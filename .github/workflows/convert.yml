@@ -88,7 +88,8 @@ jobs:
             --extra-index-url https://download.pytorch.org/whl/cpu
           case "${{ matrix.key }}" in
             ort-*) python -m pip install onnxruntime-genai==0.18.0 onnx onnx-ir onnxscript ;;  # onnx-ir (Apache-2.0), onnxscript (MIT): the model builder needs them
-            ov-*)  python -m pip install "optimum-intel[openvino]==2.2.0" "nncf>=3.3" ;;
+            # optimum-intel 2.2 exports Qwen3-VL only with Transformers 5.0 or older (4.57 added Qwen3-VL).
+            ov-*)  python -m pip install "optimum-intel[openvino]==2.2.0" "nncf>=3.3" "transformers==4.57.6" ;;
           esac
       - name: Convert
         run: python convert_models.py --plan plan.json --out build/engine-models --upload "${{ matrix.key }}"
