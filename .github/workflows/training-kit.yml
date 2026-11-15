@@ -1,0 +1,30 @@
+# Publish the Picture Model Training Kit (training-kit/) as Picture-Model-Training-Kit.zip in the release
+# "training-kit" whenever the kit changes on main, or by hand.
+name: Publish the training kit
+
+on:
+  push:
+    branches: ["main"]
+    paths: ["training-kit/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Zip the kit
+        run: |
+          mkdir -p build/"Picture Model Training Kit"
+          cp -r training-kit/. build/"Picture Model Training Kit"/
+          (cd build && zip -qr Picture-Model-Training-Kit.zip "Picture Model Training Kit")
+      - name: Upload it to the release
+        run: |
+          gh release view training-kit > /dev/null 2>&1 || gh release create training-kit --title "Picture Model Training Kit" \
+            --notes "Unpack the zip and read READ ME FIRST.txt. Needs an NVIDIA graphics card with 12 GB or more of memory."
+          gh release upload training-kit build/Picture-Model-Training-Kit.zip --clobber

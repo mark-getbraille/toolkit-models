@@ -1,3 +1,4 @@
+# Pinned for Windows, Python 3.12, CUDA 12.8 (resolved with uv pip compile).
 accelerate==1.15.0
 aiohappyeyeballs==2.7.1
 aiohttp==3.14.5
