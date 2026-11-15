@@ -32,12 +32,6 @@
     "devices": [
      "directml"
     ]
-   },
-   {
-    "name": "cpu",
-    "devices": [
-     "cpu"
-    ]
    }
   ]
  },

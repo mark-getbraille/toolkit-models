@@ -1,0 +1,55 @@
+Picture Model Training Kit
+
+What it does
+This kit teaches the Digital Accessibility Toolkit's picture model (the uncensored Qwen3-VL) to describe pictures
+the way a blind reader needs. It learns from about 17,000 photos that people have described:
+- DOCCI: 9,600 photos, each with a careful description of about 120 words;
+- VizWiz: about 7,700 photos taken by blind people, each with a one-sentence description.
+It trains a small add-on to the model, then tests whether the model really got better. The model itself is not
+changed. Nothing is sent anywhere; the kit only downloads what it needs.
+
+What you need
+- An NVIDIA graphics card with at least 12 GB of memory for the 4B model, or 16 GB for the 8B model, with an
+  up-to-date NVIDIA driver.
+- About 70 GB of free disk space (90 GB for the 8B model) on the drive where you unpack the kit.
+- An internet connection for the downloads, about 25 GB in all.
+- A night: the downloads take an hour or two, and training takes several hours.
+
+How to start
+1. Unpack this zip to a folder on a drive with enough free space, for example D:\Training. Do not run it from
+   inside the zip.
+2. Open the folder and press Enter on "Start Training.cmd" (the 4B model). For the 8B model, use
+   "Start Training 8B.cmd" instead (only with a 16 GB card or bigger; do the 4B model first).
+3. A console window opens. It says each step in plain words; JAWS and NVDA read it. Every line also goes into the
+   file training-log.txt in the kit folder, which you can open at any time.
+4. Leave the computer on. The kit stops Windows from going to sleep while it runs; the screen may turn off.
+
+The steps it says
+1. Checking the graphics card and the disk.
+2. Downloading the model (about 9 GB for 4B).
+3. Downloading the pictures and making them smaller (about 11 GB).
+4. Testing the model before training (about 20 minutes).
+5. Training: the long part. It says how many pictures are done and how long is left every 200 pictures.
+6. Testing the trained model on the same pictures.
+7. Writing the report and the file to send.
+
+If it stops
+You can close the window at any time, or the computer can restart. Press Enter on the same Start file again: it
+carries on where it stopped. Training carries on from its last save. If it says STOPPED, it gives the reason on the
+line after the word STOPPED, for example a card with too little memory or too little disk space.
+
+When it has finished
+It says FINISHED and whether the model got better. Two files matter:
+- report-4b.txt in the kit folder: the scores before and after, and 15 examples, each with a person's description,
+  the model's description before training and after training.
+- The zip in the "result" folder (a few hundred MB): this is what to send. Tell Claude the training has finished
+  and you will be told how to send it. The add-on is only published in the toolkit if the tests show it is better.
+
+Afterwards
+You can delete the "work" folder to get the disk space back (keep the "result" folder until the file is sent).
+
+Licences
+The kit is under the Apache License 2.0. The training pictures: DOCCI (Google) and VizWiz Captions are both under
+the Creative Commons Attribution 4.0 licence. The model: Qwen3-VL (Alibaba Cloud) and huihui-ai's version, Apache
+License 2.0. The tools it installs (Python, PyTorch, Transformers, PEFT, bitsandbytes and others) are under
+permissive licences; the installer helper uv is from astral.sh (MIT or Apache 2.0).

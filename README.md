@@ -46,3 +46,10 @@ That file lists model keys separated by commas, or `all`.
 
 `plan.json` and `convert_models.py` are copied here from the toolkit by `python tools/convert_models.py --export`.
 Change them there, not here.
+
+## Picture Model Training Kit
+
+`training-kit/` teaches the picture model (Qwen3-VL abliterated) to describe pictures the way a blind reader needs,
+on your own NVIDIA graphics card. It trains a small add-on (a LoRA adapter) on DOCCI and VizWiz Captions (both CC BY
+4.0) and tests the model before and after. Download it from the release **training-kit**, unpack it, and read
+`READ ME FIRST.txt`. A trained add-on is published here only if its test shows it describes better.
