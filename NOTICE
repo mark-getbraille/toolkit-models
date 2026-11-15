@@ -1,0 +1,10 @@
+Toolkit models
+Copyright 2026 Company Maker, LLC (GetBraille.com)
+
+The model files in this repository's releases are derived works of:
+  - Qwen3 and Qwen3-VL by Alibaba Cloud (Qwen team), Apache License 2.0;
+  - their abliterated versions by huihui-ai (huggingface.co/huihui-ai), Apache License 2.0.
+
+Changes made: each model was converted from its original safetensors files to ONNX Runtime GenAI or OpenVINO format,
+with 4-bit (int4) weights, using onnxruntime-genai's model builder or optimum-intel. The tokenizer and chat template
+files are copied unchanged. The weights are otherwise not changed.

@@ -1,0 +1,2 @@
+# Changing this file on main starts .github/workflows/convert.yml for these model keys (separated by commas), or all.
+all

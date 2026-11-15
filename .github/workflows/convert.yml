@@ -1,0 +1,120 @@
+# Convert the models in plan.json (written from the Digital Accessibility Toolkit's model table) to ONNX Runtime GenAI
+# int4 and OpenVINO int4, and publish the zips with their sizes and SHA-256 to this repository's release
+# "engine-models", where the toolkit downloads them. Run by hand (Actions > Convert engine models > Run workflow) or
+# by changing convert-request.txt on main; convert_models.py does the work.
+#
+# Runtime and disk: each model is its own job (one at a time, so the release's manifest is merged once at the end).
+# A GitHub-hosted runner of a public repository has 4 cores, 16 GB of memory and about 20 GB of free disk; the
+# job removes unused tool folders (about 40 GB more), puts a 20 GB swap file and the work folder on the runner's second
+# disk (/mnt) when it has room, and publishes each zip as soon as it is made (then deletes it), so an 8B model fits
+# (16 GB download, 5 GB output, 5 GB zip; 17 GB of memory in 16-bit form). A 4B model takes about 15 minutes per
+# variant, an 8B model about 30. After the run, copy the printed sizes and SHA-256
+# into models.py; only then does the toolkit offer the models.
+name: Convert engine models
+
+on:
+  # By hand, or by changing convert-request.txt (its text: the model keys, separated by commas, or all).
+  push:
+    branches: ["main"]
+    paths: ["convert-request.txt"]
+  workflow_dispatch:
+    inputs:
+      keys:
+        description: "Model keys, separated by commas, or all"
+        required: true
+        default: "all"
+
+permissions:
+  contents: write
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      keys: ${{ steps.keys.outputs.keys }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - id: keys
+        run: |
+          keys='${{ inputs.keys }}'
+          if [ -z "$keys" ] && [ -f convert-request.txt ]; then keys=$(grep -v '^#' convert-request.txt | tr -d '[:space:]'); fi
+          echo "keys=$(python convert_models.py --plan plan.json --list-json "${keys:-all}")" >> "$GITHUB_OUTPUT"
+
+  convert:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        key: ${{ fromJSON(needs.plan.outputs.keys) }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      HF_HUB_DISABLE_TELEMETRY: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disk space and add swap
+        run: |
+          # Tools this job never uses (about 40 GB), and the image's small swap file ("Text file busy" otherwise).
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL \
+            /usr/share/swift /usr/local/share/boost /usr/lib/jvm /usr/local/share/powershell /usr/local/share/chromium \
+            /opt/microsoft /opt/google /opt/az /usr/local/lib/node_modules
+          sudo docker image prune --all --force > /dev/null 2>&1 || true
+          sudo swapoff -a && sudo rm -f /swapfile
+          # The runner's second disk (/mnt), when it has room, takes the 20 GB swap file and, with more room, the work
+          # folder (build/engine-models becomes a link to it).
+          swap=/swapfile
+          mnt_free=$(df --output=avail -BG /mnt 2>/dev/null | tail -1 | tr -dc 0-9)
+          if [ "${mnt_free:-0}" -ge 24 ]; then swap=/mnt/swapfile; fi
+          if [ "${mnt_free:-0}" -ge 60 ]; then
+            sudo mkdir -p /mnt/engine-models && sudo chown "$(id -u):$(id -g)" /mnt/engine-models
+            mkdir -p build && ln -sfn /mnt/engine-models build/engine-models
+          fi
+          sudo fallocate -l 20G "$swap" && sudo chmod 600 "$swap" && sudo mkswap "$swap" && sudo swapon "$swap"
+          df -h / /mnt && free -g
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # Permissive licences only: onnxruntime-genai (MIT) and its model builder, optimum-intel, openvino and nncf
+      # (Apache-2.0), transformers and huggingface_hub (Apache-2.0), torch (BSD-style).
+      - name: Install the converters
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "huggingface_hub>=0.34" "transformers>=4.57,<5.6" torch torchvision \
+            --extra-index-url https://download.pytorch.org/whl/cpu
+          case "${{ matrix.key }}" in
+            ort-*) python -m pip install onnxruntime-genai==0.18.0 onnx onnx-ir onnxscript ;;  # onnx-ir (Apache-2.0), onnxscript (MIT): the model builder needs them
+            ov-*)  python -m pip install "optimum-intel[openvino]==2.2.0" "nncf>=3.3" ;;
+          esac
+      - name: Convert
+        run: python convert_models.py --plan plan.json --out build/engine-models --upload "${{ matrix.key }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: manifest-${{ matrix.key }}
+          path: build/engine-models/manifest-${{ matrix.key }}.json
+
+  manifest:
+    needs: convert
+    if: always()
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: manifest-*
+          path: manifests
+          merge-multiple: true
+      - name: Merge into the release's manifest.json
+        run: |
+          mkdir -p build/engine-models
+          gh release download engine-models -p manifest.json -D build/engine-models || true
+          python convert_models.py --out build/engine-models --upload --merge manifests/*.json

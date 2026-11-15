@@ -1,0 +1,120 @@
+[
+ {
+  "key": "ort-qwen3-4b-abliterated",
+  "engine": "ort-genai",
+  "base_model": "huihui-ai/Huihui-Qwen3-4B-Instruct-2507-abliterated",
+  "base_revision": "c9bd464550d4078c72af0dd22aa18d0437868ce3",
+  "vision": false,
+  "variants": [
+   {
+    "name": "gpu",
+    "devices": [
+     "directml"
+    ]
+   },
+   {
+    "name": "cpu",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "ort-qwen3-8b-abliterated",
+  "engine": "ort-genai",
+  "base_model": "huihui-ai/Huihui-Qwen3-8B-abliterated-v2",
+  "base_revision": "7d89db76029281fd8f3e6698a8e30738608105a9",
+  "vision": false,
+  "variants": [
+   {
+    "name": "gpu",
+    "devices": [
+     "directml"
+    ]
+   },
+   {
+    "name": "cpu",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "ov-qwen3-4b-abliterated",
+  "engine": "openvino",
+  "base_model": "huihui-ai/Huihui-Qwen3-4B-Instruct-2507-abliterated",
+  "base_revision": "c9bd464550d4078c72af0dd22aa18d0437868ce3",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "intel-gpu",
+     "cpu"
+    ]
+   },
+   {
+    "name": "npu",
+    "devices": [
+     "npu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "ov-qwen3-8b-abliterated",
+  "engine": "openvino",
+  "base_model": "huihui-ai/Huihui-Qwen3-8B-abliterated-v2",
+  "base_revision": "7d89db76029281fd8f3e6698a8e30738608105a9",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "intel-gpu",
+     "cpu"
+    ]
+   },
+   {
+    "name": "npu",
+    "devices": [
+     "npu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "ov-qwen3vl-4b-abliterated",
+  "engine": "openvino",
+  "base_model": "huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated",
+  "base_revision": "ce72a7c22aacb493fb94478de3bfbe834c61844a",
+  "vision": true,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "intel-gpu",
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "ov-qwen3vl-8b-abliterated",
+  "engine": "openvino",
+  "base_model": "huihui-ai/Huihui-Qwen3-VL-8B-Instruct-abliterated",
+  "base_revision": "b47a0690b22eaf1d9a63874d967a03781c90f9cf",
+  "vision": true,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "intel-gpu",
+     "cpu"
+    ]
+   }
+  ]
+ }
+]
