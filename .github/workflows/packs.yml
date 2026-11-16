@@ -39,7 +39,10 @@ jobs:
                    "banknotes", "cattle_health", "clothing", "japan_search", "ksamsok", "rijksmuseum", "stair_captions",
                    "coco_cn", "eggs", "beef", "taiwan_pills", "pharmassist", "mediseg", "open_images_food",
                    "grocery_store", "fish_eyes", "commons_food", "open_images_objects", "orbit", "core50",
-                   "lila_camera_traps", "gbif_species", "commons_breeds"]
+                   "lila_camera_traps", "gbif_species", "commons_breeds",
+                   "textocr", "coco_text", "cord", "doclaynet", "plotqa", "loc_letters", "ptl_crossings",
+                   "uroac_crossings", "open_images_street", "walkway_dhaka", "outdoor_navigation", "seoul_sidewalks",
+                   "dollar_street", "geode"]
           words = [w for w in sys.argv[1].split(",") if w]
           keys = known if words in ([], ["all"]) else [w for w in words if w in known]
           print("keys=" + json.dumps(keys))
@@ -70,6 +73,8 @@ jobs:
             ksamsok|rijksmuseum|coco_cn)
               python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
               python -m pip install "transformers==4.57.6" sentencepiece sacremoses ;;
+            seoul_sidewalks)
+              python -m pip install "pillow-heif==1.1.1" ;;
           esac
       - name: Build the pack
         run: |
@@ -104,6 +109,20 @@ jobs:
             lila_camera_traps) limit=8000 ;;
             gbif_species) limit=6000 ;;
             commons_breeds) limit=3000 ;;
+            textocr) limit=8000 ;;
+            coco_text) limit=1200 ;;
+            cord) limit=1000 ;;
+            doclaynet) limit=6000 ;;
+            plotqa) limit=6000 ;;
+            loc_letters) limit=8000 ;;
+            ptl_crossings) limit=5000 ;;
+            uroac_crossings) limit=1000 ;;
+            open_images_street) limit=5000 ;;
+            walkway_dhaka) limit=1000 ;;
+            outdoor_navigation) limit=700 ;;
+            seoul_sidewalks) limit=514 ;;
+            dollar_street) limit=8000 ;;
+            geode) limit=6000 ;;
           esac
           python packs/build_packs.py "${{ matrix.key }}" --out build/packs --limit "$limit"
       - name: Upload it to the release

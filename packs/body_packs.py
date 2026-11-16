@@ -45,8 +45,10 @@ import sys
 import tempfile
 import time
 
+# The shared helpers of the other pack files (session, clean, smaller, fetch_all, say ...), and the polite
+# Wikimedia Commons helpers of food_packs (commons_get waits and tries again when Commons answers 429).
 from build_packs import session, clean, smaller, fetch_all, first_sentences, say, article, LONG_SIDE  # noqa: F401
-from food_packs import commons_get, commons_members, commons_entries, with_twins, sentence
+from food_packs import commons_get, commons_members, commons_entries, with_twins, sentence  # noqa: F401
 
 DESCRIBE = "Describe this picture."
 IS_NUDE = "Is there nudity in this picture?"
@@ -67,16 +69,18 @@ MINOR = re.compile(
     r"david|romulus|remus|charity|caritas|fetus|fetal|foetus|foetal|embryo\w*|"
     r"enfant\w*|filles?|fillettes?|gar[cç]on\w*|petite?s?|jeune\w*|jeunesse|fanciull\w*|ragazz\w*|bimb\w*|"
     r"ni[nñ][oa]s?|muchach\w*|chic[oa]s?|kinder\w*|kindje\w*|kindheit|knabe\w*|m[aä]dchen|j[uü]ngling\w*|"
-    r"junge\w*|jongen\w*|meisje\w*|puer\w*|puella\w*|infans)\b|子供|子ども|こども|童|少年|少女|乳児|幼|赤ん坊|娘|息子",
+    r"junge\w*|jongen\w*|meisje\w*|puer\w*|puella\w*|infans)\b|"
+    r"子供|子ども|こども|童|少年|少女|乳児|幼|赤ん坊|娘|息子",
     re.I)
 
 # Words that mark sexual content, sexual acts, or stories whose pictures are about sex or sexual violence. Also wide.
 SEXUAL = re.compile(
     r"\b(erotic\w*|shunga|makura|porn\w*|sex\w*|intercourse|coitus|copulat\w*|phall\w*|ithyphall\w*|priap\w*|"
     r"penis|vulva|vagina\w*|genital\w*|erection\w*|erectile|arous\w*|orgasm\w*|masturbat\w*|satyrs?|satyresses?|"
-    r"nymphs?|brothel\w*|bordello|prostitut\w*|courtesans?|harem\w*|concubine\w*|odalisques?|rap(e|es|ed|ing)|ravish\w*|"
-    r"abduct\w*|seduc\w*|lust\w*|lovers?|love-?making|kiss\w*|embrac\w*|caress\w*|bacchanal\w*|orgy|orgies|"
-    r"voyeur\w*|leda|dana[eë]|antiope|susanna|bathsheba|jupiter|zeus|pasiphae|salmacis|hermaphrodit\w*|"
+    r"nymphs?|brothel\w*|bordello|prostitut\w*|courtesans?|harem\w*|concubine\w*|odalisques?|rap(e|es|ed|ing)|"
+    r"ravish\w*|abduct\w*|seduc\w*|lust\w*|lovers?|love-?making|kiss\w*|embrac\w*|caress\w*|bacchanal\w*|orgy|orgies|"
+    r"voyeur\w*|leda|lucretia|tarquin\w*|dana[eë]|antiope|susanna|bathsheba|jupiter|zeus|pasiphae|salmacis|"
+    r"hermaphrodit\w*|"
     r"bondage|fetish\w*|pin-?ups?|burlesque|striptease|stripper\w*)\b|春画|枕絵|艶|秘画", re.I)
 
 # What each builder left out and why, for the quick check (source, title, the word that excluded it).
@@ -128,7 +132,9 @@ ART_KINDS = {"drawing", "painting", "print", "photograph", "sculpture", "waterco
 def lead(title, kind="", artist="", date="", medium=""):
     """The opening sentence of an answer from the record: "Seated Male Nude: a drawing by Baccio Bandinelli,
     c. 1516-20, in red chalk." (only what the record gives)."""
-    kind, medium, date = clean(kind).lower(), clean(medium), clean(date)
+    kind, medium, date, artist = clean(kind).lower(), clean(medium), clean(date), clean(artist)
+    if artist.lower() in ("unidentified", "unknown", "unknown artist", "anonymous"):
+        artist = ""
     if not kind:                         # a record with only a medium: "a drawing", else "a work in pencil"
         if medium.lower() in ART_KINDS:
             kind, medium = medium.lower(), ""
@@ -506,9 +512,11 @@ def si_items(want):
 
 # ----------------------------------------------------------------- art_nudes
 
-# Each museum's share of the pack (the National Gallery and the Met have the most tagged nudes).
-ART_SHARES = (("nga", nga_items, 0.35), ("met", met_items, 0.35), ("si", si_items, 0.12),
-              ("cma", cma_items, 0.09), ("aic", aic_items, 0.09))
+# Each museum's share of the pack. Usable in November 2026 (after the licence and safety checks): the Met about
+# 2,300 (of 4,806 tagged works), the National Gallery 1,198, the American Art Museum 638, the Art Institute 289 and
+# Cleveland 203; a museum with fewer than its share gives what it has.
+ART_SHARES = (("nga", nga_items, 0.3), ("met", met_items, 0.5), ("si", si_items, 0.14),
+              ("cma", cma_items, 0.05), ("aic", aic_items, 0.07))
 
 
 def build_art_nudes(limit):
@@ -684,8 +692,8 @@ BODY_PACKS = {
 # How many pictures a full build takes from each collection (about what each offers after the licence and
 # safety checks).
 BODY_LIMITS = {
-    "art_nudes": 4000,
-    "anatomy": 1500,
+    "art_nudes": 4000,                # of about 4,600 usable works in the five museums
+    "anatomy": 1500,                  # 498 usable OpenStax figures, the rest Gray's plates
 }
 
 

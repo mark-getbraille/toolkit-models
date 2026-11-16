@@ -731,6 +731,14 @@ PACKS.update(FOOD_PACKS)
 from everyday_packs import EVERYDAY_PACKS
 PACKS.update(EVERYDAY_PACKS)
 
+# Reading: text in photos, receipts, document pages, charts and handwritten letters.
+from text_packs import TEXT_PACKS
+PACKS.update(TEXT_PACKS)
+
+# Getting around (pedestrian lights, crossings, pavements, obstacles) and homes around the world.
+from world_life_packs import LIFE_PACKS
+PACKS.update(LIFE_PACKS)
+
 
 def sha256_of(path):
     """The SHA-256 of a file."""

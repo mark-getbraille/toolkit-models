@@ -55,7 +55,7 @@ import zipfile
 import zlib
 
 from build_packs import session, clean, smaller, fetch_all, say, article  # noqa: F401
-from food_packs import with_twins, sentence, listed, oi_lines, oi_licence_name, OI, OI_PICTURE
+from food_packs import with_twins, listed, oi_lines, oi_licence_name, OI, OI_PICTURE
 
 
 # ----------------------------------------------------------------- shared helpers
@@ -446,7 +446,8 @@ def oi_yes_answer(name, boxes):
         start = f"Yes, there {'are' if plural or b['group'] else 'is'} {many if b['group'] and not plural else one}"
     else:
         sides = []
-        for b in sorted(boxes, key=lambda b: -(b["x2"] - b["x1"]) * (b["y2"] - b["y1"]))[:3]:
+        biggest_three = sorted(boxes, key=lambda b: -(b["x2"] - b["x1"]) * (b["y2"] - b["y1"]))[:3]
+        for b in sorted(biggest_three, key=lambda b: b["x1"] + b["x2"]):
             part = picture_part((b["x1"] + b["x2"]) / 2)
             if part not in sides:
                 sides.append(part)

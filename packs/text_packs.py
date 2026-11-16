@@ -10,11 +10,12 @@ is a person's transcription or label (or a sentence made from them by a fixed te
 
   textocr       TextOCR (Singh et al., 2021, Facebook AI; annotations CC BY 4.0, textvqa.org/textocr) on Open Images
                 photos whose own licence is CC BY (photographer credited): every word in the picture typed by
-                people, read out line by line. "Read all the text in this picture." Only photos where every word was
-                legible (TextOCR marks unreadable words with "."), with 2 to 60 words, none written sideways.
+                people, read out line by line in the order they typed it. "Read all the text in this picture." Only
+                photos with 2 to 60 legible words, none written sideways; where people marked some words as
+                unreadable (at most a quarter), the answer ends "(There is more text, too small or blurred to read.)".
   coco_text     COCO-Text v2 (Veit et al., 2016; annotations CC BY 4.0, bgshih.github.io/cocotext) on COCO photos
-                under CC BY 2.0 or no known copyright (the kit fetches them): the same question, only photos where
-                every marked piece of text is legible and big enough to read.
+                under CC BY 2.0 or no known copyright (the kit fetches them): the same question and the same note,
+                only photos whose legible text is big enough to read (10 pixels or more).
   cord          CORD v2 (Park et al., 2019, NAVER CLOVA; CC BY 4.0, github.com/clovaai/cord): photos of 1,000
                 Indonesian shop and restaurant receipts with every field labelled by people. "What is the total on
                 this receipt?", "List the items and prices on this receipt." and "How much change was given?"
@@ -49,6 +50,7 @@ from build_packs import session, clean, smaller, fetch_all, say, coco_licences  
 
 READ_ALL = "Read all the text in this picture."
 READ_PAGE = "Read this page."
+UNREADABLE = "\n(There is more text, too small or blurred to read.)"
 COCO_PHOTO = "photo from COCO (cocodataset.org), CC BY 2.0 or no known copyright restrictions"
 
 
@@ -100,6 +102,28 @@ def text_lines(words):
     return [text for _, text in sorted(out, key=lambda m: m[0])]
 
 
+def lines_in_given_order(words):
+    """The words of a picture as lines of text, keeping the order in which the people who typed them went (TextOCR's
+    annotators worked sign by sign, in reading order): the next word stays on the line when it sits just to the
+    right of the last one at about the same height, and starts a new line otherwise. None when a word is written
+    sideways (taller than wide)."""
+    lines, last = [], None
+    for text, x, y, w, h in words:
+        if len(text) >= 3 and h > 1.5 * w:
+            return None
+        if last:
+            lx, ly, lw, lh = last
+            same_height = abs((y + h / 2) - (ly + lh / 2)) <= 0.5 * min(h, lh) and max(h, lh) <= 2 * min(h, lh)
+            gap = x - (lx + lw)
+            if same_height and -0.3 * min(h, lh) <= gap <= 3 * max(h, lh):
+                lines[-1].append(text)
+                last = (x, y, w, h)
+                continue
+        lines.append([text])
+        last = (x, y, w, h)
+    return [" ".join(line) for line in lines]
+
+
 def plain_number(value):
     """A number as people say it: 234280000 -> "234 million", 45.2999992 -> "45.3", 1234.5 -> "1,235"."""
     v = float(value)
@@ -142,24 +166,25 @@ def oi_licence_name(url):
 
 
 def textocr_answers(data):
-    """{Open Images id: the picture's text, line by line} for the TextOCR pictures where every word was legible,
-    with 2 to 60 words, none written sideways."""
+    """{Open Images id: the picture's text, line by line} for the TextOCR pictures with 2 to 60 legible words, none
+    written sideways, where at most a quarter of the marked words could not be read (TextOCR types those as ".";
+    the answer then ends by saying there is more text that cannot be read)."""
     out = {}
     for image_id, ann_ids in data["imgToAnns"].items():
-        words = []
+        words, unreadable = [], 0
         for ann_id in ann_ids:
             a = data["anns"][ann_id]
             text = clean(a.get("utf8_string"))
             if not text or text == ".":                 # "." marks a word people could not read
-                words = None
-                break
+                unreadable += 1
+                continue
             x, y, w, h = a["bbox"]
             words.append((text, x, y, w, h))
-        if not words or not 2 <= len(words) <= 60:
+        if not 2 <= len(words) <= 60 or unreadable > len(words) / 3:
             continue
-        lines = text_lines(words)
+        lines = lines_in_given_order(words)
         if lines:
-            out[image_id] = "\n".join(lines)
+            out[image_id] = "\n".join(lines) + (UNREADABLE if unreadable else "")
     return out
 
 
@@ -180,6 +205,7 @@ def build_textocr(limit):
     wanted, items = int(limit * 1.2) + 2, []
     with s.get(OI_ALL_IMAGES, timeout=900, stream=True) as r:
         r.raise_for_status()
+        r.encoding = "utf-8"                              # the server does not say; names are UTF-8 ("Kārlis")
         for photo in csv.DictReader(line for line in r.iter_lines(decode_unicode=True) if line):
             image_id = photo.get("ImageID")
             if image_id not in answers or (photo.get("Rotation") or "0") not in ("0", "0.0", ""):
@@ -232,7 +258,7 @@ def build_coco_text(limit):
             continue
         lines = text_lines(words)
         if lines:
-            answer = "\n".join(lines) + ("\n(There is more text, too small or blurred to read.)" if unreadable else "")
+            answer = "\n".join(lines) + (UNREADABLE if unreadable else "")
             rows.append({"url": free[int(image_id)], "question": READ_ALL, "answer": answer,
                          "credit": f"Text typed by people for COCO-Text (Veit et al., 2016), CC BY 4.0; {COCO_PHOTO}"})
     say(f"COCO-Text: {len(rows)} free photos with readable text")
@@ -505,7 +531,8 @@ def build_plotqa(limit):
                         continue
                     credit = (f"PlotQA (Methani et al., 2020), CC BY 4.0, https://github.com/NiteshMethani/PlotQA: "
                               f"{part} chart {match.group(1)}, drawn from public data (World Bank and others)")
-                    fetched.append((f"plotqa-{part}-{match.group(1)}.jpg", data, [dict(r, credit=credit) for r in rows]))
+                    fetched.append((f"plotqa-{part}-{match.group(1)}.jpg", data,
+                                    [dict(r, credit=credit) for r in rows]))
                     taken += 1
                     if taken >= per_part or len(fetched) >= limit:
                         break
@@ -641,7 +668,7 @@ TEXT_PACKS = {
 
 # How many pictures a full build takes from each source (about what each offers after the checks above).
 TEXT_LIMITS = {
-    "textocr": 12000,
+    "textocr": 8000,
     "coco_text": 1200,
     "cord": 1000,
     "doclaynet": 6000,
