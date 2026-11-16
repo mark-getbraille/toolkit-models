@@ -1,0 +1,9 @@
+# Picture-making training (train_pictures.py): only what kit\requirements.txt does not already have.
+# Install both together:  uv pip install -r kit\requirements.txt -r kit\requirements-pictures.txt
+#   --extra-index-url https://download.pytorch.org/whl/cu128 --index-strategy unsafe-best-match
+# Resolved with uv pip compile for Windows, Python 3.12, against the pins in requirements.txt. diffusers 0.39.0 is the
+# newest release that works with huggingface-hub 0.36.2 (which transformers 4.57.6 needs); 0.40 and later need
+# huggingface-hub 1.x. Every version here was released at least two weeks before 16 November 2026.
+diffusers==0.39.0
+importlib-metadata==10.1.0
+zipp==4.1.2

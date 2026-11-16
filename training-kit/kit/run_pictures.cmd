@@ -51,7 +51,7 @@ if not exist env\installed.txt (
 rem The picture-making tools, once (installed-pictures-cmd.txt is this file's own mark; the program keeps its own).
 if exist kit\requirements-pictures.txt if not exist env\installed-pictures-cmd.txt (
   echo Getting ready: installing the picture-making tools in this folder. This can take 10 to 30 minutes.
-  tools\uv.exe pip install --python env\Scripts\python.exe -r kit\requirements-pictures.txt --extra-index-url https://download.pytorch.org/whl/cu128 --index-strategy unsafe-best-match --quiet
+  tools\uv.exe pip install --python env\Scripts\python.exe -r kit\requirements.txt -r kit\requirements-pictures.txt --extra-index-url https://download.pytorch.org/whl/cu128 --index-strategy unsafe-best-match --quiet
   if errorlevel 1 goto :failed
   echo installed> env\installed-pictures-cmd.txt
 )
