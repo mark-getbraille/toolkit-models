@@ -1132,3 +1132,18 @@ def prepare_source(source, data_dir, work, size="normal", seed=7):
     rng.shuffle(rest)
     cap = max(50, int(source.cap * SIZES[size]))
     return rest[:cap], test
+
+
+def _add_collections(extra):
+    """Put more collections (from their own files) into SOURCES, before the share-alike ones, so the permissive
+    collections stay together and in the order the kit trains them."""
+    first_shared = next((i for i, s in enumerate(SOURCES) if s.group != "permissive"), len(SOURCES))
+    known = {s.key for s in SOURCES}
+    SOURCES[first_shared:first_shared] = [s for s in extra if s.key not in known]
+
+
+# The large described-picture and question collections (VQA, Visual Dialog, Localized Narratives ...), in their own file.
+# Imported here, at the end, because that file uses this one's helpers.
+from more_sources import MORE_SOURCES  # noqa: E402
+
+_add_collections(MORE_SOURCES)
