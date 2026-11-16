@@ -42,6 +42,7 @@ import random
 import re
 import sys
 import tempfile
+import time
 import zipfile
 
 from build_packs import session, clean, smaller, fetch_all, say, coco_licences  # noqa: F401
@@ -529,11 +530,16 @@ def btp_pictures_free(s, resource_url, cache):
     """True when the Library of Congress says the collection of a page has no known copyright restrictions (its
     "rights" statement, read once per collection page and kept in cache)."""
     if resource_url not in cache:
-        try:
-            item = s.get(resource_url, params={"fo": "json", "at": "item.rights"}, timeout=120).json()
-            rights = clean(" ".join(item.get("item.rights") or []))
-        except Exception:  # noqa: BLE001 - unknown rights: left out
-            rights = ""
+        rights = ""
+        for attempt in range(3):                  # the Library's server is slow and sometimes answers nothing
+            try:
+                item = s.get(resource_url, params={"fo": "json", "at": "item.rights"}, timeout=120).json()
+                rights = clean(" ".join(item.get("item.rights") or []))
+            except Exception:  # noqa: BLE001 - tried again, then unknown rights: left out
+                rights = ""
+            if rights:
+                break
+            time.sleep(5 * (attempt + 1))
         cache[resource_url] = bool(BTP_PICTURE_FREE.search(rights)) and not BTP_NOT_FREE.search(rights)
     return cache[resource_url]
 

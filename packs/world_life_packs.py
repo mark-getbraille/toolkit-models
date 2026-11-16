@@ -778,7 +778,7 @@ DS_TOPICS = {
     "dishwashers": ("thing", "a dishwasher"), "dish-washing-soaps": ("thing", "washing-up liquid (dish soap)"),
     "earings": ("thing", "earrings"), "everyday-shoes": ("thing", "everyday shoes"),
     "floors": ("thing", "a floor"), "freezers": ("thing", "a freezer"), "front-doors": ("thing", "a front door"),
-    "frontdoor-keys": ("thing", "front-door keys"), "fruits": ("thing", "fruit"), "glasses": ("thing", "glasses"),
+    "frontdoor-keys": ("thing", "front-door keys"), "fruits": ("thing", "fruit"),
     "goats": ("thing", "goats"), "grains": ("thing", "grains"), "hair-brushes": ("thing", "a hairbrush"),
     "instruments": ("thing", "a musical instrument"), "jackets": ("thing", "a jacket"),
     "jewelry": ("thing", "jewellery"), "kitchen-sinks": ("thing", "a kitchen sink"),
@@ -848,12 +848,25 @@ def ds_hits(s, topic):
 def ds_photographers(s, media_id, cache):
     """The names of the photographers of a family (from one of its photos), remembered by family."""
     try:
-        place = s.get(f"{DS_API}/media/{media_id}", params={"lng": "en"}, timeout=60).json().get("place") or {}
+        media = s.get(f"{DS_API}/media/{media_id}", params={"lng": "en"}, timeout=60).json()
     except Exception:  # noqa: BLE001 - unnamed
         return ""
-    names = [v.get("name") for v in place.get("visitors") or [] if "photographer" in (v.get("kind") or [])]
-    cache[place.get("id")] = ", ".join(n for n in names if n)
+    place = media.get("place") or {} if isinstance(media, dict) else {}
+    names = [v.get("name") for v in place.get("visitors") or []
+             if "photographer" in [str(k).lower() for k in v.get("kind") or []]]
+    if not names and isinstance(media, dict):
+        own = media.get("photographer")
+        names = [own.get("name") if isinstance(own, dict) else own] if own else []
+    cache[place.get("id")] = ", ".join(str(n) for n in names if n)
     return cache[place.get("id")]
+
+
+def this_is(words):
+    """ "This is a bed." or "These are goats." (plural when the words end in s, not counting a note in brackets,
+    and have no "a", "an" or "the")."""
+    plain = re.sub(r"\s*\(.*?\)", "", words)
+    plural = plain.endswith("s") and not re.match(r"(a|an|the)\s", plain)
+    return f"{'These are' if plural else 'This is'} {words}."
 
 
 def build_dollar_street(limit):
@@ -880,10 +893,9 @@ def build_dollar_street(limit):
                       f"CC BY 4.0: {DS_PAGE}{place.get('slug', '')}")
             kind, words = DS_TOPICS[topic]
             if kind == "thing":
-                rows = [{"question": "What is this?", "answer": sentence(f"this is {words}"), "credit": credit}]
+                rows = [{"question": "What is this?", "answer": this_is(words), "credit": credit}]
             else:
-                rows = [{"question": "What kind of place is this?", "answer": sentence(f"this is {words}"),
-                         "credit": credit}]
+                rows = [{"question": "What kind of place is this?", "answer": this_is(words), "credit": credit}]
             if topic in DS_WHERE and country:
                 rows.append({"question": "Where might this photo be from?",
                              "answer": f"It was taken in {country}.", "credit": credit})
@@ -938,7 +950,7 @@ def build_geode(limit):
             if not data or not words:
                 continue
             out.append((f"geode-{len(out)}.jpg", data, {"question": "What is this?",
-                        "answer": sentence(f"this is {words}"), "credit": GEODE_CREDIT}))
+                        "answer": this_is(words), "credit": GEODE_CREDIT}))
             taken += 1
             if taken >= per_group:
                 break
