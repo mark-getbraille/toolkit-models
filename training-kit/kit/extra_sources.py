@@ -27,6 +27,10 @@ Safety, as in personal_sources.py and the packs:
     plants, pets, birds, food); never people, children or medical.
 
 The collections (EXTRA_SOURCES):
+  permissive (open, but too big for a ready-made pack, so the kit downloads them itself)
+    cerrado_fruits        Cerrado Fruits: five fruits of the Brazilian savanna (CC BY 4.0, Zenodo 17559202).
+    scoa_blister          SCOA blister packs (CC BY 4.0; one 6.2 GB 7-Zip archive; its makers left out the per-photo
+                          labels, so most answers can only say it is a blister pack of tablets).
   share-alike
     oxford_pets           Oxford-IIIT Pet: 37 cat and dog breeds (CC BY-SA 4.0).
     hagrid                HaGRIDv2: hand gestures made by adults (a variant of CC BY-SA 4.0).
@@ -44,6 +48,10 @@ The collections (EXTRA_SOURCES):
     papila                PAPILA: eye-fundus photos of adults, healthy, glaucoma or suspect (GPL-3.0+; medical).
     fortepan              Fortepan: Hungarian photos with their Hungarian titles (CC BY-SA 4.0, through Europeana).
     deutsche_fotothek     Deutsche Fotothek: pictures with German titles and descriptions (CC BY-SA 4.0, Europeana).
+    streetsurfacevis      StreetSurfaceVis: German street photos, the road surface and its condition (CC BY-SA 4.0).
+    arc_d_asphalt         ARC-D: close-ups of potholes and cracks in asphalt (CC BY-SA 4.0).
+    lombardia_fotografie  Lombardia Beni Culturali photographs with Italian descriptions (records CC0; the pictures'
+                          licence is not confirmed, so they are kept with the share-alike group).
   noncommercial
     hindi_vg              Hindi Visual Genome: one part of a photo, outlined in red, described in Hindi (CC BY-NC-SA).
     thai_coco             Thai descriptions of COCO and NECTEC photos (CC BY-NC-SA 3.0).
@@ -72,6 +80,8 @@ The collections (EXTRA_SOURCES):
     uit_viic              UIT-ViIC: COCO sports photos described in Vietnamese (no licence stated).
     ktvic                 KTVIC: everyday life in Vietnam described in Vietnamese (no licence stated).
     multi30k_coco         Multi30k: COCO photos described in German and French (no licence stated).
+    guerre_14_18          Fonds de la guerre 14-18: French army photographs, 1914-1919, French captions (no photo
+                          terms written; they show war damage, the wounded and the dead).
 
 Other languages: each of those answers stays in its own language, with the question asked in that language
 ("Mit ábrázol ez a fénykép?", "Was zeigt dieses Bild?", "Hãy mô tả bức ảnh này trong một câu." ...), and rows carry
@@ -100,6 +110,17 @@ folder with your own descriptions, as the user guide says):
                                          Bengali descriptions of Flickr8k photos.
   Roboflow Universe sets (dog breeds,    https://universe.roboflow.com : a free Roboflow account and API key are needed
   price tags and others)                 to download; each set shows its own licence.
+  Open, but blocked from the machine these entries were made on (fetch them yourself):
+    Ingenium (Canada)                    https://ingeniumcanada.org/collection-research/open-data : the artifact
+                                         records (OGL-Canada) are at source.techno-science.ca/datasets-donnees/
+                                         artifacts-artefacts/ (CSV and XML); its pictures are CC BY-NC-ND, so personal
+                                         use only. The site answers automated requests with a challenge page.
+    Trove (National Library of Australia) https://trove.nla.gov.au : a free API key is needed
+                                         (trove.nla.gov.au/about/create-something/using-api).
+    Museums Victoria                     https://collections.museumsvictoria.com.au (its API is at
+                                         collections.museumsvictoria.com.au/api).
+    Biblioteca Digital Hispanica         https://bdh.bne.es
+    The Marseille photo collection       found by the portal search; its link is in that search's notes.
   EMOTIC, BoLD, RAF-DB, AffectNet,       request forms or agreements (see personal_sources.py).
   Jester, EgoGesture
 
@@ -2230,6 +2251,198 @@ def prepare_multi30k_coco(source, data_dir, work, cap):
     return fetch_shared(items[:cap + source.test], os.path.join(data_dir, source.key))
 
 
+# ----------------------------------------------------------------- roads, Italian photo records, war photos, fruit
+
+STREET_SURFACE = "11449977"
+SURFACES = {"asphalt": "asphalt", "concrete": "concrete", "paving_stones": "paving stones",
+            "sett": "setts (cobblestones)", "unpaved": "unpaved"}
+QUALITY_WORDS = {"excellent": "in excellent condition", "good": "in good condition",
+                 "intermediate": "in fair condition, with some wear", "bad": "in bad condition, with cracks or holes",
+                 "very_bad": "in very bad condition"}
+
+
+def prepare_streetsurfacevis(source, data_dir, work, cap):
+    """StreetSurfaceVis (Kapp, Hoffmann, Weigmann et al., 2024, HTW Berlin; Zenodo 11449977, CC BY-SA 4.0): 9,122
+    street-level photos from Germany (Mapillary), each labelled with the road surface and its condition. Its
+    1024-pixel zip (1.3 GB) is read by HTTP ranges, an equal share for each surface and condition; its test part gives
+    the test pictures. "What is the road surface like here?" """
+    sizes = zenodo_sizes(STREET_SURFACE)
+    groups = {}
+    for r in csv.DictReader(io.StringIO(get_bytes(zenodo(STREET_SURFACE, "streetSurfaceVis_v1_0.csv")).decode())):
+        if r["surface_type"] in SURFACES and r["surface_quality"] in QUALITY_WORDS:
+            groups.setdefault((r["surface_type"], r["surface_quality"]), []).append(
+                (r["mapillary_image_id"], r["surface_type"], r["surface_quality"], r["train"], r["user_name"]))
+    chosen = []
+    for image_id, surface, quality, train, user in even_pick(groups, cap + source.test, 331):
+        chosen.append((f"s_1024/{image_id}.jpg",
+                       {"question": "What is the road surface like here?",
+                        "answer": f"The road surface is {SURFACES[surface]}, {QUALITY_WORDS[quality]}.",
+                        "split": "" if train == "True" else "test",
+                        "credit": f"Photo by {user} on Mapillary, CC BY-SA 4.0, StreetSurfaceVis"}))
+    url, size = zenodo(STREET_SURFACE, "s_1024.zip"), sizes["s_1024.zip"]
+    say(f"  StreetSurfaceVis: reading {len(chosen)} street photos.")
+    return zip_members(source, data_dir, work, lambda: remote_zip(url, size), chosen)
+
+
+ARCD_URL, ARCD_SIZE = "https://mfund-arcd.s3.us-west-000.backblazeb2.com/mfund_split.zip", 131086273
+ARCD_CLASSES = {"Hintergrund": "No: the road surface here looks undamaged.",
+                "Longitudinalriss": "Yes: there is a crack running along the road (a longitudinal crack).",
+                "Transversalriss": "Yes: there is a crack running across the road (a transverse crack).",
+                "Tranversalriss": "Yes: there is a crack running across the road (a transverse crack).",
+                "Netzriss": "Yes: the asphalt has a network of cracks, like crazy paving (alligator cracking).",
+                "Schlagloch": "Yes: there is a pothole."}
+
+
+def prepare_arc_d_asphalt(source, data_dir, work, cap):
+    """ARC-D (Palaimon GmbH, mFUND; CC BY-SA 4.0, from the GRDDC road-damage photos): 19,735 close-ups cut from road
+    photos, showing a pothole, a crack along or across the road, a network of cracks, or undamaged road. Faces and
+    number plates were made unrecognisable by its makers. Crops under 64 pixels are left out; the 131 MB zip is read
+    by HTTP ranges; its valid part gives the test pictures. "Is this road surface damaged?" """
+    z = remote_zip(ARCD_URL, ARCD_SIZE)
+    groups = {}
+    for n in z.namelist():
+        parts = n.split("/")
+        if len(parts) == 4 and parts[2] in ARCD_CLASSES and n.endswith(".jpg") and z.getinfo(n).file_size > 2500:
+            groups.setdefault(ARCD_CLASSES[parts[2]], []).append(n)
+    z.close()
+    chosen = [(n, {"question": "Is this road surface damaged?", "split": "test" if "/valid/" in n else "",
+                   "answer": f"A close-up of a road. {ARCD_CLASSES[n.split('/')[2]]}"})
+              for n in even_pick(groups, int((cap + source.test) * 1.3), 337)]       # some crops are too small
+    rows = zip_members(source, data_dir, work, lambda: remote_zip(ARCD_URL, ARCD_SIZE), chosen)
+    return rows[:cap + source.test]
+
+
+LOMBARDIA = "https://www.dati.lombardia.it/resource/ir82-62ur.json"
+# Catalogue notes that say how or why a picture was made, not what it shows: left out.
+LOMBARDIA_NOT_PICTURE = re.compile(r"^(immagine realizzata|fotografia realizzata|scatto realizzato|stampa|negativo|"
+                                   r"recupero|indicazione)|\bper servizi pubblicitari\b", re.I)
+
+
+def prepare_lombardia_fotografie(source, data_dir, work, cap):
+    """Lombardia Beni Culturali, photographs (dati.lombardia.it ir82-62ur; the records are CC0, the licence of the
+    pictures themselves is not confirmed, so they are kept with the share-alike group): photographs held by museums
+    and archives in Lombardy, each with an Italian description written by the cataloguers (field sgtd). The
+    1280-pixel picture is fetched from the region's server. "Che cosa mostra questa fotografia?" (What does this
+    photograph show?)"""
+    items, offset, want = [], 0, int((cap + source.test) * 1.2)
+    while len(items) < want * 2 and offset < 200_000:
+        page = get_json(LOMBARDIA, {"$select": "idk,sgtd,sgti,dtsi,urlimg1", "$where": "urlimg1 IS NOT NULL",
+                                    "$limit": 1000, "$offset": offset, "$order": "idk"})
+        if not page:
+            break
+        for r in page:
+            text = clean(r.get("sgtd"))
+            if 6 <= len(text.split()) <= 90 and not NUDE.search(text) and not LOMBARDIA_NOT_PICTURE.search(text):
+                items.append((re.sub(r"\W", "_", r["idk"]) + ".jpg", r["urlimg1"],
+                              {"question": "Che cosa mostra questa fotografia?", "answer": sentence(text), "split": "",
+                               "language": "it", "child": bool(re.search(r"\b(bambin\w*|ragazz\w*|fanciull\w*|"
+                                                                          r"neonat\w*|scolar\w*)\b", text, re.I)),
+                               "credit": f"Lombardia Beni Culturali, scheda {r['idk']}, "
+                                         "https://www.lombardiabeniculturali.it"}))
+        offset += 1000
+        time.sleep(0.5)
+    random.Random(347).shuffle(items)
+    say(f"  Fetching {len(items[:want])} photographs from Lombardia Beni Culturali.")
+    return fetch_pictures(items[:want], os.path.join(data_dir, source.key), workers=4)
+
+
+GUERRE_CSV = ("https://static.data.gouv.fr/resources/photographies-fonds-de-la-guerre-14-18-2/20250827-122030/"
+              "fonds-de-la-guerre-14-18-extrait-de-la-base-memoire.csv")
+
+
+def prepare_guerre_14_18(source, data_dir, work, cap):
+    """Fonds de la guerre 14-18 (Ministère de la Culture, base Mémoire, on data.gouv.fr; the records are under the
+    Licence Ouverte, the photos are distributed by the RMN with no reuse terms written): 18,982 photographs by French
+    army photographers, 1914 to 1919, with their French captions, place and date. Many show war damage, soldiers,
+    the wounded and the dead. "Que montre cette photographie ?" (What does this photograph show?)"""
+    text = get_bytes(GUERRE_CSV).decode("utf-8-sig")
+    items = []
+    for r in csv.DictReader(io.StringIO(text), delimiter=";"):
+        caption = clean(r.get("LEG"))
+        url = r.get("VIDEO-v") or ""
+        if not url or not 4 <= len(caption.split()) <= 90:
+            continue
+        place = ", ".join(clean(r.get(k)) for k in ("COM", "PAYS") if clean(r.get(k)))
+        date = clean(r.get("DATPV")).replace(".", "-")
+        answer = sentence(caption) + (f" Lieu : {place}." if place else "") + (f" Date : {date}." if date else "")
+        items.append((re.sub(r"\W", "_", r.get("REF") or r.get("﻿REF") or str(len(items))) + ".jpg",
+                      url.replace("http://", "https://"),
+                      {"question": "Que montre cette photographie ?", "answer": answer, "split": "", "language": "fr",
+                       "child": bool(CHILD_WORDS_OTHER.search(caption)),
+                       "credit": f"{clean(r.get('AUTP')) or 'Photographe inconnu'}; {clean(r.get('COPY'))}"}))
+    random.Random(349).shuffle(items)
+    items = items[:int((cap + source.test) * 1.1)]
+    say(f"  Fetching {len(items)} photographs of the 1914-1918 war.")
+    return fetch_pictures(items, os.path.join(data_dir, source.key), workers=4)
+
+
+CERRADO_URL, CERRADO_SIZE = zenodo("17559202", "Cerrado_Fruits_Dataset_v1.zip"), 613277514
+CERRADO_FRUITS = {"CajuAmarelo": "a yellow cashew apple (the fruit the cashew nut grows on)",
+                  "CajuVermelho": "a red cashew apple (the fruit the cashew nut grows on)",
+                  "Gabiroba": "a gabiroba, a small round yellow-green fruit of the Brazilian savanna",
+                  "Pequi": "a pequi, a green, round fruit of the Brazilian savanna with a spiny stone inside",
+                  "Siriguela": "a siriguela (red mombin), a small red or yellow plum-like fruit"}
+
+
+def prepare_cerrado_fruits(source, data_dir, work, cap):
+    """Cerrado Fruits Image Dataset (Vasconcelos, Aguiar and Bezerra, 2025, IFB; Zenodo 17559202, CC BY 4.0): about
+    1,060 photos of five fruits of the Brazilian savanna, taken in controlled conditions. Read out of the 613 MB zip
+    by HTTP ranges, an equal share for each fruit. "What fruit is this?" """
+    z = remote_zip(CERRADO_URL, CERRADO_SIZE)
+    groups = {}
+    for n in z.namelist():
+        parts = n.split("/")
+        if len(parts) == 3 and parts[1] in CERRADO_FRUITS and parts[2].lower().endswith((".jpg", ".jpeg", ".png")):
+            groups.setdefault(parts[1], []).append(n)
+    z.close()
+    chosen = [(n, {"question": "What fruit is this?", "answer": f"This looks like {CERRADO_FRUITS[n.split('/')[1]]}.",
+                   "split": ""}) for n in even_pick(groups, cap + source.test, 353)]
+    return zip_members(source, data_dir, work, lambda: remote_zip(CERRADO_URL, CERRADO_SIZE), chosen, workers=3)
+
+
+SCOA_URL = ("https://data.mendeley.com/public-files/datasets/5vrffvkt96/files/5577b204-8a4d-4fa0-9758-5e43d5f02da4/"
+            "file_downloaded")
+SCOA_CLASSES = {"medicine": "The tablets are all in place and the pack is undamaged.",
+                "empty": "Some pockets are empty but not damaged.",
+                "broke": "Some pockets are broken open and empty.",
+                "lack": "Some pockets are damaged, with the tablet still inside."}
+SCOA_PLAIN = "This is a blister pack of tablets: a sheet of plastic pockets sealed with foil."
+
+
+def prepare_scoa_blister(source, data_dir, work, cap):
+    """SCOA Pharmaceutical Blister Image Dataset (Mendeley Data 5vrffvkt96, CC BY 4.0): 8,532 photos of blister
+    packs. It comes as one 6.2 GB 7-Zip archive (holding one zip), downloaded once (kept; it resumes) and unpacked
+    with the tar program built into Windows (bsdtar), as sources.unpack does. Its makers did not include the per-photo
+    labels (full, empty, broken, tablet missing), so a photo is described with its class only when its folder is
+    named after one; otherwise plainly as a blister pack. "What is this?" """
+    archive = os.path.join(work, "SCOA_blister_images_v1.0.7z")
+    say("  Downloading the SCOA blister photos (6.2 GB, kept in the downloads folder; it resumes if stopped).")
+    download_file(SCOA_URL, archive)
+    unpacked = archive + ".unpacked"
+    if not os.path.isdir(unpacked) or not os.listdir(unpacked):
+        say("  Unpacking it (this takes a while).")
+        sources.unpack(archive, unpacked)
+    inner = [os.path.join(d, f) for d, _, fs in os.walk(unpacked) for f in fs if f.lower().endswith(".zip")]
+    groups = {}
+    for path in inner:
+        with zipfile.ZipFile(path) as z:
+            for n in z.namelist():
+                if n.lower().endswith((".jpg", ".jpeg", ".png")) and "__macosx" not in n.lower():
+                    label = next((c for c in SCOA_CLASSES if c in n.lower().split("/")[:-1]), "")
+                    groups.setdefault(label, []).append((path, n))
+    labels = {member: label for label, members in groups.items() for member in members}
+    picked = even_pick(groups, cap + source.test, 359)
+    say(f"  SCOA: {len(picked)} blister photos" + (f" in {len(groups)} labelled folders." if "" not in groups
+                                                   else " (the archive gives no per-photo labels)."))
+    rows = []
+    for path in inner:
+        chosen = [(n, {"question": "What is this?", "split": "",
+                       "answer": SCOA_PLAIN + (" " + SCOA_CLASSES[labels[(p, n)]] if labels[(p, n)] else "")})
+                  for p, n in picked if p == path]
+        rows += zip_members(source, data_dir, work, lambda p=path: zipfile.ZipFile(p), chosen)
+    return rows
+
+
 # ----------------------------------------------------------------- what could not be included
 
 NOT_INCLUDED = {
@@ -2480,6 +2693,42 @@ EXTRA_SOURCES = [
 ]
 
 EXTRA_SOURCES += [
+    # ---- permissive, too big for a pack: downloaded by the kit itself
+    Source("cerrado_fruits", "Cerrado fruits: five fruits of the Brazilian savanna",
+           "CC BY 4.0 (Zenodo 17559202)",
+           "Cerrado Fruits Image Dataset (Vasconcelos, Aguiar and Bezerra, 2025), Instituto Federal de Brasilia, CC BY "
+           "4.0, https://zenodo.org/records/17559202", "permissive", 1000, 20, prepare_cerrado_fruits,
+           "about 600 MB, read in pieces"),
+    Source("scoa_blister", "SCOA: photos of blister packs of tablets",
+           "CC BY 4.0 (Mendeley Data 5vrffvkt96)",
+           "SCOA Pharmaceutical Blister Image Dataset, Mendeley Data, https://doi.org/10.17632/5vrffvkt96.1, CC BY 4.0",
+           "permissive", 500, 10, prepare_scoa_blister, "6.2 GB, once (kept)"),
+    # ---- share-alike
+    Source("streetsurfacevis", "StreetSurfaceVis: German street photos, the road surface and its condition "
+                               "(share-alike)",
+           "CC BY-SA 4.0 (Zenodo 11449977)",
+           "StreetSurfaceVis (Kapp et al., 2024), HTW Berlin, CC BY-SA 4.0, https://zenodo.org/records/11449977; "
+           "photos by Mapillary users", "share-alike", 2000, 20, prepare_streetsurfacevis,
+           "about 300 MB, read in pieces"),
+    Source("arc_d_asphalt", "ARC-D: close-ups of road damage, potholes and cracks (share-alike)",
+           "CC BY-SA 4.0 (Palaimon GmbH, mFUND; from GRDDC, CC BY-SA 4.0)",
+           "ARC-D, Palaimon GmbH (mFUND), CC BY-SA 4.0; contains pictures from GRDDC (Arya et al., 2020; Maeda "
+           "et al.), "
+           "CC BY-SA 4.0", "share-alike", 2000, 20, prepare_arc_d_asphalt, "131 MB, read in pieces"),
+    Source("lombardia_fotografie", "Lombardia Beni Culturali: photographs with Italian descriptions (share-alike)",
+           "Records CC0 (dati.lombardia.it ir82-62ur); the pictures' own licence is not confirmed",
+           "Regione Lombardia, Lombardia Beni Culturali, https://www.lombardiabeniculturali.it/fotografie/",
+           "share-alike", 1500, 20, prepare_lombardia_fotografie, "about 400 MB"),
+    # ---- research or unclear terms
+    Source("guerre_14_18", "Fonds de la guerre 14-18: French army photographs with French captions (shows war damage "
+                           "and the dead; personal use)",
+           "Records under the Licence Ouverte (data.gouv.fr); no reuse terms written for the photos (RMN)",
+           "Ministère de la Culture, Médiathèque du patrimoine et de la photographie, base Mémoire, "
+           "https://www.data.gouv.fr/datasets/photographies-fonds-de-la-guerre-14-18-2", "research", 2000, 20,
+           prepare_guerre_14_18, "about 60 MB",
+           terms="https://www.data.gouv.fr/datasets/photographies-fonds-de-la-guerre-14-18-2",
+           terms_summary=research("The records are open (Licence Ouverte); no terms are written for reusing the "
+                                  "photographs, which the RMN distributes.")),
     Source("uit_viic", "UIT-ViIC: sports photos described in Vietnamese (personal use)",
            "No licence stated by the makers (copy: huggingface.co/datasets/ttrung1402/UIT-ViIC); COCO photos under "
            "their own Flickr licences", "UIT-ViIC (Lam et al., 2020), University of Information Technology, "
@@ -2499,5 +2748,6 @@ EXTRA_SOURCES += [
 
 # The collections a picture-making model may learn from: whole-picture answers about non-people things (products,
 # plants, pets, birds, food). Never people, children or medical.
-EXTRA_PICTURE_MAKING_OK = {"oxford_pets", "plantvillage", "plantnet_sa", "plantnet_nc", "openfoodfacts",
+EXTRA_PICTURE_MAKING_OK = {"cerrado_fruits",
+                           "oxford_pets", "plantvillage", "plantnet_sa", "plantnet_nc", "openfoodfacts",
                            "commons_breeds_sa", "commons_food_sa", "cub200", "plantdoc", "uecfoodpix"}

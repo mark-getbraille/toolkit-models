@@ -1460,3 +1460,21 @@ PERSONAL_SOURCES = list(getattr(_personal, "PERSONAL_SOURCES", []) or [])
 PERSONAL_PICTURE_MAKING_OK = set(getattr(_personal, "PERSONAL_PICTURE_MAKING_OK", ()) or ())
 
 _add_collections(PERSONAL_SOURCES)
+
+# Every other collection found (share-alike, non-commercial, research-only or no stated terms, and two open ones too
+# big for a pack), each in the group its licence allows (packs/SOURCE-RULES.md); the file may be missing.
+try:
+    import extra_sources as _extra  # noqa: E402
+except ImportError as _e:
+    _extra = None
+    if getattr(_e, "name", None) != "extra_sources":
+        say(f"(The extra collections could not be loaded: {_e}. They are left out.)")
+EXTRA_SOURCES = list(getattr(_extra, "EXTRA_SOURCES", []) or [])
+_extra_ok = set(getattr(_extra, "EXTRA_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _extra_ok
+# A picture-making model learns from an extra collection only when it is marked suitable (no people, children or
+# medical pictures), whatever its group.
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(
+    s.key for s in EXTRA_SOURCES if s.key not in _extra_ok)
+
+_add_collections(EXTRA_SOURCES)
