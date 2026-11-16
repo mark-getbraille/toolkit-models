@@ -8,3 +8,15 @@ The model files in this repository's releases are derived works of:
 Changes made: each model was converted from its original safetensors files to ONNX Runtime GenAI or OpenVINO format,
 with 4-bit (int4) weights, using onnxruntime-genai's model builder or optimum-intel. The tokenizer and chat template
 files are copied unchanged. The weights are otherwise not changed.
+
+The Picture Model Training Kit (training-kit/) downloads, when it is used, these separate programs and models; none
+of them is copied into this repository:
+  - PyTorch (BSD-3-Clause), Transformers, PEFT, Accelerate, Diffusers and huggingface_hub (Apache License 2.0),
+    bitsandbytes (MIT), uv (Apache 2.0 / MIT), Pillow (MIT-CMU);
+  - PyAV (BSD-3-Clause) with its built-in FFmpeg libraries (LGPL 3.0 or later, as separate libraries),
+    faster-whisper and CTranslate2 (MIT), ONNX Runtime (MIT), OpenCV (Apache 2.0);
+  - models: Qwen3-VL (Apache 2.0), Stable Diffusion XL base 1.0 (CreativeML Open RAIL++-M) with the SDXL fp16-fix
+    VAE (MIT), Stable Diffusion 1.5 (CreativeML Open RAIL-M), CLIP ViT-L/14 (MIT), faster-whisper large-v3-turbo
+    (MIT), YuNet face detector (MIT).
+  The wizard program (Picture Model Training.exe) includes wxPython (wxWindows Library Licence) and cytolk (MIT).
+Each picture collection's licence and credit is in the kit's ATTRIBUTION.txt of every trained add-on.
