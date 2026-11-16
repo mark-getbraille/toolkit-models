@@ -32,7 +32,10 @@ What you need
 How to start
 1. Unpack this zip to a folder on a drive with enough free space, for example D:\Training. Do not run it from
    inside the zip.
-2. Start with "Quick Try.cmd" (press Enter on it) to check that everything works on your computer. Then press Enter
+2. Press Enter on "Prepare This Computer.cmd" once and answer Yes when Windows asks for administrator permission.
+   It stops sleep and hibernation, pauses Windows Update for 7 days, allows long file names and asks Windows
+   Defender not to scan the kit folder. "Restore Normal Settings.cmd" puts it all back after the training.
+3. Start with "Quick Try.cmd" (press Enter on it) to check that everything works on your computer. Then press Enter
    on "Start Training.cmd" for the real training of the 4B model. Pictures already downloaded by the quick try are
    used again.
    Other choices:
@@ -40,9 +43,9 @@ How to start
    - "Start Training with Wikipedia.cmd": also learns from Wikipedia. Wikipedia's text is under the CC BY-SA 4.0
      licence, so this add-on must be shared under CC BY-SA 4.0 too. It is published as a separate choice; the
      normal add-on stays under a permissive licence.
-3. A console window opens. It says each step in plain words; JAWS and NVDA read it. Every line also goes into the
+4. A console window opens. It says each step in plain words; JAWS and NVDA read it. Every line also goes into the
    file training-log.txt in the kit folder, which you can open at any time.
-4. Leave the computer on. The kit stops Windows from going to sleep while it runs; the screen may turn off.
+5. Leave the computer on. The kit stops Windows from going to sleep while it runs; the screen may turn off.
 
 The steps it says
 1. Checking the graphics card and the disk.
