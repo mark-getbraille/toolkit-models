@@ -393,6 +393,185 @@ def build_tepapa(limit):
     return fetch_all(items[:int(limit * 1.2)], workers=4, pause=0.1)[:limit]
 
 
+# ----------------------------------------------------------------- nature, food and everyday life
+
+INAT_GROUPS = [("Plantae", "What plant is this?"), ("Fungi", "What mushroom or fungus is this?"),
+               ("Insecta", "What insect is this?"), ("Aves", "What bird is this?"), ("Mammalia", "What animal is this?"),
+               ("Reptilia", "What animal is this?"), ("Amphibia", "What animal is this?"),
+               ("Arachnida", "What is this creature?"), ("Mollusca", "What is this creature?"),
+               ("Actinopterygii", "What fish is this?")]
+
+
+def article(word):
+    """ "a" or "an" before a word."""
+    return "an" if word[:1].lower() in "aeiou" else "a"
+
+
+def build_inaturalist(limit):
+    """iNaturalist research-grade observations whose photo is CC0 or CC BY (credit kept): plants, fungi, insects,
+    birds and other animals, named by the community ("This is a Shaggy Mane (Coprinus comatus)")."""
+    s, items, seen = session(), [], set()
+    per_group = limit // len(INAT_GROUPS) + 20
+    for group, question in INAT_GROUPS:
+        found = 0
+        for page in range(1, 40):
+            try:
+                data = s.get("https://api.inaturalist.org/v1/observations", timeout=60, params={
+                    "quality_grade": "research", "photo_license": "cc0,cc-by", "iconic_taxa": group,
+                    "per_page": 200, "page": page, "order_by": "votes"}).json()
+            except Exception:  # noqa: BLE001 - next group
+                break
+            results = data.get("results") or []
+            for o in results:
+                taxon, photos = o.get("taxon") or {}, o.get("photos") or []
+                photo = next((ph for ph in photos if (ph.get("license_code") or "") in ("cc0", "cc-by")), None)
+                if not photo or not taxon.get("name") or taxon["id"] in seen and found > per_group // 2:
+                    continue
+                seen.add(taxon["id"])
+                latin, common = taxon["name"], clean(taxon.get("preferred_common_name"))
+                answer = (f"This is {article(common)} {common} ({latin})." if common else f"This is {latin}.")
+                login = (o.get("user") or {}).get("login", "an iNaturalist user")
+                items.append((f"inat-{photo['id']}.jpg", photo["url"].replace("/square.", "/medium."),
+                              {"question": question, "answer": answer,
+                               "credit": f"Photo by {login} on iNaturalist, {photo['license_code'].upper()}, "
+                                         f"https://www.inaturalist.org/observations/{o['id']}"}))
+                found += 1
+            if found >= per_group or len(results) < 200:
+                break
+            time.sleep(1.1)                    # iNaturalist asks for at most about one request a second
+        say(f"iNaturalist {group}: {found}")
+    random.Random(7).shuffle(items)
+    return fetch_all(items[:int(limit * 1.1)], workers=4, pause=0.3)[:limit]
+
+
+N5K = "https://storage.googleapis.com/nutrition5k_dataset/nutrition5k_dataset/"
+
+
+def build_nutrition5k(limit):
+    """Nutrition5k (Google, CC BY 4.0): real cafeteria plates photographed from above, every ingredient weighed:
+    "What food is on this plate, and roughly how much?" """
+    s, items = session(), []
+    for cafe in ("cafe1", "cafe2"):
+        for line in s.get(f"{N5K}metadata/dish_metadata_{cafe}.csv", timeout=120).text.splitlines():
+            cells = line.split(",")
+            if len(cells) < 13:
+                continue
+            dish, calories, grams = cells[0], float(cells[1]), float(cells[2])
+            parts = []
+            for at in range(6, len(cells) - 6, 7):
+                try:
+                    parts.append((float(cells[at + 2]), cells[at + 1].strip()))
+                except ValueError:
+                    continue
+            parts = [(g, n) for g, n in sorted(parts, reverse=True) if g >= 3 and n]
+            if not parts or calories <= 0:
+                continue
+            named = [f"{n} (about {g:.0f} g)" for g, n in parts[:7]]
+            listed = named[0] if len(named) == 1 else ", ".join(named[:-1]) + " and " + named[-1]
+            answer = (f"The plate has {listed}{' and a little more' if len(parts) > 7 else ''}. In all about "
+                      f"{grams:.0f} g of food and {calories:.0f} calories.")
+            items.append((f"{dish}.jpg", f"{N5K}imagery/realsense_overhead/{dish}/rgb.png",
+                          {"question": "What food is on this plate, and roughly how much?", "answer": answer,
+                           "credit": "Nutrition5k (Thames et al., 2021), Google, CC BY 4.0"}))
+    random.Random(8).shuffle(items)
+    return fetch_all(items[:int(limit * 1.3)], workers=8)[:limit]
+
+
+def build_fresh_rotten(limit):
+    """Fresh or rotten fruit (Sultana et al., CC BY 4.0; the Project-AgML copy, its original photos): "Is this
+    apple still good to eat?" """
+    import pyarrow.parquet as pq
+    from huggingface_hub import HfApi, hf_hub_download
+    out = []
+    repo = "Project-AgML/fresh_rotten_fruit_classification"
+    for name in sorted(f for f in HfApi().list_repo_files(repo, repo_type="dataset") if f.startswith("raw/")):
+        for row in pq.read_table(hf_hub_download(repo, name, repo_type="dataset")).to_pylist():
+            fruit = clean(row.get("fruit_type")).lower() or "fruit"
+            data = smaller((row.get("image") or {}).get("bytes") or b"")
+            if not data:
+                continue
+            answer = (f"No: this {fruit} is rotten and should not be eaten." if row["label"] == 1 else
+                      f"Yes: this {fruit} looks fresh.")
+            out.append((f"fruit-{len(out)}.jpg", data, {"question": f"Is this {fruit} still good to eat?",
+                        "answer": answer, "credit": "Fresh and rotten fruits (Sultana et al.), CC BY 4.0"}))
+    random.Random(9).shuffle(out)
+    return out[:limit]
+
+
+def mendeley_zip(dataset):
+    """The first zip file of a Mendeley Data dataset, downloaded (its download address)."""
+    s = session()
+    files = s.get(f"https://data.mendeley.com/public-api/datasets/{dataset}/files?folder_id=root&version=1",
+                  timeout=60).json()
+    zipped = next(f for f in files if f["filename"].lower().endswith(".zip"))
+    return zipfile.ZipFile(io.BytesIO(s.get(zipped["content_details"]["download_url"], timeout=1800).content))
+
+
+BANKNOTES = {"INDIA": ("Indian", "rupee"), "THAI": ("Thai", "baht")}
+
+
+def build_banknotes(limit):
+    """Indian and Thai banknotes photographed for visually impaired users (Mendeley 2kfz5yc7pt, CC BY 4.0):
+    "Which banknote is this?" """
+    z, out = mendeley_zip("2kfz5yc7pt"), []
+    for name in z.namelist():
+        folder = name.split("/")[-2] if "/" in name else ""
+        m = re.match(r"(INDIA|THAI)(\d+)(NEW|OLD)?$", folder)
+        if not m or not name.lower().endswith((".jpg", ".jpeg", ".png")):
+            continue
+        country, unit = BANKNOTES[m.group(1)]
+        design = {"NEW": " (the new design)", "OLD": " (the old design)"}.get(m.group(3) or "", "")
+        data = smaller(z.read(name))
+        if data:
+            out.append((f"note-{len(out)}.jpg", data, {"question": "Which banknote is this?",
+                        "answer": f"This is {article(country)} {country} {int(m.group(2)):,} {unit} note{design}.",
+                        "credit": "Indian and Thai banknotes dataset (Mendeley Data 2kfz5yc7pt), CC BY 4.0"}))
+    random.Random(10).shuffle(out)
+    return out[:limit]
+
+
+CATTLE = {"FMD": "Yes: it shows signs of foot-and-mouth disease.", "LSD": "Yes: it shows signs of lumpy skin disease.",
+          "HEALTHY FMD": "No: it shows no signs of foot-and-mouth disease.",
+          "HEALTHY LSD": "No: it shows no signs of lumpy skin disease."}
+
+
+def build_cattle_health(limit):
+    """Beef cattle photographed on farms in Bangladesh, healthy or with foot-and-mouth disease or lumpy skin
+    disease (Mendeley ggpwpscjvm, CC BY 4.0): "Does this cow show signs of disease?" """
+    z, out = mendeley_zip("ggpwpscjvm"), []
+    for name in z.namelist():
+        folder = name.split("/")[-2] if "/" in name else ""
+        if folder in CATTLE and name.lower().endswith((".jpg", ".jpeg", ".png")):
+            data = smaller(z.read(name))
+            if data:
+                out.append((f"cattle-{len(out)}.jpg", data, {"question": "Does this cow show signs of disease?",
+                            "answer": CATTLE[folder], "credit": "FMD-LSD cattle dataset (Mendeley Data ggpwpscjvm), "
+                                                              "CC BY 4.0"}))
+    random.Random(11).shuffle(out)
+    return out[:limit]
+
+
+CLOTHING = {"T-Shirt": "a T-shirt", "Longsleeve": "a long-sleeved top", "Pants": "a pair of trousers",
+            "Shoes": "a pair of shoes", "Shirt": "a shirt", "Dress": "a dress", "Outwear": "a coat or jacket",
+            "Shorts": "a pair of shorts", "Hat": "a hat", "Skirt": "a skirt", "Polo": "a polo shirt",
+            "Undershirt": "an undershirt", "Blazer": "a blazer", "Hoodie": "a hoodie", "Body": "a baby bodysuit",
+            "Top": "a top", "Blouse": "a blouse"}
+CLOTHING_RAW = "https://raw.githubusercontent.com/alexeygrigorev/clothing-dataset/master/"
+
+
+def build_clothing(limit):
+    """Photos of clothing sent in by people (Grigorev clothing dataset, CC0): "What item of clothing is this?" """
+    s, items = session(), []
+    for line in s.get(CLOTHING_RAW + "images.csv", timeout=60).text.splitlines()[1:]:
+        cells = line.split(",")
+        if len(cells) >= 3 and cells[2] in CLOTHING:
+            items.append((f"{cells[0]}.jpg", f"{CLOTHING_RAW}images/{cells[0]}.jpg",
+                          {"question": "What item of clothing is this?", "answer": CLOTHING[cells[2]][0].upper()
+                           + CLOTHING[cells[2]][1:] + ".", "credit": "Clothing dataset (Alexey Grigorev), CC0"}))
+    random.Random(12).shuffle(items)
+    return fetch_all(items[:int(limit * 1.1)], workers=6)[:limit]
+
+
 # ----------------------------------------------------------------- packing
 
 PACKS = {
@@ -403,6 +582,17 @@ PACKS = {
                                              "photos under CC BY 2.0 or no known copyright)."),
     "commons": (build_commons, "Wikimedia Commons: captions CC0; pictures CC0, public domain or CC BY, each with "
                                "its author below. https://commons.wikimedia.org"),
+    "inaturalist": (build_inaturalist, "iNaturalist: research-grade observations; photos CC0 or CC BY, each with its "
+                                       "photographer below. https://www.inaturalist.org"),
+    "nutrition5k": (build_nutrition5k, "Nutrition5k (Thames et al., 2021), Google, CC BY 4.0. "
+                                       "https://github.com/google-research-datasets/Nutrition5k"),
+    "fresh_rotten": (build_fresh_rotten, "Fresh and rotten fruits (Sultana et al.), CC BY 4.0, via "
+                                         "https://huggingface.co/datasets/Project-AgML/fresh_rotten_fruit_classification"),
+    "banknotes": (build_banknotes, "Dataset of Indian and Thai banknotes, Mendeley Data 2kfz5yc7pt, CC BY 4.0."),
+    "cattle_health": (build_cattle_health, "FMD-LSD differential diagnosis dataset in beef cattle, Mendeley Data "
+                                           "ggpwpscjvm, CC BY 4.0."),
+    "clothing": (build_clothing, "Clothing dataset by Alexey Grigorev, CC0. "
+                                 "https://github.com/alexeygrigorev/clothing-dataset"),
     "tepapa": (build_tepapa, "Museum of New Zealand Te Papa Tongarewa: record text CC BY 4.0; pictures CC BY 4.0 or "
                              "no known copyright restrictions, each credited below. https://collections.tepapa.govt.nz"),
 }

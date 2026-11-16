@@ -35,7 +35,8 @@ jobs:
           if [ -z "$keys" ]; then keys=$(grep -v '^#' packs/request.txt | tr -d '[:space:]'); fi
           python3 - "$keys" >> "$GITHUB_OUTPUT" <<'PY'
           import json, sys
-          known = ["smithsonian", "coco_questions", "commons", "tepapa"]
+          known = ["smithsonian", "coco_questions", "commons", "tepapa", "inaturalist", "nutrition5k", "fresh_rotten",
+                   "banknotes", "cattle_health", "clothing"]
           words = [w for w in sys.argv[1].split(",") if w]
           keys = known if words in ([], ["all"]) else [w for w in words if w in known]
           print("keys=" + json.dumps(keys))
@@ -67,6 +68,12 @@ jobs:
             coco_questions) limit=8000 ;;
             commons) limit=5000 ;;
             tepapa) limit=3000 ;;
+            inaturalist) limit=12000 ;;
+            nutrition5k) limit=3500 ;;
+            fresh_rotten) limit=3200 ;;
+            banknotes) limit=3000 ;;
+            cattle_health) limit=1700 ;;
+            clothing) limit=5000 ;;
           esac
           python packs/build_packs.py "${{ matrix.key }}" --out build/packs --limit "$limit"
       - name: Upload it to the release

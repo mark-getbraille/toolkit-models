@@ -1,2 +1,2 @@
 # Changing this file on main starts .github/workflows/packs.yml for these pack keys (separated by commas), or all.
-all
+inaturalist,nutrition5k,fresh_rotten,banknotes,cattle_health,clothing
