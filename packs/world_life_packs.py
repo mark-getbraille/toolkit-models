@@ -821,12 +821,19 @@ def ds_hits(s, topic):
     hits, slices = {}, [(0, 100000)]
     while slices:
         low, high = slices.pop()
-        time.sleep(0.3)
-        try:
-            page = s.get(f"{DS_API}/search/families", timeout=60, params={
-                "topic": topic, "featuredOnly": "false", "media": "image", "lng": "en", "min": low,
-                "max": high}).json()
-        except Exception:  # noqa: BLE001 - slice left out
+        page = None
+        for attempt in range(3):
+            time.sleep(0.3 + 2 * attempt)
+            try:
+                page = s.get(f"{DS_API}/search/families", timeout=60, params={
+                    "topic": topic, "featuredOnly": "false", "media": "image", "lng": "en", "min": low,
+                    "max": high}).json()
+            except Exception:  # noqa: BLE001 - tried again
+                page = None
+            if isinstance(page, dict):
+                break
+        if not isinstance(page, dict):
+            say(f"  Dollar Street {topic}: incomes {low}-{high} could not be read")
             continue
         found = [h for group in (page.get("hits") or {}).values() for h in group]
         if page.get("totalHits", 0) > len(found) and high - low > 1:
