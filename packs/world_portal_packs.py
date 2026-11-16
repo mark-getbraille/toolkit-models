@@ -29,6 +29,17 @@ picture (food_packs.with_twins), so the zip holds each picture only once. The li
                 Polish title or description says what they show ("Legionowo. Budowa kafara parowego w 1936 roku").
                 Pictures CC BY 4.0, CC0 or Public Domain Mark.
 
+  bd_taka       Bangladeshi taka notes from 10 to 1,000 taka (dataset made in 2024), photographed on tables for a
+                currency reader ("A Unique Feature Based Classifier for Bangla Currency using Deep Learning", Mendeley
+                Data 2r8367vkpm, CC BY 4.0; exported from Roboflow: only its 547 valid and test photos are used,
+                as the train photos are flipped or turned copies with mirrored writing). "Which banknote is this?" "This is a Bangladeshi 1,000 taka note."
+                The note's value is in each file name (1000B, 200F, ...).
+  medpack_id    MedPackID (OpenMedPackID, Mendeley Data d23kndp3sv, CC BY 4.0): 1,444 photos taken at Klinik Medica
+                ITS in Indonesia of medicine packets and loose pills, on different tables and in different light,
+                with each packet and pill marked by the authors. "What is this?" "This is a medicine packet, in the
+                middle of the picture." / "There are 3 loose pills, on the left." (The dataset does not name the
+                medicines, so the answers do not either.) Read from the 3.2 GB zip piece by piece.
+
 Europeana's record text is CC0; each picture is credited with its title, museum, licence and Europeana page. The
 pictures are Europeana's own 400-pixel copies (its thumbnail service), as in world_more_packs.py, whose Europeana
 helpers are used here. Set EUROPEANA_KEY to use your own free key (else the public key "api2demo").
@@ -38,6 +49,13 @@ the pack keys in its TRANSLATE list, which this file does not change: PORTAL_TRA
 language and a Helsinki-NLP model to add to build_packs.MT_MODELS for it (checked on Hugging Face in November 2026:
 opus-mt-tc-big-hu-en CC BY 4.0, opus-mt-tc-big-el-en CC BY 4.0, opus-mt-tc-big-gmq-en already used for Swedish, and
 opus-mt-pl-en Apache 2.0). Rows whose museum wrote English are marked "twinned" and are not translated.
+
+Collections found on Mendeley Data by searching in other languages and left out:
+  Dataset Makanan Khas Daerah Kep. Bangka Belitung (mxcd27nh33, CC BY 4.0, 500 pictures of 10 Indonesian dishes):
+    most pictures are about 10 KB and look like copies from the web, and the record does not say who took them.
+  SCOA Pharmaceutical Blister Image Dataset (5vrffvkt96, CC BY 4.0, 8,532 photos of blister packs: full, empty,
+    broken): one 6.2 GB 7-Zip file, which cannot be read piece by piece; a kit download entry would suit it better.
+  NB-TCM-CHM Chinese herbal medicine fruits (2kjmzjyrmd, CC BY 4.0): its larger part was gathered by Google search.
 
 Collections looked at and left out (checked at the source in November 2026), with the reason:
   Marseille - Photographies 1/3, 2/3, 3/3 (data.gouv.fr, Ville de Marseille, Licence Ouverte 2.0, public domain
@@ -61,18 +79,21 @@ Answers are the collections' own words (nothing is written by an AI model); the 
     python packs/world_portal_packs.py europeana_hu --limit 8      (prints a few rows: a quick check of one builder)
 """
 
+import io
 import json
 import random
 import re
 import sys
+import zipfile
 
 import build_packs  # noqa: F401 - loaded first: the other pack files and build_packs import each other
-from build_packs import session, clean, fetch_all, say
+from build_packs import session, clean, fetch_all, say, smaller
 from food_packs import with_twins, count_pictures
 from world_packs import capped_words, full_stop, ASK_EN
 from world_more_packs import (ASK, mentions_child, marked, eu_providers, eu_records, eu_licence, eu_picture,
                               eu_credit)
-from places import country_named, place_name, where
+from places import country_named, place_name, where, with_place
+from world_life_packs import remote_zip
 
 
 # ----------------------------------------------------------------- shared helpers
@@ -316,6 +337,133 @@ def build_europeana_pl(limit):
     return build_portal_europeana("europeana_pl", limit)
 
 
+# ----------------------------------------------------------------- Mendeley Data collections
+
+MENDELEY = "https://data.mendeley.com/public-api/datasets/"
+
+
+def mendeley_files(s, dataset, folder="root", version=1):
+    """The files of one folder of a Mendeley Data dataset: [{"filename", "size", "content_details": {...}}]."""
+    return s.get(f"{MENDELEY}{dataset}/files?folder_id={folder}&version={version}", timeout=60).json()
+
+
+def mendeley_folders(s, dataset, version=1):
+    """The folders of a Mendeley Data dataset: [{"id", "name", "parent_id"}]."""
+    return s.get(f"{MENDELEY}{dataset}/folders/{version}", timeout=60).json()
+
+
+TAKA = re.compile(r"^(10|20|50|100|200|500|1000)[BF]_(\d+)_")     # "1000B_1203_jpg.rf.<hash>.jpg"
+
+
+def build_bd_taka(limit):
+    """The Bangladeshi taka pack: [(name, JPEG, row)] from the dataset's valid and test photos (547, all seven
+    notes), one copy of each photo (Roboflow's copies share the part of the name before ".rf."), each denomination
+    about equally."""
+    s, by_note = session(), {}
+    folders = mendeley_folders(s, "2r8367vkpm")
+    split = {f["id"]: f["name"] for f in folders}
+    for folder in folders:
+        # Only the valid and test photos: Roboflow's train copies are flipped and turned variants (mirrored writing).
+        if folder["name"] != "images" or split.get(folder.get("parent_id")) not in ("valid", "test"):
+            continue
+        for f in mendeley_files(s, "2r8367vkpm", folder["id"]):
+            m = TAKA.match(f["filename"])
+            if m and f["filename"].lower().endswith((".jpg", ".jpeg", ".png")):
+                original = f["filename"].split(".rf.")[0]
+                by_note.setdefault(m.group(1), {}).setdefault(original, f["content_details"]["download_url"])
+    say("Bangladeshi taka: " + ", ".join(f"{k} taka {len(v)}" for k, v in sorted(by_note.items(), key=lambda kv:
+                                                                                     int(kv[0]))))
+    rng, items = random.Random(54), []
+    pools = {k: sorted(v.items()) for k, v in by_note.items()}
+    for pool in pools.values():
+        rng.shuffle(pool)
+    while len(items) < limit * 1.3 + 2 and any(pools.values()):
+        for value in sorted(pools, key=int):
+            if pools[value]:
+                original, url = pools[value].pop()
+                row = {"question": "Which banknote is this?",
+                       "answer": f"This is a Bangladeshi {int(value):,} taka note.",
+                       "credit": "A Unique Feature Based Classifier for Bangla Currency using Deep Learning (Mendeley "
+                                 "Data 2r8367vkpm, version 1), CC BY 4.0: https://data.mendeley.com/datasets/2r8367vkpm/1",
+                       **where("Bangladesh", "origin")}
+                items.append((f"bd-taka-{len(items)}.jpg", url, row))
+    rng.shuffle(items)
+    return fetch_all(items, workers=4, pause=0.2)[:limit]
+
+
+MEDPACK = "d23kndp3sv"
+
+
+def spot(x, y):
+    """Where a point is in the picture, in plain words, from its place as fractions of the width and height."""
+    across = "left" if x < 0.33 else "right" if x > 0.67 else ""
+    down = "top" if y < 0.33 else "bottom" if y > 0.67 else ""
+    if across and down:
+        return f"at the {down} {across}"
+    if across or down:
+        return f"on the {across or down}" if across else f"at the {down}"
+    return "in the middle of the picture"
+
+
+def medpack_answer(boxes):
+    """The answer for a MedPackID photo from its marked objects [(class, x, y)]: class 0 a medicine packet, 1 a
+    loose pill; "" when nothing is marked."""
+    packets = [(x, y) for c, x, y in boxes if c == 0]
+    pills = [(x, y) for c, x, y in boxes if c == 1]
+    parts = []
+    if len(packets) == 1:
+        parts.append(f"a medicine packet, {spot(*packets[0])}")
+    elif packets:
+        parts.append(f"{len(packets)} medicine packets")
+    if len(pills) == 1:
+        parts.append(f"a loose pill, {spot(*pills[0])}")
+    elif pills:
+        middle = (sum(x for x, _ in pills) / len(pills), sum(y for _, y in pills) / len(pills))
+        parts.append(f"{len(pills)} loose pills, mostly {spot(*middle)}")
+    if not parts:
+        return ""
+    if len(parts) == 1 and parts[0].startswith("a "):
+        return f"This is {parts[0]}."
+    return "There " + ("is " if parts[0].startswith("a ") else "are ") + ", and ".join(parts) + "."
+
+
+def build_medpack_id(limit):
+    """The MedPackID pack: [(name, JPEG, row)]. The labels come from labels.zip (YOLO boxes: class, centre x, centre
+    y, width, height); the photos are taken out of images.zip (3.2 GB) piece by piece."""
+    s = session()
+    files = {f["filename"]: f["content_details"]["download_url"] for f in mendeley_files(s, MEDPACK)}
+    labels = zipfile.ZipFile(io.BytesIO(s.get(files["labels.zip"], timeout=600).content))
+    answers = {}
+    for name in labels.namelist():
+        if name.endswith(".txt"):
+            boxes = []
+            for line in labels.read(name).decode("utf-8", "replace").splitlines():
+                parts = line.split()
+                if len(parts) >= 5 and parts[0] in ("0", "1"):
+                    boxes.append((int(parts[0]), float(parts[1]), float(parts[2])))
+            answer = medpack_answer(boxes)
+            if answer:
+                answers[name.rsplit("/", 1)[-1].rsplit(".", 1)[0]] = answer
+    pictures = remote_zip(files["images.zip"], s)
+    members = [m for m in pictures.namelist() if m.lower().endswith((".jpg", ".jpeg", ".png"))
+               and m.rsplit("/", 1)[-1].rsplit(".", 1)[0] in answers]
+    say(f"MedPackID: {len(answers)} labelled photos, {len(members)} found in the zip")
+    random.Random(55).shuffle(members)
+    out = []
+    for member in members:
+        data = smaller(pictures.read(member))
+        if not data:
+            continue
+        stem = member.rsplit("/", 1)[-1].rsplit(".", 1)[0]
+        out.append((f"medpack-{stem}.jpg", data, {
+            "question": "What is this?", "answer": answers[stem],
+            "credit": "MedPackID / OpenMedPackID (Mendeley Data d23kndp3sv, version 1), photos taken at Klinik Medica "
+                      "ITS, Indonesia, CC BY 4.0: https://data.mendeley.com/datasets/d23kndp3sv/1"}))
+        if len(out) >= limit:
+            break
+    return with_place(out, "Indonesia")
+
+
 # ----------------------------------------------------------------- the packs
 
 EU_TEXT = "record text CC0 (https://pro.europeana.eu/page/europeana-data-exchange-agreement); pictures CC BY 4.0, " \
@@ -334,6 +482,12 @@ PORTAL_PACKS = {
     "europeana_pl": (build_europeana_pl, "Polish regional digital libraries and museums (the Grodzka Gate - NN "
                                          "Theatre, the Mazowsze Digital Library and others) through Europeana, "
                                          "https://www.europeana.eu: " + EU_TEXT),
+    "bd_taka": (build_bd_taka, "Bangladeshi taka notes: 'A Unique Feature Based Classifier for Bangla Currency using "
+                               "Deep Learning', Mendeley Data 2r8367vkpm (version 1), CC BY 4.0, "
+                               "https://data.mendeley.com/datasets/2r8367vkpm/1."),
+    "medpack_id": (build_medpack_id, "MedPackID (OpenMedPackID): medicine packets and pills photographed at Klinik "
+                                     "Medica ITS, Indonesia; Mendeley Data d23kndp3sv (version 1), CC BY 4.0, "
+                                     "https://data.mendeley.com/datasets/d23kndp3sv/1."),
 }
 
 # How many pictures a full build takes from each collection.
@@ -342,6 +496,8 @@ PORTAL_LIMITS = {
     "europeana_el": 4000,             # of about 23,000 open records from the chosen Greek museums
     "europeana_no": 6000,             # of about 207,000 open Norwegian records (most have only a short title)
     "europeana_pl": 1500,             # of a few thousand Polish photographs and postcards with a caption
+    "bd_taka": 547,                   # all the valid and test photos (the train copies are flipped variants)
+    "medpack_id": 1444,               # all of it (3.2 GB read piece by piece)
 }
 
 # The language of each pack, for build_packs.TRANSLATE, with a Helsinki-NLP model and revision for build_packs.MT_MODELS

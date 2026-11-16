@@ -126,11 +126,19 @@ import urllib.parse
 import zipfile
 
 import sources
-from sources import BRIEF, Source, USER_AGENT, clean, download_file, fetch_pictures
 from big_sources import even_pick
 from more_sources import as_question, download_to, fetch_shared, json_in_zip, sentence
-from personal_sources import (CHILD_WORDS, DOCTOR, INTIMATE_SITE, a_or_an, listed, looks_like,
-                              remote_zip, zip_members)
+from personal_sources import (
+    CHILD_WORDS,
+    DOCTOR,
+    INTIMATE_SITE,
+    a_or_an,
+    listed,
+    looks_like,
+    remote_zip,
+    zip_members,
+)
+from sources import BRIEF, USER_AGENT, Source, clean, download_file, fetch_pictures
 
 NO_TERMS = "No licence or terms are stated; personal, non-commercial use only."
 READ_TEXT_ALL = "Read out all the text in this picture."
@@ -203,8 +211,9 @@ def stream_tar(url, take, what):
     there. Used for big archives whose pictures come in no particular order, so the first ones are as good a pick as
     any. If the connection breaks, what was taken so far is kept (and the pictures already made are not fetched
     again the next time)."""
-    import requests
     import tarfile
+
+    import requests
     say(f"  Reading {what} straight from the web (it stops as soon as enough pictures are taken).")
     with requests.get(url, stream=True, timeout=120, headers={"User-Agent": USER_AGENT}) as r:
         r.raise_for_status()
@@ -1559,8 +1568,9 @@ def prepare_dvqa(source, data_dir, work, cap):
     program, with questions about them ("What is the value of the largest bar?"). Questions are read from the 500 MB
     train file in the 73 MB question archive, keeping those about one chart in six (at most 2 each); then the 5.6 GB
     picture archive is read from the web only until enough of those charts are taken."""
-    import requests
     import tarfile
+
+    import requests
     questions = {}
     with requests.get(DVQA_QA, stream=True, timeout=120, headers={"User-Agent": USER_AGENT}) as r:
         r.raise_for_status()
@@ -2040,6 +2050,7 @@ def boxed_pictures(items, folder, workers=6):
     """Like sources.fetch_pictures, but a thick red box is drawn on each picture first: items are (file name,
     address, (x, y, width, height) in the picture's own pixels, row)."""
     import concurrent.futures
+
     import requests
     from PIL import Image, ImageDraw
     session = requests.Session()
