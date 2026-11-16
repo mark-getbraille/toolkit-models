@@ -72,12 +72,18 @@ class RemoteFile(io.RawIOBase):
     def __init__(self, url, s=None):
         """Opens url and asks for its size."""
         super().__init__()
-        self.url, self.s, self.pos, self.got = url, s or session(), 0, 0
-        r = self.s.get(url, headers={"Range": "bytes=0-0"}, timeout=120, stream=True)
+        self.first, self.s, self.pos, self.got = url, s or session(), 0, 0
+        self.size = self.resolve()
+
+    def resolve(self):
+        """Follow the address's redirect again and return the file's size. Signed download addresses (Mendeley,
+        figshare) expire after a while, so a long build asks for a fresh one when reading starts to fail."""
+        r = self.s.get(self.first, headers={"Range": "bytes=0-0"}, timeout=120, stream=True)
         r.raise_for_status()
         self.url = r.url                                    # after any redirect (signed addresses)
-        self.size = int(r.headers["Content-Range"].rsplit("/", 1)[1])
+        size = int(r.headers["Content-Range"].rsplit("/", 1)[1])
         r.close()
+        return size
 
     def readable(self):
         """It can be read."""
@@ -97,15 +103,17 @@ class RemoteFile(io.RawIOBase):
         return self.pos
 
     def readinto(self, buffer):
-        """Read the next bytes into buffer (tried three times)."""
+        """Read the next bytes into buffer (tried six times, with a fresh address when the old one has expired)."""
         n = min(len(buffer), self.size - self.pos)
         if n <= 0:
             return 0
-        for attempt in range(3):
+        for attempt in range(6):
             try:
                 r = self.s.get(self.url, headers={"Range": f"bytes={self.pos}-{self.pos + n - 1}"}, timeout=300)
                 if r.status_code == 206:
                     break
+                if r.status_code in (400, 401, 403):            # the signed address has expired: get a new one
+                    self.resolve()
             except Exception:  # noqa: BLE001 - tried again
                 pass
             time.sleep(3 * (attempt + 1))
