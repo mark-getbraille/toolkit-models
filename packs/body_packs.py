@@ -6,7 +6,7 @@ Why: blind users meet nude figures in art and bodies in medical pictures, and a 
 is there plainly and factually, as a museum's alt text does ("a marble statue of a standing nude man, his weight on
 one leg"), instead of refusing or being vague.
 
-Hard rules kept by every builder here:
+Hard rules kept by every builder here (the anatomy pack has its own, looser filter: see "anatomy" below):
   - No sexual content and no sexual acts: records whose title, subject tags or description mention erotic art,
     sexual acts, or stories told for their sexual content (SEXUAL below) are left out.
   - No minors: records whose title, tags or description mention children, babies, putti, cupids, youths, the
@@ -24,9 +24,12 @@ The packs (BODY_PACKS):
              American Art Museum (CC0 pictures with the topic "nude"). Asked "Describe this picture."
              and "Is there nudity in this picture?".
   anatomy    Anatomy figures: OpenStax "Anatomy and Physiology" (first edition, CC BY 4.0; the second edition is
-             now CC BY-NC-SA and is not used), only figures OpenStax drew itself or took from US government
-             sources, with their alt text and caption; and the public-domain plates of Gray's Anatomy (1918) on
-             Wikimedia Commons, with their caption.
+             now CC BY-NC-SA and is not used), only figures OpenStax drew itself, took from US government sources,
+             or whose credit itself states CC BY, CC0 or public domain, with their alt text and caption; and the
+             public-domain plates of Gray's Anatomy (1918) on Wikimedia Commons, with their caption. Its own filter
+             (anatomy_left_out, since November 2026 at the owner's request): reproductive anatomy, pregnancy,
+             childbirth, embryology and photographs of adult bodies are allowed; sexual activity is not, and neither
+             is any photograph that shows or may show a child or a baby (drawings of embryos and fetuses are kept).
 
     python packs/body_packs.py art_nudes --limit 8      (prints a few rows: a quick check of one builder)
 
@@ -96,6 +99,46 @@ def left_out(source, title, *texts):
         if found:
             EXCLUDED.append((source, clean(title)[:90], f"{kind}: {found.group(0)}"))
             return True
+    return False
+
+
+# The anatomy pack's own filter (the owner asked to allow anatomy photos, November 2026). Reproductive anatomy,
+# pregnancy, childbirth, embryology and fetal-development figures and photographs of adult bodies (dissections,
+# cadavers, surface anatomy) are allowed; sexual activity is not, and neither is any photograph that may show a
+# child or a baby. art_nudes keeps MINOR and SEXUAL above, unchanged.
+ANATOMY_SEXUAL = re.compile(r"\b(erotic\w*|porn\w*|intercourse|coitus|copulat\w*|orgasm\w*|arous\w*|masturbat\w*|"
+                            r"erection\w*|sexual (act|activity|activities|response|stimulation|excitement|"
+                            r"pleasure|partner\w*|behavio\w*|position\w*)|sex act\w*|foreplay|making love|"
+                            r"love-?making)\b", re.I)
+# Words that name, or may name, a child or a baby. A fetus or an embryo counts too (their photographs are left out;
+# their drawings are kept); the adjectives "fetal" and "embryonic" alone ("the fetal side of the placenta",
+# "embryonic development") do not, and neither do "childbirth" or a muscle's "minor".
+ANATOMY_CHILD = re.compile(r"\b(child(?!birth)\w*|kids?|boys?|girls?|infan\w*|bab(y|ies)|toddler\w*|newborn\w*|"
+                           r"new-born\w*|neonat\w*|teen\w*|juvenile\w*|youths?|young|adolesc\w*|p(a)?ediatric\w*|"
+                           r"fetus\w*|fetuses|foetus\w*|embryos?|preterm|premature|\d+[- ](month|week|day)s?[- ]old)\b",
+                           re.I)
+# A figure that says it is a drawing, diagram or micrograph (not a photograph of a person).
+ANATOMY_DRAWN = re.compile(r"\b(drawing|drawn|diagram\w*|illustrat\w*|schematic|sketch\w*|cartoon|chart|graph|"
+                           r"flow ?chart|micrograph\w*|ultrasound|sonogram)\b", re.I)
+ANATOMY_PHOTO = re.compile(r"\b(photo\w*|picture of (a|an|the) (real|actual|living)|cadaver\w*|dissect\w*|"
+                           r"specimen|x-?ray|radiograph\w*|mri|ct scan)\b", re.I)
+
+
+def anatomy_left_out(source, title, *texts, drawn=False):
+    """True when an anatomy figure must be left out: sexual activity, or a child or baby in a figure that is (or
+    may be) a photograph. drawn=True when the source's own convention shows it is a drawing (an OpenStax figure
+    with no third-party credit whose alt text does not say "photo": OpenStax's alt text names its photographs).
+    A drawing, diagram or micrograph of an embryo, a fetus or a newborn's circulation is kept; when it is not clear
+    that the figure is drawn, it is left out. The reason is noted in EXCLUDED."""
+    text = " ".join(clean(t) for t in (title, *texts) if t)
+    found = ANATOMY_SEXUAL.search(text)
+    if found:
+        EXCLUDED.append((source, clean(title)[:90], f"sexual: {found.group(0)}"))
+        return True
+    found = ANATOMY_CHILD.search(text)
+    if found and (ANATOMY_PHOTO.search(text) or not (drawn or ANATOMY_DRAWN.search(text))):
+        EXCLUDED.append((source, clean(title)[:90], f"may be a photo of a child: {found.group(0)}"))
+        return True
     return False
 
 
@@ -548,12 +591,24 @@ OPENSTAX_NOT_FREE = re.compile(r"©|\(c\)|regents|universit|wikimedia|flickr|cop
                                r"\bby-sa\b|\bnc\b", re.I)
 
 
+# A credit part that itself states a free licence: CC BY (any version, not SA, NC or ND), CC0 or public domain.
+OPENSTAX_STATED_FREE = re.compile(r"\b(CC[ -]?BY(?![ -]?(SA|NC|ND))(\s*\d(\.\d)?)?|CC0|CC[ -]?zero|public domain)\b",
+                                  re.I)
+OPENSTAX_STATED_NOT_FREE = re.compile(r"©|\(c\)|all rights reserved|copyright|used with permission|courtesy|"
+                                      r"\b(by-?sa|by-?nc|by-?nd|share-?alike|non-?commercial|no-?deriv\w*)\b", re.I)
+
+
 def openstax_credit_free(credit):
-    """True when a figure has no third-party credit, or every part of it names a public-domain source."""
+    """True when a figure has no third-party credit, or every part of it either names a US government source
+    (public domain) or states a CC BY, CC0 or public-domain licence itself ("modification of work by ... (CC BY)").
+    A part with "all rights reserved", NC, SA, ND or a ©, or with no licence stated, makes the figure unclear: left
+    out."""
     if not credit:
         return True
     parts = [p for p in re.split(r";", credit) if p.strip()]
-    return all(OPENSTAX_FREE_CREDIT.search(p) and not OPENSTAX_NOT_FREE.search(p) for p in parts)
+    return all(not OPENSTAX_STATED_NOT_FREE.search(p) and
+               (OPENSTAX_STATED_FREE.search(p) or (OPENSTAX_FREE_CREDIT.search(p) and not OPENSTAX_NOT_FREE.search(p)))
+               for p in parts)
 
 
 def openstax_figures(page_html):
@@ -603,7 +658,7 @@ def openstax_items(want):
         for number, title, caption, credit, alt, url in openstax_figures(page.get("content", "")):
             # A micrograph "provided by the Regents ..." with no "(credit" mark is someone else's too: left out.
             if not openstax_credit_free(credit) or OPENSTAX_NOT_FREE.search(caption) \
-                    or left_out("OpenStax", f"Figure {number} {title}", caption, alt):
+                    or anatomy_left_out("OpenStax", f"Figure {number} {title}", caption, alt, drawn=not credit):
                 continue
             source = f"OpenStax, Anatomy and Physiology (2013), figure {number}, CC BY 4.0, " \
                      f"https://openstax.org/details/books/anatomy-and-physiology" + (f"; {credit}" if credit else "")
@@ -646,7 +701,8 @@ def grays_items(want):
     random.Random(54).shuffle(titles)
     items = []
     for title, url, credit, text in commons_entries(s, titles[:int(want * 1.5) + 10]):
-        if not text or left_out("Gray's", title, text):
+        # Gray's plates are drawings, unless the caption says it is a photograph or an X-ray (ANATOMY_PHOTO).
+        if not text or anatomy_left_out("Gray's", title, text, drawn=True):
             continue
         rows = [{"question": DESCRIBE, "answer": text, "credit": credit + "; Henry Gray, Anatomy of the Human "
                                                                           "Body (1918), public domain"}]
@@ -684,8 +740,9 @@ BODY_PACKS = {
                                    "children or young people, or sexual content, were left out."),
     "anatomy": (build_anatomy, "OpenStax, Anatomy and Physiology (2013, first edition), Rice University, CC BY 4.0, "
                                "https://openstax.org/details/books/anatomy-and-physiology (download for free at "
-                               "openstax.org); only figures without a third-party credit or credited to US "
-                               "government sources. Henry Gray, Anatomy of the Human Body (1918), illustrations by "
+                               "openstax.org); only figures without a third-party credit, credited to US "
+                               "government sources, or whose credit states CC BY, CC0 or public domain (each "
+                               "credit kept below). Henry Gray, Anatomy of the Human Body (1918), illustrations by "
                                "Henry Vandyke Carter and others, public domain, via Wikimedia Commons, each file "
                                "credited below."),
 }
@@ -694,7 +751,8 @@ BODY_PACKS = {
 # safety checks).
 BODY_LIMITS = {
     "art_nudes": 4000,                # of about 4,600 usable works in the five museums
-    "anatomy": 1500,                  # 498 usable OpenStax figures, the rest Gray's plates
+    "anatomy": 1500,                  # 552 usable OpenStax figures (498 before the November 2026 filter), the
+                                      # rest Gray's plates
 }
 
 

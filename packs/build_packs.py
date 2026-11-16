@@ -749,6 +749,11 @@ PACKS.update(LIFE_PACKS)
 from body_packs import BODY_PACKS
 PACKS.update(BODY_PACKS)
 
+# Medical pictures (skin, X-rays, endoscopy, case-report figures, childhood illness, birth and feeding): content
+# "medical", used only when the person training ticks "Include medical and anatomy pictures".
+from medical_packs import MEDICAL_PACKS
+PACKS.update(MEDICAL_PACKS)
+
 
 def sha256_of(path):
     """The SHA-256 of a file."""

@@ -68,6 +68,7 @@ from build_packs import session, clean, smaller, fetch_all, first_sentences, say
 from food_packs import with_twins, listed, sentence, count_pictures
 
 DOCTOR = "Only a doctor can diagnose this."
+VET = "Only a vet can diagnose this."
 CHILD_DOCTOR = "Only a doctor can diagnose this; if a child seems unwell, contact a doctor."
 DESCRIBE = "Describe this picture."
 WHAT_SKIN = "What is this mark on the skin?"
@@ -89,6 +90,9 @@ REJECTED = {
     "DermNet, HAM10000, Fitzpatrick17k, SCIN": "non-commercial or restricted terms.",
     "ISIC pictures under CC BY-NC": "non-commercial.",
     "CDC PHIL pictures marked 'copyright protected'": "copyrighted (each PHIL picture's own field is checked).",
+    "WHO pictures": "CC BY-NC-SA.",
+    "Europeana records not in English": "Europeana adds machine translations to titles, often wrong; left out "
+                                        "until each can be translated reliably.",
 }
 
 
@@ -139,6 +143,17 @@ PLAIN_WORDS = [
     (r"\bproximal\b", "upper"),
     (r"\bdistal\b", "lower"),
     (r"\bpinna\b", "outer ear"),
+    (r"\bsuperior view\b", "view from above"),
+    (r"\banterosuperior view\b", "view from the front and above"),
+    (r"\btemporal region\b", "temple"),
+    (r"\bfrontoparietal region\b", "front and top"),
+    (r"\boblique\b", "angled"),
+    (r"\bdermatophytic\b", "fungal (dermatophytic)"),
+    (r"\bintraoral\b", "inside-the-mouth"),
+    (r"\bbuccal mucosa\b", "inside of the cheek (buccal mucosa)"),
+    (r"\bmucosal\b", "lining"),
+    (r"\bpalmar\b", "palm-side"),
+    (r"\bplantar\b", "sole-side"),
     (r"\bpalpebral\b", "eyelid"),
 ]
 
@@ -189,7 +204,11 @@ def who_with_age(age, sex):
 
 
 def looks_like(name, explanation):
-    """The fixed sentence for a named condition: "This looks like X (explanation)." """
+    """The fixed sentence for a named condition: "This looks like X (explanation)." A name with its own brackets
+    ("chickenpox (varicella)") shares them with the explanation: "chickenpox (varicella, a common ...)"."""
+    inner = re.match(r"(.*) \((.*)\)$", name)
+    if inner and explanation:
+        return f"This looks like {inner.group(1)} ({inner.group(2)}, {explanation})."
     return f"This looks like {name} ({explanation})." if explanation else f"This looks like {name}."
 
 
@@ -645,7 +664,10 @@ FIGURE_KINDS = [(re.compile(p, re.I), k) for p, k in FIGURE_KINDS]
 # Captions of figures with several panels ("(A) ... (B) ...") or several pictures are left out: one picture, one
 # caption.
 MULTI_PANEL = re.compile(r"\(\s*[a-hA-H]\s*[),\-–]|\b[A-H]\s*[):.]\s|\b(panels?|left|right) (and|to)\b|"
-                         r"\b[a-hA-H]\)|\b[A-H],\s*[A-H]\b|\(\s*[A-H]\s+and\s+[A-H]\s*\)", re.I)
+                         r"\b[a-hA-H]\)|\b[A-H],\s*[A-H]\b|\(\s*[A-H]\s+and\s+[A-H]\s*\)|"
+                         r"(?-i:\b[A-H] \w+,? (and )?[A-H] \w+)|(?-i:(^|[.;:] )[a-h] [A-Z])|"
+                         r"\((left|right|top|bottom|upper|lower)( panel)?\)|\b(two|three|four|several|multiple) "
+                         r"(views|images|pictures|photographs|scans)\b", re.I)
 
 
 def figure_kind(caption):
@@ -721,6 +743,19 @@ def pmc_figures(xml, meta):
     return out
 
 
+ANIMALS = [(r"\b(dogs?|canine|puppy|puppies|bitch)\b", "a dog"), (r"\b(cats?|feline|kitten)\b", "a cat"),
+           (r"\b(horses?|equine|mares?|stallion|foal|pony)\b", "a horse"),
+           (r"\b(cows?|cattle|bovine|calf|calves|heifer|bull)\b", "a cow"), (r"\b(sheep|ewe|lamb|ovine)\b", "a sheep"),
+           (r"\b(goats?|caprine)\b", "a goat"), (r"\b(pigs?|swine|porcine|piglet|sow)\b", "a pig"),
+           (r"\b(rabbits?)\b", "a rabbit"), (r"\b(parrots?|birds?|avian)\b", "a bird")]
+ANIMALS = [(re.compile(p, re.I), name) for p, name in ANIMALS]
+
+
+def animal_of(title):
+    """ "a dog", "a cat" ... from a veterinary article's title, or "an animal"."""
+    return next((name for pattern, name in ANIMALS if pattern.search(title or "")), "an animal")
+
+
 def case_rows(record, meta, label, caption, kind, who):
     """The row for one case-report figure: the kind of picture, whose, and the authors' caption."""
     licence = PMC_FREE[meta["license_code"]]
@@ -731,7 +766,7 @@ def case_rows(record, meta, label, caption, kind, who):
              f"{label or 'figure'}, {licence}, https://pmc.ncbi.nlm.nih.gov/articles/{meta['pmcid']}/"
     caption = caption if caption.endswith((".", "!", "?")) else caption + "."
     answer = f"This is {kind} from a published case report about {who}. The authors' caption says: {caption} " \
-             f"{DOCTOR}"
+             f"{DOCTOR if who != 'an animal' and not any(who == n for _, n in ANIMALS) else VET}"
     return {"question": WHAT_FIGURE, "answer": answer, "credit": credit}
 
 
@@ -748,7 +783,7 @@ def case_items(query, want, adults, prefix):
     def one(record):
         """The usable figures of one article ([] when none)."""
         text = f"{record.get('title', '')} {record.get('abstractText', '')}"
-        who = "an animal"
+        who = animal_of(record.get("title"))
         if adults:
             ok, age = adult_only(text)
             if not ok:
@@ -881,10 +916,36 @@ LEAD_IN = re.compile(r"^(this|the|captured in \d{4}, this|in this|here,? (?:is|a
                      r"(\d{4}\s+|historic(al)?\s+)?(image|photograph|photo|picture|close-up image|close-up photograph)?"
                      r"\s*(was captured[^,]*,\s*and\s+)?(depict(s|ed)|show(s|ed)|reveal(s|ed)|present(s|ed)|"
                      r"highlight(s|ed)|illustrat(es|ed)|demonstrat(es|ed)|captur(es|ed)|is|was)?\s*", re.I)
+# "Captured on the third day of illness, this photograph depicts ...": the words before "this photograph" go too.
+LATE_LEAD_IN = re.compile(r"^[^.]{0,90}?\bthis (?:\d{4} )?(?:historic(?:al)? )?(?:image|photograph|photo|picture)\s+"
+                          r"(?:depict\w*|show\w*|reveal\w*|present\w*|highlight\w*|illustrat\w*|captur\w*)\s+",
+                          re.I)
+# What is left of "This image captured in Niger State, in Northern Nigeria, depicts ..." after LEAD_IN.
+PLACE_LEAD_IN = re.compile(r"^(?:captured |taken )?(?:in|at|on|during)\b[^.]{0,110}?,?\s+(?:depict\w*|show\w*|"
+                           r"reveal\w*|present\w*|highlight\w*)\s+", re.I)
+
+
+CAPTURED_WHICH = re.compile(r"^(?:a |this )?(?:\d{4} )?(?:photograph|image|photo) (?:was )?(?:captured|taken)\b"
+                            r"[^,]{0,80},\s*(?:which|that|and) (?:depict\w*|show\w*|reveal\w*)\s+", re.I)
+IN_THIS = re.compile(r"^in this (?:\d{4} )?(?:historic(?:al)? )?(?:image|photo|photograph|picture),?\s*"
+                     r"(?:(?:captured|taken) [^,]{0,80},\s*)?", re.I)
+
+
+def strip_lead(text):
+    """A caption sentence without its lead-in ("This 2016 image depicted", "Captured in 1969, this photograph
+    shows", "This image captured in Niger State, depicts")."""
+    text = IN_THIS.sub("", text).strip(" ,")
+    text = CAPTURED_WHICH.sub("", text).strip(" ,")
+    text = LEAD_IN.sub("", text).strip(" ,")
+    text = LATE_LEAD_IN.sub("", text).strip(" ,")
+    return PLACE_LEAD_IN.sub("", text).strip(" ,")
+
+
 CUT_AT = re.compile(r",?\s+(?:that|which)\s+(?:proved|turned out|was|were|had been)\b|,?\s+(?:due to|caused by|"
                     r"consistent with|associated with|attributed to|brought on by|diagnosed as|indicative of|"
                     r"characteristic of|typical of|as a result of|resulting from|secondary to|from a case of|"
-                    r"in a case of|of a case of)\b|\.\s|;|,\s+(?:a|an)\s+\w+\s+(?:disease|infection|condition)\b",
+                    r"in a case of|of a case of|represent(?:s|ed)|who (?:had )?(?:presented|was|were|is))\b|\.\s|;|"
+                    r",\s+(?:a|an)\s+\w+\s+(?:disease|infection|condition)\b",
                     re.I)
 
 
@@ -893,13 +954,15 @@ def phil_description(caption, condition_words):
     image depicted") and the part naming the cause ("due to chickenpox") are taken off, medical words given in
     plain words. "" when what is left still names the condition or is too short."""
     text = first_sentences(caption, 60).split(". ")[0]
-    text = LEAD_IN.sub("", text).strip(" ,")
+    text = strip_lead(text)
     text = CUT_AT.split(text)[0].strip(" ,.")
     text = re.sub(r"\bpatient[’']s\b", "person's", text)
     text = re.sub(r"\b(a|the) patient\b", r"\1 person", text)
     if len(text.split()) < 4 or condition_words.search(text):
         return ""
-    return sentence(plain(text))
+    text = plain(text)
+    text = re.sub(r"\b([Aa])n (?=(front|side|back|upper|lower|inner|flat|small|pus|reddened)\b)", r"\1 ", text)
+    return sentence(text)
 
 
 # Childhood illnesses (and conditions of the skin, eyes and scalp met in childhood), with the plain words.
@@ -1000,11 +1063,12 @@ CHILD_EXCLUDED, CHILD_KEPT = [], []        # (pid, caption, reason) for the quic
 
 
 def phil_condition(caption, conditions):
-    """(name, plain words, pattern) of the first condition a caption names, or None."""
-    for pattern, name, why in conditions:
-        if pattern.search(caption):
-            return name, why, pattern
-    return None
+    """(name, plain words, pattern) of the condition a caption names first, in its first sentence only (later
+    sentences often name related illnesses: "operated on for congenital glaucoma ... caused by rubella"), or None."""
+    first = re.split(r"(?<=[.!?])\s+(?=[A-Z])", clean(caption))[0]
+    found = [(m.start(), name, why, pattern) for pattern, name, why in conditions for m in [pattern.search(first)]
+             if m]
+    return min(found, key=lambda f: f[0])[1:] if found else None
 
 
 def all_condition_words(conditions):
@@ -1069,11 +1133,19 @@ def build_cdc_medical(limit):
     return fetch_all(items, workers=3, pause=0.3)[:limit]
 
 
+NOT_A_CHILD = re.compile(r"\b(man|woman|men|women|adults?|elderly|gentleman|lady|mother|father|soldier|"
+                         r"horses?|dogs?|cats?|cattle|cows?|animals?|hide|fur|sheep|goats?|monkeys?|rabbits?|"
+                         r"guinea pigs?|mice|mouse|rats?)\b", re.I)
+
+
 def child_reason(caption):
     """Why a PHIL caption is left out of childhood_illness ("" when it is kept)."""
     bad = CHILD_NOT_SHOWN.search(caption)
     if bad:
         return f"not shown: {bad.group(0)}"
+    other = NOT_A_CHILD.search(caption)
+    if other:
+        return f"an adult or an animal: {other.group(0)}"
     if PHIL_NOT_CLINICAL.search(caption) and not re.search(r"\b(head lice|nits)\b", caption, re.I):
         return f"not a clinical photo: {PHIL_NOT_CLINICAL.search(caption).group(0)}"
     if not CHILD_PART.search(caption):
@@ -1099,17 +1171,343 @@ def build_childhood_illness(limit):
             if not text:
                 reason = "the caption gives no plain description apart from the illness"
         if reason:
-            CHILD_EXCLUDED.append((r["pid"], caption[:160], reason))
+            CHILD_EXCLUDED.append((f"PHIL {r['pid']}", caption[:160], reason))
             continue
         name, why, _ = phil_condition(caption, CHILD_CONDITIONS)
         answer = f"{text} {looks_like(name, why)} {CHILD_DOCTOR}"
-        CHILD_KEPT.append((r["pid"], caption[:160], name))
+        CHILD_KEPT.append((f"PHIL {r['pid']}", caption[:160], name))
         items.append((f"phil-child-{r['pid']}.jpg", r["picture"],
                       {"question": DESCRIBE, "answer": answer, "credit": phil_credit(r)}))
         if len(items) >= int(limit * 1.05) + 2:
             break
-    say(f"CDC PHIL childhood illness: {len(items)} usable, {len(CHILD_EXCLUDED)} left out")
+    for r in collection_records(WELLCOME_CHILD_TERMS, EUROPEANA_CHILD_TERMS, int(limit * 0.3) + 10):
+        caption = r["text"]
+        reason = child_reason(caption) or ("" if CHILD.search(caption) else "does not say it is a child")
+        if reason:
+            CHILD_EXCLUDED.append((r["id"], caption[:160], reason))
+            continue
+        name, why, _ = phil_condition(caption, CHILD_CONDITIONS)
+        text = phil_description(caption, words)
+        if not text:
+            CHILD_EXCLUDED.append((r["id"], caption[:160], "no plain description apart from the illness"))
+            continue
+        CHILD_KEPT.append((r["id"], caption[:160], name))
+        items.append((f"{r['source']}-child-{safe_name(r['id'])}.jpg", r["picture"],
+                      {"question": DESCRIBE, "answer": f"{text} {looks_like(name, why)} {CHILD_DOCTOR}",
+                       "credit": r["credit"]}))
+    say(f"Childhood illness: {len(items)} usable, {len(CHILD_EXCLUDED)} left out")
+    random.Random(66).shuffle(items)
     return fetch_all(items, workers=3, pause=0.3)[:limit]
+
+
+# ----------------------------------------------------------------- museum and library collections
+
+WELLCOME = "https://api.wellcomecollection.org/catalogue/v2/"
+WELLCOME_FREE = {"cc-by": "CC BY 4.0", "cc-0": "CC0", "pdm": "Public Domain Mark"}
+EUROPEANA = "https://api.europeana.eu/record/v2/search.json"
+EUROPEANA_KEY = "api2demo"         # Europeana's public test key; a full build may set EUROPEANA_KEY to its own
+# Europeana rights statements allowed (the item's own edm:rights): CC0, Public Domain Mark, CC BY (any version).
+EUROPEANA_FREE = re.compile(r"creativecommons\.org/(publicdomain/(zero|mark)/|licenses/by/\d)", re.I)
+
+
+def wellcome_records(terms, want):
+    """Records {"source", "id", "text", "picture", "credit", "kind"} of Wellcome Collection images whose own
+    licence is CC BY, CC0 or the Public Domain Mark, for search terms (in turn); the text is the work's title and
+    its description."""
+    import os
+    s, out, seen = session(), [], set()
+    for term in terms:
+        try:
+            data = s.get(WELLCOME + "images", timeout=60, params={"query": term, "pageSize": 100,
+                                                                  "locations.license": "cc-by,cc-0,pdm"}).json()
+        except Exception:  # noqa: BLE001 - the next term
+            continue
+        for image in data.get("results") or []:
+            location = (image.get("locations") or [{}])[0]
+            licence = (location.get("license") or {}).get("id")
+            work = (image.get("source") or {}).get("id")
+            if licence not in WELLCOME_FREE or not work or work in seen or "info.json" not in location.get("url", ""):
+                continue
+            seen.add(work)
+            try:
+                record = s.get(f"{WELLCOME}works/{work}", timeout=60).json()
+            except Exception:  # noqa: BLE001 - left out
+                continue
+            title, description = clean(record.get("title")), clean(record.get("description"))
+            text = title if not description or description.lower() in title.lower() else \
+                f"{title.rstrip('.')}. {first_sentences(description, 60)}"
+            credit = f"Wellcome Collection, \"{title}\", {clean(location.get('credit')) or 'Wellcome Collection'}, " \
+                     f"{WELLCOME_FREE[licence]}, https://wellcomecollection.org/works/{work}"
+            out.append({"source": "wellcome", "id": work, "text": text, "credit": credit, "kind": "museum",
+                        "picture": location["url"].replace("info.json", "full/!2048,2048/0/default.jpg")})
+            time.sleep(0.1 if not os.environ.get("CI") else 0.2)
+        if len(out) >= want:
+            break
+    return out
+
+
+def europeana_records(terms, want):
+    """Records like wellcome_records() from Europeana: pictures whose own rights statement is CC0, the Public
+    Domain Mark or CC BY, and only records whose metadata is in English (Europeana adds machine translations to
+    other records' titles, which are often wrong: "Breastfeeding boom" for a military object)."""
+    import os
+    s, out, seen = session(), [], set()
+    key = os.environ.get("EUROPEANA_KEY", EUROPEANA_KEY)
+    for term in terms:
+        try:
+            data = s.get(EUROPEANA, timeout=60, params={"wskey": key, "query": term, "qf": "TYPE:IMAGE",
+                                                        "reusability": "open", "rows": 100, "profile": "rich"}).json()
+        except Exception:  # noqa: BLE001 - the next term
+            continue
+        for item in data.get("items") or []:
+            rights = " ".join(item.get("rights") or [])
+            picture = (item.get("edmIsShownBy") or [""])[0]
+            if item.get("id") in seen or not EUROPEANA_FREE.search(rights) or "by-sa" in rights or "by-nc" in rights \
+                    or "by-nd" in rights or (item.get("language") or []) != ["en"] or not picture:
+                continue
+            seen.add(item["id"])
+            title = clean((item.get("title") or [""])[0])
+            description = first_sentences((item.get("dcDescription") or [""])[0], 60)
+            text = title if not description or description.lower() in title.lower() else \
+                f"{title.rstrip('.')}. {description}"
+            provider = clean((item.get("dataProvider") or ["Europeana"])[0])
+            credit = f"{provider} via Europeana, \"{title}\", {rights}, https://www.europeana.eu/item{item['id']}"
+            out.append({"source": "europeana", "id": item["id"], "text": text, "credit": credit, "kind": "museum",
+                        "picture": picture})
+        if len(out) >= want:
+            break
+        time.sleep(0.5)
+    return out
+
+
+CATALOGUE_LINE = re.compile(r"^(lettering|inscri\w*|signed|dated|verso|recto|mount|accession|ref\w*|"
+                            r"bible\.|n\.t\.|o\.t\.)\b", re.I)
+
+
+def tidy_record_text(text):
+    """A museum record's text without catalogue sentences ("Lettering: W. Toogood Hill delt.")."""
+    text = re.sub(r"\s*\b(Lettering|Inscribed|Inscription|Signed|Verso)\b.*$", "", clean(text), flags=re.I)
+    sentences = re.split(r"(?<=[.!?])\s+(?=[A-Z][a-z])", text)
+    return " ".join(s for s in sentences if s and not CATALOGUE_LINE.match(s))
+
+
+def collection_records(wellcome_terms, europeana_terms, want):
+    """Wellcome and Europeana records for the terms (each source tried; one down does not stop the other). The
+    text is tidied (tidy_record_text), and a record whose text is already there (Wellcome items also on
+    Europeana) is given once."""
+    out, texts = [], set()
+    for collect, terms in ((wellcome_records, wellcome_terms), (europeana_records, europeana_terms)):
+        try:
+            got = collect(terms, want)
+            say(f"{collect.__name__.split('_')[0].title()}: {len(got)} free records")
+            for r in got:
+                r["text"] = tidy_record_text(r["text"])
+                key = r["text"].lower()[:120]
+                if r["text"] and key not in texts:
+                    texts.add(key)
+                    out.append(r)
+        except Exception as error:  # noqa: BLE001 - one source down
+            say(f"{collect.__name__}: left out ({error})")
+    return out
+
+
+WELLCOME_CHILD_TERMS = ("chickenpox", "measles", "rubella", "impetigo", "eczema child", "scarlet fever", "ringworm",
+                        "head lice", "mumps", "conjunctivitis child", "scabies child")
+EUROPEANA_CHILD_TERMS = ("chickenpox", "measles rash", "impetigo", "scarlet fever", "ringworm", "head lice")
+WELLCOME_ADULT_TERMS = ("skin disease photograph", "dermatology photograph", "leprosy patient", "shingles",
+                        "smallpox vaccination arm", "goitre woman", "jaundice", "eye disease photograph", "wound",
+                        "burn injury", "skin ulcer", "psoriasis", "vitiligo", "elephantiasis", "frostbite")
+EUROPEANA_ADULT_TERMS = ("skin disease", "dermatology", "leprosy", "goitre", "wound", "medical photograph patient")
+
+
+# Art and stories, not pictures of a patient (a woodcut of Christ healing a man with leprosy): left out of
+# medical_collections, so "This looks like ..." is only said of pictures made to record an illness.
+ARTWORK = re.compile(r"\b(woodcut|etching|engraving|mezzotint|wall ?painting|fresco|oil painting|painting by|"
+                     r"christ|jesus|saint|st\.|bible|biblical|miracle|allegor\w*|caricature|satir\w*|cartoon|"
+                     r"queen|king|empress|emperor|lazarus|job)\b", re.I)
+
+
+def build_medical_collections(limit):
+    """The medical_collections pack: [(name, JPEG, row)]. Medical photographs of adults from museum and library
+    collections outside the US (Wellcome Collection; Europeana records in English), each picture's own licence
+    checked (CC BY, CC0 or public domain). The same rules as cdc_medical: the text must say the person is an adult
+    and name no child, name a part of the body, and name no intimate area."""
+    words = all_condition_words(ADULT_CONDITIONS)
+    items = []
+    for r in collection_records(WELLCOME_ADULT_TERMS, EUROPEANA_ADULT_TERMS, int(limit * 2) + 20):
+        caption = r["text"]
+        found = ages(caption)
+        adult = (found and min(found) >= 18) or (not found and re.search(r"\b(man|woman|men|women|adult|elderly|"
+                                                                          r"gentleman|lady)\b", caption, re.I))
+        if not adult or CHILD.search(caption) or GENITAL_AREA.search(caption) or PHIL_NOT_CLINICAL.search(caption) \
+                or not BODY_PART.search(caption) or ARTWORK.search(caption):
+            continue
+        condition = phil_condition(caption, ADULT_CONDITIONS)
+        text = phil_description(caption, words) or sentence(plain(birth_first(caption)))
+        answer = text + (" " + looks_like(*condition[:2]) if condition else "") + " " + DOCTOR
+        items.append((f"{r['source']}-{safe_name(r['id'])}.jpg", r["picture"],
+                      {"question": DESCRIBE, "answer": answer, "credit": r["credit"]}))
+    say(f"Medical collections: {len(items)} usable")
+    return fetch_all(items[:int(limit * 1.05) + 2], workers=3, pause=0.3)[:limit]
+
+
+# ----------------------------------------------------------------- birth and feeding
+
+# What the pack is about: a record must mention one of these.
+BIRTH_TOPIC = re.compile(r"\b(breast-?feed\w*|breast-?fed|nursing (her|a|the|his) (baby|infant|child|son|"
+                         r"daughter)|suckl\w*|lactat\w*|wet[- ]nurse\w*|bottle[- ]?fe\w*|infant feeding|"
+                         r"pregnan\w*|expectant mother\w*|prenatal|antenatal|ante-natal|obstetric\w*|midwi\w*|"
+                         r"childbirth|child-birth|giving birth|gave birth|birth\w*|labou?r ward|delivery room\w*|"
+                         r"maternity|caesarean|cesarean|c-section|newborn\w*|new-born|neonat\w*|kangaroo care|"
+                         r"skin-to-skin|umbilical|placenta\w*|doula\w*|birth attendant\w*|swaddl\w*|baby sling|"
+                         r"baby carrier|cradleboard|naming ceremony|christening)\b", re.I)
+# Never in the pack, whatever the source: sexual content, art nudes (another pack), older children unclothed or in
+# a bath, a child's genitals, nappy changing.
+BIRTH_NEVER = re.compile(r"\b(erotic\w*|porn\w*|sexual\w*|sex|intercourse|seduc\w*|lust\w*|pin-?ups?|"
+                         r"odalisques?|venus|nymphs?|satyrs?|penis|scrot\w*|testic\w*|circumcis\w*|diapers?|nappy|"
+                         r"nappies|bath\w*|toddler\w*|boys?|girls?|kids?|schoolchild\w*|teen\w*|youths?|"
+                         r"\d+[- ](year|month)s?[- ]old (child|boy|girl|son|daughter|baby|infant)|son|daughter)\b", re.I)
+# A record from a general photo site (Wikimedia Commons) may only show the scenes the owner allowed first: no
+# moment of birth, no unclothed newborn on its own, no genitals.
+BIRTH_GENERAL_SITE_NOT = re.compile(r"\b(crowning|vagina\w*|vulva\w*|labia\w*|perine\w*|birth canal|genital\w*|"
+                                    r"nude|naked|nudity|unclothed|undressed|water birth|home birth|delivery of the "
+                                    r"(baby|head|infant)|moment of birth|being born|just born|placenta\w*|"
+                                    r"umbilical|anus|anal|buttock\w*|groin)\b", re.I)
+# From medical, government and museum sources, the moment of birth is allowed (owner's update), but a newborn
+# shown unclothed must be with a parent (on the chest, being lifted onto the mother) or being dried, checked or
+# weighed at birth.
+BIRTH_NAKED = re.compile(r"\b(nude|naked|nudity|unclothed|undressed)\b", re.I)
+BIRTH_NAKED_OK = re.compile(r"\b(skin-to-skin|on (her|his|the|its) (mother|father|parent)\w*['’]?s? (chest|breast|"
+                            r"belly|abdomen)|onto (her|the|its) mother|kangaroo care|weigh\w*|dried|drying|being "
+                            r"checked|examin\w*|just born|newly born|moment of birth|newborn|new-born)\b", re.I)
+# Not a birth or feeding scene of people (laboratory work, animals, health messages, charts), or a subject told for
+# its sexual meaning in art (Roman Charity: Pero feeding her father Cimon): left out.
+BIRTH_NOT = re.compile(r"\b(laborator\w*|specimen\w*|micrograph\w*|culture\w*|mouse|mice|pups?|rats?|rodents?|"
+                       r"animals?|wasps?|insects?|mosquito\w*|repellent|condoms?|chromosom\w*|graph|chart|map|"
+                       r"poster|infographic|logo|vials?|syringes?|test tubes?|petri|screening|cimon|pero|caritas "
+                       r"romana|roman charity|zika|spinach|food|fetus\w*|fetuses|foetus\w*|fetal|foetal|embryo\w*|"
+                       r"stillb\w*|abort\w*|miscarr\w*|ectopic|autops\w*|deceased|dead|death|died|"
+                       r"gestational sac)\b", re.I)
+# A baby on its own: kept only when the text shows it is with a parent or carer, dressed or wrapped, or being
+# weighed or checked at birth; otherwise (it may be unclothed, alone) left out.
+BIRTH_BABY = re.compile(r"\b(newborn\w*|new-born|neonat\w*|infants?|bab(y|ies))\b", re.I)
+BIRTH_WITH = re.compile(r"\b(mother\w*|father\w*|parents?|mum|mom|dad|held|holds?|holding|cradl\w*|arms|lap|"
+                        r"breast\w*|chest|wrapped|swaddl\w*|blankets?|dressed|clothed|clothes|onesie|bonnet|"
+                        r"weigh\w*|scales?|midwi\w*|nurse\w*|doctor\w*|birth attendant\w*|bottle\w*|carried|"
+                        r"carrying|sling|skin-to-skin|kangaroo care)\b", re.I)
+BIRTH_EXCLUDED, BIRTH_KEPT = [], []
+BIRTH_COMMONS = ("Breastfeeding", "Breastfeeding women", "Breastfeeding in art", "Kangaroo care", "Childbirth",
+                 "Pregnancy", "Pregnant women", "Newborn babies", "Delivery rooms", "Caesarean section", "Midwifery",
+                 "Midwives", "Prenatal care", "Bottle feeding", "Obstetric ultrasonography", "Baby carriers",
+                 "Babywearing")
+# The question and answer used when a record's own text is too thin (under 5 words): the first that matches.
+BIRTH_FALLBACK = [
+    (r"breast-?fe|suckl|wet[- ]nurs|nursing", "What is happening in this picture?", "A mother is breastfeeding her "
+                                                                                    "baby."),
+    (r"bottle", "What is happening in this picture?", "A baby is being fed from a bottle."),
+    (r"kangaroo|skin-to-skin", "What is happening in this picture?", "A newborn baby is held skin to skin on a "
+                                                                     "parent's chest."),
+    (r"ultraso", "What is this picture?", "An ultrasound scan taken during pregnancy."),
+    (r"caesarean|cesarean|c-section", "What is happening in this picture?", "A caesarean section is taking place "
+                                                                            "in an operating room."),
+    (r"midwi", "What is happening in this picture?", "A midwife is at work."),
+    (r"prenatal|antenatal", "What is happening in this picture?", "A pregnant woman is having a check-up."),
+    (r"pregnan", "What is in this picture?", "A pregnant woman."),
+    (r"newborn|new-born|neonat", "What is in this picture?", "A newborn baby."),
+    (r"birth|delivery", "What is happening in this picture?", "A baby is being born."),
+]
+BIRTH_FALLBACK = [(re.compile(p, re.I), q, a) for p, q, a in BIRTH_FALLBACK]
+PHIL_BIRTH_KEYWORDS = ("breastfeeding", "breast feeding", "pregnant", "pregnancy", "prenatal care", "newborn",
+                       "midwife", "kangaroo care", "childbirth", "infant feeding", "neonatal")
+WELLCOME_BIRTH_TERMS = ("breastfeeding", "breast feeding", "wet nurse", "pregnant woman", "pregnancy", "childbirth",
+                        "midwife", "midwifery", "birthing chair", "newborn baby", "caesarean section", "obstetrics",
+                        "labour ward", "antenatal clinic", "swaddling", "umbilical cord", "placenta",
+                        "birth attendant", "kangaroo care", "baby carrier")
+EUROPEANA_BIRTH_TERMS = ("breastfeeding", "midwife", "childbirth", "pregnant woman", "maternity hospital",
+                         "newborn baby", "birth attendant", "christening")
+
+
+def birth_first(text):
+    """The record's first sentence, without a lead-in ("This 2016 image depicted ..."): what the picture shows."""
+    text = clean(text)
+    first = re.split(r"(?<=[.!?])\s+(?=[A-Z])", text)[0] if text else ""
+    first = strip_lead(first)
+    return re.sub(r"\bpatient[’']s\b", "woman's", first)
+
+
+def birth_reason(text, general_site, first=None):
+    """Why a record is left out of birth_and_feeding ("" when kept). The topic is looked for in what the picture
+    shows (first: the first sentence); the exclusions in the whole text."""
+    first = text if first is None else first
+    if not BIRTH_TOPIC.search(first):
+        return "not about birth, pregnancy, feeding or newborns"
+    never = BIRTH_NEVER.search(text) or BIRTH_NOT.search(text)
+    if never:
+        return f"never: {never.group(0)}"
+    if BIRTH_BABY.search(first) and not BIRTH_WITH.search(first):
+        return "a baby alone (may be unclothed)"
+    if general_site:
+        bad = BIRTH_GENERAL_SITE_NOT.search(text)
+        if bad:
+            return f"general photo site: {bad.group(0)}"
+    elif BIRTH_NAKED.search(text) and not BIRTH_NAKED_OK.search(text):
+        return f"unclothed, not in an allowed birth scene: {BIRTH_NAKED.search(text).group(0)}"
+    return ""
+
+
+def birth_rows(text, credit):
+    """The rows for one record: "Describe this picture." with its first sentence, tidied (birth_first), or the
+    category question when that is under 5 words."""
+    text = birth_first(text)
+    if len(text.split()) >= 5:
+        return [{"question": DESCRIBE, "answer": sentence(text), "credit": credit}]
+    for pattern, question, answer in BIRTH_FALLBACK:
+        if pattern.search(text):
+            return [{"question": question, "answer": answer, "credit": credit}]
+    return []
+
+
+def build_birth_and_feeding(limit):
+    """The birth_and_feeding pack: [(name, JPEG, row)]. Childbirth, breastfeeding, pregnancy and the first days
+    with a newborn, and their customs, described plainly and respectfully. Sources: CDC PHIL (public domain),
+    Wellcome Collection and English-language Europeana records (CC BY, CC0 or public domain, checked per item),
+    and Wikimedia Commons categories (CC0, public domain or CC BY files; as a general photo site, only the scenes
+    BIRTH_GENERAL_SITE_NOT allows). Never used for picture-making training."""
+    from food_packs import commons_members, commons_entries
+    records = []
+    for r in phil_records(PHIL_BIRTH_KEYWORDS, int(limit * 0.5) + 10, int(limit * 1.5) + 40):
+        records.append({"source": "phil", "id": r["pid"], "text": r["caption"], "picture": r["picture"],
+                        "credit": phil_credit(r), "kind": "gov"})
+    records += collection_records(WELLCOME_BIRTH_TERMS, EUROPEANA_BIRTH_TERMS, int(limit * 0.5) + 10)
+    try:
+        s, titles = session(), []
+        for category in BIRTH_COMMONS:
+            titles += commons_members(s, category, "file")
+        titles = list(dict.fromkeys(titles))
+        random.Random(67).shuffle(titles)
+        for title, url, credit, text in commons_entries(s, titles[:int(limit * 1.5) + 20]):
+            name = re.sub(r"[_-]+", " ", title.split(":", 1)[-1].rsplit(".", 1)[0])
+            records.append({"source": "commons", "id": title, "text": text or name, "picture": url,
+                            "credit": credit, "kind": "general", "title": name})
+    except Exception as error:  # noqa: BLE001 - Commons refused: the other sources only
+        say(f"Commons: left out ({error})")
+    items = []
+    for r in records:
+        text = clean(r["text"])
+        check = f"{r.get('title', '')} {text}"
+        reason = birth_reason(check, r["kind"] == "general", f"{r.get('title', '')} {birth_first(text)}")
+        rows = [] if reason else birth_rows(text, r["credit"])
+        if not reason and not rows:
+            reason = "too little text to describe it"
+        if reason:
+            BIRTH_EXCLUDED.append((r["source"], check[:140], reason))
+            continue
+        BIRTH_KEPT.append((r["source"], check[:140], rows[0]["answer"][:120]))
+        items.append((f"{r['source']}-birth-{safe_name(r['id'])}.jpg", r["picture"], rows))
+    say(f"Birth and feeding: {len(items)} usable, {len(BIRTH_EXCLUDED)} left out")
+    random.Random(68).shuffle(items)
+    fetched = fetch_all(items[:int(limit * 1.1) + 2], workers=3, pause=0.3)
+    return with_twins(fetched[:limit])
 
 
 # ----------------------------------------------------------------- the packs
@@ -1162,7 +1560,21 @@ MEDICAL_PACKS = {
                           "copyright field checked), credited below with CDC and the photographer where known. "
                           "Only pictures of one part of the body (face, arm, leg, hand, foot, back, an eye, the "
                           "scalp); any picture whose caption mentions an unclothed or whole child, an intimate "
-                          "area, a nappy or a bath is left out."),
+                          "area, a nappy or a bath is left out. Also Wellcome Collection (CC BY, CC0 or public "
+                          "domain, each credited below) and Europeana records in English with a CC0, public-domain "
+                          "or CC BY rights statement."),
+    "medical_collections": (build_medical_collections,
+                            "Medical photographs of adults from Wellcome Collection (https://wellcomecollection.org) "
+                            "and Europeana (https://www.europeana.eu; English-language records only): each picture's "
+                            "own licence checked, CC BY, CC0 or public domain only, each credited below."),
+    "birth_and_feeding": (build_birth_and_feeding,
+                          "FOR DESCRIBING FAMILY AND MEDICAL PICTURES ONLY (never for picture-making training): "
+                          "childbirth, breastfeeding, pregnancy and newborns, and their customs. CDC Public Health "
+                          "Image Library (public domain, https://phil.cdc.gov); Wellcome Collection (CC BY, CC0 or "
+                          "public domain); Europeana (English-language records, CC0, public domain or CC BY); "
+                          "Wikimedia Commons (CC0, public domain or CC BY files). Each picture credited below. "
+                          "Nothing sexual; no unclothed child other than a newborn in a birth scene from a medical, "
+                          "government or museum source."),
 }
 
 # How many pictures a full build takes from each collection (about what each offers after the checks, November
@@ -1171,11 +1583,13 @@ MEDICAL_LIMITS = {
     "skin_lesion_photos": 2259,      # every adult photo
     "isic_skin": 12000,              # of about 75,000 adult CC0 or CC BY pictures, balanced over 20 diagnoses
     "gi_endoscopy": 8000,            # of 10,662 labelled pictures, balanced over 23 findings
-    "chest_xray": 8000,              # of about 27,000 adult patients, one X-ray each
+    "chest_xray": 8000,              # of 29,324 adult patients, one X-ray each
     "case_report_figures": 20000,    # of about 200,000 CC BY or CC0 case reports
     "vet_case_figures": 3000,
     "cdc_medical": 600,
     "childhood_illness": 300,
+    "medical_collections": 300,
+    "birth_and_feeding": 1500,
 }
 
 
@@ -1192,13 +1606,15 @@ def main(argv=None):
     for name, data, row in entries:
         say(json.dumps({"file": name, "bytes": len(data) if data else None, **row}, ensure_ascii=False))
     say(f"{len(entries)} entries, {count_pictures(entries)} pictures, in {time.time() - started:.0f} s")
-    if args.key == "childhood_illness":
+    checks = {"childhood_illness": (CHILD_EXCLUDED, CHILD_KEPT), "birth_and_feeding": (BIRTH_EXCLUDED, BIRTH_KEPT)}
+    if args.key in checks:
+        excluded, kept = checks[args.key]
         say("Left out by the filter, for example:")
-        for pid, caption, reason in random.Random(1).sample(CHILD_EXCLUDED, min(5, len(CHILD_EXCLUDED))):
-            say(f"  PHIL {pid}: {caption}  ({reason})")
+        for source, caption, reason in random.Random(1).sample(excluded, min(5, len(excluded))):
+            say(f"  {source}: {caption}  ({reason})")
         say("Kept, for example:")
-        for pid, caption, name in CHILD_KEPT[:5]:
-            say(f"  PHIL {pid}: {caption}  ({name})")
+        for source, caption, note in random.Random(2).sample(kept, min(5, len(kept))):
+            say(f"  {source}: {caption}  ({note})")
     return 0
 
 
