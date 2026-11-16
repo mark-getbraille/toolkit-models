@@ -57,9 +57,12 @@ from food_packs import (sentence, listed, with_twins, count_pictures, oi_lines, 
 
 def a_or_an(phrase):
     """ "a" or "an" before a phrase, knowing that "USB", "UNO" and "one" start with a "you" or "won" sound."""
-    first = phrase.split()[0].lower() if phrase.split() else ""
+    word = phrase.split()[0] if phrase.split() else ""
+    first = word.lower()
     if first.startswith(("usb", "uno", "one", "uni", "euro", "ewe")):
         return "a"
+    if len(word) >= 2 and word.isupper() and word[0] in "AEFHILMNORSX":        # letters said one by one: "an RNIB"
+        return "an"
     return article(phrase)
 
 
@@ -418,7 +421,7 @@ ORBIT_FIX = {
     "apple wath": "Apple Watch", "walletv": "wallet", "remote comtrol": "remote control", "control": "remote control",
     "clickr": "remote control", "nobile phone stand": "mobile phone stand", "migenta marker": "magenta marker",
     "braille displat": "braille display", "favourite earings": "earrings", "sisters car": "car",
-    "pro": "AirPods Pro", "cup again": "cup", "sport bago": "sports bag", "numb bag": "bum bag",
+    "pro": "pair of AirPods Pro", "cup again": "cup", "sport bago": "sports bag", "numb bag": "bum bag",
     "tred mill": "treadmill", "tilly hat upside down": "Tilley hat", "tilly hat": "Tilley hat",
     "i phone 11 pro": "iPhone 11 Pro", "jd whisky bottle": "Jack Daniel's whisky bottle", "watering": "watering can",
     "mobility": "mobility cane", "1 cup measuring cup": "one-cup measuring cup", "12 measuring cup": "measuring cup",
@@ -428,6 +431,11 @@ ORBIT_FIX = {
     "blue tooth keyboard": "Bluetooth keyboard", "skip prep": None, "flee": None, "dog poo": None,
     "cannabis vape battery": None, "condom box": None, "aspirin vs tylenol": None, "make up": "make-up",
     "orbit braille reader and notetaker": "Orbit Reader braille notetaker", "dogs": "dogs",
+    "front door from outside": "front door", "front door to house": "front door", "shelf unit with things":
+    "shelf unit", "washing machine setting": "washing machine dial", "tumble dry setting washing machine":
+    "washing machine dial", "usb": "USB stick", "mouse": "computer mouse", "remote tv": "TV remote",
+    "pen friend": "PenFriend audio labeller", "dogs lead": "dog lead", "wheely bin": "wheelie bin",
+    "airpod pro": "pair of AirPods Pro", "airpod pros case": "AirPods Pro case", "iphone air pods": "AirPods",
     "glasses": "pair of glasses", "eye glasses": "pair of glasses", "reading glasses": "pair of reading glasses",
     "dark glasses": "pair of dark glasses", "sunglasses": "pair of sunglasses", "scissors": "pair of scissors",
     "wraparound sunglasses": "pair of wraparound sunglasses", "headphones": "pair of headphones",
@@ -443,8 +451,7 @@ ORBIT_WORDS = {"iphone": "iPhone", "ipad": "iPad", "ipod": "iPod", "airpod": "Ai
                "phillips": "Phillips", "covid": "COVID", "pinesol": "Pine-Sol", "mountain": "Mountain",
                "dew": "Dew", "q": "Q", "smarttv": "smart TV", "fire": "Fire", "stick": "stick"}
 ORBIT_UNCOUNTED = {"tea", "rice", "money", "make-up", "hand gel", "mustard", "prosecco", "valve oil", "slide grease",
-                   "mediterranean sea salt", "pink himalayan salt", "fish food", "medication", "cranberry cream tea",
-                   "tablets", "paperclips", "cappuccino pods"}
+                   "mediterranean sea salt", "pink himalayan salt", "fish food", "medication", "cranberry cream tea"}
 ORBIT_ISSUES = {"blur_issue": "the picture is blurred", "underexposed_issue": "the picture is too dark",
                 "overexposed_issue": "the picture is too bright",
                 "framing_issue": "the object is partly outside the picture",

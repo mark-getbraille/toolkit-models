@@ -21,7 +21,7 @@ The packs (BODY_PACKS):
              with the subject "nudes" or "nude" in the title; its alt text written for screen readers), the
              Cleveland Museum of Art (CC0 works with "nude" or "naked" in the title or description), the National
              Gallery of Art, Washington (open-access works with a "nude" keyword; its alt text) and the Smithsonian
-             American Art Museum and Hirshhorn (CC0 pictures with the topic "nude"). Asked "Describe this picture."
+             American Art Museum (CC0 pictures with the topic "nude"). Asked "Describe this picture."
              and "Is there nudity in this picture?".
   anatomy    Anatomy figures: OpenStax "Anatomy and Physiology" (first edition, CC BY 4.0; the second edition is
              now CC BY-NC-SA and is not used), only figures OpenStax drew itself or took from US government
@@ -119,6 +119,10 @@ def nudity_sentence(female, male):
     if male:
         return "The work includes male nudity."
     return "The work includes nudity."
+
+
+ART_KINDS = {"drawing", "painting", "print", "photograph", "sculpture", "watercolor", "watercolour", "etching",
+             "engraving", "lithograph", "woodcut", "relief", "statue", "statuette", "figurine", "pastel", "sketch"}
 
 
 def lead(title, kind="", artist="", date="", medium=""):
@@ -437,13 +441,13 @@ def nga_items(want):
     return items
 
 
-# ----------------------------------------------------------------- Smithsonian (American Art Museum, Hirshhorn)
+# ----------------------------------------------------------------- Smithsonian American Art Museum
 
-SI_NUDE_UNITS = ("saam", "hmsg")
+SI_NUDE_UNITS = ("saam",)      # the Hirshhorn was tried: no CC0 picture of a nude
 
 
 def si_items(want):
-    """(name, picture address, rows) for Smithsonian American Art Museum and Hirshhorn records whose topics say
+    """(name, picture address, rows) for Smithsonian American Art Museum records whose topics say
     nude (or "Nudity") and whose picture is CC0; the answer uses the accessibility text or gallery label when there
     is one (build_packs.si_row), otherwise the record's title, artist, date and medium."""
     from build_packs import si_keys, si_row, SI_BUCKET

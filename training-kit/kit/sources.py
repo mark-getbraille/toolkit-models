@@ -1147,3 +1147,8 @@ def _add_collections(extra):
 from more_sources import MORE_SOURCES  # noqa: E402
 
 _add_collections(MORE_SOURCES)
+
+# The big food downloads kept in the picture library (beef, fish, chicken, food packaging, Packeat produce).
+from big_sources import BIG_SOURCES  # noqa: E402
+
+_add_collections(BIG_SOURCES)
