@@ -47,6 +47,8 @@ How to start
    on "Start Training.cmd" for the real training of the 4B model. Pictures already downloaded by the quick try are
    used again.
    Other choices:
+   - "Start Training Full.cmd": up to three times as many pictures from every collection (about 110,000), for the
+     best result if the computer can run for several days (roughly three days on a fast card).
    - "Start Training 8B.cmd": the 8B model (only with a 16 GB card or bigger; do the 4B model first).
    - "Start Training with Wikipedia.cmd": also learns from Wikipedia. Wikipedia's text is under the CC BY-SA 4.0
      licence, so this add-on must be shared under CC BY-SA 4.0 too. It is published as a separate choice; the
