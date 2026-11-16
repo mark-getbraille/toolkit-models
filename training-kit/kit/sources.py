@@ -12,13 +12,19 @@ Groups:
   "share-alike" CC BY-SA (Wikipedia): only with --with-wikipedia. The add-on is then labelled CC BY-SA 4.0 and
                 credits Wikipedia, and is published as a separate choice.
 
+Content choices (Source.content): most collections have none (""). A collection marked "nudity" (non-sexual nudes
+in art) is only used with --with-nudity, and one marked "medical" (medical and anatomy pictures) only with
+--with-medical, so the person training decides whether the model learns from those pictures. chosen() leaves out
+what was not chosen; content_choices_text() says the choices in plain words for the report and ATTRIBUTION.txt.
+
 Sizes (--size): each source has a cap for "normal"; "quick" uses a tenth of it (a try of an hour or two) and
 "full" three times as much (several nights on a fast card).
 
 A finished source is not prepared again when the kit is started again (its rows are kept in data/<key>-<size>.jsonl;
 a bigger size prepares it again, but pictures already downloaded are kept).
 
-Main parts: Source, SOURCES, chosen(with_wikipedia), prepare_source(source, data_dir, work, cap), questions.
+Main parts: Source, SOURCES, chosen(with_wikipedia, with_nudity=, with_medical=), content_choices_text,
+prepare_source(source, data_dir, work, cap), questions.
 """
 
 import concurrent.futures
@@ -66,12 +72,21 @@ class Source:
     cap        the most pictures to use at "normal" size
     test       how many of its pictures are kept back for the test
     prepare    a function (source, data_dir, work, cap) -> [rows], each with "split" ("train", "test" or "")
-    download   roughly how much it downloads, for the screen ("7.6 GB")"""
+    download   roughly how much it downloads, for the screen ("7.6 GB")
+    content    "" for most collections; "nudity" (non-sexual nudes in art: only with --with-nudity) or "medical"
+               (medical and anatomy pictures: only with --with-medical)"""
 
-    def __init__(self, key, name, licence, credit, group, cap, test, prepare, download):
+    def __init__(self, key, name, licence, credit, group, cap, test, prepare, download, content=""):
         """Store the fields (see the class docstring)."""
+        if content not in CONTENTS:
+            raise ValueError(f"unknown content {content!r} for {key}")
         self.key, self.name, self.licence, self.credit, self.group = key, name, licence, credit, group
         self.cap, self.test, self.prepare, self.download = cap, test, prepare, download
+        self.content = content
+
+
+# The content choices a collection can need: "" (none), "nudity" and "medical" (see the module docstring).
+CONTENTS = ("", "nudity", "medical")
 
 
 # ----------------------------------------------------------------- shared helpers
@@ -1075,6 +1090,81 @@ SOURCES = [
     Source("beef", "Beef: fresh, and five days after it was bought (ready-made pack)",
            "CC BY 4.0 (Mendeley Data wvhkpppddp)", "Fresh and non-fresh beef images, Mendeley Data wvhkpppddp, CC BY 4.0",
            "permissive", 60, 6, prepare_pack, "about 20 MB"),
+    Source('open_images_objects', 'Household objects: what is in the picture, and is there a ... (ready-made pack)',
+           'CC BY 4.0 labels; photos CC BY 2.0, each author credited',
+           'Open Images V7 (Google), CC BY 4.0 labels; photos by their Flickr authors, CC BY 2.0', "permissive", 6000, 20, prepare_pack, 'about 1.5 GB'),
+    Source('orbit', "ORBIT: blind people's own videos of their things: what it is, where it is, is it a good photo (ready-made pack)",
+           'CC BY 4.0 (City, University of London figshare 14294597)',
+           'ORBIT dataset (Massiceti et al., 2021), City, University of London, CC BY 4.0', "permissive", 5000, 20, prepare_pack, 'about 1 GB'),
+    Source('core50', 'CORe50: hand-held everyday objects (ready-made pack)',
+           'CC BY 4.0',
+           'CORe50 (Lomonaco and Maltoni, 2017), CC BY 4.0', "permissive", 2000, 10, prepare_pack, 'about 200 MB'),
+    Source('lila_camera_traps', 'Wildlife camera traps: which animal, day and night (ready-made pack)',
+           'CDLA-Permissive-1.0 (lila.science)',
+           'LILA BC camera-trap collections (lila.science), CDLA-Permissive 1.0', "permissive", 5000, 20, prepare_pack, 'about 1.5 GB'),
+    Source('gbif_species', 'Species of the world: birds, mammals, fish, insects, plants and fungi (GBIF, ready-made pack)',
+           'Each photo CC0, public domain or CC BY, photographer credited',
+           'Photographers and institutions publishing through GBIF (gbif.org), credited in ATTRIBUTION.txt', "permissive", 5000, 20, prepare_pack, 'about 1.5 GB'),
+    Source('commons_breeds', 'Breeds of dogs, cats, horses, cattle, sheep and other farm animals (Wikimedia Commons, ready-made pack)',
+           'CC0, public domain or CC BY, each author credited',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 2000, 10, prepare_pack, 'about 500 MB'),
+    Source('textocr', 'Reading text in everyday photos (TextOCR, ready-made pack)',
+           'CC BY 4.0 words; photos CC BY 2.0, each author credited',
+           'TextOCR (Singh et al., 2021), CC BY 4.0; photos from Open Images by their Flickr authors, CC BY 2.0', "permissive", 5000, 20, prepare_pack, 'about 1.5 GB'),
+    Source('coco_text', 'Reading text in everyday photos (COCO-Text, ready-made pack)',
+           'CC BY 4.0; COCO photos under CC BY 2.0 or no known copyright only',
+           'COCO-Text v2 (Veit et al., 2016), CC BY 4.0; photos from COCO', "permissive", 1200, 10, prepare_pack, 'about 200 MB (photos fetched from COCO)'),
+    Source('cord', 'Receipts: the total, the items and prices, the change (CORD, ready-made pack)',
+           'CC BY 4.0',
+           'CORD v2 (Park et al., 2019, NAVER Clova), CC BY 4.0', "permissive", 1000, 15, prepare_pack, 'about 200 MB'),
+    Source('doclaynet', 'Document pages: what kind of document, the title, the text (DocLayNet, ready-made pack)',
+           'CDLA-Permissive-1.0',
+           'DocLayNet (Pfitzmann et al., 2022, IBM), CDLA-Permissive 1.0', "permissive", 4000, 20, prepare_pack, 'about 800 MB'),
+    Source('plotqa', 'Charts: what the chart shows and its values (PlotQA, ready-made pack)',
+           'CC BY 4.0',
+           'PlotQA (Methani et al., 2020), CC BY 4.0, charts drawn from World Bank and other open data', "permissive", 4000, 20, prepare_pack, 'about 600 MB'),
+    Source('loc_letters', 'Handwritten letters and diaries read by volunteers (Library of Congress By the People, ready-made pack)',
+           'Transcriptions CC0; pages with no known copyright restrictions',
+           'Library of Congress, By the People transcriptions (CC0), from collections with no known copyright restrictions', "permissive", 5000, 20, prepare_pack, 'about 1.5 GB'),
+    Source('ptl_crossings', 'Pedestrian lights and which way the crossing goes (ImVisible, ready-made pack)',
+           'MIT (github.com/samuelyu2002/ImVisible)',
+           'ImVisible pedestrian traffic light dataset (Yu et al.), MIT', "permissive", 3000, 20, prepare_pack, 'about 600 MB'),
+    Source('uroac_crossings', 'Pedestrian lights and crossings, day and night (UrOAC, ready-made pack)',
+           'CC BY 4.0 (Mendeley Data fcrmp92ckn)',
+           'UrOAC urban obstacles and crossings dataset, Mendeley Data fcrmp92ckn, CC BY 4.0', "permissive", 1000, 10, prepare_pack, 'about 300 MB'),
+    Source('open_images_street', 'Getting around: stairs, lifts, doors, ramps, crossings, bus stops (ready-made pack)',
+           'CC BY 4.0 labels; photos CC BY 2.0, each author credited',
+           'Open Images V7 (Google), CC BY 4.0 labels; photos by their Flickr authors, CC BY 2.0', "permissive", 4000, 20, prepare_pack, 'about 1 GB'),
+    Source('walkway_dhaka', 'Footpath obstacles and vehicles, where they are (Dhaka, ready-made pack)',
+           'CC BY 4.0 (Mendeley Data m68g3h7p87)',
+           'Walkway obstacle dataset, Dhaka, Mendeley Data m68g3h7p87, CC BY 4.0', "permissive", 1000, 10, prepare_pack, 'about 200 MB'),
+    Source('outdoor_navigation', 'Pavements, ramps and crossings ahead (Bucharest, ready-made pack)',
+           'CC BY 4.0 (Zenodo 14043015)',
+           'Outdoor navigation dataset for visually impaired people, Zenodo 14043015, CC BY 4.0', "permissive", 700, 10, prepare_pack, 'about 150 MB'),
+    Source('seoul_sidewalks', 'Pavements: condition, width and slope (Seoul, ready-made pack)',
+           'CC0 (Zenodo 22908353)',
+           'Seoul sidewalk accessibility dataset, Zenodo 22908353, CC0', "permissive", 514, 10, prepare_pack, 'about 200 MB'),
+    Source('dollar_street', 'Dollar Street: homes and everyday things in about 60 countries (ready-made pack)',
+           'CC BY 4.0 (gapminder.org/dollar-street)',
+           'Dollar Street by Gapminder, CC BY 4.0, each photographer credited', "permissive", 5000, 20, prepare_pack, 'about 1.5 GB'),
+    Source('geode', 'GeoDE: everyday objects and places from six world regions (ready-made pack)',
+           'CC BY',
+           'GeoDE (Ramaswamy et al., 2023, Princeton), CC BY', "permissive", 4000, 20, prepare_pack, 'about 800 MB'),
+    # Pictures of the human body (packs/body_packs.py). Records mentioning children or sexual content are left out
+    # when the packs are built; the person training still chooses whether to use them (--with-nudity, --with-medical).
+    Source("art_nudes", "Nudes in art, described plainly and without anything sexual (ready-made pack)",
+           "CC0 or public domain (The Met, Art Institute of Chicago, Cleveland Museum of Art, National Gallery of "
+           "Art, Smithsonian; each work credited in the pack's CREDITS.txt)",
+           "Non-sexual nudes in art from The Metropolitan Museum of Art, the Art Institute of Chicago, the Cleveland "
+           "Museum of Art, the National Gallery of Art (Washington) and the Smithsonian American Art Museum, CC0 or "
+           "public domain, each work credited in CREDITS.txt", "permissive", 3000, 10, prepare_pack, "about 600 MB",
+           content="nudity"),
+    Source("anatomy", "Anatomy figures: OpenStax Anatomy and Physiology and Gray's Anatomy plates (ready-made pack)",
+           "OpenStax figures CC BY 4.0 (first edition); Gray's Anatomy (1918) plates public domain",
+           "OpenStax, Anatomy and Physiology (2013, first edition), Rice University, CC BY 4.0, "
+           "https://openstax.org/details/books/anatomy-and-physiology; Henry Gray, Anatomy of the Human Body (1918), "
+           "public domain, via Wikimedia Commons", "permissive", 1500, 10, prepare_pack, "about 200 MB",
+           content="medical"),
     Source("concadia", "Concadia: Wikipedia pictures with their alt text",
            "CC BY-SA 4.0 (Wikipedia's text); pictures under their own Wikimedia Commons licences",
            "Concadia (Kreiss et al., 2022) from Wikipedia, CC BY-SA 4.0, https://github.com/elisakreiss/concadia",
@@ -1086,9 +1176,23 @@ SOURCES = [
 ]
 
 
-def chosen(with_wikipedia=False):
-    """The sources to train on: the permissive ones, and the share-alike ones too with with_wikipedia."""
-    return [s for s in SOURCES if s.group == "permissive" or with_wikipedia]
+def chosen(with_wikipedia=False, *, with_nudity=False, with_medical=False):
+    """The sources to train on: the permissive ones, and the share-alike ones too with with_wikipedia. A collection
+    with content "nudity" is only included with with_nudity, and one with content "medical" only with with_medical
+    (see the module docstring)."""
+    allowed = {"": True, "nudity": with_nudity, "medical": with_medical}
+    return [s for s in SOURCES if (s.group == "permissive" or with_wikipedia) and allowed[s.content]]
+
+
+def content_of(key):
+    """The content choice ("", "nudity" or "medical") of the collection with this key ("" when unknown)."""
+    return next((s.content for s in SOURCES if s.key == key), "")
+
+
+def content_choices_text(with_nudity, with_medical):
+    """The content choices in one plain sentence, for the report and ATTRIBUTION.txt."""
+    return ("Content choices: art with nudity (non-sexual) " + ("included" if with_nudity else "not included") +
+            "; medical and anatomy pictures " + ("included" if with_medical else "not included") + ".")
 
 
 def prepare_source(source, data_dir, work, size="normal", seed=7):

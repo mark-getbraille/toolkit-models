@@ -1,15 +1,22 @@
 """Picture Model Training: the one-click wizard of the Picture Model Training Kit (Picture Model Training.exe).
 
 It does what the kit's .cmd files do, in one window that a screen reader user can follow:
+  0. what to train: a picture describer (pictures to words: kit\\train.py) or a picture-making model (words to
+     pictures: kit\\train_pictures.py, Stable Diffusion XL or 1.5, chosen in "Picture-making model:", which is shown
+     only then);
   1. the first page: the picture library folder (B:\\Picture Library when drive B: exists: every picture, larger
      copies and download kept for good, for future training), the training folder (C:\\Training by default), the model (4B or 8B), how much to train (a quick
      try, normal, full: several days, or a follow-up that carries on from the last finished training with only
-     the new collections), Wikipedia or not, and whether to prepare this computer first; "Check this
-     computer" says the NVIDIA card, its memory and the free disk space;
+     the new collections), Wikipedia or not, the content choices (art with nudity, medical and anatomy pictures:
+     both ticked for a describer, neither for a picture-making model, and remembered for each), your own pictures
+     folder ("Check my pictures" says what was found in it, kit\\own_data.py) and whether to train on them alone, and
+     whether to prepare this computer first; "Check this computer" says the NVIDIA card, its memory and the free
+     disk space;
   2. "Start training": the kit's files are copied into "<folder>\\Picture Model Training Kit" (a newer wizard
      updates them; the downloads, pictures, training and results there are kept), "Prepare This Computer.cmd" runs
-     as administrator when asked for, the helper uv and the training tools are installed once into the kit folder,
-     and kit\\train.py runs without a console window;
+     as administrator when asked for, the helper uv and the training tools are installed once into the kit folder
+     (for a picture-making model also kit\\requirements-pictures.txt), and kit\\train.py (or kit\\train_pictures.py)
+     runs without a console window;
   3. the progress page: every line the training says goes into "Everything said:", the latest into "Status:", and
      the important ones (each step, each collection, the training progress every 200 pictures, FINISHED or STOPPED)
      are spoken by the running screen reader (Tolk, through cytolk, as in the Digital Accessibility Toolkit).
@@ -17,8 +24,11 @@ It does what the kit's .cmd files do, in one window that a screen reader user ca
      their buttons; "Stop the training" stops it (starting again carries on from the last save).
 
 Accessibility: standard wx controls only; a label ending ":" right before each field; every button and check box
-has an Alt letter, named in its tooltip, and no letter is used twice in the window; Escape closes (asking first while
-training runs); F1 opens READ ME FIRST.txt; Enter presses only the focused button (no default button).
+has an Alt letter, named in its tooltip, and no letter is used twice in the window (both pages together; with this
+many controls some labels have no letter); Escape closes (asking first while training runs); F1 opens READ ME
+FIRST.txt; Enter presses only the focused button (no default button). Letters: first page B, L, W, Y (nudity),
+A (anatomy), O (own pictures folder), K (check my pictures), M (only my own), P, C, S, I and the labels T and H;
+second page R, G, E, F, U, N, D and the label V; X (Exit) on both.
 
 Logs: like the Digital Accessibility Toolkit, everything the wizard says (and any error) is written, with the time,
 into "Picture Model Training logs" on the desktop, one file a day ("Picture Model Training log 2026-11-16.txt");
@@ -99,6 +109,17 @@ def save_choices(choices):
             json.dump(choices, f, indent=1)
     except OSError:
         pass
+# What to train: the picture describer (kit\\train.py) or a picture-making model (kit\\train_pictures.py, written
+# separately; its command line: --base sd15|sdxl --library FOLDER --size quick|normal|full [--with-wikipedia]
+# [--with-nudity] [--with-medical] [--own FOLDER] [--own-only] [--limit N]).
+KINDS = [("describer", "A picture describer (pictures to words)"),
+         ("pictures", "A picture-making model (words to pictures)")]
+PICTURE_MODELS = [("sdxl", "Stable Diffusion XL (best, about 1 to 2 days)"),
+                  ("sd15", "Stable Diffusion 1.5 (faster, smaller)")]
+# The content choices' starting values for each kind, until the person changes them (then remembered).
+CONTENT_DEFAULTS = {"describer": True, "pictures": False}
+TRAIN_SCRIPTS = {"describer": "train.py", "pictures": "train_pictures.py"}
+
 MODELS = [("4b", "Qwen3-VL 4B (needs an NVIDIA card with 12 GB or more)"),
           ("8b", "Qwen3-VL 8B (needs 16 GB or more; train the 4B model first)")]
 SIZES = [("quick", "Quick try: a tenth of the pictures, an hour or two"),
@@ -107,12 +128,22 @@ SIZES = [("quick", "Quick try: a tenth of the pictures, an hour or two"),
          ("continue", "Follow-up: carry on from the last finished training with only the new collections (a few hours)")]
 NO_WINDOW = 0x08000000 if os.name == "nt" else 0          # CREATE_NO_WINDOW
 
-# Where the training is, as a share of the whole run (the progress bar): each step's start and end percent.
+# Where the training is, as a share of the whole run (the progress bar): each step's start and end percent (the
+# describer's 7 steps; a training with another number of steps gets equal parts, see step_span).
 STEP_SPAN = {1: (0, 1), 2: (1, 6), 3: (6, 16), 4: (16, 20), 5: (20, 92), 6: (92, 99), 7: (99, 100)}
-STEP_LINE = re.compile(r"^Step (\d) of 7:")
+STEP_LINE = re.compile(r"^Step (\d+) of (\d+):")
 TRAINED_LINE = re.compile(r"(\d+) of (\d+) pictures trained \((\d+) percent\)")
-SPOKEN = re.compile(r"^(Step \d of 7:|\s*Collection \d+ of \d+:|\s*Ready:|\s+\d+ of \d+ pictures trained|"
+SPOKEN = re.compile(r"^(Step \d+ of \d+:|\s*Collection \d+ of \d+:|\s*Ready:|\s+\d+ of \d+ pictures trained|"
                     r"\s*Score (before|after)|FINISHED|STOPPED|Getting ready|\s*This collection could not)")
+
+
+def step_span(step, total):
+    """(start, end) percent of a step: STEP_SPAN for the describer's 7 steps, otherwise equal parts."""
+    if total == 7 and step in STEP_SPAN:
+        return STEP_SPAN[step]
+    total = max(total, 1)
+    step = min(max(step, 1), total)
+    return (100 * (step - 1) // total, 100 * step // total)
 
 
 def resource(*parts):
@@ -306,9 +337,10 @@ def kit_environment(kit):
     return env
 
 
-def install_tools(kit, report):
+def install_tools(kit, report, pictures=False):
     """Download the helper uv and install the kit's own Python and training tools once (again when the kit's
-    requirements change). report(text) says what happens."""
+    requirements change); with pictures, also the picture-making tools in kit\\requirements-pictures.txt (when that
+    file is there; remembered in env\\installed-pictures.txt). report(text) says what happens."""
     tools = os.path.join(kit, "tools")
     os.makedirs(tools, exist_ok=True)
     uv = os.path.join(tools, "uv.exe")
@@ -321,18 +353,43 @@ def install_tools(kit, report):
     with open(requirements, "rb") as f:
         wanted = hashlib.sha256(f.read()).hexdigest()
     mark = os.path.join(kit, "env", "installed.txt")
-    if os.path.exists(mark) and open(mark, encoding="utf-8").read().strip() == wanted:
-        return
-    report("Getting ready: installing the training tools in the kit folder, about 5 GB. This takes 10 to 30 minutes, "
-           "and nothing is said while it works.")
     env = kit_environment(kit)
-    if not os.path.exists(os.path.join(kit, "env", "Scripts", "python.exe")):
-        run_quiet([uv, "venv", "env", "--python", "3.12", "--quiet"], kit, env)
+    if not (os.path.exists(mark) and open(mark, encoding="utf-8").read().strip() == wanted):
+        report("Getting ready: installing the training tools in the kit folder, about 5 GB. This takes 10 to 30 "
+               "minutes, and nothing is said while it works.")
+        if not os.path.exists(os.path.join(kit, "env", "Scripts", "python.exe")):
+            run_quiet([uv, "venv", "env", "--python", "3.12", "--quiet"], kit, env)
+        pip_install(uv, kit, env, requirements)
+        with open(mark, "w", encoding="utf-8") as f:
+            f.write(wanted)
+        report("Getting ready: the training tools are installed.")
+    extra = os.path.join(kit, "kit", "requirements-pictures.txt")
+    if pictures and os.path.exists(extra):
+        with open(extra, "rb") as f:
+            wanted = hashlib.sha256(f.read()).hexdigest()
+        mark = os.path.join(kit, "env", "installed-pictures.txt")
+        if not installed(mark, wanted):
+            report("Getting ready: installing the picture-making tools in the kit folder. This can take 10 to 30 "
+                   "minutes, and nothing is said while it works.")
+            pip_install(uv, kit, env, extra)
+            with open(mark, "w", encoding="utf-8") as f:
+                f.write(wanted)
+            report("Getting ready: the picture-making tools are installed.")
+
+
+def installed(mark, wanted):
+    """True when the mark file says the requirements with the checksum wanted are installed."""
+    try:
+        with open(mark, encoding="utf-8") as f:
+            return f.read().strip() == wanted
+    except OSError:
+        return False
+
+
+def pip_install(uv, kit, env, requirements):
+    """Install a requirements file into the kit's own Python (with PyTorch's CUDA packages)."""
     run_quiet([uv, "pip", "install", "--python", os.path.join("env", "Scripts", "python.exe"), "-r", requirements,
                "--extra-index-url", TORCH_INDEX, "--index-strategy", "unsafe-best-match", "--quiet"], kit, env)
-    with open(mark, "w", encoding="utf-8") as f:
-        f.write(wanted)
-    report("Getting ready: the training tools are installed.")
 
 
 def prepare_computer(kit, report):
@@ -350,6 +407,21 @@ def prepare_computer(kit, report):
         report("This computer is prepared: no sleep, no hibernation, Windows Update paused for 7 days.")
 
 
+# ----------------------------------------------------------------- your own pictures
+
+def own_data_module():
+    """The kit's own_data.py (bundled into the program, or beside the wizard in the kit), which checks a folder of
+    your own pictures; None when it cannot be loaded."""
+    folder = resource("kit")
+    if folder not in sys.path:
+        sys.path.insert(0, folder)
+    try:
+        import own_data
+        return own_data
+    except Exception:  # noqa: BLE001 - said by the caller
+        return None
+
+
 # ----------------------------------------------------------------- the window
 
 class Wizard(wx.Frame):
@@ -357,12 +429,14 @@ class Wizard(wx.Frame):
 
     def __init__(self):
         """Build both pages; the first is shown."""
-        super().__init__(None, title=APP_NAME, size=(760, 640))
+        super().__init__(None, title=APP_NAME, size=(800, 860))
         self.process = None
         self.lines = queue.Queue()
         self.percent = 0
+        self.step = (5, 7)             # the step said last (number, of how many), for the progress bar
         self.kit = None
         self.mnemonics = {}
+        self.last_label = None         # the label labelled() made last (to hide it with its field)
         self.panel = wx.Panel(self)
         outer = wx.BoxSizer(wx.VERTICAL)
         self.first = self.build_first(self.panel)
@@ -384,6 +458,7 @@ class Wizard(wx.Frame):
     def labelled(self, parent, sizer, label, factory, proportion=0):
         """A label ending ":" and, right after it, its control; an &letter in the label moves focus to it."""
         text = wx.StaticText(parent, label=label)
+        self.last_label = text
         sizer.Add(text, 0, wx.LEFT | wx.RIGHT | wx.TOP, 8)
         control = factory()
         sizer.Add(control, proportion, wx.EXPAND | wx.ALL, 8)
@@ -410,39 +485,75 @@ class Wizard(wx.Frame):
 
     # -- the first page
     def build_first(self, parent):
-        """The settings page."""
+        """The settings page (the Alt letters are listed in the module docstring)."""
         page = wx.Panel(parent)
         s = wx.BoxSizer(wx.VERTICAL)
         self.about = self.labelled(page, s, "About this wizard:", lambda: wx.TextCtrl(
-            page, value=("This wizard teaches the Digital Accessibility Toolkit's picture model to describe pictures "
-                         "the way a blind reader needs, on this computer's NVIDIA graphics card. Choose the folder and "
-                         "how much to train, then press Start training. Every step is said as it happens. You can "
-                         "close the wizard at any time; starting again carries on where it stopped. Press F1 for the "
-                         "full instructions."), style=wx.TE_MULTILINE | wx.TE_READONLY), 1)
-        row = wx.BoxSizer(wx.HORIZONTAL)
+            page, value=("This wizard teaches a picture model on this computer's NVIDIA graphics card: either the "
+                         "Digital Accessibility Toolkit's picture describer, to describe pictures the way a blind "
+                         "reader needs, or a picture-making model that draws pictures from words. Choose what to "
+                         "train, the folders and how much to train, then press Start training. Every step is said as "
+                         "it happens. You can close the wizard at any time; starting again carries on where it "
+                         "stopped. Press F1 for the full instructions."), style=wx.TE_MULTILINE | wx.TE_READONLY), 1)
         chosen = load_choices()
+        self.kind = self.labelled(page, s, "What to train:", lambda: wx.Choice(page, choices=[k[1] for k in KINDS]))
+        self.kind.SetSelection(next((i for i, k in enumerate(KINDS) if k[0] == chosen.get("what")), 0))
+        self.kind.Bind(wx.EVT_CHOICE, self.on_kind)
+        self.picture_model = self.labelled(page, s, "Picture-making model:", lambda: wx.Choice(
+            page, choices=[m[1] for m in PICTURE_MODELS]))
+        self.picture_model_label = self.last_label
+        self.picture_model.SetSelection(next((i for i, m in enumerate(PICTURE_MODELS)
+                                              if m[0] == chosen.get("picture_model")), 0))
+        row = wx.BoxSizer(wx.HORIZONTAL)
         self.folder = self.labelled(page, s, "&Training folder:", lambda: wx.TextCtrl(
             page, value=chosen.get("folder") or DEFAULT_FOLDER))
         row.Add(self.button(page, "&Browse for the training folder...", "Choose the training folder", self.on_browse),
                 0, wx.ALL, 4)
         s.Add(row, 0, wx.LEFT, 4)
-        self.library = self.labelled(page, s, "Picture library f&older:", lambda: wx.TextCtrl(
+        self.library = self.labelled(page, s, "Picture library folder:", lambda: wx.TextCtrl(
             page, value=chosen.get("library") or default_library()))
         self.library.SetToolTip("All pictures, full-size copies and downloads are kept here for good, for future "
                                 "training. It starts on the drive with the most free space.")
         s.Add(self.button(page, "Browse for the &library folder...", "Choose where the picture library is",
                           self.on_browse_library), 0, wx.LEFT, 12)
-        self.model = self.labelled(page, s, "&Model:", lambda: wx.Choice(page, choices=[m[1] for m in MODELS]))
+        self.model = self.labelled(page, s, "Model:", lambda: wx.Choice(page, choices=[m[1] for m in MODELS]))
+        self.model_label = self.last_label
         self.model.SetSelection(next((i for i, m in enumerate(MODELS) if m[0] == chosen.get("model")), 0))
         self.size = self.labelled(page, s, "&How much to train:", lambda: wx.Choice(page, choices=[x[1] for x in SIZES]))
         self.size.SetSelection(next((i for i, x in enumerate(SIZES) if x[0] == chosen.get("size")), 2))
         self.wikipedia = self.check(page, "Include &Wikipedia (the add-on is then CC BY-SA 4.0)",
                                     "Also learn from Wikipedia's alt text", False)
         s.Add(self.wikipedia, 0, wx.ALL, 8)
+        # The content choices, remembered for each kind of training (see CONTENT_DEFAULTS).
+        self.content = {kind: {"nudity": chosen.get(f"nudity_{kind}", CONTENT_DEFAULTS[kind]),
+                               "medical": chosen.get(f"medical_{kind}", CONTENT_DEFAULTS[kind])} for kind, _ in KINDS}
+        self.nudity = self.check(page, "Include art with nudit&y (non-sexual)",
+                                 "Paintings, drawings, sculptures and photographs from museums that show nude people, "
+                                 "described plainly; nothing sexual and no children", False)
+        s.Add(self.nudity, 0, wx.ALL, 8)
+        self.medical = self.check(page, "Include medical and &anatomy pictures",
+                                  "Anatomy textbook figures and old anatomy plates showing the inside and outside of "
+                                  "the human body, with their captions", False)
+        s.Add(self.medical, 0, wx.ALL, 8)
+        self.own = self.labelled(page, s, "Your own pictures folder:", lambda: wx.TextCtrl(
+            page, value=chosen.get("own_folder") or ""))
+        self.own.SetToolTip("Optional: a folder of your own pictures with their descriptions, for personal use. "
+                            "See HOW TO ADD YOUR OWN PICTURES.txt. Leave it empty to use only the collections.")
+        own_row = wx.BoxSizer(wx.HORIZONTAL)
+        for b in (self.button(page, "Browse for your &own pictures folder...", "Choose the folder of your own pictures",
+                              self.on_browse_own),
+                  self.button(page, "Chec&k my pictures", "Say what was found in your own pictures folder",
+                              self.on_check_own)):
+            own_row.Add(b, 0, wx.ALL, 4)
+        s.Add(own_row, 0, wx.LEFT, 4)
+        self.own_only = self.check(page, "Only &my own pictures",
+                                   "Train on the pictures in your own pictures folder alone, without the collections",
+                                   bool(chosen.get("own_only", False)))
+        s.Add(self.own_only, 0, wx.ALL, 8)
         self.prepare = self.check(page, "&Prepare this computer first (asks for administrator permission)",
                                   "No sleep or hibernation, Windows Update paused, Defender skips the kit folder", True)
         s.Add(self.prepare, 0, wx.ALL, 8)
-        self.check_result = self.labelled(page, s, "Computer chec&k result:", lambda: wx.TextCtrl(
+        self.check_result = self.labelled(page, s, "Check result:", lambda: wx.TextCtrl(
             page, value="Not checked yet.", style=wx.TE_MULTILINE | wx.TE_READONLY, size=(-1, 90)))
         buttons = wx.BoxSizer(wx.HORIZONTAL)
         for b in (self.button(page, "&Check this computer", "Say the graphics card and the free space", self.on_check),
@@ -451,16 +562,48 @@ class Wizard(wx.Frame):
             buttons.Add(b, 0, wx.ALL, 4)
         s.Add(buttons, 0, wx.ALL, 4)
         page.SetSizer(s)
+        self.shown_kind = self.kind_key()
+        self.show_kind(self.shown_kind)
         return page
+
+    # -- what to train
+    def kind_key(self):
+        """"describer" or "pictures": what is chosen in "What to train"."""
+        return KINDS[self.kind.GetSelection()][0]
+
+    def show_kind(self, kind):
+        """Show the model choice that fits kind (the describer's or the picture-making one) and put that kind's
+        content choices in the check boxes."""
+        pictures = kind == "pictures"
+        for control in (self.picture_model_label, self.picture_model):
+            control.Show(pictures)
+        for control in (self.model_label, self.model):
+            control.Show(not pictures)
+        self.nudity.SetValue(self.content[kind]["nudity"])
+        self.medical.SetValue(self.content[kind]["medical"])
+        if getattr(self, "first", None):          # not yet while the page is being built
+            self.first.Layout()
+
+    def on_kind(self, _event):
+        """Another kind chosen: keep the content choices of the one before, show the fitting fields, and say it."""
+        self.content[self.shown_kind] = {"nudity": self.nudity.GetValue(), "medical": self.medical.GetValue()}
+        self.shown_kind = self.kind_key()
+        self.show_kind(self.shown_kind)
+        ticked = [w for w, c in (("art with nudity", self.nudity), ("medical and anatomy pictures", self.medical))
+                  if c.GetValue()]
+        speak(("Picture-making model chosen: choose Stable Diffusion in Picture-making model. "
+               if self.shown_kind == "pictures" else "Picture describer chosen. ")
+              + ("Ticked: " + " and ".join(ticked) + "." if ticked else
+                 "Art with nudity and medical pictures are not ticked."), True)
 
     # -- the progress page
     def build_second(self, parent):
         """The progress page."""
         page = wx.Panel(parent)
         s = wx.BoxSizer(wx.VERTICAL)
-        self.status = self.labelled(page, s, "St&atus:", lambda: wx.TextCtrl(page, style=wx.TE_READONLY))
+        self.status = self.labelled(page, s, "Status:", lambda: wx.TextCtrl(page, style=wx.TE_READONLY))
         self.gauge = self.labelled(page, s, "Progress:", lambda: wx.Gauge(page, range=100))
-        self.log = self.labelled(page, s, "Ever&ything said:", lambda: wx.TextCtrl(
+        self.log = self.labelled(page, s, "E&verything said:", lambda: wx.TextCtrl(
             page, style=wx.TE_MULTILINE | wx.TE_READONLY), 1)
         buttons = wx.BoxSizer(wx.HORIZONTAL)
         self.read_button = self.button(page, "&Read the status", "Say the status and the percent again", self.on_read)
@@ -507,6 +650,42 @@ class Wizard(wx.Frame):
             if d.ShowModal() == wx.ID_OK:
                 self.library.SetValue(d.GetPath())
 
+    def on_browse_own(self, _event):
+        """Choose the folder of your own pictures."""
+        with wx.DirDialog(self, "Choose the folder of your own pictures", self.own.GetValue()) as d:
+            if d.ShowModal() == wx.ID_OK:
+                self.own.SetValue(d.GetPath())
+
+    def on_check_own(self, _event):
+        """Check the own pictures folder in the background (a big folder takes a while) and show and say what was
+        found: how many pictures, how they are described, the test pictures and any problems."""
+        folder = self.own.GetValue().strip()
+        if not folder:
+            self.show_result("Choose your own pictures folder first (Browse for your own pictures folder, Alt+O).")
+            return
+        module = own_data_module()
+        if module is None:
+            self.show_result("Your pictures cannot be checked: the kit's own_data.py is missing from the program.")
+            return
+        self.show_result("Checking your pictures. This can take a minute for a big folder.")
+
+        def check():
+            """Check the folder; the result is shown on the window's own thread."""
+            try:
+                _rows, _problems, summary = module.check_folder(folder)
+            except Exception as e:  # noqa: BLE001 - said in plain words
+                summary = f"Your pictures could not be checked: {e}"
+            wx.CallAfter(self.show_result, summary)
+        threading.Thread(target=check, daemon=True).start()
+
+    def show_result(self, text):
+        """Put text in the Check result field, write it in the log and say it."""
+        if not self:                               # the window was closed meanwhile
+            return
+        self.check_result.SetValue(text)
+        log(text)
+        speak(text.replace("\n", " "), True)
+
     def on_check(self, _event):
         """Check the card and the disk, show and say it."""
         lines, _ready = check_computer(self.folder.GetValue(), self.library.GetValue())
@@ -528,39 +707,75 @@ class Wizard(wx.Frame):
         if not ready:
             speak(" ".join(lines), True)
             return
+        kind = self.kind_key()
+        size = SIZES[self.size.GetSelection()][0]
+        own = self.own.GetValue().strip()
+        problem = None
+        if kind == "pictures" and size == "continue":
+            problem = ("A follow-up is only for the picture describer. Choose a quick try, normal or full in How much "
+                       "to train.")
+        elif self.own_only.GetValue() and not own:
+            problem = ("Only my own pictures is ticked, but no folder is chosen. Choose your own pictures folder, or "
+                       "untick Only my own pictures.")
+        elif own and not os.path.isdir(own):
+            problem = f"Your own pictures folder was not found: {own}"
+        elif kind == "pictures" and not os.path.exists(resource("kit", TRAIN_SCRIPTS[kind])):
+            problem = ("This version of the program cannot train a picture-making model yet (kit\\train_pictures.py "
+                       "is missing). Get the newest program, or choose A picture describer.")
+        if problem:
+            self.show_result(problem)
+            return
         self.kit = os.path.join(self.folder.GetValue(), KIT_NAME)
-        save_choices({"folder": self.folder.GetValue(), "library": self.library.GetValue(),
-                      "model": MODELS[self.model.GetSelection()][0], "size": SIZES[self.size.GetSelection()][0],
-                      "wikipedia": self.wikipedia.GetValue(), "prepare": self.prepare.GetValue()})
+        self.content[kind] = {"nudity": self.nudity.GetValue(), "medical": self.medical.GetValue()}
+        choices = {"folder": self.folder.GetValue(), "library": self.library.GetValue(),
+                   "model": MODELS[self.model.GetSelection()][0], "size": size,
+                   "wikipedia": self.wikipedia.GetValue(), "prepare": self.prepare.GetValue(), "what": kind,
+                   "picture_model": PICTURE_MODELS[self.picture_model.GetSelection()][0], "own_folder": own,
+                   "own_only": self.own_only.GetValue()}
+        for name, values in self.content.items():
+            choices[f"nudity_{name}"], choices[f"medical_{name}"] = values["nudity"], values["medical"]
+        save_choices(choices)
         self.first.Hide()
         self.second.Show()
         self.panel.Layout()
         self.status.SetFocus()
-        size = SIZES[self.size.GetSelection()][0]
-        args = ["--model", MODELS[self.model.GetSelection()][0], "--size", "normal" if size == "continue" else size]
-        if size == "continue":
-            args.append("--continue")
+        if kind == "pictures":
+            args = ["--base", PICTURE_MODELS[self.picture_model.GetSelection()][0], "--size", size]
+        else:
+            args = ["--model", MODELS[self.model.GetSelection()][0], "--size", "normal" if size == "continue" else size]
+            if size == "continue":
+                args.append("--continue")
         if self.library.GetValue().strip():
             args += ["--library", self.library.GetValue().strip()]
         if self.wikipedia.GetValue():
             args.append("--with-wikipedia")
-        log(f"Start training: folder {self.kit}, settings {' '.join(args)}, prepare this computer "
-            f"{'yes' if self.prepare.GetValue() else 'no'}.")
-        threading.Thread(target=self.work, args=(args, self.prepare.GetValue()), daemon=True).start()
+        if self.nudity.GetValue():
+            args.append("--with-nudity")
+        if self.medical.GetValue():
+            args.append("--with-medical")
+        if own:
+            args += ["--own", own]
+            if self.own_only.GetValue():
+                args.append("--own-only")
+        log(f"Start training ({kind}, {TRAIN_SCRIPTS[kind]}): folder {self.kit}, settings {' '.join(args)}, prepare "
+            f"this computer {'yes' if self.prepare.GetValue() else 'no'}.")
+        threading.Thread(target=self.work, args=(args, self.prepare.GetValue(), kind), daemon=True).start()
 
     # -- the work, in the background
-    def work(self, args, prepare):
-        """Copy the kit, prepare the computer, install the tools and run the training; every line goes to the
-        queue the window reads."""
+    def work(self, args, prepare, kind="describer"):
+        """Copy the kit, prepare the computer, install the tools and run the training (kit\\train.py, or
+        kit\\train_pictures.py for a picture-making model); every line goes to the queue the window reads, and from
+        there into the log on the desktop."""
         say = self.lines.put
         try:
             say("Copying the kit's files into " + self.kit)
             copy_kit(self.kit)
             if prepare:
                 prepare_computer(self.kit, say)
-            install_tools(self.kit, say)
+            install_tools(self.kit, say, pictures=kind == "pictures")
             python = os.path.join(self.kit, "env", "Scripts", "python.exe")
-            self.process = subprocess.Popen([python, "-u", os.path.join("kit", "train.py"), *args], cwd=self.kit,
+            self.process = subprocess.Popen([python, "-u", os.path.join("kit", TRAIN_SCRIPTS[kind]), *args],
+                                            cwd=self.kit,
                                             env=kit_environment(self.kit), stdout=subprocess.PIPE,
                                             stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace",
                                             creationflags=NO_WINDOW)
@@ -593,9 +808,11 @@ class Wizard(wx.Frame):
             step = STEP_LINE.match(line)
             trained = TRAINED_LINE.search(line)
             if step:
-                self.percent = STEP_SPAN[int(step.group(1))][0]
+                self.step = (int(step.group(1)), int(step.group(2)))
+                self.percent = step_span(*self.step)[0]
             elif trained:
-                start, end = STEP_SPAN[5]
+                # the training step's share: step 5 of the describer's 7, else the step said last
+                start, end = step_span(*self.step) if self.step[1] != 7 else STEP_SPAN[5]
                 self.percent = start + (end - start) * int(trained.group(3)) // 100
             if line.startswith("FINISHED"):
                 self.percent = 100
@@ -668,12 +885,25 @@ class Wizard(wx.Frame):
 
 def self_test():
     """For the build: the bundled kit files are there and the window can be made; prints OK or raises."""
-    for name in ("READ ME FIRST.txt", "Prepare This Computer.cmd", os.path.join("kit", "train.py"),
-                 os.path.join("kit", "sources.py"), os.path.join("kit", "requirements.txt")):
+    for name in ("READ ME FIRST.txt", "Prepare This Computer.cmd", "HOW TO ADD YOUR OWN PICTURES.txt",
+                 os.path.join("kit", "train.py"), os.path.join("kit", "sources.py"), os.path.join("kit", "own_data.py"),
+                 os.path.join("kit", "requirements.txt")):
         if not os.path.exists(resource(name)):
             raise SystemExit(f"missing from the program: {name}")
+    module = own_data_module()
+    if module is None:
+        raise SystemExit("own_data.py cannot be loaded")
+    import tempfile
+    with tempfile.TemporaryDirectory() as empty:
+        rows, problems, _summary = module.check_folder(empty)
+        if rows or not problems:
+            raise SystemExit("own_data.check_folder did not report an empty folder")
     app = wx.App()
     window = Wizard()
+    window.kind.SetSelection(1)                    # both kinds of training can be shown
+    window.on_kind(None)
+    window.kind.SetSelection(0)
+    window.on_kind(None)
     window.Destroy()
     app.Destroy()
     print("OK")

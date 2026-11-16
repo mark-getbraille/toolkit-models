@@ -1,0 +1,92 @@
+How to add your own pictures
+
+What this is for
+You can teach the model with pictures of your own, together with the big collections or on their own. For
+example: photos of the things in your home, your medicines, your own artwork, or a family album, each with a
+description you wrote. The same folder works for both kinds of training: a picture describer (pictures to words)
+and a picture-making model (words to pictures).
+
+This is for personal use only. A model trained on your own pictures is yours to use. Do not publish it or share it
+unless you own the rights to every picture in the folder. The report says so too.
+
+Every step below starts with the word STEP, so you can find the next one with your screen reader's find command.
+
+STEP 1: make a folder
+Make a new folder anywhere, for example D:\My pictures. Put your pictures in it. Sub-folders are fine: every
+picture in every sub-folder is used. Pictures can be jpg, jpeg, png, webp, bmp, gif or tif files. Pictures smaller
+than 64 pixels are left out.
+
+STEP 2: describe each picture, in one of four ways
+You can choose any of these ways, and you can mix them in one folder. The program finds out by itself which way
+each picture is described.
+
+Way A: a text file of the same name (the easiest)
+Next to each picture, make a plain text file with the same name, ending in .txt, holding its description.
+  D:\My pictures\kitchen.jpg
+  D:\My pictures\kitchen.txt     which holds: A small kitchen with a white cooker on the left and a window above the sink.
+  D:\My pictures\pills.jpg
+  D:\My pictures\pills.txt       which holds: A box of paracetamol, 500 milligram tablets, 16 tablets.
+To make one in Notepad: open Notepad, write the description, press Control+S, go to the folder, type the file
+name with .txt at the end (kitchen.txt) and press Enter. Save it as UTF-8 (Notepad's usual choice).
+A description of 45 words or more is learned as "Describe this picture in detail."; a shorter one as "Describe
+this picture."
+
+Way B: one table for many pictures (captions.csv or metadata.csv)
+Make a file named captions.csv (or metadata.csv) in the folder. Its first line names the columns; each line after
+it is one picture. Excel can save a table this way: File, Save As, and choose "CSV UTF-8".
+  file,description
+  kitchen.jpg,A small kitchen with a white cooker on the left.
+  garden/roses.jpg,"Red roses climbing a wooden fence, with green leaves."
+The column for the picture can be named file, file_name, filename, image or path. The column for the words can be
+named description, text, caption or answer. You can add a column named question to teach answers to your own
+question:
+  file,question,description
+  pills.jpg,Which medicine is this?,Paracetamol 500 milligram tablets.
+Picture names are read from the folder the table is in, so garden/roses.jpg means the picture roses.jpg in the
+sub-folder garden. Put the words in double quotes when they hold a comma.
+
+Way C: a .jsonl file (for people who already have one)
+A file ending in .jsonl, with one entry per line, like this:
+  {"image": "kitchen.jpg", "answer": "A small kitchen with a white cooker on the left."}
+  {"image": "pills.jpg", "question": "Which medicine is this?", "answer": "Paracetamol 500 milligram tablets."}
+The picture can also be named "file_name" or "file", and the words "text", "caption" or "description". One picture
+can have several lines, each with its own question.
+
+Way D: folders named after what they show (no writing at all)
+Put the pictures of one kind of thing in a folder with that thing's name:
+  D:\My pictures\Apples\1.jpg
+  D:\My pictures\Apples\2.jpg
+  D:\My pictures\Red bus\photo.jpg
+Each picture is then learned as the question "What is this?" with the answer "These are apples." or "This is: Red
+bus." A folder is only read this way when none of its pictures has a description of its own, and pictures lying
+loose in the main folder itself need Way A, B or C.
+
+STEP 3: check your pictures in the program
+Open Picture Model Training. In "Your own pictures folder", type the folder, or press Alt+O (Browse for your own
+pictures folder) to choose it. Then press Alt+K (Check my pictures). Nothing is trained yet. The result is said
+and shown in the "Check result" field: how many pictures were found, how many can be used, how they are described,
+how many are kept back as test pictures, and any problems, for example:
+- pictures without a description (up to 10 are named);
+- empty descriptions;
+- pictures that cannot be read (damaged, or not really pictures), or that are too small;
+- lines of a table or .jsonl file that name a picture that is not there.
+Fix what it says and check again. Pictures with a problem are simply left out; the others are used.
+
+STEP 4: choose how to use them
+- Leave "Only my own pictures" (Alt+M) unticked to add your pictures to the big collections. This is best for a
+  picture describer: it keeps everything it learned and adds your pictures.
+- Tick "Only my own pictures" to train on your pictures alone. This is quicker, and suits a picture-making model
+  that should draw in the style of your pictures.
+About 1 picture in 20 (at least 1, at most 50) is kept back as a test picture, so the report can compare the model
+before and after training on pictures it did not learn from.
+
+STEP 5: start the training
+Press Alt+S (Start training). The program remembers your folder and choices for next time. If you change the
+pictures or descriptions later, the next training is a new one, so nothing old is mixed in.
+
+With the .cmd files instead of the program
+Add the folder to the line in the Start file, after the other choices, for example:
+  call "%~dp0kit\run.cmd" --model 4b --own "D:\My pictures"
+  call "%~dp0kit\run.cmd" --model 4b --own "D:\My pictures" --own-only
+To only check a folder without training, the kit's own Python can run:
+  env\Scripts\python.exe kit\own_data.py "D:\My pictures"

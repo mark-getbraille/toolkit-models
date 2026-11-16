@@ -4,6 +4,8 @@ The easy way
 Download Picture-Model-Training.exe from the same page as this kit and press Enter on it: a wizard asks for the
 folder and how much to train, prepares the computer, installs everything and trains, saying each step through
 your screen reader. The rest of this file explains the same steps done with the .cmd files.
+The program can also train a picture-making model (words to pictures, Stable Diffusion): choose it in "What to
+train" at the top.
 
 What it does
 This kit teaches the Digital Accessibility Toolkit's picture model (the uncensored Qwen3-VL) to describe pictures
@@ -30,6 +32,13 @@ collections:
   Wikimedia Commons' best pictures with their captions, and Te Papa (Museum of New Zealand) records.
 - Wikipedia (only with "Start Training with Wikipedia"): pictures with the alt text Wikipedia's writers wrote for
   screen-reader users, from two collections (WIT and Concadia).
+Two kinds of pictures are your choice (check boxes in the program; --with-nudity and --with-medical with the .cmd
+files): art with nudity (paintings, drawings, sculptures and photographs from museums showing nude people, described
+plainly; nothing sexual and no children), and medical and anatomy pictures (anatomy textbook figures and old
+anatomy plates). For a picture describer both are ticked at first, so it can describe such pictures plainly
+instead of refusing; for a picture-making model neither is. The report says which were used.
+Your own pictures: you can also teach it with your own described pictures, for personal use. Read "HOW TO ADD YOUR
+OWN PICTURES.txt" in this folder.
 It trains a small add-on to the model, then tests whether the model really got better. The model itself is not
 changed. Nothing is sent anywhere; the kit only downloads what it needs. If one collection's website is down, the
 kit says so and carries on with the others.

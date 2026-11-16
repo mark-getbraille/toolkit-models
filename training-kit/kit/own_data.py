@@ -1,0 +1,432 @@
+"""Your own pictures: turn a folder of pictures with their descriptions into training rows, for personal use.
+
+The person training picks a folder (train.py --own FOLDER, or "Your own pictures folder" in the program). Every
+picture in it and in its sub-folders is found, and its description is taken from one of these layouts, which are
+recognised by themselves (several can be mixed in one folder):
+
+  a) a text file of the same name beside the picture: photo.jpg with photo.txt (photo.caption is read too). This is
+     also how picture-making trainers expect their pictures, so one folder serves both kinds of training.
+  b) a table named captions.csv or metadata.csv, with a column for the file (file, file_name, filename, image,
+     image_file or path) and one for the description (description, text, caption or answer), and optionally a
+     "question" column. File names are read from the table's own folder.
+  c) a .jsonl file (one entry per line), each {"image" or "file_name" or "file": ..., "question": ... (optional),
+     "answer" or "text" or "caption" or "description": ...}. One picture may have several lines (several questions).
+  d) folders named after what they show: Pictures\\Apples\\1.jpg is learned as "What is this?", "These are apples."
+     A folder is read this way only when none of its pictures has a description of its own, and never the chosen
+     folder itself (its name says nothing about the pictures).
+
+A description without a question of its own is asked "Describe this picture in detail." when it has 45 words or
+more, otherwise "Describe this picture." (the toolkit's own questions, as in sources.py).
+
+Pictures may be jpg, jpeg, png, webp, bmp, gif or tif. About 1 in 20 pictures (at least 1, at most 50) is kept back
+as a test picture, the same ones every time, so the model can be compared before and after training.
+
+Main part: check_folder(folder, copies=None) -> (rows, problems, summary). Without copies it only checks (the
+program's "Check my pictures" button), and each row's "picture" is the original file. With copies (a folder), a
+smaller training copy of each picture is made there with sources.smaller, and "picture" is that copy.
+
+Rows are in the kit's row format (as sources.prepare_source writes them): "picture", "question", "answer", "split"
+("test" or ""), "source" ("own"), plus "original" (the picture in the person's folder), "file" (its place inside the
+folder), "layout" (which layout described it) and "credit".
+
+Only the Python standard library is needed to check a folder (Pillow is used when it is there, to open each
+picture); sources.py is loaded only when copies are made.
+"""
+
+import csv
+import hashlib
+import json
+import os
+import re
+
+SOURCE_KEY = "own"
+CREDIT = "Your own pictures (for personal use only)"
+PICTURE_ENDINGS = (".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif", ".tif", ".tiff")
+TEXT_ENDINGS = (".txt", ".caption")
+TABLE_NAMES = ("captions.csv", "metadata.csv")
+FILE_COLUMNS = ("file", "file_name", "filename", "image", "image_file", "path")
+TEXT_COLUMNS = ("description", "text", "caption", "answer")
+JSON_FILE_KEYS = ("image", "file_name", "file", "filename")
+JSON_TEXT_KEYS = ("answer", "text", "caption", "description")
+
+# The toolkit's own questions (the same words as sources.DETAILED and sources.NARRATE).
+DETAILED = "Describe this picture in detail."
+NARRATE = "Describe this picture."
+FOLDER_QUESTION = "What is this?"
+DETAILED_WORDS = 45
+SMALLEST = 64                  # pixels: a smaller picture is left out (as sources.smaller does)
+SHOW = 10                      # how many file names a problem lists at most
+TEST_SHARE, TEST_MOST = 20, 50  # about 1 picture in 20 is kept back for the test, at most 50
+
+LAYOUT_NAMES = {"text file": "with a text file of the same name",
+                "table": "listed in a captions.csv or metadata.csv table",
+                "jsonl": "listed in a .jsonl file",
+                "folder": "named by the folder they are in"}
+
+
+# ----------------------------------------------------------------- small helpers
+
+def clean(text):
+    """A text with its spaces tidied; "" for nothing."""
+    return " ".join(str(text or "").split())
+
+
+def same_path(path):
+    """A path in one form for comparing (full, and in the same letter case on Windows)."""
+    return os.path.normcase(os.path.abspath(path))
+
+
+def question_for(answer):
+    """The question for a description that has none: the detailed one for long descriptions."""
+    return DETAILED if len(answer.split()) >= DETAILED_WORDS else NARRATE
+
+
+def folder_answer(name):
+    """The answer for a picture in a folder named after what it shows: "Apples" -> "These are apples.";
+    "Red bus" -> "This is: Red bus." (a leading number and underscores are left out: "01_apples" -> "apples")."""
+    text = clean(re.sub(r"[_]+", " ", name))
+    text = clean(re.sub(r"^\d+[\s.\-)]+", "", text)) or text
+    words = text.split()
+    lower = text.lower()
+    if len(words) == 1 and lower.endswith("s") and not lower.endswith(("ss", "us", "is")):
+        return f"These are {lower}."
+    return f"This is: {text}" + ("" if text.endswith((".", "!", "?")) else ".")
+
+
+def listed(items, what):
+    """A plain sentence part listing up to SHOW items: "a.jpg, b.jpg and 3 more"."""
+    shown = list(items[:SHOW])
+    rest = len(items) - len(shown)
+    return ", ".join(shown) + (f" and {rest} more" if rest else "") + (f" {what}" if what else "")
+
+
+def plural(count, one, many=None):
+    """ "1 picture", "3 pictures"."""
+    return f"{count} {one if count == 1 else (many or one + 's')}"
+
+
+MAGIC = (b"\xff\xd8\xff", b"\x89PNG", b"GIF8", b"BM", b"II*\x00", b"MM\x00*")
+
+
+def picture_size(path):
+    """(width, height) of a picture, or None when it cannot be read. Uses Pillow when it is installed; without it,
+    only the start of the file is checked (then the size is not known and (SMALLEST, SMALLEST) is given)."""
+    try:
+        from PIL import Image
+    except ImportError:
+        Image = None
+    if Image is not None:
+        try:
+            with Image.open(path) as picture:
+                picture.load()
+                return picture.size
+        except Exception:  # noqa: BLE001 - a damaged picture or not a picture
+            return None
+    try:
+        with open(path, "rb") as f:
+            start = f.read(12)
+    except OSError:
+        return None
+    if start.startswith(MAGIC) or (start[:4] == b"RIFF" and start[8:12] == b"WEBP"):
+        return (SMALLEST, SMALLEST)
+    return None
+
+
+def test_order(row_file):
+    """A fixed order for picking test pictures (the same pictures every time, without a random number generator)."""
+    return hashlib.sha1(row_file.encode("utf-8")).hexdigest()
+
+
+# ----------------------------------------------------------------- reading the descriptions
+
+def read_text(path):
+    """The text of a description file (UTF-8, with or without a byte order mark; odd characters replaced)."""
+    with open(path, encoding="utf-8-sig", errors="replace") as f:
+        return clean(f.read())
+
+
+def column(names, wanted):
+    """The first column in names (as written in the table) whose lower-case name is one of wanted, or None."""
+    lower = {clean(n).lower(): n for n in names if n}
+    return next((lower[w] for w in wanted if w in lower), None)
+
+
+def read_table(path, found, problems):
+    """Read a captions.csv or metadata.csv into found {picture path: [(question, answer, layout, where)]}; the
+    problems go into problems (a dict of lists, see check_folder)."""
+    base = os.path.dirname(path)
+    name = os.path.basename(path)
+    with open(path, encoding="utf-8-sig", errors="replace", newline="") as f:
+        sample = f.read(4096)
+        f.seek(0)
+        try:
+            dialect = csv.Sniffer().sniff(sample, delimiters=",;\t")
+        except csv.Error:
+            dialect = csv.excel
+        reader = csv.DictReader(f, dialect=dialect)
+        file_col = column(reader.fieldnames or [], FILE_COLUMNS)
+        text_col = column(reader.fieldnames or [], TEXT_COLUMNS)
+        question_col = column(reader.fieldnames or [], ("question",))
+        if not file_col or not text_col:
+            problems["tables"].append(f"{name} has no column named " + ("file" if not file_col else "description") +
+                                      " (the first line must name the columns, for example: file,description)")
+            return
+        for number, entry in enumerate(reader, 2):
+            add_entry(base, name, number, entry.get(file_col), entry.get(question_col) if question_col else "",
+                      entry.get(text_col), "table", found, problems)
+
+
+def read_jsonl(path, found, problems):
+    """Read a .jsonl file into found (see read_table)."""
+    base = os.path.dirname(path)
+    name = os.path.basename(path)
+    with open(path, encoding="utf-8-sig", errors="replace") as f:
+        for number, line in enumerate(f, 1):
+            if not line.strip():
+                continue
+            try:
+                entry = json.loads(line)
+            except ValueError:
+                entry = None
+            if not isinstance(entry, dict):
+                problems["lines"].append(f"line {number} of {name}")
+                continue
+            picture = next((entry[k] for k in JSON_FILE_KEYS if entry.get(k)), "")
+            text = next((entry[k] for k in JSON_TEXT_KEYS if entry.get(k)), "")
+            add_entry(base, name, number, picture, entry.get("question"), text, "jsonl", found, problems)
+
+
+def add_entry(base, name, number, picture, question, text, layout, found, problems):
+    """One line of a table or .jsonl file: its picture (read from the file's own folder) and description."""
+    picture = clean(picture)
+    where = f"line {number} of {name}"
+    if not picture:
+        problems["lines"].append(where + " (no picture named)")
+        return
+    path = same_path(os.path.join(base, picture.replace("\\", os.sep).replace("/", os.sep)))
+    if not os.path.isfile(path):
+        problems["missing"].append(f"{picture} ({where})")
+        return
+    answer = clean(text)
+    if not answer:
+        problems["empty"].append(where)
+        found.setdefault(path, [])                 # the picture had a description, even an empty one
+        return
+    question = clean(question if isinstance(question, str) else "") or question_for(answer)
+    found.setdefault(path, []).append((question, answer, layout, where))
+
+
+# ----------------------------------------------------------------- the folder
+
+def walk(folder):
+    """(pictures, tables, jsonl files) under folder; hidden folders (a name starting with ".") and __MACOSX are
+    skipped. Pictures are in a fixed order."""
+    pictures, tables, lists = [], [], []
+    for base, dirs, files in os.walk(folder):
+        dirs[:] = sorted(d for d in dirs if not d.startswith(".") and d != "__MACOSX")
+        for name in sorted(files):
+            lower = name.lower()
+            path = os.path.join(base, name)
+            if lower.endswith(PICTURE_ENDINGS) and not name.startswith("."):
+                pictures.append(path)
+            elif lower in TABLE_NAMES:
+                tables.append(path)
+            elif lower.endswith(".jsonl"):
+                lists.append(path)
+    return pictures, tables, lists
+
+
+def sidecar(picture):
+    """The text file of the same name as picture (photo.txt or photo.caption, any letter case), or None."""
+    stem = os.path.splitext(picture)[0]
+    for ending in TEXT_ENDINGS:
+        for candidate in (stem + ending, stem + ending.upper()):
+            if os.path.isfile(candidate):
+                return candidate
+    return None
+
+
+def make_copy(original, target):
+    """Make the training copy of original at target with sources.smaller (no large library copy: the person keeps
+    the originals); True when it worked."""
+    import sources
+    if os.path.exists(target):
+        return True
+    with open(original, "rb") as f:
+        data = f.read()
+    keep = sources.ARCHIVE_DIR
+    sources.ARCHIVE_DIR = None                    # the picture library keeps no copy of a person's own pictures
+    try:
+        return sources.smaller(data, target)
+    finally:
+        sources.ARCHIVE_DIR = keep
+
+
+def check_folder(folder, copies=None, report=None):
+    """Read the pictures and descriptions in folder (see the module docstring) and return (rows, problems, summary):
+    rows ready for training, problems as plain sentences, and a summary in plain words (with the problems). Nothing
+    is trained. copies: a folder for the smaller training copies (None: only check). report(text): says progress
+    for big folders (every 500 pictures)."""
+    problems = {"tables": [], "lines": [], "missing": [], "empty": [], "undescribed": [], "unreadable": [],
+                "small": []}
+    folder = os.path.abspath(folder or "")
+    if not folder or not os.path.isdir(folder):
+        text = f"The folder {folder} was not found. Choose the folder that holds your pictures."
+        return [], [text], text
+    pictures, tables, lists = walk(folder)
+    if not pictures:
+        text = (f"No pictures were found in {folder} or its sub-folders. Pictures must be jpg, jpeg, png, webp, bmp, "
+                "gif or tif files.")
+        return [], [text], text
+
+    # Descriptions from tables and .jsonl files (layouts b and c) come first; then text files of the same name (a).
+    found = {}
+    for path in tables:
+        read_table(path, found, problems)
+    for path in lists:
+        read_jsonl(path, found, problems)
+    described, waiting, has_text = {}, [], set()
+    for picture in pictures:
+        key = same_path(picture)
+        if key in found:
+            described[picture] = found[key]
+            has_text.add(os.path.dirname(key))
+            continue
+        text_file = sidecar(picture)
+        if text_file:
+            has_text.add(os.path.dirname(key))
+            answer = read_text(text_file)
+            if answer:
+                described[picture] = [(question_for(answer), answer, "text file",
+                                       os.path.relpath(text_file, folder))]
+            else:
+                problems["empty"].append(os.path.relpath(text_file, folder))
+            continue
+        waiting.append(picture)
+
+    # Folder names (layout d): only in a sub-folder where no picture has a description of its own.
+    named_folders = set()
+    for picture in waiting:
+        base = os.path.dirname(picture)
+        if same_path(base) != same_path(folder) and same_path(base) not in has_text:
+            described[picture] = [(FOLDER_QUESTION, folder_answer(os.path.basename(base)), "folder",
+                                   os.path.relpath(base, folder))]
+            named_folders.add(os.path.basename(base))
+        else:
+            problems["undescribed"].append(os.path.relpath(picture, folder))
+
+    # Each described picture is opened (and, with copies, made smaller) to be sure it can be used.
+    rows, used = [], 0
+    if copies:
+        os.makedirs(copies, exist_ok=True)
+    for number, picture in enumerate(sorted(described), 1):
+        if not described[picture]:
+            continue                               # only empty descriptions (said as a problem already)
+        relative = os.path.relpath(picture, folder)
+        size = picture_size(picture)
+        if size is None:
+            problems["unreadable"].append(relative)
+            continue
+        if min(size) < SMALLEST:
+            problems["small"].append(relative)
+            continue
+        path = picture
+        if copies:
+            path = os.path.join(copies, re.sub(r"[^\w.-]", "_", relative)[-150:])
+            path = os.path.splitext(path)[0] + ".jpg"
+            try:
+                if not make_copy(picture, path):
+                    problems["unreadable"].append(relative)
+                    continue
+            except OSError:
+                problems["unreadable"].append(relative)
+                continue
+        used += 1
+        for question, answer, layout in dict.fromkeys(entry[:3] for entry in described[picture]):
+            rows.append({"picture": path, "question": question, "answer": answer, "split": "",
+                         "source": SOURCE_KEY, "original": picture, "file": relative.replace(os.sep, "/"),
+                         "layout": layout, "credit": CREDIT})
+        if report and number % 500 == 0:
+            report(f"    {number} of {len(described)} of your pictures checked")
+
+    # The test pictures: about 1 in 20 (by picture, so a picture is never both learned and tested).
+    files = sorted({r["file"] for r in rows}, key=test_order)
+    want = 0 if len(files) < 2 else min(TEST_MOST, max(1, round(len(files) / TEST_SHARE)))
+    test_files = set(files[:want])
+    for row in rows:
+        if row["file"] in test_files:
+            row["split"] = "test"
+
+    sentences = problem_sentences(problems)
+    summary = make_summary(folder, len(pictures), used, rows, test_files, named_folders, sentences)
+    return rows, sentences, summary
+
+
+def problem_sentences(problems):
+    """The problems as plain sentences, each listing up to SHOW files."""
+    out = []
+    p = problems
+    if p["undescribed"]:
+        out.append(f"{plural(len(p['undescribed']), 'picture has', 'pictures have')} no description (no text file of "
+                   "the same name, and not listed in a captions.csv, metadata.csv or .jsonl file), so "
+                   f"{'it is' if len(p['undescribed']) == 1 else 'they are'} left out: "
+                   + listed(p["undescribed"], "") + ".")
+    if p["empty"]:
+        out.append(f"{plural(len(p['empty']), 'description is', 'descriptions are')} empty, so "
+                   f"{'its picture is' if len(p['empty']) == 1 else 'their pictures are'} left out: "
+                   + listed(p["empty"], "") + ".")
+    if p["unreadable"]:
+        out.append(f"{plural(len(p['unreadable']), 'picture')} could not be read (damaged, or not really a picture): "
+                   + listed(p["unreadable"], "") + ".")
+    if p["small"]:
+        out.append(f"{plural(len(p['small']), 'picture is', 'pictures are')} too small (under {SMALLEST} pixels) and "
+                   "left out: " + listed(p["small"], "") + ".")
+    if p["missing"]:
+        out.append(f"{plural(len(p['missing']), 'line names', 'lines name')} a picture that is not in the folder: "
+                   + listed(p["missing"], "") + ".")
+    if p["lines"]:
+        out.append(f"{plural(len(p['lines']), 'line')} could not be read: " + listed(p["lines"], "") + ".")
+    out += [f"The table {t}." for t in p["tables"]]
+    return out
+
+
+def make_summary(folder, found, used, rows, test_files, named_folders, sentences):
+    """The summary in plain words: how many pictures, how they are described, the test pictures and the problems."""
+    lines = [f"Your own pictures in {folder}: {plural(found, 'picture')} found, {used} can be used for training."]
+    if rows:
+        counts = {}
+        for layout in [r["layout"] for r in {r["file"]: r for r in rows}.values()]:
+            counts[layout] = counts.get(layout, 0) + 1
+        parts = [f"{n} {LAYOUT_NAMES[k]}" for k, n in counts.items()]
+        if named_folders:
+            lines.append("How they are described: " + "; ".join(parts) + ". The folders used as names: "
+                         + listed(sorted(named_folders), "") + ".")
+        else:
+            lines.append("How they are described: " + "; ".join(parts) + ".")
+        if len(rows) != used:
+            lines.append(f"Together they give {len(rows)} questions and answers to learn from.")
+        kept = "1 picture is kept back as a test picture" if len(test_files) == 1 else \
+            f"{len(test_files)} pictures are kept back as test pictures"
+        lines.append(f"{kept}, to compare the model before and after training; the other {used - len(test_files)} "
+                     f"{'is' if used - len(test_files) == 1 else 'are'} for training.")
+    if sentences:
+        lines.append(f"Problems ({len(sentences)}):")
+        lines += [f"- {s}" for s in sentences]
+    else:
+        lines.append("No problems were found.")
+    return "\n".join(lines)
+
+
+def folder_tag(folder, rows):
+    """A short code for a folder's pictures and descriptions (8 letters and digits), so a training on changed
+    pictures is a new training and not mistaken for an earlier one."""
+    digest = hashlib.sha1(same_path(folder).encode())
+    for row in sorted(rows, key=lambda r: (r["file"], r["question"])):
+        digest.update(f"\n{row['file']}\t{row['question']}\t{row['answer']}".encode())
+    return digest.hexdigest()[:8]
+
+
+if __name__ == "__main__":
+    import sys
+    _rows, _problems, _summary = check_folder(sys.argv[1] if len(sys.argv) > 1 else ".")
+    print(_summary)

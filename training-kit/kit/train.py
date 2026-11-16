@@ -29,6 +29,14 @@ changing how pictures are described.
 Command line (the .cmd files pass these): --model 4b|8b, --size quick|normal|full, --with-wikipedia (the add-on is
 then CC BY-SA 4.0), --limit N (train on at most N pictures).
 
+Content choices: --with-nudity also learns from non-sexual nudes in art, and --with-medical from medical and anatomy
+pictures (collections marked so in sources.py; without the choice they are left out, in a follow-up too). The report
+and ATTRIBUTION.txt say which choices were used, and a training with them gets its own name ("4b-nudity-medical").
+
+Your own pictures (own_data.py): --own FOLDER adds the described pictures in FOLDER to the collections, and with
+--own-only the training uses them alone. About 1 in 20 of them is kept back for the test. The add-on is then for
+personal use only, which the report and ATTRIBUTION.txt say.
+
 The picture library (--library FOLDER, which the program sets): every collection's pictures, their descriptions,
 larger copies of the pictures (up to 2,048 pixels, for future models), the original downloads and the Hugging Face
 files are kept there for good, so a later training (of this model or another) never downloads them again. Pictures
@@ -215,15 +223,17 @@ def open_library(work, library):
         shutil.move(old_hf, os.environ["HF_HOME"])
 
 
-def prepare_data(work, state, size, with_wikipedia, keys=None):
+def prepare_data(work, state, size, with_wikipedia, keys=None, with_nudity=False, with_medical=False):
     """Prepare every chosen collection once (each one remembered as done in state, so a restarted kit skips it);
     writes data/train.jsonl (shuffled) and data/test.jsonl and returns (training rows, test rows). A collection that
-    cannot be downloaded now is said and left out, so one broken website never stops the training."""
+    cannot be downloaded now is said and left out, so one broken website never stops the training. with_nudity and
+    with_medical: the content choices (see sources.chosen)."""
     import random
     data_dir = data_root(work)
     os.makedirs(data_dir, exist_ok=True)
     train_rows, test_rows = [], []
-    chosen = [s for s in sources.chosen(with_wikipedia) if keys is None or s.key in keys]
+    chosen = [s for s in sources.chosen(with_wikipedia, with_nudity=with_nudity, with_medical=with_medical)
+              if keys is None or s.key in keys]
     for number, source in enumerate(chosen, 1):
         say(f"  Collection {number} of {len(chosen)}: {source.name} (downloads {source.download}).")
         try:
@@ -243,6 +253,21 @@ def prepare_data(work, state, size, with_wikipedia, keys=None):
             for row in rows:
                 f.write(json.dumps(row) + "\n")
     return train_rows, test_rows
+
+
+def own_rows(work, folder):
+    """(training rows, test rows) of the person's own pictures in folder (own_data.py), with their smaller copies
+    in work/own-pictures; the summary and any problems are said. Also returns the folder's short code (own_data.
+    folder_tag), which names the training."""
+    import own_data
+    copies = os.path.join(work, "own-pictures", own_data.folder_tag(folder, []))
+    say(f"  Your own pictures: reading {folder} and making the training copies.")
+    rows, _problems, summary = own_data.check_folder(folder, copies=copies, report=say)
+    for line in summary.splitlines():
+        say("    " + line)
+    train_rows = [r for r in rows if r["split"] != "test"]
+    test_rows = [r for r in rows if r["split"] == "test"]
+    return train_rows, test_rows, own_data.folder_tag(folder, rows)
 
 
 def read_rows(path):
@@ -461,9 +486,28 @@ def train(model, processor, rows, adapter_dir, device, epochs=1, rate=1e-4, accu
 
 # ----------------------------------------------------------------- 7. the report and the zip
 
+OWN_NOTE = ("Includes your own pictures: for personal use only; do not publish this add-on unless you own the rights "
+            "to those pictures.")
+
+
 def source_name(key):
-    """The plain name of a collection key, for the report."""
+    """The plain name of a collection key, for the report ("own": the person's own pictures)."""
+    if key == "own":
+        return "Your own pictures"
     return next((s.name for s in sources.SOURCES if s.key == key), key)
+
+
+def content_lines(info):
+    """The content choices and, when used, the note about the person's own pictures, as lines for the report and
+    ATTRIBUTION.txt. A choice made whose collections could not be downloaded is said too."""
+    lines = [sources.content_choices_text(info.get("with_nudity", False), info.get("with_medical", False))]
+    for content, words in (("nudity", "Art with nudity was"), ("medical", "Medical and anatomy pictures were")):
+        if info.get(f"with_{content}") and not any(sources.content_of(k) == content for k in info["collections"]):
+            lines.append(f"  ({words} chosen, but none of those pictures could be downloaded.)")
+    if info.get("own_pictures"):
+        lines.append(OWN_NOTE + f" ({info['own_pictures']} questions and answers about your own pictures"
+                     + (", trained on alone" if info.get("own_only") else "") + ".)")
+    return lines
 
 
 def verdict(before, after, counts=None):
@@ -480,8 +524,9 @@ def verdict(before, after, counts=None):
     return False, f"NO CLEAR CHANGE (+{gain:.3f}). Send the result anyway; it will not be published as it is."
 
 
-def attribution(chosen_keys, share_alike):
-    """ATTRIBUTION.txt: the licence of the add-on and the credit of every collection it learned from."""
+def attribution(chosen_keys, share_alike, info=None):
+    """ATTRIBUTION.txt: the licence of the add-on, the content choices (info, when given) and the credit of every
+    collection it learned from."""
     lines = ["Picture description add-on for Qwen3-VL (huihui-ai's abliterated version, Apache License 2.0)", "",
              "Licence of this add-on: " + ("CC BY-SA 4.0 (it learned from Wikipedia's CC BY-SA text)" if share_alike
                                            else "Apache License 2.0, with the credits below (CC BY sources)"), "",
@@ -489,6 +534,10 @@ def attribution(chosen_keys, share_alike):
     for source in sources.SOURCES:
         if source.key in chosen_keys:
             lines += [f"- {source.credit}", f"  Licence: {source.licence}"]
+    if "own" in chosen_keys:
+        lines += ["- The trainer's own pictures and descriptions (not credited here; not for publishing)."]
+    if info:
+        lines += [""] + content_lines(info)
     return "\n".join(lines) + "\n"
 
 
@@ -505,7 +554,7 @@ def write_report(path, info, before, after, before_rows, after_rows):
              f"Graphics card: {info['card']}",
              f"Training pictures: {info['train']}; test pictures: {info['test']}; size: {info['size']}"
              + ("; with Wikipedia (the add-on is CC BY-SA 4.0)" if info["share_alike"] else ""),
-             f"Training time: {duration(info['seconds'])}", "",
+             f"Training time: {duration(info['seconds'])}", *content_lines(info), "",
              "RESULT: " + words, "",
              "Scores (ROUGE-L, from 0 to 1: how close each answer is to a person's; higher is better):"]
     for key in [k for k in before if k != "all"] + ["all"]:
@@ -539,7 +588,7 @@ def package(model_key, final, report, info, tag):
             z.write(os.path.join(final, name), f"adapter/{name}")
         z.write(report, "report.txt")
         z.writestr("scores.json", json.dumps(info, indent=1))
-        z.writestr("ATTRIBUTION.txt", attribution(info["collections"], info["share_alike"]))
+        z.writestr("ATTRIBUTION.txt", attribution(info["collections"], info["share_alike"], info))
         z.write(LOG, "training-log.txt")
     return path
 
@@ -569,16 +618,20 @@ def prepared_collections(state):
     return found
 
 
-def follow_up_rows(work, state, plan, with_wikipedia, size, replay):
+def follow_up_rows(work, state, plan, with_wikipedia, size, replay, with_nudity=False, with_medical=False):
     """(training rows, test rows) of a follow-up run: the new collections' pictures, a share (replay) of the earlier
-    collections' pictures, and every collection's test pictures."""
+    collections' pictures, and every collection's test pictures. Collections whose content was not chosen
+    (with_nudity, with_medical) are left out, also the earlier ones."""
     import random
-    new_train, new_test = prepare_data(work, state, size, with_wikipedia, keys=set(plan["new"]))
+    new_train, new_test = prepare_data(work, state, size, with_wikipedia, keys=set(plan["new"]),
+                                       with_nudity=with_nudity, with_medical=with_medical)
+    allowed = {s.key for s in sources.chosen(with_wikipedia, with_nudity=with_nudity, with_medical=with_medical)}
     old_train, old_test = [], []
     data_dir = data_root(work)
     for key, old_size in plan["old"].items():
         source = next((s for s in sources.SOURCES if s.key == key), None)
-        if source is None or not os.path.exists(os.path.join(data_dir, f"{key}-{old_size}.jsonl")):
+        if source is None or key not in allowed or \
+                not os.path.exists(os.path.join(data_dir, f"{key}-{old_size}.jsonl")):
             continue
         train, test = sources.prepare_source(source, data_dir, downloads_root(work), old_size)
         old_train += train
@@ -603,7 +656,12 @@ def main(argv=None):
                         help="carry on from the newest finished add-on with the collections it did not have")
     parser.add_argument("--collections", default="", help="with --continue: the collection keys to add (commas)")
     parser.add_argument("--replay", type=float, default=0.25, help="with --continue: share of earlier pictures")
+    parser.add_argument("--with-nudity", action="store_true", help="also learn from non-sexual nudes in art")
+    parser.add_argument("--with-medical", action="store_true", help="also learn from medical and anatomy pictures")
+    parser.add_argument("--own", default="", help="a folder of your own described pictures (own_data.py)")
+    parser.add_argument("--own-only", action="store_true", help="with --own: train on your own pictures alone")
     args = parser.parse_args(argv)
+    content = {"with_nudity": args.with_nudity, "with_medical": args.with_medical}
     os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
     os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
     sources.say = say
@@ -613,21 +671,36 @@ def main(argv=None):
     keep_awake(True)
     if args.library:
         open_library(work, args.library)
+    if args.own_only and not args.own:
+        stop("Only your own pictures was chosen, but no folder of your own pictures was given (--own FOLDER).")
+    if args.own and not os.path.isdir(args.own):
+        stop(f"The folder of your own pictures was not found: {args.own}")
     tag = ("-wikipedia" if args.with_wikipedia else "") + ("" if args.size == "normal" else f"-{args.size}")
     run = f"{args.model}{tag}"                 # each kind of run keeps its own test results and add-on
     plan = None
     if args.follow_up:
         plan = state.data.get("follow-up")
         if not plan or state.done(f"after-{plan['run']}"):      # a new follow-up (the last one has finished)
-            earlier = [(r, f) for r, f in finished_runs(work, state) if r.startswith(args.model)]
+            # Only a training whose pictures fit today's choices can be carried on from: one that learned from art
+            # with nudity, medical pictures or your own pictures is skipped when that is not chosen now.
+            wanted_now = {"nudity": args.with_nudity, "medical": args.with_medical, "own": bool(args.own)}
+            earlier = [(r, f) for r, f in finished_runs(work, state) if r.startswith(args.model) and
+                       all(wanted_now[c] or not state.data[f"train-{r}"].get(c) for c in wanted_now)]
             if not earlier:
-                stop("There is no finished training to carry on from. Train once first (Start Training).")
+                stop("There is no finished training to carry on from that fits these choices. Train once first "
+                     "(Start Training).")
             base_run, base_final = earlier[-1]
             old = prepared_collections(state)
             wanted = [k.strip() for k in args.collections.split(",") if k.strip()]
-            new = wanted or [s.key for s in sources.chosen(args.with_wikipedia) if s.key not in old]
-            new = [k for k in new if any(s.key == k for s in sources.SOURCES)]
-            if not new:
+            allowed = [s.key for s in sources.chosen(args.with_wikipedia, **content)]
+            new = wanted or [k for k in allowed if k not in old]
+            left = [k for k in new if k not in allowed and any(s.key == k for s in sources.SOURCES)]
+            if left:
+                say("Left out because of the content choices: " + ", ".join(left) + ".")
+            new = [k for k in new if k in allowed]
+            if args.own_only:
+                new = []                         # only the person's own pictures are added
+            if not new and not args.own:
                 stop("Every collection was already in the earlier training: there is nothing new to add yet.")
             import time as _time
             plan = {"run": f"{args.model}-plus-{_time.strftime('%Y%m%d-%H%M')}", "from": base_run, "from_final": base_final,
@@ -638,10 +711,16 @@ def main(argv=None):
     say("")
     say(f"Picture Model Training Kit started for the {args.model.upper()} model, size {args.size}"
         + (", with Wikipedia." if args.with_wikipedia else "."))
+    say(sources.content_choices_text(args.with_nudity, args.with_medical))
+    if args.own:
+        say(f"With your own pictures from {args.own}" + (", alone." if args.own_only else ", added to the collections."))
     if plan:
-        say(f"This is a follow-up: it carries on from the training {plan['from']} and adds "
-            f"{len(plan['new'])} collection{'s' if len(plan['new']) != 1 else ''}: "
-            + ", ".join(source_name(k).split(":")[0] for k in plan["new"]) + ".")
+        if plan["new"]:
+            say(f"This is a follow-up: it carries on from the training {plan['from']} and adds "
+                f"{len(plan['new'])} collection{'s' if len(plan['new']) != 1 else ''}: "
+                + ", ".join(source_name(k).split(":")[0] for k in plan["new"]) + ".")
+        else:
+            say(f"This is a follow-up: it carries on from the training {plan['from']} and adds your own pictures.")
     say("Windows will not go to sleep while this runs; the screen may turn off. You can close this window at any time "
         "and start the kit again later: it carries on where it stopped.")
     say("Step 1 of 7: checking the graphics card and the disk.")
@@ -651,10 +730,37 @@ def main(argv=None):
     folder = download_model(args.model, work)
     say("Step 3 of 7: downloading the described pictures of each collection and making them smaller. A collection "
         "done before is not downloaded again.")
-    if plan:
-        train_rows, test_rows = follow_up_rows(work, state, plan, args.with_wikipedia, args.size, args.replay)
+    if args.own_only:
+        train_rows, test_rows = [], []
+    elif plan:
+        train_rows, test_rows = follow_up_rows(work, state, plan, args.with_wikipedia, args.size, args.replay,
+                                               **content)
     else:
-        train_rows, test_rows = prepare_data(work, state, args.size, args.with_wikipedia)
+        train_rows, test_rows = prepare_data(work, state, args.size, args.with_wikipedia, **content)
+    own_count = 0
+    if args.own:
+        own_train, own_test, own_tag = own_rows(work, args.own)
+        own_count = len(own_train) + len(own_test)
+        if not own_train and args.own_only:
+            stop("None of your own pictures can be used. Read the problems above, then start again.")
+        if not own_train:
+            say("  None of your own pictures can be used (see the problems above); training goes on without them.")
+        else:
+            import random
+            train_rows = train_rows + own_train
+            random.Random(6).shuffle(train_rows)
+            test_rows = test_rows + own_test
+            if not plan:          # a training with own pictures is its own training, named after them
+                run += ("-own-only-" if args.own_only else "-own-") + own_tag
+                tag += ("-own-only-" if args.own_only else "-own-") + own_tag
+    used = {sources.content_of(r["source"]) for r in train_rows + test_rows}
+    if any(r["source"] == "own" for r in train_rows):
+        used.add("own")
+    if not plan:
+        # A training with the content choices is its own training too ("4b-nudity-medical"); named after the
+        # collections really prepared, so a training started before those packs existed carries on as it was.
+        extra = "".join(f"-{c}" for c in ("nudity", "medical") if c in used)
+        run, tag = run + extra, tag + extra
     if not train_rows:
         stop("No collection could be downloaded. Check the internet connection and start the kit again.")
     if args.limit:
@@ -682,7 +788,8 @@ def main(argv=None):
             f"{SAVE_EVERY} pictures.")
         model, processor = load_model(folder, trainable=True, adapter=plan["from_final"] if plan else None)
         seconds = train(model, processor, train_rows, adapter_dir, device)
-        state.mark(f"train-{run}", {"seconds": seconds})
+        state.mark(f"train-{run}", {"seconds": seconds, "nudity": "nudity" in used, "medical": "medical" in used,
+                                    "own": "own" in used})
         del model, processor
         free()
     else:
@@ -699,7 +806,8 @@ def main(argv=None):
     say("Step 7 of 7: writing the report and the zip to send.")
     repo, revision, _ = MODELS[args.model]
     info = {"model": repo, "revision": revision, "card": card, "train": len(train_rows), "test": len(test_rows),
-            "size": args.size, "share_alike": args.with_wikipedia,
+            "size": args.size, "share_alike": args.with_wikipedia, **content,
+            "own_pictures": own_count, "own_only": args.own_only,
             "collections": sorted({r["source"] for r in train_rows}),
             "seconds": state.data[f"train-{run}"]["seconds"], "before": before, "after": after,
             "continued_from": plan["from"] if plan else None,
