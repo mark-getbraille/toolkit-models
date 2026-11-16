@@ -657,6 +657,8 @@ def lila_taxa(s):
             latin = latin[0].upper() + latin[1:]
         else:
             latin = ""
+        if level not in ("species", "subspecies") and common.endswith("s") and not common.endswith("ss"):
+            common = re.sub(r"(?<=[sxz]|ch|sh)es$|s$", "", common)    # "typical iguanas" -> "typical iguana"
         out[(r["dataset_name"], r["query"].lower())] = (common, latin)
     return out
 
@@ -675,11 +677,11 @@ def lila_answer(species):
     parts = []
     for common, latin, count in species:
         latin_part = f" ({latin})" if latin else ""
-        if count:
-            parts.append(f"{number_word(count)} {plural(common) if count > 1 else common}{latin_part}")
+        if count and count > 1:
+            parts.append(f"{number_word(count)} {plural(common)}{latin_part}")
         else:
             parts.append(f"{a_or_an(common)} {common}{latin_part}")
-    if all(c for _, _, c in species):
+    if all(c for _, _, c in species):                # every count known
         return f"It shows {listed(parts)}."
     if len(parts) == 1:
         return f"The animal in this picture is {parts[0]}."
@@ -815,55 +817,78 @@ def gbif_english(s, key, cache):
     return cache[key]
 
 
+def gbif_datasets(s, params):
+    """[(dataset key, records)] of the datasets holding a group's photo records, iNaturalist left out (a facet
+    query: GBIF pages deep in a big list very slowly, so the builder samples shallow pages of each dataset)."""
+    data = s.get(f"{GBIF}occurrence/search", params=dict(params, limit=0, facet="datasetKey", facetLimit=60),
+                 timeout=120).json()
+    counts = (data.get("facets") or [{}])[0].get("counts", [])
+    return [(c["name"], c["count"]) for c in counts if c["name"] != GBIF_INATURALIST]
+
+
 def build_gbif_species(limit, per_species=2):
     """The GBIF pack's pictures: for each group (birds, mammals ... fungi), pages of human observations with photos
-    at random places in GBIF's list, keeping photos whose own licence is free and not from iNaturalist, at most
-    per_species photos of a species."""
+    from the group's 60 biggest datasets (not iNaturalist; datasets weighted by the square root of their size, so
+    small ones count too), at random places in each dataset's first 3,000 records, keeping photos whose own licence
+    is free, at most per_species photos of a species."""
     s, rng = session(), random.Random(56)
     names, titles, items = {}, {}, []
     per_group = -(-int(limit * 1.15) // len(GBIF_GROUPS))
     for taxon, question in GBIF_GROUPS:
         params = {"mediaType": "StillImage", "taxonKey": taxon, "basisOfRecord": "HUMAN_OBSERVATION",
-                  "license": ["CC0_1_0", "CC_BY_4_0"], "limit": 300}
-        total = s.get(f"{GBIF}occurrence/search", params=dict(params, limit=0), timeout=60).json().get("count", 0)
-        species, found, tries = {}, 0, 0
-        while found < per_group and tries < max(4, per_group // 15):
+                  "license": ["CC0_1_0", "CC_BY_4_0"]}
+        try:
+            datasets = gbif_datasets(s, params)
+        except Exception as e:  # noqa: BLE001 - the group is left out
+            say(f"GBIF group {taxon}: left out ({e})")
+            continue
+        weights = [n ** 0.5 for _, n in datasets]
+        species, found, tries, empty = {}, 0, 0, set()
+        while datasets and found < per_group and tries < max(6, per_group // 10):
             tries += 1
-            offset = rng.randrange(0, max(1, min(total, 99_000) - 300))
+            key, count = rng.choices(datasets, weights)[0]
+            if key in empty:
+                continue
+            offset = rng.randrange(0, max(1, min(count, 3000) - 100))
             try:
-                results = s.get(f"{GBIF}occurrence/search", params=dict(params, offset=offset), timeout=120).json().get(
-                    "results", [])
+                results = s.get(f"{GBIF}occurrence/search", timeout=120,
+                                params=dict(params, datasetKey=key, offset=offset, limit=100)).json().get("results", [])
             except Exception:  # noqa: BLE001 - another page
                 time.sleep(5)
                 continue
+            usable = 0
             for o in results:
-                key = o.get("speciesKey")
-                if not key or o.get("datasetKey") == GBIF_INATURALIST or species.get(key, 0) >= per_species \
+                taxon_key = o.get("speciesKey")
+                if not taxon_key or species.get(taxon_key, 0) >= per_species \
                         or o.get("taxonRank") not in ("SPECIES", "SUBSPECIES", "VARIETY"):
                     continue
                 media = next((m for m in o.get("media") or [] if m.get("type") == "StillImage"
-                              and m.get("identifier", "").startswith("http") and gbif_licence(m.get("license"))
-                              and "inaturalist" not in m.get("identifier", "")), None)
+                              and (m.get("identifier") or "").startswith("http") and gbif_licence(m.get("license"))
+                              and "inaturalist" not in m["identifier"]), None)
                 if not media:
                     continue
+                usable += 1
                 latin = clean(o.get("species"))
-                common = gbif_english(s, key, names)
+                common = gbif_english(s, taxon_key, names)
                 answer = f"This is {a_or_an(common)} {common} ({latin})." if common else f"This is {latin}."
-                if o["datasetKey"] not in titles:
-                    titles[o["datasetKey"]] = clean(o.get("datasetName")) or clean(s.get(
-                        f"{GBIF}dataset/{o['datasetKey']}", timeout=60).json().get("title"))
-                who = clean(media.get("creator") or media.get("rightsHolder") or o.get("recordedBy")) \
-                    or "an unnamed photographer"
-                credit = (f"Photo by {who}, {gbif_licence(media['license'])}, from {titles[o['datasetKey']]} via GBIF, "
+                if key not in titles:
+                    titles[key] = clean(o.get("datasetName")) or clean(s.get(f"{GBIF}dataset/{key}",
+                                                                             timeout=60).json().get("title"))
+                who = clean(media.get("creator") or media.get("rightsHolder") or o.get("recordedBy"))
+                if not re.search(r"[A-Za-z]", who):
+                    who = "an unnamed photographer"
+                credit = (f"Photo by {who}, {gbif_licence(media['license'])}, from {titles[key]} via GBIF, "
                           f"https://www.gbif.org/occurrence/{o['key']}")
-                species[key] = species.get(key, 0) + 1
+                species[taxon_key] = species.get(taxon_key, 0) + 1
                 items.append((f"gbif-{o['key']}.jpg", media["identifier"],
                               {"question": question, "answer": answer, "credit": credit}))
                 found += 1
                 if found >= per_group:
                     break
-            time.sleep(0.5)
-        say(f"GBIF group {taxon}: {found} photos of {len(species)} species ({total} records with photos)")
+            if not usable:
+                empty.add(key)                         # no free photos there (often "all rights reserved")
+            time.sleep(0.3)
+        say(f"GBIF group {taxon}: {found} photos of {len(species)} species from {len(datasets)} datasets")
     rng.shuffle(items)
     return fetch_all(items[:int(limit * 1.15) + 2], workers=6, pause=0.2)[:limit]
 
