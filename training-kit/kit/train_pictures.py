@@ -974,6 +974,10 @@ def main(argv=None):
             "library.")
         train_rows, test_rows = ([], []) if args.own_only else library_rows(work, args)
         mine = own_rows(args.own) if args.own else []
+        if mine:
+            say("  A reminder: a picture-making model must never learn from pictures of children, or of anyone who has"
+                " not agreed. Leave such pictures out of the folder you train a picture-making model on (a picture"
+                " describer may learn from them).")
         from transformers import CLIPTokenizer
         tokenizer = CLIPTokenizer.from_pretrained(folder, subfolder="tokenizer")
         items, tests = choose_items(train_rows, test_rows, mine, tokenizer, args, wanted)

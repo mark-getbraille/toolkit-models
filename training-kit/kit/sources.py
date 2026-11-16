@@ -1185,8 +1185,8 @@ def chosen(with_wikipedia=False, *, with_nudity=False, with_medical=False):
 
 
 # Collections that a picture-making model (train_pictures.py) never trains on, whatever is chosen: pictures of
-# children with childhood illnesses are for describing only.
-NOT_FOR_PICTURE_MAKING = ("childhood_illness",)
+# children with childhood illnesses, and of birth, breastfeeding and newborns, are for describing only.
+NOT_FOR_PICTURE_MAKING = ("childhood_illness", "birth_and_feeding")
 
 
 def content_of(key):
