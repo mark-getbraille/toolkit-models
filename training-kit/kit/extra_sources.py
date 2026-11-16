@@ -105,10 +105,10 @@ import urllib.parse
 import zipfile
 
 import sources
-from sources import BRIEF, CANNOT_TELL, Source, USER_AGENT, clean, download_file, fetch_pictures, have, smaller
+from sources import BRIEF, Source, USER_AGENT, clean, download_file, fetch_pictures
 from big_sources import even_pick
 from more_sources import as_question, download_to, fetch_shared, json_in_zip, sentence
-from personal_sources import (CHILD_WORDS, DOCTOR, INTIMATE_SITE, a_or_an, choice_question, listed, looks_like,
+from personal_sources import (CHILD_WORDS, DOCTOR, INTIMATE_SITE, a_or_an, listed, looks_like,
                               remote_zip, zip_members)
 
 NO_TERMS = "No licence or terms are stated; personal, non-commercial use only."
