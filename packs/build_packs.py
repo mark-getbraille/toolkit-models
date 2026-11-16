@@ -719,6 +719,10 @@ except ImportError:                    # run from another folder: add this one t
     from world_packs import WORLD_PACKS
 PACKS.update(WORLD_PACKS)
 
+# Medicines: single pills (Taiwan FDA), blister packs (Pharmassist) and mixed pills (MEDISEG), in their own file.
+from pill_packs import PILL_PACKS
+PACKS.update(PILL_PACKS)
+
 
 def sha256_of(path):
     """The SHA-256 of a file."""
