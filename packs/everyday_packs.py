@@ -286,7 +286,15 @@ OI_HOME = {
     "Teddy bear": "teddy bear", "Doll": "doll", "Dice": "dice", "Board game": "board game",
     "Jigsaw puzzle": "jigsaw puzzle", "Pacifier": "dummy", "Diaper": "nappy",
 }
-# Group labels: named only when no more specific label is there.
+# A label left out of the answer when a more specific one is there ("dining table", not "table and dining table").
+OI_HOME_COVERED = {"Table": {"Kitchen & dining room table", "Coffee table", "Desk"},
+                   "Clock": {"Alarm clock", "Wall clock"}, "Knife": {"Kitchen knife"},
+                   "Telephone": {"Mobile phone", "Corded phone"}, "Bottle": {"Water bottle", "Baby bottle"},
+                   "Stove": {"Gas stove"}, "Jug": {"Pitcher (Container)"}, "Bowl": {"Mixing bowl"},
+                   "Shoe": {"High heels", "Boot", "Sandal", "Slipper"}, "Medicine": {"Pill", "Capsule"},
+                   "Pharmaceutical drug": {"Pill", "Capsule", "Medicine"}, "Basket": {"Laundry basket"},
+                   "Coat": {"Jacket"}, "Glasses": {"Sunglasses"}}
+# Group labels: read so that the label lists are complete, never named (a photo needs a specific household label).
 OI_GROUPS = {"Kitchen utensil": "kitchen utensil", "Kitchen appliance": "kitchen appliance", "Furniture": "furniture",
              "Clothing": "clothing", "Tool": "tool", "Toy": "toy", "Container": "container",
              "Bathroom accessory": "bathroom item", "Electronic device": "electronic device",
@@ -327,6 +335,8 @@ def oi_home_rows(labels, rng):
         return []
     words = []
     for n in things:
+        if OI_HOME_COVERED.get(n, set()) & present:
+            continue
         if OI_HOME[n] not in words:
             words.append(OI_HOME[n])
     rows = [{"question": OI_ASK_OBJECTS, "answer": f"Objects in this picture: {listed(words[:8])}"
@@ -455,7 +465,8 @@ def orbit_name(raw):
         return name, False
     words = [ORBIT_WORDS.get(w, w) for w in name.split()]
     name = " ".join(words)
-    last = words[-1].lower()
+    head = re.split(r" (?:with|of|for|in|on|from) ", name)[0]           # "vase with flowers": the vase counts
+    last = head.split()[-1].lower()
     many = name.lower() in ORBIT_UNCOUNTED or (last.endswith("s") and not last.endswith(("ss", "us", "is")))
     return name, many
 

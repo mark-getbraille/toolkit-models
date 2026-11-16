@@ -124,9 +124,14 @@ def nudity_sentence(female, male):
 def lead(title, kind="", artist="", date="", medium=""):
     """The opening sentence of an answer from the record: "Seated Male Nude: a drawing by Baccio Bandinelli,
     c. 1516-20, in red chalk." (only what the record gives)."""
-    kind, medium = clean(kind).lower(), clean(medium)
-    if not kind and medium and len(medium.split()) <= 2:     # "drawing", "oil on canvas" said once, as the kind
-        kind, medium = medium.lower(), ""
+    kind, medium, date = clean(kind).lower(), clean(medium), clean(date)
+    if not kind:                         # a record with only a medium: "a drawing", else "a work in pencil"
+        if medium.lower() in ART_KINDS:
+            kind, medium = medium.lower(), ""
+        elif medium:
+            kind = "work"
+    if date.lower() in ("n.d.", "nd", "undated", "unknown"):
+        date = ""
     out = clean(title).rstrip(".")
     bits = []
     if kind:
