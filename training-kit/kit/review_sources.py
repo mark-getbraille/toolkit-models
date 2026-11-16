@@ -1045,6 +1045,9 @@ MEDICAL_WORDS = re.compile(
 NOT_EDUCATIONAL = re.compile(r"\b(ribbons?|logos?|awareness|posters?|stamps?|march|walk|race|run|campaign|"
                              r"fundrais\w*|t-shirts?|merchandise|pink ribbon|celebrit\w*|portrait|protest\w*)\b",
                              re.I)
+# Not a picture of a body: microscope and laboratory pictures (useful elsewhere, not for describing a body).
+LABORATORY = re.compile(r"\b(\w*micrograph\w*|microscop\w*|histolog\w*|histopatholog\w*|stain\w*|gram-|magnif\w*|"
+                        r"smear\w*|culture\w*|petri|agar|specimen\w*|slides?|bacteri(um|a) under)\b", re.I)
 OPEN_LICENCE = re.compile(r"^(cc0|cc-zero|public domain|pd\b|pd-|cc by \d|cc-by-\d|cc by-\d|attribution$)", re.I)
 SHARE_ALIKE = re.compile(r"^(cc by-sa|cc-by-sa)", re.I)
 
@@ -1090,7 +1093,8 @@ def commons_items(s, category, needs_adult, needs_topic, kind, say):
             mime = info.get("mime", "")
             ok = (mime.startswith("image/") and "gif" not in mime and info.get("thumburl")
                   and child_free(text, categories) and not_sexual(text) and not BLOCKED_CATEGORY.search(categories)
-                  and not NOT_EDUCATIONAL.search(text)
+                  and not NOT_EDUCATIONAL.search(text) and not LABORATORY.search(f"{text} {categories}")
+                  and len(re.findall(r"\w+", description)) >= 3
                   and (MEDICAL_WORDS.search(text) or condition_in(text))
                   and (not needs_topic or GENITAL.search(text) or BREAST.search(text))
                   and (not needs_adult or adult_shown(text)[0]))
