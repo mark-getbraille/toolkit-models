@@ -1265,6 +1265,30 @@ SOURCES = [
     Source('fashionpedia', 'Clothing: what people are wearing, in detail (Fashionpedia, ready-made pack)',
            'CC BY 4.0 labels; only photos under CC BY or CC0, each author credited',
            'Fashionpedia (Jia et al., 2020), CC BY 4.0; photos by their Flickr authors', "permissive", 4000, 20, prepare_pack, 'about 1 GB'),
+    Source('loc_highsmith', "Carol M. Highsmith's photos of America with detailed captions (Library of Congress, ready-made pack)",
+           'No known restrictions on publication (Library of Congress)',
+           'Carol M. Highsmith Archive, Library of Congress, Prints and Photographs Division', "permissive", 4000, 20, prepare_pack, 'about 1.5 GB'),
+    Source('loc_fsa', '1930s and 1940s documentary photos of American life (FSA/OWI, Library of Congress, ready-made pack)',
+           'US government work, no known restrictions (Library of Congress)',
+           'Farm Security Administration / Office of War Information collection, Library of Congress', "permissive", 4000, 20, prepare_pack, 'about 1.5 GB'),
+    Source('loc_world', 'Historic travel photos of the world (Photochrom prints and Matson collection, Library of Congress, ready-made pack)',
+           'No known restrictions (Library of Congress)',
+           'Photochrom Print Collection and Matson (G. Eric and Edith) Photograph Collection, Library of Congress', "permissive", 3000, 15, prepare_pack, 'about 800 MB'),
+    Source('npgallery', 'US national parks: places, wildlife and events, with captions (National Park Service, ready-made pack)',
+           'Public domain (National Park Service)',
+           'National Park Service, NPGallery, public domain', "permissive", 4000, 20, prepare_pack, 'about 1.5 GB'),
+    Source('earth_observatory', 'The Earth from space, described (NASA Earth Observatory, ready-made pack)',
+           'Not under copyright (NASA)',
+           'NASA Earth Observatory', "permissive", 2000, 15, prepare_pack, 'about 800 MB'),
+    Source('eso', 'Telescopes, observatories and the landscapes of Chile (ESO, ready-made pack)',
+           'CC BY 4.0 (eso.org/public/copyright)',
+           'ESO, CC BY 4.0', "permissive", 1200, 10, prepare_pack, 'about 500 MB'),
+    Source('usgs', 'Rivers, volcanoes, fieldwork and landscapes (US Geological Survey, ready-made pack)',
+           'Public domain (US Geological Survey)',
+           'US Geological Survey multimedia gallery, public domain', "permissive", 3000, 15, prepare_pack, 'about 1 GB'),
+    Source('commons_valued', 'Wikimedia Commons valued images with their captions (ready-made pack)',
+           'Captions CC0; pictures CC0, public domain or CC BY, each author credited',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 2500, 15, prepare_pack, 'about 1 GB'),
     Source('skin_lesion_photos', 'Skin spots photographed with a phone, adults (PAD-UFES-20, ready-made pack)',
            'CC BY 4.0 (Mendeley Data zr7vgbcyr2)',
            'PAD-UFES-20 (Pacheco et al., 2020), CC BY 4.0', "permissive", 2000, 20, prepare_pack, 'about 400 MB', content="medical"),
@@ -1478,3 +1502,18 @@ NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(
     s.key for s in EXTRA_SOURCES if s.key not in _extra_ok)
 
 _add_collections(EXTRA_SOURCES)
+
+# Documentary photo collections that are not open (share-alike Commons featured pictures, Unsplash Lite for personal
+# use); the file may be missing.
+try:
+    import documentary_sources as _documentary  # noqa: E402
+except ImportError as _e:
+    _documentary = None
+    if getattr(_e, "name", None) != "documentary_sources":
+        say(f"(The documentary collections could not be loaded: {_e}. They are left out.)")
+DOCUMENTARY_SOURCES = list(getattr(_documentary, "DOCUMENTARY_SOURCES", []) or [])
+_documentary_ok = set(getattr(_documentary, "DOCUMENTARY_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _documentary_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(
+    s.key for s in DOCUMENTARY_SOURCES if s.key not in _documentary_ok)
+_add_collections(DOCUMENTARY_SOURCES)

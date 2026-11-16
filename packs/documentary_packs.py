@@ -89,7 +89,8 @@ THE_COUNTRIES = {"usa", "uk", "netherlands", "philippines", "united arab emirate
 NOT_SHOWN = re.compile(r"\b(nud\w*|naked|nudity|topless|erotic\w*|sex\w*|porn\w*|lingerie|undress\w*)\b", re.I)
 # Catalogue codes and file notes in captions: "LC-USF34-012345-D", "(LOT 1234)", "digital file from original",
 # "1 photograph : digital, tiff file, color", call numbers and negative numbers.
-CATALOGUE = re.compile(r"\s*\((?:LOT|LC|Neg\.?|No\.?)\s*[\w\s.:-]*\)|\bLC-[A-Z0-9]+-[\w-]+\b|\bdigital file from [^.;]*|"
+CATALOGUE = re.compile(r"\s*\((?:LOT|LC|Neg\.?|No\.?)\s*[\w\s.:-]*\)|\bLC-[A-Z0-9]+-[\w-]+\b|"
+                       r"\bdigital file from [^.;]*|"
                        r"\b1 photograph\s*:[^.;]*|\b(?:neg(?:ative)?|no)\.?\s*\d[\w-]*\b|\[\s*(?:graphic|picture)\s*\]",
                        re.I)
 
@@ -614,7 +615,8 @@ DOCUMENTARY_PACKS = {
                                f"restrictions'. Captions from the agency's records. {LOC_TERMS}"),
     "loc_world": (build_loc_world, "Photochrom Prints and the G. Eric and Edith Matson Photograph Collection, Library "
                                    "of Congress, Prints and Photographs Division, https://www.loc.gov/pictures/ : 'No "
-                                   f"known restrictions on publication'. Titles from the Library's records. {LOC_TERMS}"),
+                                   "known restrictions on publication'. Titles from the Library's records. "
+                                   + LOC_TERMS),
     "npgallery": (build_npgallery, "U.S. National Park Service, NPGallery, https://npgallery.nps.gov : photos marked "
                                    "'Public domain', each with the credit the park asks for, below. Alt text and "
                                    "descriptions by the parks."),

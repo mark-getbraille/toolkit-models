@@ -894,6 +894,11 @@ for _key, (_language, _model, _revision) in PORTAL_TRANSLATE.items():
 from more_open_packs import MORE_OPEN_PACKS
 PACKS.update(MORE_OPEN_PACKS)
 
+# Documentary photos with real captions (Library of Congress, National Park Service, NASA Earth Observatory, ESO,
+# USGS, Commons valued images): the open alternatives to commercial photo magazines.
+from documentary_packs import DOCUMENTARY_PACKS
+PACKS.update(DOCUMENTARY_PACKS)
+
 
 def sha256_of(path):
     """The SHA-256 of a file."""

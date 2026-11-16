@@ -46,7 +46,8 @@ jobs:
                    "skin_lesion_photos", "isic_skin", "gi_endoscopy", "chest_xray", "case_report_figures", "vet_case_figures", "cdc_medical", "childhood_illness", "medical_collections", "birth_and_feeding",
                    "oi_expressions", "commons_expressions", "bice_gestures", "vqa_expressions",
                    "xm3600", "europeana_fi", "europeana_cs",
-                   "europeana_hu", "europeana_el", "europeana_no", "europeana_pl", "bd_taka", "medpack_id", "fashionpedia"]
+                   "europeana_hu", "europeana_el", "europeana_no", "europeana_pl", "bd_taka", "medpack_id", "fashionpedia",
+                   "loc_highsmith", "loc_fsa", "loc_world", "npgallery", "earth_observatory", "eso", "usgs", "commons_valued"]
           words = [w for w in sys.argv[1].split(",") if w]
           keys = known if words in ([], ["all"]) else [w for w in words if w in known]
           print("keys=" + json.dumps(keys))
@@ -155,6 +156,14 @@ jobs:
             bd_taka) limit=547 ;;
             medpack_id) limit=1444 ;;
             fashionpedia) limit=5000 ;;
+            loc_highsmith) limit=6000 ;;
+            loc_fsa) limit=6000 ;;
+            loc_world) limit=4000 ;;
+            npgallery) limit=6000 ;;
+            earth_observatory) limit=3000 ;;
+            eso) limit=1200 ;;
+            usgs) limit=4000 ;;
+            commons_valued) limit=2500 ;;
           esac
           python packs/build_packs.py "${{ matrix.key }}" --out build/packs --limit "$limit"
       - name: Upload it to the release
