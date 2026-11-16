@@ -18,6 +18,10 @@ Accessibility: standard wx controls only; a label ending ":" right before each f
 has an Alt letter, named in its tooltip, and no letter is used twice in the window; Escape closes (asking first while
 training runs); F1 opens READ ME FIRST.txt; Enter presses only the focused button (no default button).
 
+Logs: like the Digital Accessibility Toolkit, everything the wizard says (and any error) is written, with the time,
+into "Picture Model Training logs" on the desktop, one file a day ("Picture Model Training log 2026-11-16.txt");
+when the training has finished, its report and full log are copied there too. Files older than 30 days are deleted.
+
 Nothing is sent anywhere: the wizard and the kit only download the helper, the tools, the model and the pictures.
 """
 
@@ -60,6 +64,77 @@ def resource(*parts):
     base = getattr(sys, "_MEIPASS", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     bundled = os.path.join(base, "training-kit", *parts)
     return bundled if os.path.exists(bundled) else os.path.join(base, *parts)
+
+
+# ----------------------------------------------------------------- the logs on the desktop
+
+LOG_FOLDER_NAME = f"{APP_NAME} logs"   # like the Digital Accessibility Toolkit's "... logs" folder
+KEEP_DAYS = 30
+
+
+def desktop_dir():
+    """The user's desktop folder (also when Windows keeps it in OneDrive)."""
+    if os.name == "nt":
+        try:
+            import ctypes
+            from ctypes import wintypes
+
+            class GUID(ctypes.Structure):
+                """A Windows GUID, for SHGetKnownFolderPath's folder id."""
+                _fields_ = [("Data1", wintypes.DWORD), ("Data2", wintypes.WORD), ("Data3", wintypes.WORD),
+                            ("Data4", ctypes.c_ubyte * 8)]
+            # FOLDERID_Desktop {B4BFCC3A-DB2C-424C-B029-7FE99A87C641}
+            guid = GUID(0xB4BFCC3A, 0xDB2C, 0x424C, (ctypes.c_ubyte * 8)(0xB0, 0x29, 0x7F, 0xE9, 0x9A, 0x87,
+                                                                        0xC6, 0x41))
+            path = ctypes.c_wchar_p()
+            if ctypes.windll.shell32.SHGetKnownFolderPath(ctypes.byref(guid), 0, None, ctypes.byref(path)) == 0:
+                result = path.value
+                ctypes.windll.ole32.CoTaskMemFree(path)
+                if result:
+                    return result
+        except Exception:  # noqa: BLE001 - the usual place then
+            pass
+    return os.path.join(os.environ.get("USERPROFILE") or os.path.expanduser("~"), "Desktop")
+
+
+def log_folder():
+    """The "Picture Model Training logs" folder on the desktop (made when missing; files older than KEEP_DAYS days
+    are deleted)."""
+    import time
+    folder = os.path.join(desktop_dir(), LOG_FOLDER_NAME)
+    os.makedirs(folder, exist_ok=True)
+    for name in os.listdir(folder):
+        path = os.path.join(folder, name)
+        try:
+            if os.path.isfile(path) and time.time() - os.path.getmtime(path) > KEEP_DAYS * 86400:
+                os.remove(path)
+        except OSError:
+            pass
+    return folder
+
+
+_log_lock = threading.Lock()
+
+
+def log(text):
+    """Add text to today's log on the desktop ("Picture Model Training log 2026-11-16.txt"), each line with the
+    time. Never raises."""
+    import time
+    try:
+        path = os.path.join(log_folder(), f"{APP_NAME} log {time.strftime('%Y-%m-%d')}.txt")
+        stamp = time.strftime("%H:%M:%S ")
+        with _log_lock, open(path, "a", encoding="utf-8") as f:
+            f.write("".join(stamp + line + "\n" for line in (str(text).splitlines() or [""])))
+    except Exception:  # noqa: BLE001 - the log never stops the wizard
+        pass
+
+
+def copy_to_logs(path):
+    """Copy a file (the report) into the logs folder on the desktop. Never raises."""
+    try:
+        shutil.copy2(path, os.path.join(log_folder(), os.path.basename(path)))
+    except Exception:  # noqa: BLE001
+        pass
 
 
 # ----------------------------------------------------------------- speech
@@ -326,8 +401,10 @@ class Wizard(wx.Frame):
         self.restore_button = self.button(page, "Restore the &usual settings", "Undo Prepare this computer",
                                           self.on_restore)
         self.stop_button = self.button(page, "Stop the trai&ning", "Stop; starting again carries on", self.on_stop)
-        for b in (self.read_button, self.log_button, self.report_button, self.result_button, self.restore_button,
-                  self.stop_button):
+        self.logs_button = self.button(page, "Open the logs fol&der", "The logs folder on the desktop",
+                                       self.on_open_logs)
+        for b in (self.read_button, self.log_button, self.report_button, self.result_button, self.logs_button,
+                  self.restore_button, self.stop_button):
             buttons.Add(b, 0, wx.ALL, 4)
         self.report_button.Disable()
         s.Add(buttons, 0, wx.ALL, 4)
@@ -358,6 +435,7 @@ class Wizard(wx.Frame):
     def on_check(self, _event):
         """Check the card and the disk, show and say it."""
         lines, _ready = check_computer(self.folder.GetValue())
+        log("Computer check: " + " ".join(lines))
         self.check_result.SetValue("\n".join(lines))
         speak(" ".join(lines), True)
 
@@ -371,6 +449,7 @@ class Wizard(wx.Frame):
         """Check, then show the progress page and start the work in the background."""
         lines, ready = check_computer(self.folder.GetValue())
         self.check_result.SetValue("\n".join(lines))
+        log("Computer check: " + " ".join(lines))
         if not ready:
             speak(" ".join(lines), True)
             return
@@ -382,6 +461,8 @@ class Wizard(wx.Frame):
         args = ["--model", MODELS[self.model.GetSelection()][0], "--size", SIZES[self.size.GetSelection()][0]]
         if self.wikipedia.GetValue():
             args.append("--with-wikipedia")
+        log(f"Start training: folder {self.kit}, settings {' '.join(args)}, prepare this computer "
+            f"{'yes' if self.prepare.GetValue() else 'no'}.")
         threading.Thread(target=self.work, args=(args, self.prepare.GetValue()), daemon=True).start()
 
     # -- the work, in the background
@@ -424,6 +505,7 @@ class Wizard(wx.Frame):
                 self.stop_button.Disable()
                 continue
             self.log.AppendText(line + "\n")
+            log(line)
             self.status.SetValue(line.strip())
             step = STEP_LINE.match(line)
             trained = TRAINED_LINE.search(line)
@@ -435,6 +517,9 @@ class Wizard(wx.Frame):
             if line.startswith("FINISHED"):
                 self.percent = 100
                 self.report_button.Enable()
+                for name in os.listdir(self.kit) if self.kit and os.path.isdir(self.kit) else []:
+                    if name.startswith("report-") or name == "training-log.txt":
+                        copy_to_logs(os.path.join(self.kit, name))
             self.gauge.SetValue(self.percent)
             if SPOKEN.match(line):
                 speak(line.strip(), line.startswith(("FINISHED", "STOPPED")))
@@ -451,6 +536,10 @@ class Wizard(wx.Frame):
             os.startfile(path)  # noqa: S606
         else:
             speak("There is no log yet.", True)
+
+    def on_open_logs(self, _event):
+        """Open the "Picture Model Training logs" folder on the desktop."""
+        os.startfile(log_folder())  # noqa: S606
 
     def on_open_report(self, _event):
         """Open the newest report."""
@@ -507,11 +596,20 @@ def self_test():
     print("OK")
 
 
+def log_crash(kind, value, trace):
+    """Write an unexpected error into the desktop log (sys.excepthook and threading.excepthook)."""
+    import traceback
+    log("ERROR: " + "".join(traceback.format_exception(kind, value, trace)))
+
+
 def main():
     """Start the wizard (--self-test: the build's check)."""
     if "--self-test" in sys.argv:
         self_test()
         return
+    sys.excepthook = log_crash
+    threading.excepthook = lambda args: log_crash(args.exc_type, args.exc_value, args.exc_traceback)
+    log(f"{APP_NAME} started.")
     app = wx.App()
     Wizard().Show()
     speak("Picture Model Training wizard. Choose how much to train, then press Alt+S to start.")
