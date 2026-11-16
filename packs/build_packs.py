@@ -884,6 +884,16 @@ PACKS.update(EXPRESSION_PACKS)
 from world_more_packs import WORLD_MORE_PACKS
 PACKS.update(WORLD_MORE_PACKS)
 
+# More museums and data portals found by searching in other languages (Hungary, Greece, Norway, Poland, Bangladesh,
+# Indonesia), and Fashionpedia clothing.
+from world_portal_packs import PORTAL_PACKS, PORTAL_TRANSLATE
+PACKS.update(PORTAL_PACKS)
+for _key, (_language, _model, _revision) in PORTAL_TRANSLATE.items():
+    TRANSLATE[_key] = _language
+    MT_MODELS.setdefault(_language, (_model, _revision))
+from more_open_packs import MORE_OPEN_PACKS
+PACKS.update(MORE_OPEN_PACKS)
+
 
 def sha256_of(path):
     """The SHA-256 of a file."""
