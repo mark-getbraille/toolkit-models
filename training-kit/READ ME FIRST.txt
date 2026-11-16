@@ -46,6 +46,24 @@ It trains a small add-on to the model, then tests whether the model really got b
 changed. Nothing is sent anywhere; the kit only downloads what it needs. If one collection's website is down, the
 kit says so and carries on with the others.
 
+Personal-use collections
+Some picture collections are free to download but not openly licensed: their licences forbid commercial use (for
+example CC BY-NC), or their terms allow only research or "academic" use. The program has two check boxes for them,
+both off at first, remembered separately for a picture describer and a picture-making model:
+- "Include non-commercial collections (personal use only)" (Alt+Q).
+- "Include research-only collections (personal use only)" (Alt+Z). Ticking it opens a window listing each
+  research-only collection, its terms page and its terms in one line. Read them, tick "I have read these terms and
+  will use the result only for personal, non-commercial purposes" (Alt+I) and press Agree (Alt+A). Cancel or Escape
+  unticks the box. With the .cmd files: --personal-noncommercial, and --personal-research --accept-research-terms.
+When either is ticked, the program says "This training will be for personal use only." The result is for you alone:
+do not sell it, publish it, put it in a product or share it outside personal, non-commercial use. Its name ends in
+"-personal", its report starts with a PERSONAL USE ONLY warning listing those collections and their terms, and its
+zip holds PERSONAL-USE-ONLY.txt. A follow-up training only carries on from a personal-use training when you tick
+the same box again.
+Collections that need a sign-up or a signed agreement (for example MIMIC or ImageNet) cannot be downloaded by the
+kit. If you got such a collection yourself, and its terms allow it, you can put its pictures with their descriptions
+into your own pictures folder (see HOW TO ADD YOUR OWN PICTURES.txt); the result is then for personal use only too.
+
 What you need
 - An NVIDIA graphics card with at least 12 GB of memory for the 4B model, or 16 GB for the 8B model, with an
   up-to-date NVIDIA driver.

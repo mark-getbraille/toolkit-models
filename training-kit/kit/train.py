@@ -33,6 +33,14 @@ Content choices: --with-nudity also learns from non-sexual nudes in art, and --w
 pictures (collections marked so in sources.py; without the choice they are left out, in a follow-up too). The report
 and ATTRIBUTION.txt say which choices were used, and a training with them gets its own name ("4b-nudity-medical").
 
+Personal-use collections (sources.py, groups "noncommercial" and "research", from personal_sources.py):
+--personal-noncommercial also learns from collections under non-commercial licences (CC BY-NC, BY-NC-SA, BY-NC-ND),
+and --personal-research from research-only ("academic use") collections, which also needs --accept-research-terms
+(the person has read their terms). The add-on is then for PERSONAL USE ONLY: its name gets "-personal", the report
+starts with a warning listing those collections with their licence and terms page, ATTRIBUTION.txt lists them under
+their own heading, and the zip gets PERSONAL-USE-ONLY.txt. A follow-up never carries on from such an add-on unless
+the same choice is made again.
+
 Your own pictures (own_data.py): --own FOLDER adds the described pictures in FOLDER to the collections, and with
 --own-only the training uses them alone. About 1 in 20 of them is kept back for the test. The add-on is then for
 personal use only, which the report and ATTRIBUTION.txt say.
@@ -223,16 +231,19 @@ def open_library(work, library):
         shutil.move(old_hf, os.environ["HF_HOME"])
 
 
-def prepare_data(work, state, size, with_wikipedia, keys=None, with_nudity=False, with_medical=False):
+def prepare_data(work, state, size, with_wikipedia, keys=None, with_nudity=False, with_medical=False,
+                 with_noncommercial=False, with_research=False):
     """Prepare every chosen collection once (each one remembered as done in state, so a restarted kit skips it);
     writes data/train.jsonl (shuffled) and data/test.jsonl and returns (training rows, test rows). A collection that
     cannot be downloaded now is said and left out, so one broken website never stops the training. with_nudity and
-    with_medical: the content choices (see sources.chosen)."""
+    with_medical: the content choices; with_noncommercial and with_research: the personal-use choices (see
+    sources.chosen)."""
     import random
     data_dir = data_root(work)
     os.makedirs(data_dir, exist_ok=True)
     train_rows, test_rows = [], []
-    chosen = [s for s in sources.chosen(with_wikipedia, with_nudity=with_nudity, with_medical=with_medical)
+    chosen = [s for s in sources.chosen(with_wikipedia, with_nudity=with_nudity, with_medical=with_medical,
+                                        with_noncommercial=with_noncommercial, with_research=with_research)
               if keys is None or s.key in keys]
     for number, source in enumerate(chosen, 1):
         say(f"  Collection {number} of {len(chosen)}: {source.name} (downloads {source.download}).")
@@ -510,6 +521,32 @@ def content_lines(info):
     return lines
 
 
+def personal_chosen(info):
+    """True when a personal-use choice was made (non-commercial or research-only collections), or a personal-use
+    collection is among those learned from: the add-on is then for personal use only."""
+    return bool(info.get("with_noncommercial") or info.get("with_research") or
+                any(sources.is_personal(s) for s in sources.SOURCES if s.key in info.get("collections", ())))
+
+
+def personal_lines(info):
+    """The PERSONAL USE ONLY block that starts the report (and PERSONAL-USE-ONLY.txt): the warning, then each
+    personal-use collection learned from with its licence and terms page; [] when no personal-use choice was made."""
+    if not personal_chosen(info):
+        return []
+    lines = [sources.PERSONAL_WARNING]
+    used = [s for s in sources.SOURCES if sources.is_personal(s) and s.key in info.get("collections", ())]
+    if used:
+        lines.append("The personal-use collections it learned from:")
+        for source in used:
+            kind = "research-only" if source.group == "research" else "non-commercial"
+            lines += [f"  - {source.name} ({kind})", f"    Licence: {source.licence}",
+                      f"    Terms: {sources.terms_link(source) or 'see the licence above'}"]
+    else:
+        lines.append("(Personal-use collections were chosen, but none of them could be downloaded or none are in this "
+                     "kit. The add-on is still labelled for personal use only.)")
+    return lines
+
+
 def verdict(before, after, counts=None):
     """(better, words): better when the add-on raised the score of all test pictures by at least 0.01 and lowered no
     collection with 10 or more test pictures by more than 0.03 (smaller collections vary too much to judge)."""
@@ -527,15 +564,29 @@ def verdict(before, after, counts=None):
 def attribution(chosen_keys, share_alike, info=None):
     """ATTRIBUTION.txt: the licence of the add-on, the content choices (info, when given) and the credit of every
     collection it learned from."""
+    personal = personal_chosen(dict(info or {}, collections=chosen_keys))
+    licence = ("CC BY-SA 4.0 (it learned from Wikipedia's CC BY-SA text)" if share_alike
+               else "Apache License 2.0, with the credits below (CC BY sources)")
+    if personal:
+        licence = "PERSONAL USE ONLY (see the personal-use collections below); otherwise " + licence
     lines = ["Picture description add-on for Qwen3-VL (huihui-ai's abliterated version, Apache License 2.0)", "",
-             "Licence of this add-on: " + ("CC BY-SA 4.0 (it learned from Wikipedia's CC BY-SA text)" if share_alike
-                                           else "Apache License 2.0, with the credits below (CC BY sources)"), "",
+             "Licence of this add-on: " + licence, "",
              "It learned from these collections of described pictures:"]
     for source in sources.SOURCES:
-        if source.key in chosen_keys:
+        if source.key in chosen_keys and not sources.is_personal(source):
             lines += [f"- {source.credit}", f"  Licence: {source.licence}"]
     if "own" in chosen_keys:
         lines += ["- The trainer's own pictures and descriptions (not credited here; not for publishing)."]
+    if personal:
+        # The personal-use collections under their own heading, with their terms.
+        lines += ["", "Personal-use collections (non-commercial licences or research-only terms):",
+                  sources.PERSONAL_WARNING]
+        used = [s for s in sources.SOURCES if sources.is_personal(s) and s.key in chosen_keys]
+        for source in used:
+            lines += [f"- {source.credit}", f"  Licence: {source.licence}",
+                      f"  Terms: {sources.terms_link(source) or 'see the licence above'}"]
+        if not used:
+            lines.append("- (chosen, but none of them could be downloaded)")
     if info:
         lines += [""] + content_lines(info)
     return "\n".join(lines) + "\n"
@@ -548,7 +599,8 @@ def write_report(path, info, before, after, before_rows, after_rows):
     for row in before_rows:
         counts[row["source"]] = counts.get(row["source"], 0) + 1
     better, words = verdict(before, after, counts)
-    lines = ["Picture Model Training Kit: report", "",
+    block = personal_lines(info)                     # PERSONAL USE ONLY first, when chosen
+    lines = [*block, *([""] if block else []), "Picture Model Training Kit: report", "",
              f"Finished: {datetime.datetime.now():%d %B %Y at %H:%M}",
              f"Model: {info['model']} (commit {info['revision'][:12]})",
              f"Graphics card: {info['card']}",
@@ -589,6 +641,8 @@ def package(model_key, final, report, info, tag):
         z.write(report, "report.txt")
         z.writestr("scores.json", json.dumps(info, indent=1))
         z.writestr("ATTRIBUTION.txt", attribution(info["collections"], info["share_alike"], info))
+        if personal_chosen(info):
+            z.writestr("PERSONAL-USE-ONLY.txt", "\n".join(personal_lines(info)) + "\n")
         z.write(LOG, "training-log.txt")
     return path
 
@@ -618,14 +672,16 @@ def prepared_collections(state):
     return found
 
 
-def follow_up_rows(work, state, plan, with_wikipedia, size, replay, with_nudity=False, with_medical=False):
+def follow_up_rows(work, state, plan, with_wikipedia, size, replay, with_nudity=False, with_medical=False,
+                   with_noncommercial=False, with_research=False):
     """(training rows, test rows) of a follow-up run: the new collections' pictures, a share (replay) of the earlier
-    collections' pictures, and every collection's test pictures. Collections whose content was not chosen
-    (with_nudity, with_medical) are left out, also the earlier ones."""
+    collections' pictures, and every collection's test pictures. Collections whose content or personal-use group was
+    not chosen (with_nudity, with_medical, with_noncommercial, with_research) are left out, also the earlier ones."""
     import random
-    new_train, new_test = prepare_data(work, state, size, with_wikipedia, keys=set(plan["new"]),
-                                       with_nudity=with_nudity, with_medical=with_medical)
-    allowed = {s.key for s in sources.chosen(with_wikipedia, with_nudity=with_nudity, with_medical=with_medical)}
+    choices = {"with_nudity": with_nudity, "with_medical": with_medical, "with_noncommercial": with_noncommercial,
+               "with_research": with_research}
+    new_train, new_test = prepare_data(work, state, size, with_wikipedia, keys=set(plan["new"]), **choices)
+    allowed = {s.key for s in sources.chosen(with_wikipedia, **choices)}
     old_train, old_test = [], []
     data_dir = data_root(work)
     for key, old_size in plan["old"].items():
@@ -660,8 +716,18 @@ def main(argv=None):
     parser.add_argument("--with-medical", action="store_true", help="also learn from medical and anatomy pictures")
     parser.add_argument("--own", default="", help="a folder of your own described pictures (own_data.py)")
     parser.add_argument("--own-only", action="store_true", help="with --own: train on your own pictures alone")
+    parser.add_argument("--personal-noncommercial", action="store_true",
+                        help="also learn from non-commercial collections (the add-on is for personal use only)")
+    parser.add_argument("--personal-research", action="store_true",
+                        help="also learn from research-only collections (personal use only; needs "
+                             "--accept-research-terms)")
+    parser.add_argument("--accept-research-terms", action="store_true",
+                        help="you have read the research-only collections' terms and will use the result only for "
+                             "personal, non-commercial purposes")
     args = parser.parse_args(argv)
-    content = {"with_nudity": args.with_nudity, "with_medical": args.with_medical}
+    content = {"with_nudity": args.with_nudity, "with_medical": args.with_medical,
+               "with_noncommercial": args.personal_noncommercial, "with_research": args.personal_research}
+    personal = args.personal_noncommercial or args.personal_research
     os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
     os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
     sources.say = say
@@ -675,20 +741,40 @@ def main(argv=None):
         stop("Only your own pictures was chosen, but no folder of your own pictures was given (--own FOLDER).")
     if args.own and not os.path.isdir(args.own):
         stop(f"The folder of your own pictures was not found: {args.own}")
+    if args.personal_research and not args.accept_research_terms:
+        stop("Research-only collections were chosen, but their terms were not accepted. Read their terms and agree "
+             "to use the result only for personal, non-commercial purposes (in the program: tick Include "
+             "research-only collections and press Agree; with the .cmd files: add --accept-research-terms).")
     tag = ("-wikipedia" if args.with_wikipedia else "") + ("" if args.size == "normal" else f"-{args.size}")
     run = f"{args.model}{tag}"                 # each kind of run keeps its own test results and add-on
     plan = None
     if args.follow_up:
         plan = state.data.get("follow-up")
+        # What today's choices allow: a training that learned from art with nudity, medical pictures, your own
+        # pictures, or non-commercial or research-only collections (personal use) is only carried on from when that
+        # is chosen again now.
+        wanted_now = {"nudity": args.with_nudity, "medical": args.with_medical, "own": bool(args.own),
+                      "noncommercial": args.personal_noncommercial, "research": args.personal_research}
+        if plan and not state.done(f"after-{plan['run']}") and \
+                any(on and not wanted_now.get(c) for c, on in plan.get("needs", {}).items()):
+            say("The follow-up started before carries on from a training made with choices that are not made now "
+                "(" + ", ".join(c for c, on in plan["needs"].items() if on and not wanted_now.get(c)) + "); a new "
+                "follow-up is planned instead.")
+            plan = None
         if not plan or state.done(f"after-{plan['run']}"):      # a new follow-up (the last one has finished)
-            # Only a training whose pictures fit today's choices can be carried on from: one that learned from art
-            # with nudity, medical pictures or your own pictures is skipped when that is not chosen now.
-            wanted_now = {"nudity": args.with_nudity, "medical": args.with_medical, "own": bool(args.own)}
             earlier = [(r, f) for r, f in finished_runs(work, state) if r.startswith(args.model) and
                        all(wanted_now[c] or not state.data[f"train-{r}"].get(c) for c in wanted_now)]
             if not earlier:
+                # Say when a personal-use training was passed over, so the person knows which choice it needs.
+                skipped = {c for r, _f in finished_runs(work, state) if r.startswith(args.model)
+                           for c in ("noncommercial", "research") if state.data[f"train-{r}"].get(c)
+                           and not wanted_now[c]}
+                names = {"noncommercial": "non-commercial", "research": "research-only"}
+                hint = (" A training for personal use only (with " + " and ".join(names[c] for c in sorted(skipped))
+                        + " collections) is only carried on from when the same choice is made again."
+                        if skipped else "")
                 stop("There is no finished training to carry on from that fits these choices. Train once first "
-                     "(Start Training).")
+                     "(Start Training)." + hint)
             base_run, base_final = earlier[-1]
             old = prepared_collections(state)
             wanted = [k.strip() for k in args.collections.split(",") if k.strip()]
@@ -703,7 +789,12 @@ def main(argv=None):
             if not new and not args.own:
                 stop("Every collection was already in the earlier training: there is nothing new to add yet.")
             import time as _time
-            plan = {"run": f"{args.model}-plus-{_time.strftime('%Y%m%d-%H%M')}", "from": base_run, "from_final": base_final,
+            # A follow-up with a personal-use choice is personal too ("-personal" in its name), and remembers which
+            # choices it needs (its earlier training's, and the personal-use ones made now).
+            needs = {c: bool(state.data[f"train-{base_run}"].get(c)) for c in wanted_now}
+            needs.update({c: wanted_now[c] or needs[c] for c in ("noncommercial", "research")})
+            plan = {"run": f"{args.model}-plus-{_time.strftime('%Y%m%d-%H%M')}" + ("-personal" if personal else ""),
+                    "from": base_run, "from_final": base_final, "needs": needs,
                     "new": new, "old": {k: v for k, v in old.items() if k not in new}}
             state.mark("follow-up", plan)
         run = plan["run"]
@@ -712,6 +803,10 @@ def main(argv=None):
     say(f"Picture Model Training Kit started for the {args.model.upper()} model, size {args.size}"
         + (", with Wikipedia." if args.with_wikipedia else "."))
     say(sources.content_choices_text(args.with_nudity, args.with_medical))
+    if personal:
+        say("Personal-use collections: " + " and ".join(w for w, on in (
+            ("non-commercial", args.personal_noncommercial), ("research-only", args.personal_research)) if on)
+            + " included. This training will be for personal use only.")
     if args.own:
         say(f"With your own pictures from {args.own}" + (", alone." if args.own_only else ", added to the collections."))
     if plan:
@@ -760,6 +855,7 @@ def main(argv=None):
         # A training with the content choices is its own training too ("4b-nudity-medical"); named after the
         # collections really prepared, so a training started before those packs existed carries on as it was.
         extra = "".join(f"-{c}" for c in ("nudity", "medical") if c in used)
+        extra += "-personal" if personal else ""     # personal use only: its own training, never mixed up
         run, tag = run + extra, tag + extra
     if not train_rows:
         stop("No collection could be downloaded. Check the internet connection and start the kit again.")
@@ -789,7 +885,8 @@ def main(argv=None):
         model, processor = load_model(folder, trainable=True, adapter=plan["from_final"] if plan else None)
         seconds = train(model, processor, train_rows, adapter_dir, device)
         state.mark(f"train-{run}", {"seconds": seconds, "nudity": "nudity" in used, "medical": "medical" in used,
-                                    "own": "own" in used})
+                                    "own": "own" in used, "noncommercial": args.personal_noncommercial,
+                                    "research": args.personal_research})
         del model, processor
         free()
     else:

@@ -12,7 +12,9 @@ The steps (numbered like train.py's, so the wizard's progress bar works the same
      for SDXL also the fp16-fix VAE, and the CLIP model used to score the test;
   3. read the described pictures of the chosen collections from the picture library (preparing any collection that
      is not there yet, as train.py does), keep only real DESCRIPTIONS (not short answers, not other languages, not
-     safety advice) and shorten each to the 77 words-pieces the model reads; some are kept back for the test;
+     safety advice), leave out every picture of a child (marked "child", or whose question or answer mentions a
+     child: CHILD_WORDS; library and own pictures alike; counted in the log and the report), and shorten each to
+     the 77 words-pieces the model reads; some are kept back for the test;
   4. turn every training picture into the model's compressed form (latents) and every description into the model's
      text form (embeddings), once, kept on disk; then make the test pictures with the base model ("before");
   5. train the add-on (LoRA rank 32 on the attention layers of the UNet), saving every so often;
@@ -23,6 +25,12 @@ The steps (numbered like train.py's, so the wizard's progress bar works the same
 Command line:
   python train_pictures.py --base {sd15,sdxl} --library FOLDER --size {quick,normal,full} [--with-wikipedia]
                            [--with-nudity] [--with-medical] [--own FOLDER] [--own-only] [--limit N] [--work FOLDER]
+                           [--personal-noncommercial] [--personal-research --accept-research-terms]
+
+Personal-use collections (--personal-noncommercial, --personal-research): as in train.py, the add-on is then for
+PERSONAL USE ONLY (its name gets "-personal"; REPORT.txt starts with the warning; ATTRIBUTION.txt lists them under their
+own heading; the zip gets PERSONAL-USE-ONLY.txt). Only those whose keys are in personal_sources.py's
+PERSONAL_PICTURE_MAKING_OK are used for picture-making.
 
 Hidden options for the kit's own tests (tiny models on a computer without a graphics card): --base-repo REPO,
 --clip-repo REPO, --steps N.
@@ -97,6 +105,29 @@ DESCRIPTIVE = set("with in on of wearing holding standing sitting shows showing 
                   "above beside".split())
 
 
+# Words that show a picture is of a child (whole words, any case). A picture-making model may learn facial
+# expressions and body language from adults, but never from pictures of children: a row marked "child" (the
+# expression packs set it) or whose question or answer has one of these words is left out, with its picture.
+CHILD_WORDS = re.compile(r"\b(child|children|kids?|boys?|girls?|bab(y|ies)|infant|toddler|newborn|teen|teenager|son|"
+                         r"daughter|schoolchild|pupil|youngster|little one)\b", re.IGNORECASE)
+CHILDREN_NOTE = ("{count} picture{s} that mention children {were} left out: a picture-making model never learns from "
+                 "pictures of children.")
+
+
+def mentions_child(row):
+    """True when a row is about a child: marked "child", or its question or answer (caption, description) has a
+    child word (CHILD_WORDS)."""
+    if row.get("child"):
+        return True
+    text = " ".join(str(row.get(k) or "") for k in ("question", "answer", "caption", "description"))
+    return bool(CHILD_WORDS.search(text))
+
+
+def children_note(count):
+    """The plain sentence about the pictures of children left out (for the log and the report)."""
+    return CHILDREN_NOTE.format(count=count, s="" if count == 1 else "s", were="was" if count == 1 else "were")
+
+
 def sentences(text):
     """The sentences of a text (split after . ! or ? followed by a space)."""
     return [s for s in re.split(r"(?<=[.!?])\s+", text.strip()) if s]
@@ -164,15 +195,28 @@ def fit(text, tokenizer):
 
 
 def chosen_sources(args):
-    """The collections to use: sources.chosen with the nudity and medical choices when this kit's sources.py knows
-    them (a newer one), otherwise the older chosen(with_wikipedia)."""
+    """The collections to use: sources.chosen with the nudity, medical and personal-use choices when this kit's
+    sources.py knows them (a newer one), otherwise the older chosen(with_wikipedia). A personal-use collection
+    ("noncommercial" or "research") is only used when its key is in PERSONAL_PICTURE_MAKING_OK
+    (personal_sources.py); NOT_FOR_PICTURE_MAKING always wins."""
+    personal = {"with_noncommercial": getattr(args, "personal_noncommercial", False),
+                "with_research": getattr(args, "personal_research", False)}
     try:
-        found = sources.chosen(with_wikipedia=args.with_wikipedia, with_nudity=args.with_nudity,
-                               with_medical=args.with_medical)
+        try:
+            found = sources.chosen(with_wikipedia=args.with_wikipedia, with_nudity=args.with_nudity,
+                                   with_medical=args.with_medical, **personal)
+        except TypeError:                                # a sources.py without the personal-use choices
+            if any(personal.values()):
+                say("  (This kit's list of collections has no personal-use collections yet; they are left out.)")
+            found = sources.chosen(with_wikipedia=args.with_wikipedia, with_nudity=args.with_nudity,
+                                   with_medical=args.with_medical)
         # Pictures of children (childhood illnesses) help a describer tell a carer what a rash looks like, but a
         # picture-making model must never learn to make pictures of children's bodies: never used here.
         never = set(getattr(sources, "NOT_FOR_PICTURE_MAKING", ()))
-        return [s for s in found if s.key not in never]
+        # Personal-use collections only when their terms allow picture-making (PERSONAL_PICTURE_MAKING_OK).
+        making_ok = set(getattr(sources, "PERSONAL_PICTURE_MAKING_OK", ()) or ())
+        return [s for s in found if s.key not in never and
+                (getattr(s, "group", "") not in ("noncommercial", "research") or s.key in making_ok)]
     except TypeError:
         if args.with_nudity or args.with_medical:
             say("  (This kit's list of collections has no nudity or medical choice yet; they are left out.)")
@@ -238,14 +282,20 @@ def spread(items, count, seed):
 
 
 def choose_items(train_rows, test_rows, mine, tokenizer, args, wanted):
-    """(training items, test items), each {"picture", "caption", "source"}: the descriptions of the library's rows (and
-    the person's own), shortened to fit. The test captions come from the collections' test pictures (or, with
-    --own-only, a few of the person's own kept back); the training items are the person's own first, then the library's
-    spread over the collections, up to wanted (and --limit)."""
+    """(training items, test items, how many pictures of children were left out), each item {"picture", "caption",
+    "source"}: the descriptions of the library's rows (and the person's own), shortened to fit. The test captions come
+    from the collections' test pictures (or, with --own-only, a few of the person's own kept back); the training items
+    are the person's own first, then the library's spread over the collections, up to wanted (and --limit).
+    Every picture with a row about a child (mentions_child), in the library or the person's own, is left out
+    altogether, whatever its other rows say."""
+    children = {r.get("picture") for r in [*train_rows, *test_rows, *mine] if mentions_child(r)}
+
     def items_of(rows, own=False):
-        """The rows that are descriptions, as items."""
+        """The rows that are descriptions (and not of a picture of a child), as items."""
         out = []
         for row in rows:
+            if row.get("picture") in children:
+                continue
             caption = caption_of(row, own)
             if caption and row.get("picture"):
                 out.append({"picture": row["picture"], "caption": fit(caption, tokenizer), "source": row["source"]})
@@ -268,7 +318,7 @@ def choose_items(train_rows, test_rows, mine, tokenizer, args, wanted):
     random.Random(SEED + 2).shuffle(training)
     if args.limit:
         training = training[:args.limit]
-    return training, tests
+    return training, tests, len(children)
 
 
 # ----------------------------------------------------------------- 2. the models
@@ -749,9 +799,16 @@ def clip_verdict(before, after):
 
 # ----------------------------------------------------------------- 7. the report and the zip
 
+def personal_lines(info):
+    """The PERSONAL USE ONLY block (train.personal_lines when this kit's train.py has it)."""
+    return train.personal_lines(info) if hasattr(train, "personal_lines") else []
+
+
 def write_report(path, info):
-    """REPORT.txt: what was trained, on what, how long, the CLIP verdict, the licence and the test captions."""
-    lines = ["Picture Model Training Kit: picture-making add-on report", "",
+    """REPORT.txt: what was trained, on what, how long, the CLIP verdict, the licence and the test captions; it starts
+    with the PERSONAL USE ONLY block when a personal-use choice was made."""
+    block = personal_lines(info)
+    lines = [*block, *([""] if block else []), "Picture Model Training Kit: picture-making add-on report", "",
              f"Finished: {datetime.datetime.now():%d %B %Y at %H:%M}",
              f"Base model: {info['base_name']} ({info['repo']}, commit {info['revision'][:12]})",
              f"Graphics card: {info['card']}",
@@ -759,7 +816,8 @@ def write_report(path, info):
               + (f", {info['own']} of them your own" if info["own"] else "") + f"; size: {info['size']}"),
              (f"Training: {info['steps']} steps of {info['per_step']} pictures; LoRA rank {RANK}, learning rate "
               f"{RATE}, min-SNR weighting (gamma {SNR_GAMMA:g}), {info['precision']}"),
-             f"Training time: {duration(info['seconds'])}; final error {info['loss']:.3f}", "",
+             f"Training time: {duration(info['seconds'])}; final error {info['loss']:.3f}",
+             *([children_note(info["children_left_out"])] if info.get("children_left_out") else []), "",
              "RESULT: " + info["verdict"],
              ("(CLIP score: how well each test picture matches its description, as the CLIP model sees it, from 0 to "
               "1; a rough measure. The test pictures are in test-before and test-after, with captions.txt; the "
@@ -802,6 +860,8 @@ def attribution_text(info):
         head.append(f"Pictures were prepared with the fp16-fix VAE ({info['vae']}, MIT licence).")
     if info["share_alike"]:
         head.append("It learned from Wikipedia's CC BY-SA 4.0 text, so it is shared under CC BY-SA 4.0 as well.")
+    if personal_lines(info):                      # personal use only: said at the top too
+        head.append(sources.PERSONAL_WARNING)
     return "\n".join(head) + "\n\n" + body
 
 
@@ -833,7 +893,8 @@ diffusers (Python)
   image = pipe("A red bicycle leaning against a white wall.", num_inference_steps=25).images[0]
 
 Licence: {info['licence']}. {LICENCE_NOTE}
-""" + ("\nIt learned from your own pictures: for personal use only.\n" if info["own"] else "")
+""" + ("\nIt learned from your own pictures: for personal use only.\n" if info["own"] else "") + (
+        "\n" + "\n".join(personal_lines(info)) + "\n" if personal_lines(info) else "")
 
 
 def package(run_dir, final, name, info, report):
@@ -853,6 +914,8 @@ def package(run_dir, final, name, info, report):
         z.write(report, "REPORT.txt")
         z.writestr("ATTRIBUTION.txt", attribution_text(info))
         z.writestr("HOW TO USE.txt", how_to_use(info, name))
+        if personal_lines(info):
+            z.writestr("PERSONAL-USE-ONLY.txt", "\n".join(personal_lines(info)) + "\n")
         z.writestr("settings.json", json.dumps({k: v for k, v in info.items() if k != "captions"}, indent=1))
         if os.path.exists(train.LOG):
             z.write(train.LOG, "training-log.txt")
@@ -902,6 +965,13 @@ def main(argv=None):
     parser.add_argument("--own", default="", help="a folder of your own described pictures to add")
     parser.add_argument("--own-only", action="store_true", help="learn only from your own pictures")
     parser.add_argument("--limit", type=int, default=0, help="train on at most this many pictures")
+    parser.add_argument("--personal-noncommercial", action="store_true",
+                        help="also non-commercial collections (the add-on is for personal use only)")
+    parser.add_argument("--personal-research", action="store_true",
+                        help="also research-only collections (personal use only; needs --accept-research-terms)")
+    parser.add_argument("--accept-research-terms", action="store_true",
+                        help="you have read the research-only collections' terms and will use the result only for "
+                             "personal, non-commercial purposes")
     parser.add_argument("--work", default="", help="the work folder (the kit's work folder when not given)")
     parser.add_argument("--base-repo", default="", help=argparse.SUPPRESS)     # tests: a tiny diffusers model
     parser.add_argument("--clip-repo", default="", help=argparse.SUPPRESS)     # tests: a tiny CLIP model
@@ -909,6 +979,11 @@ def main(argv=None):
     args = parser.parse_args(argv)
     if args.own_only and not args.own:
         parser.error("--own-only needs --own FOLDER")
+    personal = args.personal_noncommercial or args.personal_research
+    if args.personal_research and not args.accept_research_terms:
+        stop("Research-only collections were chosen, but their terms were not accepted. Read their terms and agree "
+             "to use the result only for personal, non-commercial purposes (in the program: tick Include "
+             "research-only collections and press Agree; on the command line: add --accept-research-terms).")
     os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
     os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
     sources.say = say
@@ -931,6 +1006,7 @@ def main(argv=None):
     tag = "".join(f"-{w}" for w, on in (("wikipedia", args.with_wikipedia), ("nudity", args.with_nudity),
                                          ("medical", args.with_medical)) if on)
     tag += "-own-only" if args.own_only else ("-own" if args.own else "")
+    tag += "-personal" if personal else ""          # personal use only: its own training, never mixed up
     tag += f"-limit{args.limit}" if args.limit else ""
     run = f"{args.base}-{args.size}{tag}" + (f"-test-{slug(repo)}" if testing else "")
     run_dir = os.path.join(root, run)
@@ -941,6 +1017,8 @@ def main(argv=None):
     say("")
     say(f"Picture Model Training Kit started: a picture-making add-on for {settings['name']}, size {args.size}"
         + (", from your own pictures only." if args.own_only else "."))
+    if personal:
+        say("Personal-use collections included: this training will be for personal use only.")
     say("Windows will not go to sleep while this runs; the screen may turn off. You can close this window at any time "
         "and start the kit again later: it carries on where it stopped.")
 
@@ -975,12 +1053,14 @@ def main(argv=None):
         train_rows, test_rows = ([], []) if args.own_only else library_rows(work, args)
         mine = own_rows(args.own) if args.own else []
         if mine:
-            say("  A reminder: a picture-making model must never learn from pictures of children, or of anyone who has"
-                " not agreed. Leave such pictures out of the folder you train a picture-making model on (a picture"
-                " describer may learn from them).")
+            say("  A reminder: pictures of children are left out automatically when their description mentions a "
+                "child; also leave out pictures of anyone who has not agreed.")
         from transformers import CLIPTokenizer
         tokenizer = CLIPTokenizer.from_pretrained(folder, subfolder="tokenizer")
-        items, tests = choose_items(train_rows, test_rows, mine, tokenizer, args, wanted)
+        items, tests, children = choose_items(train_rows, test_rows, mine, tokenizer, args, wanted)
+        if children:
+            say("  " + children_note(children))
+        state.mark("children", children)          # for the report, also after a restart
         if not items or not tests:
             stop("There are no described pictures to learn from. Prepare the picture library first (Start Training), "
                  "or give a folder of your own described pictures.")
@@ -1066,7 +1146,9 @@ def main(argv=None):
             "per_step": per_step, "seconds": state.data["train"]["seconds"], "loss": state.data["train"]["loss"],
             "share_alike": args.with_wikipedia, "collections": collections, "captions": captions,
             "with_nudity": args.with_nudity, "with_medical": args.with_medical,
+            "with_noncommercial": args.personal_noncommercial, "with_research": args.personal_research,
             "own_pictures": collections.get("own", 0), "own_only": args.own_only,
+            "children_left_out": state.data.get("children") or 0,
             "clip_before": scores["before"], "clip_after": scores["after"],
             "verdict": clip_verdict(scores["before"], scores["after"]),
             "precision": "bf16 mixed precision, 8-bit AdamW" if device == "cuda" else "float32 on the processor (test)",

@@ -11,6 +11,14 @@ Groups:
                 (credit only), which the toolkit's rules ask for.
   "share-alike" CC BY-SA (Wikipedia): only with --with-wikipedia. The add-on is then labelled CC BY-SA 4.0 and
                 credits Wikipedia, and is published as a separate choice.
+  "noncommercial" CC BY-NC, CC BY-NC-SA or CC BY-NC-ND: only with --personal-noncommercial. The add-on is then
+                for PERSONAL USE ONLY (never sold, published or put in a product), which the report, ATTRIBUTION.txt
+                and PERSONAL-USE-ONLY.txt in the zip say.
+  "research"    research-only or "academic use" terms: only with --personal-research (and --accept-research-terms).
+                Personal use only, like "noncommercial".
+  The two personal-use groups come from personal_sources.py (PERSONAL_SOURCES), when that file is there; without it
+  the kit simply has none. A personal-use collection may give its terms page (terms=) and a one-line summary of its
+  terms (terms_summary=), shown in the report and in the program's research-terms window.
 
 Content choices (Source.content): most collections have none (""). A collection marked "nudity" (non-sexual nudes
 in art) is only used with --with-nudity, and one marked "medical" (medical and anatomy pictures) only with
@@ -23,7 +31,8 @@ Sizes (--size): each source has a cap for "normal"; "quick" uses a tenth of it (
 A finished source is not prepared again when the kit is started again (its rows are kept in data/<key>-<size>.jsonl;
 a bigger size prepares it again, but pictures already downloaded are kept).
 
-Main parts: Source, SOURCES, chosen(with_wikipedia, with_nudity=, with_medical=), content_choices_text,
+Main parts: Source, SOURCES, chosen(with_wikipedia, with_nudity=, with_medical=, with_noncommercial=, with_research=),
+content_choices_text, PERSONAL_GROUPS, is_personal, terms_link, terms_summary, PERSONAL_WARNING,
 prepare_source(source, data_dir, work, cap), questions.
 """
 
@@ -68,21 +77,26 @@ class Source:
     name       its name in the report
     licence    the licence of its words and pictures, in plain words, with where it is written
     credit     the credit line for ATTRIBUTION.txt
-    group      "permissive" or "share-alike"
+    group      "permissive", "share-alike", "noncommercial" or "research" (see the module docstring)
     cap        the most pictures to use at "normal" size
     test       how many of its pictures are kept back for the test
     prepare    a function (source, data_dir, work, cap) -> [rows], each with "split" ("train", "test" or "")
     download   roughly how much it downloads, for the screen ("7.6 GB")
     content    "" for most collections; "nudity" (non-sexual nudes in art: only with --with-nudity) or "medical"
-               (medical and anatomy pictures: only with --with-medical)"""
+               (medical and anatomy pictures: only with --with-medical)
+    terms      for a personal-use collection: the web address of its licence or terms page ("" when none; the first
+               web address in its licence or credit is used then)
+    terms_summary  for a personal-use collection: its terms in one plain line ("" when none; its licence is used)"""
 
-    def __init__(self, key, name, licence, credit, group, cap, test, prepare, download, content=""):
+    def __init__(self, key, name, licence, credit, group, cap, test, prepare, download, content="", terms="",
+                 terms_summary=""):
         """Store the fields (see the class docstring)."""
         if content not in CONTENTS:
             raise ValueError(f"unknown content {content!r} for {key}")
         self.key, self.name, self.licence, self.credit, self.group = key, name, licence, credit, group
         self.cap, self.test, self.prepare, self.download = cap, test, prepare, download
         self.content = content
+        self.terms, self.terms_summary = terms, terms_summary
 
 
 # The content choices a collection can need: "" (none), "nudity" and "medical" (see the module docstring).
@@ -1176,12 +1190,51 @@ SOURCES = [
 ]
 
 
-def chosen(with_wikipedia=False, *, with_nudity=False, with_medical=False):
-    """The sources to train on: the permissive ones, and the share-alike ones too with with_wikipedia. A collection
-    with content "nudity" is only included with with_nudity, and one with content "medical" only with with_medical
-    (see the module docstring)."""
+def chosen(with_wikipedia=False, *, with_nudity=False, with_medical=False, with_noncommercial=False,
+           with_research=False):
+    """The sources to train on: the permissive ones; the share-alike ones too with with_wikipedia; the
+    "noncommercial" ones with with_noncommercial and the "research" ones with with_research (both for personal use
+    only). A collection with content "nudity" is only included with with_nudity, and one with content "medical" only
+    with with_medical (see the module docstring). A collection of any other group is never included."""
     allowed = {"": True, "nudity": with_nudity, "medical": with_medical}
-    return [s for s in SOURCES if (s.group == "permissive" or with_wikipedia) and allowed[s.content]]
+    groups = {"permissive": True, "share-alike": with_wikipedia, "noncommercial": with_noncommercial,
+              "research": with_research}
+    return [s for s in SOURCES if groups.get(s.group, False) and allowed[s.content]]
+
+
+# ----------------------------------------------------------------- personal-use collections
+
+# The groups whose collections make the add-on PERSONAL USE ONLY.
+PERSONAL_GROUPS = ("noncommercial", "research")
+
+# The first lines of the report, of ATTRIBUTION.txt's personal part and of PERSONAL-USE-ONLY.txt.
+PERSONAL_WARNING = ("PERSONAL USE ONLY. This add-on learned from collections whose licences do not allow commercial "
+                    "use (and/or research-only collections). Do not sell it, publish it, put it in a product or share "
+                    "it outside personal, non-commercial use.")
+
+
+def is_personal(source):
+    """True when a collection is for personal use only (its group is "noncommercial" or "research")."""
+    return getattr(source, "group", "") in PERSONAL_GROUPS
+
+
+def terms_link(source):
+    """The web address of a collection's terms: its terms field, or else the first web address in its licence or
+    credit ("" when there is none)."""
+    if getattr(source, "terms", ""):
+        return source.terms
+    found = re.search(r"https?://\S+", f"{source.licence} {source.credit}")
+    return found.group(0).rstrip(".,;)") if found else ""
+
+
+def terms_summary(source):
+    """A collection's terms in one plain line: its terms_summary, or else its licence."""
+    return getattr(source, "terms_summary", "") or source.licence
+
+
+def personal_sources(group=None):
+    """The personal-use collections in SOURCES (only those of group when given: "noncommercial" or "research")."""
+    return [s for s in SOURCES if is_personal(s) and (group is None or s.group == group)]
 
 
 # Collections that a picture-making model (train_pictures.py) never trains on, whatever is chosen: pictures of
@@ -1244,8 +1297,9 @@ def prepare_source(source, data_dir, work, size="normal", seed=7):
 
 
 def _add_collections(extra):
-    """Put more collections (from their own files) into SOURCES, before the share-alike ones, so the permissive
-    collections stay together and in the order the kit trains them."""
+    """Put more collections (from their own files) into SOURCES, before the first collection that is not permissive
+    (share-alike or personal-use), so the permissive collections stay together and in the order the kit trains
+    them."""
     first_shared = next((i for i, s in enumerate(SOURCES) if s.group != "permissive"), len(SOURCES))
     known = {s.key for s in SOURCES}
     SOURCES[first_shared:first_shared] = [s for s in extra if s.key not in known]
@@ -1261,3 +1315,17 @@ _add_collections(MORE_SOURCES)
 from big_sources import BIG_SOURCES  # noqa: E402
 
 _add_collections(BIG_SOURCES)
+
+# The personal-use collections (non-commercial licences and research-only terms), in their own file, which may be
+# missing: the kit then simply has none. PERSONAL_PICTURE_MAKING_OK: the keys of those a picture-making model may
+# learn from (train_pictures.py); none when the file or the set is missing.
+try:
+    import personal_sources as _personal  # noqa: E402
+except ImportError as _e:
+    _personal = None
+    if getattr(_e, "name", None) != "personal_sources":       # the file is there but cannot be loaded: say why
+        say(f"(The personal-use collections could not be loaded: {_e}. They are left out.)")
+PERSONAL_SOURCES = list(getattr(_personal, "PERSONAL_SOURCES", []) or [])
+PERSONAL_PICTURE_MAKING_OK = set(getattr(_personal, "PERSONAL_PICTURE_MAKING_OK", ()) or ())
+
+_add_collections(PERSONAL_SOURCES)

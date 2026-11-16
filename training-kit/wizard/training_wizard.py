@@ -8,7 +8,9 @@ It does what the kit's .cmd files do, in one window that a screen reader user ca
      copies and download kept for good, for future training), the training folder (C:\\Training by default), the model (4B or 8B), how much to train (a quick
      try, normal, full: several days, or a follow-up that carries on from the last finished training with only
      the new collections), Wikipedia or not, the content choices (art with nudity, medical and anatomy pictures:
-     both ticked for a describer, neither for a picture-making model, and remembered for each), your own pictures
+     both ticked for a describer, neither for a picture-making model, and remembered for each), the personal-use
+     collections (non-commercial licences, research-only terms: both off at first, remembered for each kind; ticking
+     the research box opens ResearchTermsDialog, which lists their terms and must be agreed to), your own pictures
      folder ("Check my pictures" says what was found in it, kit\\own_data.py) and whether to train on them alone, and
      whether to prepare this computer first; "Check this computer" says the NVIDIA card, its memory and the free
      disk space;
@@ -27,9 +29,14 @@ Accessibility: standard wx controls only; a label ending ":" right before each f
 has an Alt letter, named in its tooltip, and no letter is used twice in the window (both pages together; with this
 many controls some labels have no letter); Escape closes (asking first while training runs); F1 opens READ ME
 FIRST.txt; Enter presses only the focused button (no default button). Letters: first page B, L, W, Y (nudity),
-A (anatomy), O (own pictures folder), K (check my pictures), J (describe pictures), M (only my own), P, C, S, I
-and the labels T and H;
+A (anatomy), Q (non-commercial collections, shown in brackets), Z (research-only collections, in brackets), O (own
+pictures folder), K (check my pictures), J (describe pictures), M (only my own), P, C, S, I and the labels T and H;
 second page R, G, E, F, U, N, D and the label V; X (Exit) on both.
+
+Personal-use collections: when either box is ticked the training is for personal use only (train.py and
+train_pictures.py get --personal-noncommercial and --personal-research --accept-research-terms), which the Check
+result and the Status field say. The research-terms window has its own letters: T (the terms list), I (I have read
+these terms), A (Agree), C (Cancel); Escape is Cancel and F1 opens READ ME FIRST.txt.
 
 Describe pictures (Alt+J) opens describe_window.py: describing pictures together with friends, offline, in a
 workspace folder that "Your own pictures folder" can then point at (the data side is kit\\describe_package.py).
@@ -426,6 +433,121 @@ def own_data_module():
         return None
 
 
+# ----------------------------------------------------------------- personal-use collections
+
+PERSONAL_NOTE = "This training will be for personal use only."
+NONCOMMERCIAL_HINT = ("Personal use only: collections whose licences do not allow commercial use. You may not sell or "
+                      "publish what you make with them, put it in a product or share it outside personal use.")
+
+
+def sources_module():
+    """The kit's sources.py (bundled into the program, or beside the wizard in the kit), which lists the collections
+    and, through personal_sources.py when it is there, the personal-use ones; None when it cannot be loaded."""
+    folder = resource("kit")
+    if folder not in sys.path:
+        sys.path.insert(0, folder)
+    try:
+        import sources
+        return sources
+    except Exception:  # noqa: BLE001 - said by the caller
+        return None
+
+
+def research_collections():
+    """[(name, terms link, one-line summary of its terms)] of the research-only collections in the kit (empty when
+    there are none or the list cannot be read)."""
+    module = sources_module()
+    if module is None:
+        return []
+    out = []
+    for source in module.SOURCES:
+        if getattr(source, "group", "") == "research":
+            link = module.terms_link(source) if hasattr(module, "terms_link") else ""
+            summary = module.terms_summary(source) if hasattr(module, "terms_summary") else source.licence
+            out.append((source.name, link, summary))
+    return out
+
+
+def research_terms_text(collections):
+    """The research-only collections and their terms as plain text for the terms window's list (one paragraph each,
+    so a screen reader reads them line by line)."""
+    if not collections:
+        return ("This version of the kit has no research-only collections yet, so ticking the box changes nothing "
+                "for now. If some are added later, they are for personal, non-commercial use only.")
+    parts = [(f"{len(collections)} research-only collection{'s' if len(collections) != 1 else ''}. Each may only be "
+              "used for research or personal, non-commercial purposes.")]
+    for number, (name, link, summary) in enumerate(collections, 1):
+        parts.append(f"{number}. {name}\nTerms: {link or 'see its licence'}\nIn short: {summary}")
+    return "\n\n".join(parts)
+
+
+class ResearchTermsDialog(wx.Dialog):
+    """Asked when "Include research-only collections" is ticked: lists each research-only collection with its terms
+    page and a one-line summary (in one read-only, scrollable text field), and asks the person to tick "I have read
+    these terms ..." and press Agree. Agree without the tick says what is missing and keeps the window open; Cancel
+    or Escape closes it (the box is then unticked). Standard controls, a label before the field, Alt letters named in
+    the tooltips, no default button, F1 opens READ ME FIRST.txt."""
+
+    def __init__(self, parent, collections):
+        """The terms list, the agreement check box and the two buttons."""
+        super().__init__(parent, title="Research-only collections: their terms", size=(680, 520),
+                         style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+        self.mnemonics = {}
+        panel = wx.Panel(self)
+        s = wx.BoxSizer(wx.VERTICAL)
+        label = wx.StaticText(panel, label="Research-only collections and their &terms:")
+        s.Add(label, 0, wx.LEFT | wx.RIGHT | wx.TOP, 8)
+        self.terms = wx.TextCtrl(panel, value=research_terms_text(collections),
+                                 style=wx.TE_MULTILINE | wx.TE_READONLY)
+        s.Add(self.terms, 1, wx.EXPAND | wx.ALL, 8)
+        self.mnemonics["t"] = self.terms
+        self.agree_box = wx.CheckBox(panel, label="&I have read these terms and will use the result only for "
+                                                  "personal, non-commercial purposes")
+        self.agree_box.SetToolTip("Needed before Agree (Alt+I)")
+        s.Add(self.agree_box, 0, wx.ALL, 8)
+        row = wx.BoxSizer(wx.HORIZONTAL)
+        self.agree_button = wx.Button(panel, label="&Agree")
+        self.agree_button.SetToolTip("Keep the research-only collections in the training (Alt+A)")
+        self.agree_button.Bind(wx.EVT_BUTTON, self.on_agree)
+        self.cancel_button = wx.Button(panel, label="&Cancel")
+        self.cancel_button.SetToolTip("Leave the research-only collections out (Alt+C)")
+        self.cancel_button.Bind(wx.EVT_BUTTON, lambda e: self.EndModal(wx.ID_CANCEL))
+        for b in (self.agree_button, self.cancel_button):
+            row.Add(b, 0, wx.ALL, 4)
+        s.Add(row, 0, wx.ALL, 4)
+        panel.SetSizer(s)
+        self.Bind(wx.EVT_CHAR_HOOK, self.on_key)
+        self.terms.SetFocus()
+
+    def on_agree(self, _event):
+        """Agree: only with the check box ticked; otherwise say what is missing and stay open."""
+        if not self.agree_box.GetValue():
+            speak("First tick I have read these terms and will use the result only for personal, non-commercial "
+                  "purposes, with Alt+I, then press Agree.", True)
+            self.agree_box.SetFocus()
+            return
+        self.EndModal(wx.ID_OK)
+
+    def on_key(self, event):
+        """Escape is Cancel; F1 opens READ ME FIRST.txt; Alt and the label's letter moves to the terms list."""
+        key = event.GetKeyCode()
+        if key == wx.WXK_ESCAPE:
+            self.EndModal(wx.ID_CANCEL)
+        elif key == wx.WXK_F1:
+            open_help(None)
+        elif event.AltDown() and not event.ControlDown() and 0 < key < 256 and chr(key).lower() in self.mnemonics:
+            self.mnemonics[chr(key).lower()].SetFocus()
+        else:
+            event.Skip()
+
+
+def open_help(kit):
+    """Open READ ME FIRST.txt (the kit folder's copy when there is one, else the program's)."""
+    path = os.path.join(kit, "READ ME FIRST.txt") if kit else resource("READ ME FIRST.txt")
+    if os.path.exists(path) and hasattr(os, "startfile"):
+        os.startfile(path)  # noqa: S606 - opens the text file in Notepad
+
+
 # ----------------------------------------------------------------- the window
 
 class Wizard(wx.Frame):
@@ -539,6 +661,21 @@ class Wizard(wx.Frame):
                                   "Anatomy textbook figures and old anatomy plates showing the inside and outside of "
                                   "the human body, with their captions", False)
         s.Add(self.medical, 0, wx.ALL, 8)
+        # The personal-use collections, remembered for each kind of training, both off at first. Few Alt letters are
+        # left, so theirs (Q and Z) are shown in brackets.
+        self.personal = {kind: {"noncommercial": bool(chosen.get(f"noncommercial_{kind}", False)),
+                                "research": bool(chosen.get(f"research_{kind}", False))} for kind, _ in KINDS}
+        self.noncommercial = self.check(page, "Include non-commercial collections (personal use only) (&Q)",
+                                        NONCOMMERCIAL_HINT, False)
+        self.noncommercial.Bind(wx.EVT_CHECKBOX, self.on_noncommercial)
+        s.Add(self.noncommercial, 0, wx.ALL, 8)
+        self.noncommercial_hint = wx.StaticText(page, label=NONCOMMERCIAL_HINT)
+        s.Add(self.noncommercial_hint, 0, wx.LEFT | wx.RIGHT, 28)
+        self.research = self.check(page, "Include research-only collections (personal use only) (&Z)",
+                                   "Collections whose terms allow only research or academic use; you are shown their "
+                                   "terms and must agree first. Personal use only", False)
+        self.research.Bind(wx.EVT_CHECKBOX, self.on_research)
+        s.Add(self.research, 0, wx.ALL, 8)
         self.own = self.labelled(page, s, "Your own pictures folder:", lambda: wx.TextCtrl(
             page, value=chosen.get("own_folder") or ""))
         self.own.SetToolTip("Optional: a folder of your own pictures with their descriptions, for personal use. "
@@ -587,12 +724,15 @@ class Wizard(wx.Frame):
             control.Show(not pictures)
         self.nudity.SetValue(self.content[kind]["nudity"])
         self.medical.SetValue(self.content[kind]["medical"])
+        self.noncommercial.SetValue(self.personal[kind]["noncommercial"])
+        self.research.SetValue(self.personal[kind]["research"])
         if getattr(self, "first", None):          # not yet while the page is being built
             self.first.Layout()
 
     def on_kind(self, _event):
         """Another kind chosen: keep the content choices of the one before, show the fitting fields, and say it."""
         self.content[self.shown_kind] = {"nudity": self.nudity.GetValue(), "medical": self.medical.GetValue()}
+        self.personal[self.shown_kind] = self.personal_choice()
         self.shown_kind = self.kind_key()
         self.show_kind(self.shown_kind)
         ticked = [w for w, c in (("art with nudity", self.nudity), ("medical and anatomy pictures", self.medical))
@@ -600,7 +740,50 @@ class Wizard(wx.Frame):
         speak(("Picture-making model chosen: choose Stable Diffusion in Picture-making model. "
                if self.shown_kind == "pictures" else "Picture describer chosen. ")
               + ("Ticked: " + " and ".join(ticked) + "." if ticked else
-                 "Art with nudity and medical pictures are not ticked."), True)
+                 "Art with nudity and medical pictures are not ticked.")
+              + (" " + PERSONAL_NOTE if self.is_personal() else ""), True)
+
+    # -- the personal-use collections
+    def personal_choice(self):
+        """{"noncommercial": ticked, "research": ticked}: the personal-use boxes as they are now."""
+        return {"noncommercial": self.noncommercial.GetValue(), "research": self.research.GetValue()}
+
+    def is_personal(self):
+        """True when either personal-use box is ticked: the training is then for personal use only."""
+        return self.noncommercial.GetValue() or self.research.GetValue()
+
+    def say_personal(self, first=""):
+        """Show and say first in Check result, followed by the personal-use note when either box is ticked."""
+        text = (first + (" " + PERSONAL_NOTE if self.is_personal() else "")).strip()
+        self.show_result(text)
+
+    def on_noncommercial(self, _event):
+        """The non-commercial box changed: say what it means."""
+        if self.noncommercial.GetValue():
+            self.say_personal("Non-commercial collections included. " + NONCOMMERCIAL_HINT)
+        else:
+            self.say_personal("Non-commercial collections left out.")
+
+    def on_research(self, _event):
+        """The research box was ticked: show the research-only collections' terms; it stays ticked only when the
+        person ticks "I have read these terms ..." and presses Agree (Cancel unticks it)."""
+        if not self.research.GetValue():
+            self.say_personal("Research-only collections left out.")
+            return
+        if self.agree_to_research_terms():
+            self.say_personal("Research-only collections included; you agreed to their terms.")
+        else:
+            self.research.SetValue(False)
+            self.say_personal("Research-only collections left out: their terms were not agreed to.")
+        self.research.SetFocus()
+
+    def agree_to_research_terms(self):
+        """Show ResearchTermsDialog; True when the person agreed."""
+        dialog = ResearchTermsDialog(self, research_collections())
+        try:
+            return dialog.ShowModal() == wx.ID_OK
+        finally:
+            dialog.Destroy()
 
     # -- the progress page
     def build_second(self, parent):
@@ -718,9 +901,7 @@ class Wizard(wx.Frame):
 
     def on_help(self, _event):
         """Open READ ME FIRST.txt."""
-        path = os.path.join(self.kit, "READ ME FIRST.txt") if self.kit else resource("READ ME FIRST.txt")
-        if os.path.exists(path):
-            os.startfile(path)  # noqa: S606 - opens the text file in Notepad
+        open_help(self.kit)
 
     def on_start(self, _event):
         """Check, then show the progress page and start the work in the background."""
@@ -750,6 +931,7 @@ class Wizard(wx.Frame):
             return
         self.kit = os.path.join(self.folder.GetValue(), KIT_NAME)
         self.content[kind] = {"nudity": self.nudity.GetValue(), "medical": self.medical.GetValue()}
+        self.personal[kind] = self.personal_choice()
         choices = {"folder": self.folder.GetValue(), "library": self.library.GetValue(),
                    "model": MODELS[self.model.GetSelection()][0], "size": size,
                    "wikipedia": self.wikipedia.GetValue(), "prepare": self.prepare.GetValue(), "what": kind,
@@ -757,6 +939,8 @@ class Wizard(wx.Frame):
                    "own_only": self.own_only.GetValue()}
         for name, values in self.content.items():
             choices[f"nudity_{name}"], choices[f"medical_{name}"] = values["nudity"], values["medical"]
+        for name, values in self.personal.items():     # the personal-use boxes, for each kind
+            choices[f"noncommercial_{name}"], choices[f"research_{name}"] = values["noncommercial"], values["research"]
         save_choices({**load_choices(), **choices})    # keeps the Describe pictures window's own choices
         self.first.Hide()
         self.second.Show()
@@ -776,6 +960,14 @@ class Wizard(wx.Frame):
             args.append("--with-nudity")
         if self.medical.GetValue():
             args.append("--with-medical")
+        if self.noncommercial.GetValue():
+            args.append("--personal-noncommercial")
+        if self.research.GetValue():                 # only ticked after Agree in the terms window
+            args += ["--personal-research", "--accept-research-terms"]
+        self.personal_run = self.is_personal()
+        if self.personal_run:
+            self.lines.put(PERSONAL_NOTE)            # into the Status field and Everything said
+            speak(PERSONAL_NOTE)
         if own:
             args += ["--own", own]
             if self.own_only.GetValue():
@@ -850,7 +1042,9 @@ class Wizard(wx.Frame):
     # -- the progress page's buttons
     def on_read(self, _event):
         """Say the status and the percent again."""
-        speak(f"{self.status.GetValue()} Overall {self.percent} percent.", True)
+        personal = getattr(self, "personal_run", False) and PERSONAL_NOTE not in self.status.GetValue()
+        speak(f"{self.status.GetValue()} Overall {self.percent} percent." + (" " + PERSONAL_NOTE if personal else ""),
+              True)
 
     def on_open_log(self, _event):
         """Open training-log.txt."""
@@ -923,6 +1117,10 @@ def self_test():
         rows, problems, _summary = module.check_folder(empty)
         if rows or not problems:
             raise SystemExit("own_data.check_folder did not report an empty folder")
+    kit_sources = sources_module()
+    if kit_sources is None or not hasattr(kit_sources, "PERSONAL_GROUPS"):
+        raise SystemExit("sources.py cannot be loaded, or has no personal-use groups")
+    research_terms_text(research_collections())     # the research-terms list can be read
     import describe_window
     package = describe_window.load_package_module(sys.modules[__name__])
     if package is None:
@@ -938,6 +1136,7 @@ def self_test():
     window.on_kind(None)
     window.kind.SetSelection(0)
     window.on_kind(None)
+    ResearchTermsDialog(window, research_collections()).Destroy()    # the research-terms window can be made
     describe_window.DescribeWindow(window, sys.modules[__name__], None).Destroy()
     window.Destroy()
     app.Destroy()

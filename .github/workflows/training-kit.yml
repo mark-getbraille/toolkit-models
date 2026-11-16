@@ -42,7 +42,9 @@ jobs:
           python-version: "3.12"
       - name: Install wxPython, cytolk, Pillow and PyInstaller
         # Pillow: "Check my pictures" opens each of your own pictures (kit/own_data.py, bundled into the program),
-        # and "Describe pictures" makes big pictures smaller (kit/describe_package.py, also bundled).
+        # and "Describe pictures" makes big pictures smaller (kit/describe_package.py, also bundled). The research-terms
+        # window lists the research-only collections from kit/sources.py (with more_sources, big_sources and
+        # personal_sources, also bundled; personal_sources may be missing, which only gives a build warning).
         run: python -m pip install wxPython==4.3.1 cytolk==0.1.13 pillow==13.0.0 pyinstaller==6.22.3
       - name: Build the program
         shell: pwsh
@@ -51,7 +53,8 @@ jobs:
             --add-data "training-kit;training-kit" --collect-all cytolk `
             --paths training-kit/kit --paths training-kit/wizard --hidden-import own_data `
             --hidden-import describe_package --hidden-import describe_window --hidden-import PIL.Image `
-            --hidden-import PIL.ImageOps `
+            --hidden-import PIL.ImageOps --hidden-import sources --hidden-import more_sources `
+            --hidden-import big_sources --hidden-import personal_sources `
             training-kit/wizard/training_wizard.py
           $p = Start-Process -FilePath "dist\Picture Model Training.exe" -ArgumentList "--self-test" -Wait -PassThru `
             -RedirectStandardOutput selftest.txt
