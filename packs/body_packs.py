@@ -213,7 +213,8 @@ def fetch_diagrams(items, workers=4, pause=0.2):
                     return (name, data, rows) if data else None
                 if r.status_code in (403, 404, 410):
                     return None
-                time.sleep(int(r.headers.get("Retry-After", "5")) if r.status_code == 429 else 2)
+                after = r.headers.get("Retry-After", "")      # Commons asks to slow down: wait, at most 2 minutes
+                time.sleep(min(int(after), 120) if r.status_code == 429 and after.isdigit() else 5)
             except Exception:  # noqa: BLE001 - tried again, then left out
                 time.sleep(2)
         return None

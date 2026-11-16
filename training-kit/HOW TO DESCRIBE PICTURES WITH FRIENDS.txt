@@ -1,0 +1,129 @@
+How to describe pictures with friends
+
+What this is for
+You and your friends can write descriptions for pictures together, for example stills taken from your own videos,
+and then teach the picture model with them. Your sighted friends can do most of the describing; you can describe
+things you know, check their work and run the training. No website is needed: the work is passed between you as
+zip files ("packages") on a USB stick, by email or on a shared drive. Nothing is sent anywhere by the program.
+
+Personal use only: the pictures and descriptions are for training your own and your friends' models. Don't publish
+the pictures, the descriptions or a model trained on them unless everyone involved agrees and owns the rights. Each
+workspace and each package holds a file PERSONAL-USE.txt saying so.
+
+Every step below starts with the word STEP, so you can find the next one with your screen reader's find command.
+
+How it works, in short
+A workspace is an ordinary folder. Each picture in it has its description in a text file of the same name
+(kitchen.jpg and kitchen.txt), the same as Way A in "HOW TO ADD YOUR OWN PICTURES.txt". Beside them is one work
+file, describing.json, that remembers for each picture its status, who described it and when, who checked it, and
+notes. The statuses are:
+- new: no description yet;
+- described: someone wrote a description;
+- checked: a second person read the description and confirmed it is right;
+- needs another look: something must be looked at again, for example two people wrote different descriptions;
+- skip: the picture is left out (blurred, nothing to see, or private).
+Only described and checked pictures are used for training.
+
+STEP 1: open the Describe pictures window
+Start Picture Model Training (Picture-Model-Training.exe) and press Alt+J (Describe pictures). Press F1 in the
+window at any time to open this guide.
+
+STEP 2: make a workspace
+Make an empty folder, for example D:\Describing. In the window, press Alt+B (Browse for the workspace folder) and
+choose it. The program asks for the workspace's name (for example "Family videos"): press Alt+M (Make the
+workspace). Then write your name in "Your name" (Alt+M in the main describing window). Your name is saved with
+every description and check, and remembered for next time.
+To open the same workspace another day, the program opens the last one by itself. You can also type a folder in
+"Workspace folder" (Alt+F) and press Alt+W (Open or make the workspace).
+
+STEP 3: put pictures in
+- Your own photos: press Alt+A (Add pictures) and choose pictures, or press Cancel to choose a whole folder
+  instead. The pictures are copied in, made at most 2,048 pixels on their longest side, and turned the right way
+  up. A picture that is already in the workspace is skipped, even under another name. A picture with a .txt of the
+  same name brings its description along.
+- Stills from your videos: press Alt+V (Take stills from videos). Add the video files (Alt+A), choose how often to
+  take a picture (one every 2 seconds at most, by default), whether to use what is said in the video as
+  descriptions, the spoken language, and whether to blur people's faces. Then press Alt+T (Start taking stills).
+  The first time, the program installs its video and speech tools into the kit folder (the training folder chosen
+  in the main window); this can take half an hour. Each video is said as it is done. The stills go into the
+  workspace; a still with your speech near it gets that speech as its description (check it!), and the others are
+  "new". A video done before is skipped.
+Every picture added is listed in Pictures with its status.
+
+STEP 4: describe the pictures
+Go to the Pictures list (Alt+U) and choose a picture with the arrow keys. The picture is shown, with its
+description as its alternative text, and the program says its number, name, status and description. Then:
+- "Question" (Alt+Q) is the question the description answers. It is usually "Describe this picture." You can ask
+  something else, for example "What does the label say?".
+- Write the description in "Description" (Alt+D).
+- "Notes for each other" is for telling the others something, for example "Is this the blue mug or the green one?"
+- Press Alt+S (Save and next) to save and go to the next picture. The cursor goes to Description, ready to write.
+If Filter (Alt+R) is set to "Not described", only the pictures still to do are listed.
+
+STEP 5: check each other's work
+A second person reads each description and, when it is right, presses Alt+C (Mark as checked). If it is wrong,
+correct it and then mark it as checked, or press Alt+N (Needs another look) and write why in Notes for each other.
+Press Alt+K (Skip this picture) to leave a picture out. Set Filter to "Described" to go through the descriptions
+waiting for a check.
+
+STEP 6: pass the work back and forth
+- To send pictures to a friend: press Alt+E (Export a package) and choose which pictures go in:
+  "All", "Not described" (for a friend who will describe them), "Described" (described and checked ones), or "To
+  check" (descriptions waiting for a check, and pictures needing another look). Then choose where to save the zip,
+  for example on a USB stick. The program suggests a name with the workspace, the choice, your name and the date.
+  Inside the zip is a README.txt that says what it is and how to open it.
+- Your friend opens the program, makes or opens a workspace (STEP 2) and presses Alt+I (Import a package) and
+  chooses the zip. Do not unpack the zip first.
+- When they are done, they export a package the same way and send it back, and you import it.
+Importing never loses anything. It says what it did, for example "12 new pictures, 30 descriptions added, 2
+differences to look at." The rules:
+- a picture you do not have yet is added (a different picture with a name you already use gets a new name);
+- if only one of you wrote a description, it is kept;
+- if you both wrote the same words, they are kept (and a check made by either of you counts);
+- if one of you corrected the other's description, the correction is kept: the program remembers which
+  descriptions each one replaced;
+- if you really wrote different descriptions, the newer one is kept as the description, the other is kept beside
+  it (for example kitchen.other-Anna.txt), and the picture is marked "needs another look".
+
+STEP 7: settle the differences
+Set Filter to "Needs another look". On each picture, press Alt+O (Show the other version). The window shows the
+description in use, the other version (choose which one in "Which other version" when there are several), and a
+field "Description to keep" (Alt+K). Press Alt+U to keep the description in use, Alt+O to keep the other version,
+or edit "Description to keep" to merge the two and press Alt+E (Keep the edited description). The versions not
+kept are moved into a hidden folder named ".resolved versions" in the workspace, so nothing is ever deleted. When
+you send this picture back to your friend, their copy is settled too.
+
+STEP 8: train with the workspace
+Press Alt+T (Use this workspace for training). The window closes and the main window's "Your own pictures folder"
+holds the workspace. Press Alt+K (Check my pictures) to hear how many pictures will be used: only the described
+and checked ones; the rest are listed as not ready. Then train as described in "HOW TO ADD YOUR OWN PICTURES.txt"
+(STEP 4 and STEP 5 there).
+
+Keyboard commands in the Describe pictures window
+- Control+S: save the description and stay on the picture.
+- Alt+S: save and go to the next picture.
+- Control+Page Down: the next picture; Control+Page Up (or Alt+P): the previous picture. What you wrote is kept.
+- Moving in the Pictures list with the arrow keys also keeps what you wrote.
+- Alt+F Workspace folder, Alt+B Browse, Alt+W Open or make the workspace, Alt+M Your name, Alt+R Filter, Alt+U
+  Pictures, Alt+Q Question, Alt+D Description.
+- Alt+C Mark as checked, Alt+N Needs another look, Alt+K Skip this picture, Alt+O Show the other version.
+- Alt+A Add pictures, Alt+V Take stills from videos, Alt+E Export a package, Alt+I Import a package, Alt+T Use
+  this workspace for training, Alt+H or F1 this guide, Alt+L or Escape close.
+- The Status field says what happened last; the Progress field says where you are, for example "Picture 14 of 120.
+  63 described, 20 checked." Long tasks (adding pictures, packages, videos) are said as they go, and everything is
+  written into the "Picture Model Training logs" folder on the desktop.
+
+Tips for good descriptions for blind people
+- Most important first: say what the picture is in the first few words ("A tin of tomato soup on a shop shelf"),
+  then the details.
+- Colours: name them plainly (dark blue, pale green, bright red), also for clothes, food and packaging.
+- Text in the picture: write out labels, signs, prices and screens word for word, and say where they are ("The
+  label says: Heinz Cream of Tomato Soup, 400 grams.").
+- Where things are: left, right, in front, behind, at the top, in the middle ("A mug on the left of the keyboard").
+- People: what they are doing, how they are standing, their facial expression and clothes ("A woman in a red coat
+  laughs and waves"). Name a person only if you know who it is and they agree.
+- No guessing: describe only what you can see. If something cannot be made out, say so ("The price is too blurred
+  to read."). Do not invent names, places or feelings.
+- Keep it natural: whole sentences, no "image of" or "picture showing" at the start, no emojis.
+- About 1 to 4 sentences for a simple picture; more for a busy one. Over 45 words is learned as a detailed
+  description.

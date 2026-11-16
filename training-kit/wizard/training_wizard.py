@@ -27,8 +27,12 @@ Accessibility: standard wx controls only; a label ending ":" right before each f
 has an Alt letter, named in its tooltip, and no letter is used twice in the window (both pages together; with this
 many controls some labels have no letter); Escape closes (asking first while training runs); F1 opens READ ME
 FIRST.txt; Enter presses only the focused button (no default button). Letters: first page B, L, W, Y (nudity),
-A (anatomy), O (own pictures folder), K (check my pictures), M (only my own), P, C, S, I and the labels T and H;
+A (anatomy), O (own pictures folder), K (check my pictures), J (describe pictures), M (only my own), P, C, S, I
+and the labels T and H;
 second page R, G, E, F, U, N, D and the label V; X (Exit) on both.
+
+Describe pictures (Alt+J) opens describe_window.py: describing pictures together with friends, offline, in a
+workspace folder that "Your own pictures folder" can then point at (the data side is kit\\describe_package.py).
 
 Logs: like the Digital Accessibility Toolkit, everything the wizard says (and any error) is written, with the time,
 into "Picture Model Training logs" on the desktop, one file a day ("Picture Model Training log 2026-11-16.txt");
@@ -543,7 +547,9 @@ class Wizard(wx.Frame):
         for b in (self.button(page, "Browse for your &own pictures folder...", "Choose the folder of your own pictures",
                               self.on_browse_own),
                   self.button(page, "Chec&k my pictures", "Say what was found in your own pictures folder",
-                              self.on_check_own)):
+                              self.on_check_own),
+                  self.button(page, "Describe pictures (&J)...", "Describe pictures with friends, and pass the work "
+                              "between you as packages", self.on_describe)):
             own_row.Add(b, 0, wx.ALL, 4)
         s.Add(own_row, 0, wx.LEFT, 4)
         self.own_only = self.check(page, "Only &my own pictures",
@@ -678,6 +684,23 @@ class Wizard(wx.Frame):
             wx.CallAfter(self.show_result, summary)
         threading.Thread(target=check, daemon=True).start()
 
+    def on_describe(self, _event):
+        """Open the Describe pictures window; when it says "Use this workspace for training", the workspace goes
+        into Your own pictures folder."""
+        try:
+            import describe_window
+        except Exception as e:  # noqa: BLE001 - said in plain words
+            self.show_result(f"The Describe pictures window cannot be opened: {e}")
+            return
+        kit = os.path.join(self.folder.GetValue().strip(), KIT_NAME) if self.folder.GetValue().strip() else None
+        with describe_window.DescribeWindow(self, sys.modules[__name__], kit) as window:
+            window.ShowModal()
+            folder = window.training_folder
+        if folder:
+            self.own.SetValue(folder)
+            self.show_result(f"Your own pictures folder is now the describing workspace {folder}. Only its described "
+                             "and checked pictures are used. Press Check my pictures (Alt+K) to see them.")
+
     def show_result(self, text):
         """Put text in the Check result field, write it in the log and say it."""
         if not self:                               # the window was closed meanwhile
@@ -734,7 +757,7 @@ class Wizard(wx.Frame):
                    "own_only": self.own_only.GetValue()}
         for name, values in self.content.items():
             choices[f"nudity_{name}"], choices[f"medical_{name}"] = values["nudity"], values["medical"]
-        save_choices(choices)
+        save_choices({**load_choices(), **choices})    # keeps the Describe pictures window's own choices
         self.first.Hide()
         self.second.Show()
         self.panel.Layout()
@@ -886,7 +909,9 @@ class Wizard(wx.Frame):
 def self_test():
     """For the build: the bundled kit files are there and the window can be made; prints OK or raises."""
     for name in ("READ ME FIRST.txt", "Prepare This Computer.cmd", "HOW TO ADD YOUR OWN PICTURES.txt",
-                 os.path.join("kit", "train.py"), os.path.join("kit", "sources.py"), os.path.join("kit", "own_data.py"),
+                 "HOW TO DESCRIBE PICTURES WITH FRIENDS.txt", os.path.join("kit", "train.py"),
+                 os.path.join("kit", "sources.py"), os.path.join("kit", "own_data.py"),
+                 os.path.join("kit", "describe_package.py"), os.path.join("kit", "run_video.cmd"),
                  os.path.join("kit", "requirements.txt")):
         if not os.path.exists(resource(name)):
             raise SystemExit(f"missing from the program: {name}")
@@ -898,12 +923,22 @@ def self_test():
         rows, problems, _summary = module.check_folder(empty)
         if rows or not problems:
             raise SystemExit("own_data.check_folder did not report an empty folder")
+    import describe_window
+    package = describe_window.load_package_module(sys.modules[__name__])
+    if package is None:
+        raise SystemExit("describe_package.py cannot be loaded")
+    with tempfile.TemporaryDirectory() as folder:
+        package.self_test(folder)                   # make, describe, export and import a tiny workspace
+        rows, _problems, _summary = module.check_folder(os.path.join(folder, "second"))
+        if len(rows) != 1:
+            raise SystemExit("own_data.check_folder did not read the self-test workspace")
     app = wx.App()
     window = Wizard()
     window.kind.SetSelection(1)                    # both kinds of training can be shown
     window.on_kind(None)
     window.kind.SetSelection(0)
     window.on_kind(None)
+    describe_window.DescribeWindow(window, sys.modules[__name__], None).Destroy()
     window.Destroy()
     app.Destroy()
     print("OK")

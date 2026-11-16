@@ -30,6 +30,15 @@ To make one in Notepad: open Notepad, write the description, press Control+S, go
 name with .txt at the end (kitchen.txt) and press Enter. Save it as UTF-8 (Notepad's usual choice).
 A description of 45 words or more is learned as "Describe this picture in detail."; a shorter one as "Describe
 this picture."
+Your own question for a whole folder: make a file named question.txt in the folder, with the question on its
+first line, for example: What is this?
+Every picture described by a .txt file in that folder, and in its sub-folders, is then learned with that question
+(a sub-folder can have a question.txt of its own). The program for videos writes one for you.
+Text files that are never read as descriptions: question.txt, stills-for-describers.jsonl, and files beside a
+picture ending in .draft.txt (a draft to check and rename to .txt), .narration.txt (what was said near a still)
+or .other-NAME.txt (another person's version, from Describe pictures). Only kitchen.txt describes kitchen.jpg.
+A folder made with Describe pictures in the program (see HOW TO DESCRIBE PICTURES WITH FRIENDS.txt) is Way A
+too; there, only the pictures marked described or checked are used.
 
 Way B: one table for many pictures (captions.csv or metadata.csv)
 Make a file named captions.csv (or metadata.csv) in the folder. Its first line names the columns; each line after

@@ -15,7 +15,23 @@ recognised by themselves (several can be mixed in one folder):
      A folder is read this way only when none of its pictures has a description of its own, and never the chosen
      folder itself (its name says nothing about the pictures).
 
-A description without a question of its own is asked "Describe this picture in detail." when it has 45 words or
+A folder made by the program's "Describe pictures" window (a describing workspace, kit\\describe_package.py) is
+layout a) with a work file, describing.json, that gives each picture a status: only pictures marked "described" or
+"checked" there are used; the others (not described yet, skipped, or needing another look) are left out and said.
+Its other versions of a description (photo.other-Anna.txt) are never read as descriptions (only photo.txt and
+photo.caption are), and a question written in the window is used instead of the usual one.
+
+Files that are never read as descriptions: question.txt (see below), stills-for-describers.jsonl (video_frames.py's
+list of stills for the describers' website), and the extra text files beside pictures: photo.draft.txt (a draft
+that a person must check), photo.narration.txt (what was said near a still) and photo.other-Anna.txt (another
+person's version). Only photo.txt and photo.caption describe photo.jpg.
+
+A question.txt in a folder gives, in its first line, the question for every picture described by a text file of the
+same name (layout a) in that folder and in its sub-folders, unless a sub-folder has a question.txt of its own (for
+example "What is this?" for stills from your own narrated videos). A question set in the "Describe pictures" window
+for one picture comes before it.
+
+Otherwise a description without a question of its own is asked "Describe this picture in detail." when it has 45 words or
 more, otherwise "Describe this picture." (the toolkit's own questions, as in sources.py).
 
 Pictures may be jpg, jpeg, png, webp, bmp, gif or tif. About 1 in 20 pictures (at least 1, at most 50) is kept back
@@ -57,6 +73,12 @@ DETAILED_WORDS = 45
 SMALLEST = 64                  # pixels: a smaller picture is left out (as sources.smaller does)
 SHOW = 10                      # how many file names a problem lists at most
 TEST_SHARE, TEST_MOST = 20, 50  # about 1 picture in 20 is kept back for the test, at most 50
+QUESTION_FILE = "question.txt"  # a folder's question for its layout a) pictures
+IGNORED_LISTS = ("stills-for-describers.jsonl",)            # lists that are not descriptions
+NOT_DESCRIPTIONS = (".draft.txt", ".narration.txt")         # text files beside pictures that are not descriptions
+OTHER_VERSION = re.compile(r"\.other(-[^\\/]*)?\.txt$", re.IGNORECASE)  # photo.other-Anna.txt
+WORK_FILE = "describing.json"   # a describing workspace's work file (describe_package.py)
+READY = ("described", "checked")  # the statuses in it that are used for training
 
 LAYOUT_NAMES = {"text file": "with a text file of the same name",
                 "table": "listed in a captions.csv or metadata.csv table",
@@ -231,9 +253,32 @@ def walk(folder):
                 pictures.append(path)
             elif lower in TABLE_NAMES:
                 tables.append(path)
-            elif lower.endswith(".jsonl"):
+            elif lower.endswith(".jsonl") and lower not in IGNORED_LISTS:
                 lists.append(path)
     return pictures, tables, lists
+
+
+def workspace_status(folder, cache):
+    """{picture file name in lower case: (status, question)} from a describing workspace's work file in folder
+    ({} when the folder is not a workspace or its work file cannot be read); cache keeps each folder's answer."""
+    if folder not in cache:
+        cache[folder] = {}
+        try:
+            with open(os.path.join(folder, WORK_FILE), encoding="utf-8") as f:
+                pictures = json.load(f).get("pictures", {})
+            for name, entry in pictures.items():
+                if isinstance(entry, dict):
+                    cache[folder][name.lower()] = (str(entry.get("status", "new")), clean(entry.get("question", "")))
+        except (OSError, ValueError, AttributeError):
+            pass
+    return cache[folder]
+
+
+def not_a_description(path):
+    """True for a text file that is never a picture's description: question.txt, and photo.draft.txt,
+    photo.narration.txt and photo.other-Anna.txt (even beside a picture named photo.draft.jpg)."""
+    name = os.path.basename(path).lower()
+    return name == QUESTION_FILE or name.endswith(NOT_DESCRIPTIONS) or bool(OTHER_VERSION.search(name))
 
 
 def sidecar(picture):
@@ -241,9 +286,25 @@ def sidecar(picture):
     stem = os.path.splitext(picture)[0]
     for ending in TEXT_ENDINGS:
         for candidate in (stem + ending, stem + ending.upper()):
-            if os.path.isfile(candidate):
+            if os.path.isfile(candidate) and not not_a_description(candidate):
                 return candidate
     return None
+
+
+def folder_question(base, top, cache):
+    """The question from the nearest question.txt in base or a folder above it, up to top (the chosen folder);
+    "" when there is none. cache keeps each folder's answer."""
+    key = same_path(base)
+    if key not in cache:
+        path = os.path.join(base, QUESTION_FILE)
+        question = ""
+        if os.path.isfile(path):
+            with open(path, encoding="utf-8-sig", errors="replace") as f:
+                question = clean(next((line for line in f if line.strip()), ""))
+        if not question and key != same_path(top) and os.path.dirname(key) != key:
+            question = folder_question(os.path.dirname(base), top, cache)
+        cache[key] = question
+    return cache[key]
 
 
 def make_copy(original, target):
@@ -268,7 +329,7 @@ def check_folder(folder, copies=None, report=None):
     is trained. copies: a folder for the smaller training copies (None: only check). report(text): says progress
     for big folders (every 500 pictures)."""
     problems = {"tables": [], "lines": [], "missing": [], "empty": [], "undescribed": [], "unreadable": [],
-                "small": []}
+                "small": [], "not ready": []}
     folder = os.path.abspath(folder or "")
     if not folder or not os.path.isdir(folder):
         text = f"The folder {folder} was not found. Choose the folder that holds your pictures."
@@ -285,9 +346,14 @@ def check_folder(folder, copies=None, report=None):
         read_table(path, found, problems)
     for path in lists:
         read_jsonl(path, found, problems)
-    described, waiting, has_text = {}, [], set()
+    described, waiting, has_text, workspaces, questions = {}, [], set(), {}, {}
     for picture in pictures:
         key = same_path(picture)
+        status = workspace_status(os.path.dirname(picture), workspaces).get(os.path.basename(picture).lower())
+        if status and status[0] not in READY:     # a describing workspace's picture that is not ready
+            problems["not ready"].append(os.path.relpath(picture, folder))
+            has_text.add(os.path.dirname(key))
+            continue
         if key in found:
             described[picture] = found[key]
             has_text.add(os.path.dirname(key))
@@ -297,8 +363,9 @@ def check_folder(folder, copies=None, report=None):
             has_text.add(os.path.dirname(key))
             answer = read_text(text_file)
             if answer:
-                described[picture] = [(question_for(answer), answer, "text file",
-                                       os.path.relpath(text_file, folder))]
+                asked = (status[1] if status and status[1] and status[1] != NARRATE else
+                         folder_question(os.path.dirname(picture), folder, questions) or question_for(answer))
+                described[picture] = [(asked, answer, "text file", os.path.relpath(text_file, folder))]
             else:
                 problems["empty"].append(os.path.relpath(text_file, folder))
             continue
@@ -375,6 +442,10 @@ def problem_sentences(problems):
         out.append(f"{plural(len(p['empty']), 'description is', 'descriptions are')} empty, so "
                    f"{'its picture is' if len(p['empty']) == 1 else 'their pictures are'} left out: "
                    + listed(p["empty"], "") + ".")
+    if p["not ready"]:
+        out.append(f"{plural(len(p['not ready']), 'picture')} in a describing workspace "
+                   f"{'is' if len(p['not ready']) == 1 else 'are'} not described or checked yet (or skipped, or "
+                   "needing another look), so left out: " + listed(p["not ready"], "") + ".")
     if p["unreadable"]:
         out.append(f"{plural(len(p['unreadable']), 'picture')} could not be read (damaged, or not really a picture): "
                    + listed(p["unreadable"], "") + ".")

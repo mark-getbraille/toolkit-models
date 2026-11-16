@@ -39,6 +39,9 @@ anatomy plates). For a picture describer both are ticked at first, so it can des
 instead of refusing; for a picture-making model neither is. The report says which were used.
 Your own pictures: you can also teach it with your own described pictures, for personal use. Read "HOW TO ADD YOUR
 OWN PICTURES.txt" in this folder.
+Describing pictures with friends: the program's "Describe pictures" button (Alt+J) lets you and your friends
+describe pictures together, for example stills from your own videos, and pass the work between you as zip files
+by USB stick, email or a shared drive, with no website. Read "HOW TO DESCRIBE PICTURES WITH FRIENDS.txt".
 It trains a small add-on to the model, then tests whether the model really got better. The model itself is not
 changed. Nothing is sent anywhere; the kit only downloads what it needs. If one collection's website is down, the
 kit says so and carries on with the others.
