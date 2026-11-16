@@ -84,7 +84,7 @@ import time
 import zipfile
 
 import sources
-from sources import (BRIEF, CANNOT_TELL, Source, USER_AGENT, clean, download_file, fetch_pictures, have,
+from sources import (BRIEF, Source, USER_AGENT, clean, download_file, fetch_pictures, have,
                      hf_parquet_files, hf_parquet_rows, smaller)
 from big_sources import even_pick
 from more_sources import agreed_answer, as_question, download_to, fetch_shared, json_in_zip, narrative_row, sentence
