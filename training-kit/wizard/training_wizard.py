@@ -48,10 +48,57 @@ KIT_NAME = "Picture Model Training Kit"
 DEFAULT_FOLDER = "C:\\Training"
 
 
+def fixed_drives():
+    """The computer's own drives that are there now ("C:\\", "D:\\" ...); on other systems, the root."""
+    if os.name != "nt":
+        return ["/"]
+    import ctypes
+    drives = []
+    mask = ctypes.windll.kernel32.GetLogicalDrives()
+    for i in range(26):
+        if mask & (1 << i):
+            root = f"{chr(65 + i)}:\\"
+            if ctypes.windll.kernel32.GetDriveTypeW(root) == 3:       # DRIVE_FIXED: not a USB stick or DVD
+                drives.append(root)
+    return drives
+
+
 def default_library():
-    """The picture library's usual place: B:\\Picture Library when drive B: exists (the big drive), otherwise beside
-    the training folder."""
-    return "B:\\Picture Library" if os.path.isdir("B:\\") else os.path.join(DEFAULT_FOLDER, "Picture Library")
+    """The picture library's suggested place: "Picture Library" on the fixed drive with the most free space (no
+    drive letter is assumed: it is worked out on each computer)."""
+    best, free = None, -1
+    for root in fixed_drives():
+        try:
+            room = shutil.disk_usage(root).free
+        except OSError:
+            continue
+        if room > free:
+            best, free = root, room
+    return os.path.join(best or os.path.expanduser("~"), "Picture Library")
+
+
+SETTINGS_FILE = os.path.join(os.environ.get("APPDATA") or os.path.expanduser("~"), APP_NAME, "settings.json")
+
+
+def load_choices():
+    """The choices made last time on this computer ({} the first time)."""
+    import json
+    try:
+        with open(SETTINGS_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}
+
+
+def save_choices(choices):
+    """Remember the choices for next time (in the user's own application data). Never raises."""
+    import json
+    try:
+        os.makedirs(os.path.dirname(SETTINGS_FILE), exist_ok=True)
+        with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+            json.dump(choices, f, indent=1)
+    except OSError:
+        pass
 MODELS = [("4b", "Qwen3-VL 4B (needs an NVIDIA card with 12 GB or more)"),
           ("8b", "Qwen3-VL 8B (needs 16 GB or more; train the 4B model first)")]
 SIZES = [("quick", "Quick try: a tenth of the pictures, an hour or two"),
@@ -322,7 +369,7 @@ class Wizard(wx.Frame):
         self.second = self.build_second(self.panel)
         outer.Add(self.first, 1, wx.EXPAND)
         outer.Add(self.second, 1, wx.EXPAND)
-        self.close_button = self.button(self.panel, "C&lose", "Close the wizard", self.on_close)
+        self.close_button = self.button(self.panel, "E&xit", "Close the wizard", self.on_close)
         outer.Add(self.close_button, 0, wx.ALL | wx.ALIGN_RIGHT, 8)
         self.panel.SetSizer(outer)
         self.second.Hide()
@@ -373,15 +420,22 @@ class Wizard(wx.Frame):
                          "close the wizard at any time; starting again carries on where it stopped. Press F1 for the "
                          "full instructions."), style=wx.TE_MULTILINE | wx.TE_READONLY), 1)
         row = wx.BoxSizer(wx.HORIZONTAL)
-        self.folder = self.labelled(page, s, "&Training folder:", lambda: wx.TextCtrl(page, value=DEFAULT_FOLDER))
-        row.Add(self.button(page, "&Browse...", "Choose the training folder", self.on_browse), 0, wx.ALL, 4)
+        chosen = load_choices()
+        self.folder = self.labelled(page, s, "&Training folder:", lambda: wx.TextCtrl(
+            page, value=chosen.get("folder") or DEFAULT_FOLDER))
+        row.Add(self.button(page, "&Browse for the training folder...", "Choose the training folder", self.on_browse),
+                0, wx.ALL, 4)
         s.Add(row, 0, wx.LEFT, 4)
-        self.library = self.labelled(page, s, "Picture library f&older:", lambda: wx.TextCtrl(page, value=default_library()))
-        self.library.SetToolTip("All pictures, larger copies and downloads are kept here for good, for future training")
+        self.library = self.labelled(page, s, "Picture library f&older:", lambda: wx.TextCtrl(
+            page, value=chosen.get("library") or default_library()))
+        self.library.SetToolTip("All pictures, full-size copies and downloads are kept here for good, for future "
+                                "training. It starts on the drive with the most free space.")
+        s.Add(self.button(page, "Browse for the &library folder...", "Choose where the picture library is",
+                          self.on_browse_library), 0, wx.LEFT, 12)
         self.model = self.labelled(page, s, "&Model:", lambda: wx.Choice(page, choices=[m[1] for m in MODELS]))
-        self.model.SetSelection(0)
+        self.model.SetSelection(next((i for i, m in enumerate(MODELS) if m[0] == chosen.get("model")), 0))
         self.size = self.labelled(page, s, "&How much to train:", lambda: wx.Choice(page, choices=[x[1] for x in SIZES]))
-        self.size.SetSelection(2)
+        self.size.SetSelection(next((i for i, x in enumerate(SIZES) if x[0] == chosen.get("size")), 2))
         self.wikipedia = self.check(page, "Include &Wikipedia (the add-on is then CC BY-SA 4.0)",
                                     "Also learn from Wikipedia's alt text", False)
         s.Add(self.wikipedia, 0, wx.ALL, 8)
@@ -447,6 +501,12 @@ class Wizard(wx.Frame):
             if d.ShowModal() == wx.ID_OK:
                 self.folder.SetValue(d.GetPath())
 
+    def on_browse_library(self, _event):
+        """Choose the picture library folder."""
+        with wx.DirDialog(self, "Choose the picture library folder", self.library.GetValue()) as d:
+            if d.ShowModal() == wx.ID_OK:
+                self.library.SetValue(d.GetPath())
+
     def on_check(self, _event):
         """Check the card and the disk, show and say it."""
         lines, _ready = check_computer(self.folder.GetValue(), self.library.GetValue())
@@ -469,6 +529,9 @@ class Wizard(wx.Frame):
             speak(" ".join(lines), True)
             return
         self.kit = os.path.join(self.folder.GetValue(), KIT_NAME)
+        save_choices({"folder": self.folder.GetValue(), "library": self.library.GetValue(),
+                      "model": MODELS[self.model.GetSelection()][0], "size": SIZES[self.size.GetSelection()][0],
+                      "wikipedia": self.wikipedia.GetValue(), "prepare": self.prepare.GetValue()})
         self.first.Hide()
         self.second.Show()
         self.panel.Layout()

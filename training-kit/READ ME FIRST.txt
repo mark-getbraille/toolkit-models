@@ -90,9 +90,11 @@ It says FINISHED and whether the model got better. Two files matter:
   and you will be told how to send it. The add-on is only published in the toolkit if the tests show it is better.
 
 The picture library
-The program keeps every picture for good in the picture library folder (B:\Picture Library when drive B: exists):
-the training copies, larger copies of every picture (up to 2,048 pixels) for future models, the original downloads
-and the descriptions with their credits. A later training, of this model or a future one, uses them without
+The program keeps every picture for good in the picture library folder. It suggests "Picture Library" on the drive
+with the most free space on each computer, and you can choose any folder (Browse for the library folder, Alt+L),
+also on an external or network drive. It keeps the training copies, full-size copies of every picture (up to 2,048
+pixels) for future models, the original downloads and the descriptions with their credits. Pictures prepared before
+the library existed are downloaded again at full size the first time. A later training, of this model or a future one, uses them without
 downloading anything again. Do not delete it. Pictures an earlier training kept in the kit's work folder are moved
 into it the first time the program uses it.
 

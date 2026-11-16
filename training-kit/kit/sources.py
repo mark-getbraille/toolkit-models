@@ -76,6 +76,20 @@ class Source:
 
 # ----------------------------------------------------------------- shared helpers
 
+def archive_path(path):
+    """Where the library keeps the large copy of the training copy at path (None without a library)."""
+    if ARCHIVE_DIR and DATA_DIR:
+        return os.path.join(ARCHIVE_DIR, os.path.relpath(path, DATA_DIR))
+    return None
+
+
+def have(path):
+    """True when a picture needs nothing more: its training copy is there and, with a picture library, its large
+    copy too (a picture prepared before the library existed is downloaded again for its large copy)."""
+    keep = archive_path(path)
+    return os.path.exists(path) and (keep is None or os.path.exists(keep))
+
+
 def smaller(data, path):
     """Save picture bytes as a JPEG at most LONG_SIDE pixels on its long side; False when it cannot be read or is
     tiny (under 64 pixels)."""
@@ -135,7 +149,7 @@ def fetch_pictures(items, folder, workers=8, pause=0.0):
         """Fetch one picture; the row, or None."""
         name, url, row = item
         path = os.path.join(folder, name)
-        if not os.path.exists(path):
+        if not have(path):
             if pause:
                 time.sleep(pause)
             try:
@@ -181,7 +195,7 @@ def save_picture(row_id, data, folder):
     """Save picture bytes from a parquet row as a smaller JPEG named row_id; the path, or None."""
     os.makedirs(folder, exist_ok=True)
     path = os.path.join(folder, re.sub(r"[^\w.-]", "_", str(row_id)) + ".jpg")
-    if os.path.exists(path) or smaller(data or b"", path):
+    if have(path) or smaller(data or b"", path):
         return path
     return None
 
@@ -215,7 +229,7 @@ def prepare_docci(source, data_dir, work, cap):
                 continue
             split, text = descriptions[name]
             path = os.path.join(folder, name)
-            if os.path.exists(path) or smaller(tar.extractfile(member).read(), path):
+            if have(path) or smaller(tar.extractfile(member).read(), path):
                 rows.append({"picture": path, "question": DETAILED, "answer": clean(text), "split": split})
             count += 1
             if count % 1000 == 0:
@@ -402,7 +416,7 @@ def prepare_art_institute(source, data_dir, work, cap):
             alt = clean((art.get("thumbnail") or {}).get("alt_text"))
             if art.get("image_id") and len(alt.split()) >= 4:
                 items.append((f"{art['id']}.jpg",
-                              f"https://www.artic.edu/iiif/2/{art['image_id']}/full/843,/0/default.jpg",
+                              f"https://www.artic.edu/iiif/2/{art['image_id']}/full/843,/0/default.jpg",   # the museum's own size
                               {"question": ALT_TEXT, "answer": alt, "split": ""}))
         if page >= data.get("pagination", {}).get("total_pages", 0) or len(items) >= cap + source.test:
             break
@@ -441,7 +455,8 @@ def prepare_met(source, data_dir, work, cap):
             obj = session.get(f"{api}objects/{object_id}", timeout=30).json()
         except Exception:  # noqa: BLE001 - left out
             return None
-        if not obj.get("isPublicDomain") or not obj.get("primaryImageSmall") or not clean(obj.get("title")):
+        if not obj.get("isPublicDomain") or not (obj.get("primaryImage") or obj.get("primaryImageSmall")) \
+                or not clean(obj.get("title")):
             return None
         parts = [clean(obj["title"])]
         if clean(obj.get("artistDisplayName")):
@@ -450,7 +465,8 @@ def prepare_met(source, data_dir, work, cap):
         if clean(obj.get("objectDate")):
             answer += ", " + clean(obj["objectDate"])
         answer += "." + (" " + clean(obj["medium"]) + "." if clean(obj.get("medium")) else "")
-        return (f"{object_id}.jpg", obj["primaryImageSmall"], {"question": ARTWORK, "answer": answer, "split": ""})
+        return (f"{object_id}.jpg", obj.get("primaryImage") or obj["primaryImageSmall"],
+                {"question": ARTWORK, "answer": answer, "split": ""})
 
     with concurrent.futures.ThreadPoolExecutor(4) as pool:
         items = [i for i in pool.map(one, ids[:int((cap + source.test) * 1.2)]) if i]
@@ -508,7 +524,7 @@ def prepare_nasa(source, data_dir, work, cap):
                 if not key or key in seen or not links or not answer:
                     continue
                 seen.add(key)
-                href = links[0]["href"].replace("~thumb.", "~medium.")
+                href = links[0]["href"].replace("~thumb.", "~large.")
                 items.append((re.sub(r"[^\w.-]", "_", key) + ".jpg", href,
                               {"question": SPACE, "answer": answer, "split": ""}))
                 got += 1
@@ -638,7 +654,7 @@ def prepare_crossmodal(source, data_dir, work, cap):
             name = os.path.basename(member.name)
             if member.isfile() and name in english:
                 path = os.path.join(folder, name)
-                if os.path.exists(path) or smaller(tar.extractfile(member).read(), path):
+                if have(path) or smaller(tar.extractfile(member).read(), path):
                     rows.append({"picture": path, "question": BRIEF, "answer": english[name], "split": ""})
     if not KEEP_DOWNLOADS:
         os.remove(archive)
@@ -704,7 +720,7 @@ def prepare_wellcome(source, data_dir, work, cap):
             title = clean((image.get("source") or {}).get("title"))
             if (location.get("license") or {}).get("id") in WELLCOME_FREE and 8 <= len(title.split()) <= 80 and \
                     location.get("url", "").endswith("/info.json"):
-                entries.append((image["id"], location["url"][:-len("/info.json")] + "/full/!896,896/0/default.jpg",
+                entries.append((image["id"], location["url"][:-len("/info.json")] + "/full/!2048,2048/0/default.jpg",
                                 title))
     random.Random(23).shuffle(entries)
     items = [(f"{i}.jpg", url, {"question": MUSEUM, "answer": title, "split": ""})
@@ -780,10 +796,8 @@ def prepare_pack(source, data_dir, work, cap):
             base = {"question": row["question"], "answer": clean(row["answer"]), "split": ""}
             if row.get("file"):
                 path = os.path.join(folder, os.path.basename(row["file"]))
-                if not os.path.exists(path):
-                    with open(path, "wb") as out:
-                        out.write(z.read(row["file"]))
-                rows.append(dict(base, picture=path))
+                if have(path) or smaller(z.read(row["file"]), path):       # a training copy and a large copy
+                    rows.append(dict(base, picture=path))
             elif row.get("url"):
                 to_fetch.append((f"{source.key}-{index}.jpg", row["url"], base))
         with open(os.path.join(folder, "CREDITS.txt"), "wb") as out:
@@ -914,10 +928,22 @@ def prepare_source(source, data_dir, work, size="normal", seed=7):
     restarted kit reads instead of preparing again (a bigger size prepares again, using the pictures already there). Its "test" rows (or, without them, a random few) are the test pictures; the
     rest, up to its cap for the size, are for training."""
     path = os.path.join(data_dir, f"{source.key}-{size}.jsonl")
+    rows = None
     if os.path.exists(path):
         with open(path, encoding="utf-8") as f:
             rows = [json.loads(line) for line in f if line.strip()]
-    else:
+        missing = sum(1 for r in rows if not have(r["picture"]))
+        if missing:
+            # Prepared before the picture library existed (or interrupted): its pictures are downloaded again at
+            # full size for the library; the list stays the same, so the training does not change.
+            say(f"    {missing} of its pictures have no full-size copy in the picture library yet: downloading them "
+                "again at full size.")
+            try:
+                source.prepare(source, data_dir, work, max(50, int(source.cap * SIZES[size])))
+            except Exception as e:  # noqa: BLE001 - the pictures already there still train; tried again next time
+                say(f"    The full-size copies could not be downloaded now ({str(e).splitlines()[0][:150]}); the "
+                    "training uses the pictures already there, and they are tried again next time.")
+    if rows is None:
         cap = max(50, int(source.cap * SIZES[size]))
         rows = source.prepare(source, data_dir, work, cap)
         rows = [dict(r, source=source.key) for r in rows if r.get("picture") and clean(r.get("answer"))]

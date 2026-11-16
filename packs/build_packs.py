@@ -40,7 +40,7 @@ import sys
 import time
 import zipfile
 
-LONG_SIDE = 896
+LONG_SIDE = 2048       # packs keep large pictures: the kit makes its training copies and keeps these in the library
 PART_BYTES = 1_900_000_000
 USER_AGENT = "PictureModelTrainingKit/2 (https://github.com/mark-getbraille/toolkit-models)"
 DETAILED, ALT_TEXT = "Describe this picture in detail.", "Write a short description of this picture for someone who " \
@@ -95,7 +95,7 @@ def smaller(data):
         return None
     img.thumbnail((LONG_SIDE, LONG_SIDE))
     out = io.BytesIO()
-    img.save(out, "JPEG", quality=88)
+    img.save(out, "JPEG", quality=90)
     return out.getvalue()
 
 
@@ -172,7 +172,7 @@ def si_row(record):
     if not picture or not picture.get("content"):
         return None
     alt, ext = clean(picture.get("altTextAccessibility")), clean(picture.get("extDescrAccessibility"))
-    url = picture["content"] + "&max=896"
+    url = picture["content"] + "&max=2048"
     credit = f"{record.get('unitCode', 'Smithsonian')}, Smithsonian Institution, CC0: {record.get('title', '')}"
     if is_description(alt, 6):
         return url, {"question": ALT_TEXT, "answer": alt, "credit": credit}
@@ -431,7 +431,7 @@ def build_inaturalist(limit):
                 latin, common = taxon["name"], clean(taxon.get("preferred_common_name"))
                 answer = (f"This is {article(common)} {common} ({latin})." if common else f"This is {latin}.")
                 login = (o.get("user") or {}).get("login", "an iNaturalist user")
-                items.append((f"inat-{photo['id']}.jpg", photo["url"].replace("/square.", "/medium."),
+                items.append((f"inat-{photo['id']}.jpg", photo["url"].replace("/square.", "/large."),
                               {"question": question, "answer": answer,
                                "credit": f"Photo by {login} on iNaturalist, {photo['license_code'].upper()}, "
                                          f"https://www.inaturalist.org/observations/{o['id']}"}))

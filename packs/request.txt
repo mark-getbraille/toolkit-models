@@ -1,2 +1,3 @@
 # Changing this file on main starts .github/workflows/packs.yml for these pack keys (separated by commas), or all.
-inaturalist,nutrition5k,fresh_rotten,banknotes,cattle_health,clothing
+# Rebuilt with full-size (2048-pixel) pictures for the picture library.
+all
