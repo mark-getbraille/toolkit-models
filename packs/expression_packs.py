@@ -575,7 +575,8 @@ ABOUT_EXPRESSION = re.compile(
     r"\b(smil\w*|grin\w*|laugh\w*|cry\w*|tears?|frown\w*|yawn\w*|wink\w*|happy|happily|sad|unhappy|angry|mad|upset|"
     r"scared|afraid|frightened|surprised|shocked|excited|bored|tired|sleepy|worried|nervous|calm|relaxed|annoyed|"
     r"confused|serious|content|pleased|joyful|cheerful|emotions?|mood|feel|feels|feeling|facial expression|"
-    r"expression|enjoying (him|her|them)sel\w+|having fun|wav(e|es|ing)|thumbs? up|peace sign|hug\w*|"
+    r"expression|enjoying (him|her|them)sel\w+|having fun|waving|waves? (at|to|hello|goodbye)|thumbs? up|"
+    r"peace sign|hug|hugs|hugging|hugged|"
     r"shak\w* hands|handshake|pointing|clapp\w*|shrug\w*|salut\w*|pos(e|es|ing) for|scream\w*|yell\w*|shout\w*|"
     r"arms crossed|crossed arms|folded arms)\b", re.I)
 # A question must be about people (not an animal, a bed that "feels soft" or the weather).
@@ -755,6 +756,8 @@ def build_vqa_expressions(limit, most_each=3):
             if re.fullmatch(r"(?i)(can'?t|cannot) (tell|see)( that)?|not sure|unsure|i don'?t know|"
                             r"(i )?(can'?t|cannot) tell.*", answer):
                 continue
+            if len(answer.split()) < 2 and answer.lower() not in {"yes", "no"} | FEELINGS | set(ACTIONS):
+                continue                                         # "little", "somewhat": too loose alone
             question = as_question(question)
             add(image_id, question, careful_answer(question, answer), VISDIAL_CREDIT)
             found["Visual Dialog"] += 1
@@ -844,8 +847,8 @@ EXPRESSION_PACKS = {
 EXPRESSION_LIMITS = {
     "oi_expressions": 12000,          # about 1,500 usable in validation and test, many thousands more in training
     "commons_expressions": 1500,      # 70 categories, at most about 40 free pictures each
-    "bice_gestures": 1350,            # the stills of the 11 still gestures (of 2,482 stills)
-    "vqa_expressions": 6000,          # expression questions on free COCO photos, at most 3 a photo
+    "bice_gestures": 1430,            # every still of the 11 still gestures (of 2,482 stills)
+    "vqa_expressions": 1200,          # about 1,140 expression questions on free COCO photos (VQA v2 val, Visual Dialog)
 }
 
 
