@@ -47,7 +47,19 @@ The packs (MEDICAL_PACKS):
   childhood_illness   CDC Public Health Image Library, public-domain photographs only: close clinical pictures of
                       a childhood illness (chickenpox, measles, impetigo, ringworm, head lice and similar) on one
                       part of the body (face, arm, leg, hand, foot, back, chest, an eye, the scalp). For recognising
-                      illness only.
+                      illness only. Also Wellcome Collection and English-language Europeana records (same rules).
+  medical_collections Medical photographs and medical drawings of adults from Wellcome Collection and Europeana
+                      (English-language records), each item's licence checked (CC BY, CC0, public domain); art and
+                      stories (woodcuts of miracles and the like) left out.
+  birth_and_feeding   Childbirth, breastfeeding, pregnancy, newborns and their customs, described plainly and
+                      respectfully, so the describer can describe a family's own photos instead of refusing: CDC
+                      PHIL (public domain), Wellcome Collection and English-language Europeana (CC BY, CC0, public
+                      domain) and Wikimedia Commons categories (CC0, public domain, CC BY). The moment of birth and a
+                      newborn unclothed on a parent's chest are allowed from medical, government and museum sources
+                      only; from Commons (a general photo site) only the first list of scenes. Never: anything
+                      sexual, a child older than a newborn unclothed or in a bath, a child's genitals, nappy
+                      changing, fetal or specimen photos, a baby shown alone with nothing to show it is dressed or
+                      with a parent. Never used for picture-making training, like childhood_illness.
 
     python packs/medical_packs.py isic_skin --limit 8      (prints a few rows: a quick check of one builder)
 
@@ -93,6 +105,13 @@ REJECTED = {
     "WHO pictures": "CC BY-NC-SA.",
     "Europeana records not in English": "Europeana adds machine translations to titles, often wrong; left out "
                                         "until each can be translated reliably.",
+    "Te Papa birth and feeding records": "nearly all 'No Known Copyright Restrictions' (not on the allowed list) "
+                                         "and a noisy search; left out.",
+    "Gallica, Rijksmuseum, K-samsok, Finna, DigitaltMuseum, Deutsche Digitale Bibliothek": "reached through "
+        "Europeana, whose records from them are not in English (see above); not added separately yet.",
+    "Trove and DigitalNZ": "need an API key; not added yet.",
+    "UK OGL and Canadian, Australian and New Zealand health-department images": "not searched yet (NHS sites "
+        "use licensed stock photos, which are out).",
 }
 
 
