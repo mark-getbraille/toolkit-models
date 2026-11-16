@@ -78,6 +78,7 @@ import time
 
 from build_packs import session, clean, smaller, fetch_all, first_sentences, say, article  # noqa: F401
 from food_packs import with_twins, listed, sentence, count_pictures
+from places import with_place
 
 DOCTOR = "Only a doctor can diagnose this."
 VET = "Only a vet can diagnose this."
@@ -317,7 +318,7 @@ def build_skin_lesion_photos(limit):
                 out.append((f"pad-{r['img_id'].rsplit('.', 1)[0]}.jpg", data,
                             {"question": WHAT_SKIN, "answer": pad_answer(r), "credit": PAD_CREDIT}))
     random.Random(62).shuffle(out)
-    return out[:limit]
+    return with_place(out[:limit], "Espírito Santo, Brazil")   # patients of the PAD clinic of UFES, Espírito Santo
 
 
 # ----------------------------------------------------------------- ISIC Archive (dermoscopy and close-ups)
@@ -555,7 +556,7 @@ def build_gi_endoscopy(limit):
                            {"question": DESCRIBE, "answer": hk_answer(name), "credit": HK_CREDIT}))
             if not q:
                 queues.remove(entry)
-    return fetch_all(chosen, workers=4, pause=0.2)[:limit]
+    return with_place(fetch_all(chosen, workers=4, pause=0.2)[:limit], "Bærum, Norway")   # Bærum Hospital
 
 
 # ----------------------------------------------------------------- NIH ChestX-ray14
@@ -641,7 +642,7 @@ def build_chest_xray(limit):
                     out.append((f"nih-{r['Image Index'].rsplit('.', 1)[0]}.jpg", data,
                                 {"question": DESCRIBE, "answer": nih_answer(r), "credit": NIH_CREDIT}))
     random.Random(64).shuffle(out)
-    return out[:limit]
+    return with_place(out[:limit], "Bethesda, Maryland, USA")   # the NIH Clinical Center's patients
 
 
 # ----------------------------------------------------------------- PubMed Central case reports (CC BY or CC0)

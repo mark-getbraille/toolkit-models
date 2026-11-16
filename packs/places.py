@@ -36,7 +36,8 @@ OTHER_NAMES = {"united states": "USA", "united states of america": "USA", "u.s.a
                "the bahamas": "Bahamas", "republic of serbia": "Serbia", "united republic of tanzania": "Tanzania",
                "taiwan, province of china": "Taiwan", "hong kong sar": "Hong Kong", "hong kong s.a.r.": "Hong Kong",
                "iran, islamic republic of": "Iran", "england": "England", "scotland": "Scotland", "wales": "Wales",
-               "northern ireland": "Northern Ireland"}
+               "northern ireland": "Northern Ireland", "中国": "China", "韓国": "South Korea", "台湾": "Taiwan",
+               "米国": "USA", "アメリカ": "USA", "英国": "UK", "イギリス": "UK", "タイ": "Thailand"}
 _COUNTRIES = None          # [(name, ISO code, (west, south, east, north), [rings])], read once
 _NAMES = None              # {name in another language or spelling, lower case: English name}
 

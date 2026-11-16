@@ -30,6 +30,7 @@ import sys
 import time
 
 from build_packs import session, clean, smaller, fetch_all, first_sentences, say, COCO_FREE, coco_licences  # noqa: F401
+from places import where, country_named, place_name
 
 ASK_JA = "この写真を説明してください。"
 ASK_SV = "Beskriv bilden."
@@ -144,6 +145,25 @@ def jps_answer(description):
     return answer if len(answer) >= 8 else ""
 
 
+# Kinds of object whose Japan Search place ("spatial") is where the object was made or found: crafts, ceramics,
+# metalwork, lacquer, textiles, sculpture, archaeology and folk objects. For paintings, photographs and maps the place
+# can be the one shown instead, so they get none.
+JPS_MADE_TYPES = {"陶磁", "工芸", "工芸品", "金工", "漆工", "染織", "彫刻", "考古", "考古資料", "民俗", "民俗資料"}
+
+
+def jps_place(record):
+    """{"place": country, "place_kind": "origin"} for a craft or archaeological object whose record gives its
+    place ("日本 > 宮城県", "海外 > アジア > 中国"), the country only; or {}."""
+    index = record.get("rdfindex") or {}
+    if not JPS_MADE_TYPES & set(index.get("type") or []):
+        return {}
+    for spatial in index.get("spatial") or []:
+        country = next((country_named(part) for part in reversed(str(spatial).split(">")) if country_named(part)), "")
+        if country:
+            return where(country, "origin")
+    return {}
+
+
 def jps_row(record, text_licence):
     """(picture address, row) for a Japan Search record with a free picture and a description of what it shows."""
     c = record.get("common") or {}
@@ -158,7 +178,7 @@ def jps_row(record, text_licence):
     page = f"https://jpsearch.go.jp/item/{c.get('id') or record.get('id')}"
     credit = (f"{clean(c.get('title'))}, {clean(c.get('provider'))}. Picture: {picture_licence}; description: "
               f"{text_licence}. Via Japan Search: {page}" + (f" ({c['linkUrl']})" if c.get("linkUrl") else ""))
-    return url, {"question": ASK_JA, "answer": answer, "credit": credit}
+    return url, {"question": ASK_JA, "answer": answer, "credit": credit, **jps_place(record)}
 
 
 def build_japan_search(limit):
@@ -259,6 +279,22 @@ def ks_answer(motiv):
     return answer if len(answer.split()) >= 6 else ""
 
 
+def ks_place(entity):
+    """{"place", "place_kind"} from a K-samsök record's own contexts: where it was photographed ("Fotografering"),
+    made ("Produktion", "Tillverkning") or what place it shows ("Avbildning"); the municipality (or county) and the
+    country, in English. {} when no such context names one country."""
+    kinds = {"fotografering": "photo", "fotografi": "photo", "produktion": "origin", "tillverkning": "origin",
+             "avbildning": "depicted", "avbildad": "depicted"}
+    for context in (e for e in entity.iter() if ks_local(e.tag) == "Context"):
+        kind = kinds.get(ks_text(context, "contextLabel").lower())
+        country = ks_text(context, "countryName")
+        if not kind or not country or ";" in country or not country_named(country):
+            continue
+        local = ks_text(context, "municipalityName") or ks_text(context, "countyName")
+        return where(place_name(local, country_named(country)), kind)
+    return {}
+
+
 def ks_row(entity):
     """(picture address, row) for a K-samsök record with a free picture and a "Motiv" description, or None."""
     motiv = ""
@@ -286,7 +322,7 @@ def ks_row(entity):
         page = ks_text(entity, "url") or entity.get("{http://www.w3.org/1999/02/22-rdf-syntax-ns#}about", "")
         organisation = ks_text(entity, "serviceOrganizationFull") or ks_text(entity, "serviceOrganization")
         credit = f"{title}, {organisation}, {KS_LICENCES[licence]}, via K-samsök: {page}"
-        return url, {"question": ASK_SV, "answer": answer, "credit": credit}
+        return url, {"question": ASK_SV, "answer": answer, "credit": credit, **ks_place(entity)}
     return None
 
 
@@ -396,6 +432,45 @@ def rm_row(record):
     return picture, {"question": question, "answer": answer, "credit": credit}
 
 
+def rm_place_name(s, place, cache, depth=0):
+    """(name, country) of a Rijksmuseum place (a Linked Art "Place", with its English name inline or read from
+    its own record, then its country by following "part_of" up to four steps); ("", "") when unknown. Kept in
+    cache by address."""
+    address = place.get("id", "")
+    if address in cache:
+        return cache[address]
+    notation = place.get("notation") or []
+    names = [n.get("@value") for n in (notation if isinstance(notation, list) else [notation])
+             if isinstance(n, dict) and n.get("@language") == "en"]
+    record = place
+    if not names and address.startswith("https://id.rijksmuseum.nl/"):
+        try:
+            record = s.get(address, timeout=60).json()
+        except Exception:  # noqa: BLE001 - unknown place
+            record = {}
+        names = [clean(n.get("content")) for n in record.get("identified_by") or []
+                 if str(((n.get("language") or [{}])[0]).get("id", "")).endswith(RM_ENGLISH)]
+        names += [clean(n.get("content")) for n in record.get("identified_by") or []]
+    name = next((n for n in names if n), "")
+    country = country_named(name)
+    if name and not country and depth < 4:
+        country = next((rm_place_name(s, up, cache, depth + 1)[1] for up in record.get("part_of") or []), "")
+    cache[address] = (name, country)
+    return cache[address]
+
+
+def rm_place(s, record, cache):
+    """{"place": "Amsterdam, Netherlands", "place_kind": "origin"} from where a Rijksmuseum object was made (its
+    production's place), or {}."""
+    produced = record.get("produced_by") or {}
+    for step in [produced] + list(produced.get("part") or []):
+        for place in step.get("took_place_at") or []:
+            name, country = rm_place_name(s, place, cache)
+            if country:
+                return where(place_name(name if name != country else "", country), "origin")
+    return {}
+
+
 def build_rijksmuseum(limit):
     """The Rijksmuseum pack's pictures: [(name, JPEG, row)]. Walks the search results of several kinds of object
     (works with a picture and a Dutch description), takes every third object so one series does not fill the pack,
@@ -405,7 +480,7 @@ def build_rijksmuseum(limit):
     s.headers["Accept"] = "application/ld+json"
     wanted = int(limit * 1.3)
     per_type = wanted // len(RM_TYPES) + 1
-    items, seen = [], set()
+    items, seen, places = [], set(), {}
 
     def one(address):
         """One object's record, or None."""
@@ -433,6 +508,7 @@ def build_rijksmuseum(limit):
                     got = rm_row(record) if record else None
                     if got and got[1]["answer"] not in seen and found < per_type:
                         seen.add(got[1]["answer"])
+                        got = (got[0], {**got[1], **rm_place(s, record, places)})
                         items.append((f"rijksmuseum-{safe_name(record['id'].rsplit('/', 1)[-1])}.jpg", *got))
                         found += 1
         say(f"Rijksmuseum {kind or 'other'}: {found} usable")

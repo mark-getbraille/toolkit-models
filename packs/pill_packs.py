@@ -32,6 +32,7 @@ import time
 import zipfile
 
 from build_packs import session, clean, smaller, fetch_all, say  # noqa: F401
+from places import with_place
 
 SAFETY = "Check the packaging or ask a pharmacist to be sure."
 
@@ -181,7 +182,8 @@ def build_taiwan_pills(limit):
             items.append((f"tw-{re.sub(r'[^0-9a-f-]', '', got[0].rsplit('/', 1)[-1].split('?')[0])[:40]}.jpg", *got))
     say(f"Taiwan FDA: {len(items)} usable pills of {len(records)} records")
     random.Random(41).shuffle(items)
-    return fetch_all(items[:int(limit * 1.05) + 2], workers=3, pause=0.3)[:limit]
+    return with_place(fetch_all(items[:int(limit * 1.05) + 2], workers=3, pause=0.3)[:limit],
+                      "Taiwan")                                # photographed for Taiwan's FDA register
 
 
 # ----------------------------------------------------------------- Pharmassist blister packs (India)
@@ -221,7 +223,8 @@ def build_pharmassist(limit):
                        "credit": PA_CREDIT}))
     say(f"Pharmassist: {len(items)} original photos")
     random.Random(42).shuffle(items)
-    return fetch_all(items[:int(limit * 1.05) + 2], workers=3, pause=0.3)[:limit]
+    return with_place(fetch_all(items[:int(limit * 1.05) + 2], workers=3, pause=0.3)[:limit],
+                      "Chennai, India")                        # taken in Chennai (the dataset's record)
 
 
 # ----------------------------------------------------------------- MEDISEG loose pills (Hong Kong)

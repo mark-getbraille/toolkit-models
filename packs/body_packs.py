@@ -52,6 +52,7 @@ import time
 # Wikimedia Commons helpers of food_packs (commons_get waits and tries again when Commons answers 429).
 from build_packs import session, clean, smaller, fetch_all, first_sentences, say, article, LONG_SIDE  # noqa: F401
 from food_packs import commons_get, commons_members, commons_entries, with_twins, sentence  # noqa: F401
+from places import where, place_from_text, place_name
 
 DESCRIBE = "Describe this picture."
 IS_NUDE = "Is there nudity in this picture?"
@@ -213,6 +214,11 @@ def art_rows(answer_text, credit, title, kind, artist, date, medium, female, mal
             {"question": IS_NUDE, "answer": NUDE_YES, "credit": credit}]
 
 
+def made_in(rows, place):
+    """An art_nudes picture's rows with the place the work was made (from the museum's record), when known."""
+    return [dict(r, **where(place, "origin")) for r in rows]
+
+
 def safe_name(text):
     """A file-name-safe version of a record identifier."""
     return re.sub(r"[^\w.-]+", "_", str(text))[:80]
@@ -321,6 +327,8 @@ def met_items(want):
                     (f", {artist}" if artist else "") + f", {o.get('objectURL', '')}"
                 rows = art_rows(shown, credit, title, o.get("objectName"), artist, date, o.get("medium"),
                                 female, male)
+                if o.get("geographyType") in ("", "Made in", "From"):          # not "Possibly from"
+                    rows = made_in(rows, place_from_text(place_name(o.get("city"), o.get("country"))))
                 items.append((f"met-{o['objectID']}.jpg", o["primaryImageSmall"], rows))
             if len(items) >= want:
                 break
@@ -332,7 +340,8 @@ def met_items(want):
 
 AIC = "https://api.artic.edu/api/v1/artworks/search"
 AIC_FIELDS = ["id", "title", "subject_titles", "term_titles", "description", "short_description", "thumbnail",
-              "image_id", "artist_display", "date_display", "medium_display", "classification_title"]
+              "image_id", "artist_display", "date_display", "medium_display", "classification_title",
+              "place_of_origin"]
 
 
 def aic_items(want):
@@ -369,7 +378,7 @@ def aic_items(want):
             rows = art_rows(text, credit, title, a.get("classification_title"), re.sub(r"\s*\(.*", "", artist),
                             a.get("date_display"), a.get("medium_display"), female, male)
             url = f"https://www.artic.edu/iiif/2/{a['image_id']}/full/1686,/0/default.jpg"
-            items.append((f"aic-{a['id']}.jpg", url, rows))
+            items.append((f"aic-{a['id']}.jpg", url, made_in(rows, place_from_text(a.get("place_of_origin")))))
         if page >= ((data.get("pagination") or {}).get("total_pages") or 0) or not records:
             break
         page += 1
@@ -416,7 +425,8 @@ def cma_items(want):
                 credit = f"Cleveland Museum of Art, CC0: {title}, {creator}, {a.get('url', '')}"
                 rows = art_rows(text, credit, title, a.get("type"), re.sub(r"\s*\(.*", "", creator),
                                 a.get("creation_date"), a.get("technique"), female, male)
-                items.append((f"cma-{a['id']}.jpg", url, rows))
+                culture = str((a.get("culture") or [""])[0]).split(",")[0]     # "France, 19th century"
+                items.append((f"cma-{a['id']}.jpg", url, made_in(rows, place_from_text(culture))))
             skip += len(records)
             if not records or skip >= ((data.get("info") or {}).get("total") or 0):
                 break
@@ -500,7 +510,7 @@ def si_items(want):
     """(name, picture address, rows) for Smithsonian American Art Museum records whose topics say
     nude (or "Nudity") and whose picture is CC0; the answer uses the accessibility text or gallery label when there
     is one (build_packs.si_row), otherwise the record's title, artist, date and medium."""
-    from build_packs import si_keys, si_row, SI_BUCKET
+    from build_packs import si_keys, si_row, si_place, SI_BUCKET
     s, items = session(), []
     per_unit = want // len(SI_NUDE_UNITS) + 1
     for unit in SI_NUDE_UNITS:
@@ -545,6 +555,7 @@ def si_items(want):
                     (f", {artist}" if artist else "")
                 rows = art_rows(text, credit, title, "", artist, field("date", "Date"),
                                 field("physicalDescription", "Medium"), female, male)
+                rows = [dict(r, **si_place(content)) for r in rows]
                 items.append((f"si-{safe_name(record.get('id', title))}.jpg", picture["content"] + "&max=2048", rows))
                 found += 1
                 if found >= per_unit:

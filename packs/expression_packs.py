@@ -54,7 +54,7 @@ import build_packs  # noqa: F401 - loaded first: food_packs and build_packs impo
 from build_packs import session, clean, fetch_all, say, ALT_TEXT, COCO_FREE
 from food_packs import (sentence, listed, with_twins, count_pictures, oi_lines, oi_licence_name,  # noqa: F401
                         commons_get, commons_members, commons_entries, OI_CLASSES, OI_LABELS, OI_IMAGES,
-                        OI_PICTURE)
+                        OI_PICTURE, commons_place)
 from everyday_packs import RemoteZip, fetch_from_zip
 
 FACE_Q = "What is this person's facial expression?"
@@ -510,7 +510,7 @@ def build_commons_expressions(limit):
                 rows.append({"question": ALT_TEXT, "answer": text, "credit": credit})
             if not rows:
                 continue
-            rows = [mark_child(r, title, text, category) for r in rows]
+            rows = [dict(mark_child(r, title, text, category), **commons_place(title)) for r in rows]
             name = re.sub(r"[^\w.-]+", "_", title.split(":", 1)[-1].rsplit(".", 1)[0])[:80]
             items.append((f"commons-expr-{name}.jpg", url, rows))
             found += 1

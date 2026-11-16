@@ -47,6 +47,7 @@ import time
 import zipfile
 
 from build_packs import session, clean, smaller, fetch_all, say, coco_licences  # noqa: F401
+from places import with_place
 
 READ_ALL = "Read all the text in this picture."
 READ_PAGE = "Read this page."
@@ -540,7 +541,7 @@ def build_plotqa(limit):
             if len(fetched) >= limit:
                 break
     random.Random(81).shuffle(fetched)
-    return with_twins(fetched[:limit])
+    return with_place(with_twins(fetched[:limit]), "Indonesia")    # receipts of Indonesian shops (the CORD paper)
 
 
 # ----------------------------------------------------------------- Library of Congress, By the People (letters)

@@ -348,7 +348,8 @@ def build_grocery_store(limit):
                                      "https://github.com/marcusklasson/GroceryStoreDataset"}))
     say(f"Grocery Store Dataset: {len(items)} natural photos in {len(classes)} classes")
     random.Random(43).shuffle(items)
-    return fetch_all(items[:int(limit * 1.05) + 2], workers=8)[:limit]
+    # Taken in 18 grocery stores in Sweden (the paper names no city; the products are from Swedish shops).
+    return with_place(fetch_all(items[:int(limit * 1.05) + 2], workers=8)[:limit], "Sweden")
 
 
 # ----------------------------------------------------------------- Freshness of the Fish Eyes (Mendeley Data)

@@ -46,6 +46,9 @@ import zipfile
 if __name__ == "__main__":
     sys.modules.setdefault("build_packs", sys.modules["__main__"])
 
+# Where in the world each picture is from (a row's optional "place" and "place_kind"): packs/places.py.
+from places import where, country_at, place_from_text  # noqa: E402
+
 LONG_SIDE = 2048       # packs keep large pictures: the kit makes its training copies and keeps these in the library
 PART_BYTES = 1_900_000_000
 USER_AGENT = "PictureModelTrainingKit/2 (https://github.com/mark-getbraille/toolkit-models)"
@@ -169,6 +172,26 @@ def si_keys(unit):
         token = token_el.text
 
 
+# The record's place labels by kind: where the object was made, where a photo or film was taken, what it shows.
+SI_PLACE_KINDS = (("origin", ("place made", "made in", "made at", "origin", "manufacturer", "place printed",
+                              "place issued", "place of issue")),
+                  ("photo", ("place captured", "place filmed")),
+                  ("depicted", ("place depicted", "depicted", "depicts", "depicts sights in")))
+
+
+def si_place(content):
+    """{"place", "place_kind"} from a Smithsonian record's own place fields ("Place made: Japan"), or {}."""
+    given = {}
+    for p in content.get("freetext", {}).get("place") or []:
+        given.setdefault(clean(p.get("label")).lower(), p.get("content"))
+    for kind, labels in SI_PLACE_KINDS:
+        for label in labels:
+            place = place_from_text(given.get(label))
+            if place:
+                return where(place, kind)
+    return {}
+
+
 def si_row(record):
     """(picture address, row) for a record with a CC0 picture and a real description, or None."""
     content = record.get("content", {})
@@ -181,17 +204,17 @@ def si_row(record):
     url = picture["content"] + "&max=2048"
     credit = f"{record.get('unitCode', 'Smithsonian')}, Smithsonian Institution, CC0: {record.get('title', '')}"
     if is_description(alt, 6):
-        return url, {"question": ALT_TEXT, "answer": alt, "credit": credit}
+        return url, {"question": ALT_TEXT, "answer": alt, "credit": credit, **si_place(content)}
     ext = first_sentences(ext, 90)
     if is_description(ext, 12):
-        return url, {"question": NARRATE, "answer": ext, "credit": credit}
+        return url, {"question": NARRATE, "answer": ext, "credit": credit, **si_place(content)}
     for note in content.get("freetext", {}).get("notes", []):
         if note.get("label") in ("Gallery Label", "Luce Center Label", "Exhibition Label", "Description"):
             text = first_sentences(note.get("content"), 90)
             if len(text.split()) >= 15:
                 title = clean(record.get("title"))
                 answer = text if not title or title.lower() in text.lower() else f"{title}. {text}"
-                return url, {"question": MUSEUM, "answer": answer, "credit": credit}
+                return url, {"question": MUSEUM, "answer": answer, "credit": credit, **si_place(content)}
     return None
 
 
@@ -316,7 +339,7 @@ def build_commons(limit):
     for category in COMMONS_CATEGORIES:
         params = {"action": "query", "format": "json", "generator": "categorymembers", "gcmtitle": category,
                   "gcmtype": "file", "gcmlimit": 50, "prop": "imageinfo|info", "iiprop": "url|extmetadata",
-                  "iiurlwidth": LONG_SIDE, "iiextmetadatafilter": "LicenseShortName|Artist", "maxlag": 5}
+                  "iiurlwidth": LONG_SIDE, "iiextmetadatafilter": "LicenseShortName|Artist|GPSLatitude|GPSLongitude", "maxlag": 5}
         while len(items) < limit * 1.3:
             try:
                 data = s.get(COMMONS_API, params=params, timeout=60).json()
@@ -344,8 +367,10 @@ def build_commons(limit):
                 credit = f"{p['title']} by {artist or 'unknown'}, {licence}, https://commons.wikimedia.org/wiki/" + \
                     p["title"].replace(" ", "_")
                 answer = caption[:1].upper() + caption[1:] + ("" if caption.endswith((".", "!", "?")) else ".")
+                place = country_at(clean((meta.get("GPSLatitude") or {}).get("value")),   # the camera's place
+                                   clean((meta.get("GPSLongitude") or {}).get("value")))
                 items.append((f"commons-{p['pageid']}.jpg", info["thumburl"],
-                              {"question": ALT_TEXT, "answer": answer, "credit": credit}))
+                              {"question": ALT_TEXT, "answer": answer, "credit": credit, **where(place)}))
             if "continue" not in data:
                 break
             params.update(data["continue"])
@@ -361,6 +386,18 @@ TEPAPA_TERMS = ("dress", "chair", "bird", "photograph", "painting", "jug", "broo
                 "tool", "coin", "bottle", "doll", "mask", "fern", "plant", "landscape", "portrait", "building",
                 "teapot", "cup", "box", "medal", "badge", "textile", "carving")
 TEPAPA_FREE = ("Attribution 4.0", "CC BY 4.0", "No Known Copyright", "Public Domain", "CC0")
+
+
+def tepapa_place(record):
+    """{"place": ..., "place_kind": "origin"} from where a Te Papa object was made (its production place), or {}."""
+    for production in record.get("production") or []:
+        spatial = production.get("spatial") or {}
+        nation = (spatial.get("nation") or [""])[0]
+        place = place_from_text(f"{spatial.get('prefLabel')} ({nation})" if nation and spatial.get("prefLabel")
+                                else spatial.get("title"))
+        if place:
+            return where(place, "origin")
+    return {}
 
 
 def build_tepapa(limit):
@@ -389,7 +426,7 @@ def build_tepapa(limit):
                 items.append((f"tepapa-{r['id']}.jpg", rep["contentUrl"].replace("/full", "/preview") if
                               rep["contentUrl"].endswith("/full") else rep["contentUrl"],
                               {"question": MUSEUM, "answer": answer,
-                               "credit": f"Te Papa (record {r['id']}), {rights}"}))
+                               "credit": f"Te Papa (record {r['id']}), {rights}", **tepapa_place(r)}))
             if len(results) < 100:
                 break
             time.sleep(0.3)
@@ -411,6 +448,15 @@ INAT_GROUPS = [("Plantae", "What plant is this?"), ("Fungi", "What mushroom or f
 def article(word):
     """ "a" or "an" before a word."""
     return "an" if word[:1].lower() in "aeiou" else "a"
+
+
+def inat_place(observation):
+    """{"place": country} from an observation's coordinates, or {} when they are hidden or blurred on purpose."""
+    if observation.get("obscured") or observation.get("geoprivacy") in ("obscured", "private") \
+            or observation.get("taxon_geoprivacy") in ("obscured", "private"):
+        return {}
+    point = str(observation.get("location") or "").split(",")
+    return where(country_at(*point)) if len(point) == 2 else {}
 
 
 def build_inaturalist(limit):
@@ -438,7 +484,7 @@ def build_inaturalist(limit):
                 answer = (f"This is {article(common)} {common} ({latin})." if common else f"This is {latin}.")
                 login = (o.get("user") or {}).get("login", "an iNaturalist user")
                 items.append((f"inat-{photo['id']}.jpg", photo["url"].replace("/square.", "/large."),
-                              {"question": question, "answer": answer,
+                              {"question": question, "answer": answer, **inat_place(o),
                                "credit": f"Photo by {login} on iNaturalist, {photo['license_code'].upper()}, "
                                          f"https://www.inaturalist.org/observations/{o['id']}"}))
                 found += 1
@@ -513,7 +559,7 @@ def mendeley_zip(dataset, version=1):
     return zipfile.ZipFile(io.BytesIO(s.get(zipped["content_details"]["download_url"], timeout=1800).content))
 
 
-BANKNOTES = {"INDIA": ("Indian", "rupee"), "THAI": ("Thai", "baht")}
+BANKNOTES = {"INDIA": ("Indian", "rupee", "India"), "THAI": ("Thai", "baht", "Thailand")}   # the last: its country
 
 
 def build_banknotes(limit):
@@ -525,13 +571,14 @@ def build_banknotes(limit):
         m = re.match(r"(INDIA|THAI)(\d+)(NEW|OLD)?$", folder)
         if not m or not name.lower().endswith((".jpg", ".jpeg", ".png")):
             continue
-        country, unit = BANKNOTES[m.group(1)]
+        country, unit, issued = BANKNOTES[m.group(1)]
         design = {"NEW": " (the new design)", "OLD": " (the old design)"}.get(m.group(3) or "", "")
         data = smaller(z.read(name))
         if data:
             out.append((f"note-{len(out)}.jpg", data, {"question": "Which banknote is this?",
                         "answer": f"This is {article(country)} {country} {int(m.group(2)):,} {unit} note{design}.",
-                        "credit": "Indian and Thai banknotes dataset (Mendeley Data 2kfz5yc7pt), CC BY 4.0"}))
+                        "credit": "Indian and Thai banknotes dataset (Mendeley Data 2kfz5yc7pt), CC BY 4.0",
+                        **where(issued, "origin")}))
     random.Random(10).shuffle(out)
     return out[:limit]
 
@@ -552,7 +599,8 @@ def build_cattle_health(limit):
             if data:
                 out.append((f"cattle-{len(out)}.jpg", data, {"question": "Does this cow show signs of disease?",
                             "answer": CATTLE[folder], "credit": "FMD-LSD cattle dataset (Mendeley Data ggpwpscjvm), "
-                                                              "CC BY 4.0"}))
+                                                              "CC BY 4.0",
+                            "place": "Cumilla, Bangladesh"}))         # farms in Cumilla (the dataset's record)
     random.Random(11).shuffle(out)
     return out[:limit]
 
@@ -600,7 +648,8 @@ def build_eggs(limit):
             kind = EGG_KINDS[m.group(2)]
             out.append((f"egg-{len(out)}.jpg", data, {"question": "Is this egg fresh?",
                         "answer": f"This is {kind}. {EGG_STATES[m.group(1)]}",
-                        "credit": "Egg variety and freshness dataset (Mendeley Data 49msr3ksxj), CC BY 4.0"}))
+                        "credit": "Egg variety and freshness dataset (Mendeley Data 49msr3ksxj), CC BY 4.0",
+                        "place": "Dhaka, Bangladesh"}))           # bought at markets in Dhaka (the dataset's record)
     random.Random(13).shuffle(out)
     return out[:limit]
 

@@ -50,7 +50,8 @@ import build_packs  # noqa: F401 - loaded first: food_packs and build_packs impo
 from build_packs import session, clean, smaller, fetch_all, say, article  # noqa: F401
 from food_packs import (sentence, listed, with_twins, count_pictures, oi_lines, oi_licence_name,  # noqa: F401
                         commons_members, commons_entries, OI_LABELS, OI_CLASSES, OI_IMAGES, OI_PICTURE,
-                        COMMONS_NOT_FOOD)
+                        COMMONS_NOT_FOOD, commons_place)
+from places import where, country_named, place_name
 
 
 # ----------------------------------------------------------------- shared helpers
@@ -588,6 +589,8 @@ def build_orbit(limit):
         say(f"ORBIT {split}: {len(found)} frames located")
         rng.shuffle(found)
         out += fetch_from_zip(zipped, found[:limit - len(out)])
+    # No place: ORBIT's first phase was filmed in the UK, its second by collectors around the world (mostly the UK,
+    # Canada, the USA and Australia), and a video does not say which (the ORBIT paper, appendix A.1).
     return with_twins(out[:limit])
 
 
@@ -634,6 +637,22 @@ LILA_NOT_ANIMAL = re.compile(r"^(empty|blank|human|person|people|vehicle|car|mot
                              r"unidentif|unclassif|start|end|setup|test|fire|other|none|nothing|ignore|"
                              r"humans?$|.*\bhuman\b|.*\bvehicle\b)", re.I)
 LILA_ASK = "What animal is in this picture?"
+
+
+def lila_place(row):
+    """The place of a LILA collection from LILA's list (its "region" and "country" columns), or "" where the list
+    gives none (Missouri Camera Traps, named after its university, shows red deer and mouflon from elsewhere) or
+    several countries. The list is UTF-8 that may have been read as Latin-1 ("OrinoquÃ­a"): mended first."""
+    def mended(text):
+        """Text read as Latin-1 turned back into its UTF-8 letters (unchanged when it was read right)."""
+        try:
+            return str(text or "").encode("latin-1").decode("utf-8")
+        except UnicodeError:
+            return str(text or "")
+    country = mended(row.get("country"))
+    if not country or ";" in country:
+        return ""
+    return place_name(mended(row.get("region")), country_named(country) or country)
 
 
 def lila_json(s, url):
@@ -749,7 +768,8 @@ def lila_collection(s, row, taxa, quota, rng):
                 credit = f"{dataset} (LILA BC, lila.science), Community Data License Agreement (permissive), " \
                          f"{row['image_base_url_gcp'].rstrip('/')}/{image['file_name']}"
                 items.append((f"lila-{row['short_name']}-{re.sub(r'[^A-Za-z0-9]+', '-', str(image['id']))[-60:]}.jpg",
-                              address, {"question": LILA_ASK, "answer": lila_answer(named), "credit": credit}))
+                              address, {"question": LILA_ASK, "answer": lila_answer(named), "credit": credit,
+                                        **where(lila_place(row))}))
     say(f"LILA {dataset}: {sum(len(v) for v in by_species.values()) + len(items)} usable images of "
         f"{len(by_species)} kinds, {len(items)} taken")
     return items
@@ -888,7 +908,8 @@ def build_gbif_species(limit, per_species=2):
                           f"https://www.gbif.org/occurrence/{o['key']}")
                 species[taxon_key] = species.get(taxon_key, 0) + 1
                 items.append((f"gbif-{o['key']}.jpg", media["identifier"],
-                              {"question": question, "answer": answer, "credit": credit}))
+                              {"question": question, "answer": answer, "credit": credit,
+                               **where(country_named(o.get("countryCode")))}))      # the record's country
                 found += 1
                 if found >= per_group:
                     break
@@ -955,7 +976,8 @@ def build_commons_breeds(limit, per_breed=4):
                 name = re.sub(r"[^\w.-]+", "_", title.split(":", 1)[-1].rsplit(".", 1)[0])[:80]
                 kind = "cattle" if animal == "cattle" else animal
                 answer = f"It looks like {a_or_an(breed)} {breed}, a breed of {kind}."
-                items.append((f"breed-{name}.jpg", url, {"question": question, "answer": answer, "credit": credit}))
+                items.append((f"breed-{name}.jpg", url, {"question": question, "answer": answer, "credit": credit,
+                                                         **commons_place(title)}))
                 got += 1
                 if got >= per_breed:
                     break

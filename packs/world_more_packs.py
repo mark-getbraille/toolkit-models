@@ -229,6 +229,16 @@ def eu_records(s, query, filters, provider, most):
         cursor = data.get("nextCursor") if items else None
 
 
+def eu_picture(address):
+    """Europeana's 400-pixel copy of a record's picture, or "". The museums' own picture servers (zetcom.app for the
+    Finnish museums, esbirky.cz for the Náprstek Museum) refuse downloads from programs (401 and 404 answers), so
+    Europeana's thumbnail service is used: https://api.europeana.eu/thumbnail/v3/400/<MD5 of the picture address>."""
+    import hashlib
+    if not address.startswith("http"):
+        return ""
+    return "https://api.europeana.eu/thumbnail/v3/400/" + hashlib.md5(address.encode("utf-8")).hexdigest()
+
+
 def eu_credit(item, licence):
     """The credit of a Europeana record: title, museum, licence and the record's Europeana page."""
     title = clean((item.get("title") or [""])[0])
@@ -291,8 +301,9 @@ def cs_answer(descriptions):
 
 EU_SOURCES = {
     "europeana_fi": {"language": "fi", "query": '"sisällön kuvaus"', "filters": [], "answer": fi_answer},
-    "europeana_cs": {"language": "cs", "query": "*", "answer": lambda d: (cs_answer(d), ""),
-                     "filters": ['DATA_PROVIDER:"Náprstek Museum of Asian, African and American Cultures"']},
+    # (Europeana's museum counts ignore a museum filter, so the one museum is named here.)
+    "europeana_cs": {"language": "cs", "query": "*", "answer": lambda d: (cs_answer(d), ""), "filters": [],
+                     "providers": {"Náprstek Museum of Asian, African and American Cultures": 12435}},
 }
 
 
@@ -308,14 +319,14 @@ def build_europeana(key, limit):
     each record's description in its language and, where the museum wrote one, its English twin."""
     source = EU_SOURCES[key]
     s, items, seen = session(), [], set()
-    providers = eu_providers(s, source["query"], source["filters"])
+    providers = source.get("providers") or eu_providers(s, source["query"], source["filters"])
     say(f"Europeana {key}: {sum(providers.values())} records from {len(providers)} museums")
     per_museum = max(20, int(limit * 1.5 * 0.4))
     for provider, count in sorted(providers.items(), key=lambda kv: -kv[1]):
         found = 0
         for item in eu_records(s, source["query"], source["filters"], provider, min(count, per_museum * 8)):
             licence = eu_licence(item)
-            picture = (item.get("edmIsShownBy") or [""])[0]
+            picture = eu_picture((item.get("edmIsShownBy") or [""])[0])
             answer, english = source["answer"](eu_descriptions(item, source["language"]))
             if not licence or not picture.startswith("http") or not answer or answer in seen:
                 continue
