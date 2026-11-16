@@ -701,8 +701,11 @@ def grays_items(want):
     random.Random(54).shuffle(titles)
     items = []
     for title, url, credit, text in commons_entries(s, titles[:int(want * 1.5) + 10]):
-        # Gray's plates are drawings, unless the caption says it is a photograph or an X-ray (ANATOMY_PHOTO).
-        if not text or anatomy_left_out("Gray's", title, text, drawn=True):
+        # Gray's own plates ("File:Gray123.png") and diagrams saved as PNG, SVG or GIF are drawings, unless the caption
+        # says it is a photograph or an X-ray (ANATOMY_PHOTO); other files in the category (JPEG photos) are not
+        # assumed to be drawings.
+        drawn = bool(re.match(r"File:Gray\d+", title)) or title.lower().endswith((".png", ".svg", ".gif"))
+        if not text or anatomy_left_out("Gray's", title, text, drawn=drawn):
             continue
         rows = [{"question": DESCRIBE, "answer": text, "credit": credit + "; Henry Gray, Anatomy of the Human "
                                                                           "Body (1918), public domain"}]

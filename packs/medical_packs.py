@@ -168,6 +168,7 @@ PLAIN_WORDS = [
     (r"\bfrontoparietal region\b", "front and top"),
     (r"\boblique\b", "angled"),
     (r"\bdermatophytic\b", "fungal (dermatophytic)"),
+    (r"\bdorsum of\b", "top of"),
     (r"\bintraoral\b", "inside-the-mouth"),
     (r"\bbuccal mucosa\b", "inside of the cheek (buccal mucosa)"),
     (r"\bmucosal\b", "lining"),
@@ -946,7 +947,7 @@ PLACE_LEAD_IN = re.compile(r"^(?:captured |taken )?(?:in|at|on|during)\b[^.]{0,1
 
 CAPTURED_WHICH = re.compile(r"^(?:a |this )?(?:\d{4} )?(?:photograph|image|photo) (?:was )?(?:captured|taken)\b"
                             r"[^,]{0,80},\s*(?:which|that|and) (?:depict\w*|show\w*|reveal\w*)\s+", re.I)
-IN_THIS = re.compile(r"^in this (?:\d{4} )?(?:historic(?:al)? )?(?:image|photo|photograph|picture),?\s*"
+IN_THIS = re.compile(r"^in this (?:\d{4} )?(?:historic(?:al)? )?(?:image|photograph|photo|picture)\b,?\s*"
                      r"(?:(?:captured|taken) [^,]{0,80},\s*)?", re.I)
 
 
@@ -980,7 +981,7 @@ def phil_description(caption, condition_words):
     if len(text.split()) < 4 or condition_words.search(text):
         return ""
     text = plain(text)
-    text = re.sub(r"\b([Aa])n (?=(front|side|back|upper|lower|inner|flat|small|pus|reddened)\b)", r"\1 ", text)
+    text = re.sub(r"\b([Aa])n (?=[b-df-gj-np-tv-wyzB-DF-GJ-NP-TV-WYZ])", r"\1 ", text)   # "an view" -> "a view"
     return sentence(text)
 
 
@@ -1166,6 +1167,8 @@ def child_reason(caption):
     other = NOT_A_CHILD.search(caption)
     if other:
         return f"an adult or an animal: {other.group(0)}"
+    if re.search(r"\bcongenital\b", caption, re.I):
+        return "a congenital condition, not a childhood illness"
     if PHIL_NOT_CLINICAL.search(caption) and not re.search(r"\b(head lice|nits)\b", caption, re.I):
         return f"not a clinical photo: {PHIL_NOT_CLINICAL.search(caption).group(0)}"
     if not CHILD_PART.search(caption):
@@ -1406,7 +1409,8 @@ BIRTH_NOT = re.compile(r"\b(laborator\w*|specimen\w*|micrograph\w*|culture\w*|mo
                        r"poster|infographic|logo|vials?|syringes?|test tubes?|petri|screening|cimon|pero|caritas "
                        r"romana|roman charity|zika|spinach|food|fetus\w*|fetuses|foetus\w*|fetal|foetal|embryo\w*|"
                        r"stillb\w*|abort\w*|miscarr\w*|ectopic|autops\w*|deceased|dead|death|died|"
-                       r"gestational sac)\b", re.I)
+                       r"gestational sac|congenital|syphilis|rubella|infect\w*|diseases?|disorders?|syndromes?|"
+                       r"lesions?|abnormalit\w*|defects?)\b", re.I)
 # A baby on its own: kept only when the text shows it is with a parent or carer, dressed or wrapped, or being
 # weighed or checked at birth; otherwise (it may be unclothed, alone) left out.
 BIRTH_BABY = re.compile(r"\b(newborn\w*|new-born|neonat\w*|infants?|bab(y|ies))\b", re.I)
@@ -1609,10 +1613,10 @@ MEDICAL_LIMITS = {
     "chest_xray": 8000,              # of 29,324 adult patients, one X-ray each
     "case_report_figures": 20000,    # of about 200,000 CC BY or CC0 case reports
     "vet_case_figures": 3000,
-    "cdc_medical": 600,
-    "childhood_illness": 300,
-    "medical_collections": 300,
-    "birth_and_feeding": 1500,
+    "cdc_medical": 600,              # upper bound, not counted in full (about 4% of ~1,950 PHIL photos pass)
+    "childhood_illness": 300,        # upper bound; about 9% of ~1,070 PHIL photos pass, so roughly 100
+    "medical_collections": 300,      # upper bound, not counted in full
+    "birth_and_feeding": 1500,       # upper bound, not counted in full
 }
 
 
