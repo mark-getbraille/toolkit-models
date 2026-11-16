@@ -103,6 +103,8 @@ def plain_number(value):
     """A number as people say it: 234280000 -> "234 million", 45.2999992 -> "45.3", 1234.5 -> "1,235"."""
     v = float(value)
     a = abs(v)
+    if a >= 1e12:
+        return f"{v / 1e12:,.3g} trillion" if a < 1e15 else f"{v / 1e12:,.0f} trillion"
     if a >= 1e9:
         return f"{v / 1e9:.3g} billion"
     if a >= 1e6:
@@ -329,6 +331,7 @@ def dln_box_text(cells):
     """The words of one marked part of a page: its PDF text cells joined (a word broken by a hyphen at the end of
     a line is joined again)."""
     text = " ".join(clean(c.get("text")) for c in cells or [] if clean(c.get("text")))
+    text = re.sub(r"GLYPH(<[^>]*>)?\s*", "", text).strip()          # bullets and symbols the PDF had no letter for
     return re.sub(r"(\w)- (?=[a-z])", r"\1", text)
 
 
