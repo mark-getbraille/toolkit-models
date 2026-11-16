@@ -216,12 +216,15 @@ def build_coco_text(limit):
     for image_id, ann_ids in sorted(data["imgToAnns"].items(), key=lambda kv: int(kv[0])):
         if not ann_ids or int(image_id) not in free:
             continue
-        words = []
+        words, unreadable = [], 0
         for ann_id in ann_ids:
             a = data["anns"][str(ann_id)]
             text = clean(a.get("utf8_string"))
             x, y, w, h = a["bbox"]
-            if a.get("legibility") != "legible" or not text or min(w, h) < 10:
+            if a.get("legibility") != "legible":
+                unreadable += 1                          # marked, but too small or blurred for people to read
+                continue
+            if not text or min(w, h) < 10:
                 words = None
                 break
             words.append((text, x, y, w, h))
@@ -229,9 +232,10 @@ def build_coco_text(limit):
             continue
         lines = text_lines(words)
         if lines:
-            rows.append({"url": free[int(image_id)], "question": READ_ALL, "answer": "\n".join(lines),
+            answer = "\n".join(lines) + ("\n(There is more text, too small or blurred to read.)" if unreadable else "")
+            rows.append({"url": free[int(image_id)], "question": READ_ALL, "answer": answer,
                          "credit": f"Text typed by people for COCO-Text (Veit et al., 2016), CC BY 4.0; {COCO_PHOTO}"})
-    say(f"COCO-Text: {len(rows)} free photos with all their text legible")
+    say(f"COCO-Text: {len(rows)} free photos with readable text")
     random.Random(61).shuffle(rows)
     return [(None, None, r) for r in rows[:limit]]
 
@@ -638,7 +642,7 @@ TEXT_PACKS = {
 # How many pictures a full build takes from each source (about what each offers after the checks above).
 TEXT_LIMITS = {
     "textocr": 12000,
-    "coco_text": 6000,
+    "coco_text": 1200,
     "cord": 1000,
     "doclaynet": 6000,
     "plotqa": 6000,
