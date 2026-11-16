@@ -598,6 +598,15 @@ PACKS = {
 }
 
 
+# The worldwide collections (Japan, Sweden, the Netherlands, Japanese and Chinese captions), in their own file.
+try:
+    from world_packs import WORLD_PACKS
+except ImportError:                    # run from another folder: add this one to the path first
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from world_packs import WORLD_PACKS
+PACKS.update(WORLD_PACKS)
+
+
 def sha256_of(path):
     """The SHA-256 of a file."""
     digest = hashlib.sha256()

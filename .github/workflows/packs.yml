@@ -36,7 +36,8 @@ jobs:
           python3 - "$keys" >> "$GITHUB_OUTPUT" <<'PY'
           import json, sys
           known = ["smithsonian", "coco_questions", "commons", "tepapa", "inaturalist", "nutrition5k", "fresh_rotten",
-                   "banknotes", "cattle_health", "clothing"]
+                   "banknotes", "cattle_health", "clothing", "japan_search", "ksamsok", "rijksmuseum", "stair_captions",
+                   "coco_cn"]
           words = [w for w in sys.argv[1].split(",") if w]
           keys = known if words in ([], ["all"]) else [w for w in words if w in known]
           print("keys=" + json.dumps(keys))
@@ -74,6 +75,11 @@ jobs:
             banknotes) limit=3000 ;;
             cattle_health) limit=1700 ;;
             clothing) limit=5000 ;;
+            japan_search) limit=3000 ;;
+            ksamsok) limit=5000 ;;
+            rijksmuseum) limit=6000 ;;
+            stair_captions) limit=20000 ;;
+            coco_cn) limit=4000 ;;
           esac
           python packs/build_packs.py "${{ matrix.key }}" --out build/packs --limit "$limit"
       - name: Upload it to the release
