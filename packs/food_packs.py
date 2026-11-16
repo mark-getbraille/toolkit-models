@@ -31,6 +31,7 @@ import time
 
 from build_packs import (session, clean, smaller, fetch_all, first_sentences, say, article,  # noqa: F401
                          ALT_TEXT, COMMONS_API, COMMONS_FREE, LONG_SIDE)
+from places import where, with_place, country_at
 
 
 # ----------------------------------------------------------------- shared helpers
@@ -491,15 +492,26 @@ def commons_description(caption, description):
     return ""
 
 
+COMMONS_PLACES = {}        # {file title: the country at the file's camera coordinates}, filled by commons_entries
+
+
+def commons_place(title):
+    """{"place": country} for a Commons file whose page gives the camera's coordinates (read by commons_entries and
+    turned into a country offline, packs/places.py), or {}."""
+    return where(COMMONS_PLACES.get(title, ""))
+
+
 def commons_entries(s, titles):
     """[(title, picture address, credit, caption or description)] for files whose picture is CC0, public domain
-    or CC BY (never BY-SA or NC), 50 files a request."""
+    or CC BY (never BY-SA or NC), 50 files a request. The country where each photo was taken, when its page gives
+    coordinates, is kept in COMMONS_PLACES (commons_place)."""
     out = []
     for start in range(0, len(titles), 50):
         batch = titles[start:start + 50]
         data = commons_get(s, {"action": "query", "titles": "|".join(batch), "prop": "imageinfo",
                                "iiprop": "url|extmetadata|mime", "iiurlwidth": LONG_SIDE,
-                               "iiextmetadatafilter": "LicenseShortName|Artist|ImageDescription",
+                               "iiextmetadatafilter": "LicenseShortName|Artist|ImageDescription|GPSLatitude|"
+                                                      "GPSLongitude",
                                "iiextmetadatalanguage": "en"})
         pages = [p for p in ((data.get("query") or {}).get("pages") or {}).values() if p.get("pageid")]
         captions = {}
@@ -520,6 +532,9 @@ def commons_entries(s, titles):
             credit = f"{p['title']} by {artist}, {licence}, {page}"
             text = commons_description(captions.get(f"M{p['pageid']}"), (meta.get("ImageDescription") or {}).get("value"))
             out.append((p["title"], info["thumburl"], credit, text))
+            if meta.get("GPSLatitude") and meta.get("GPSLongitude"):
+                COMMONS_PLACES[p["title"]] = country_at(clean(meta["GPSLatitude"].get("value")),
+                                                        clean(meta["GPSLongitude"].get("value")))
         time.sleep(1)
     return out
 
@@ -544,9 +559,9 @@ def build_commons_food(limit):
             if category == "Rhizopus stolonifer" and not COMMONS_ON_FOOD.search(f"{title} {text}"):
                 continue
             seen.add(title)
-            rows = [{"question": question, "answer": answer, "credit": credit}]
+            rows = [{"question": question, "answer": answer, "credit": credit, **commons_place(title)}]
             if text:
-                rows.append({"question": ALT_TEXT, "answer": text, "credit": credit})
+                rows.append({"question": ALT_TEXT, "answer": text, "credit": credit, **commons_place(title)})
             name = re.sub(r"[^\w.-]+", "_", title.split(":", 1)[-1].rsplit(".", 1)[0])[:80]
             items.append((f"commons-food-{name}.jpg", url, rows))
             found += 1

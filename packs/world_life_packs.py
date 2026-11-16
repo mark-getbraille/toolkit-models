@@ -39,6 +39,10 @@ The whole world's everyday life:
 Answers are written from each dataset's own labels with fixed sentences (nothing is written by an AI model), with
 practical safety advice where it matters ("do not cross yet").
 
+Every row carries the "place" its photo was taken (packs/places.py): the city the authors name for the street
+collections (Shanghai, Alicante, Dhaka, Bucharest, Seoul), the family's country for Dollar Street, and for GeoDE the
+photographer's country where it lies in the photo's region, else the region.
+
     python packs/world_life_packs.py ptl_crossings --limit 8      (prints a few rows: a quick check of one builder)
 """
 
@@ -56,6 +60,7 @@ import zlib
 
 from build_packs import session, clean, smaller, fetch_all, say, article  # noqa: F401
 from food_packs import with_twins, listed, oi_lines, oi_licence_name, OI, OI_PICTURE
+from places import with_place, country_named, place_name
 
 
 # ----------------------------------------------------------------- shared helpers
@@ -310,7 +315,7 @@ def build_ptl_crossings(limit):
         except (TypeError, ValueError):
             pass
         out.append((f"ptl-{key.rsplit('.', 1)[0]}.jpg", data, rows))
-    return with_twins(out)
+    return with_place(with_twins(out), "Shanghai, China")            # the authors' photos, all taken in Shanghai
 
 
 # ----------------------------------------------------------------- UrOAC crossings in any light (Alicante)
@@ -368,7 +373,7 @@ def build_uroac_crossings(limit):
         if len(out) >= limit:
             break
     random.Random(52).shuffle(out)
-    return with_twins(out)
+    return with_place(with_twins(out), "Alicante, Spain")            # photographed in Alicante by the authors
 
 
 # ----------------------------------------------------------------- Open Images: streets and buildings
@@ -611,7 +616,7 @@ def build_walkway_dhaka(limit):
             continue
         if rows:
             items.append((f"dhaka-{safe_name(key.replace('_jpg.rf.', '-'))}.jpg", pictures[key], rows))
-    return with_twins(fetch_all(items, workers=4, pause=0.2)[:limit])
+    return with_place(with_twins(fetch_all(items, workers=4, pause=0.2)[:limit]), "Dhaka, Bangladesh")
 
 
 # ----------------------------------------------------------------- Outdoor Navigation Dataset (Bucharest)
@@ -678,7 +683,7 @@ def build_outdoor_navigation(limit):
             out.append((f"onav-{safe_name(key)}.jpg", data, rows))
         if len(out) >= limit:
             break
-    return with_twins(out)
+    return with_place(with_twins(out), "Bucharest, Romania")         # filmed by the authors in Bucharest
 
 
 # ----------------------------------------------------------------- Seoul pavements
@@ -758,7 +763,7 @@ def build_seoul_sidewalks(limit):
         if len(out) >= limit:
             break
     random.Random(57).shuffle(out)
-    return with_twins(out[:limit])
+    return with_place(with_twins(out[:limit]), "Seoul, South Korea")
 
 
 # ----------------------------------------------------------------- Dollar Street (Gapminder)
@@ -900,6 +905,8 @@ def build_dollar_street(limit):
             if topic in DS_WHERE and country:
                 rows.append({"question": "Where might this photo be from?",
                              "answer": f"It was taken in {country}.", "credit": credit})
+            if country:                                # the family's country, from Gapminder's record
+                rows = [dict(r, place=country_named(country) or country) for r in rows]
             items.append((f"ds-{h['id']}.jpg", h["images"]["full1024"], rows))
         say(f"Dollar Street {topic}: {len(hits)} photos")
     random.Random(59).shuffle(items)
@@ -924,6 +931,27 @@ GEODE_NAMES = {
     "dog": "a dog", "flag": "a flag", "monument": "a monument", "religious_building": "a religious building",
     "stall": "a market stall", "storefront": "a shop front", "wheelbarrow": "a wheelbarrow",
 }
+
+# GeoDE's six regions in words, and the countries in each (the photographers' "ip_country" is used only when it lies
+# in the region the photo was taken for, so a worker abroad or behind a VPN does not give a wrong country).
+GEODE_REGIONS = {"Africa": ("Africa", {"Angola", "Botswana", "Cameroon", "Egypt", "Ghana", "Nigeria", "South Africa",
+                                       "Zambia"}),
+                 "Americas": ("the Americas", {"Argentina", "Brazil", "Colombia", "Mexico", "Uruguay", "Venezuela",
+                                               "USA", "Canada"}),
+                 "EastAsia": ("East Asia", {"China", "Japan", "South Korea", "Taiwan"}),
+                 "Europe": ("Europe", {"Bulgaria", "France", "Greece", "Ireland", "Italy", "Moldova", "Netherlands",
+                                       "Poland", "Portugal", "Romania", "Spain", "UK"}),
+                 "SouthEastAsia": ("South-East Asia", {"Indonesia", "Malaysia", "Philippines", "Singapore",
+                                                       "Thailand", "Vietnam"}),
+                 "WestAsia": ("West Asia", {"Jordan", "Saudi Arabia", "Turkey", "United Arab Emirates", "Yemen"})}
+
+
+def geode_place(row):
+    """{"place": ...} for a GeoDE photo: its country where it fits the photo's region, else the region; or {}."""
+    region, countries = GEODE_REGIONS.get(str(row.get("region") or "").replace(" ", "").replace("_", ""), ("", ()))
+    country = country_named(row.get("ip_country"))
+    place = country if country in countries else region
+    return {"place": place_name(place)} if place else {}
 
 
 def build_geode(limit):
@@ -951,7 +979,7 @@ def build_geode(limit):
             if not data or not words:
                 continue
             out.append((f"geode-{len(out)}.jpg", data, {"question": "What is this?",
-                        "answer": this_is(words), "credit": GEODE_CREDIT}))
+                        "answer": this_is(words), "credit": GEODE_CREDIT, **geode_place(row)}))
             taken += 1
             if taken >= per_group:
                 break
