@@ -1184,6 +1184,11 @@ def chosen(with_wikipedia=False, *, with_nudity=False, with_medical=False):
     return [s for s in SOURCES if (s.group == "permissive" or with_wikipedia) and allowed[s.content]]
 
 
+# Collections that a picture-making model (train_pictures.py) never trains on, whatever is chosen: pictures of
+# children with childhood illnesses are for describing only.
+NOT_FOR_PICTURE_MAKING = ("childhood_illness",)
+
+
 def content_of(key):
     """The content choice ("", "nudity" or "medical") of the collection with this key ("" when unknown)."""
     return next((s.content for s in SOURCES if s.key == key), "")

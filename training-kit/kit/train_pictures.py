@@ -167,8 +167,12 @@ def chosen_sources(args):
     """The collections to use: sources.chosen with the nudity and medical choices when this kit's sources.py knows
     them (a newer one), otherwise the older chosen(with_wikipedia)."""
     try:
-        return sources.chosen(with_wikipedia=args.with_wikipedia, with_nudity=args.with_nudity,
-                              with_medical=args.with_medical)
+        found = sources.chosen(with_wikipedia=args.with_wikipedia, with_nudity=args.with_nudity,
+                               with_medical=args.with_medical)
+        # Pictures of children (childhood illnesses) help a describer tell a carer what a rash looks like, but a
+        # picture-making model must never learn to make pictures of children's bodies: never used here.
+        never = set(getattr(sources, "NOT_FOR_PICTURE_MAKING", ()))
+        return [s for s in found if s.key not in never]
     except TypeError:
         if args.with_nudity or args.with_medical:
             say("  (This kit's list of collections has no nudity or medical choice yet; they are left out.)")
