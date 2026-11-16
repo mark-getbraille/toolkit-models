@@ -687,54 +687,126 @@ def build_beef(limit):
 
 # ----------------------------------------------------------------- English translations of other languages
 
-# Packs whose descriptions are in another language also get an English version of each, translated by the open
-# OPUS-MT models (University of Helsinki; Apache 2.0, the Chinese one CC BY 4.0), marked "translated": the kit
-# never uses those for its test, so a translation mistake cannot make the model look better or worse.
-# Japanese is left out: in tests OPUS-MT ja-en turned a cat (ねこ) into "a fox"; a wrong translation teaches the
-# model to describe what is not there. Japanese descriptions are used in Japanese only.
-TRANSLATE = {"ksamsok": "sv", "rijksmuseum": "nl", "coco_cn": "zh"}
-MT_MODELS = {"ja": ("Helsinki-NLP/opus-mt-ja-en", "0770961a39ba"), "sv": ("Helsinki-NLP/opus-mt-sv-en", "202cf6240046"),
-             "nl": ("Helsinki-NLP/opus-mt-nl-en", "48af999f2c59"), "zh": ("Helsinki-NLP/opus-mt-zh-en", "cf109095479d")}
+# Packs whose descriptions are in another language also get an English version of each, translated on the processor
+# by open OPUS-MT models (University of Helsinki), marked "translated": the kit never uses those for its test, so a
+# translation mistake cannot make the model look better or worse. The models were chosen language by language
+# (November 2026) by translating 20 real descriptions from each pack with each candidate and checking every output
+# against the source by hand:
+#   sv  opus-mt-tc-big-gmq-en (CC BY 4.0): clearly better than opus-mt-sv-en ("pencil sketch", "sideburns",
+#       "checked dress", where opus-mt-sv-en left words untranslated or wrong); about 1 second a description.
+#   nl  opus-mt-tc-bible-big-gmw-en (Apache 2.0): better than opus-mt-nl-en ("kneeling woman", "wagon", "stream
+#       goddesses", where opus-mt-nl-en said "car" and "electricity goddesses"); about 1.2 seconds a description.
+#   zh  opus-mt-zh-en (CC BY 4.0), as before: the tc-bible zhx-en model often left half the sentence out.
+#   fi  opus-mt-tc-big-fi-en (CC BY 4.0) and cs opus-mt-tc-big-ces_slk-en (CC BY 4.0): about 17 of 20 right.
+# Rejected: MADLAD-400 3B (Apache 2.0; its 8-bit CTranslate2 copy repeated and dropped words on short captions and
+# took 1-3 seconds a description; the full model is 12 GB), M2M100 418M and 1.2B (MIT; slower and no better: "white
+# eagle" for a duck, "frog" for a heron), and NLLB (CC BY-NC, not allowed). None of these licences limits the use of
+# the translations.
+# Japanese is still left out: every model tried got about 3 in 10 short STAIR captions wrong (OPUS-MT ja-en: a cat
+# became "a fox"; M2M100 1.2B: a duck became "a white eagle", a man on a toilet "standing on top of his shoes"), and
+# the long Japan Search descriptions came out garbled. A wrong translation teaches the model to describe what is not
+# there, so Japanese descriptions are used in Japanese only.
+TRANSLATE = {"ksamsok": "sv", "rijksmuseum": "nl", "coco_cn": "zh", "europeana_fi": "fi", "europeana_cs": "cs"}
+MT_MODELS = {"sv": ("Helsinki-NLP/opus-mt-tc-big-gmq-en", "b243b46fc9e1eaf068ae0d8ae896ac1acd7d2380"),
+             "nl": ("Helsinki-NLP/opus-mt-tc-bible-big-gmw-en", "5af4b912a33023bc682ee6f27456dab65dbeaa73"),
+             "zh": ("Helsinki-NLP/opus-mt-zh-en", "cf109095479db38d6df799875e34039d4938aaa6"),
+             "fi": ("Helsinki-NLP/opus-mt-tc-big-fi-en", "956e13710061738d21f677e4ed16a56546511c0f"),
+             "cs": ("Helsinki-NLP/opus-mt-tc-big-ces_slk-en", "2c4f1841a6cf8a4a79cf8b523c7e8169b5711342")}
+# At most this long is spent translating one pack (GitHub's machines have 4 processors; a build may run 350 minutes,
+# and the pictures need time too). Descriptions not reached in time keep their own language only.
+MT_SECONDS = 2.5 * 3600
+CJK = re.compile(r"[぀-ヿ㐀-䶿一-鿿가-힯]")
 
 
-def translate(texts, language):
-    """English translations of texts (OPUS-MT, on the processor, in batches)."""
-    from transformers import MarianMTModel, MarianTokenizer
-    repo, revision = MT_MODELS[language]
+def translation_ok(source, text, language):
+    """True when a machine translation looks sound: not empty, not much shorter or longer than the source, no word
+    or group of words repeated over and over, no language tag left in it and, from Japanese or Chinese, no Japanese
+    or Chinese characters left untranslated. A failed one is dropped (the row in its own language stays)."""
+    words = text.lower().split()
+    if len(words) < 3 or ">>" in text:
+        return False
+    ratio = len(text) / max(1, len(source))
+    if language in ("ja", "zh"):
+        if CJK.search(text) or not 0.8 <= ratio <= 8:
+            return False
+    elif not 0.5 <= ratio <= 2.0:
+        return False
+    runs = [w.strip(".,;:!?\"'()") for w in words]
+    if any(runs[i] and runs[i] == runs[i + 1] == runs[i + 2] for i in range(len(runs) - 2)):
+        return False                                                       # "the the the"
+    threes = [tuple(runs[i:i + 3]) for i in range(len(runs) - 2)]
+    if len(threes) - len(set(threes)) >= 2:
+        return False                                                       # a phrase said again and again
+    common = max(runs.count(w) for w in set(runs) if len(w) > 3) if any(len(w) > 3 for w in runs) else 0
+    return not (len(runs) >= 8 and common > len(runs) * 0.25)
+
+
+def translate(texts, language, seconds=MT_SECONDS):
+    """English translations of texts (OPUS-MT, on the processor, in batches of similar length so little time goes
+    on padding). Texts not reached within seconds come back as "" (left untranslated)."""
     from huggingface_hub import snapshot_download
-    folder = snapshot_download(repo, allow_patterns=["*.json", "*.spm", "*.txt", "*.bin", "*.safetensors",
-                                                     "*vocab*", "*source*", "*target*"])
+    from transformers import MarianMTModel, MarianTokenizer
+    import torch
+    repo, revision = MT_MODELS[language]
+    folder = snapshot_download(repo, revision=revision, allow_patterns=[
+        "*.json", "*.spm", "*.txt", "*.bin", "*.safetensors", "*vocab*", "*source*", "*target*"])
     tokenizer = MarianTokenizer.from_pretrained(folder)
-    model = MarianMTModel.from_pretrained(folder)
-    out = []
-    for start in range(0, len(texts), 16):
-        batch = tokenizer(texts[start:start + 16], return_tensors="pt", padding=True, truncation=True, max_length=256)
-        made = model.generate(**batch, max_new_tokens=256, num_beams=2)
-        out += [clean(t) for t in tokenizer.batch_decode(made, skip_special_tokens=True)]
-        if start % 800 == 0:
-            say(f"  translated {start + len(made)} of {len(texts)}")
+    model = MarianMTModel.from_pretrained(folder).eval()
+    order = sorted(range(len(texts)), key=lambda i: len(texts[i]))
+    out, started, done = [""] * len(texts), time.time(), 0
+    with torch.inference_mode():
+        for start in range(0, len(order), 16):
+            if time.time() - started > seconds:
+                say(f"  time is up: {done} of {len(texts)} translated, the rest left in their own language")
+                break
+            group = order[start:start + 16]
+            batch = tokenizer([texts[i] for i in group], return_tensors="pt", padding=True, truncation=True,
+                              max_length=256)
+            made = model.generate(**batch, max_new_tokens=256, num_beams=2)
+            for i, text in zip(group, tokenizer.batch_decode(made, skip_special_tokens=True)):
+                out[i] = clean(text)
+            done += len(group)
+            if start % 800 == 0:
+                say(f"  translated {done} of {len(texts)} ({time.time() - started:.0f} seconds)")
     return out
 
 
 def add_translations(key, entries):
     """For a pack in another language: an English row ("Describe this picture." and the translation) for every
-    row, pointing at the same picture (or address), marked translated."""
+    row in that language, pointing at the same picture (or address), marked translated, keeping the row's "child"
+    and place marks. Rows already in English, and rows marked "twinned" (their collection wrote its own English),
+    are not translated; a translation that fails translation_ok is dropped."""
     language = TRANSLATE.get(key)
     if not language:
         return entries
-    english = translate([row["answer"] for _, _, row in entries], language)
-    more = []
-    for (name, data, row), text in zip(entries, english):
-        if len(text.split()) < 3:
+    skip = {i for i, (_, _, row) in enumerate(entries) if row.get("twinned")}
+    entries = [(n, d, {k: v for k, v in r.items() if k != "twinned"}) if r.get("twinned") else (n, d, r)
+               for n, d, r in entries]
+    wanted = [i for i, (_, _, row) in enumerate(entries) if i not in skip
+              and row.get("question") != "Describe this picture." and not row.get("translated")]
+    english = translate([entries[i][2]["answer"] for i in wanted], language)
+    more, dropped = [], 0
+    for i, text in zip(wanted, english):
+        name, data, row = entries[i]
+        if not text:
+            continue
+        if not translation_ok(row["answer"], text, language):
+            dropped += 1
             continue
         twin = {"question": "Describe this picture.", "answer": text, "translated": True,
-                "credit": row.get("credit", "") + "; English translation by OPUS-MT (machine translation)"}
-        if data is None:
+                "credit": row.get("credit", "") + f"; English translation by {MT_MODELS[language][0]} "
+                                                  "(machine translation)"}
+        twin.update({k: row[k] for k in ("child", "place", "place_kind") if k in row})
+        if data is not None:
+            twin["file"] = f"pictures/{name}"
+        elif row.get("url"):
             twin["url"] = row["url"]
-            more.append((None, None, twin))
+        elif row.get("file"):
+            twin["file"] = row["file"]
         else:
-            more.append((None, None, dict(twin, file=f"pictures/{name}")))
-    say(f"{len(more)} English translations added")
+            continue
+        more.append((None, None, twin))
+    say(f"{len(more)} English translations added ({dropped} failed the check and were left out)")
     return entries + more
 
 
@@ -806,6 +878,11 @@ PACKS.update(MEDICAL_PACKS)
 # Facial expressions, gestures and body language (Open Images, Commons, BiCE-HG gestures, VQA questions).
 from expression_packs import EXPRESSION_PACKS
 PACKS.update(EXPRESSION_PACKS)
+
+# More worldwide collections found by searching in other languages: Crossmodal-3600 (captions in 36 languages) and
+# Finnish and Czech museums through Europeana.
+from world_more_packs import WORLD_MORE_PACKS
+PACKS.update(WORLD_MORE_PACKS)
 
 
 def sha256_of(path):

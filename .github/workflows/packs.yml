@@ -44,7 +44,8 @@ jobs:
                    "uroac_crossings", "open_images_street", "walkway_dhaka", "outdoor_navigation", "seoul_sidewalks",
                    "dollar_street", "geode", "art_nudes", "anatomy",
                    "skin_lesion_photos", "isic_skin", "gi_endoscopy", "chest_xray", "case_report_figures", "vet_case_figures", "cdc_medical", "childhood_illness", "medical_collections", "birth_and_feeding",
-                   "oi_expressions", "commons_expressions", "bice_gestures", "vqa_expressions"]
+                   "oi_expressions", "commons_expressions", "bice_gestures", "vqa_expressions",
+                   "xm3600", "europeana_fi", "europeana_cs"]
           words = [w for w in sys.argv[1].split(",") if w]
           keys = known if words in ([], ["all"]) else [w for w in words if w in known]
           print("keys=" + json.dumps(keys))
@@ -62,6 +63,8 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       HF_HUB_DISABLE_TELEMETRY: "1"
+      # Europeana's free API key (a repository secret); without it the builders use the public demonstration key.
+      EUROPEANA_KEY: ${{ secrets.EUROPEANA_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -72,9 +75,9 @@ jobs:
           python -m pip install requests pillow pyarrow "huggingface_hub>=0.34"
           # The packs in other languages are also translated into English (OPUS-MT, on the processor).
           case "${{ matrix.key }}" in
-            ksamsok|rijksmuseum|coco_cn)
+            ksamsok|rijksmuseum|coco_cn|europeana_fi|europeana_cs)
               python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
-              python -m pip install "transformers==4.57.6" sentencepiece sacremoses ;;
+              python -m pip install "transformers==4.57.6" "sentencepiece==0.2.1" "sacremoses==0.1.1" ;;
             seoul_sidewalks)
               python -m pip install "pillow-heif==1.1.1" ;;
           esac
@@ -141,6 +144,9 @@ jobs:
             commons_expressions) limit=1500 ;;
             bice_gestures) limit=1430 ;;
             vqa_expressions) limit=1200 ;;
+            xm3600) limit=3600 ;;
+            europeana_fi) limit=6000 ;;
+            europeana_cs) limit=4000 ;;
           esac
           python packs/build_packs.py "${{ matrix.key }}" --out build/packs --limit "$limit"
       - name: Upload it to the release

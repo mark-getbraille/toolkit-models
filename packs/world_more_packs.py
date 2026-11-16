@@ -15,11 +15,15 @@ expression_packs.py), in any of the languages below.
                 Finnish Architecture and others), through Europeana's search: records whose picture is CC BY 4.0, CC0
                 or Public Domain Mark, with the museum's Finnish "sisällön kuvaus" (content description: what the
                 picture shows). Europeana's record text is CC0. Where the museum also wrote an English "content
-                description", that is the English row; otherwise build_packs adds a machine translation.
+                description", that is the English row; otherwise build_packs adds a machine translation
+                (opus-mt-tc-big-fi-en). Architects' drawings and plans, number lists and notes are left out.
   europeana_cs  The Náprstek Museum of Asian, African and American Cultures, Prague (part of the National Museum),
                 through Europeana: objects and photographs whose picture is CC BY 4.0, with the museum's short Czech
                 description ("Miska z kalebasy zdobená vypalovaným vzorem ryb a hada."). Machine-translated to English
-                by build_packs.
+                by build_packs (opus-mt-tc-big-ces_slk-en).
+
+The Europeana pictures are Europeana's own 400-pixel copies (its thumbnail service): the museums' picture servers
+refuse downloads from programs.
 
 Europeana asks programs to use their own free API key (https://pro.europeana.eu/page/get-api): set EUROPEANA_KEY.
 Without it the builders use Europeana's public demonstration key "api2demo", which works but is meant for trials.
@@ -256,13 +260,16 @@ FI_PHYSICAL = re.compile(r"^\s*fyysinen kuvaus:\s*(.+)", re.I | re.S)
 FI_NOT_SHOWN = re.compile(r"numero|@paikka|kuvaajatieto|julkaisu:|vasemmalta|oikealta:|ylärivi|alarivi|eturivi|takarivi|"
                           r"^esinekuva|^alue \d|^kortteli|^koekuoppa|^\W*$|^huom\b|^(ulko|sisä)kuva,|kuva otettu|"
                           r"inventointi|dokumentointi|restaurointi \d|^kuvattu (lännestä|idästä|etelästä|pohjoisesta)|"
-                          r"kuvauspaikka|planssi|tuntematon", re.I)
+                          r"kuvauspaikka|planssi|tuntematon|"
+                          # architects' drawings and plans ("Puutarhasuunnitelma, asemapiirros, 1:200, sign: ..."):
+                          r"\b1\s*:\s*\d{2,}|piirustus|asemapiirros|suunnitelma\b|signeera|\bsign\.?:", re.I)
+FI_CAPTION_LABEL = re.compile(r"^\s*(kuvakortin )?kuvateksti:\s*", re.I)     # "kuvakortin kuvateksti: ..."
 FI_ORIENTATION = re.compile(r"^(vaaka|pysty|neliö|mustavalkoinen|värillinen)\W*$", re.I)
 
 
 def fi_first_line(text):
     """The first line of a description part, without dates and places on its later lines."""
-    return clean(re.split(r"\s*\n\s*", text.strip())[0])
+    return FI_CAPTION_LABEL.sub("", clean(re.split(r"\s*\n\s*", text.strip())[0]))
 
 
 def fi_answer(descriptions):
