@@ -59,7 +59,7 @@ def a_or_an(phrase):
     """ "a" or "an" before a phrase, knowing that "USB", "UNO" and "one" start with a "you" or "won" sound."""
     word = phrase.split()[0] if phrase.split() else ""
     first = word.lower()
-    if first.startswith(("usb", "uno", "one", "uni", "euro", "ewe")):
+    if first.startswith(("usb", "uno", "one", "uni", "eu", "ewe", "ura", "ure")):
         return "a"
     if len(word) >= 2 and word.isupper() and word[0] in "AEFHILMNORSX":        # letters said one by one: "an RNIB"
         return "an"
@@ -108,7 +108,8 @@ def is_greyscale(jpeg):
         img = Image.open(io.BytesIO(jpeg)).convert("RGB").resize((64, 64))
     except Exception:  # noqa: BLE001 - not known: treated as colour
         return False
-    diff = sum(max(p) - min(p) for p in img.getdata()) / (64 * 64)
+    raw = img.tobytes()
+    diff = sum(max(raw[i:i + 3]) - min(raw[i:i + 3]) for i in range(0, len(raw), 3)) / (64 * 64)
     return diff < 4
 
 
@@ -658,7 +659,7 @@ def lila_taxa(s):
         else:
             latin = ""
         if level not in ("species", "subspecies") and common.endswith("s") and not common.endswith("ss"):
-            common = re.sub(r"(?<=[sxz]|ch|sh)es$|s$", "", common)    # "typical iguanas" -> "typical iguana"
+            common = common[:-2] if re.search(r"(x|z|ch|sh|sses)$", common) else common[:-1]   # "iguanas" -> "iguana"
         out[(r["dataset_name"], r["query"].lower())] = (common, latin)
     return out
 
@@ -785,10 +786,15 @@ GBIF_INATURALIST = "50c9509d-22c7-4a22-a47d-8c48425ef4a7"      # left out: the i
 # A photo's own licence (not only its record's) must be one of these: CC0, the Public Domain Mark, or CC BY.
 GBIF_FREE = re.compile(r"creativecommons\.org/(licenses/by/(\d\.\d)|publicdomain/(zero|mark)/\d\.\d)/?(legalcode)?"
                        r"(\.\w+)?$", re.I)
-GBIF_GROUPS = [(212, "What bird is this?"), (359, "What animal is this?"), (358, "What animal is this?"),
-               (131, "What animal is this?"), (204, "What fish is this?"), (216, "What insect is this?"),
-               (367, "What is this creature?"), (52, "What is this creature?"), (6, "What plant is this?"),
-               (5, "What mushroom or fungus is this?")]
+# The groups, as GBIF Backbone keys (its backbone has no class for reptiles or ray-finned fish, so their orders are
+# listed: lizards and snakes, turtles, crocodiles; sharks and rays and the main bony-fish orders), with the question.
+GBIF_GROUPS = [((212,), "What bird is this?"), ((359,), "What animal is this?"),
+               ((11592253, 11418114, 11493978), "What animal is this?"), ((131,), "What animal is this?"),
+               ((121, 587, 1313, 1153, 708, 772, 588, 549, 590, 773, 495, 538, 548), "What fish is this?"),
+               ((216,), "What insect is this?"), ((367,), "What is this creature?"), ((52,), "What is this creature?"),
+               ((6,), "What plant is this?"), ((5,), "What mushroom or fungus is this?")]
+# English names that name a disease or damage rather than the living thing (fungi): the Latin name is used instead.
+GBIF_NOT_A_NAME = re.compile(r"\b(disease|rot|blight|canker|wilt|scab|mildew|spot|gall)\b", re.I)
 
 
 def gbif_licence(url):
@@ -835,7 +841,7 @@ def build_gbif_species(limit, per_species=2):
     names, titles, items = {}, {}, []
     per_group = -(-int(limit * 1.15) // len(GBIF_GROUPS))
     for taxon, question in GBIF_GROUPS:
-        params = {"mediaType": "StillImage", "taxonKey": taxon, "basisOfRecord": "HUMAN_OBSERVATION",
+        params = {"mediaType": "StillImage", "taxonKey": list(taxon), "basisOfRecord": "HUMAN_OBSERVATION",
                   "license": ["CC0_1_0", "CC_BY_4_0"]}
         try:
             datasets = gbif_datasets(s, params)
@@ -844,7 +850,7 @@ def build_gbif_species(limit, per_species=2):
             continue
         weights = [n ** 0.5 for _, n in datasets]
         species, found, tries, empty = {}, 0, 0, set()
-        while datasets and found < per_group and tries < max(6, per_group // 10):
+        while datasets and found < per_group and tries < max(10, per_group // 5):
             tries += 1
             key, count = rng.choices(datasets, weights)[0]
             if key in empty:
@@ -870,6 +876,7 @@ def build_gbif_species(limit, per_species=2):
                 usable += 1
                 latin = clean(o.get("species"))
                 common = gbif_english(s, taxon_key, names)
+                common = "" if GBIF_NOT_A_NAME.search(common) else common
                 answer = f"This is {a_or_an(common)} {common} ({latin})." if common else f"This is {latin}."
                 if key not in titles:
                     titles[key] = clean(o.get("datasetName")) or clean(s.get(f"{GBIF}dataset/{key}",
@@ -888,7 +895,7 @@ def build_gbif_species(limit, per_species=2):
             if not usable:
                 empty.add(key)                         # no free photos there (often "all rights reserved")
             time.sleep(0.3)
-        say(f"GBIF group {taxon}: {found} photos of {len(species)} species from {len(datasets)} datasets")
+        say(f"GBIF group {taxon[0]}: {found} photos of {len(species)} species from {len(datasets)} datasets")
     rng.shuffle(items)
     return fetch_all(items[:int(limit * 1.15) + 2], workers=6, pause=0.2)[:limit]
 
@@ -912,14 +919,14 @@ BREED_NOT_ONE = re.compile(r"\b(by|breeds|groups?|unidentified|mixed|crossbreeds
 
 
 def breed_name(category, animal):
-    """The breed's name from its category ("Category:Alaska (rabbit)" -> "Alaska", "Category:Beagles" ->
-    "Beagle")."""
+    """The breed's name from its category ("Category:Alaska (rabbit)" -> "Alaska", "Category:Harlequin rabbits" ->
+    "Harlequin rabbit")."""
     name = category.split(":", 1)[-1]
-    name = re.sub(r"\s*\((%s|%ss|breed|%s breed)\)$" % (animal, animal, animal), "", name, flags=re.I).strip()
     name = re.sub(r"\s*\([^)]*\)$", "", name).strip()
-    if name.endswith("s") and not name.endswith(("ss", "us")) and animal == "dog":
-        name = name[:-1]
-    return name
+    words = name.split()
+    if len(words) > 1 and words[-1].lower() in (animal + "s", plural(animal)):
+        words[-1] = animal                                      # "Chartreux cats" -> "Chartreux cat"
+    return " ".join(words)
 
 
 def build_commons_breeds(limit, per_breed=4):
@@ -960,10 +967,10 @@ def build_commons_breeds(limit, per_breed=4):
 # ----------------------------------------------------------------- the packs
 
 EVERYDAY_PACKS = {
-    "open_images_objects": (build_open_images_objects, "Open Images V7 (Google): image-level labels verified by people, "
-                                                       "CC BY 4.0, https://storage.googleapis.com/openimages/web/index."
-                                                       "html. Each photo is CC BY 2.0 (checked photo by photo), "
-                                                       "credited below with its photographer and Flickr page."),
+    "open_images_objects": (build_open_images_objects, "Open Images V7 (Google): image-level labels verified by "
+                                                       "people, CC BY 4.0, https://storage.googleapis.com/openimages/"
+                                                       "web/index.html. Each photo is CC BY 2.0 (checked photo by "
+                                                       "photo), credited below with its photographer and Flickr page."),
     "orbit": (build_orbit, "ORBIT: A Real-World Few-Shot Dataset for Teachable Object Recognition, collected from "
                            "people who are blind or low vision (Daniela Massiceti, Luisa Zintgraf, John Bronskill, "
                            "Lida Theodorou, Matthew Tobias Harris, Edward Cutrell, Cecily Morrison, Katja Hofmann and "
@@ -971,8 +978,9 @@ EVERYDAY_PACKS = {
                            "https://doi.org/10.25383/city.14294597 and https://github.com/microsoft/ORBIT-Dataset "
                            "(frame annotations). Frames resized; names of the collectors' things tidied."),
     "core50": (build_core50, CORE50_CREDIT + " Frames converted to JPEG."),
-    "lila_camera_traps": (build_lila_camera_traps, "Camera-trap collections from LILA BC (Labeled Information Library "
-                                                   "of Alexandria: Biology and Conservation), https://lila.science, each "
+    "lila_camera_traps": (build_lila_camera_traps, "Camera-trap collections from LILA BC (Labeled Information "
+                                                   "Library of Alexandria: Biology and Conservation), "
+                                                   "https://lila.science, each "
                                                    "released under the Community Data License Agreement - Permissive "
                                                    "1.0 (https://cdla.dev/permissive-1-0/); scientific names from "
                                                    "LILA's taxonomy mapping. Collections: " + ", ".join(LILA_SETS) +
@@ -989,11 +997,11 @@ EVERYDAY_PACKS = {
 
 # How many pictures a full build takes from each collection (about what each offers after the licence checks).
 EVERYDAY_LIMITS = {
-    "open_images_objects": 12000,     # of about 37,000 free photos with a confirmed household label
+    "open_images_objects": 12000,     # of about 44,900 free photos with a confirmed household label
     "orbit": 7000,                    # 2 frames from each of about 3,800 videos in the benchmark zips
     "core50": 4000,                   # of about 4,100 frames taken (every 40th frame)
-    "lila_camera_traps": 8000,        # of tens of thousands of usable images in the 21 collections
-    "gbif_species": 6000,             # 10 groups, at most 2 photos a species
+    "lila_camera_traps": 8000,        # of about 725,000 usable images (21 collections, about 1,000 kinds)
+    "gbif_species": 6000,             # 10 groups, at most 2 photos a species (hundreds of thousands free)
     "commons_breeds": 3000,           # about 1,000 breed categories, at most 4 pictures each
 }
 

@@ -727,6 +727,10 @@ PACKS.update(PILL_PACKS)
 from food_packs import FOOD_PACKS
 PACKS.update(FOOD_PACKS)
 
+# Household objects (Open Images, ORBIT, CORe50) and animals (LILA camera traps, GBIF species, Commons breeds).
+from everyday_packs import EVERYDAY_PACKS
+PACKS.update(EVERYDAY_PACKS)
+
 
 def sha256_of(path):
     """The SHA-256 of a file."""
