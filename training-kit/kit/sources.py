@@ -31,6 +31,13 @@ import tarfile
 import time
 
 LONG_SIDE = 896
+# The permanent picture library (train.py --library): when set, every picture is also kept as a larger copy (at most
+# ARCHIVE_SIDE pixels, high quality) under ARCHIVE_DIR, at the same place as its training copy under DATA_DIR, for
+# future models; and downloaded originals (archives, data files, packs) are kept instead of deleted.
+ARCHIVE_DIR = None
+DATA_DIR = None
+ARCHIVE_SIDE = 2048
+KEEP_DOWNLOADS = False
 USER_AGENT = "PictureModelTrainingKit/2"        # plain: some museum picture servers refuse longer ones
 
 # The questions, in the toolkit's own words where it has them (vision/vlm.py PICTURE).
@@ -80,6 +87,13 @@ def smaller(data, path):
         return False
     if min(img.size) < 64:
         return False
+    if ARCHIVE_DIR and DATA_DIR:
+        keep = os.path.join(ARCHIVE_DIR, os.path.relpath(path, DATA_DIR))
+        if not os.path.exists(keep):
+            os.makedirs(os.path.dirname(keep), exist_ok=True)
+            larger = img.copy()
+            larger.thumbnail((ARCHIVE_SIDE, ARCHIVE_SIDE))
+            larger.save(keep, "JPEG", quality=93)
     img.thumbnail((LONG_SIDE, LONG_SIDE))
     img.save(path, "JPEG", quality=90)
     return True
@@ -206,7 +220,8 @@ def prepare_docci(source, data_dir, work, cap):
             count += 1
             if count % 1000 == 0:
                 say(f"    {count} pictures done")
-    os.remove(archive)                                     # the small copies are kept; 7.6 GB freed
+    if not KEEP_DOWNLOADS:
+        os.remove(archive)                                 # the small copies are kept; 7.6 GB freed
     return rows
 
 
@@ -566,10 +581,11 @@ def prepare_wikipedia(source, data_dir, work, cap):
             if path:
                 rows.append({"picture": path, "question": ALT_TEXT, "answer": alt, "split": ""})
         del table
-        try:
-            os.remove(os.path.realpath(local))             # the pictures are kept; the 1 GB file is not
-        except OSError:
-            pass
+        if not KEEP_DOWNLOADS:
+            try:
+                os.remove(os.path.realpath(local))         # the pictures are kept; the 1 GB file is not
+            except OSError:
+                pass
         if len(rows) >= cap + source.test:
             break
     return rows
@@ -624,7 +640,8 @@ def prepare_crossmodal(source, data_dir, work, cap):
                 path = os.path.join(folder, name)
                 if os.path.exists(path) or smaller(tar.extractfile(member).read(), path):
                     rows.append({"picture": path, "question": BRIEF, "answer": english[name], "split": ""})
-    os.remove(archive)
+    if not KEEP_DOWNLOADS:
+        os.remove(archive)
     return rows
 
 
@@ -771,7 +788,8 @@ def prepare_pack(source, data_dir, work, cap):
                 to_fetch.append((f"{source.key}-{index}.jpg", row["url"], base))
         with open(os.path.join(folder, "CREDITS.txt"), "wb") as out:
             out.write(z.read("CREDITS.txt"))
-    os.remove(archive)
+    if not KEEP_DOWNLOADS:
+        os.remove(archive)
     if to_fetch:
         say(f"  Fetching {len(to_fetch)} pictures for the {source.key} pack from their own website.")
         rows += fetch_pictures(to_fetch, folder)

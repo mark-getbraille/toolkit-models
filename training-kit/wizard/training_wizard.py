@@ -1,7 +1,8 @@
 """Picture Model Training: the one-click wizard of the Picture Model Training Kit (Picture Model Training.exe).
 
 It does what the kit's .cmd files do, in one window that a screen reader user can follow:
-  1. the first page: the training folder (C:\\Training by default), the model (4B or 8B), how much to train (a quick
+  1. the first page: the picture library folder (B:\\Picture Library when drive B: exists: every picture, larger
+     copies and download kept for good, for future training), the training folder (C:\\Training by default), the model (4B or 8B), how much to train (a quick
      try, normal, full: several days, or a follow-up that carries on from the last finished training with only
      the new collections), Wikipedia or not, and whether to prepare this computer first; "Check this
      computer" says the NVIDIA card, its memory and the free disk space;
@@ -45,6 +46,12 @@ UV_URL = "https://github.com/astral-sh/uv/releases/download/0.9.5/uv-x86_64-pc-w
 TORCH_INDEX = "https://download.pytorch.org/whl/cu128"
 KIT_NAME = "Picture Model Training Kit"
 DEFAULT_FOLDER = "C:\\Training"
+
+
+def default_library():
+    """The picture library's usual place: B:\\Picture Library when drive B: exists (the big drive), otherwise beside
+    the training folder."""
+    return "B:\\Picture Library" if os.path.isdir("B:\\") else os.path.join(DEFAULT_FOLDER, "Picture Library")
 MODELS = [("4b", "Qwen3-VL 4B (needs an NVIDIA card with 12 GB or more)"),
           ("8b", "Qwen3-VL 8B (needs 16 GB or more; train the 4B model first)")]
 SIZES = [("quick", "Quick try: a tenth of the pictures, an hour or two"),
@@ -178,9 +185,9 @@ def nvidia_smi():
     return None
 
 
-def check_computer(folder):
-    """Plain sentences about the NVIDIA card and the free space where the kit goes, and whether training can start
-    ([sentences], ready)."""
+def check_computer(folder, library=None):
+    """Plain sentences about the NVIDIA card, the free space where the kit goes and where the picture library is,
+    and whether training can start ([sentences], ready)."""
     lines, ready = [], True
     tool = nvidia_smi()
     if tool is None:
@@ -199,16 +206,20 @@ def check_computer(folder):
         except Exception as e:  # noqa: BLE001 - said
             lines.append(f"The NVIDIA card could not be read ({e}).")
             ready = False
-    drive = os.path.splitdrive(os.path.abspath(folder))[0] + "\\"
-    try:
-        free = shutil.disk_usage(drive).free / 1024 ** 3
-        lines.append(f"Free disk space on {drive}: {free:,.0f} GB.")
-        if free < 90:
-            lines.append("The training needs about 90 GB: choose a folder on a bigger drive.")
+    needs = [(folder, 40 if library else 90, "the training folder")]
+    if library:
+        needs.append((library, 100, "the picture library"))
+    for path, gb, what in needs:
+        drive = os.path.splitdrive(os.path.abspath(path))[0] + "\\"
+        try:
+            free = shutil.disk_usage(drive).free / 1024 ** 3
+            lines.append(f"Free disk space for {what} on {drive}: {free:,.0f} GB.")
+            if free < gb:
+                lines.append(f"{what.capitalize()} needs about {gb} GB: choose a folder on a bigger drive.")
+                ready = False
+        except OSError:
+            lines.append(f"The drive {drive} for {what} could not be found.")
             ready = False
-    except OSError:
-        lines.append(f"The drive {drive} could not be found.")
-        ready = False
     lines.append("This computer is ready to train." if ready else "Training cannot start until this is solved.")
     return lines, ready
 
@@ -365,6 +376,8 @@ class Wizard(wx.Frame):
         self.folder = self.labelled(page, s, "&Training folder:", lambda: wx.TextCtrl(page, value=DEFAULT_FOLDER))
         row.Add(self.button(page, "&Browse...", "Choose the training folder", self.on_browse), 0, wx.ALL, 4)
         s.Add(row, 0, wx.LEFT, 4)
+        self.library = self.labelled(page, s, "Picture library f&older:", lambda: wx.TextCtrl(page, value=default_library()))
+        self.library.SetToolTip("All pictures, larger copies and downloads are kept here for good, for future training")
         self.model = self.labelled(page, s, "&Model:", lambda: wx.Choice(page, choices=[m[1] for m in MODELS]))
         self.model.SetSelection(0)
         self.size = self.labelled(page, s, "&How much to train:", lambda: wx.Choice(page, choices=[x[1] for x in SIZES]))
@@ -436,7 +449,7 @@ class Wizard(wx.Frame):
 
     def on_check(self, _event):
         """Check the card and the disk, show and say it."""
-        lines, _ready = check_computer(self.folder.GetValue())
+        lines, _ready = check_computer(self.folder.GetValue(), self.library.GetValue())
         log("Computer check: " + " ".join(lines))
         self.check_result.SetValue("\n".join(lines))
         speak(" ".join(lines), True)
@@ -449,7 +462,7 @@ class Wizard(wx.Frame):
 
     def on_start(self, _event):
         """Check, then show the progress page and start the work in the background."""
-        lines, ready = check_computer(self.folder.GetValue())
+        lines, ready = check_computer(self.folder.GetValue(), self.library.GetValue())
         self.check_result.SetValue("\n".join(lines))
         log("Computer check: " + " ".join(lines))
         if not ready:
@@ -464,6 +477,8 @@ class Wizard(wx.Frame):
         args = ["--model", MODELS[self.model.GetSelection()][0], "--size", "normal" if size == "continue" else size]
         if size == "continue":
             args.append("--continue")
+        if self.library.GetValue().strip():
+            args += ["--library", self.library.GetValue().strip()]
         if self.wikipedia.GetValue():
             args.append("--with-wikipedia")
         log(f"Start training: folder {self.kit}, settings {' '.join(args)}, prepare this computer "

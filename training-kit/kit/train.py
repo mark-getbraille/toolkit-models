@@ -29,6 +29,11 @@ changing how pictures are described.
 Command line (the .cmd files pass these): --model 4b|8b, --size quick|normal|full, --with-wikipedia (the add-on is
 then CC BY-SA 4.0), --limit N (train on at most N pictures).
 
+The picture library (--library FOLDER, which the program sets): every collection's pictures, their descriptions,
+larger copies of the pictures (up to 2,048 pixels, for future models), the original downloads and the Hugging Face
+files are kept there for good, so a later training (of this model or another) never downloads them again. Pictures
+an earlier run kept in the kit's work folder are moved there once, and their lists rewritten to the new place.
+
 A follow-up run (--continue): carries on from the newest finished add-on instead of starting a new one, and trains
 only on the collections that run did not have (or the ones named with --collections), mixed with a share of the
 earlier pictures (--replay, 0.25 by default: one earlier picture for every four new ones) so the model does not
@@ -161,19 +166,68 @@ def download_model(model_key, work):
 
 # ----------------------------------------------------------------- 3. the pictures
 
+LIBRARY = None          # the picture library folder (--library), or None: everything in the work folder
+
+
+def data_root(work):
+    """Where the prepared pictures and their lists are: the library's "data" folder, or the work folder's."""
+    return os.path.join(LIBRARY, "data") if LIBRARY else os.path.join(work, "data")
+
+
+def downloads_root(work):
+    """Where downloads (archives, data files, packs) go: the library's "downloads" folder, or the work folder."""
+    return os.path.join(LIBRARY, "downloads") if LIBRARY else work
+
+
+def open_library(work, library):
+    """Use library as the picture library: make its folders, point the downloads and the Hugging Face files there,
+    and move what an earlier run kept in the work folder (data, hf-cache) there once, rewriting the pictures' places
+    in every list."""
+    global LIBRARY
+    LIBRARY = os.path.abspath(library)
+    for name in ("data", "originals", "downloads"):
+        os.makedirs(os.path.join(LIBRARY, name), exist_ok=True)
+    sources.ARCHIVE_DIR = os.path.join(LIBRARY, "originals")
+    sources.DATA_DIR = os.path.join(LIBRARY, "data")
+    sources.KEEP_DOWNLOADS = True
+    os.environ["HF_HOME"] = os.path.join(LIBRARY, "hf-cache")
+    old_data, new_data = os.path.join(work, "data"), os.path.join(LIBRARY, "data")
+    if os.path.isdir(old_data) and os.listdir(old_data):
+        say(f"Moving the pictures downloaded before into the picture library {LIBRARY} (once; this can take a while).")
+        for name in os.listdir(old_data):
+            target = os.path.join(new_data, name)
+            if not os.path.exists(target):
+                shutil.move(os.path.join(old_data, name), target)
+        for name in os.listdir(new_data):
+            if name.endswith(".jsonl"):
+                path = os.path.join(new_data, name)
+                with open(path, encoding="utf-8") as f:
+                    text = f.read()
+                old = json.dumps(old_data)[1:-1]            # the folder as written inside the JSON lines
+                if old in text:
+                    with open(path, "w", encoding="utf-8") as f:
+                        f.write(text.replace(old, json.dumps(new_data)[1:-1]))
+        shutil.rmtree(old_data, ignore_errors=True)
+        say("  Moved.")
+    old_hf = os.path.join(work, "hf-cache")
+    if os.path.isdir(old_hf) and not os.path.exists(os.environ["HF_HOME"]):
+        say("Moving the Hugging Face files downloaded before into the picture library (once).")
+        shutil.move(old_hf, os.environ["HF_HOME"])
+
+
 def prepare_data(work, state, size, with_wikipedia, keys=None):
     """Prepare every chosen collection once (each one remembered as done in state, so a restarted kit skips it);
     writes data/train.jsonl (shuffled) and data/test.jsonl and returns (training rows, test rows). A collection that
     cannot be downloaded now is said and left out, so one broken website never stops the training."""
     import random
-    data_dir = os.path.join(work, "data")
+    data_dir = data_root(work)
     os.makedirs(data_dir, exist_ok=True)
     train_rows, test_rows = [], []
     chosen = [s for s in sources.chosen(with_wikipedia) if keys is None or s.key in keys]
     for number, source in enumerate(chosen, 1):
         say(f"  Collection {number} of {len(chosen)}: {source.name} (downloads {source.download}).")
         try:
-            train, test = sources.prepare_source(source, data_dir, work, size)
+            train, test = sources.prepare_source(source, data_dir, downloads_root(work), size)
         except Exception as e:  # noqa: BLE001 - one collection failing does not stop the others
             say(f"    This collection could not be prepared now ({str(e).splitlines()[0][:200]}); it is left out. "
                 "Start the kit again later to try it again.")
@@ -521,12 +575,12 @@ def follow_up_rows(work, state, plan, with_wikipedia, size, replay):
     import random
     new_train, new_test = prepare_data(work, state, size, with_wikipedia, keys=set(plan["new"]))
     old_train, old_test = [], []
-    data_dir = os.path.join(work, "data")
+    data_dir = data_root(work)
     for key, old_size in plan["old"].items():
         source = next((s for s in sources.SOURCES if s.key == key), None)
         if source is None or not os.path.exists(os.path.join(data_dir, f"{key}-{old_size}.jsonl")):
             continue
-        train, test = sources.prepare_source(source, data_dir, work, old_size)
+        train, test = sources.prepare_source(source, data_dir, downloads_root(work), old_size)
         old_train += train
         old_test += test
     random.Random(9).shuffle(old_train)
@@ -544,6 +598,7 @@ def main(argv=None):
     parser.add_argument("--size", choices=sorted(sources.SIZES), default="normal")
     parser.add_argument("--with-wikipedia", action="store_true", help="also learn from Wikipedia (CC BY-SA 4.0)")
     parser.add_argument("--limit", type=int, default=0, help="train on at most this many pictures")
+    parser.add_argument("--library", default="", help="the permanent picture library folder")
     parser.add_argument("--continue", dest="follow_up", action="store_true",
                         help="carry on from the newest finished add-on with the collections it did not have")
     parser.add_argument("--collections", default="", help="with --continue: the collection keys to add (commas)")
@@ -556,6 +611,8 @@ def main(argv=None):
     os.makedirs(work, exist_ok=True)
     state = State(work)
     keep_awake(True)
+    if args.library:
+        open_library(work, args.library)
     tag = ("-wikipedia" if args.with_wikipedia else "") + ("" if args.size == "normal" else f"-{args.size}")
     run = f"{args.model}{tag}"                 # each kind of run keeps its own test results and add-on
     plan = None

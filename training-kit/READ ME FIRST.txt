@@ -89,8 +89,16 @@ It says FINISHED and whether the model got better. Two files matter:
 - The zip in the "result" folder (a few hundred MB): this is what to send. Tell Claude the training has finished
   and you will be told how to send it. The add-on is only published in the toolkit if the tests show it is better.
 
+The picture library
+The program keeps every picture for good in the picture library folder (B:\Picture Library when drive B: exists):
+the training copies, larger copies of every picture (up to 2,048 pixels) for future models, the original downloads
+and the descriptions with their credits. A later training, of this model or a future one, uses them without
+downloading anything again. Do not delete it. Pictures an earlier training kept in the kit's work folder are moved
+into it the first time the program uses it.
+
 Afterwards
-You can delete the "work" folder to get the disk space back (keep the "result" folder until the file is sent).
+You can delete the "work" folder inside the kit folder to get space back (keep the "result" folder until the file is
+sent); the picture library stays.
 
 Licences and credits
 The kit is under the Apache License 2.0. The model: Qwen3-VL (Alibaba Cloud) and huihui-ai's version, Apache License
