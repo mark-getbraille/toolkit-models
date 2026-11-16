@@ -793,7 +793,9 @@ def prepare_pack(source, data_dir, work, cap):
         listed = [json.loads(line) for line in z.read("rows.jsonl").decode("utf-8").splitlines() if line.strip()]
         random.Random(29).shuffle(listed)
         for index, row in enumerate(listed[:int((cap + source.test) * 1.15)]):
-            base = {"question": row["question"], "answer": clean(row["answer"]), "split": ""}
+            # A machine-translated twin is for training only, never for the test (split "no-test").
+            base = {"question": row["question"], "answer": clean(row["answer"]),
+                    "split": "no-test" if row.get("translated") else ""}
             if row.get("file"):
                 path = os.path.join(folder, os.path.basename(row["file"]))
                 if have(path) or smaller(z.read(row["file"]), path):       # a training copy and a large copy
@@ -808,6 +810,117 @@ def prepare_pack(source, data_dir, work, cap):
         say(f"  Fetching {len(to_fetch)} pictures for the {source.key} pack from their own website.")
         rows += fetch_pictures(to_fetch, folder)
     return rows
+
+
+# ----------------------------------------------------------------- big archives downloaded by the kit itself
+
+def unpack(archive, folder):
+    """Unpack a zip, RAR or 7z archive into folder: zips with Python, the others with the tar program built into
+    Windows 10 and 11 (bsdtar, which reads RAR and 7z); raises RuntimeError when that is not possible."""
+    import subprocess
+    import zipfile
+    os.makedirs(folder, exist_ok=True)
+    if archive.lower().endswith(".zip"):
+        zipfile.ZipFile(archive).extractall(folder)
+        return
+    tar = os.path.join(os.environ.get("SystemRoot", "C:\\Windows"), "System32", "tar.exe")
+    if not os.path.exists(tar):
+        import shutil
+        tar = shutil.which("bsdtar") or shutil.which("tar")
+    done = subprocess.run([tar, "-xf", archive, "-C", folder], capture_output=True, text=True,
+                          creationflags=0x08000000 if os.name == "nt" else 0)
+    if done.returncode != 0:
+        raise RuntimeError("the archive could not be unpacked: " + (done.stderr or "").strip()[:200])
+
+
+def pictures_in(folder):
+    """Every picture file under folder (with its path), in a fixed order."""
+    found = []
+    for base, _dirs, files in os.walk(folder):
+        for name in files:
+            if name.lower().endswith((".jpg", ".jpeg", ".png", ".bmp")):
+                found.append(os.path.join(base, name))
+    return sorted(found)
+
+
+def archive_collection(source, data_dir, work, url, archive_name, label_of, cap, seed):
+    """Download a big archive once (kept in the downloads folder, which is the picture library's), unpack it, turn
+    each picture whose label_of(path) gives (question, answer) into a training copy and a full-size copy, and remove
+    the unpacked folder again. Pictures are picked evenly from every label, at most cap + test of them."""
+    archive = os.path.join(work, archive_name)
+    say(f"  Downloading {archive_name} (kept for good in the picture library; it is large and resumes if stopped).")
+    download_file(url, archive)
+    unpacked = os.path.join(work, archive_name + ".unpacked")
+    if not os.path.isdir(unpacked) or not os.listdir(unpacked):
+        say("  Unpacking it (this takes a while).")
+        unpack(archive, unpacked)
+    by_label = {}
+    for path in pictures_in(unpacked):
+        got = label_of(os.path.relpath(path, unpacked))
+        if got:
+            by_label.setdefault(got, []).append(path)
+    if not by_label:
+        raise RuntimeError("no labelled pictures were found in the archive")
+    want = cap + source.test
+    per_label = max(1, want // len(by_label))
+    folder = os.path.join(data_dir, source.key)
+    os.makedirs(folder, exist_ok=True)
+    rows = []
+    for (question, answer), paths in sorted(by_label.items()):
+        random.Random(f"{seed}-{answer}").shuffle(paths)
+        for path in paths[:per_label]:
+            target = os.path.join(folder, re.sub(r"[^\w.-]", "_", os.path.relpath(path, unpacked))[-120:])
+            target = os.path.splitext(target)[0] + ".jpg"
+            with open(path, "rb") as f:
+                data = f.read()
+            if have(target) or smaller(data, target):
+                rows.append({"picture": target, "question": question, "answer": answer, "split": ""})
+    import shutil
+    shutil.rmtree(unpacked, ignore_errors=True)          # the archive stays; its unpacked copy is not needed
+    say(f"  {len(rows)} pictures from {len(by_label)} kinds.")
+    return rows
+
+
+MEAT_QUESTION = "Is this meat still safe to cook?"
+
+
+def meat_label(path):
+    """Fresh or spoiled, from MeatScan's folder and file names; None for other files (masks, notes)."""
+    lower = path.lower().replace("\\", "/")
+    if "_seg" in lower or "mask" in lower:
+        return None
+    if "spoil" in lower or "rotten" in lower or "bad" in lower.split("/")[0]:
+        return (MEAT_QUESTION, "No: this meat looks spoiled. Do not eat it.")
+    if "fresh" in lower:
+        return (MEAT_QUESTION, "Yes: this meat looks fresh.")
+    return None
+
+
+def prepare_meatscan(source, data_dir, work, cap):
+    """MeatScan (Zenodo 16764338, CC BY 4.0): 11,000 photos of beef from markets in Ghana, fresh or spoiled: "Is this
+    meat still safe to cook?". A 25 GB archive, downloaded once by the kit (too big for the GitHub packs)."""
+    return archive_collection(source, data_dir, work,
+                              "https://zenodo.org/api/records/16764338/files/MeatScan_Dataset.rar/content",
+                              "MeatScan_Dataset.rar", meat_label, cap, 31)
+
+
+def ghana_label(path):
+    """A Ghanaian note or coin from its folder name ("5_Cedi_note", "50_pesewas_coin")."""
+    m = re.search(r"(\d+)_(cedi|pesewas?)_(note|coin)", path.lower())
+    if not m:
+        return None
+    amount, unit, kind = int(m.group(1)), m.group(2), m.group(3)
+    unit = "cedi" if unit == "cedi" else "pesewa"
+    return ("Which banknote or coin is this?", f"This is a Ghanaian {amount} {unit} {kind}.")
+
+
+def prepare_ghana_money(source, data_dir, work, cap):
+    """Ghana's banknotes and coins (Mendeley Data vws5r8mj4w, CC BY 4.0): "Which banknote or coin is this?"."""
+    import requests
+    files = requests.get("https://data.mendeley.com/public-api/datasets/vws5r8mj4w/files?folder_id=root&version=1",
+                         timeout=60, headers={"User-Agent": USER_AGENT}).json()
+    return archive_collection(source, data_dir, work, files[0]["content_details"]["download_url"],
+                              "Ghana_Cedis_Currency.rar", ghana_label, cap, 32)
 
 
 SOURCES = [
@@ -926,6 +1039,19 @@ SOURCES = [
            "MIT; COCO photos under CC BY 2.0 or no known copyright only",
            "COCO-CN (Li et al., 2019), MIT; photos from COCO", "permissive", 2000, 10, prepare_pack,
            "about 300 MB (photos fetched from COCO)"),
+    Source("meatscan", "MeatScan: fresh or spoiled beef (a 25 GB download, kept in the picture library)",
+           "CC BY 4.0 (zenodo.org/records/16764338)",
+           "MeatScan (Zenodo 16764338), CC BY 4.0, https://zenodo.org/records/16764338", "permissive", 4000, 20,
+           prepare_meatscan, "25 GB, once"),
+    Source("ghana_money", "Ghana's banknotes and coins (a 2 GB download)", "CC BY 4.0 (Mendeley Data vws5r8mj4w)",
+           "Ghana Cedis currency dataset, Mendeley Data vws5r8mj4w, CC BY 4.0", "permissive", 1500, 10,
+           prepare_ghana_money, "2 GB, once"),
+    Source("eggs", "Eggs: fresh, no longer fully fresh or rotten, five kinds (ready-made pack)",
+           "CC BY 4.0 (Mendeley Data 49msr3ksxj)", "Egg variety and freshness dataset, Mendeley Data 49msr3ksxj, CC BY 4.0",
+           "permissive", 3000, 15, prepare_pack, "about 400 MB"),
+    Source("beef", "Beef: fresh, and five days after it was bought (ready-made pack)",
+           "CC BY 4.0 (Mendeley Data wvhkpppddp)", "Fresh and non-fresh beef images, Mendeley Data wvhkpppddp, CC BY 4.0",
+           "permissive", 60, 6, prepare_pack, "about 20 MB"),
     Source("concadia", "Concadia: Wikipedia pictures with their alt text",
            "CC BY-SA 4.0 (Wikipedia's text); pictures under their own Wikimedia Commons licences",
            "Concadia (Kreiss et al., 2022) from Wikipedia, CC BY-SA 4.0, https://github.com/elisakreiss/concadia",
@@ -972,12 +1098,14 @@ def prepare_source(source, data_dir, work, size="normal", seed=7):
         os.replace(path + ".part", path)
     rng = random.Random(f"{seed}-{source.key}")
     marked = [r for r in rows if r.get("split") == "test"]
-    others = [r for r in rows if r.get("split") != "test"]
+    testable = [r for r in rows if r.get("split") not in ("test", "no-test")]
+    untestable = [r for r in rows if r.get("split") == "no-test"]
     rng.shuffle(marked)
-    rng.shuffle(others)
+    rng.shuffle(testable)
     if len(marked) >= source.test:
-        test, rest = marked[:source.test], others
+        test, rest = marked[:source.test], testable + untestable
     else:
-        test, rest = others[:source.test], others[source.test:]
+        test, rest = testable[:source.test], testable[source.test:] + untestable
+    rng.shuffle(rest)
     cap = max(50, int(source.cap * SIZES[size]))
     return rest[:cap], test

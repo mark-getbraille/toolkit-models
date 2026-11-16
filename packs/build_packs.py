@@ -498,10 +498,10 @@ def build_fresh_rotten(limit):
     return out[:limit]
 
 
-def mendeley_zip(dataset):
+def mendeley_zip(dataset, version=1):
     """The first zip file of a Mendeley Data dataset, downloaded (its download address)."""
     s = session()
-    files = s.get(f"https://data.mendeley.com/public-api/datasets/{dataset}/files?folder_id=root&version=1",
+    files = s.get(f"https://data.mendeley.com/public-api/datasets/{dataset}/files?folder_id=root&version={version}",
                   timeout=60).json()
     zipped = next(f for f in files if f["filename"].lower().endswith(".zip"))
     return zipfile.ZipFile(io.BytesIO(s.get(zipped["content_details"]["download_url"], timeout=1800).content))
@@ -572,6 +572,117 @@ def build_clothing(limit):
     return fetch_all(items[:int(limit * 1.1)], workers=6)[:limit]
 
 
+# ----------------------------------------------------------------- eggs and beef
+
+EGG_KINDS = {"Chicken_White_Layer": "a white chicken egg", "Chicken_Red_Layer": "a brown chicken egg",
+             "Chicken_Country": "a country chicken egg", "Duck_Pati": "a duck egg", "Bird_Koel": "a koel's egg"}
+EGG_STATES = {"Fresh": "It looks fresh.", "Half-Fresh": "It is no longer fully fresh: use it soon and check it "
+                                                         "before eating.",
+              "Rotten": "It looks rotten: do not eat it."}
+
+
+def build_eggs(limit):
+    """Egg freshness (Mendeley Data 49msr3ksxj, CC BY 4.0): only its "Raw Dataset" of real photos (not the altered
+    copies), fresh, half-fresh or rotten, of five kinds of egg: "Is this egg fresh?" """
+    z, out = mendeley_zip("49msr3ksxj", version=2), []
+    for name in z.namelist():
+        m = re.search(r"Raw Dataset/Egg Freshness Recognition/[^/]+/(Fresh|Half-Fresh|Rotten)__([A-Za-z_]+)/[^/]+$", name)
+        if not m or m.group(2) not in EGG_KINDS or not name.lower().endswith((".jpg", ".jpeg", ".png")):
+            continue
+        data = smaller(z.read(name))
+        if data:
+            kind = EGG_KINDS[m.group(2)]
+            out.append((f"egg-{len(out)}.jpg", data, {"question": "Is this egg fresh?",
+                        "answer": f"This is {kind}. {EGG_STATES[m.group(1)]}",
+                        "credit": "Egg variety and freshness dataset (Mendeley Data 49msr3ksxj), CC BY 4.0"}))
+    random.Random(13).shuffle(out)
+    return out[:limit]
+
+
+BEEF_CUTS = {"A": "inside skirt", "B": "knuckle", "S": "sirloin"}
+
+
+def build_beef(limit):
+    """Fresh and non-fresh beef (Mendeley Data wvhkpppddp, CC BY 4.0): 30 pieces of three cuts photographed the day
+    they were bought and five days later (the original photos only, not the processed ones): "Is this meat still
+    fresh?" """
+    s = session()
+    files = s.get("https://data.mendeley.com/public-api/datasets/wvhkpppddp/files?folder_id=root&version=1",
+                  timeout=60).json()
+    firsts = {}
+    for f in files:
+        m = re.match(r"(\d{8})_([ABS])\d+_\d+\.jpg$", f["filename"])
+        if m:
+            firsts.setdefault(m.group(2), set()).add(m.group(1))
+    out = []
+    for f in files:
+        m = re.match(r"(\d{8})_([ABS])\d+_\d+\.jpg$", f["filename"])
+        if not m:
+            continue                                            # the processed "_seg" pictures are left out
+        fresh = m.group(1) == min(firsts[m.group(2)])
+        data = smaller(s.get(f["content_details"]["download_url"], timeout=120).content)
+        if data:
+            cut = BEEF_CUTS[m.group(2)]
+            answer = (f"This is raw beef ({cut}). It looks fresh." if fresh else
+                      f"This is raw beef ({cut}). It is no longer fresh (five days after it was bought): do not eat it.")
+            out.append((f"beef-{len(out)}.jpg", data, {"question": "Is this meat still fresh?", "answer": answer,
+                        "credit": "Fresh and non-fresh beef images (Mendeley Data wvhkpppddp), CC BY 4.0"}))
+    return out[:limit]
+
+
+# ----------------------------------------------------------------- English translations of other languages
+
+# Packs whose descriptions are in another language also get an English version of each, translated by the open
+# OPUS-MT models (University of Helsinki; Apache 2.0, the Chinese one CC BY 4.0), marked "translated": the kit
+# never uses those for its test, so a translation mistake cannot make the model look better or worse.
+# Japanese is left out: in tests OPUS-MT ja-en turned a cat (ねこ) into "a fox"; a wrong translation teaches the
+# model to describe what is not there. Japanese descriptions are used in Japanese only.
+TRANSLATE = {"ksamsok": "sv", "rijksmuseum": "nl", "coco_cn": "zh"}
+MT_MODELS = {"ja": ("Helsinki-NLP/opus-mt-ja-en", "0770961a39ba"), "sv": ("Helsinki-NLP/opus-mt-sv-en", "202cf6240046"),
+             "nl": ("Helsinki-NLP/opus-mt-nl-en", "48af999f2c59"), "zh": ("Helsinki-NLP/opus-mt-zh-en", "cf109095479d")}
+
+
+def translate(texts, language):
+    """English translations of texts (OPUS-MT, on the processor, in batches)."""
+    from transformers import MarianMTModel, MarianTokenizer
+    repo, revision = MT_MODELS[language]
+    from huggingface_hub import snapshot_download
+    folder = snapshot_download(repo, allow_patterns=["*.json", "*.spm", "*.txt", "*.bin", "*.safetensors",
+                                                     "*vocab*", "*source*", "*target*"])
+    tokenizer = MarianTokenizer.from_pretrained(folder)
+    model = MarianMTModel.from_pretrained(folder)
+    out = []
+    for start in range(0, len(texts), 16):
+        batch = tokenizer(texts[start:start + 16], return_tensors="pt", padding=True, truncation=True, max_length=256)
+        made = model.generate(**batch, max_new_tokens=256, num_beams=2)
+        out += [clean(t) for t in tokenizer.batch_decode(made, skip_special_tokens=True)]
+        if start % 800 == 0:
+            say(f"  translated {start + len(made)} of {len(texts)}")
+    return out
+
+
+def add_translations(key, entries):
+    """For a pack in another language: an English row ("Describe this picture." and the translation) for every
+    row, pointing at the same picture (or address), marked translated."""
+    language = TRANSLATE.get(key)
+    if not language:
+        return entries
+    english = translate([row["answer"] for _, _, row in entries], language)
+    more = []
+    for (name, data, row), text in zip(entries, english):
+        if len(text.split()) < 3:
+            continue
+        twin = {"question": "Describe this picture.", "answer": text, "translated": True,
+                "credit": row.get("credit", "") + "; English translation by OPUS-MT (machine translation)"}
+        if data is None:
+            twin["url"] = row["url"]
+            more.append((None, None, twin))
+        else:
+            more.append((None, None, dict(twin, file=f"pictures/{name}")))
+    say(f"{len(more)} English translations added")
+    return entries + more
+
+
 # ----------------------------------------------------------------- packing
 
 PACKS = {
@@ -593,6 +704,8 @@ PACKS = {
                                            "ggpwpscjvm, CC BY 4.0."),
     "clothing": (build_clothing, "Clothing dataset by Alexey Grigorev, CC0. "
                                  "https://github.com/alexeygrigorev/clothing-dataset"),
+    "eggs": (build_eggs, "Egg variety and freshness dataset, Mendeley Data 49msr3ksxj, CC BY 4.0 (its real photos only)."),
+    "beef": (build_beef, "Fresh and non-fresh beef meat images, Mendeley Data wvhkpppddp, CC BY 4.0."),
     "tepapa": (build_tepapa, "Museum of New Zealand Te Papa Tongarewa: record text CC BY 4.0; pictures CC BY 4.0 or "
                              "no known copyright restrictions, each credited below. https://collections.tepapa.govt.nz"),
 }
@@ -627,7 +740,7 @@ def write_pack(key, entries, out):
         for name, data, row in entries:
             if data is not None:
                 z.writestr(f"pictures/{name}", data)
-                row = dict(row, file=f"pictures/{name}")
+                row = dict(row, file=f"pictures/{name}")       # (a translated twin already names its picture)
             rows.append(row)
             if row.get("credit"):
                 credits.append(f"{row.get('file') or row.get('url')}: {row['credit']}")
@@ -653,6 +766,7 @@ def main(argv=None):
     entries = PACKS[args.key][0](args.limit)
     if not entries:
         raise SystemExit(f"The {args.key} pack came out empty.")
+    entries = add_translations(args.key, entries)
     manifest = write_pack(args.key, entries, args.out)
     say(json.dumps(manifest))
     return 0
