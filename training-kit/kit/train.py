@@ -28,6 +28,12 @@ changing how pictures are described.
 
 Command line (the .cmd files pass these): --model 4b|8b, --size quick|normal|full, --with-wikipedia (the add-on is
 then CC BY-SA 4.0), --limit N (train on at most N pictures).
+
+A follow-up run (--continue): carries on from the newest finished add-on instead of starting a new one, and trains
+only on the collections that run did not have (or the ones named with --collections), mixed with a share of the
+earlier pictures (--replay, 0.25 by default: one earlier picture for every four new ones) so the model does not
+forget what it learned. Its "before" test is the earlier add-on, on every collection's test pictures, so the report
+shows whether anything got worse. It takes hours, not days.
 """
 
 
@@ -155,7 +161,7 @@ def download_model(model_key, work):
 
 # ----------------------------------------------------------------- 3. the pictures
 
-def prepare_data(work, state, size, with_wikipedia):
+def prepare_data(work, state, size, with_wikipedia, keys=None):
     """Prepare every chosen collection once (each one remembered as done in state, so a restarted kit skips it);
     writes data/train.jsonl (shuffled) and data/test.jsonl and returns (training rows, test rows). A collection that
     cannot be downloaded now is said and left out, so one broken website never stops the training."""
@@ -163,7 +169,7 @@ def prepare_data(work, state, size, with_wikipedia):
     data_dir = os.path.join(work, "data")
     os.makedirs(data_dir, exist_ok=True)
     train_rows, test_rows = [], []
-    chosen = sources.chosen(with_wikipedia)
+    chosen = [s for s in sources.chosen(with_wikipedia) if keys is None or s.key in keys]
     for number, source in enumerate(chosen, 1):
         say(f"  Collection {number} of {len(chosen)}: {source.name} (downloads {source.download}).")
         try:
@@ -177,8 +183,9 @@ def prepare_data(work, state, size, with_wikipedia):
         train_rows += train
         test_rows += test
     random.Random(5).shuffle(train_rows)
+    suffix = "-follow-up" if keys else ""
     for name, rows in (("train", train_rows), ("test", test_rows)):
-        with open(os.path.join(data_dir, f"{name}.jsonl"), "w", encoding="utf-8") as f:
+        with open(os.path.join(data_dir, f"{name}{suffix}.jsonl"), "w", encoding="utf-8") as f:
             for row in rows:
                 f.write(json.dumps(row) + "\n")
     return train_rows, test_rows
@@ -194,7 +201,8 @@ def read_rows(path):
 
 def load_model(folder, four_bit=True, adapter=None, trainable=False):
     """(model, processor): the model from folder (in 4-bit form unless four_bit is False), with the add-on at
-    adapter when given, or a new trainable add-on when trainable."""
+    adapter when given (trainable: it is trained further, for a follow-up run), or a new trainable add-on when
+    trainable."""
     import torch
     from transformers import AutoModelForImageTextToText, AutoProcessor
     kwargs = {"dtype": torch.bfloat16 if torch.cuda.is_available() else torch.float32}
@@ -213,10 +221,14 @@ def load_model(folder, four_bit=True, adapter=None, trainable=False):
         else:
             model.gradient_checkpointing_enable()
             model.enable_input_require_grads()
-        config = LoraConfig(r=16, lora_alpha=32, lora_dropout=0.05, task_type="CAUSAL_LM",
-                            target_modules=r".*language_model.*\.(q_proj|k_proj|v_proj|o_proj|gate_proj|up_proj|"
-                                           r"down_proj)")
-        model = get_peft_model(model, config)
+        if adapter:
+            from peft import PeftModel
+            model = PeftModel.from_pretrained(model, adapter, is_trainable=True)
+        else:
+            config = LoraConfig(r=16, lora_alpha=32, lora_dropout=0.05, task_type="CAUSAL_LM",
+                                target_modules=r".*language_model.*\.(q_proj|k_proj|v_proj|o_proj|gate_proj|"
+                                               r"up_proj|down_proj)")
+            model = get_peft_model(model, config)
     elif adapter:
         from peft import PeftModel
         model = PeftModel.from_pretrained(model, adapter)
@@ -478,6 +490,51 @@ def package(model_key, final, report, info, tag):
     return path
 
 
+# ----------------------------------------------------------------- a follow-up run
+
+def finished_runs(work, state):
+    """[(run name, its add-on folder)] of the runs that finished training, newest last."""
+    runs = []
+    for name in state.data:
+        if name.startswith("train-"):
+            run = name[len("train-"):]
+            final = os.path.join(work, f"adapter-{run}", "final")
+            if os.path.isdir(final):
+                runs.append((os.path.getmtime(final), run, final))
+    return [(run, final) for _, run, final in sorted(runs)]
+
+
+def prepared_collections(state):
+    """{collection key: size} of every collection prepared before (from its "data-<key>-<size>" mark)."""
+    found = {}
+    for name in state.data:
+        if name.startswith("data-"):
+            key, _, size = name[len("data-"):].rpartition("-")
+            if key and size in sources.SIZES:
+                found[key] = size
+    return found
+
+
+def follow_up_rows(work, state, plan, with_wikipedia, size, replay):
+    """(training rows, test rows) of a follow-up run: the new collections' pictures, a share (replay) of the earlier
+    collections' pictures, and every collection's test pictures."""
+    import random
+    new_train, new_test = prepare_data(work, state, size, with_wikipedia, keys=set(plan["new"]))
+    old_train, old_test = [], []
+    data_dir = os.path.join(work, "data")
+    for key, old_size in plan["old"].items():
+        source = next((s for s in sources.SOURCES if s.key == key), None)
+        if source is None or not os.path.exists(os.path.join(data_dir, f"{key}-{old_size}.jsonl")):
+            continue
+        train, test = sources.prepare_source(source, data_dir, work, old_size)
+        old_train += train
+        old_test += test
+    random.Random(9).shuffle(old_train)
+    mixed = new_train + old_train[:int(len(new_train) * replay)]
+    random.Random(10).shuffle(mixed)
+    return mixed, new_test + old_test
+
+
 # ----------------------------------------------------------------- all steps
 
 def main(argv=None):
@@ -487,6 +544,10 @@ def main(argv=None):
     parser.add_argument("--size", choices=sorted(sources.SIZES), default="normal")
     parser.add_argument("--with-wikipedia", action="store_true", help="also learn from Wikipedia (CC BY-SA 4.0)")
     parser.add_argument("--limit", type=int, default=0, help="train on at most this many pictures")
+    parser.add_argument("--continue", dest="follow_up", action="store_true",
+                        help="carry on from the newest finished add-on with the collections it did not have")
+    parser.add_argument("--collections", default="", help="with --continue: the collection keys to add (commas)")
+    parser.add_argument("--replay", type=float, default=0.25, help="with --continue: share of earlier pictures")
     args = parser.parse_args(argv)
     os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
     os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
@@ -497,9 +558,33 @@ def main(argv=None):
     keep_awake(True)
     tag = ("-wikipedia" if args.with_wikipedia else "") + ("" if args.size == "normal" else f"-{args.size}")
     run = f"{args.model}{tag}"                 # each kind of run keeps its own test results and add-on
+    plan = None
+    if args.follow_up:
+        plan = state.data.get("follow-up")
+        if not plan or state.done(f"after-{plan['run']}"):      # a new follow-up (the last one has finished)
+            earlier = [(r, f) for r, f in finished_runs(work, state) if r.startswith(args.model)]
+            if not earlier:
+                stop("There is no finished training to carry on from. Train once first (Start Training).")
+            base_run, base_final = earlier[-1]
+            old = prepared_collections(state)
+            wanted = [k.strip() for k in args.collections.split(",") if k.strip()]
+            new = wanted or [s.key for s in sources.chosen(args.with_wikipedia) if s.key not in old]
+            new = [k for k in new if any(s.key == k for s in sources.SOURCES)]
+            if not new:
+                stop("Every collection was already in the earlier training: there is nothing new to add yet.")
+            import time as _time
+            plan = {"run": f"{args.model}-plus-{_time.strftime('%Y%m%d-%H%M')}", "from": base_run, "from_final": base_final,
+                    "new": new, "old": {k: v for k, v in old.items() if k not in new}}
+            state.mark("follow-up", plan)
+        run = plan["run"]
+        tag = run[len(args.model):]
     say("")
     say(f"Picture Model Training Kit started for the {args.model.upper()} model, size {args.size}"
         + (", with Wikipedia." if args.with_wikipedia else "."))
+    if plan:
+        say(f"This is a follow-up: it carries on from the training {plan['from']} and adds "
+            f"{len(plan['new'])} collection{'s' if len(plan['new']) != 1 else ''}: "
+            + ", ".join(source_name(k).split(":")[0] for k in plan["new"]) + ".")
     say("Windows will not go to sleep while this runs; the screen may turn off. You can close this window at any time "
         "and start the kit again later: it carries on where it stopped.")
     say("Step 1 of 7: checking the graphics card and the disk.")
@@ -509,7 +594,10 @@ def main(argv=None):
     folder = download_model(args.model, work)
     say("Step 3 of 7: downloading the described pictures of each collection and making them smaller. A collection "
         "done before is not downloaded again.")
-    train_rows, test_rows = prepare_data(work, state, args.size, args.with_wikipedia)
+    if plan:
+        train_rows, test_rows = follow_up_rows(work, state, plan, args.with_wikipedia, args.size, args.replay)
+    else:
+        train_rows, test_rows = prepare_data(work, state, args.size, args.with_wikipedia)
     if not train_rows:
         stop("No collection could be downloaded. Check the internet connection and start the kit again.")
     if args.limit:
@@ -519,8 +607,9 @@ def main(argv=None):
     os.makedirs(results, exist_ok=True)
     before_path, after_path = os.path.join(results, "before.jsonl"), os.path.join(results, "after.jsonl")
     if not state.done(f"before-{run}"):
-        say(f"Step 4 of 7: testing the model before training on {len(test_rows)} pictures (about half an hour).")
-        model, processor = load_model(folder)
+        say(f"Step 4 of 7: testing the model before training on {len(test_rows)} pictures (about half an hour)"
+            + (", with the earlier add-on." if plan else "."))
+        model, processor = load_model(folder, adapter=plan["from_final"] if plan else None)
         before = run_test(model, processor, test_rows, before_path, device, "before training")
         state.mark(f"before-{run}", before)
         del model, processor
@@ -534,7 +623,7 @@ def main(argv=None):
     if not state.done(f"train-{run}"):
         say(f"Step 5 of 7: training on {len(train_rows)} pictures. This is the long part; the time left is said every "
             f"{SAVE_EVERY} pictures.")
-        model, processor = load_model(folder, trainable=True)
+        model, processor = load_model(folder, trainable=True, adapter=plan["from_final"] if plan else None)
         seconds = train(model, processor, train_rows, adapter_dir, device)
         state.mark(f"train-{run}", {"seconds": seconds})
         del model, processor
@@ -556,6 +645,7 @@ def main(argv=None):
             "size": args.size, "share_alike": args.with_wikipedia,
             "collections": sorted({r["source"] for r in train_rows}),
             "seconds": state.data[f"train-{run}"]["seconds"], "before": before, "after": after,
+            "continued_from": plan["from"] if plan else None,
             "settings": {"lora_r": 16, "lora_alpha": 32, "rate": 1e-4, "accumulate": 8, "four_bit": True,
                          "long_side": sources.LONG_SIDE, "system": SYSTEM}}
     report = os.path.join(HERE, f"report-{run}.txt")

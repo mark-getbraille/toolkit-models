@@ -2,7 +2,8 @@
 
 It does what the kit's .cmd files do, in one window that a screen reader user can follow:
   1. the first page: the training folder (C:\\Training by default), the model (4B or 8B), how much to train (a quick
-     try, normal, or full: several days), Wikipedia or not, and whether to prepare this computer first; "Check this
+     try, normal, full: several days, or a follow-up that carries on from the last finished training with only
+     the new collections), Wikipedia or not, and whether to prepare this computer first; "Check this
      computer" says the NVIDIA card, its memory and the free disk space;
   2. "Start training": the kit's files are copied into "<folder>\\Picture Model Training Kit" (a newer wizard
      updates them; the downloads, pictures, training and results there are kept), "Prepare This Computer.cmd" runs
@@ -48,7 +49,8 @@ MODELS = [("4b", "Qwen3-VL 4B (needs an NVIDIA card with 12 GB or more)"),
           ("8b", "Qwen3-VL 8B (needs 16 GB or more; train the 4B model first)")]
 SIZES = [("quick", "Quick try: a tenth of the pictures, an hour or two"),
          ("normal", "Normal: about 44,000 pictures, roughly a day"),
-         ("full", "Full: about 110,000 pictures, roughly three days (the best result)")]
+         ("full", "Full: about 110,000 pictures, roughly three days (the best result)"),
+         ("continue", "Follow-up: carry on from the last finished training with only the new collections (a few hours)")]
 NO_WINDOW = 0x08000000 if os.name == "nt" else 0          # CREATE_NO_WINDOW
 
 # Where the training is, as a share of the whole run (the progress bar): each step's start and end percent.
@@ -458,7 +460,10 @@ class Wizard(wx.Frame):
         self.second.Show()
         self.panel.Layout()
         self.status.SetFocus()
-        args = ["--model", MODELS[self.model.GetSelection()][0], "--size", SIZES[self.size.GetSelection()][0]]
+        size = SIZES[self.size.GetSelection()][0]
+        args = ["--model", MODELS[self.model.GetSelection()][0], "--size", "normal" if size == "continue" else size]
+        if size == "continue":
+            args.append("--continue")
         if self.wikipedia.GetValue():
             args.append("--with-wikipedia")
         log(f"Start training: folder {self.kit}, settings {' '.join(args)}, prepare this computer "
