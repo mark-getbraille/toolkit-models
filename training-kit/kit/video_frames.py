@@ -154,6 +154,7 @@ CREDITS = "CREDITS.txt"
 DESCRIBERS_LIST = "stills-for-describers.jsonl"
 CAPTIONS = "captions.csv"
 QUESTION_FILE = "question.txt"     # the question for a folder's pictures (own_data.py reads it)
+PLACE_FILE = "place.txt"           # where in the world the folder's pictures are from (own_data.py reads it)
 OWN_QUESTION = "What is this?"     # your own narrated videos: what you said is the answer to this
 PERSONAL_FILE = "PERSONAL-USE.txt"
 OVERLAYS_FILE = "OVERLAYS.txt"     # what was found and done about date stamps and logos, one line per video
@@ -1468,6 +1469,15 @@ def set_question(out, question):
         write_text(path, question)
 
 
+def set_place(out, place):
+    """Write place.txt in out (--place): where in the world the videos were filmed, such as "Accra, Ghana". own_data.py
+    gives every picture in the folder this place, which teaches the model what places look like."""
+    place = " ".join(str(place or "").split()).strip(" ,.")
+    if place:
+        os.makedirs(out, exist_ok=True)
+        write_text(os.path.join(out, PLACE_FILE), place)
+
+
 def add_captions(out, rows):
     """Add rows {"file", "question", "answer"} to captions.csv in out (own_data.py layout b), made when missing."""
     path = os.path.join(out, CAPTIONS)
@@ -1865,6 +1875,8 @@ def main(argv=None):
     parser.add_argument("--overlays", default="keep", choices=OVERLAY_CHOICES,
                         help="burned-in date stamps, station logos and fixed tickers: keep them, crop them off (filled "
                              "in when cropping would lose too much), or fill them in")
+    parser.add_argument("--place", default="", help="where the videos were filmed, ending with the country (for "
+                                                    "example \"Accra, Ghana\"): written to place.txt in --out")
     parser.add_argument("--overlay-box", action="append", default=[], metavar="X,Y,W,H",
                         help="with --overlays crop or fill: also remove this box, in percent of the picture from its "
                              "top left corner (can be given more than once)")
@@ -1879,6 +1891,7 @@ def main(argv=None):
         print(text, flush=True)
 
     try:
+        set_place(args.out, args.place)
         if args.described:
             if len(args.sources) != 1 or not os.path.isfile(args.sources[0]):
                 raise VideoProblem("--described takes one video file that is on this computer.")

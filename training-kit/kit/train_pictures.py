@@ -170,10 +170,11 @@ def caption_of(row, own=False):
     return None
 
 
-def fit(text, tokenizer):
-    """text shortened to what the text encoder reads (77 pieces with its start and end marks): whole sentences from
-    the start while they fit, or, when even the first sentence is too long, its first words."""
-    limit = tokenizer.model_max_length - 2
+def fit(text, tokenizer, room=None):
+    """text shortened to what the text encoder reads (77 pieces with its start and end marks), or to room pieces
+    when given: whole sentences from the start while they fit, or, when even the first sentence is too long, its
+    first words."""
+    limit = tokenizer.model_max_length - 2 if room is None else room
 
     def size(t):
         """How many pieces t is."""
@@ -192,6 +193,44 @@ def fit(text, tokenizer):
             out = (out + " " + word).strip()
         out = out.rstrip(",;:")
     return out
+
+
+# A short "What is this?" answer of a collection whose photos show the place ("This is a kitchen."), used as a
+# caption only when the row has a place: "Photo taken in Kenya. A kitchen." teaches what a kitchen in Kenya looks like.
+NAMED_THING = re.compile(r"^(this is|these are) (.{3,80}?)\.?$", re.IGNORECASE)
+
+
+def place_caption(row, own=False):
+    """A caption for a row that is not a description but names what a place photo shows (see NAMED_THING), or
+    None."""
+    if not row.get("place") or (row.get("source") not in getattr(sources, "PLACE_VISIBLE", ())):
+        return None
+    if (row.get("question") or "") not in ("What is this?", "What kind of place is this?"):
+        return None
+    m = NAMED_THING.match(sources.clean(row.get("answer")))
+    return (m.group(2)[0].upper() + m.group(2)[1:] + ".") if m else None
+
+
+def with_place(row, caption, tokenizer):
+    """The caption to train on, fitted to the 77 pieces, with the row's place: "Photo taken in Kyoto, Japan. <the
+    description>" for a photo, "<the description> Made in Japan." for an object (place_kind "origin"), "<the
+    description> It shows Kyoto, Japan." for a picture of a place ("depicted"). The place always stays: the
+    description is shortened to the room left."""
+    place = sources.clean(row.get("place")).strip(" ,.")
+    if not place:
+        return fit(caption, tokenizer)
+    kind = row.get("place_kind") or "photo"
+    words = sources.place_words(place) if hasattr(sources, "place_words") else place
+    if kind == "origin":
+        before, after = "", f"Made in {words}."
+    elif kind == "depicted":
+        before, after = "", f"It shows {words}."
+    else:
+        before, after = f"Photo taken in {words}.", ""
+    marks = before or after
+    room = tokenizer.model_max_length - 2 - len(tokenizer(" " + marks, add_special_tokens=False).input_ids)
+    text = fit(caption, tokenizer, room) if room > 0 else ""
+    return " ".join(t for t in (before, text, after) if t)
 
 
 def chosen_sources(args):
@@ -296,9 +335,13 @@ def choose_items(train_rows, test_rows, mine, tokenizer, args, wanted):
         for row in rows:
             if row.get("picture") in children:
                 continue
-            caption = caption_of(row, own)
+            caption = caption_of(row, own) or place_caption(row, own)
             if caption and row.get("picture"):
-                out.append({"picture": row["picture"], "caption": fit(caption, tokenizer), "source": row["source"]})
+                item = {"picture": row["picture"], "caption": with_place(row, caption, tokenizer),
+                        "source": row["source"]}
+                if row.get("place"):
+                    item["place"] = row["place"]
+                out.append(item)
         return out
     own_items = items_of([r for r in mine if r.get("split") != "test"], own=True)
     if args.own_only:
@@ -817,7 +860,9 @@ def write_report(path, info):
              (f"Training: {info['steps']} steps of {info['per_step']} pictures; LoRA rank {RANK}, learning rate "
               f"{RATE}, min-SNR weighting (gamma {SNR_GAMMA:g}), {info['precision']}"),
              f"Training time: {duration(info['seconds'])}; final error {info['loss']:.3f}",
-             *([children_note(info["children_left_out"])] if info.get("children_left_out") else []), "",
+             *([children_note(info["children_left_out"])] if info.get("children_left_out") else []),
+             *([f"Pictures with a place (their description starts with where they were taken, or ends with where "
+                f"they were made): {info['places']}"] if info.get("places") else []), "",
              "RESULT: " + info["verdict"],
              ("(CLIP score: how well each test picture matches its description, as the CLIP model sees it, from 0 to "
               "1; a rough measure. The test pictures are in test-before and test-after, with captions.txt; the "
@@ -1149,6 +1194,7 @@ def main(argv=None):
             "with_noncommercial": args.personal_noncommercial, "with_research": args.personal_research,
             "own_pictures": collections.get("own", 0), "own_only": args.own_only,
             "children_left_out": state.data.get("children") or 0,
+            "places": sum(1 for item in ready if item.get("place")),
             "clip_before": scores["before"], "clip_after": scores["after"],
             "verdict": clip_verdict(scores["before"], scores["after"]),
             "precision": "bf16 mixed precision, 8-bit AdamW" if device == "cuda" else "float32 on the processor (test)",

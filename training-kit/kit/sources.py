@@ -820,6 +820,8 @@ def prepare_pack(source, data_dir, work, cap):
     rows, to_fetch = [], []
     with zipfile.ZipFile(archive) as z:
         listed = [json.loads(line) for line in z.read("rows.jsonl").decode("utf-8").splitlines() if line.strip()]
+        # Where each picture is from: a row without a place (a translated twin) takes that of its picture's other rows.
+        known = {r.get("file") or r.get("url"): place_fields(r) for r in listed if r.get("place")}
         random.Random(29).shuffle(listed)
         for index, row in enumerate(listed[:int((cap + source.test) * 1.15)]):
             # A machine-translated twin is for training only, never for the test (split "no-test").
@@ -827,6 +829,7 @@ def prepare_pack(source, data_dir, work, cap):
                     "split": "no-test" if row.get("translated") else ""}
             if row.get("child"):                     # a picture of a child: never used to make pictures
                 base["child"] = True
+            base.update(place_fields(row) or known.get(row.get("file") or row.get("url"), {}))
             if row.get("file"):
                 path = os.path.join(folder, os.path.basename(row["file"]))
                 if have(path) or smaller(z.read(row["file"]), path):       # a training copy and a large copy
@@ -841,6 +844,56 @@ def prepare_pack(source, data_dir, work, cap):
         say(f"  Fetching {len(to_fetch)} pictures for the {source.key} pack from their own website.")
         rows += fetch_pictures(to_fetch, folder)
     return rows
+
+
+# ----------------------------------------------------------------- where in the world a picture is from
+
+# A row may carry "place" (a short place name, most specific first, ending with the country in English: "Kyoto,
+# Japan") and "place_kind": "photo" (where the photo was taken; the same as none), "origin" (where an object was
+# made) or "depicted" (the place a picture shows). Places come only from each collection's own records (packs/
+# places.py builds them for the packs), never from a guess. train.py teaches the describer a few "Which country might
+# this photo be from?" and "Where was this object made?" answers from them; train_pictures.py starts a description
+# with its place, so a picture-making add-on learns what places look like.
+PLACE_KINDS = ("photo", "origin", "depicted")
+# Collections whose photos show the place itself (streets, homes, shops, landscapes), so a describer may learn to
+# say which country a photo might be from; "own" is the person's own pictures with a place.txt.
+PLACE_VISIBLE = {"dollar_street", "geode", "ptl_crossings", "uroac_crossings", "walkway_dhaka", "outdoor_navigation",
+                 "seoul_sidewalks", "open_images_street", "commons", "lila_camera_traps", "grocery_store", "own"}
+# Places that are parts of the world, not countries (GeoDE's regions and the like).
+PLACE_REGIONS = {"africa", "the americas", "americas", "east asia", "europe", "south-east asia", "southeast asia",
+                 "west asia", "asia", "oceania", "north america", "south america", "eastern north america",
+                 "central america", "middle east", "southern africa"}
+# Country names said with "the" ("taken in the USA").
+THE_COUNTRIES = {"usa", "uk", "netherlands", "philippines", "united arab emirates", "czech republic",
+                 "dominican republic", "democratic republic of the congo", "republic of the congo",
+                 "central african republic", "bahamas", "gambia", "maldives", "solomon islands", "marshall islands",
+                 "comoros", "seychelles", "vatican city", "united states", "united kingdom", "americas"}
+
+
+def place_fields(row):
+    """{"place": ..., "place_kind": ...} of a row (only what it has, tidied; "photo" is left out as the default),
+    or {}."""
+    place = clean(row.get("place")).strip(" ,.")
+    if not place:
+        return {}
+    kind = clean(row.get("place_kind")).lower()
+    return {"place": place, "place_kind": kind} if kind in PLACE_KINDS[1:] else {"place": place}
+
+
+def place_country(place):
+    """The country (or part of the world) of a place: its last part ("Kyoto, Japan" -> "Japan")."""
+    return clean(place).split(",")[-1].strip(" .")
+
+
+def is_region(place):
+    """True when a place is a part of the world rather than a country ("East Asia")."""
+    return place_country(place).lower() in PLACE_REGIONS
+
+
+def place_words(place):
+    """A place as it follows "in": "the USA", "the Netherlands", "Kyoto, Japan", "East Asia"."""
+    place = clean(place).strip(" ,.")
+    return ("the " + place) if place.lower() in THE_COUNTRIES else place
 
 
 # ----------------------------------------------------------------- big archives downloaded by the kit itself
@@ -874,10 +927,11 @@ def pictures_in(folder):
     return sorted(found)
 
 
-def archive_collection(source, data_dir, work, url, archive_name, label_of, cap, seed):
+def archive_collection(source, data_dir, work, url, archive_name, label_of, cap, seed, place="", place_kind=""):
     """Download a big archive once (kept in the downloads folder, which is the picture library's), unpack it, turn
     each picture whose label_of(path) gives (question, answer) into a training copy and a full-size copy, and remove
-    the unpacked folder again. Pictures are picked evenly from every label, at most cap + test of them."""
+    the unpacked folder again. Pictures are picked evenly from every label, at most cap + test of them. place and
+    place_kind: where all its pictures are from, when the collection's record says so (see place_fields)."""
     archive = os.path.join(work, archive_name)
     say(f"  Downloading {archive_name} (kept for good in the picture library; it is large and resumes if stopped).")
     download_file(url, archive)
@@ -905,7 +959,8 @@ def archive_collection(source, data_dir, work, url, archive_name, label_of, cap,
             with open(path, "rb") as f:
                 data = f.read()
             if have(target) or smaller(data, target):
-                rows.append({"picture": target, "question": question, "answer": answer, "split": ""})
+                rows.append({"picture": target, "question": question, "answer": answer, "split": "",
+                             **place_fields({"place": place, "place_kind": place_kind})})
     import shutil
     shutil.rmtree(unpacked, ignore_errors=True)          # the archive stays; its unpacked copy is not needed
     say(f"  {len(rows)} pictures from {len(by_label)} kinds.")
@@ -932,7 +987,8 @@ def prepare_meatscan(source, data_dir, work, cap):
     meat still safe to cook?". A 25 GB archive, downloaded once by the kit (too big for the GitHub packs)."""
     return archive_collection(source, data_dir, work,
                               "https://zenodo.org/api/records/16764338/files/MeatScan_Dataset.rar/content",
-                              "MeatScan_Dataset.rar", meat_label, cap, 31)
+                              "MeatScan_Dataset.rar", meat_label, cap, 31,
+                              place="Ghana")             # "captured in real-world Ghanaian environments"
 
 
 def ghana_label(path):
@@ -951,7 +1007,8 @@ def prepare_ghana_money(source, data_dir, work, cap):
     files = requests.get("https://data.mendeley.com/public-api/datasets/vws5r8mj4w/files?folder_id=root&version=1",
                          timeout=60, headers={"User-Agent": USER_AGENT}).json()
     return archive_collection(source, data_dir, work, files[0]["content_details"]["download_url"],
-                              "Ghana_Cedis_Currency.rar", ghana_label, cap, 32)
+                              "Ghana_Cedis_Currency.rar", ghana_label, cap, 32,
+                              place="Ghana", place_kind="origin")       # Ghana's own money
 
 
 SOURCES = [

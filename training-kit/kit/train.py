@@ -281,6 +281,50 @@ def own_rows(work, folder):
     return train_rows, test_rows, own_data.folder_tag(folder, rows)
 
 
+ASK_COUNTRY = "Which country might this photo be from?"
+ASK_REGION = "Which part of the world might this photo be from?"
+ASK_MADE = "Where was this object made?"
+PLACE_EVERY = 5            # about one picture in this many with a place gets a place question
+
+
+def place_rows(rows):
+    """Extra training rows about where pictures are from (never test rows): for about one in PLACE_EVERY pictures
+    with a place, chosen by the picture's name so a restart picks the same ones,
+      - a photo (place_kind "photo" or none) from a collection whose photos show the place itself
+        (sources.PLACE_VISIBLE: streets, homes, shops, landscapes): "Which country might this photo be from?" ->
+        "It was taken in Japan." (the country only; "Which part of the world ..." for a region such as East Asia);
+      - an object whose record says where it was made (place_kind "origin"): "Where was this object made?" ->
+        "It was made in Kyoto, Japan."
+    The place is never put into a description's answer: the model must not learn to state what it cannot see."""
+    import zlib
+    out, seen = [], set()
+    for row in rows:
+        place, kind, picture = row.get("place"), row.get("place_kind") or "photo", row.get("picture")
+        if not place or not picture or picture in seen or row.get("split") == "test":
+            continue
+        if zlib.crc32(os.path.basename(picture).encode("utf-8")) % PLACE_EVERY:
+            continue
+        if kind == "photo" and row.get("source") in sources.PLACE_VISIBLE:
+            country = sources.place_country(place)
+            question = ASK_REGION if sources.is_region(place) else ASK_COUNTRY
+            answer = f"It was taken in {sources.place_words(country)}."
+        elif kind == "origin":
+            question, answer = ASK_MADE, f"It was made in {sources.place_words(place)}."
+        else:
+            continue
+        seen.add(picture)
+        out.append({"picture": picture, "question": question, "answer": answer, "split": "no-test",
+                    "source": row.get("source"), "place": place, **({"place_kind": kind} if kind != "photo" else {})})
+    return out
+
+
+def place_counts(rows):
+    """(pictures with a place, place questions added) among training rows, for the report."""
+    asked = (ASK_COUNTRY, ASK_REGION, ASK_MADE)
+    pictures = {r["picture"] for r in rows if r.get("place") and r.get("picture")}
+    return len(pictures), sum(1 for r in rows if r.get("question") in asked and r.get("split") == "no-test")
+
+
 def read_rows(path):
     """The rows of a .jsonl file."""
     with open(path, encoding="utf-8") as f:
@@ -592,6 +636,15 @@ def attribution(chosen_keys, share_alike, info=None):
     return "\n".join(lines) + "\n"
 
 
+def place_lines(info):
+    """The report's line about where the pictures are from (how many training pictures had a place)."""
+    pictures, asked = info.get("places") or (0, 0)
+    if not pictures:
+        return []
+    return [f"Pictures with a place (where in the world they are from): {pictures}; {asked} training questions asked "
+            "where a photo was taken or an object made (never in the test)."]
+
+
 def write_report(path, info, before, after, before_rows, after_rows):
     """The report: what was trained, the scores for each collection, the verdict and examples (the person's answer,
     the model's before and after: two from each collection), in plain words."""
@@ -606,7 +659,7 @@ def write_report(path, info, before, after, before_rows, after_rows):
              f"Graphics card: {info['card']}",
              f"Training pictures: {info['train']}; test pictures: {info['test']}; size: {info['size']}"
              + ("; with Wikipedia (the add-on is CC BY-SA 4.0)" if info["share_alike"] else ""),
-             f"Training time: {duration(info['seconds'])}", *content_lines(info), "",
+             f"Training time: {duration(info['seconds'])}", *content_lines(info), *place_lines(info), "",
              "RESULT: " + words, "",
              "Scores (ROUGE-L, from 0 to 1: how close each answer is to a person's; higher is better):"]
     for key in [k for k in before if k != "all"] + ["all"]:
@@ -859,6 +912,12 @@ def main(argv=None):
         run, tag = run + extra, tag + extra
     if not train_rows:
         stop("No collection could be downloaded. Check the internet connection and start the kit again.")
+    extra = place_rows(train_rows)                     # "Which country might this photo be from?" and the like
+    if extra:
+        import random
+        train_rows = train_rows + extra
+        random.Random(7).shuffle(train_rows)
+        say(f"  {len(extra)} questions about where pictures are from were added to the training.")
     if args.limit:
         train_rows = train_rows[:args.limit]
     device = "cuda"
@@ -904,7 +963,7 @@ def main(argv=None):
     repo, revision, _ = MODELS[args.model]
     info = {"model": repo, "revision": revision, "card": card, "train": len(train_rows), "test": len(test_rows),
             "size": args.size, "share_alike": args.with_wikipedia, **content,
-            "own_pictures": own_count, "own_only": args.own_only,
+            "own_pictures": own_count, "own_only": args.own_only, "places": place_counts(train_rows),
             "collections": sorted({r["source"] for r in train_rows}),
             "seconds": state.data[f"train-{run}"]["seconds"], "before": before, "after": after,
             "continued_from": plan["from"] if plan else None,

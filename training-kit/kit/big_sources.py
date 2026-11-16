@@ -174,10 +174,11 @@ def even_pick(groups, want, seed):
     return picked
 
 
-def zip_collection(source, data_dir, zips, label_of, cap, seed):
+def zip_collection(source, data_dir, zips, label_of, cap, seed, place=""):
     """Make training rows from pictures inside downloaded zips (see the module docstring). zips: open ZipFiles;
     label_of(name) gives (label, question, answer) for a picture's name inside its zip, or None to leave it out.
-    The label is what the pictures are picked evenly by (at most cap + the source's test count of them)."""
+    The label is what the pictures are picked evenly by (at most cap + the source's test count of them). place:
+    where all the photos were taken, when the collection's record says so (sources.place_fields)."""
     groups, labels = {}, {}
     for number, z in enumerate(zips):
         for name in z.namelist():
@@ -197,7 +198,8 @@ def zip_collection(source, data_dir, zips, label_of, cap, seed):
         target = os.path.splitext(target)[0] + ".jpg"
         _label, question, answer = labels[(number, name)]
         if have(target) or smaller(zips[number].read(name), target):
-            rows.append({"picture": target, "question": question, "answer": answer, "split": ""})
+            rows.append({"picture": target, "question": question, "answer": answer, "split": "",
+                         **sources.place_fields({"place": place})})
         if count % 500 == 0:
             say(f"    {count} of {len(picked)} pictures done")
     say(f"  {len(rows)} pictures from {len(groups)} kinds.")
@@ -232,7 +234,8 @@ def prepare_locbeef(source, data_dir, work, cap):
     paths = fetch_all(sorted(files, key=lambda f: f[1]), os.path.join(work, source.key))
     zips = [open_zip(p) for p in paths]
     try:
-        return zip_collection(source, data_dir, zips, locbeef_label, cap, 41)
+        return zip_collection(source, data_dir, zips, locbeef_label, cap, 41,
+                              place="Aceh, Indonesia")      # "local Aceh beef" (the dataset's record)
     finally:
         for z in zips:
             z.close()

@@ -27,7 +27,9 @@ Main parts:
   register_new(workspace) -> text                    record pictures put into the folder by other means (videos)
   export_package(workspace, out_zip, which, person) -> text
   import_package(workspace, zip_path) -> text        merge a package in (see import_package for the rules)
-and, for the window: describe, set_status, mark_checked, other_versions, resolve, picture_names, counts.
+and, for the window: describe, set_status, mark_checked, other_versions, resolve, picture_names, counts,
+place_of and set_place (the workspace's optional place.txt: where in the world its pictures are from, such as
+"Accra, Ghana"; it travels in packages too).
 
 Only the Python standard library is needed; Pillow is used when it is there, to make big pictures smaller and to
 turn photos the right way up.
@@ -44,6 +46,7 @@ import zipfile
 WORK_FILE = "describing.json"
 PERSONAL_FILE = "PERSONAL-USE.txt"
 QUESTION_FILE = "question.txt"           # a folder's question for all its pictures (own_data.py reads it too)
+PLACE_FILE = "place.txt"                 # where in the world the pictures are from (own_data.py reads it too)
 RESOLVED_FOLDER = ".resolved versions"
 PACKAGE_README = "README.txt"
 PACKAGE_PICTURES = "pictures/"           # the pictures and descriptions are in this folder inside a package
@@ -527,6 +530,24 @@ def question_of(workspace, name):
     return clean(first) or DEFAULT_QUESTION
 
 
+def place_of(workspace):
+    """The workspace's place: the first line of its place.txt ("" when there is none)."""
+    workspace = open_workspace(workspace)
+    return clean(next((line for line in read_lines(workspace.path(PLACE_FILE)) if line.strip()), ""))
+
+
+def set_place(workspace, place):
+    """Write the workspace's place into place.txt (a short place name ending with the country, such as "Kyoto,
+    Japan"); an empty place removes the file. own_data.py gives every picture in the folder this place."""
+    workspace = open_workspace(workspace)
+    place = clean(place).strip(" ,.")
+    path = workspace.path(PLACE_FILE)
+    if place:
+        write_file_text(path, place)
+    elif os.path.exists(path):
+        os.remove(path)
+
+
 def read_lines(path):
     """The lines of a text file ([] when it is missing)."""
     try:
@@ -616,6 +637,8 @@ def export_package(workspace, out_zip, which="all", person="", say=None):
     entries = {n: dict(workspace.entry(n), question=question_of(workspace, n)) for n in names}
     meta = {"format": FORMAT, "name": workspace.name, "people": workspace.data.get("people", []),
             "pictures": entries, "package": {"made_by": clean(person), "made_at": now(), "which": which}}
+    if place_of(workspace):
+        meta["place"] = place_of(workspace)            # where the pictures are from (place.txt is not packed)
     folder = os.path.dirname(os.path.abspath(out_zip))
     os.makedirs(folder, exist_ok=True)
     temporary = out_zip + ".new"
@@ -685,6 +708,8 @@ def import_package(workspace, zip_path, say=None):
     workspace = open_workspace(workspace)
     meta, members = read_package(zip_path)
     their_entries = meta["pictures"]
+    if isinstance(meta.get("place"), str) and meta["place"].strip() and not place_of(workspace):
+        set_place(workspace, meta["place"])            # the sender's place, when this workspace has none yet
     sender = clean((meta.get("package") or {}).get("made_by", ""))
     known = known_hashes(workspace)
     tally = {"new": 0, "added": 0, "updated": 0, "differences": 0, "checks": 0, "renamed": 0, "missing": 0}

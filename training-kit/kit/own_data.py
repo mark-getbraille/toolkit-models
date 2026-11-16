@@ -31,6 +31,13 @@ same name (layout a) in that folder and in its sub-folders, unless a sub-folder 
 example "What is this?" for stills from your own narrated videos). A question set in the "Describe pictures" window
 for one picture comes before it.
 
+Where in the world the pictures are from (optional): a place.txt in a folder gives, in its first line, the place of
+every picture in that folder and its sub-folders (unless a sub-folder has its own), for example "Accra, Ghana" or
+"Kyoto, Japan": a short place name, most specific first, ending with the country. A table may have a "place" column
+and a .jsonl entry a "place" key instead (and "place_kind": "origin" for an object made there). Rows then carry
+"place", which teaches the model what places look like: the describer learns to say which country a photo might be
+from, and a picture-making add-on learns "a kitchen in Ghana". Only give a place you know.
+
 Otherwise a description without a question of its own is asked "Describe this picture in detail." when it has 45 words or
 more, otherwise "Describe this picture." (the toolkit's own questions, as in sources.py).
 
@@ -74,6 +81,8 @@ SMALLEST = 64                  # pixels: a smaller picture is left out (as sourc
 SHOW = 10                      # how many file names a problem lists at most
 TEST_SHARE, TEST_MOST = 20, 50  # about 1 picture in 20 is kept back for the test, at most 50
 QUESTION_FILE = "question.txt"  # a folder's question for its layout a) pictures
+PLACE_FILE = "place.txt"        # a folder's place (where in the world its pictures are from)
+PLACE_KINDS = ("photo", "origin", "depicted")
 IGNORED_LISTS = ("stills-for-describers.jsonl",)            # lists that are not descriptions
 NOT_DESCRIPTIONS = (".draft.txt", ".narration.txt")         # text files beside pictures that are not descriptions
 OTHER_VERSION = re.compile(r"\.other(-[^\\/]*)?\.txt$", re.IGNORECASE)  # photo.other-Anna.txt
@@ -173,9 +182,10 @@ def column(names, wanted):
     return next((lower[w] for w in wanted if w in lower), None)
 
 
-def read_table(path, found, problems):
+def read_table(path, found, problems, places=None):
     """Read a captions.csv or metadata.csv into found {picture path: [(question, answer, layout, where)]}; the
-    problems go into problems (a dict of lists, see check_folder)."""
+    problems go into problems (a dict of lists, see check_folder); places (when given) gets {picture path: (place,
+    place kind)} from the optional "place" and "place_kind" columns."""
     base = os.path.dirname(path)
     name = os.path.basename(path)
     with open(path, encoding="utf-8-sig", errors="replace", newline="") as f:
@@ -189,6 +199,8 @@ def read_table(path, found, problems):
         file_col = column(reader.fieldnames or [], FILE_COLUMNS)
         text_col = column(reader.fieldnames or [], TEXT_COLUMNS)
         question_col = column(reader.fieldnames or [], ("question",))
+        place_col = column(reader.fieldnames or [], ("place",))
+        kind_col = column(reader.fieldnames or [], ("place_kind",))
         if not file_col or not text_col:
             problems["tables"].append(f"{name} has no column named " + ("file" if not file_col else "description") +
                                       " (the first line must name the columns, for example: file,description)")
@@ -196,10 +208,13 @@ def read_table(path, found, problems):
         for number, entry in enumerate(reader, 2):
             add_entry(base, name, number, entry.get(file_col), entry.get(question_col) if question_col else "",
                       entry.get(text_col), "table", found, problems)
+            if place_col and places is not None:
+                add_place(base, entry.get(file_col), entry.get(place_col),
+                          entry.get(kind_col) if kind_col else "", places)
 
 
-def read_jsonl(path, found, problems):
-    """Read a .jsonl file into found (see read_table)."""
+def read_jsonl(path, found, problems, places=None):
+    """Read a .jsonl file into found and places (see read_table)."""
     base = os.path.dirname(path)
     name = os.path.basename(path)
     with open(path, encoding="utf-8-sig", errors="replace") as f:
@@ -216,6 +231,17 @@ def read_jsonl(path, found, problems):
             picture = next((entry[k] for k in JSON_FILE_KEYS if entry.get(k)), "")
             text = next((entry[k] for k in JSON_TEXT_KEYS if entry.get(k)), "")
             add_entry(base, name, number, picture, entry.get("question"), text, "jsonl", found, problems)
+            if places is not None:
+                add_place(base, picture, entry.get("place"), entry.get("place_kind"), places)
+
+
+def add_place(base, picture, place, kind, places):
+    """Note the place of a picture named in a table or .jsonl file (nothing when either is empty)."""
+    place, picture = clean(place if isinstance(place, str) else "").strip(" ,."), clean(picture)
+    if place and picture:
+        kind = clean(kind if isinstance(kind, str) else "").lower()
+        path = same_path(os.path.join(base, picture.replace("\\", os.sep).replace("/", os.sep)))
+        places[path] = (place, kind if kind in PLACE_KINDS else "photo")
 
 
 def add_entry(base, name, number, picture, question, text, layout, found, problems):
@@ -278,7 +304,7 @@ def not_a_description(path):
     """True for a text file that is never a picture's description: question.txt, and photo.draft.txt,
     photo.narration.txt and photo.other-Anna.txt (even beside a picture named photo.draft.jpg)."""
     name = os.path.basename(path).lower()
-    return name == QUESTION_FILE or name.endswith(NOT_DESCRIPTIONS) or bool(OTHER_VERSION.search(name))
+    return name in (QUESTION_FILE, PLACE_FILE) or name.endswith(NOT_DESCRIPTIONS) or bool(OTHER_VERSION.search(name))
 
 
 def sidecar(picture):
@@ -291,18 +317,19 @@ def sidecar(picture):
     return None
 
 
-def folder_question(base, top, cache):
+def folder_question(base, top, cache, file_name=QUESTION_FILE):
     """The question from the nearest question.txt in base or a folder above it, up to top (the chosen folder);
-    "" when there is none. cache keeps each folder's answer."""
+    "" when there is none. cache keeps each folder's answer. file_name: another such file (place.txt, with its own
+    cache)."""
     key = same_path(base)
     if key not in cache:
-        path = os.path.join(base, QUESTION_FILE)
+        path = os.path.join(base, file_name)
         question = ""
         if os.path.isfile(path):
             with open(path, encoding="utf-8-sig", errors="replace") as f:
                 question = clean(next((line for line in f if line.strip()), ""))
         if not question and key != same_path(top) and os.path.dirname(key) != key:
-            question = folder_question(os.path.dirname(base), top, cache)
+            question = folder_question(os.path.dirname(base), top, cache, file_name)
         cache[key] = question
     return cache[key]
 
@@ -341,11 +368,11 @@ def check_folder(folder, copies=None, report=None):
         return [], [text], text
 
     # Descriptions from tables and .jsonl files (layouts b and c) come first; then text files of the same name (a).
-    found = {}
+    found, places, folder_places = {}, {}, {}
     for path in tables:
-        read_table(path, found, problems)
+        read_table(path, found, problems, places)
     for path in lists:
-        read_jsonl(path, found, problems)
+        read_jsonl(path, found, problems, places)
     described, waiting, has_text, workspaces, questions = {}, [], set(), {}, {}
     for picture in pictures:
         key = same_path(picture)
@@ -409,10 +436,13 @@ def check_folder(folder, copies=None, report=None):
                 problems["unreadable"].append(relative)
                 continue
         used += 1
+        place, kind = places.get(same_path(picture)) or (
+            folder_question(os.path.dirname(picture), folder, folder_places, PLACE_FILE).strip(" ,."), "photo")
+        where = ({"place": place} if kind == "photo" else {"place": place, "place_kind": kind}) if place else {}
         for question, answer, layout in dict.fromkeys(entry[:3] for entry in described[picture]):
             rows.append({"picture": path, "question": question, "answer": answer, "split": "",
                          "source": SOURCE_KEY, "original": picture, "file": relative.replace(os.sep, "/"),
-                         "layout": layout, "credit": CREDIT})
+                         "layout": layout, "credit": CREDIT, **where})
         if report and number % 500 == 0:
             report(f"    {number} of {len(described)} of your pictures checked")
 

@@ -33,6 +33,9 @@ Make an empty folder, for example D:\Describing. In the window, press Alt+B (Bro
 choose it. The program asks for the workspace's name (for example "Family videos"): press Alt+M (Make the
 workspace). Then write your name in "Your name" (Alt+M in the main describing window). Your name is saved with
 every description and check, and remembered for next time.
+The next field, "Place the pictures are from", is optional (it has no Alt letter: press Tab from Your name). Write
+where the pictures were taken, ending with the country, for example: Accra, Ghana. It is saved in the workspace's
+place.txt and travels in packages; it helps the model learn what places look like. Leave it empty if you are not sure.
 To open the same workspace another day, the program opens the last one by itself. You can also type a folder in
 "Workspace folder" (Alt+F) and press Alt+W (Open or make the workspace).
 

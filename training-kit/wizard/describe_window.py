@@ -25,6 +25,8 @@ N (Needs another look), K (Skip this picture), O (Show the other version), A (Ad
 videos), E (Export a package), I (Import a package), T (Use this workspace for training), H (Help), L (Close).
 In "Take stills from videos": V (Videos), A (Add videos), F (Add a folder), R (Remove), S (seconds), L (Spoken
 language), D (descriptions), B (Blur faces), O (Date stamps and logos, remembered), T (Start), H (Help), C (Cancel).
+The Place field (where the pictures are from, saved in the workspace's place.txt) has no letter: all of its letters
+are taken; it comes right after Your name when tabbing.
 Keys: Ctrl+S saves, Ctrl+Page Down and Ctrl+Page Up go to the next and previous picture (keeping what was written).
 """
 
@@ -357,6 +359,12 @@ class DescribeWindow(AccessibleDialog):
         self.person = self.labelled(left, "Your na&me:", lambda: wx.TextCtrl(
             self.panel, value=chosen.get("describe_name", "")))
         self.person.SetToolTip("Saved with each description and check, so the others know who wrote it")
+        # No Alt letter: every letter of "Place" is taken in this window; Tab from Your name reaches it.
+        self.place = self.labelled(left, "Place the pictures are from (optional, such as Accra, Ghana):",
+                                   lambda: wx.TextCtrl(self.panel))
+        self.place.SetToolTip("Where in the world these pictures were taken, ending with the country. Saved in the "
+                              "workspace's place.txt; it helps the model learn what places look like")
+        self.place.Bind(wx.EVT_KILL_FOCUS, self.on_place_left)
         self.filter = self.labelled(left, "Filte&r:", lambda: wx.Choice(self.panel, choices=[f[1] for f in FILTERS]))
         self.filter.SetSelection(0)
         self.filter.Bind(wx.EVT_CHOICE, self.on_filter)
@@ -480,6 +488,8 @@ class DescribeWindow(AccessibleDialog):
         if self.workspace is not None:
             try:
                 self.workspace = self.package.open_workspace(self.workspace.folder)
+                if hasattr(self.package, "place_of"):     # an imported package may have brought a place
+                    self.place.SetValue(self.package.place_of(self.workspace))
             except self.package.PackageProblem as e:
                 summary += " " + str(e)
         if then:
@@ -538,6 +548,7 @@ class DescribeWindow(AccessibleDialog):
                 return
             made = f"Workspace {self.workspace.name} opened. "
         self.folder.SetValue(self.workspace.folder)
+        self.place.SetValue(self.package.place_of(self.workspace) if hasattr(self.package, "place_of") else "")
         self.keep_settings()
         self.current = None
         self.refresh(None)
@@ -668,9 +679,30 @@ class DescribeWindow(AccessibleDialog):
         self.person.SetFocus()
         return False
 
+    def on_place_left(self, event):
+        """Leaving the Place field saves it."""
+        event.Skip()
+        self.save_place()
+
+    def save_place(self):
+        """Write the Place field into the workspace's place.txt when it was changed (said in the Status field)."""
+        if self.workspace is None or not hasattr(self.package, "set_place"):
+            return
+        place = " ".join(self.place.GetValue().split()).strip(" ,.")
+        if place == self.package.place_of(self.workspace):
+            return
+        try:
+            self.package.set_place(self.workspace, place)
+        except OSError as e:
+            self.say(f"The place could not be saved: {e}")
+            return
+        self.say(f"Place saved: {place}." if place else "Place removed.", interrupt=False)
+
     def save_changes(self, force=False):
         """Save what was written for the shown picture when it was changed (force: also an unchanged description,
-        which then counts as described). True when it is saved or nothing needed saving."""
+        which then counts as described). True when it is saved or nothing needed saving. The Place field is saved
+        too."""
+        self.save_place()
         if self.workspace is None or self.current is None or not (force or self.changed()):
             return True
         if not self.need_person():

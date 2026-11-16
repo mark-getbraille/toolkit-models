@@ -28,7 +28,7 @@ SHORT_NAMES = {"US": "USA", "GB": "UK", "HK": "Hong Kong", "MO": "Macao", "RS": 
 OTHER_NAMES = {"united states": "USA", "united states of america": "USA", "u.s.a.": "USA", "us": "USA",
                "america": "USA", "united kingdom": "UK", "great britain": "UK", "britain": "UK",
                "united kingdom of great britain and northern ireland": "UK", "the netherlands": "Netherlands",
-               "holland": "Netherlands", "korea": "South Korea", "republic of korea": "South Korea",
+               "holland": "Netherlands", "republic of korea": "South Korea",
                "korea, republic of": "South Korea", "russian federation": "Russia", "viet nam": "Vietnam",
                "people's republic of china": "China", "prc": "China", "lao": "Laos", "lao pdr": "Laos",
                "czech republic": "Czechia", "turkiye": "Turkey", "türkiye": "Turkey", "ivory coast": "Ivory Coast",
