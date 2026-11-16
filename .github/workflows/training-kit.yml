@@ -28,3 +28,34 @@ jobs:
           gh release view training-kit > /dev/null 2>&1 || gh release create training-kit --title "Picture Model Training Kit" \
             --notes "Unpack the zip and read READ ME FIRST.txt. Needs an NVIDIA graphics card with 12 GB or more of memory."
           gh release upload training-kit build/Picture-Model-Training-Kit.zip --clobber
+
+  exe:
+    # The one-click wizard, Picture Model Training.exe (training-kit/wizard/training_wizard.py, with the kit's files
+    # inside), built on Windows and published beside the zip.
+    runs-on: windows-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install wxPython, cytolk and PyInstaller
+        run: python -m pip install wxPython==4.3.1 cytolk==0.1.13 pyinstaller==6.22.3
+      - name: Build the program
+        shell: pwsh
+        run: |
+          python -m PyInstaller --noconfirm --onefile --windowed --name "Picture Model Training" `
+            --add-data "training-kit;training-kit" --collect-all cytolk `
+            training-kit/wizard/training_wizard.py
+          $p = Start-Process -FilePath "dist\Picture Model Training.exe" -ArgumentList "--self-test" -Wait -PassThru `
+            -RedirectStandardOutput selftest.txt
+          Get-Content selftest.txt
+          if ($p.ExitCode -ne 0) { throw "The program's self-test failed" }
+          Copy-Item "dist\Picture Model Training.exe" "Picture-Model-Training.exe"
+      - name: Upload it to the release
+        shell: pwsh
+        run: |
+          gh release view training-kit *> $null
+          if ($LASTEXITCODE -ne 0) { gh release create training-kit --title "Picture Model Training Kit" --notes "Run Picture-Model-Training.exe." }
+          gh release upload training-kit Picture-Model-Training.exe --clobber

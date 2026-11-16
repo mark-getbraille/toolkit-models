@@ -81,5 +81,7 @@ echo.
 echo Finished. This computer is ready. Now press Enter on "Quick Try.cmd".
 echo When the training is over, run "Restore Normal Settings.cmd" to put everything back.
 echo.
+rem Started by the wizard with /nopause: no key to press.
+if /i "%~1"=="/nopause" exit /b 0
 echo Press any key to close this window.
 pause >nul
