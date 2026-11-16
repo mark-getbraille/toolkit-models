@@ -40,6 +40,12 @@ import sys
 import time
 import zipfile
 
+# Run as a program (python packs/build_packs.py ...), this file is the module "__main__". The other pack files say
+# "from build_packs import ...": point that name at this same running file, so it is not loaded a second time (a second
+# copy would import those files again before they are ready and stop with an ImportError).
+if __name__ == "__main__":
+    sys.modules.setdefault("build_packs", sys.modules["__main__"])
+
 LONG_SIDE = 2048       # packs keep large pictures: the kit makes its training copies and keeps these in the library
 PART_BYTES = 1_900_000_000
 USER_AGENT = "PictureModelTrainingKit/2 (https://github.com/mark-getbraille/toolkit-models)"
