@@ -257,7 +257,8 @@ def per_label(want, labels):
 def plural(word):
     """A rough English plural ("box" -> "boxes", "berry" -> "berries", "person" -> "people")."""
     special = {"person": "people", "man": "men", "woman": "women", "child": "children", "mouse": "mice",
-               "knife": "knives", "shelf": "shelves", "glasses": "glasses", "sheep": "sheep", "fish": "fish"}
+               "knife": "knives", "shelf": "shelves", "glasses": "glasses", "sheep": "sheep", "fish": "fish",
+               "tomato": "tomatoes", "potato": "potatoes", "mango": "mangoes", "leaf": "leaves"}
     last = word.split()[-1]
     if last.lower() in special:
         return word[:-len(last)] + special[last.lower()]

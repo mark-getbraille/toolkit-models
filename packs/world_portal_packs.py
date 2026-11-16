@@ -87,8 +87,12 @@ CATALOGUE = re.compile(r"inventory number|^\s*(wymiary|méret|mérete|dimensions
                        r"([,.]\d+)?\s*(cm|mm|εκ)|καρτ ποστάλ|^αντίγραφο|^νο\.|^no\.\s*\d|^k\. \d|negativet|"
                        r"innsamlingsarkiv|^\s*(fénykép|kép|fotografia|zdjęcie|φωτογραφία)\W*$|μουσείο\W*$", re.I)
 # Lists of the people in a photo ("fra venstre: ...", "balról jobbra: ...", "od lewej: ...").
-NAME_LIST = re.compile(r"fra venstre|til høyre:|bakerste rad|første rad|foran f\.v\.|balról|jobbról|od lewej|"
+NAME_LIST = re.compile(r"\b(fra|til) (venstre|høyre)\b|bakerste rad|første rad|foran f\.v\.|balról|jobbról|od lewej|"
                        r"od prawej|από αριστερά", re.I)
+# Sentences that are notes about the print, the scan or the series, not about what the picture shows.
+NOTES = re.compile(r"^fra (serie|dr\.|samling)|storgårdsundersøk|\bverso\b|^kadr|przebarwi|uszkodz|stan zachowania|"
+                   r"^reprodukció\W*$|^repro\W*$|^biblioteka (miejska|publiczna)|krawędzi|dopisk|częścią kolekcji|"
+                   r"^stykówka\W*$|^odbitka|^negatyw|^βιβλιογραφία|^bibliogra|^irodalom:|^litteratur:", re.I)
 # A person's dates of birth and death ("1763. május 9. – ... 1845."), as in a biography rather than a description.
 LIFE_DATES = re.compile(r"\(\s*[^()]*\d{4}[^()]*[–-][^()]*\d{4}\s*\)|\d{4}\.\s*\w+\s*\d{1,2}\.\s*[–-]")
 
@@ -110,21 +114,38 @@ def sentence_case(text):
     return text[:1].upper() + text[1:]
 
 
+def shown_sentences(text):
+    """A text up to its first sentence that lists names or is a note about the print or series ("Til venstre frk.
+    Aagot Tingulstad ...", "Fra dr. Eivind S. Engelstads ...", "s. verso: ..."): such sentences come last, and
+    names with abbreviations ("frk.", "dr.") would otherwise leave pieces behind. A note standing alone in the
+    middle ("Reprodukció.") is just left out; the catalogue numbers some titles end with ("... 1967. [14]") too."""
+    text = re.sub(r"[\s.,]*\[?\b\d{1,3}\]?\.?$", "", clean(text)) if re.search(r"\D\.?\s*\[?\d{1,3}\]?\.?$", clean(text)) \
+        and not re.search(r"\b(u|ul|nr|no|str)\.\s*\d{1,3}\.?$", clean(text), re.I) \
+        else clean(text)
+    kept = []
+    for s in re.split(r"(?<=[.!?])\s+(?=[A-ZÁÉÍÓÖŐÚÜŰÆØÅĄĆĘŁŃŚŹŻΑ-ΩΆ-Ώ\"«„])", text):
+        if NAME_LIST.search(s) or (NOTES.search(s) and not re.match(r"^(reprodukció|repro)\W*$", s, re.I)):
+            break
+        if not re.match(r"^(reprodukció|repro)\W*$", s, re.I):
+            kept.append(s)
+    return " ".join(kept).strip()
+
+
 def usable_parts(parts):
-    """A record's description parts that say what the picture shows: first lines only, no catalogue notes, no lists
-    of names and no biographies."""
+    """A record's description parts that say what the picture shows: first lines only, without catalogue notes,
+    lists of names, notes about the print and biographies."""
     out = []
     for part in parts:
-        line = first_line(part)
-        if line and not CATALOGUE.search(line) and not NAME_LIST.search(line) and not LIFE_DATES.search(line):
+        line = shown_sentences(first_line(part))
+        if line and not CATALOGUE.search(line) and not LIFE_DATES.search(line):
             out.append(line)
     return out
 
 
 def joined(title, description):
-    """A short title and a description as one answer ("Falitányér. Klasszikus mélytányér forma ..."), the title left
-    out when the description already starts with it or the title is long (then it is a caption of its own)."""
-    if not title or words(title) > 4 or description.lower().startswith(title.lower().rstrip(".")):
+    """A title and a description as one answer ("Falitányér. Klasszikus mélytányér forma ..."), the title left out
+    when the description already holds it."""
+    if not title or title.lower().rstrip(".") in description.lower():
         return full_stop(description)
     return full_stop(title) + " " + full_stop(description)
 
@@ -137,7 +158,7 @@ def lang_parts(item, language):
 
 def answer_from(title, local, most=70):
     """An answer from a record's title and its usable description parts in the record's language, or ""."""
-    title = sentence_case(clean(title)).rstrip(" .")
+    title = shown_sentences(sentence_case(clean(title))).rstrip(" .")
     described = [p for p in local if words(p) >= 4 and p.rstrip(". ").lower() != title.lower()]
     if described:
         text = joined(title, max(described[:3], key=len))
@@ -145,7 +166,7 @@ def answer_from(title, local, most=70):
         text = full_stop(title)
     else:
         return ""
-    return capped_words(text, most)
+    return "" if LIFE_DATES.search(text) else capped_words(text, most)
 
 
 def english_from(item):
@@ -175,16 +196,18 @@ def no_answer(item):
     en kvinne foran et fjøs."; the place is in the row's place)."""
     title = sentence_case(clean((item.get("title") or [""])[0]))
     parts = usable_parts(lang_parts(item, "no"))
-    caption = title.split(", ")[-1] if ", " in title else title
-    if words(caption) >= 4 and caption != title:
+    caption = title.split(", ")[-1] if ", " in title and ". " not in title else title
+    if words(caption) >= 4 and caption != title and not NAME_LIST.search(caption):
         title = caption[:1].upper() + caption[1:]
     return answer_from(title, [sentence_case(p) for p in parts]), english_from(item)
 
 
 def pl_answer(item):
-    """(Polish answer, English answer) of a Polish record: its description, or a title that is a caption."""
-    title = (item.get("title") or [""])[0]
-    return answer_from(title, usable_parts(lang_parts(item, "pl"))), english_from(item)
+    """(Polish answer, "") of a Polish record: its Polish title with a description that says what is shown. The
+    libraries' English titles and descriptions are left out: some read as machine translations ("Personnel 1-12"
+    for "Kadr 1-12")."""
+    titles = (item.get("dcTitleLangAware") or {}).get("pl") or item.get("title") or [""]
+    return answer_from(titles[0], usable_parts(lang_parts(item, "pl"))), ""
 
 
 # ----------------------------------------------------------------- places

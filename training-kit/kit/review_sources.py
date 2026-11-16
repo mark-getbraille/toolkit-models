@@ -301,7 +301,7 @@ def plain(text):
     """Text with medical words in plain words (the medical word kept in brackets where useful)."""
     for pattern, words in PLAIN_WORDS:
         text = pattern.sub(words, text)
-    return text
+    return re.sub(r"\b([Aa]) (?=[aeio]|u(?:pper|lcer|nder|nusual))", r"\1n ", text)          # "a upper view" -> "an upper view"
 
 
 # (pattern, plain name, explanation, warning sign?) for genital and breast anatomy, normal variants and conditions.
@@ -325,6 +325,8 @@ CONDITIONS = [
     (r"montgomery'?s? (glands?|tubercles?)", "Montgomery glands", "small normal bumps on the areola", False),
     (r"striae|stretch marks?", "stretch marks", "lines in the skin from stretching, common and harmless", False),
     # conditions of the genitals
+    (r"condylom\w* lata|secondary syphilis", "secondary syphilis", "a later stage of syphilis, with a rash or moist "
+     "patches; curable with antibiotics", False),
     (r"genital warts?|condylom\w* acuminat\w*|anogenital warts?|venereal warts?|condylomas?\b", "genital warts",
      "a common infection with a wart virus (HPV), with small skin-coloured bumps", False),
     (r"genital herpes|herpes genitalis|herpes simplex|hsv-?2|hsv-?1", "genital herpes", "a common virus infection "
@@ -333,8 +335,6 @@ CONDITIONS = [
      False),
     (r"chancre|primary syphilis", "a syphilis sore (chancre)", "the first sign of syphilis, a usually painless "
      "firm sore; syphilis is curable with antibiotics", False),
-    (r"condylomata lata|secondary syphilis", "secondary syphilis", "a later stage of syphilis, with a rash or moist "
-     "patches; curable with antibiotics", False),
     (r"syphili\w*|treponema", "syphilis", "a bacterial infection that is curable with antibiotics", False),
     (r"lymphogranuloma venereum|\blgv\b", "lymphogranuloma venereum", "a chlamydia infection that can cause sores "
      "and swollen groin glands", False),
@@ -800,7 +800,8 @@ def fetch_cdc_phil_intimate(folder, cap, say=print):
         caption = record["caption"] if record else ""
         if not record or not record["public"] or not record["picture"] or not child_free(caption) \
                 or not not_sexual(caption) or PHIL_NOT_CLINICAL.search(caption) \
-                or not (GENITAL.search(caption) or BREAST.search(caption)):
+                or not (GENITAL.search(first_sentences(caption, 60, 2)) or BREAST.search(first_sentences(caption, 60,
+                                                                                                     2))):
             ws.mark_tried(name)
             left += 1
             continue
@@ -813,7 +814,7 @@ def fetch_cdc_phil_intimate(folder, cap, say=print):
         page = f"https://phil.cdc.gov/Details.aspx?pid={pid}"
         skin, skin_words = skin_from_text(caption)
         ws.add(name, data, draft("A clinical photograph from the US Centers for Disease Control and Prevention. "
-                                 "The CDC's caption says:", text, [caption], skin_words=skin_words),
+                                 "The CDC's caption says:", text, [text, caption], skin_words=skin_words),
                f"CDC Public Health Image Library, ID {pid}, {record['credit']}", "public domain (US government work)",
                page, note="No age given: confirm the person is an adult. Skin type: "
                           + (skin_words or "not stated by the source; note it if you can see it plainly."), skin=skin)
@@ -1123,16 +1124,24 @@ def commons_fetch(key, kind, folder, cap, say):
     source = source_by_key(key)
     ws, s = ReviewWorkspace(folder, source, say), session()
     looked = left = 0
-    seen = set()
+    lists = []
     for category, needs_adult, needs_topic in COMMONS_CATEGORIES:
-        if ws.full(cap):
-            break
         items, n, m = commons_items(s, category, needs_adult, needs_topic, kind, say)
-        items = [i for i in items if i[0] not in seen]
-        seen.update(i[0] for i in items)
+        lists.append(items)
         looked, left = looked + n, left + m
-        left += fill(ws, items, cap, s, workers=2)
         time.sleep(1)
+    # Taking turns between the categories, so every condition and body area has its share; skin types are taken
+    # in turns too where a file's text states one.
+    items, seen = [], set()
+    while any(lists):
+        for found in lists:
+            if found:
+                item = found.pop(0)
+                if item[0] not in seen:
+                    seen.add(item[0])
+                    items.append(item)
+    items = balanced(items, lambda i: i[8], lambda i: "")
+    left += fill(ws, items, cap, s, workers=2)
     return ws.finish(looked, left)
 
 
