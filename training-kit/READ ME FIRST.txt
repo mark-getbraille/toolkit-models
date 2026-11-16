@@ -2,7 +2,7 @@ Picture Model Training Kit
 
 What it does
 This kit teaches the Digital Accessibility Toolkit's picture model (the uncensored Qwen3-VL) to describe pictures
-the way a blind reader needs. It learns from about 35,000 pictures that people have described, from these
+the way a blind reader needs. It learns from about 40,000 pictures that people have described, from these
 collections:
 - DOCCI: photos, each described carefully in about 120 words.
 - VizWiz: photos taken by blind people, with one-sentence descriptions, and the questions blind people asked about
@@ -15,8 +15,13 @@ collections:
 - The Metropolitan Museum of Art: its best-known works, learned by name ("What artwork is this?").
 - Europeana: objects from museums and archives across Europe, learned as "Tell me about this museum object".
 - NASA: space, Earth and aviation pictures with NASA's captions.
+- COCO and Crossmodal-3600: everyday photos from around the world, each described in one sentence (only photos whose
+  own licence allows it).
+- Canterbury Museum and Auckland Museum (New Zealand): their staff's descriptions of how objects and old photographs
+  look.
+- Wellcome Collection (UK): prints, drawings and photographs, learned by their descriptive titles.
 - Wikipedia (only with "Start Training with Wikipedia"): pictures with the alt text Wikipedia's writers wrote for
-  screen-reader users.
+  screen-reader users, from two collections (WIT and Concadia).
 It trains a small add-on to the model, then tests whether the model really got better. The model itself is not
 changed. Nothing is sent anywhere; the kit only downloads what it needs. If one collection's website is down, the
 kit says so and carries on with the others.
@@ -26,8 +31,8 @@ What you need
   up-to-date NVIDIA driver.
 - About 90 GB of free disk space (110 GB for the 8B model) on the drive where you unpack the kit.
 - An internet connection for the downloads, about 40 GB in all (more with Wikipedia).
-- Time: the downloads take a few hours, and training on all the pictures takes roughly a night and a day on a fast
-  card. "Quick Try" uses a tenth of the pictures and takes an hour or two.
+- Time: the downloads take a few hours, and training on all the pictures takes roughly a day on a fast card.
+  "Quick Try" uses a tenth of the pictures and takes an hour or two.
 
 How to start
 1. Unpack this zip to a folder on a drive with enough free space, for example D:\Training. Do not run it from

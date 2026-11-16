@@ -575,6 +575,148 @@ def prepare_wikipedia(source, data_dir, work, cap):
     return rows
 
 
+COCO_FREE_LICENCES = (4, 7)       # 4: CC BY 2.0; 7: no known copyright restrictions (COCO's own licence list)
+
+
+def prepare_coco(source, data_dir, work, cap):
+    """COCO Captions: everyday photos with five one-sentence descriptions each (captions CC BY 4.0, cocodataset.org).
+    Only photos whose own licence is CC BY 2.0 or "no known copyright restrictions" are used (about 20,800); the
+    non-commercial ones are left out. The phiyodr copy on Hugging Face lists each photo's licence."""
+    say("  Reading COCO's list of photos and their licences.")
+    rows = []
+    for name in hf_parquet_files("phiyodr/coco2017", r"^data/"):
+        rows += [r for r in hf_parquet_rows("phiyodr/coco2017", name, ["license", "image_id", "coco_url", "captions"])
+                 if r.get("license") in COCO_FREE_LICENCES and r.get("captions")]
+    random.Random(19).shuffle(rows)
+    items = []
+    for row in rows[:int((cap + source.test) * 1.1)]:
+        caption = clean(row["captions"][0])
+        caption = caption[:1].upper() + caption[1:] + ("" if caption.endswith(".") else ".")
+        items.append((f"{row['image_id']}.jpg", row["coco_url"],             # COCO serves its photos over http only
+                      {"question": BRIEF, "answer": caption, "split": ""}))
+    say(f"  Fetching {len(items)} COCO photos.")
+    return fetch_pictures(items, os.path.join(data_dir, "coco"))
+
+
+def prepare_crossmodal(source, data_dir, work, cap):
+    """Crossmodal-3600 (Google): 3,600 photos from around the world with carefully written one-sentence English
+    descriptions (captions CC BY 4.0; photos CC BY 2.0 from Open Images)."""
+    import zipfile
+    captions = os.path.join(work, "xm3600-captions.zip")
+    download_file("https://google.github.io/crossmodal-3600/web-data/captions.zip", captions)
+    english = {}
+    with zipfile.ZipFile(captions) as z:
+        for line in z.open("captions.jsonl"):
+            entry = json.loads(line)
+            first = next((clean(c) for c in (entry.get("en") or {}).get("caption", []) if clean(c)), "")
+            if first:
+                english[entry["image/key"] + ".jpg"] = first
+    archive = os.path.join(work, "xm3600-images.tgz")
+    say("  Downloading Crossmodal-3600's photos (316 MB).")
+    download_file("https://open-images-dataset.s3.amazonaws.com/crossmodal-3600/images.tgz", archive)
+    folder = os.path.join(data_dir, "crossmodal")
+    os.makedirs(folder, exist_ok=True)
+    rows = []
+    with tarfile.open(archive, "r|gz") as tar:
+        for member in tar:
+            name = os.path.basename(member.name)
+            if member.isfile() and name in english:
+                path = os.path.join(folder, name)
+                if os.path.exists(path) or smaller(tar.extractfile(member).read(), path):
+                    rows.append({"picture": path, "question": BRIEF, "answer": english[name], "split": ""})
+    os.remove(archive)
+    return rows
+
+
+def digitalnz_items(partner, question, cap, test, min_words=8):
+    """Fetch items of one New Zealand collection through DigitalNZ (no key needed): pictures whose record allows
+    commercial use and changes, with a description of at least min_words words; (file name, address, row)."""
+    import requests
+    items, page = [], 1
+    while len(items) < (cap + test) * 1.2 and page <= 400:
+        try:
+            data = requests.get("https://api.digitalnz.org/records.json", timeout=60, headers={"User-Agent": USER_AGENT},
+                                params={"and[category][]": "Images", "and[usage][]": ["Use commercially", "Modify"],
+                                        "and[content_partner][]": partner, "per_page": 100, "page": page}).json()
+        except Exception:  # noqa: BLE001 - stop here with what there is
+            break
+        found = data.get("search", {}).get("results", [])
+        if not found:
+            break
+        for record in found:
+            text, url = clean(record.get("description")), record.get("large_thumbnail_url") or ""
+            if url and min_words <= len(text.split()) <= 120:
+                items.append((f"{record['id']}.jpg", url, {"question": question, "answer": text, "split": ""}))
+        page += 1
+        time.sleep(0.3)
+    return items
+
+
+def prepare_canterbury(source, data_dir, work, cap):
+    """Canterbury Museum (New Zealand): its staff's descriptions of how each object or photograph looks, for
+    pictures marked for commercial use and changes ("no known copyright restrictions" or CC BY), through DigitalNZ."""
+    items = digitalnz_items("Canterbury Museum", NARRATE, cap, source.test, min_words=12)
+    say(f"  Fetching {len(items)} pictures from Canterbury Museum.")
+    return fetch_pictures(items, os.path.join(data_dir, "canterbury"), workers=4, pause=0.1)
+
+
+def prepare_auckland(source, data_dir, work, cap):
+    """Auckland War Memorial Museum (New Zealand): object and photograph records with descriptions, for pictures
+    marked for commercial use and changes, through DigitalNZ; learned as "Tell me about this museum object." """
+    items = digitalnz_items("Auckland War Memorial Museum Tāmaki Paenga Hira", MUSEUM, cap, source.test)
+    say(f"  Fetching {len(items)} pictures from Auckland Museum.")
+    return fetch_pictures(items, os.path.join(data_dir, "auckland"), workers=4, pause=0.1)
+
+
+WELLCOME_FREE = ("pdm", "cc-0", "cc-by")
+
+
+def prepare_wellcome(source, data_dir, work, cap):
+    """Wellcome Collection (UK): prints, drawings and photographs whose catalogue titles describe them ("Galileo
+    Galilei. Wood engraving by F.L. Meyer, 1878."), public domain, CC0 or CC BY pictures only; learned as "Tell me
+    about this museum object." """
+    import gzip
+    path = os.path.join(work, "wellcome-images.json.gz")
+    say("  Downloading Wellcome Collection's list of pictures (30 MB).")
+    download_file("https://data.wellcomecollection.org/catalogue/v2/images.json.gz", path)
+    entries = []
+    with gzip.open(path, "rt", encoding="utf-8") as f:
+        for line in f:
+            image = json.loads(line)
+            location = (image.get("locations") or [{}])[0]
+            title = clean((image.get("source") or {}).get("title"))
+            if (location.get("license") or {}).get("id") in WELLCOME_FREE and 8 <= len(title.split()) <= 80 and \
+                    location.get("url", "").endswith("/info.json"):
+                entries.append((image["id"], location["url"][:-len("/info.json")] + "/full/!896,896/0/default.jpg",
+                                title))
+    random.Random(23).shuffle(entries)
+    items = [(f"{i}.jpg", url, {"question": MUSEUM, "answer": title, "split": ""})
+             for i, url, title in entries[:int((cap + source.test) * 1.1)]]
+    say(f"  Fetching {len(items)} Wellcome Collection pictures.")
+    return fetch_pictures(items, os.path.join(data_dir, "wellcome"), workers=6)
+
+
+def prepare_concadia(source, data_dir, work, cap):
+    """Concadia: about 97,000 pictures from Wikipedia with the alt text written for screen-reader users
+    (Wikipedia's text is CC BY-SA 4.0: only with --with-wikipedia; the nirmalendu01 copy on Hugging Face)."""
+    rows = []
+    files = hf_parquet_files("nirmalendu01/concadia", r"^data/train-")
+    for number, name in enumerate(files, 1):
+        say(f"  Concadia part {number} of {len(files)}.")
+        for index, row in enumerate(hf_parquet_rows("nirmalendu01/concadia", name, ["image", "article_id",
+                                                                                     "description_raw"])):
+            alt = clean(row.get("description_raw"))
+            if len(alt.split()) < 5:
+                continue
+            path = save_picture(f"concadia-{number}-{index}", (row.get("image") or {}).get("bytes"),
+                                os.path.join(data_dir, "concadia"))
+            if path:
+                rows.append({"picture": path, "question": ALT_TEXT, "answer": alt, "split": ""})
+        if len(rows) >= cap + source.test:
+            break
+    return rows
+
+
 SOURCES = [
     Source("docci", "DOCCI: photos described in about 120 words",
            "CC BY 4.0, descriptions and photos (google.github.io/docci)",
@@ -582,27 +724,27 @@ SOURCES = [
            "7.6 GB"),
     Source("vizwiz_captions", "VizWiz Captions: photos taken by blind people, one sentence each",
            "CC BY 4.0 (vizwiz.org)",
-           "VizWiz-Captions (Gurari et al., 2020), CC BY 4.0, https://vizwiz.org", "permissive", 4000, 10,
+           "VizWiz-Captions (Gurari et al., 2020), CC BY 4.0, https://vizwiz.org", "permissive", 3000, 10,
            prepare_vizwiz_captions, "3.5 GB"),
     Source("vizwiz_vqa", "VizWiz questions: what blind people asked about their own photos",
            "CC BY 4.0 (vizwiz.org)",
-           "VizWiz VQA (Gurari et al., 2018), CC BY 4.0, https://vizwiz.org", "permissive", 4000, 10,
+           "VizWiz VQA (Gurari et al., 2018), CC BY 4.0, https://vizwiz.org", "permissive", 3500, 10,
            prepare_vizwiz_vqa, "up to 4 GB"),
     Source("textcaps", "TextCaps: descriptions that read out the text in the picture",
            "CC BY 4.0 descriptions (textvqa.org); Open Images photos, CC BY 2.0",
            "TextCaps (Sidorov et al., 2020), CC BY 4.0, https://textvqa.org/textcaps; photos from Open Images",
-           "permissive", 3000, 10, prepare_textcaps, "up to 2 GB"),
+           "permissive", 2500, 10, prepare_textcaps, "up to 2 GB"),
     Source("textvqa", "TextVQA: questions about the text in photos",
            "CC BY 4.0 (textvqa.org); Open Images photos, CC BY 2.0",
            "TextVQA (Singh et al., 2019), CC BY 4.0, https://textvqa.org; photos from Open Images", "permissive",
-           2000, 10, prepare_textvqa, "up to 2 GB"),
+           1500, 10, prepare_textvqa, "up to 2 GB"),
     Source("localized_narratives", "Localized Narratives: photos described aloud by people",
            "CC BY 4.0 descriptions (google.github.io/localized-narratives); Open Images photos, CC BY 2.0",
            "Localized Narratives (Pont-Tuset et al., 2020), CC BY 4.0; photos from Open Images, CC BY 2.0",
-           "permissive", 4000, 10, prepare_localized_narratives, "about 1 GB"),
+           "permissive", 3000, 10, prepare_localized_narratives, "about 1 GB"),
     Source("cooper_hewitt", "Cooper Hewitt, Smithsonian Design Museum: descriptions written for accessibility",
            "CC0, words and pictures (Smithsonian Open Access)",
-           "Cooper Hewitt, Smithsonian Design Museum, CC0 (via biglam/cooper-hewitt-alt-text)", "permissive", 3000,
+           "Cooper Hewitt, Smithsonian Design Museum, CC0 (via biglam/cooper-hewitt-alt-text)", "permissive", 2500,
            10, prepare_cooper_hewitt, "up to 3 GB"),
     Source("art_institute", "Art Institute of Chicago: alt text written for screen readers",
            "CC0, data and public-domain pictures (api.artic.edu)",
@@ -610,15 +752,39 @@ SOURCES = [
            "about 200 MB"),
     Source("met", "The Metropolitan Museum of Art: its best-known works by name",
            "CC0 (Met Open Access)", "The Metropolitan Museum of Art Open Access, CC0, https://metmuseum.github.io",
-           "permissive", 1500, 5, prepare_met, "about 200 MB"),
+           "permissive", 1200, 5, prepare_met, "about 200 MB"),
     Source("nasa", "NASA: space, Earth and aviation pictures with NASA's captions",
            "Generally not under copyright (nasa.gov/nasa-brand-center/images-and-media); copyrighted ones left out",
-           "NASA Image and Video Library, https://images.nasa.gov", "permissive", 1000, 5, prepare_nasa,
+           "NASA Image and Video Library, https://images.nasa.gov", "permissive", 800, 5, prepare_nasa,
            "about 150 MB"),
     Source("europeana", "Europeana: objects from museums and archives across Europe",
            "Each object's own licence: only CC0, public domain or CC BY are used (europeana.eu)",
            "Europeana and its partner museums, CC0 / public domain / CC BY per object, https://www.europeana.eu",
-           "permissive", 1500, 5, prepare_europeana, "about 200 MB"),
+           "permissive", 1000, 5, prepare_europeana, "about 200 MB"),
+    Source("coco", "COCO: everyday photos with one-sentence descriptions",
+           "CC BY 4.0 descriptions (cocodataset.org); only photos under CC BY 2.0 or no known copyright",
+           "COCO Captions (Chen et al., 2015), CC BY 4.0, https://cocodataset.org; Flickr photos under CC BY 2.0 or "
+           "no known copyright restrictions", "permissive", 3000, 10, prepare_coco, "about 1 GB"),
+    Source("crossmodal", "Crossmodal-3600: photos from around the world, carefully described",
+           "CC BY 4.0 descriptions; Open Images photos, CC BY 2.0 (google.github.io/crossmodal-3600)",
+           "Crossmodal-3600 (Thapliyal et al., 2022), CC BY 4.0, https://google.github.io/crossmodal-3600/",
+           "permissive", 2500, 10, prepare_crossmodal, "316 MB"),
+    Source("canterbury", "Canterbury Museum, New Zealand: how each object and photograph looks",
+           "Each record's own licence: only those marked for commercial use and changes (DigitalNZ)",
+           "Canterbury Museum, Christchurch, via DigitalNZ, https://digitalnz.org", "permissive", 2000, 10,
+           prepare_canterbury, "about 300 MB"),
+    Source("auckland", "Auckland War Memorial Museum, New Zealand: object and photograph records",
+           "Each record's own licence: only those marked for commercial use and changes (DigitalNZ)",
+           "Auckland War Memorial Museum Tāmaki Paenga Hira, via DigitalNZ, https://digitalnz.org", "permissive",
+           1000, 5, prepare_auckland, "about 200 MB"),
+    Source("wellcome", "Wellcome Collection, UK: prints, drawings and photographs by title",
+           "Public domain, CC0 or CC BY pictures only; catalogue text CC0 (wellcomecollection.org)",
+           "Wellcome Collection, London, https://wellcomecollection.org", "permissive", 1000, 5, prepare_wellcome,
+           "about 200 MB"),
+    Source("concadia", "Concadia: Wikipedia pictures with their alt text",
+           "CC BY-SA 4.0 (Wikipedia's text); pictures under their own Wikimedia Commons licences",
+           "Concadia (Kreiss et al., 2022) from Wikipedia, CC BY-SA 4.0, https://github.com/elisakreiss/concadia",
+           "share-alike", 5000, 10, prepare_concadia, "up to 2 GB"),
     Source("wikipedia", "Wikipedia: alt text written for screen-reader users",
            "CC BY-SA 4.0 (wikimedia/wit_base); pictures under their own Wikimedia Commons licences",
            "Wikipedia-based Image Text (WIT) by Wikimedia, CC BY-SA 4.0, https://huggingface.co/datasets/wikimedia/"
