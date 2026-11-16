@@ -535,7 +535,8 @@ OPENSTAX_BOOK = "14fb4ad7-39a1-4eee-ab6e-3ef2482e3e22@ccce780"    # Anatomy and 
 OPENSTAX_FREE_CREDIT = re.compile(r"\b(NIH|National Institutes? of Health|NCI|National Cancer Institute|CDC|Centers "
                                   r"for Disease Control|NIAID|NHLBI|NIGMS|NASA|NOAA|USDA|FDA|U\.?S\.? Department|"
                                   r"public domain)\b", re.I)
-OPENSTAX_NOT_FREE = re.compile(r"©|\(c\)|regents|universit|wikimedia|flickr|copyright|courtesy|by-sa|nc", re.I)
+OPENSTAX_NOT_FREE = re.compile(r"©|\(c\)|regents|universit|wikimedia|flickr|copyright|courtesy|provided by|"
+                               r"\bby-sa\b|\bnc\b", re.I)
 
 
 def openstax_credit_free(credit):
@@ -591,7 +592,9 @@ def openstax_items(want):
         except Exception:  # noqa: BLE001 - the next page
             continue
         for number, title, caption, credit, alt, url in openstax_figures(page.get("content", "")):
-            if not openstax_credit_free(credit) or left_out("OpenStax", f"Figure {number} {title}", caption, alt):
+            # A micrograph "provided by the Regents ..." with no "(credit" mark is someone else's too: left out.
+            if not openstax_credit_free(credit) or OPENSTAX_NOT_FREE.search(caption) \
+                    or left_out("OpenStax", f"Figure {number} {title}", caption, alt):
                 continue
             source = f"OpenStax, Anatomy and Physiology (2013), figure {number}, CC BY 4.0, " \
                      f"https://openstax.org/details/books/anatomy-and-physiology" + (f"; {credit}" if credit else "")

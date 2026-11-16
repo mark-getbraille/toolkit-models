@@ -767,7 +767,7 @@ DS_PAGE = "https://www.gapminder.org/dollar-street/families/"
 # The topics used: ("thing", answer) for an object, ("place", answer) for a room or a scene. Topics about feelings,
 # activities or money (dreams, most loved items, income) are left out.
 DS_TOPICS = {
-    "alarm-clocks": ("thing", "an alarm clock"), "arm-watches": ("thing", "a wristwatch"),
+    "arm-watches": ("thing", "a wristwatch"),
     "armchairs": ("thing", "an armchair"), "beds": ("thing", "a bed"), "bikes": ("thing", "a bicycle"),
     "books": ("thing", "books"), "bowls": ("thing", "a bowl"), "car-keys": ("thing", "car keys"),
     "cars": ("thing", "a car"), "ceilings": ("thing", "a ceiling"), "chickens": ("thing", "chickens"),
@@ -792,7 +792,7 @@ DS_TOPICS = {
     "power-outlets": ("thing", "a power socket (outlet)"), "power-switches": ("thing", "a light switch"),
     "radios": ("thing", "a radio"), "refrigerators": ("thing", "a fridge"), "roofs": ("thing", "a roof"),
     "rugs": ("thing", "a rug"), "salt": ("thing", "salt"), "shampoo": ("thing", "shampoo"),
-    "shoes": ("thing", "shoes"), "showers": ("thing", "a shower"), "soaps": ("thing", "soap"),
+    "shoes": ("thing", "shoes"), "soaps": ("thing", "soap"),
     "sofas": ("thing", "a sofa"), "sources-of-cool": ("thing", "something to keep cool, such as a fan"),
     "sources-of-heat": ("thing", "a heater"), "spices": ("thing", "spices"), "stoves": ("thing", "a stove"),
     "toilet-paper": ("thing", "toilet paper"), "toilets": ("thing", "a toilet"), "tools": ("thing", "tools"),
