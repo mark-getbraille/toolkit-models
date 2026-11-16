@@ -1102,9 +1102,10 @@ def phil_credit(r):
         f", https://phil.cdc.gov/Details.aspx?pid={r['pid']}"
 
 
-def phil_records(keywords, want, budget):
-    """PHIL records for a list of keywords: ids from each search (in turn), then each item's details page; only
-    public-domain items. Stops after budget details pages."""
+def phil_records(keywords):
+    """PHIL records for a list of keywords, one by one (a generator: the caller stops when it has enough): ids from
+    each search, shuffled, then each item's details page, three at a time; only public-domain items with a picture
+    and a caption."""
     s = session()
     ids = []
     for keyword in keywords:
@@ -1113,15 +1114,15 @@ def phil_records(keywords, want, budget):
         say(f"PHIL '{keyword}': {len(found)} photos ({len(ids)} in all)")
         time.sleep(0.5)
     random.Random(65).shuffle(ids)
-    records = []
+    read = 0
     with concurrent.futures.ThreadPoolExecutor(3) as pool:
-        for start in range(0, min(len(ids), budget), 60):
-            records += [r for r in pool.map(lambda p: phil_record(s, p), ids[start:start + 60])
-                        if r and r["public"] and r["picture"] and r["caption"]]
-            if len(records) >= want:
-                break
-    say(f"PHIL: {len(records)} public-domain records read")
-    return records
+        for start in range(0, len(ids), 30):
+            for r in pool.map(lambda p: phil_record(s, p), ids[start:start + 30]):
+                read += 1
+                if r and r["public"] and r["picture"] and r["caption"]:
+                    yield r
+            if start % 300 == 0:
+                say(f"  PHIL: {read} of {len(ids)} records read")
 
 
 def build_cdc_medical(limit):
@@ -1131,7 +1132,7 @@ def build_cdc_medical(limit):
     intimate area."""
     words = all_condition_words(ADULT_CONDITIONS)
     items = []
-    for r in phil_records(PHIL_ADULT_KEYWORDS, int(limit * 3) + 20, int(limit * 6) + 60):
+    for r in phil_records(PHIL_ADULT_KEYWORDS):
         caption = r["caption"]
         found = ages(caption)
         adult = (found and min(found) >= 18) or (not found and re.search(r"\b(man|woman|men|women|adult|elderly|"
@@ -1182,7 +1183,7 @@ def build_childhood_illness(limit):
     illness carefully and ends with CHILD_DOCTOR."""
     words = all_condition_words(CHILD_CONDITIONS)
     items = []
-    for r in phil_records(PHIL_CHILD_KEYWORDS, int(limit * 4) + 30, int(limit * 8) + 80):
+    for r in phil_records(PHIL_CHILD_KEYWORDS):
         caption = r["caption"]
         reason = child_reason(caption)
         if not reason:
@@ -1233,7 +1234,6 @@ def wellcome_records(terms, want):
     """Records {"source", "id", "text", "picture", "credit", "kind"} of Wellcome Collection images whose own
     licence is CC BY, CC0 or the Public Domain Mark, for search terms (in turn); the text is the work's title and
     its description."""
-    import os
     s, out, seen = session(), [], set()
     for term in terms:
         try:
@@ -1259,7 +1259,7 @@ def wellcome_records(terms, want):
                      f"{WELLCOME_FREE[licence]}, https://wellcomecollection.org/works/{work}"
             out.append({"source": "wellcome", "id": work, "text": text, "credit": credit, "kind": "museum",
                         "picture": location["url"].replace("info.json", "full/!2048,2048/0/default.jpg")})
-            time.sleep(0.1 if not os.environ.get("CI") else 0.2)
+            time.sleep(0.1)
         if len(out) >= want:
             break
     return out
@@ -1494,9 +1494,13 @@ def build_birth_and_feeding(limit):
     BIRTH_GENERAL_SITE_NOT allows). Never used for picture-making training."""
     from food_packs import commons_members, commons_entries
     records = []
-    for r in phil_records(PHIL_BIRTH_KEYWORDS, int(limit * 0.5) + 10, int(limit * 1.5) + 40):
+    usable = 0
+    for r in phil_records(PHIL_BIRTH_KEYWORDS):              # PHIL's share: about half the pack at most
         records.append({"source": "phil", "id": r["pid"], "text": r["caption"], "picture": r["picture"],
                         "credit": phil_credit(r), "kind": "gov"})
+        usable += not birth_reason(r["caption"], False, birth_first(r["caption"]))
+        if usable >= int(limit * 0.5) + 5:
+            break
     records += collection_records(WELLCOME_BIRTH_TERMS, EUROPEANA_BIRTH_TERMS, int(limit * 0.5) + 10)
     try:
         s, titles = session(), []
