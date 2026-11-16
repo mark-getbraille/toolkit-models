@@ -42,7 +42,8 @@ jobs:
                    "lila_camera_traps", "gbif_species", "commons_breeds",
                    "textocr", "coco_text", "cord", "doclaynet", "plotqa", "loc_letters", "ptl_crossings",
                    "uroac_crossings", "open_images_street", "walkway_dhaka", "outdoor_navigation", "seoul_sidewalks",
-                   "dollar_street", "geode", "art_nudes", "anatomy"]
+                   "dollar_street", "geode", "art_nudes", "anatomy",
+                   "skin_lesion_photos", "isic_skin", "gi_endoscopy", "chest_xray", "case_report_figures", "vet_case_figures", "cdc_medical", "childhood_illness", "medical_collections", "birth_and_feeding"]
           words = [w for w in sys.argv[1].split(",") if w]
           keys = known if words in ([], ["all"]) else [w for w in words if w in known]
           print("keys=" + json.dumps(keys))
@@ -51,7 +52,7 @@ jobs:
   build:
     needs: plan
     runs-on: ubuntu-latest
-    timeout-minutes: 300
+    timeout-minutes: 350
     strategy:
       fail-fast: false
       max-parallel: 5
@@ -125,6 +126,16 @@ jobs:
             geode) limit=6000 ;;
             art_nudes) limit=4000 ;;
             anatomy) limit=1500 ;;
+            skin_lesion_photos) limit=2259 ;;
+            isic_skin) limit=12000 ;;
+            gi_endoscopy) limit=8000 ;;
+            chest_xray) limit=8000 ;;
+            case_report_figures) limit=10000 ;;
+            vet_case_figures) limit=3000 ;;
+            cdc_medical) limit=600 ;;
+            childhood_illness) limit=300 ;;
+            medical_collections) limit=300 ;;
+            birth_and_feeding) limit=1500 ;;
           esac
           python packs/build_packs.py "${{ matrix.key }}" --out build/packs --limit "$limit"
       - name: Upload it to the release
