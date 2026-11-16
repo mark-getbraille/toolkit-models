@@ -186,6 +186,8 @@ class VideoDialog(AccessibleDialog):
         self.videos = self.labelled(s, "&Videos:", lambda: wx.ListBox(self.panel, style=wx.LB_EXTENDED), 1)
         row = wx.BoxSizer(wx.HORIZONTAL)
         row.Add(self.button("&Add videos...", "Choose video files", self.on_add), 0, wx.ALL, 4)
+        row.Add(self.button("Add a &folder of videos...", "Choose a folder: every video in it and in its sub-folders "
+                            "is added", self.on_add_folder), 0, wx.ALL, 4)
         row.Add(self.button("&Remove the selected videos", "Take them off the list", self.on_remove), 0, wx.ALL, 4)
         s.Add(row, 0, wx.LEFT, 4)
         self.every = self.labelled(s, "At most one picture every how many &seconds:", lambda: wx.SpinCtrlDouble(
@@ -214,6 +216,24 @@ class VideoDialog(AccessibleDialog):
                     if path not in self.videos.GetItems():
                         self.videos.Append(path)
                 self.wizard.speak(f"Videos on the list: {self.videos.GetCount()}.", True)
+
+    def on_add_folder(self, _event):
+        """Choose a folder and put every video in it, and in its sub-folders, on the list."""
+        with wx.DirDialog(self, "Choose a folder of videos (its sub-folders are searched too)") as d:
+            if d.ShowModal() != wx.ID_OK:
+                return
+            folder = d.GetPath()
+        endings = tuple(e.lstrip("*").lower() for e in VIDEO_ENDINGS.split(";"))
+        found = 0
+        for base, dirs, files in os.walk(folder):
+            dirs[:] = sorted(x for x in dirs if not x.startswith("."))
+            for name in sorted(files):
+                path = os.path.join(base, name)
+                if name.lower().endswith(endings) and not name.startswith(".") and path not in self.videos.GetItems():
+                    self.videos.Append(path)
+                    found += 1
+        self.wizard.speak(f"{found} videos found in the folder and its sub-folders. Videos on the list: "
+                          f"{self.videos.GetCount()}.", True)
 
     def on_remove(self, _event):
         """Take the selected videos off the list."""
@@ -354,8 +374,9 @@ class DescribeWindow(AccessibleDialog):
         self.gauge = self.labelled(s, "Working:", lambda: wx.Gauge(self.panel, range=100))
 
         tools = wx.WrapSizer(wx.HORIZONTAL)
-        for b in (self.button("&Add pictures...", "Copy pictures or a folder of pictures into the workspace",
-                              self.on_add),
+        for b in (self.button("&Add pictures...", "Copy chosen pictures into the workspace", self.on_add),
+                  self.button("Add a folder of pictures (&G)...", "Copy every picture in a folder and its sub-folders "
+                              "into the workspace", self.on_add_folder),
                   self.button("Take stills from &videos...", "Turn videos into still pictures for describing",
                               self.on_videos),
                   self.button("&Export a package...", "Make a zip of pictures and descriptions for a friend",
@@ -763,16 +784,27 @@ class DescribeWindow(AccessibleDialog):
         """Copy pictures into the workspace (files, or a whole folder when none are chosen)."""
         if not self.ready() or not self.save_changes():
             return
-        with wx.FileDialog(self, "Choose pictures (Cancel to choose a whole folder instead)",
-                           wildcard=f"Pictures|{PICTURE_FILES}|All files|*.*",
+        with wx.FileDialog(self, "Choose pictures", wildcard=f"Pictures|{PICTURE_FILES}|All files|*.*",
                            style=wx.FD_OPEN | wx.FD_MULTIPLE | wx.FD_FILE_MUST_EXIST) as d:
-            paths = d.GetPaths() if d.ShowModal() == wx.ID_OK else []
-        if not paths:
-            with wx.DirDialog(self, "Choose a folder of pictures to add") as d:
-                if d.ShowModal() != wx.ID_OK:
-                    self.say("No pictures were added.")
-                    return
-                paths = [d.GetPath()]
+            if d.ShowModal() != wx.ID_OK:
+                self.say("No pictures were added.")
+                return
+            paths = d.GetPaths()
+        self.add_paths(paths)
+
+    def on_add_folder(self, _event):
+        """Copy every picture in a folder, and in its sub-folders, into the workspace."""
+        if not self.ready() or not self.save_changes():
+            return
+        with wx.DirDialog(self, "Choose a folder of pictures (its sub-folders are searched too)") as d:
+            if d.ShowModal() != wx.ID_OK:
+                self.say("No pictures were added.")
+                return
+            paths = [d.GetPath()]
+        self.add_paths(paths)
+
+    def add_paths(self, paths):
+        """Copy the pictures in paths (files, or folders searched with their sub-folders) into the workspace."""
         workspace, person = self.workspace, self.person.GetValue().strip()
         self.run_task("adding the pictures", lambda say: self.package.add_pictures(workspace, paths, person, say))
 

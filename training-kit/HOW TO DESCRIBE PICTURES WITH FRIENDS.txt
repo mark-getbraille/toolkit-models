@@ -37,11 +37,11 @@ To open the same workspace another day, the program opens the last one by itself
 "Workspace folder" (Alt+F) and press Alt+W (Open or make the workspace).
 
 STEP 3: put pictures in
-- Your own photos: press Alt+A (Add pictures) and choose pictures, or press Cancel to choose a whole folder
-  instead. The pictures are copied in, made at most 2,048 pixels on their longest side, and turned the right way
+- Your own photos: press Alt+A (Add pictures) and choose pictures, or press Alt+G (Add a folder of pictures) to
+  add every picture in a folder and all its sub-folders. The pictures are copied in, made at most 2,048 pixels on their longest side, and turned the right way
   up. A picture that is already in the workspace is skipped, even under another name. A picture with a .txt of the
   same name brings its description along.
-- Stills from your videos: press Alt+V (Take stills from videos). Add the video files (Alt+A), choose how often to
+- Stills from your videos: press Alt+V (Take stills from videos). Add the video files (Alt+A), or a whole folder of videos with its sub-folders (Alt+F), choose how often to
   take a picture (one every 2 seconds at most, by default), whether to use what is said in the video as
   descriptions, the spoken language, and whether to blur people's faces. Then press Alt+T (Start taking stills).
   The first time, the program installs its video and speech tools into the kit folder (the training folder chosen
@@ -107,7 +107,7 @@ Keyboard commands in the Describe pictures window
 - Alt+F Workspace folder, Alt+B Browse, Alt+W Open or make the workspace, Alt+M Your name, Alt+R Filter, Alt+U
   Pictures, Alt+Q Question, Alt+D Description.
 - Alt+C Mark as checked, Alt+N Needs another look, Alt+K Skip this picture, Alt+O Show the other version.
-- Alt+A Add pictures, Alt+V Take stills from videos, Alt+E Export a package, Alt+I Import a package, Alt+T Use
+- Alt+A Add pictures, Alt+G Add a folder of pictures, Alt+V Take stills from videos, Alt+E Export a package, Alt+I Import a package, Alt+T Use
   this workspace for training, Alt+H or F1 this guide, Alt+L or Escape close.
 - The Status field says what happened last; the Progress field says where you are, for example "Picture 14 of 120.
   63 described, 20 checked." Long tasks (adding pictures, packages, videos) are said as they go, and everything is
