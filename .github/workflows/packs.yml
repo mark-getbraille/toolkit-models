@@ -42,7 +42,7 @@ jobs:
                    "lila_camera_traps", "gbif_species", "commons_breeds",
                    "textocr", "coco_text", "cord", "doclaynet", "plotqa", "loc_letters", "ptl_crossings",
                    "uroac_crossings", "open_images_street", "walkway_dhaka", "outdoor_navigation", "seoul_sidewalks",
-                   "dollar_street", "geode"]
+                   "dollar_street", "geode", "art_nudes", "anatomy"]
           words = [w for w in sys.argv[1].split(",") if w]
           keys = known if words in ([], ["all"]) else [w for w in words if w in known]
           print("keys=" + json.dumps(keys))
@@ -123,6 +123,8 @@ jobs:
             seoul_sidewalks) limit=514 ;;
             dollar_street) limit=8000 ;;
             geode) limit=6000 ;;
+            art_nudes) limit=4000 ;;
+            anatomy) limit=1500 ;;
           esac
           python packs/build_packs.py "${{ matrix.key }}" --out build/packs --limit "$limit"
       - name: Upload it to the release

@@ -1,4 +1,3 @@
 # Changing this file on main starts .github/workflows/packs.yml for these pack keys (separated by commas), or all.
-# Full-size rebuild of every pack: the medicine, food, household, animal, reading, getting-around and world-life
-# packs included (the run before stopped on an import loop when build_packs.py was run as a program; fixed).
+# Full-size rebuild of every pack, now also with the art (non-sexual nudes) and anatomy packs.
 all

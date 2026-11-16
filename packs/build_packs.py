@@ -745,6 +745,10 @@ PACKS.update(TEXT_PACKS)
 from world_life_packs import LIFE_PACKS
 PACKS.update(LIFE_PACKS)
 
+# The human body: non-sexual nudes in museum art, and anatomy figures (the kit uses them only when chosen).
+from body_packs import BODY_PACKS
+PACKS.update(BODY_PACKS)
+
 
 def sha256_of(path):
     """The SHA-256 of a file."""
