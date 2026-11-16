@@ -2,7 +2,7 @@ Picture Model Training Kit
 
 What it does
 This kit teaches the Digital Accessibility Toolkit's picture model (the uncensored Qwen3-VL) to describe pictures
-the way a blind reader needs. It learns from about 40,000 pictures that people have described, from these
+the way a blind reader needs. It learns from about 44,000 pictures that people have described, from these
 collections:
 - DOCCI: photos, each described carefully in about 120 words.
 - VizWiz: photos taken by blind people, with one-sentence descriptions, and the questions blind people asked about
@@ -20,6 +20,9 @@ collections:
 - Canterbury Museum and Auckland Museum (New Zealand): their staff's descriptions of how objects and old photographs
   look.
 - Wellcome Collection (UK): prints, drawings and photographs, learned by their descriptive titles.
+- Ready-made packs, built on GitHub and downloaded from the kit's own repository: the Smithsonian museums'
+  accessibility descriptions and gallery labels, questions about everyday photos answered with the reason why,
+  Wikimedia Commons' best pictures with their captions, and Te Papa (Museum of New Zealand) records.
 - Wikipedia (only with "Start Training with Wikipedia"): pictures with the alt text Wikipedia's writers wrote for
   screen-reader users, from two collections (WIT and Concadia).
 It trains a small add-on to the model, then tests whether the model really got better. The model itself is not

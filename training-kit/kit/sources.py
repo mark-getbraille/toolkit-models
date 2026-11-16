@@ -717,6 +717,67 @@ def prepare_concadia(source, data_dir, work, cap):
     return rows
 
 
+PACKS_URL = "https://github.com/mark-getbraille/toolkit-models/releases/download/training-data/"
+
+
+def prepare_pack(source, data_dir, work, cap):
+    """A ready-made pack built on GitHub's machines and published in the kit's own repository (packs/build_packs.py):
+    its parts are downloaded, joined, checked against packs.json's SHA-256 and unpacked; a row with "url" instead of a
+    picture (COCO's photos, which may not be copied) is fetched from its own website."""
+    import hashlib
+    import requests
+    import zipfile
+    manifest = requests.get(PACKS_URL + "packs.json", timeout=60, headers={"User-Agent": USER_AGENT}).json()
+    if source.key not in manifest:
+        raise RuntimeError("this pack is not published yet")
+    info = manifest[source.key]
+    archive = os.path.join(work, f"{source.key}.zip")
+    if not (os.path.exists(archive) and os.path.getsize(archive) == info["size"]):
+        with open(archive + ".part", "wb") as joined:
+            for number, name in enumerate(info["files"], 1):
+                piece = os.path.join(work, name + ".download")
+                say(f"  Downloading the {source.key} pack, part {number} of {len(info['files'])}.")
+                download_file(PACKS_URL + name, piece)
+                with open(piece, "rb") as f:
+                    while True:
+                        block = f.read(1 << 20)
+                        if not block:
+                            break
+                        joined.write(block)
+                os.remove(piece)
+        os.replace(archive + ".part", archive)
+    digest = hashlib.sha256()
+    with open(archive, "rb") as f:
+        for block in iter(lambda: f.read(1 << 20), b""):
+            digest.update(block)
+    if digest.hexdigest() != info["sha256"]:
+        os.remove(archive)
+        raise RuntimeError("the pack's download was damaged; it is downloaded again the next time")
+    folder = os.path.join(data_dir, source.key)
+    os.makedirs(folder, exist_ok=True)
+    rows, to_fetch = [], []
+    with zipfile.ZipFile(archive) as z:
+        listed = [json.loads(line) for line in z.read("rows.jsonl").decode("utf-8").splitlines() if line.strip()]
+        random.Random(29).shuffle(listed)
+        for index, row in enumerate(listed[:int((cap + source.test) * 1.15)]):
+            base = {"question": row["question"], "answer": clean(row["answer"]), "split": ""}
+            if row.get("file"):
+                path = os.path.join(folder, os.path.basename(row["file"]))
+                if not os.path.exists(path):
+                    with open(path, "wb") as out:
+                        out.write(z.read(row["file"]))
+                rows.append(dict(base, picture=path))
+            elif row.get("url"):
+                to_fetch.append((f"{source.key}-{index}.jpg", row["url"], base))
+        with open(os.path.join(folder, "CREDITS.txt"), "wb") as out:
+            out.write(z.read("CREDITS.txt"))
+    os.remove(archive)
+    if to_fetch:
+        say(f"  Fetching {len(to_fetch)} pictures for the {source.key} pack from their own website.")
+        rows += fetch_pictures(to_fetch, folder)
+    return rows
+
+
 SOURCES = [
     Source("docci", "DOCCI: photos described in about 120 words",
            "CC BY 4.0, descriptions and photos (google.github.io/docci)",
@@ -724,7 +785,7 @@ SOURCES = [
            "7.6 GB"),
     Source("vizwiz_captions", "VizWiz Captions: photos taken by blind people, one sentence each",
            "CC BY 4.0 (vizwiz.org)",
-           "VizWiz-Captions (Gurari et al., 2020), CC BY 4.0, https://vizwiz.org", "permissive", 3000, 10,
+           "VizWiz-Captions (Gurari et al., 2020), CC BY 4.0, https://vizwiz.org", "permissive", 2500, 10,
            prepare_vizwiz_captions, "3.5 GB"),
     Source("vizwiz_vqa", "VizWiz questions: what blind people asked about their own photos",
            "CC BY 4.0 (vizwiz.org)",
@@ -733,7 +794,7 @@ SOURCES = [
     Source("textcaps", "TextCaps: descriptions that read out the text in the picture",
            "CC BY 4.0 descriptions (textvqa.org); Open Images photos, CC BY 2.0",
            "TextCaps (Sidorov et al., 2020), CC BY 4.0, https://textvqa.org/textcaps; photos from Open Images",
-           "permissive", 2500, 10, prepare_textcaps, "up to 2 GB"),
+           "permissive", 2000, 10, prepare_textcaps, "up to 2 GB"),
     Source("textvqa", "TextVQA: questions about the text in photos",
            "CC BY 4.0 (textvqa.org); Open Images photos, CC BY 2.0",
            "TextVQA (Singh et al., 2019), CC BY 4.0, https://textvqa.org; photos from Open Images", "permissive",
@@ -741,7 +802,7 @@ SOURCES = [
     Source("localized_narratives", "Localized Narratives: photos described aloud by people",
            "CC BY 4.0 descriptions (google.github.io/localized-narratives); Open Images photos, CC BY 2.0",
            "Localized Narratives (Pont-Tuset et al., 2020), CC BY 4.0; photos from Open Images, CC BY 2.0",
-           "permissive", 3000, 10, prepare_localized_narratives, "about 1 GB"),
+           "permissive", 2500, 10, prepare_localized_narratives, "about 1 GB"),
     Source("cooper_hewitt", "Cooper Hewitt, Smithsonian Design Museum: descriptions written for accessibility",
            "CC0, words and pictures (Smithsonian Open Access)",
            "Cooper Hewitt, Smithsonian Design Museum, CC0 (via biglam/cooper-hewitt-alt-text)", "permissive", 2500,
@@ -764,11 +825,11 @@ SOURCES = [
     Source("coco", "COCO: everyday photos with one-sentence descriptions",
            "CC BY 4.0 descriptions (cocodataset.org); only photos under CC BY 2.0 or no known copyright",
            "COCO Captions (Chen et al., 2015), CC BY 4.0, https://cocodataset.org; Flickr photos under CC BY 2.0 or "
-           "no known copyright restrictions", "permissive", 3000, 10, prepare_coco, "about 1 GB"),
+           "no known copyright restrictions", "permissive", 2000, 10, prepare_coco, "about 1 GB"),
     Source("crossmodal", "Crossmodal-3600: photos from around the world, carefully described",
            "CC BY 4.0 descriptions; Open Images photos, CC BY 2.0 (google.github.io/crossmodal-3600)",
            "Crossmodal-3600 (Thapliyal et al., 2022), CC BY 4.0, https://google.github.io/crossmodal-3600/",
-           "permissive", 2500, 10, prepare_crossmodal, "316 MB"),
+           "permissive", 2000, 10, prepare_crossmodal, "316 MB"),
     Source("canterbury", "Canterbury Museum, New Zealand: how each object and photograph looks",
            "Each record's own licence: only those marked for commercial use and changes (DigitalNZ)",
            "Canterbury Museum, Christchurch, via DigitalNZ, https://digitalnz.org", "permissive", 2000, 10,
@@ -781,6 +842,22 @@ SOURCES = [
            "Public domain, CC0 or CC BY pictures only; catalogue text CC0 (wellcomecollection.org)",
            "Wellcome Collection, London, https://wellcomecollection.org", "permissive", 1000, 5, prepare_wellcome,
            "about 200 MB"),
+    Source("smithsonian", "Smithsonian museums: accessibility descriptions and gallery labels (ready-made pack)",
+           "CC0, words and pictures (Smithsonian Open Access)",
+           "Smithsonian Institution Open Access, CC0, https://www.si.edu/openaccess", "permissive", 2000, 10,
+           prepare_pack, "about 300 MB"),
+    Source("coco_questions", "Questions about everyday photos, answered with the reason (ready-made pack)",
+           "VQAv2 CC BY 4.0 and A-OKVQA Apache-2.0; COCO photos under CC BY 2.0 or no known copyright only",
+           "VQAv2 (Goyal et al., 2017), CC BY 4.0; A-OKVQA (Schwenk et al., 2022), Apache-2.0; photos from COCO",
+           "permissive", 2500, 10, prepare_pack, "about 400 MB"),
+    Source("commons", "Wikimedia Commons: featured and quality pictures with their captions (ready-made pack)",
+           "Captions CC0; pictures CC0, public domain or CC BY (each credited in the pack's CREDITS.txt)",
+           "Wikimedia Commons contributors (captions CC0; pictures credited in CREDITS.txt), "
+           "https://commons.wikimedia.org", "permissive", 2000, 10, prepare_pack, "about 300 MB"),
+    Source("tepapa", "Te Papa, Museum of New Zealand: object and photograph records (ready-made pack)",
+           "Record text CC BY 4.0; pictures CC BY 4.0 or no known copyright (credited in CREDITS.txt)",
+           "Museum of New Zealand Te Papa Tongarewa, CC BY 4.0, https://collections.tepapa.govt.nz", "permissive",
+           1000, 5, prepare_pack, "about 150 MB"),
     Source("concadia", "Concadia: Wikipedia pictures with their alt text",
            "CC BY-SA 4.0 (Wikipedia's text); pictures under their own Wikimedia Commons licences",
            "Concadia (Kreiss et al., 2022) from Wikipedia, CC BY-SA 4.0, https://github.com/elisakreiss/concadia",

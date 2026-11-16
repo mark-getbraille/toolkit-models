@@ -1,0 +1,106 @@
+# Build the training-data packs of the Picture Model Training Kit (packs/build_packs.py) and publish them in the
+# release "training-data", with packs.json listing each pack's parts, size and SHA-256 (the kit reads it).
+# Runs by hand (Actions > Build training packs > Run workflow) or when packs/request.txt changes on main (its text:
+# the pack keys, separated by commas, or all).
+name: Build training packs
+
+on:
+  push:
+    branches: ["main"]
+    paths: ["packs/request.txt"]
+  workflow_dispatch:
+    inputs:
+      keys:
+        description: "Pack keys, separated by commas, or all"
+        required: true
+        default: "all"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: training-packs
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      keys: ${{ steps.keys.outputs.keys }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: keys
+        run: |
+          keys='${{ inputs.keys }}'
+          if [ -z "$keys" ]; then keys=$(grep -v '^#' packs/request.txt | tr -d '[:space:]'); fi
+          python3 - "$keys" >> "$GITHUB_OUTPUT" <<'PY'
+          import json, sys
+          known = ["smithsonian", "coco_questions", "commons", "tepapa"]
+          words = [w for w in sys.argv[1].split(",") if w]
+          keys = known if words in ([], ["all"]) else [w for w in words if w in known]
+          print("keys=" + json.dumps(keys))
+          PY
+
+  build:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        key: ${{ fromJSON(needs.plan.outputs.keys) }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      HF_HUB_DISABLE_TELEMETRY: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install what the builder needs
+        run: python -m pip install requests pillow pyarrow "huggingface_hub>=0.34"
+      - name: Build the pack
+        run: |
+          case "${{ matrix.key }}" in
+            smithsonian) limit=6000 ;;
+            coco_questions) limit=8000 ;;
+            commons) limit=5000 ;;
+            tepapa) limit=3000 ;;
+          esac
+          python packs/build_packs.py "${{ matrix.key }}" --out build/packs --limit "$limit"
+      - name: Upload it to the release
+        run: |
+          gh release view training-data > /dev/null 2>&1 || gh release create training-data \
+            --title "Training data packs" \
+            --notes "Picture packs for the Picture Model Training Kit (packs/build_packs.py); each zip has CREDITS.txt."
+          files=$(python -c "import json;print(' '.join(json.load(open('build/packs/manifest-${{ matrix.key }}.json'))['files']))")
+          for f in $files manifest-${{ matrix.key }}.json; do
+            for attempt in 1 2 3 4; do
+              gh release upload training-data "build/packs/$f" --clobber && break
+              sleep 30
+            done
+          done
+
+  manifest:
+    needs: build
+    if: always()
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Merge the packs' manifests into packs.json
+        run: |
+          mkdir -p merged && cd merged
+          gh release download training-data -p 'manifest-*.json' --clobber || true
+          python3 - <<'PY'
+          import glob, json
+          packs = {}
+          for path in sorted(glob.glob("manifest-*.json")):
+              data = json.load(open(path))
+              packs[data["key"]] = data
+          json.dump(packs, open("packs.json", "w"), indent=1)
+          print(json.dumps(packs, indent=1))
+          PY
+          gh release upload training-data packs.json --clobber
