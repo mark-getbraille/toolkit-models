@@ -1,0 +1,14 @@
+# Extra packages for kit\video_frames.py (videos into training pictures), installed ON TOP of requirements.txt.
+# Pinned for Windows, Python 3.12; resolved together with requirements.txt (uv pip compile, windows platform).
+# Licences: faster-whisper MIT; ctranslate2 MIT; av (PyAV) BSD-3-Clause, its wheels carry FFmpeg as separate
+# libraries under LGPL-3.0-or-later; onnxruntime MIT; opencv-python-headless Apache-2.0 (its own FFmpeg is LGPL);
+# flatbuffers Apache-2.0; protobuf BSD-3-Clause.
+# Downloaded once at run time (not packages): the speech model faster-whisper-large-v3-turbo (MIT, from OpenAI's
+# Whisper) and OpenCV's YuNet face finder (MIT), each pinned in video_frames.py.
+av==19.0.2
+ctranslate2==4.8.4
+faster-whisper==1.2.1
+flatbuffers==25.12.19
+onnxruntime==1.31.1
+opencv-python-headless==4.14.0.94
+protobuf==7.36.2

@@ -1,0 +1,149 @@
+How to turn videos into training pictures
+
+Every step below starts with the word STEP, so you can find the next one with your screen reader's find command.
+
+What this does
+You film things while you talk about them, for example walking round a grocery store with Meta smart glasses
+saying "these are Granny Smith apples, a dollar twenty-nine a pound". The kit takes sharp still pictures out of the
+video and gives each one the words you said at that moment. The pictures and their descriptions go into a folder
+that you can then choose as "your own pictures" for training. Your speech is turned into text on this computer;
+nothing is sent anywhere.
+
+The kit can also take still pictures from open-licence videos on the web, and from audio-described films you
+already have. Those are explained further down.
+
+PART 1: YOUR OWN VIDEOS
+
+STEP 1: Film while you talk
+- Say what is in front of you, in a normal voice, as you look at it: "this is the oat milk, the Oatly one",
+  "bananas, sixty-nine cents a pound". Say the name on the label, the size and the price if you know them.
+- Hold still for a second or two while you look at each thing, then speak. The kit keeps the sharpest picture
+  near your words, and a picture taken while you turn your head is usually blurred.
+- The kit uses what you say at the moment of the picture, or what you start saying up to 3 seconds after it. So
+  say the description while you are still looking at the thing, not after you have moved on.
+- Keep each video short (a few minutes). Quiet places work best; music and announcements make the speech harder
+  to hear.
+- Phone videos work too.
+
+STEP 2: Get the videos onto the computer
+- With Meta smart glasses, the videos are brought into the Meta AI app on your phone (the app used to be called
+  Meta View). Open the Meta AI app, go to your glasses, and if there is an Import button next to Gallery, press it.
+  On most phones the videos are imported by themselves (auto-import) and saved into the phone's own photos and
+  videos (the Camera Roll on an iPhone, Gallery or Photos on Android). Clips that the glasses filmed by themselves
+  (auto-capture) stay in the app until you save them to the phone yourself.
+  Careful: deleting a video in the Meta AI app also deletes it from the phone's photos, and the other way round.
+- Copy the videos from the phone to the computer: connect the phone with its USB cable and copy them from the
+  phone's DCIM folder in File Explorer, or use OneDrive (or iCloud for Windows) to upload them from the phone and
+  then copy them from the OneDrive folder on the computer.
+- Put the videos in one folder, for example D:\Shop Videos.
+
+STEP 3: Make the pictures
+- In the program (where it offers videos), choose the folder of videos and a folder for the pictures. Or, in a
+  Command Prompt in the kit folder:
+      env\Scripts\python.exe kit\video_frames.py "D:\Shop Videos" --out "D:\Shop Pictures" --blur-faces
+  (The first time, the extra tools are installed with:
+      tools\uv.exe pip install --python env\Scripts\python.exe -r kit\requirements-video.txt
+  and the speech recogniser, about 1.6 GB, is downloaded once.)
+- Choices:
+  --every 2       at most one picture every 2 seconds (the default).
+  --max 50        at most 50 pictures from each video.
+  --blur-faces    blur the faces of people in the pictures. Use it whenever other shoppers may be in a video.
+  --language fr   the language you speak, if it is not English.
+  --no-speech     do not use your speech (every picture then needs a description written by hand).
+  --draft-descriptions   let the computer write drafts for pictures with nothing said near them (see STEP 5).
+- It says what it does for each video and, at the end, how many pictures it kept, how many have your words, how
+  many do not, and how many faces it blurred.
+- A video that was done before is skipped, so descriptions you have corrected are never written over. To make a
+  video's pictures again, delete its pictures first.
+
+STEP 4: Check and fix the descriptions
+- Each picture has a text file of the same name: Shop_01-12.5.jpg has Shop_01-12.5.txt. The name says where in the
+  video the picture is: 1 minute 12.5 seconds.
+- Open the .txt files in Notepad and read them. The speech recogniser can mishear ("the angry apples" for "these
+  are green apples") and names of products are often written in small letters. Correct anything wrong and save.
+  If a picture does not show what its words say (you had already turned away), change the words or delete both
+  files.
+- transcript.txt has everything that was heard in each video, with the times, if you want to look something up.
+- "NO DESCRIPTION YET.txt" lists the pictures with nothing said near them. Those are not used for training until
+  each has a .txt file. Write one in Notepad (same name as the picture, ending .txt), or delete the picture.
+
+STEP 5: Drafts (only if you chose --draft-descriptions)
+- For pictures with nothing said near them, the kit's own picture model writes a DRAFT into a file ending
+  .draft.txt, for example Shop_01-12.5.draft.txt. Drafts are not used for training.
+- A draft must be checked by a person who can see the picture: a sighted helper, or the describers on the Picture
+  Describers website. When it is right (corrected if needed), rename it from .draft.txt to .txt.
+- Why: training the model on its own guesses teaches it nothing new, and teaches it its own mistakes. Only words
+  checked by a person make it better.
+- Drafts need the NVIDIA graphics card, and the first time the picture model is downloaded (about 9 GB) unless the
+  kit has it already.
+
+STEP 6: Train
+- Choose the pictures folder as your own pictures in the program (or train.py --own "D:\Shop Pictures").
+
+Privacy and personal use
+- Do not film people without asking them. In shops other people will be in the picture: use --blur-faces. It finds
+  most faces seen from the front; faces seen from the side or half hidden can be missed, so a sighted helper should
+  check pictures with people in them.
+- Do not film card numbers, PIN pads, letters or screens with other people's details.
+- Pictures from your own videos are for training your own personal model. Do not share them, or a model trained on
+  them, unless everyone in them has agreed and you have the right to share what they show.
+
+PART 2: OPEN-LICENCE VIDEOS FROM THE WEB
+
+STEP 1: Choose videos
+- archive.org: the address of a video (https://archive.org/details/...) or just its name, for example
+  AboutBan1935. The Prelinger Archives collection has thousands of public domain films.
+- Wikimedia Commons: the address of a video file page (https://commons.wikimedia.org/wiki/File:....webm).
+- NASA: the address of a video on images.nasa.gov (https://images.nasa.gov/details/...).
+- Or let the kit search archive.org: --from-search "grocery store" --collection prelinger --max-videos 5.
+
+STEP 2: The licence is checked for you
+- Only public domain, CC0 and CC BY videos are used. Videos that do not allow commercial use (NC) or changes (ND)
+  are refused, and so is a video whose licence is not known, with the reason said.
+- Share-alike videos (CC BY-SA) are used only when you add --share-alike. Their stills are marked SHARE-ALIKE in
+  CREDITS.txt, because anything made from them must be shared under the same licence.
+
+STEP 3: Make the stills
+- For example:
+      env\Scripts\python.exe kit\video_frames.py https://archive.org/details/AboutBan1935 --out "D:\Web Stills" --max 20
+- The video is not downloaded: the kit jumps to evenly spaced moments (20 from each video unless you give --max)
+  and reads only a second around each one.
+- CREDITS.txt lists each video's title, maker, licence and address, and the time of every still.
+- These stills get no description, because a film's narration rarely says what is in the picture. They are listed
+  in stills-for-describers.jsonl, with their credits, to be described by people on the Picture Describers website.
+- --speech writes the narration near each still into a file ending .narration.txt, only for reference. Never
+  rename it to .txt without checking that it really describes the picture. --speech reads the whole sound track,
+  so the whole video is fetched.
+- Keep web stills in a different folder from your own pictures.
+
+PART 3: AUDIO-DESCRIBED FILMS YOU ALREADY HAVE (personal use only)
+
+Audio description says what is on the screen in the pauses between the dialogue. Those sentences make good picture
+descriptions. The kit only works with video files you already have on this computer: it does not download from
+streaming services and does not unlock protected videos.
+
+STEP 1: Find out whether a video has a description track
+- Run the kit with --described: before anything else it lists every sound track of the video with its title and
+  language, and says which one is marked as audio description. The same list is in the summary at the end.
+
+STEP 2: Choose how the description is given (one of three)
+- a) The video has a description sound track. The kit finds it by itself when it is marked (titles such as "Audio
+  Description" or "Descriptive", or the "for visually impaired" mark). If it is not marked, choose it by its
+  number from the list: --ad-track 2.
+      env\Scripts\python.exe kit\video_frames.py "D:\Films\Film.mkv" --out "D:\Film Pictures" --described
+- b) The description is a separate sound file: --ad-audio "D:\Films\Film description.mp3".
+- c) The description is a text file (WebVTT .vtt or SubRip .srt subtitles with the description lines):
+  --ad-text "D:\Films\Film descriptions.vtt". No speech recognition is needed then.
+- When the description track is the whole film sound plus the narrator, the kit turns both tracks into text and
+  keeps only the narrator's lines (the words that are not in the plain soundtrack at the same moment).
+
+STEP 3: Check the result
+- For each narrator line, the sharpest picture while the line is spoken is kept. Lines of fewer than 3 words and
+  lines that are only a name are left out; pieces of one sentence are joined.
+- Each picture's description is in a text file of the same name (the picture ending .jpg, its description ending
+  .txt). Open it in Notepad to check and correct it. question.txt holds the question for these pictures,
+  "Describe what is happening in this picture." Keep described films in their own folder, apart from your own
+  videos (whose question is "What is this?").
+- PERSONAL-USE.txt is written in the folder: these pictures and descriptions are for training your own personal
+  model only. Do not share the pictures or descriptions, and do not publish a model trained on them, unless you
+  have the rights.
