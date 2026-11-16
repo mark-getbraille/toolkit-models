@@ -1,3 +1,4 @@
 # Changing this file on main starts .github/workflows/packs.yml for these pack keys (separated by commas), or all.
-# Full-size rebuild with the worldwide packs, eggs, beef and English translations (Swedish, Dutch, Chinese).
+# Full-size rebuild of every pack, now with the medicine packs (Taiwan pills, blister packs, MEDISEG) and the food
+# packs (Open Images food, Grocery Store, fish eyes, Commons food).
 all
