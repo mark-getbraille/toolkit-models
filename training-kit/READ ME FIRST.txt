@@ -1,5 +1,10 @@
 Picture Model Training Kit
 
+The easy way
+Download Picture-Model-Training.exe from the same page as this kit and press Enter on it: a wizard asks for the
+folder and how much to train, prepares the computer, installs everything and trains, saying each step through
+your screen reader. The rest of this file explains the same steps done with the .cmd files.
+
 What it does
 This kit teaches the Digital Accessibility Toolkit's picture model (the uncensored Qwen3-VL) to describe pictures
 the way a blind reader needs. It learns from about 44,000 pictures that people have described, from these
