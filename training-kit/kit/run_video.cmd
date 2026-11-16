@@ -3,7 +3,9 @@ rem Picture Model Training Kit: take still pictures out of videos (kit\video_fra
 rem Like run.cmd: downloads the helper uv once and makes the kit's own Python 3.12 with kit\requirements.txt (the
 rem same environment the training uses, in this folder only); then also installs kit\requirements-video.txt (the
 rem video and speech tools, when that file is there) once, and runs kit\video_frames.py with the arguments given:
-rem   call kit\run_video.cmd "D:\Videos\Shop.mp4" --out "D:\Describing" --every 2 --blur-faces
+rem   call kit\run_video.cmd "D:\Videos\Shop.mp4" --out "D:\Describing" --every 2 --blur-faces --overlays crop
+rem (--overlays crop or fill removes burned-in date stamps and station logos; the Describe pictures window adds it
+rem when "Date stamps and logos" is not "Leave them".)
 rem The program's "Describe pictures" window starts this file without a window, writes every line it says into
 rem the "Picture Model Training logs" folder on the desktop, and sets KIT_NO_PAUSE so it does not wait for a key.
 rem No NVIDIA card is needed: the speech is turned into text on the graphics card when there is one, otherwise on

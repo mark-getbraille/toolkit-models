@@ -37,9 +37,19 @@ There are three ways to use it.
    picture." PERSONAL-USE.txt is written beside them. Nothing is downloaded from streaming services and nothing is
    unlocked: only video files you already have.
 
+Burned-in overlays, in all three (--overlays crop or fill; the default, keep, changes nothing): a camcorder's date
+and time stamp, a TV station's logo or a fixed ticker is found by what stays the same while the picture behind it
+changes, in the pictures already looked at (no AI; see find_overlays()). Only marks near an edge or corner are
+taken, and only when most of the picture changes over the video (a still camera: nothing is looked for, and that is
+said). They are cropped off (the largest part of the picture around its middle without them; filled in when that would
+lose more than a fifth of the picture) or filled in from around them (OpenCV's inpainting). --overlay-box x,y,w,h (in
+percent) adds a box by hand. What was found and done for each video is said and written into OVERLAYS.txt. Faces
+are blurred after, in the picture that is saved.
+
 Command line:
     python video_frames.py VIDEO_OR_FOLDER_OR_ADDRESS ... --out FOLDER [--every SECONDS] [--max N] [--no-speech]
         [--language en] [--blur-faces] [--draft-descriptions] [--speech] [--share-alike]
+        [--overlays keep|crop|fill [--overlay-box X,Y,W,H ...]]
         [--from-search "words" --collection prelinger --max-videos N]
         [--described [--ad-track N | --ad-audio FILE | --ad-text FILE]]
 
@@ -117,6 +127,26 @@ WHISPER_DEFAULT = "large-v3-turbo"
 YUNET = ("opencv/face_detection_yunet", "3cc26e7f1014a5ee5d74a42acee58bafc9d0a310",
          "face_detection_yunet_2023mar.onnx", "8f2383e4dd3cfbb4553ea8718107fc0423210dc964f9f4280604804ed2552fa4")
 
+# Burned-in overlays (camcorder date stamps, station logos, fixed tickers): found by what stays the same while the
+# picture behind it changes, in the pictures already looked at (no AI). See find_overlays().
+OVERLAY_CHOICES = ("keep", "crop", "fill")
+OVERLAY_SIDE = 256         # the size (long side, pixels) the pictures are compared at
+OVERLAY_LEAST = 12         # fewer pictures than this: too short to tell what stays fixed
+OVERLAY_MOVING_STD = 14.0  # a spot whose colour varies more than this (0 to 255) over the video has changed ...
+OVERLAY_MOVING = 0.6       # ... and at least this share of the picture must have changed (a moving camera)
+OVERLAY_STILL_STD = 9.0    # a spot whose colour varies less than this stays the same
+OVERLAY_EDGE = 24.0        # an edge: brightness changing by this much (0 to 255) over 2 pixels
+OVERLAY_EDGE_STILL = 0.6   # a spot that stays the same and is an edge in this share of the pictures is an overlay
+OVERLAY_EDGE_ALWAYS = 0.92 # ... and any spot that is an edge in this share of the pictures (see-through logos)
+OVERLAY_JOIN = 0.035       # pieces closer than this share of the picture are joined (the digits of a date stamp)
+OVERLAY_NEAR_EDGE = 0.15   # an overlay lies within this share of the picture from an edge
+OVERLAY_EACH = 0.08        # an overlay takes at most this share of the picture ...
+OVERLAY_ALL = 0.15         # ... and all of them together at most this
+OVERLAY_LEAST_SHARE = 0.0005  # smaller marks are noise
+OVERLAY_PAD = 0.012        # each overlay box is made this share of the picture bigger on every side
+CROP_MOST_LOST = 0.20      # cropping that loses more than this share of the picture fills in instead
+CROP_ASPECT = 1.34         # a cropped still's shape may differ from the video's by at most this factor
+
 # File names in the output folder.
 NO_DESCRIPTION = "NO DESCRIPTION YET.txt"
 TRANSCRIPT = "transcript.txt"
@@ -126,6 +156,7 @@ CAPTIONS = "captions.csv"
 QUESTION_FILE = "question.txt"     # the question for a folder's pictures (own_data.py reads it)
 OWN_QUESTION = "What is this?"     # your own narrated videos: what you said is the answer to this
 PERSONAL_FILE = "PERSONAL-USE.txt"
+OVERLAYS_FILE = "OVERLAYS.txt"     # what was found and done about date stamps and logos, one line per video
 
 
 class VideoProblem(Exception):
@@ -353,9 +384,10 @@ def picture_of(frame):
     return img.convert("RGB")
 
 
-def scan(source):
+def scan(source, watch=None):
     """Look at about SAMPLE_RATE pictures a second of a whole video file: [{"t", "pts", "sharp", "bright",
-    "hash"}] and the video's length in seconds."""
+    "hash"}] and the video's length in seconds. Each picture looked at is also given to watch (an OverlayWatch,
+    which looks for date stamps and logos), when given."""
     samples = []
     with open_media(source) as container:
         stream = video_stream(container, source)
@@ -369,6 +401,8 @@ def scan(source):
                 continue
             due = math.floor(t * SAMPLE_RATE + 1e-6) / SAMPLE_RATE + 1 / SAMPLE_RATE
             samples.append(dict(score(gray_of(frame)), t=t, pts=frame.pts))
+            if watch is not None:
+                watch.add(frame)
         length = float(container.duration / 1e6) if container.duration else (samples[-1]["t"] if samples else 0)
     return samples, length
 
@@ -433,9 +467,10 @@ def choose(samples, every):
     return kept, counts
 
 
-def spot(container, stream, start, point):
+def spot(container, stream, start, point, watch=None):
     """The sharpest picture that is not dark in about SPOT_LENGTH seconds from point (seconds) of an open video:
-    (scores with "t", the frame), or (None, why: "dark" or "blurry")."""
+    (scores with "t", the frame), or (None, why: "dark" or "blurry"). The pictures looked at also go to watch
+    (an OverlayWatch), when given."""
     try:
         container.seek(int((point + start) / stream.time_base), stream=stream, backward=True)
     except Exception:  # noqa: BLE001 - a spot that cannot be reached is left out
@@ -451,6 +486,8 @@ def spot(container, stream, start, point):
             break
         due = t + 1 / SAMPLE_RATE
         values = dict(score(gray_of(frame)), t=t)
+        if watch is not None:
+            watch.add(frame)
         if values["bright"] < DARK:
             continue
         any_light = True
@@ -463,11 +500,11 @@ def spot(container, stream, start, point):
     return best, best_frame
 
 
-def spots(source, points, step):
+def spots(source, points, step, watch=None):
     """Read an online video only around the given times (seconds): at each one, jump there, look at about
     SPOT_LENGTH seconds of it and keep the sharpest picture that is not dark or blurry and does not look like one
     kept before; when there is none, try once more a third of step later. Returns ([{"t", "sharp", "hash",
-    "picture", "span"}], counts of what was left out, length in seconds)."""
+    "picture", "span"}], counts of what was left out, length in seconds). watch: see spot()."""
     kept, counts = [], {"dark": 0, "blurry": 0, "same": 0}
     with open_media(source) as container:
         stream = video_stream(container, source)
@@ -478,7 +515,7 @@ def spots(source, points, step):
             for when in (point, point + step / 3):
                 if length and when > length - 0.5:
                     break
-                best, frame = spot(container, stream, start, when)
+                best, frame = spot(container, stream, start, when, watch)
                 if best is None:
                     why = frame
                     continue
@@ -821,8 +858,290 @@ class FaceBlur:
         return Image.fromarray(bgr[:, :, ::-1].copy())
 
 
-def save_picture(img, path, faces=None):
-    """Save a picture as a JPEG, with faces blurred first when faces (a FaceBlur) is given."""
+# ----------------------------------------------------------------- date stamps, logos and other burned-in overlays
+
+class OverlayWatch:
+    """Keeps running totals over the pictures of one video, at a small size (OVERLAY_SIDE), to find what stays
+    fixed while the picture behind it changes: per spot, the sum and sum of squares of its colour (for how much it
+    varies) and how often it is an edge. Only totals are kept, so long videos take no more memory."""
+
+    def __init__(self):
+        """Nothing seen yet."""
+        self.count, self.turn = 0, 0
+        self.sum = self.squares = self.edges = None
+
+    def add(self, frame):
+        """Add one video frame (PyAV) to the totals."""
+        import numpy as np
+        w, h = frame.width, frame.height
+        scale = min(1.0, OVERLAY_SIDE / max(w, h))
+        w, h = max(8, int(w * scale) // 2 * 2), max(8, int(h * scale) // 2 * 2)
+        rgb = frame.to_ndarray(format="rgb24", width=w, height=h).astype(np.float32)
+        if self.sum is None or self.sum.shape != rgb.shape:
+            if self.sum is not None:                     # the size changed in the middle: start again
+                self.count = 0
+            self.sum = np.zeros(rgb.shape, np.float64)
+            self.squares = np.zeros(rgb.shape, np.float64)
+            self.edges = np.zeros(rgb.shape[:2], np.int32)
+        self.turn = (frame.rotation or 0) % 360
+        self.sum += rgb
+        self.squares += rgb * rgb
+        self.edges += edge_map(rgb.mean(axis=2)) > OVERLAY_EDGE
+        self.count += 1
+
+
+def edge_map(gray):
+    """How strong the edge is at each spot of a grey picture (2-D array): the change in brightness across 2 pixels,
+    across and down, added."""
+    import numpy as np
+    across, down = np.zeros_like(gray), np.zeros_like(gray)
+    across[:, 1:-1] = np.abs(gray[:, 2:] - gray[:, :-2])
+    down[1:-1, :] = np.abs(gray[2:, :] - gray[:-2, :])
+    return across + down
+
+
+def find_overlays(watch):
+    """The burned-in overlays of a video from its OverlayWatch: (boxes, note). boxes: [(x0, y0, x1, y1)] as shares
+    of the upright picture (0 to 1); note: why none were looked for, in plain words, or "".
+
+    How: a spot is part of an overlay when it stays the same over the video (its colour hardly varies) and is an
+    edge in most pictures (the outline of letters and logos), or when it is an edge in nearly every picture
+    (see-through logos). This only means something when the rest of the picture changes, so when most of the
+    picture stays the same (a still camera) nothing is looked for. The spots are joined into marks (a date stamp's
+    changing seconds join its fixed digits); only compact marks near an edge or corner of the picture are kept,
+    each at most OVERLAY_EACH of the picture and all at most OVERLAY_ALL (the smaller ones first)."""
+    import cv2
+    import numpy as np
+    if watch is None or watch.count < OVERLAY_LEAST:
+        return [], "the video is too short to tell what stays fixed, so none were looked for"
+    n = watch.count
+    mean = watch.sum / n
+    spread_ = np.sqrt(np.maximum(watch.squares / n - mean * mean, 0)).max(axis=2)
+    edges = watch.edges / n
+    turns = watch.turn // 90
+    if turns:                                            # the same turn picture_of() gives the stills
+        spread_, edges = np.rot90(spread_, turns), np.rot90(edges, turns)
+    moving = float((spread_ > OVERLAY_MOVING_STD).mean())
+    if moving < OVERLAY_MOVING:
+        return [], (f"the picture hardly changes (the camera barely moved: only {round(moving * 100)}% of the "
+                    "picture changed), so a date stamp or logo cannot be told apart from the scene; none were "
+                    "looked for")
+    marks = ((spread_ < OVERLAY_STILL_STD) & (edges >= OVERLAY_EDGE_STILL)) | (edges >= OVERLAY_EDGE_ALWAYS)
+    marks = np.ascontiguousarray(marks.astype(np.uint8))
+    h, w = marks.shape
+    size = max(3, round(min(w, h) * OVERLAY_JOIN)) | 1
+    joined = cv2.morphologyEx(marks, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (size, size)))
+    count, labels, stats, _ = cv2.connectedComponentsWithStats(joined, connectivity=8)
+    found = []
+    for label in range(1, count):
+        x, y, bw, bh, _area = (int(v) for v in stats[label])
+        share = bw * bh / (w * h)
+        seeds = int(marks[labels == label].sum())
+        if share < OVERLAY_LEAST_SHARE or share > OVERLAY_EACH or min(bw, bh) < 3 or seeds < 6:
+            continue
+        gap = min(x / w, y / h, (w - x - bw) / w, (h - y - bh) / h)
+        if gap > OVERLAY_NEAR_EDGE:
+            continue
+        found.append((share, (x / w, y / h, (x + bw) / w, (y + bh) / h)))
+    boxes, total = [], 0.0
+    for share, box in sorted(found):
+        if total + share > OVERLAY_ALL:
+            break
+        total += share
+        boxes.append(pad_box(box, OVERLAY_PAD + 1 / min(w, h)))
+    return boxes, ""
+
+
+def pad_box(box, pad):
+    """A box (shares of the picture) made bigger by pad on every side, inside the picture."""
+    x0, y0, x1, y1 = box
+    return (max(0.0, x0 - pad), max(0.0, y0 - pad), min(1.0, x1 + pad), min(1.0, y1 + pad))
+
+
+def overlay_box(text):
+    """A box given on the command line as "x,y,w,h" in percent of the picture (from the top left corner) ->
+    (x0, y0, x1, y1) as shares; ValueError when it is not one."""
+    parts = [float(p) for p in str(text).replace("%", "").split(",")]
+    if len(parts) != 4:
+        raise ValueError("give four numbers: x,y,width,height in percent")
+    x, y, bw, bh = parts
+    if min(parts) < 0 or bw <= 0 or bh <= 0 or x + bw > 100.001 or y + bh > 100.001:
+        raise ValueError("the box must lie inside the picture (0 to 100 percent)")
+    return (x / 100, y / 100, min(1.0, (x + bw) / 100), min(1.0, (y + bh) / 100))
+
+
+def where(box):
+    """Where a box is, in plain words: "the top right corner", "a band along the bottom", "the left edge"."""
+    x0, y0, x1, y1 = box
+    cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+    across = "left" if cx < 1 / 3 else "right" if cx > 2 / 3 else ""
+    down = "top" if cy < 1 / 3 else "bottom" if cy > 2 / 3 else ""
+    if x1 - x0 >= 0.5 and down:
+        return f"a band along the {down}"
+    if y1 - y0 >= 0.5 and across:
+        return f"a band down the {across} side"
+    if across and down:
+        return f"the {down} {across} corner"
+    if down:
+        return f"the {down} edge, in the middle"
+    if across:
+        return f"the {across} edge, half way down"
+    return "the middle of the picture"
+
+
+def percent(share):
+    """A share of the picture for people: "about 6%" ("less than 1%" for small ones)."""
+    return "less than 1%" if share < 0.005 else f"about {max(1, round(share * 100))}%"
+
+
+def centred_crop(boxes):
+    """The largest rectangle that keeps the middle of the picture, leaves out every box (shares of the picture) and
+    whose shape (width against height) differs from the picture's by at most CROP_ASPECT: (x0, y0, x1, y1) as
+    shares, or None when there is none. Only the sides with a box are cut (a logo at the top cuts the top, not the
+    bottom too); when the shape has to be kept, the narrowed side stays as near the middle as it can. A box that
+    covers the middle of the picture cannot be cropped off."""
+    lefts = {0.0} | {bx[2] for bx in boxes if bx[2] <= 0.5}
+    rights = {1.0} | {bx[0] for bx in boxes if bx[0] >= 0.5}
+    tops = {0.0} | {bx[3] for bx in boxes if bx[3] <= 0.5}
+    bottoms = {1.0} | {bx[1] for bx in boxes if bx[1] >= 0.5}
+
+    def fit(lo, hi, size):
+        """A stretch of length size inside lo..hi, as near the middle (0.5) as it can be."""
+        start = min(max(0.5 - size / 2, lo), hi - size)
+        return start, start + size
+    best, best_area = None, 0.0
+    for x0 in lefts:
+        for x1 in rights:
+            for y0 in tops:
+                for y1 in bottoms:
+                    if not all(bx[2] <= x0 or bx[0] >= x1 or bx[3] <= y0 or bx[1] >= y1 for bx in boxes):
+                        continue
+                    w, h = x1 - x0, y1 - y0             # as shares, so w / h is the shape against the picture's
+                    left, right, top, bottom = x0, x1, y0, y1
+                    if w > h * CROP_ASPECT:              # making a side shorter still leaves out every box
+                        left, right = fit(x0, x1, h * CROP_ASPECT)
+                    elif h > w * CROP_ASPECT:
+                        top, bottom = fit(y0, y1, w * CROP_ASPECT)
+                    area = (right - left) * (bottom - top)
+                    if area > best_area:
+                        best, best_area = (left, top, right, bottom), area
+    return best
+
+
+class Overlays:
+    """What is done about the burned-in overlays of one video: how ("keep", "crop" or "fill"), the boxes given
+    by hand (shares of the picture), and, once settle() has run, the boxes found and the crop or fill used. Called
+    with a still picture, it returns the picture with the overlays removed."""
+
+    def __init__(self, how="keep", manual=()):
+        """Ready to watch the video (an OverlayWatch is made only when something is to be removed)."""
+        self.how, self.manual = how, [tuple(b) for b in manual]
+        self.watch = OverlayWatch() if how != "keep" else None
+        self.found, self.note, self.used, self.crop, self.settled = [], "", how, None, False
+        self.lost = 0.0                                  # the share cropping would have lost (when filled instead)
+
+    def settle(self):
+        """Find the overlays in what was watched and decide between cropping and filling in."""
+        self.settled = True
+        if self.how == "keep":
+            return
+        self.found, self.note = find_overlays(self.watch)
+        boxes = self.found + self.manual
+        if not boxes:
+            self.used = "keep"
+            return
+        if self.how == "crop":
+            crop = centred_crop(boxes)
+            area = (crop[2] - crop[0]) * (crop[3] - crop[1]) if crop else 0.0
+            if area >= 1 - CROP_MOST_LOST:
+                self.crop, self.used = crop, "crop"
+            else:
+                self.used, self.lost = "fill", 1 - area
+        self.watch = None                                # the totals are no longer needed
+
+    def __call__(self, img):
+        """img (a Pillow picture) with the overlays cropped off or filled in."""
+        if not self.settled:
+            self.settle()
+        boxes = self.found + self.manual
+        if self.used == "keep" or not boxes:
+            return img
+        w, h = img.size
+        if self.used == "crop":
+            x0, y0, x1, y1 = self.crop
+            return img.crop((round(x0 * w), round(y0 * h), round(x1 * w), round(y1 * h)))
+        import cv2
+        import numpy as np
+        from PIL import Image
+        bgr = np.ascontiguousarray(np.asarray(img)[:, :, ::-1])
+        mask = np.zeros((h, w), np.uint8)
+        grow = max(2, round(min(w, h) * 0.006))         # a little bigger, to cover soft outlines
+        for x0, y0, x1, y1 in boxes:
+            mask[max(0, int(y0 * h) - grow):min(h, math.ceil(y1 * h) + grow),
+                 max(0, int(x0 * w) - grow):min(w, math.ceil(x1 * w) + grow)] = 255
+        filled = cv2.inpaint(bgr, mask, max(3, round(min(w, h) * 0.01)), cv2.INPAINT_TELEA)
+        return Image.fromarray(filled[:, :, ::-1].copy())
+
+    def report(self, name):
+        """One line in plain words for the summary and OVERLAYS.txt: what was found in the video name and what was
+        done; "" when nothing was asked for."""
+        if self.how == "keep":
+            return ""
+        if not self.settled:
+            self.settle()
+        parts = [f"in {where(b)}, {percent((b[2] - b[0]) * (b[3] - b[1]))} of the picture" for b in self.found]
+        parts += [f"your box in {where(b)}, {percent((b[2] - b[0]) * (b[3] - b[1]))} of the picture"
+                  for b in self.manual]
+        if self.found:
+            text = f"{name}: found {plural(len(self.found), 'date stamp or logo', 'date stamps or logos')}"
+        elif self.note:
+            text = f"{name}: {self.note}"
+        else:
+            text = f"{name}: no date stamp or logo found"
+        if self.manual:
+            text += f"; {plural(len(self.manual), 'box', 'boxes')} given by you"
+        if parts:
+            text += " (" + "; ".join(parts) + ")"
+        if self.used == "crop":
+            x0, y0, x1, y1 = self.crop
+            text += f". Cropped off: the stills keep {round((x1 - x0) * (y1 - y0) * 100)}% of the picture."
+        elif self.used == "fill" and self.how == "crop":
+            text += (f". Filled in, because cropping would have lost {round(self.lost * 100)}% of the picture "
+                     "(check the filled spots: they can look smudged).")
+        elif self.used == "fill":
+            text += ". Filled in (check the filled spots: they can look smudged)."
+        else:
+            text += ". Nothing was changed."
+        return text
+
+
+def overlay_report(out, overlays, name, lines, say):
+    """Say what overlays found in the video name and what was done, and write it into OVERLAYS.txt in out and
+    lines (for the summary). Nothing when overlays is None or nothing was asked for."""
+    if overlays is None:
+        return
+    text = overlays.report(name)
+    if text:
+        say("  " + text)
+        lines.append(text)
+        with open(os.path.join(out, OVERLAYS_FILE), "a", encoding="utf-8") as f:
+            f.write(text + "\n")
+
+
+def check_overlays(how, boxes):
+    """VideoProblem when the overlay choice is not one of OVERLAY_CHOICES, or boxes are given with "keep"."""
+    if how not in OVERLAY_CHOICES:
+        raise VideoProblem(f"The overlay choice must be one of {', '.join(OVERLAY_CHOICES)}, not {how}.")
+    if boxes and how == "keep":
+        raise VideoProblem("A box to remove (--overlay-box) needs --overlays crop or --overlays fill.")
+
+
+def save_picture(img, path, faces=None, overlays=None):
+    """Save a picture as a JPEG: date stamps and logos removed first when overlays (an Overlays) is given, then
+    faces blurred when faces (a FaceBlur) is given, so faces are blurred in the picture that is saved (filling in
+    could otherwise bring back part of a face beside a logo)."""
+    if overlays is not None:
+        img = overlays(img)
     if faces is not None:
         img = faces(img)
     img.save(path, "JPEG", quality=JPEG_QUALITY)
@@ -1163,9 +1482,10 @@ def add_captions(out, rows):
 
 # ----------------------------------------------------------------- 1. your own videos
 
-def own_video(path, out, every, max_frames, listener, faces, say):
-    """Make the pictures of one video of your own (see the module docstring). Returns {"kept", "described",
-    "new": [pictures without a description]}."""
+def own_video(path, out, every, max_frames, listener, faces, say, overlays=None, overlay_lines=None):
+    """Make the pictures of one video of your own (see the module docstring). overlays: an Overlays for this video
+    (date stamps and logos), or None; what it found and did is added to overlay_lines and OVERLAYS.txt. Returns
+    {"kept", "described", "new": [pictures without a description]}."""
     name = os.path.basename(path)
     stem = safe_stem(os.path.splitext(name)[0])
     set_question(out, OWN_QUESTION)
@@ -1176,7 +1496,8 @@ def own_video(path, out, every, max_frames, listener, faces, say):
         append_text(os.path.join(out, TRANSCRIPT), transcript_text(name, said))
         say(f"  {plural(len(said), 'phrase')} heard.")
     say("  Choosing the pictures (sharp, not dark, not the same as the one before).")
-    samples, length = scan(path)
+    samples, length = scan(path, overlays.watch if overlays is not None else None)
+    overlay_report(out, overlays, name, overlay_lines if overlay_lines is not None else [], say)
     kept, counts = choose(samples, every)
     align(kept, said)
     if max_frames and len(kept) > max_frames:
@@ -1192,7 +1513,7 @@ def own_video(path, out, every, max_frames, listener, faces, say):
         if img is None:
             continue
         base = os.path.join(out, f"{stem}_{time_name(k['t'])}")
-        save_picture(img, base + ".jpg", faces)
+        save_picture(img, base + ".jpg", faces, overlays)
         text = tidy(" ".join(p["text"] for p in k["said"]))
         if text and not os.path.exists(base + ".txt"):
             write_text(base + ".txt", text)
@@ -1229,10 +1550,11 @@ def video_length(url, say, tries=3):
     return 0.0
 
 
-def online_pictures(video, out, every, max_frames, listener, faces, say):
+def online_pictures(video, out, every, max_frames, listener, faces, say, overlays=None, overlay_lines=None):
     """Make the stills of one online video (from online_video()): read only around evenly spaced times, write
     CREDITS.txt and stills-for-describers.jsonl, and with listener the narration to <name>.narration.txt.
-    Returns {"kept", "narrated"}."""
+    overlays, overlay_lines: see own_video() (here only the moments read are compared). Returns {"kept",
+    "narrated"}."""
     key = video["id"].replace("File:", "")
     key = os.path.splitext(key)[0] if key.lower().endswith(VIDEO_ENDINGS) else key
     stem = safe_stem(f"{SITE_KEYS[video['site']]}-{key}")
@@ -1246,7 +1568,9 @@ def online_pictures(video, out, every, max_frames, listener, faces, say):
     gap = max(every, length / most)
     points = [gap / 2 + i * gap for i in range(int(length / gap))][:most] or [length / 2]
     say(f"  Reading {plural(len(points), 'moment')} of {clock(length)} of video, straight from the web.")
-    kept, counts, _ = spots(video["video"], points, gap)
+    kept, counts, _ = spots(video["video"], points, gap, overlays.watch if overlays is not None else None)
+    overlay_report(out, overlays, f"{video['title']} ({video['page']})", overlay_lines if overlay_lines is not None
+                   else [], say)
     said = []
     if listener is not None:
         say("  Turning the narration into text (this reads the whole sound track).")
@@ -1265,7 +1589,7 @@ def online_pictures(video, out, every, max_frames, listener, faces, say):
     rows, narrated = [], 0
     for k in kept:
         name = f"{stem}_{time_name(k['t'])}"
-        save_picture(k["picture"], os.path.join(out, name + ".jpg"), faces)
+        save_picture(k["picture"], os.path.join(out, name + ".jpg"), faces, overlays)
         block.append(f"    {name}.jpg at {clock(k['t'])}")
         if k.get("said"):
             write_text(os.path.join(out, name + ".narration.txt"), tidy(" ".join(p["text"] for p in k["said"])))
@@ -1286,7 +1610,7 @@ def online_pictures(video, out, every, max_frames, listener, faces, say):
 
 def make_pictures(video_paths, out_folder, every=2.0, max_frames=0, speech=True, language="en", blur_faces=False,
                   drafts=False, say=print, share_alike=False, online_speech=False, search="", collection="",
-                  max_videos=5, speech_model=WHISPER_DEFAULT):
+                  max_videos=5, speech_model=WHISPER_DEFAULT, overlays="keep", overlay_boxes=()):
     """Turn videos into training pictures in out_folder and return a summary in plain words.
 
     video_paths: one or more video files, folders of videos, or online addresses (archive.org, Wikimedia Commons,
@@ -1294,7 +1618,11 @@ def make_pictures(video_paths, out_folder, every=2.0, max_frames=0, speech=True,
     each video (0: no limit for your own videos; ONLINE_MOST for online ones). speech: describe your own videos'
     pictures with what you said. blur_faces: blur faces. drafts: draft descriptions for the rest. share_alike:
     accept CC BY-SA online videos. online_speech: write online videos' narration to .narration.txt. search,
-    collection, max_videos: also find up to max_videos archive.org videos for these words."""
+    collection, max_videos: also find up to max_videos archive.org videos for these words. overlays: what to do
+    about burned-in date stamps, station logos and fixed tickers: "keep" them (as they are), "crop" them off (filled
+    in when cropping would lose too much) or "fill" them in; overlay_boxes: boxes given by hand, (x0, y0, x1, y1) as
+    shares of the picture (see overlay_box()), removed as well. What was found goes into OVERLAYS.txt."""
+    check_overlays(overlays, overlay_boxes)
     if isinstance(video_paths, str):
         video_paths = [video_paths]
     os.makedirs(out_folder, exist_ok=True)
@@ -1318,7 +1646,7 @@ def make_pictures(video_paths, out_folder, every=2.0, max_frames=0, speech=True,
     faces = FaceBlur(say) if blur_faces else None
     listener = Listener(speech_model, language, say) if (speech and local) or (online_speech and online) else None
     totals = {"own": len(local), "videos": 0, "kept": 0, "described": 0, "online": 0, "narrated": 0, "skipped": 0}
-    new = []
+    new, overlay_lines = [], []
     for number, path in enumerate(local, 1):
         name = os.path.basename(path)
         say(f"Video {number} of {len(local)}: {name}")
@@ -1327,7 +1655,8 @@ def make_pictures(video_paths, out_folder, every=2.0, max_frames=0, speech=True,
             totals["skipped"] += 1
             continue
         try:
-            result = own_video(path, out_folder, every, max_frames, listener if speech else None, faces, say)
+            result = own_video(path, out_folder, every, max_frames, listener if speech else None, faces, say,
+                               Overlays(overlays, overlay_boxes), overlay_lines)
         except VideoProblem as e:
             refused.append(str(e))
             say("  " + str(e))
@@ -1349,7 +1678,7 @@ def make_pictures(video_paths, out_folder, every=2.0, max_frames=0, speech=True,
             video = online_video(source, share_alike)
             say(f"  {video['title']}; licence: {video['licence']}.")
             result = online_pictures(video, out_folder, every, max_frames, listener if online_speech else None,
-                                     faces, say)
+                                     faces, say, Overlays(overlays, overlay_boxes), overlay_lines)
         except VideoProblem as e:
             refused.append(str(e))
             say("  " + str(e))
@@ -1366,11 +1695,12 @@ def make_pictures(video_paths, out_folder, every=2.0, max_frames=0, speech=True,
         listener.close()
     drafted = write_drafts(new, say) if drafts and new else 0
     waiting = update_no_description(out_folder)
-    return summary(out_folder, totals, len(new), drafted, waiting, faces, refused)
+    return summary(out_folder, totals, len(new), drafted, waiting, faces, refused, overlay_lines)
 
 
-def summary(out, totals, without, drafted, waiting, faces, refused):
-    """The plain-words summary of make_pictures."""
+def summary(out, totals, without, drafted, waiting, faces, refused, overlay_lines=()):
+    """The plain-words summary of make_pictures (overlay_lines: what was found and done about date stamps and
+    logos, one line per video)."""
     lines = [f"Finished: {plural(totals['videos'], 'video')} made into pictures in {out}."]
     if totals["own"]:
         lines.append(f"Your own videos: {plural(totals['kept'], 'picture')} kept, {totals['described']} with a "
@@ -1387,6 +1717,9 @@ def summary(out, totals, without, drafted, waiting, faces, refused):
                         else ""))
     if faces is not None:
         lines.append(f"Faces blurred: {faces.faces} in {plural(faces.pictures, 'picture')}.")
+    if overlay_lines:
+        lines.append(f"Date stamps and logos (also written in {OVERLAYS_FILE}):")
+        lines += ["  " + line for line in overlay_lines]
     if totals["skipped"]:
         lines.append(f"{plural(totals['skipped'], 'video')} done before {'was' if totals['skipped'] == 1 else 'were'} "
                      "skipped.")
@@ -1417,10 +1750,11 @@ def choose_ad_track(tracks, ad_track=0):
 
 
 def make_described_pictures(video, out_folder, ad_track=0, ad_audio="", ad_text="", language="en", blur_faces=False,
-                            say=print, speech_model=WHISPER_DEFAULT):
+                            say=print, speech_model=WHISPER_DEFAULT, overlays="keep", overlay_boxes=()):
     """Pictures with descriptions from an audio-described video you have, for PERSONAL training (see the module
     docstring); returns a summary in plain words, which lists the video's sound tracks and the personal-use
-    note."""
+    note. overlays, overlay_boxes: date stamps and logos, as in make_pictures()."""
+    check_overlays(overlays, overlay_boxes)
     os.makedirs(out_folder, exist_ok=True)
     os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
     name = os.path.basename(video)
@@ -1460,7 +1794,10 @@ def make_described_pictures(video, out_folder, ad_track=0, ad_audio="", ad_text=
         append_text(os.path.join(out_folder, TRANSCRIPT), transcript_text(f"{name}: the narrator", lines))
     lines = narrator_lines(lines)
     say(f"{plural(len(lines), 'description line')} to use. Choosing the sharpest picture for each.")
-    samples, _ = scan(video)
+    remover = Overlays(overlays, overlay_boxes)
+    overlay_lines = []
+    samples, _ = scan(video, remover.watch)
+    overlay_report(out_folder, remover, name, overlay_lines, say)
     limit = blur_limit(samples)
     picks = {}
     for line in lines:
@@ -1481,7 +1818,7 @@ def make_described_pictures(video, out_folder, ad_track=0, ad_audio="", ad_text=
         if pts not in pictures:
             continue
         file = f"{stem}_{time_name(pick['t'])}.jpg"
-        save_picture(pictures[pts], os.path.join(out_folder, file), faces)
+        save_picture(pictures[pts], os.path.join(out_folder, file), faces, remover)
         rows.append(file)
         base = os.path.splitext(os.path.join(out_folder, file))[0]
         if not os.path.exists(base + ".txt"):              # never overwrite a description someone corrected
@@ -1495,6 +1832,8 @@ def make_described_pictures(video, out_folder, ad_track=0, ad_audio="", ad_text=
             "Its sound tracks:", listing]
     if faces is not None:
         text.append(f"Faces blurred: {faces.faces} in {plural(faces.pictures, 'picture')}.")
+    if overlay_lines:
+        text.append(f"Date stamps and logos (also written in {OVERLAYS_FILE}): " + " ".join(overlay_lines))
     text.append("PERSONAL USE: " + PERSONAL_USE)
     return "\n".join(text)
 
@@ -1523,7 +1862,17 @@ def main(argv=None):
     parser.add_argument("--ad-track", type=int, default=0, help="with --described: the description sound track")
     parser.add_argument("--ad-audio", default="", help="with --described: a description sound file")
     parser.add_argument("--ad-text", default="", help="with --described: a WebVTT or SRT description file")
+    parser.add_argument("--overlays", default="keep", choices=OVERLAY_CHOICES,
+                        help="burned-in date stamps, station logos and fixed tickers: keep them, crop them off (filled "
+                             "in when cropping would lose too much), or fill them in")
+    parser.add_argument("--overlay-box", action="append", default=[], metavar="X,Y,W,H",
+                        help="with --overlays crop or fill: also remove this box, in percent of the picture from its "
+                             "top left corner (can be given more than once)")
     args = parser.parse_args(argv)
+    try:
+        boxes = [overlay_box(b) for b in args.overlay_box]
+    except ValueError as e:
+        parser.error(f"--overlay-box: {e}")
 
     def say(text=""):
         """Say one line on the screen."""
@@ -1534,7 +1883,8 @@ def main(argv=None):
             if len(args.sources) != 1 or not os.path.isfile(args.sources[0]):
                 raise VideoProblem("--described takes one video file that is on this computer.")
             text = make_described_pictures(args.sources[0], args.out, args.ad_track, args.ad_audio, args.ad_text,
-                                           args.language, args.blur_faces, say, args.speech_model)
+                                           args.language, args.blur_faces, say, args.speech_model, args.overlays,
+                                           boxes)
         else:
             if not args.sources and not args.from_search:
                 raise VideoProblem("Give at least one video, folder or online address (or --from-search).")
@@ -1543,7 +1893,8 @@ def main(argv=None):
                     raise VideoProblem(f"{source} was not found.")
             text = make_pictures(args.sources, args.out, args.every, args.max, not args.no_speech, args.language,
                                  args.blur_faces, args.draft_descriptions, say, args.share_alike, args.speech,
-                                 args.from_search, args.collection, args.max_videos, args.speech_model)
+                                 args.from_search, args.collection, args.max_videos, args.speech_model,
+                                 args.overlays, boxes)
     except VideoProblem as e:
         say("STOPPED: " + str(e))
         return 1

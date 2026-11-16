@@ -51,6 +51,7 @@ STEP 3: Make the pictures
   --language fr   the language you speak, if it is not English.
   --no-speech     do not use your speech (every picture then needs a description written by hand).
   --draft-descriptions   let the computer write drafts for pictures with nothing said near them (see STEP 5).
+  --overlays crop        remove a date stamp or a TV station logo (see "Date stamps and station logos" below).
 - It says what it does for each video and, at the end, how many pictures it kept, how many have your words, how
   many do not, and how many faces it blurred.
 - A video that was done before is skipped, so descriptions you have corrected are never written over. To make a
@@ -87,6 +88,51 @@ Privacy and personal use
 - Do not film card numbers, PIN pads, letters or screens with other people's details.
 - Pictures from your own videos are for training your own personal model. Do not share them, or a model trained on
   them, unless everyone in them has agreed and you have the right to share what they show.
+
+DATE STAMPS AND STATION LOGOS (for all the parts of this guide)
+
+A camcorder can write the date and time into the picture, and recorded TV has the station's logo in a corner, or a
+fixed news ticker along the bottom. These are burned into the picture, so the model would learn that they are part
+of every scene. The kit can remove them from the stills.
+
+STEP 1: Choose what to do with them
+- In the program's "Take stills from videos" window, choose in "Date stamps and logos" (Alt+O): Leave them (as
+  before), Crop them off, or Fill them in. The program remembers your choice. Or on the command line:
+  --overlays crop     cut the edges with a stamp or logo off the stills. This is the cleanest. When cutting would
+                      lose more than a fifth of the picture, the spots are filled in instead, and that is said.
+  --overlays fill     paint over them with what is around them, keeping the whole picture.
+  --overlay-box 80,85,18,10   also remove a box you give yourself: from the left, from the top, its width and its
+                      height, all in percent of the picture. You can give more than one. Use it when the kit misses
+                      a logo, or for a still camera (see the limits below). It needs --overlays crop or fill.
+
+STEP 2: How the kit finds them
+- Nothing is sent anywhere and no AI is used. The kit compares the pictures it looks at (about 4 a second): a
+  stamp or a logo stays in the same place with the same outline while the picture behind it changes. Only marks
+  near an edge or a corner are taken, each at most 8% of the picture.
+- A date stamp whose seconds change is still found: its fixed digits mark where it is, and the whole stamp is
+  removed.
+- The camera has to move during the video. When most of the picture stays the same (a camera on a tripod, a
+  still scene), the kit cannot tell a logo from the scene: it removes nothing and says so. Give the box yourself
+  then with --overlay-box.
+
+STEP 3: Check the result
+- For each video, the kit says what it found and what it did, in plain words, for example "found 1 date stamp or
+  logo (in the bottom right corner, about 3% of the picture). Cropped off: the stills keep 88% of the picture."
+  The same lines, with each video's name, are written into OVERLAYS.txt in the pictures folder. The stills keep
+  their usual names, so you still know which video and which moment each came from.
+- Faces are blurred after the stamp or logo is removed, in the picture that is saved.
+
+Limits
+- A logo that moves, fades in and out, or is see-through may be missed, or only partly removed.
+- Something that really is fixed in every shot near an edge, such as a car's dashboard filmed from inside, may be
+  taken for a logo.
+- Filled-in spots can look smudged, especially on detailed backgrounds. Crop is cleaner: use fill only when
+  cropping would cut off too much.
+- Have a sighted helper look at a few stills if it matters.
+
+Whose footage it is
+- For your own videos and for personal training only. Station logos and watermarks identify who owns the footage:
+  don't share stills or a model made from someone else's footage with the logo removed.
 
 PART 2: OPEN-LICENCE VIDEOS FROM THE WEB
 

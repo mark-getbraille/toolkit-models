@@ -23,6 +23,8 @@ The letters in the main window: F (Workspace folder), B (Browse), W (Open or mak
 R (Filter), U (Pictures), Q (Question), D (Description), S (Save and next), P (Previous), C (Mark as checked),
 N (Needs another look), K (Skip this picture), O (Show the other version), A (Add pictures), V (Take stills from
 videos), E (Export a package), I (Import a package), T (Use this workspace for training), H (Help), L (Close).
+In "Take stills from videos": V (Videos), A (Add videos), F (Add a folder), R (Remove), S (seconds), L (Spoken
+language), D (descriptions), B (Blur faces), O (Date stamps and logos, remembered), T (Start), H (Help), C (Cancel).
 Keys: Ctrl+S saves, Ctrl+Page Down and Ctrl+Page Up go to the next and previous picture (keeping what was written).
 """
 
@@ -40,6 +42,9 @@ FILTERS = [("all", "All"), ("not described", "Not described"), ("needs another l
            ("described", "Described (and checked)"), ("checked", "Checked")]
 VIDEO_ENDINGS = "*.mp4;*.mov;*.m4v;*.mkv;*.avi;*.webm;*.3gp;*.mts;*.m2ts;*.wmv;*.ogv"
 PICTURE_FILES = "*.jpg;*.jpeg;*.png;*.webp;*.bmp;*.gif;*.tif;*.tiff"
+# What "Take stills from videos" does about burned-in date stamps and logos: (video_frames.py --overlays, shown).
+OVERLAY_CHOICES = [("keep", "Leave them"), ("crop", "Crop them off (fill in when cropping would lose too much)"),
+                   ("fill", "Fill them in")]
 # The lines of the video tool that are spoken (the rest only go into the Status field and the log).
 SPOKEN = re.compile(r"^\s*(Video \d+ of \d+|Online video|Getting ready|STOPPED|Finished|.*still need a description)")
 
@@ -199,6 +204,13 @@ class VideoDialog(AccessibleDialog):
         s.Add(self.speech, 0, wx.ALL, 6)
         self.blur = self.check("&Blur the faces of people", "Blur every face found in the stills", False)
         s.Add(self.blur, 0, wx.ALL, 6)
+        self.overlays = self.labelled(s, "Date stamps and l&ogos:", lambda: wx.Choice(
+            self.panel, choices=[label for _key, label in OVERLAY_CHOICES]), flag=0)
+        self.overlays.SetToolTip("A camcorder's date and time stamp, a TV station's logo or a fixed ticker burned "
+                                 "into the video: found by what stays fixed while the picture changes")
+        remembered = wizard.load_choices().get("video_overlays", "keep")
+        keys = [key for key, _label in OVERLAY_CHOICES]
+        self.overlays.SetSelection(keys.index(remembered) if remembered in keys else 0)
         row = wx.BoxSizer(wx.HORIZONTAL)
         row.Add(self.button("Start &taking stills", "Take the stills and add them to the workspace", self.on_start),
                 0, wx.ALL, 4)
@@ -246,7 +258,12 @@ class VideoDialog(AccessibleDialog):
         if not self.videos.GetCount():
             self.wizard.speak("Add at least one video first (Alt+A).", True)
             return
+        self.wizard.save_choices({**self.wizard.load_choices(), "video_overlays": self.overlay_choice()})
         self.EndModal(wx.ID_OK)
+
+    def overlay_choice(self):
+        """The chosen key of Date stamps and logos: "keep", "crop" or "fill"."""
+        return OVERLAY_CHOICES[max(0, self.overlays.GetSelection())][0]
 
     def arguments(self, out_folder):
         """The command line for kit\\video_frames.py."""
@@ -256,6 +273,8 @@ class VideoDialog(AccessibleDialog):
             args.append("--no-speech")
         if self.blur.GetValue():
             args.append("--blur-faces")
+        if self.overlay_choice() != "keep":
+            args += ["--overlays", self.overlay_choice()]
         return args
 
 
