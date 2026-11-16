@@ -754,6 +754,10 @@ PACKS.update(BODY_PACKS)
 from medical_packs import MEDICAL_PACKS
 PACKS.update(MEDICAL_PACKS)
 
+# Facial expressions, gestures and body language (Open Images, Commons, BiCE-HG gestures, VQA questions).
+from expression_packs import EXPRESSION_PACKS
+PACKS.update(EXPRESSION_PACKS)
+
 
 def sha256_of(path):
     """The SHA-256 of a file."""

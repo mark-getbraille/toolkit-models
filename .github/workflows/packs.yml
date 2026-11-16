@@ -43,7 +43,8 @@ jobs:
                    "textocr", "coco_text", "cord", "doclaynet", "plotqa", "loc_letters", "ptl_crossings",
                    "uroac_crossings", "open_images_street", "walkway_dhaka", "outdoor_navigation", "seoul_sidewalks",
                    "dollar_street", "geode", "art_nudes", "anatomy",
-                   "skin_lesion_photos", "isic_skin", "gi_endoscopy", "chest_xray", "case_report_figures", "vet_case_figures", "cdc_medical", "childhood_illness", "medical_collections", "birth_and_feeding"]
+                   "skin_lesion_photos", "isic_skin", "gi_endoscopy", "chest_xray", "case_report_figures", "vet_case_figures", "cdc_medical", "childhood_illness", "medical_collections", "birth_and_feeding",
+                   "oi_expressions", "commons_expressions", "bice_gestures", "vqa_expressions"]
           words = [w for w in sys.argv[1].split(",") if w]
           keys = known if words in ([], ["all"]) else [w for w in words if w in known]
           print("keys=" + json.dumps(keys))
@@ -136,6 +137,10 @@ jobs:
             childhood_illness) limit=300 ;;
             medical_collections) limit=300 ;;
             birth_and_feeding) limit=1500 ;;
+            oi_expressions) limit=12000 ;;
+            commons_expressions) limit=1500 ;;
+            bice_gestures) limit=1430 ;;
+            vqa_expressions) limit=1200 ;;
           esac
           python packs/build_packs.py "${{ matrix.key }}" --out build/packs --limit "$limit"
       - name: Upload it to the release

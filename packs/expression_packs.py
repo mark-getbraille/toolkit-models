@@ -471,6 +471,10 @@ COMMONS_NOT_PEOPLE = re.compile(r"\b(icons?|emoji\w*|emoticons?|smilies|smiley|l
                                 r"mascots?|cartoons?|comics?|ai-generated|stamps?)\b", re.I)
 
 
+# A caption that is really a file or album name ("Desfile 7 de Setembro ... -07-09-22-Fotos (64)"), not a description.
+FILE_NAME_LIKE = re.compile(r"\d{2}[-_.]\d{2}[-_.]\d{2}|\(\d+\)|\b(IMG|DSC|DSCF|DSCN|P\d{6,})\b|_\w+_|\bFotos?\b")
+
+
 def commons_safe(*texts):
     """True when none of texts suggests sexual material or something that is not a person's expression."""
     joined = " ".join(t or "" for t in texts)
@@ -484,7 +488,10 @@ def build_commons_expressions(limit):
     with 429 (slow down): food_packs.commons_get waits as asked and tries again."""
     s, items, seen = session(), [], set()
     per_category = max(6, limit * 2 // len(COMMONS_EXPRESSIONS))
-    for category, (question, answer) in COMMONS_EXPRESSIONS.items():
+    categories = list(COMMONS_EXPRESSIONS.items())
+    if limit < 50:
+        random.Random(65).shuffle(categories)                    # a quick test: a few categories of every kind
+    for category, (question, answer) in categories:
         try:
             titles = [t for t in commons_members(s, category, "file") if t not in seen]
         except RuntimeError as e:                                # Commons kept refusing: the next category
@@ -499,7 +506,7 @@ def build_commons_expressions(limit):
             rows = []
             if question:
                 rows.append({"question": question, "answer": answer, "credit": credit})
-            if text:
+            if text and not FILE_NAME_LIKE.search(text):
                 rows.append({"question": ALT_TEXT, "answer": text, "credit": credit})
             if not rows:
                 continue
@@ -510,6 +517,8 @@ def build_commons_expressions(limit):
             if found >= per_category:
                 break
         say(f"Commons {category}: {found} free pictures ({len(titles)} files)")
+        if limit < 50 and len(items) >= limit * 2:
+            break                                                # a quick test: enough categories visited
     random.Random(62).shuffle(items)
     fetched = fetch_all(items[:int(limit * 1.1) + 2], workers=2, pause=0.5)
     return with_twins(fetched[:limit])

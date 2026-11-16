@@ -825,6 +825,8 @@ def prepare_pack(source, data_dir, work, cap):
             # A machine-translated twin is for training only, never for the test (split "no-test").
             base = {"question": row["question"], "answer": clean(row["answer"]),
                     "split": "no-test" if row.get("translated") else ""}
+            if row.get("child"):                     # a picture of a child: never used to make pictures
+                base["child"] = True
             if row.get("file"):
                 path = os.path.join(folder, os.path.basename(row["file"]))
                 if have(path) or smaller(z.read(row["file"]), path):       # a training copy and a large copy
@@ -1164,6 +1166,18 @@ SOURCES = [
     Source('geode', 'GeoDE: everyday objects and places from six world regions (ready-made pack)',
            'CC BY',
            'GeoDE (Ramaswamy et al., 2023, Princeton), CC BY', "permissive", 4000, 20, prepare_pack, 'about 800 MB'),
+    Source('oi_expressions', 'Facial expressions, gestures and body language (Open Images, ready-made pack)',
+           'CC BY 4.0 labels; photos CC BY 2.0, each author credited',
+           'Open Images V7 (Google), CC BY 4.0 labels; photos by their Flickr authors, CC BY 2.0', "permissive", 8000, 20, prepare_pack, 'about 2 GB'),
+    Source('commons_expressions', 'Facial expressions and gestures (Wikimedia Commons, ready-made pack)',
+           'CC0, public domain or CC BY, each author credited',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 1500, 10, prepare_pack, 'about 400 MB'),
+    Source('bice_gestures', 'Hand gestures seen from your own point of view (BiCE-HG, ready-made pack)',
+           'CC BY 4.0 (University of Sheffield, doi 10.15131/shef.data.32374137)',
+           'BiCE-HG hand gesture dataset, University of Sheffield, CC BY 4.0', "permissive", 1430, 10, prepare_pack, 'about 300 MB'),
+    Source('vqa_expressions', 'Questions people asked about faces and feelings in photos (VQA and Visual Dialog, ready-made pack)',
+           'CC BY 4.0; COCO photos under CC BY 2.0 or no known copyright only',
+           'VQA v2 and Visual Dialog, CC BY 4.0; photos from COCO', "permissive", 1200, 10, prepare_pack, 'about 200 MB (photos fetched from COCO)'),
     Source('skin_lesion_photos', 'Skin spots photographed with a phone, adults (PAD-UFES-20, ready-made pack)',
            'CC BY 4.0 (Mendeley Data zr7vgbcyr2)',
            'PAD-UFES-20 (Pacheco et al., 2020), CC BY 4.0', "permissive", 2000, 20, prepare_pack, 'about 400 MB', content="medical"),
