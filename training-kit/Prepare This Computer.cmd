@@ -64,11 +64,16 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "try { Add-MpPreference -
 echo Windows Defender: the kit folder %KIT% is not scanned.>> "%NOTE%"
 
 echo 7. Checking the graphics card and the disk.
+set "NVSMI="
 where nvidia-smi >nul 2>&1
-if errorlevel 1 (
-  echo    No NVIDIA driver was found. Install the newest driver from nvidia.com before training.
+if not errorlevel 1 set "NVSMI=nvidia-smi"
+if not defined NVSMI if exist "%ProgramFiles%\NVIDIA Corporation\NVSMI\nvidia-smi.exe" set "NVSMI=%ProgramFiles%\NVIDIA Corporation\NVSMI\nvidia-smi.exe"
+if not defined NVSMI (
+  echo    No NVIDIA driver was found. The graphics cards in this computer are:
+  powershell -NoProfile -Command "Get-CimInstance Win32_VideoController | ForEach-Object { Write-Host ('      ' + $_.Name) }"
+  echo    The kit needs an NVIDIA card. Tell Claude the names above.
 ) else (
-  for /f "tokens=1,2 delims=," %%a in ('nvidia-smi --query-gpu^=name^,memory.total --format^=csv^,noheader') do echo    Graphics card: %%a, memory%%b
+  for /f "tokens=1,2 delims=," %%a in ('call "%NVSMI%" --query-gpu^=name^,memory.total --format^=csv^,noheader') do echo    Graphics card: %%a, memory%%b
 )
 powershell -NoProfile -Command "$d=(Get-Item '%KIT%').PSDrive; $gb=[math]::Floor($d.Free/1GB); if ($gb -ge 90) { Write-Host ('   Free disk space on drive ' + $d.Name + ': ' + $gb + ' GB. Enough.') } else { Write-Host ('   Free disk space on drive ' + $d.Name + ': only ' + $gb + ' GB. The training needs about 90 GB: move the kit folder to a bigger drive.') }"
 

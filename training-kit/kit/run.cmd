@@ -14,9 +14,15 @@ set "TRANSFORMERS_VERBOSITY=error"
 set "PYTHONWARNINGS=ignore"
 if not exist work mkdir work
 if not exist tools mkdir tools
+rem The NVIDIA driver's tool: in the search path (newer drivers), or in its own folder (older drivers).
+set "NVSMI="
 where nvidia-smi >nul 2>&1
-if errorlevel 1 (
-  echo STOPPED: no NVIDIA graphics card driver was found. The kit needs an NVIDIA card with at least 12 GB of memory.
+if not errorlevel 1 set "NVSMI=nvidia-smi"
+if not defined NVSMI if exist "%ProgramFiles%\NVIDIA Corporation\NVSMI\nvidia-smi.exe" set "NVSMI=%ProgramFiles%\NVIDIA Corporation\NVSMI\nvidia-smi.exe"
+if not defined NVSMI if exist "%SystemRoot%\System32\nvidia-smi.exe" set "NVSMI=%SystemRoot%\System32\nvidia-smi.exe"
+if not defined NVSMI (
+  echo STOPPED: no NVIDIA graphics card driver was found. The kit needs an NVIDIA card with at least 12 GB of memory
+  echo and its driver from nvidia.com. If this computer has an AMD or Intel graphics card instead, tell Claude its name.
   goto :end
 )
 if not exist tools\uv.exe (
