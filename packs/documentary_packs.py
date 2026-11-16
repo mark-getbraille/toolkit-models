@@ -351,6 +351,9 @@ EO_IMAGE_OF_THE_DAY = 22453            # the "science-org" term of Earth Observa
 EO_NOT_NASA = re.compile(r"Planet Labs|PlanetScope|SkySat|Maxar|DigitalGlobe|WorldView|Airbus|Pl[ée]iades|SPOT \d|"
                          r"Satellogic|BlackSky|Capella|ICEYE|Umbra|©|\(c\)|copyright", re.I)
 EO_DATE_ONLY = re.compile(r"^\s*\d{4}-\d{2}-\d{2}")
+# Maps, charts and data plots (Earth Observatory has many): only pictures of the Earth itself are kept.
+EO_NOT_A_PHOTO = re.compile(r"\b(maps?|charts?|graphs?|plots?|diagrams?|colou?r (scale|bar|key)|legend|"
+                            r"animation|data visuali[sz]ation|model(led)? (output|data))\b", re.I)
 
 
 def eo_picture(source_url):
@@ -382,6 +385,7 @@ def build_earth_observatory(limit):
             alt = tidy(m.get("alt_text"))
             title = clean((post.get("title") or {}).get("rendered")).lower().rstrip(".")
             if m.get("source_url") and usable(alt, 10) and not EO_DATE_ONLY.match(alt) \
+                    and not EO_NOT_A_PHOTO.search(alt) \
                     and title[:30] not in alt.lower():          # migrated posts often repeat the title as alt text
                 good.append((post, m, alt))
         if not good:
@@ -406,8 +410,8 @@ def build_earth_observatory(limit):
 ESO = "https://www.eso.org/public/images/"
 # ESO's picture categories in Chile, with the place each one is.
 ESO_CATEGORIES = {"paranal": "Paranal Observatory, Chile", "lasilla": "La Silla Observatory, Chile",
-                  "alma": "Chajnantor Plateau, Chile", "apex": "Chajnantor Plateau, Chile",
-                  "elt": "Cerro Armazones, Chile"}
+                  "alma": "Chajnantor Plateau, Chile", "apex": "Chajnantor Plateau, Chile"}
+# (The ELT category is left out: most of its pictures are renderings of the telescope being built.)
 # Record types of documentary photos (the Earth and its sky, observatories, people), not deep-space pictures.
 ESO_NOT_A_PHOTO = re.compile(r"\b(render\w*|artist['’]s (impression|view|rendering)|illustration|animation|"
                              r"computer[- ]generated|simulat\w*|mock-?up|diagram|infographic|drawing)\b", re.I)
@@ -476,7 +480,8 @@ USGS = "https://www.usgs.gov"
 USGS_GALLERY = USGS + "/products/multimedia-gallery/images"
 USGS_NOT_A_PHOTO = re.compile(r"\b(map|maps|chart|graph|graphic|diagram|figure|logo|organizational|poster|"
                               r"infographic|illustration|plot|table|screenshot|cover|flyer|schematic|model "
-                              r"output|cross[- ]section)\b", re.I)
+                              r"output|cross[- ]section|photomicrographs?|micrographs?|necropsy|histolog\w*|stain|"
+                              r"lesions?|tissue|organs?|microscop\w*|carcass\w*|found dead)\b", re.I)
 
 
 def usgs_page(s, path):
@@ -497,7 +502,8 @@ def usgs_page(s, path):
 
 def build_usgs(limit):
     """The USGS pack: image pages from random pages of the multimedia gallery (about 1,000 pages of 20), the
-    caption (its first sentences, at most about 60 words) as the answer. Maps, charts and diagrams are left out."""
+    caption (its first sentences, at most about 60 words) as the answer. Maps, charts, diagrams and wildlife-health
+    laboratory pictures (necropsies, micrographs) are left out."""
     s, items = session(), []
     try:
         first = s.get(USGS_GALLERY, timeout=60).text
@@ -519,7 +525,7 @@ def build_usgs(limit):
                 continue
             time.sleep(0.5)
             info = usgs_page(s, path)
-            if not info or USGS_NOT_A_PHOTO.search(info[0]):
+            if not info or USGS_NOT_A_PHOTO.search(info[0]) or USGS_NOT_A_PHOTO.search(info[1]):
                 continue
             answer = tidy(capped_words(info[1], 60))
             if not usable(answer):
@@ -554,24 +560,18 @@ def commons_get(s, params, tries=8):
 
 
 def build_commons_valued(limit):
-    """The Commons Valued images pack: files (from the category's subcategories by promotion date, newest first)
-    with an English caption of 6 words or more whose licence is CC0, public domain or CC BY (never SA, NC or ND),
-    the camera's coordinates as the place."""
+    """The Commons Valued images pack: files of the category (about 56,000, read 50 at a time) with an English
+    caption of 6 words or more whose licence is CC0, public domain or CC BY (never SA, NC or ND), the camera's
+    coordinates as the place. Only about one file in twelve has such a caption."""
     s, items, seen = session(), [], set()
-    months = [m["title"] for m in (commons_get(s, {"action": "query", "list": "categorymembers", "cmtitle": VALUED,
-                                                   "cmtype": "subcat", "cmlimit": 500})
-                                   .get("query") or {}).get("categorymembers", [])]
-    random.Random(76).shuffle(months)
-    for month in months or [VALUED]:
-        if len(items) >= limit * 1.3:
-            break
-        params = {"action": "query", "generator": "categorymembers", "gcmtitle": month, "gcmtype": "file",
-                  "gcmlimit": 50, "prop": "imageinfo", "iiprop": "url|extmetadata|mime", "iiurlwidth": LONG_SIDE,
-                  "iiextmetadatafilter": "LicenseShortName|Artist|GPSLatitude|GPSLongitude"}
+    params = {"action": "query", "generator": "categorymembers", "gcmtitle": VALUED, "gcmtype": "file",
+              "gcmlimit": 50, "prop": "imageinfo", "iiprop": "url|extmetadata|mime", "iiurlwidth": LONG_SIDE,
+              "iiextmetadatafilter": "LicenseShortName|Artist|GPSLatitude|GPSLongitude"}
+    while len(items) < limit * 1.3:
         data = commons_get(s, params)
         pages = [p for p in ((data.get("query") or {}).get("pages") or {}).values() if p.get("pageid")]
         if not pages:
-            continue
+            break
         entities = commons_get(s, {"action": "wbgetentities", "ids": "|".join(f"M{p['pageid']}" for p in pages),
                                    "props": "labels", "languages": "en"}).get("entities", {})
         for p in pages:
@@ -591,6 +591,9 @@ def build_commons_valued(limit):
             place = country_at(clean((meta.get("GPSLatitude") or {}).get("value")),
                                clean((meta.get("GPSLongitude") or {}).get("value")))
             items.append((f"commons-valued-{p['pageid']}.jpg", info["thumburl"], picture_rows(caption, credit, place)))
+        if "continue" not in data:
+            break
+        params.update(data["continue"])
         time.sleep(1)
     say(f"Commons Valued images: {len(items)} captioned free files")
     return finish("commons_valued", items, limit, workers=3, pause=0.3)
@@ -641,7 +644,7 @@ DOCUMENTARY_LIMITS = {
     "earth_observatory": 3000,        # of about 9,500 posts; those with real alt text (mostly 2020 onwards)
     "eso": 1200,                      # documentary pictures in the Chilean categories (about 7,000 pictures in all)
     "usgs": 4000,                     # of about 20,000 gallery pages
-    "commons_valued": 5000,           # of about 100,000 Valued images; those with an English caption and a free licence
+    "commons_valued": 2500,           # of about 56,000 Valued images; those with an English caption and a free licence
 }
 
 

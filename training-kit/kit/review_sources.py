@@ -140,7 +140,7 @@ BLOCKED_CATEGORY = re.compile(
 GENITAL = re.compile(
     r"\b(genit\w*|penis|penile|glans|prepuc\w*|foreskin|frenulum|coronal|scrot\w*|testic\w*|testis|testes|"
     r"epididym\w*|spermatic|vulv\w*|labia\w*|labium|clitor\w*|vestibul\w*|introitus|fourchette|vagin\w*|"
-    r"perine\w*|perianal|anogenital|pubic|pubis|groin|inguinal|intertrigo|condylom\w*|chancre\w*|"
+    r"perine\w*|perianal|anogenital|pubic|pubis|groin|inguinal|intertrigo|"
     r"balan\w*|phimosis|paraphimosis|hydrocele|varicocele|bartholin\w*)\b", re.I)
 
 # Words naming the breasts or chest.

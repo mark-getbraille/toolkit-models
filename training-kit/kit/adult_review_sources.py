@@ -43,6 +43,7 @@ How to use (for the kit's own code):
                         "research"), licence, terms, terms_summary, credit, content ("sexual"), cap, download (size),
                         fetch (a function fetch_<key>(folder, cap, say)), plus "review_only": True.
   NOT_INCLUDED          sources looked at and left out, with the reason (including sign-up-only ones).
+  CONTRACT_CANDIDATES   companies and bodies whose catalogues could be licensed by contract (nothing downloaded).
   Each fetch function downloads into folder (made into a describing workspace when it is not one yet), skips
   pictures already there or already tried, so a stopped run carries on where it was, and returns a plain summary.
   Each also says up to five titles it left out, with the reason, so the filters can be seen working.
@@ -134,7 +135,7 @@ VIOLENCE = re.compile(
     r"gag(ged|s)?|spank\w*|punish\w*|chastis\w*|humiliat\w*|wars?|battles?|executions?|sleep\w*|asleep|drunk\w*|"
     r"intoxica\w*|unconscious|drugged|voyeur\w*|peep\w*|spy\w*|spying|surprised|hidden cameras?|upskirt\w*|"
     r"downblouse|creep\w*|leak\w*|revenge|stolen|hacked|non-?consensual|without (her|his|their) (consent|knowledge)"
-    r"|unaware|incest\w*|martyr\w*|crucif\w*|sacrific\w*|suicide|severed|beheaded|weapons?|swords?|daggers?|guns?|"
+    r"|unaware|dogging|in public|public sex|sex in public|outdoor sex|glory ?holes?|exhibitionis\w*|incest\w*|martyr\w*|crucif\w*|sacrific\w*|suicide|severed|beheaded|weapons?|swords?|daggers?|guns?|"
     r"verkracht\w*|ontvoer\w*|geweld\w*|viol|enlèvement|vergewaltig\w*|stupro|violación|seduc\w*)\b", re.I)
 
 # Stories about rape, abduction or a minor, and other names that need their capital letter (case matters).
@@ -956,45 +957,41 @@ COMMONS = rs.COMMONS_API
 # own rules. Sub-categories are read only when their own names pass screen().
 COMMONS_GROUPS = {
     "erotic_sculpture": dict(
-        categories=[("Erotic sculptures of Khajuraho", 1), ("Erotic sculptures in Khajuraho", 1),
-                    ("Mithuna sculptures in Khajuraho", 1), ("Erotic sculptures of Konark Sun Temple", 1),
-                    ("Erotic sculptures in Konark", 1), ("Maithuna", 1), ("Mithuna", 1),
-                    ("Erotic art in Pompeii", 1), ("Erotic frescoes in Pompeii", 1), ("Lupanar (Pompeii)", 1),
-                    ("Erotic sculptures in India", 1), ("Erotic sculptures", 1), ("Erotic art of ancient Rome", 1),
-                    ("Erotic art in ancient Greek pottery", 1), ("Moche erotic pottery", 1),
-                    ("Sexual intercourse in ancient Greek pottery", 1)],
+        categories=[("Erotic sculptures of Konark Sun Temple", 0), ("Erotic sculptures in India", 2),
+                    ("Erotic sculptures in Nepal", 1), ("Mithuna", 1), ("Erotic reliefs", 1),
+                    ("Sexuality in ancient Roman sculptures", 1), ("Lupanar (Pompeii)", 1), ("Erotic pottery", 2),
+                    ("Fellatio in sculptures", 1), ("Erotic sculptures", 1)],
         lead="A photograph of an erotic artwork (sculpture, fresco or pottery)", people_photo=False,
-        generic="It shows an ancient erotic artwork of adults"),
+        generic="It shows an erotic artwork of adults"),
     "sex_drawings": dict(
-        categories=[("Sex positions", 2), ("Drawings of sex positions", 1), ("Diagrams of sex positions", 1),
-                    ("Sexual intercourse in drawings", 1), ("Drawings of sexual activities", 1),
-                    ("Sex education", 1), ("Sex education illustrations", 1), ("Kama Sutra", 1),
-                    ("Kamasutra illustrations", 1), ("Vintage erotic illustrations", 1), ("Erotic engravings", 1),
-                    ("Erotic illustrations", 1), ("Erotic drawings", 1), ("Erotic prints", 1),
-                    ("Erotic lithographs", 1), ("Erotic etchings", 1)],
-        lead="A drawing or illustration", people_photo=False, drawings_only=True,
+        categories=[("Sex positions", 2), ("Human sexual activity diagrams", 1), ("Sex education", 1),
+                    ("Kama Sutra", 1), ("I modi - nine fragments - Agostino Veneziano", 0),
+                    ("Erotic prints in the Metropolitan Museum of Art", 1), ("Erotic engravings", 1),
+                    ("Erotic illustrations", 1), ("Erotic drawings", 1), ("People having sex in art", 1),
+                    ("Erotic paintings", 1)],
+        lead="A drawing, print or painting", people_photo=False, drawings_only=True,
         generic="It is a drawing of adults having sex or being intimate"),
     "sex_photos": dict(
-        categories=[("Human sexual activity", 0), ("Photographs of sexual intercourse", 1),
-                    ("Photographs of human sexual activity", 1), ("Sexual intercourse (photographs)", 1),
-                    ("Oral sex (photographs)", 1), ("Masturbation (photographs)", 1), ("Human penis erect", 0),
-                    ("Kissing (sexual)", 0), ("Nude couples", 1), ("Female masturbation", 0),
-                    ("Male masturbation", 0), ("Fellatio", 0), ("Cunnilingus", 0), ("Vaginal intercourse", 0),
-                    ("Anal intercourse", 0)],
-        lead="A photograph of adults", people_photo=True, photos_only=True,
+        categories=[("Human sexual activity", 2), ("Nude couples", 1)],
+        lead="A photograph of adults", people_photo=True, photos_only=True, own_work=True,
         generic="It is a photograph of adults having sex or being intimate"),
+    "inclusive": dict(
+        categories=[("LGBT sex", 2), ("Gay sex", 1), ("Lesbian sex", 1), ("Transgender sexuality", 1),
+                    ("Interracial sex", 1), ("Sexual activity during pregnancy", 0), ("Gay erotic art", 1),
+                    ("Lesbian erotic art", 1), ("Bisexual erotic art", 1), ("Safer sex", 1),
+                    ("Disability and sexuality", 1)],
+        lead="A picture of adults", people_photo=True, own_work=True,
+        generic="It is a picture of adults being intimate or having sex"),
     "sex_toys": dict(
-        categories=[("Sex toys", 1), ("Dildos", 1), ("Vibrators (sex toys)", 1), ("Vibrators", 1), ("Butt plugs", 1),
-                    ("Anal beads", 1), ("Penis rings", 1), ("Cock rings", 1), ("Love eggs", 1), ("Fleshlights", 1),
-                    ("Strap-on dildos", 1), ("Sex dolls", 0), ("Sex shops", 1), ("Personal lubricants", 1)],
+        categories=[("Sex toys", 1), ("Dildos", 1), ("Vibrators", 1), ("Butt plugs", 1), ("Anal beads", 1),
+                    ("Cock rings", 1), ("Sex dolls", 0), ("Sex shops", 0), ("Personal lubricants", 1)],
         lead="A product photograph of a sex toy", people_photo=True,
         generic="It is a photograph of a sex toy"),
     "contraception": dict(
-        categories=[("Condoms", 1), ("Female condoms", 1), ("Male condoms", 1), ("Combined oral contraceptive pill", 1),
-                    ("Oral contraceptives", 1), ("Intrauterine devices", 1), ("Contraceptive diaphragms", 1),
-                    ("Contraceptive sponges", 1), ("Dental dams", 1), ("Emergency contraception", 1),
-                    ("Contraceptive implants", 1), ("Vaginal rings", 1), ("Pregnancy tests", 1),
-                    ("Personal lubricants", 0)],
+        categories=[("Condoms", 1), ("Female condoms", 1), ("Male condoms", 1), ("Contraceptive pills", 1),
+                    ("Contraceptive devices", 1), ("Intrauterine devices", 1), ("Contraceptive implants", 1),
+                    ("Contraceptive injections", 0), ("Dental dams", 1), ("Latex dental dams", 0),
+                    ("Emergency contraception", 1), ("Vaginal rings", 0), ("Spermicides", 1), ("Safer sex", 0)],
         lead="A photograph of a sexual-health item", people_photo=True,
         generic="It is a photograph of a condom, contraceptive or other sexual-health item"),
 }
@@ -1092,7 +1089,7 @@ def commons_check(ws, group, pageid, title, info):
     if not why and COMMONS_GROUPS[group].get("photos_only") and drawn:
         why = "a drawing (counted in the drawings collection)"
     if not why and not drawn and has_person and COMMONS_GROUPS[group]["people_photo"]:
-        if group == "sex_photos" and not re.search(r"\bown work\b", credit_src, re.I):
+        if COMMONS_GROUPS[group].get("own_work") and not re.search(r"\bown work\b", credit_src, re.I):
             why = "a photograph of people that is not the uploader's own work (consent cannot be checked)"
         elif PHOTO_WORDS.search(f"{text} {categories}") and re.search(r"\b1[89]\d\d\b|vintage|antique", text, re.I):
             why = "an old photograph (anonymous: age and consent cannot be checked)"
@@ -1185,6 +1182,18 @@ def fetch_commons_sex_photos_sa(folder, cap, say=print):
     return commons_group_fetch("commons_sex_photos_sa", "sex_photos", "share-alike", folder, cap, say)
 
 
+def fetch_commons_inclusive(folder, cap, say=print):
+    """Commons pictures of LGBTQ+ sex, interracial couples, sex in pregnancy, safer sex and disability and sexuality
+    (CC0, public domain or CC BY): drawings, artworks and photographs; photographs of people must be the uploader's
+    own work. (Commons has almost nothing on older adults' or disabled people's sexuality: a gap.)"""
+    return commons_group_fetch("commons_inclusive", "inclusive", "open", folder, cap, say)
+
+
+def fetch_commons_inclusive_sa(folder, cap, say=print):
+    """The same as fetch_commons_inclusive, for CC BY-SA pictures."""
+    return commons_group_fetch("commons_inclusive_sa", "inclusive", "share-alike", folder, cap, say)
+
+
 def fetch_commons_sex_toys(folder, cap, say=print):
     """Commons product photographs of sex toys (CC0, public domain or CC BY): dildos, vibrators, butt plugs, anal
     beads, rings, love eggs and the like."""
@@ -1208,11 +1217,8 @@ def fetch_commons_contraception_sa(folder, cap, say=print):
 
 # ----------------------------------------------------------------- vintage photographs of NAMED, provably adult people
 
-VINTAGE_CATEGORIES = [("Pin-up photographs", 1), ("Pin-up models", 2), ("Burlesque performers", 1),
-                      ("Burlesque dancers", 1), ("Nude photography in the 1900s", 1),
-                      ("Nude photography in the 1910s", 1), ("Nude photography in the 1920s", 1),
-                      ("Vintage nude photography", 1), ("Art nude photography", 1), ("Vintage erotic photography", 1),
-                      ("Ziegfeld Follies performers", 1), ("Bathing beauties", 1)]
+VINTAGE_CATEGORIES = [("Pin-up photographs", 1), ("Vintage nude photographs", 2), ("Erotische Fotografie 1890-1920", 0),
+                      ("Erotische Fotografie 1845-1890", 0), ("Bathing beauties", 1), ("Burlesque performers", 1)]
 WIKIDATA = "https://www.wikidata.org/w/api.php"
 PD_BEFORE = 1930                          # a photo taken in this year or earlier is public domain in the US
 
@@ -1434,6 +1440,10 @@ ADULT_REVIEW_SOURCES = [
                    fetch_commons_sex_photos, 300, "about 60 MB"),
     commons_source("commons_sex_photos_sa", "Wikimedia Commons photographs of adult sexual activity", "share-alike",
                    fetch_commons_sex_photos_sa, 300, "about 60 MB"),
+    commons_source("commons_inclusive", "Wikimedia Commons LGBTQ+, interracial, pregnancy, safer-sex and disability "
+                   "sexuality pictures", "open", fetch_commons_inclusive, 300, "about 50 MB"),
+    commons_source("commons_inclusive_sa", "Wikimedia Commons LGBTQ+, interracial, pregnancy, safer-sex and "
+                   "disability sexuality pictures", "share-alike", fetch_commons_inclusive_sa, 300, "about 50 MB"),
     commons_source("commons_sex_toys", "Wikimedia Commons product photos of sex toys", "open",
                    fetch_commons_sex_toys, 400, "about 60 MB"),
     commons_source("commons_sex_toys_sa", "Wikimedia Commons product photos of sex toys", "share-alike",
@@ -1488,7 +1498,65 @@ NOT_INCLUDED = {
         "never used.",
     "BDSM, bondage and fetish categories": "left out: restraint and pain cannot be told apart from violence in a "
         "picture, and consent cannot be checked.",
+    "Commons 'Sex in public', 'Outdoor sex', 'Dogging', 'Voyeurism' and 'Glory holes' categories": "left out: "
+        "bystanders or the people shown may not have agreed.",
+    # Academic adult and NSFW datasets: none documents performer consent or age records.
+    "NPDI Pornography-800 and Pornography-2k (Avila et al., Moreira et al.)": "excluded: videos collected from "
+        "pornography websites (and YouTube for the non-porn part); no performer consent or age records.",
+    "LSPD, Large-Scale Pornographic Dataset (2022)": "excluded: pictures and videos collected from the web; no "
+        "consent or age records.",
+    "'Adult Content Dataset' and similar Kaggle or GitHub NSFW sets": "excluded: scraped from porn sites and the "
+        "web; no consent or age records.",
+    "NSFW Data Scraper (alex000kim) and NudeNet's training data": "excluded: scrapers of Reddit and other sites; "
+        "no consent or age records.",
+    "Yahoo open_nsfw": "excluded: a model only, no data (and trained on unpublished web data).",
+    # Producers and platforms: no openly licensed, consent-documented release found.
+    "Ethical or feminist producers with Creative Commons releases": "none found with a clear open licence AND "
+        "documented performer consent and age records (November 2026). Their catalogues can only be licensed by "
+        "contract: see CONTRACT_CANDIDATES.",
+    "Flickr 'restricted' photos under CC licences": "excluded: the Flickr API shows restricted photos only to a "
+        "signed-in adult account with safe search off (sign-up), and nothing on a photo page proves the uploader "
+        "is the person shown, their age or their consent; limiting to models' own accounts cannot be done "
+        "reliably by a program. Commons photos that came from Flickr are left out of the photograph collections "
+        "for the same reason.",
+    # Archives.
+    "The Kinsey Institute (Indiana University)": "restricted: the collections are seen by appointment by "
+        "researchers; pictures are not openly licensed. Can be asked about by letter.",
+    "Schwules Museum Berlin": "not open: its online collection is shown without an open licence; any items it "
+        "gave to Europeana with open rights are read by europeana_erotic.",
+    "Wellcome Collection sexology and erotica": "included (wellcome_erotica, CC BY or public domain).",
+    # Instructional sexuality material (terms as generally published; check again before any agreement).
+    "AMAZE (amaze.org) sex-education videos": "not open: free to watch and share as they are, but no open "
+        "licence for copying frames into training (contract candidate).",
+    "Scarleteen (scarleteen.com)": "not open: all rights reserved (contract candidate).",
+    "OMGYes, Kenneth Play, Betty Dodson Foundation, Beducated": "not open: paid or copyrighted teaching material "
+        "(contract candidates).",
+    "Positions for people with limited mobility (how-to diagrams)": "no openly licensed set found; a gap. Disability "
+        "charities' guides are copyrighted (contract candidates).",
+    # Inclusive sexuality.
+    "Sexual Health and Disability Alliance (SHADA), Love Lives and Disability, Enhance the UK 'Undressing "
+    "Disability', Planned Parenthood disability resources": "not open: copyrighted text and photographs "
+        "(contract candidates).",
+    "NHS and other Crown material": "the Open Government Licence covers Crown text, but NHS website pictures are "
+        "mostly licensed stock photographs: not included.",
+    "CDC, Australian and Canadian health departments' LGBTQ+ sexual-health pictures": "mostly stock photographs or "
+        "third-party pictures excluded from their open licences; CDC public-domain items are in the CDC PHIL "
+        "collection of review_sources.py. Not included here.",
+    "Open photographs of disabled people's or older adults' sexuality": "a GAP: none found on Commons or in any "
+        "open source (Commons has no category for older adults' sexuality and one file under 'Disability and "
+        "sexuality', read by commons_inclusive).",
 }
+
+# Companies and bodies whose catalogues could be licensed by contract (nothing is downloaded from them). Any
+# agreement should give: written performer consent to this use, age records (US 18 U.S.C. 2257 or the local
+# equivalent), permission to train a private description model, and no picture-making or publication.
+CONTRACT_CANDIDATES = [
+    "Lust Cinema / XConfessions (Erika Lust)", "Bellesa", "CrashPad Series (Pink and White Productions)",
+    "Four Chambers (Vex Ashley)", "FrolicMe", "Joymii", "Comstock Films", "Make Love Not Porn (if still operating)",
+    "OMGYes", "Kenneth Play", "Betty Dodson Foundation", "Beducated", "AMAZE", "Scarleteen",
+    "Sexual Health and Disability Alliance", "Love Lives and Disability", "Enhance the UK (Undressing Disability)",
+    "Planned Parenthood", "The Kinsey Institute",
+]
 
 
 def main(argv):
