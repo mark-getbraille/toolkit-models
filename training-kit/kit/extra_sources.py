@@ -42,7 +42,11 @@ The collections (EXTRA_SOURCES):
     commons_food_sa       Wikimedia Commons: food photos under CC BY-SA or GFDL.
     commons_medical_sa    Wikimedia Commons: medical photos of adults under CC BY-SA or GFDL (content "medical").
     papila                PAPILA: eye-fundus photos of adults, healthy, glaucoma or suspect (GPL-3.0+; medical).
+    fortepan              Fortepan: Hungarian photos with their Hungarian titles (CC BY-SA 4.0, through Europeana).
+    deutsche_fotothek     Deutsche Fotothek: pictures with German titles and descriptions (CC BY-SA 4.0, Europeana).
   noncommercial
+    hindi_vg              Hindi Visual Genome: one part of a photo, outlined in red, described in Hindi (CC BY-NC-SA).
+    thai_coco             Thai descriptions of COCO and NECTEC photos (CC BY-NC-SA 3.0).
     plantnet_nc           Pl@ntNet-300K v2: the photos under CC BY-NC or CC BY-NC-SA.
     ravdess               RAVDESS: stills of 24 adult actors posing eight expressions (CC BY-NC-SA 4.0 videos).
     how2sign              How2Sign: stills of adults signing American Sign Language (CC BY-NC 4.0 videos).
@@ -65,6 +69,18 @@ The collections (EXTRA_SOURCES):
     uecfoodpix            UEC FoodPix Complete: Japanese meals, the dishes on the tray (research only).
     indoor_scenes         MIT Indoor 67: kinds of indoor places (research only).
     stanford_products     Stanford Online Products: everyday things from online shop listings (no terms stated).
+    uit_viic              UIT-ViIC: COCO sports photos described in Vietnamese (no licence stated).
+    ktvic                 KTVIC: everyday life in Vietnam described in Vietnamese (no licence stated).
+    multi30k_coco         Multi30k: COCO photos described in German and French (no licence stated).
+
+Other languages: each of those answers stays in its own language, with the question asked in that language
+("Mit ábrázol ez a fénykép?", "Was zeigt dieses Bild?", "Hãy mô tả bức ảnh này trong một câu." ...), and rows carry
+"language". Nothing is translated when the kit prepares them.
+
+Left out because their words were written by an AI model (the kit only learns people's words):
+japanese-photos-captioned, metmuseum_w_korean_captions, laion-coco-arabic and pixmo-captions-arabic. Also the HCMUS
+Vietnamese captions for blind people (pqthinh232 on Hugging Face): five reworded navigation instructions per photo, with
+no word of who wrote them, and walking advice a model must not learn from unchecked text.
 
 Needing sign-up (cannot be downloaded automatically; get them yourself, then put the pictures in the own-pictures
 folder with your own descriptions, as the user guide says):
@@ -78,6 +94,10 @@ folder with your own descriptions, as the user guide says):
                                          (facebookresearch/DCI).
   Total-Text                             https://github.com/cs-chan/Total-Text-Dataset : its 2026 terms ask research by
                                          or for a company to get written confirmation first: e-mail the authors.
+  Flickr30k and Flickr8k photos          https://forms.illinois.edu/sec/229675 (Flickr30k) and the Flickr8k form at
+                                         the University of Illinois: needed for Multi30k's German, French and Czech
+                                         descriptions of Flickr30k photos, and for the Turkish (TasvirEt), Hindi and
+                                         Bengali descriptions of Flickr8k photos.
   Roboflow Universe sets (dog breeds,    https://universe.roboflow.com : a free Roboflow account and API key are needed
   price tags and others)                 to download; each set shows its own licence.
   EMOTIC, BoLD, RAF-DB, AffectNet,       request forms or agreements (see personal_sources.py).
@@ -94,6 +114,7 @@ file's download address) and the Wikimedia Commons helpers.
 import collections
 import csv
 import gzip
+import hashlib
 import io
 import json
 import math
@@ -127,6 +148,18 @@ def gdrive(file_id):
     """The direct download address of a public Google Drive file (it answers range requests, so a big zip there can
     be read piece by piece)."""
     return f"https://drive.usercontent.google.com/download?id={file_id}&export=download&confirm=t"
+
+
+def remote_size(url):
+    """The size in bytes of a file on the web, asked with a one-byte range request (Google Drive answers a plain size
+    question for big files with a web page instead)."""
+    import requests
+    r = requests.get(url, headers={"User-Agent": USER_AGENT, "Range": "bytes=0-0"}, timeout=120, stream=True)
+    r.close()
+    total = (r.headers.get("Content-Range") or "").rsplit("/", 1)[-1]
+    if not total.isdigit():
+        raise RuntimeError(f"the size of {url} could not be found; it is tried again the next time")
+    return int(total)
 
 
 def zenodo(record, name):
@@ -255,7 +288,8 @@ PET_DOGS = {"american_bulldog": "American Bulldog", "american_pit_bull_terrier":
             "leonberger": "Leonberger", "miniature_pinscher": "Miniature Pinscher", "newfoundland": "Newfoundland",
             "pomeranian": "Pomeranian", "pug": "Pug", "saint_bernard": "Saint Bernard", "samoyed": "Samoyed",
             "scottish_terrier": "Scottish Terrier", "shiba_inu": "Shiba Inu",
-            "staffordshire_bull_terrier": "Staffordshire Bull Terrier", "wheaten_terrier": "Soft-coated Wheaten Terrier",
+            "staffordshire_bull_terrier": "Staffordshire Bull Terrier",
+            "wheaten_terrier": "Soft-coated Wheaten Terrier",
             "yorkshire_terrier": "Yorkshire Terrier"}
 
 
@@ -530,7 +564,8 @@ def prepare_mapqa(source, data_dir, work, cap):
     choropleth maps of the United States (states shaded by a value, with a legend), with questions about them
     ("Which states have the lowest value in the West?"). The question files (80 MB) and the chosen maps are read out
     of the 2 GB zip by HTTP ranges; its dev part gives the test pictures. At most 3 questions per map."""
-    z = remote_zip(MAPQA_U)
+    size = remote_size(MAPQA_U)
+    z = remote_zip(MAPQA_U, size)
     rows = []
     for part, split, want in (("dev", "test", source.test * 3), ("test", "", cap)):
         per_map = {}
@@ -549,7 +584,7 @@ def prepare_mapqa(source, data_dir, work, cap):
                 chosen.append((f"MapQA_U/images/{m}", {"question": question, "answer": answer, "split": split}))
                 count += 1
         say(f"  MapQA: {len(chosen)} questions from its {part} part.")
-        rows += zip_members(source, data_dir, work, lambda: remote_zip(MAPQA_U), chosen, workers=2)
+        rows += zip_members(source, data_dir, work, lambda: remote_zip(MAPQA_U, size), chosen, workers=2)
     z.close()
     return rows
 
@@ -702,6 +737,19 @@ def nutrition_answer(nutriments):
     return "Per 100 g: " + "; ".join(parts) + "."
 
 
+ENGLISH_INGREDIENTS = re.compile(r"\b(sugar|salt|water|oil|flour|milk|wheat|cocoa|butter|cream|egg|starch|"
+                                 r"flavou?ring|vinegar|syrup|yeast|rice|maize|corn|tomato|onion|garlic|pepper|"
+                                 r"spices?|acid|extract|powder|emulsifier|vitamin|beef|pork|chicken|fish)\b", re.I)
+NOT_ENGLISH = re.compile(r"\b(et|de|du|des|sucre|huile|farine|lait|und|zucker|mehl|salz|azúcar|aceite|harina|leche|"
+                         r"zucchero|olio|farina|latte|suiker|melk|socker|mjölk)\b", re.I)
+
+
+def looks_english(text):
+    """True when an ingredient list seems to be in English (Open Food Facts sometimes has another language in its
+    English field)."""
+    return bool(ENGLISH_INGREDIENTS.search(text)) and not NOT_ENGLISH.search(text)
+
+
 def prepare_openfoodfacts_labels(source, data_dir, work, cap):
     """Open Food Facts (photos CC BY-SA 3.0, database ODbL 1.0): the English ingredient-list and nutrition-table
     photos of food products, with what people typed from them: "Read the ingredients on this label." and "What does
@@ -723,7 +771,7 @@ def prepare_openfoodfacts_labels(source, data_dir, work, cap):
             except RuntimeError:
                 product = None
             text = clean(re.sub(r"_", "", (product or {}).get("ingredients_text_en") or ""))
-            if text and len(text.split()) <= 120:
+            if text and len(text.split()) <= 120 and looks_english(text):
                 items.append((f"off-ingredients-{code}.jpg", url,
                               {"question": "Read the ingredients on this label.",
                                "answer": f"The ingredients are: {text.rstrip('.')}.", "split": "", "credit": credit}))
@@ -882,7 +930,8 @@ def prepare_commons_breeds_sa(source, data_dir, work, cap, per_breed=4):
                     continue
                 items.append((commons_file_name("breed-sa", title), url,
                               {"question": question, "split": "", "credit": credit,
-                               "answer": f"It looks like {a_or_an(breed)} {breed}, a breed of {animal}."}))
+                               "answer": (f"It looks like {breed}, a breed of cattle." if animal == "cattle" else
+                                         f"It looks like {a_or_an(breed)} {breed}, a breed of {animal}.")}))
                 got += 1
     say(f"  Fetching {len(items)} Commons breed photos.")
     return fetch_pictures(items, os.path.join(data_dir, source.key), workers=2, pause=0.5)
@@ -1145,7 +1194,8 @@ def prepare_how2sign(source, data_dir, work, cap):
     clip (PyAV; install requirements-video.txt), one clip per instructional video first so every signer and topic
     is spread; only the chosen clips are read out of the 31 GB zip by HTTP ranges. A still cannot show what is being
     said, so the answer says what can be seen."""
-    z = remote_zip(HOW2SIGN_CLIPS)
+    size = remote_size(HOW2SIGN_CLIPS)
+    z = remote_zip(HOW2SIGN_CLIPS, size)
     groups = {}
     for member in z.namelist():
         if member.endswith(".mp4"):
@@ -1156,7 +1206,7 @@ def prepare_how2sign(source, data_dir, work, cap):
               "hands, face and body. From a single picture the meaning cannot be read.")
     chosen = [(m, {"question": "What is this person doing?", "answer": answer, "split": ""}) for m in picked]
     say(f"  How2Sign: {len(chosen)} stills from {len(groups)} videos.")
-    return zip_members(source, data_dir, work, lambda: remote_zip(HOW2SIGN_CLIPS), chosen, workers=3,
+    return zip_members(source, data_dir, work, lambda: remote_zip(HOW2SIGN_CLIPS, size), chosen, workers=3,
                        prepare_picture=video_still)
 
 
@@ -1184,6 +1234,17 @@ def prepare_cub200(source, data_dir, work, cap):
     download_file(CUB_URL, archive)
     quota, counts, rows = per_label(cap + source.test, 200), collections.Counter(), []
     folder = os.path.join(data_dir, source.key)
+    try:
+        cub_read(archive, quota, counts, rows, folder)
+    except (EOFError, OSError, tarfile.TarError) as e:
+        say(f"  The CUB archive could not be read to the end ({e}); the photos read so far are used.")
+    say(f"  {len(rows)} bird photos of {len(counts)} species.")
+    return rows
+
+
+def cub_read(archive, quota, counts, rows, folder):
+    """Read the CUB archive once, taking up to quota photos of each species into rows."""
+    import tarfile
     with tarfile.open(archive, "r|gz") as tar:
         for m in tar:
             parts = m.name.split("/")
@@ -1195,8 +1256,6 @@ def prepare_cub200(source, data_dir, work, cap):
                     bird = bird_name(parts[2])
                     rows.append({"picture": path, "question": "What bird is this?",
                                  "answer": f"This looks like {a_or_an(bird)} {bird}.", "split": ""})
-    say(f"  {len(rows)} bird photos of {len(counts)} species.")
-    return rows
 
 
 PLANTDOC_REPO = "pratikkayal/PlantDoc-Dataset"
@@ -1214,7 +1273,8 @@ PLANTDOC_ANSWERS = {
     "Tomato leaf bacterial spot": "a tomato leaf with bacterial spot",
     "Tomato leaf late blight": "a tomato leaf with late blight",
     "Tomato leaf mosaic virus": "a tomato leaf with mosaic virus",
-    "Tomato leaf yellow virus": "a tomato leaf with yellow leaf curl virus", "Tomato mold leaf": "a tomato leaf with leaf mould",
+    "Tomato leaf yellow virus": "a tomato leaf with yellow leaf curl virus",
+    "Tomato mold leaf": "a tomato leaf with leaf mould",
     "grape leaf": "a healthy grape leaf", "grape leaf black rot": "a grape leaf with black rot",
 }
 
@@ -1261,7 +1321,8 @@ def prepare_nocaps(source, data_dir, work, cap):
         texts = captions.get(image["id"]) or []
         first = next((t for t in texts if len(t.split()) >= 5), "")
         if first:
-            items.append((image["file_name"], f"https://s3.amazonaws.com/nocaps/val/{image['file_name']}",
+            items.append((image["file_name"],
+                          f"https://open-images-dataset.s3.amazonaws.com/validation/{image['open_images_id']}.jpg",
                           {"question": BRIEF, "answer": sentence(first), "split": "",
                            "child": any(CHILD_WORDS.search(t) for t in texts)}))
     random.Random(239).shuffle(items)
@@ -1305,7 +1366,7 @@ def prepare_rico_screens(source, data_dir, work, cap):
             path = save(f"rico-{stem}", tar.extractfile(member).read(), folder)
             if path:
                 rows.append({"picture": path, "question": "What is on this phone screen?",
-                             "answer": f"This app screen shows {summaries[stem][0].lower()}{summaries[stem][1:]}",
+                             "answer": summaries[stem],
                              "split": "test" if stem in tests else ""})
         return len(rows) >= want
 
@@ -1372,7 +1433,7 @@ def prepare_rico_widgets(source, data_dir, work, cap):
                 path = data and save(f"widget-{stem}", data, folder)
                 if path:
                     rows.append({"picture": path, "question": "What does the control outlined in red do?",
-                                 "answer": f"It is for: {caption}.", "split": ""})
+                                 "answer": sentence(caption), "split": ""})
         return len(rows) >= want
 
     stream_tar(RICO_URL, take, "the Rico phone screens (6.4 GB at most)")
@@ -1411,11 +1472,12 @@ def prepare_sroie(source, data_dir, work, cap):
 
 WILDRECEIPT_URL = "https://download.openmmlab.com/mmocr/data/wildreceipt.tar"
 # WildReceipt's label numbers for the values it marks.
-WILD_FIELDS = {1: "store", 3: "address", 7: "date", 9: "time", 11: "item", 13: "quantity", 15: "price", 23: "total"}
+WILD_FIELDS = {1: "store", 7: "date", 9: "time", 23: "total"}
+WILD_QUESTION = "Read the shop's name, the date and the total from this receipt."
 
 
 def wildreceipt_answer(entry):
-    """The answer for one WildReceipt receipt (its marked values in reading order), or ""."""
+    """The answer for one WildReceipt receipt (its shop, date, time and total, in reading order), or ""."""
     found = {}
     for a in sorted(entry.get("annotations") or [], key=lambda a: (a["box"][1], a["box"][0])):
         field = WILD_FIELDS.get(a.get("label"))
@@ -1427,16 +1489,13 @@ def wildreceipt_answer(entry):
     when = " ".join(found.get("date", [])[:1] + found.get("time", [])[:1])
     if when:
         text += f" It is dated {when}."
-    items = found.get("item", [])
-    if items:
-        text += f" It lists {listed(items[:8])}" + (" and more" if len(items) > 8 else "") + "."
     return text + f" The total is {found['total'][-1]}."
 
 
 def prepare_wildreceipt(source, data_dir, work, cap):
     """WildReceipt (Sun et al., 2021, OpenMMLab; no licence stated): 1,768 photos of receipts from many shops, with
-    the store, date, time, items, prices and total marked. The 185 MB archive is downloaded once (kept; it resumes).
-    "Read the shop's name, the date, the items and the total from this receipt." """
+    the store, date, time and total marked (its item names are written without spaces, so they are not used). The
+    185 MB archive is downloaded once (kept; it resumes). "Read the shop's name, the date and the total ..." """
     import tarfile
     archive = download_to(work, WILDRECEIPT_URL)
     rows = []
@@ -1457,7 +1516,7 @@ def prepare_wildreceipt(source, data_dir, work, cap):
             path = save("wildreceipt-" + re.sub(r"\W", "_", name)[-80:], tar.extractfile(name).read(), folder)
             if path:
                 rows.append({"picture": path, "answer": answer, "split": split,
-                             "question": "Read the shop's name, the date, the items and the total from this receipt."})
+                             "question": WILD_QUESTION})
     return rows
 
 
@@ -1465,27 +1524,31 @@ DVQA_QA = gdrive("1VKYd3kaiCFziSsSv4SgQJ2T5m7jxuh5u")
 DVQA_IMAGES = gdrive("1iKH2lTi1-QxtNUVRxTUWFvUvRHq6HAsZ")
 
 
-def json_array_items(f, block=1 << 20):
+def json_array_items(f, block=1 << 22):
     """The items of a big JSON list read from a file one by one, without loading the whole file."""
-    decoder, buffer, started = json.JSONDecoder(), "", False
+    import codecs
+    decoder, buffer, pos, started = json.JSONDecoder(), "", 0, False
+    text = codecs.getincrementaldecoder("utf-8")("ignore")             # a letter split between two blocks is kept
+    skip = re.compile(r"[\s,]*")
     while True:
         chunk = f.read(block)
-        buffer += chunk.decode("utf-8", "ignore") if chunk else ""
+        buffer = buffer[pos:] + text.decode(chunk or b"", final=not chunk)
+        pos = 0
         while True:
-            buffer = buffer.lstrip(" \r\n\t,")
+            pos = skip.match(buffer, pos).end()
             if not started:
-                if not buffer.startswith("["):
+                if not buffer.startswith("[", pos):
                     break
-                buffer, started = buffer[1:], True
+                pos, started = pos + 1, True
                 continue
-            if buffer.startswith("]"):
+            if buffer.startswith("]", pos):
                 return
             try:
-                item, end = decoder.raw_decode(buffer)
+                item, pos_after = decoder.raw_decode(buffer, pos)
             except ValueError:
                 break
+            pos = pos_after
             yield item
-            buffer = buffer[end:]
         if not chunk:
             return
 
@@ -1506,10 +1569,12 @@ def prepare_dvqa(source, data_dir, work, cap):
                     for q in json_array_items(tar.extractfile(member)):
                         number = int(re.sub(r"\D", "", q["image"]) or 0)
                         if number % 6 == 0 and len(questions.get(q["image"], [])) < 2 \
-                                and q.get("question_type") in ("data", "reasoning"):
+                                and q.get("template_id") in ("data", "reasoning"):
                             questions.setdefault(q["image"], []).append(
                                 (as_question(q["question"]), sentence(str(q["answer"]))))
                     break
+    if not questions:
+        raise RuntimeError("DVQA's questions could not be read; it is tried again the next time")
     say(f"  DVQA: questions kept for {len(questions)} charts.")
     want, rows = cap + source.test, []
     folder = os.path.join(data_dir, source.key)
@@ -1557,10 +1622,13 @@ def prepare_gothenburg_price_tags(source, data_dir, work, cap):
 
 STREET_SIGNS = "AlessandroFerrante/StreetSignSet"
 SIGNS = {
-    "prio_give_way": "a give-way (yield) sign", "prio_stop": "a stop sign", "prio_priority_road": "a priority road sign",
-    "forb_no_entry": "a no-entry sign", "forb_no_parking": "a no-parking sign", "forb_no_stopping": "a no-stopping sign",
+    "prio_give_way": "a give-way (yield) sign", "prio_stop": "a stop sign",
+    "prio_priority_road": "a priority road sign",
+    "forb_no_entry": "a no-entry sign", "forb_no_parking": "a no-parking sign",
+    "forb_no_stopping": "a no-stopping sign",
     "forb_overtake_car": "a no-overtaking sign", "forb_overtake_trucks": "a no-overtaking-for-lorries sign",
-    "forb_trucks": "a no-lorries sign", "forb_turn_left": "a no-left-turn sign", "forb_turn_right": "a no-right-turn sign",
+    "forb_trucks": "a no-lorries sign", "forb_turn_left": "a no-left-turn sign",
+    "forb_turn_right": "a no-right-turn sign",
     "forb_weight_over_3.5t": "a sign banning vehicles over 3.5 tonnes",
     "forb_weight_over_7.5t": "a sign banning vehicles over 7.5 tonnes", "forb_u_turn": "a no-U-turn sign",
     "info_bus_station": "a bus stop sign", "info_crosswalk": "a pedestrian crossing sign",
@@ -1575,7 +1643,8 @@ SIGNS = {
     "warn_sharp_right_curve": "a warning sign for a sharp bend to the right",
     "warn_slippery_road": "a slippery road warning sign", "warn_hump": "a warning sign for a speed bump",
     "warn_traffic_light": "a warning sign for traffic lights", "warn_tram": "a warning sign for trams",
-    "warn_two_way_traffic": "a warning sign for two-way traffic", "warn_wild_animals": "a warning sign for wild animals",
+    "warn_two_way_traffic": "a warning sign for two-way traffic",
+    "warn_wild_animals": "a warning sign for wild animals",
     "mand_bike_lane": "a cycle lane sign", "mand_go_left": "a sign saying turn left",
     "mand_go_left_right": "a sign saying turn left or right", "mand_go_right": "a sign saying turn right",
     "mand_go_straight": "a sign saying go straight ahead", "mand_go_straight_left": "a sign saying go straight or left",
@@ -1880,6 +1949,275 @@ def prepare_stanford_products(source, data_dir, work, cap):
     return zip_members(source, data_dir, work, lambda: remote_zip(SOP_URL, SOP_SIZE), chosen, workers=4)
 
 
+# ----------------------------------------------------------------- other languages (each answer in its own language)
+
+EUROPEANA = "https://api.europeana.eu/record/v2/search.json"
+# Words that name a child, in the languages below (a row with one is marked "child", as CHILD_WORDS does in English).
+CHILD_WORDS_OTHER = re.compile(r"\b(gyerek\w*|gyermek\w*|kisfiú\w*|kislány\w*|csecsemő\w*|óvod\w*|kind|kinder\w*|"
+                               r"junge|mädchen|knabe|säugling|enfant\w*|garçon\w*|fillette\w*|bébé\w*|"
+                               r"trẻ em|em bé|cậu bé|cô bé|bé trai|bé gái|đứa trẻ|học sinh)\b|เด็ก|बच्च|लड़का|लड़की|"
+                               r"बालक|बालिका|शिशु", re.I)
+
+
+def europeana_rows(source, data_dir, provider, language, question, answer_of, cap, seed):
+    """Rows from one Europeana data provider's records under CC BY-SA, in the provider's own language (Europeana's
+    machine translations are never used). answer_of(item) gives the answer or "". Uses Europeana's public
+    demonstration key, as sources.prepare_europeana does."""
+    import requests
+    params = {"wskey": "api2demo", "query": "*", "qf": [f'DATA_PROVIDER:"{provider}"', "TYPE:IMAGE"],
+              "media": "true", "profile": "rich", "rows": 100, "cursor": "*"}
+    items, rounds, want = [], 0, int((cap + source.test) * 1.2)
+    while len(items) < want * 3 and rounds < 100 and params["cursor"]:      # three times as many, then a random pick
+        try:
+            data = requests.get(EUROPEANA, params=params, timeout=60, headers={"User-Agent": USER_AGENT}).json()
+        except Exception:  # noqa: BLE001 - stop here with what there is
+            break
+        for item in data.get("items", []):
+            rights = " ".join(item.get("rights") or [])
+            url = (item.get("edmIsShownBy") or [""])[0]
+            answer = answer_of(item) if "/by-sa/" in rights and url else ""
+            if answer and not NUDE.search(answer):
+                items.append((re.sub(r"[^\w.-]", "_", item.get("id", str(len(items))))[-80:] + ".jpg", url,
+                              {"question": question, "answer": answer, "split": "", "language": language,
+                               "child": bool(CHILD_WORDS_OTHER.search(answer)),
+                               "credit": f"{provider}, CC BY-SA 4.0, https://www.europeana.eu/item{item.get('id')}"}))
+        params["cursor"] = data.get("nextCursor")
+        rounds += 1
+        time.sleep(0.5)
+    random.Random(seed).shuffle(items)
+    say(f"  Fetching {len(items[:want])} pictures from {provider} (through Europeana).")
+    return fetch_pictures(items[:want], os.path.join(data_dir, source.key), workers=4)
+
+
+def first_value(field, language):
+    """The first value of a Europeana language-aware field in one language, tidied, or ""."""
+    return clean(((field or {}).get(language) or [""])[0])
+
+
+def fortepan_answer(item):
+    """A Fortepan photo's Hungarian title with its year ("Gőzös halad át az Árpád híd alatt (1954)."), or ""."""
+    title = first_value(item.get("dcTitleLangAware"), "hu")
+    if len(title.split()) < 2:
+        return ""
+    year = (item.get("year") or [""])[0]
+    return sentence(f"{title} ({year})" if year else title)
+
+
+def prepare_fortepan(source, data_dir, work, cap):
+    """Fortepan (Budapest; CC BY-SA 4.0): Hungarian photos from family albums and photographers, 1900s to 1990s, with
+    the title written by Fortepan's volunteers, in Hungarian, and the year. Read through Europeana (about 9,500 of
+    Fortepan's photos are there). "Mit ábrázol ez a fénykép?" (What does this photo show?)"""
+    return europeana_rows(source, data_dir, "Fortepan", "hu", "Mit ábrázol ez a fénykép?", fortepan_answer, cap, 281)
+
+
+FOTOTHEK_BOILERPLATE = re.compile(r"Landesdigitalisierungsprogramm|Digitalisierung|Altbestand", re.I)
+
+
+def fotothek_answer(item):
+    """A Deutsche Fotothek record's German title and description as one answer, or ""."""
+    title = first_value(item.get("dcTitleLangAware"), "de")
+    text = first_value(item.get("dcDescriptionLangAware"), "de")
+    if FOTOTHEK_BOILERPLATE.search(text):
+        text = ""
+    answer = sentence(title) + (" " + sentence(text) if text and text.lower() not in title.lower() else "")
+    return answer if 3 <= len(answer.split()) <= 90 else ""
+
+
+def prepare_deutsche_fotothek(source, data_dir, work, cap):
+    """Deutsche Fotothek (SLUB Dresden; CC BY-SA 4.0): photographs, prints and drawings with the library's German
+    title and description, read through Europeana. "Was zeigt dieses Bild?" (What does this picture show?)"""
+    return europeana_rows(source, data_dir, "Deutsche Fotothek", "de", "Was zeigt dieses Bild?", fotothek_answer, cap,
+                          283)
+
+
+HVG_TRAIN = ("https://lindat.mff.cuni.cz/repository/server/api/core/bitstreams/handle/11234/1-3267/"
+             "hindi-visual-genome-train.txt.gz?sequence=2&isAllowed=y")
+HVG_QUESTION = "लाल चौखटे में क्या दिखाई दे रहा है?"          # "What can be seen in the red box?"
+
+
+def boxed_pictures(items, folder, workers=6):
+    """Like sources.fetch_pictures, but a thick red box is drawn on each picture first: items are (file name,
+    address, (x, y, width, height) in the picture's own pixels, row)."""
+    import concurrent.futures
+    import requests
+    from PIL import Image, ImageDraw
+    session = requests.Session()
+    session.headers["User-Agent"] = USER_AGENT
+    os.makedirs(folder, exist_ok=True)
+
+    def one(item):
+        """Fetch one picture and draw its box; the row, or None."""
+        name, url, (x, y, w, h), row = item
+        path = os.path.join(folder, name)
+        if not sources.have(path):
+            try:
+                r = session.get(url, timeout=30)
+                img = Image.open(io.BytesIO(r.content)).convert("RGB")
+            except Exception:  # noqa: BLE001 - a picture that cannot be fetched is left out
+                return None
+            if w < 16 or h < 16 or w * h > 0.8 * img.width * img.height:
+                return None
+            ImageDraw.Draw(img).rectangle((x, y, x + w, y + h), outline=(255, 0, 0), width=max(3, img.width // 150))
+            out = io.BytesIO()
+            img.save(out, "JPEG", quality=92)
+            if not sources.smaller(out.getvalue(), path):
+                return None
+        return dict(row, picture=path)
+
+    with concurrent.futures.ThreadPoolExecutor(workers) as pool:
+        return [r for r in pool.map(one, items) if r]
+
+
+def prepare_hindi_vg(source, data_dir, work, cap):
+    """Hindi Visual Genome 1.1 (Parida and Bojar, 2020; LINDAT 11234/1-3267, CC BY-NC-SA 4.0): short descriptions of
+    one part of a Visual Genome photo, machine-translated into Hindi and then corrected by people looking at the
+    picture. The part is outlined in red on the photo, which is fetched from Visual Genome's server (its photos have
+    no licence of their own written down). One part per photo. Rows whose English or Hindi names a child are marked
+    "child"."""
+    say("  Downloading Visual Genome's list of photos (17 MB; shared with visual_genome_qa).")
+    urls = {image["image_id"]: image["url"].replace("http://", "https://")
+            for image in json_in_zip(download_to(work, VG_URL + "image_data.json.zip", "vg_image_data.json.zip"))}
+    seen, items = set(), []
+    for line in gzip.decompress(get_bytes(HVG_TRAIN)).decode("utf-8").splitlines():
+        parts = line.split("\t")
+        if len(parts) != 7 or not all(p.isdigit() for p in parts[:5]) or int(parts[0]) in seen \
+                or int(parts[0]) not in urls:
+            continue
+        seen.add(int(parts[0]))
+        english, hindi = clean(parts[5]), clean(parts[6])
+        if not hindi or NUDE.search(english):
+            continue
+        items.append((f"hvg-{parts[0]}.jpg", urls[int(parts[0])], tuple(int(v) for v in parts[1:5]),
+                      {"question": HVG_QUESTION, "answer": hindi, "split": "", "language": "hi",
+                       "child": bool(CHILD_WORDS.search(english) or CHILD_WORDS_OTHER.search(hindi))}))
+    random.Random(293).shuffle(items)
+    items = items[:int((cap + source.test) * 1.1)]
+    say(f"  Fetching {len(items)} Visual Genome photos and outlining one part of each.")
+    return boxed_pictures(items, os.path.join(data_dir, source.key))
+
+
+THAI_COCO = "saksornr/coco_caption-thai-ipu24-train-sample10k"
+THAI_QUESTION = "บรรยายภาพนี้ในหนึ่งประโยค"                    # "Describe this picture in one sentence."
+
+
+def parquet_picture_rows(source, data_dir, repo, pattern, image_col, text_of, cap, seed, per_group_rows=None):
+    """Rows from Hugging Face parquet files that hold the pictures themselves, read one row group at a time (so only
+    the parts used are downloaded) until there are enough. text_of(row) gives (picture id, row) or None; a picture
+    id seen before is skipped (one row per picture)."""
+    import pyarrow.parquet as pq
+    from huggingface_hub import HfFileSystem
+    fs = HfFileSystem()
+    files = sources.hf_parquet_files(repo, pattern)
+    random.Random(seed).shuffle(files)
+    folder, rows, seen, want = os.path.join(data_dir, source.key), [], set(), cap + source.test
+    for name in files:
+        f = pq.ParquetFile(fs.open(f"datasets/{repo}/{name}"))
+        groups = list(range(f.num_row_groups))
+        random.Random(f"{seed}-{name}").shuffle(groups)
+        for group in groups:
+            for record in f.read_row_group(group).to_pylist():
+                got = text_of(record)
+                if not got or got[0] in seen:
+                    continue
+                seen.add(got[0])
+                name = re.sub(r"\W", "_", f"{source.key}-{got[0]}")[-100:]
+                path = save(name, (record.get(image_col) or {}).get("bytes"), folder)
+                if path:
+                    rows.append(dict(got[1], picture=path))
+                if len(rows) >= want:
+                    return rows
+            say(f"    {len(rows)} pictures so far")
+    return rows
+
+
+def prepare_thai_coco(source, data_dir, work, cap):
+    """Thai image captions (saksornr/coco_caption-thai-ipu24-train-sample10k on Hugging Face; CC BY-NC-SA 3.0 from
+    NECTEC's IPU24 corpus): 10,000 COCO and NECTEC photos, each described in Thai by people. The photos are in the
+    parquet files, read one part at a time until enough are taken. "บรรยายภาพนี้ในหนึ่งประโยค" (Describe this picture
+    in one sentence.)"""
+    def text_of(r):
+        """(photo id, row) for one record, or None."""
+        caption = clean(r.get("caption"))
+        if not caption:
+            return None
+        return r.get("cocoid") or caption[:40], {"question": THAI_QUESTION, "answer": caption, "split": "",
+                                                 "language": "th", "child": bool(CHILD_WORDS_OTHER.search(caption))}
+    return parquet_picture_rows(source, data_dir, THAI_COCO, r"^data/", "image", text_of, cap, 307)
+
+
+VI_QUESTION = "Hãy mô tả bức ảnh này trong một câu."          # "Describe this picture in one sentence."
+UIT_VIIC = "https://huggingface.co/datasets/ttrung1402/UIT-ViIC/resolve/main/data/annotations.zip"
+
+
+def prepare_uit_viic(source, data_dir, work, cap):
+    """UIT-ViIC (Lam et al., 2020, University of Information Technology, Ho Chi Minh City; no licence stated by the
+    makers): about 3,850 COCO photos of sports with five Vietnamese descriptions each, written by people. The
+    descriptions come from the ttrung1402/UIT-ViIC copy on Hugging Face (0.5 MB); the photos from COCO's own server.
+    Its test part gives the test pictures."""
+    archive = download_to(work, UIT_VIIC, "uit_viic_annotations.zip")
+    items = []
+    for part, split in (("train", ""), ("val", ""), ("test", "test")):
+        data = json_in_zip(archive, f"uitviic_captions_{part}2017.json")
+        urls = {i["id"]: i["coco_url"] for i in data["images"]}
+        first = {}
+        for a in data["annotations"]:
+            text = clean(a.get("caption"))
+            if a["image_id"] in urls and a["image_id"] not in first and len(text.split()) >= 4:
+                first[a["image_id"]] = text
+        for image_id, text in first.items():
+            items.append((f"{image_id}.jpg", urls[image_id],
+                          {"question": VI_QUESTION, "answer": sentence(re.sub(r"\s+([.,!?])", r"\1", text)),
+                           "split": split, "language": "vi", "child": bool(CHILD_WORDS_OTHER.search(text))}))
+    random.Random(311).shuffle(items)
+    items = [i for i in items if i[2]["split"]][:source.test * 3] + \
+        [i for i in items if not i[2]["split"]][:int(cap * 1.05)]
+    say(f"  Fetching {len(items)} COCO photos.")
+    return fetch_pictures(items, os.path.join(data_dir, source.key))
+
+
+KTVIC = "Skyler215/KTVIC"
+
+
+def prepare_ktvic(source, data_dir, work, cap):
+    """KTVIC (Pham et al., 2024, University of Information Technology, Ho Chi Minh City; no licence stated): photos
+    of everyday life in Vietnam, each described in Vietnamese by people. From the Skyler215/KTVIC copy on Hugging Face,
+    whose parquet files hold the photos (about 1 MB each, five rows per photo), read one part at a time until enough
+    are taken."""
+    def text_of(r):
+        """(photo id, row) for one record, or None."""
+        caption = clean(r.get("labels_new"))
+        picture = (r.get("img_new") or {})
+        if not caption or not picture.get("bytes"):
+            return None
+        key = picture.get("path") or hashlib.md5(picture["bytes"]).hexdigest()
+        return key, {"question": VI_QUESTION, "answer": sentence(caption), "split": "", "language": "vi",
+                     "child": bool(CHILD_WORDS_OTHER.search(caption))}
+    return parquet_picture_rows(source, data_dir, KTVIC, r"^data/(test|train)-", "img_new", text_of, cap, 313)
+
+
+MULTI30K = "https://raw.githubusercontent.com/multi30k/dataset/master/data/task1/"
+MULTI30K_QUESTIONS = {"de": "Beschreibe dieses Bild in einem Satz.", "fr": "Décris cette image en une phrase."}
+
+
+def prepare_multi30k_coco(source, data_dir, work, cap):
+    """Multi30k's 2017 COCO test set (Elliott et al., 2017): 461 COCO photos, each described in English by people
+    and then translated by people into German and French (no licence stated for the translations). Both languages
+    are used, each with the question in its own language; the photos come from COCO's own server. (Multi30k's main
+    part uses Flickr30k photos, which need a request form: see "Needing sign-up".)"""
+    names = get_bytes(MULTI30K + "image_splits/test_2017_mscoco.txt").decode().splitlines()
+    items = []
+    for language, question in MULTI30K_QUESTIONS.items():
+        lines = gzip.decompress(get_bytes(f"{MULTI30K}raw/test_2017_mscoco.{language}.gz")).decode("utf-8")
+        for name, text in zip(names, lines.splitlines()):
+            m = re.match(r"COCO_(train|val)2014_0*(\d+)\.jpg", name.split("#")[0])
+            if m and len(clean(text).split()) >= 3:
+                items.append((f"{m.group(2)}.jpg", f"http://images.cocodataset.org/{m.group(1)}2014/{name.split('#')[0]}",
+                              {"question": question, "answer": sentence(text), "split": "", "language": language,
+                               "child": bool(CHILD_WORDS_OTHER.search(text))}))
+    random.Random(317).shuffle(items)
+    return fetch_shared(items[:cap + source.test], os.path.join(data_dir, source.key))
+
+
 # ----------------------------------------------------------------- what could not be included
 
 NOT_INCLUDED = {
@@ -1900,6 +2238,9 @@ NOT_INCLUDED = {
                                                                            "never gave; the originals are on the "
                                                                            "sign-up list.",
     "WLASL, MS-ASL": "only lists of YouTube links; the videos must be scraped from YouTube.",
+    "Gallica (Bibliotheque nationale de France)": "free for non-commercial use, but its server answers every automated "
+                                                  "request with a Cloudflare challenge page, so the kit cannot "
+                                                  "download from it.",
     "SemArt, WikiArt": "SemArt's terms cannot be checked; WikiArt has no official download and most of its works are "
                        "in copyright.",
 }
@@ -1969,7 +2310,29 @@ EXTRA_SOURCES = [
            "PAPILA (Kovalyk, Morales-Sanchez, Verdu-Monedero et al., 2022), GPL-3.0+, "
            "https://doi.org/10.6084/m9.figshare.14798004", "share-alike", 488, 10, prepare_papila,
            "about 600 MB, read in pieces", content="medical"),
+    Source("fortepan", "Fortepan: Hungarian photos with their Hungarian titles (share-alike)",
+           "CC BY-SA 4.0 (fortepan.hu; read through Europeana)",
+           "Fortepan, CC BY-SA 4.0, https://fortepan.hu, through https://www.europeana.eu", "share-alike", 1500, 20,
+           prepare_fortepan, "about 200 MB"),
+    Source("deutsche_fotothek", "Deutsche Fotothek: pictures with their German titles and descriptions (share-alike)",
+           "CC BY-SA 4.0 (deutschefotothek.de; read through Europeana)",
+           "Deutsche Fotothek, SLUB Dresden, CC BY-SA 4.0, https://www.deutschefotothek.de, through "
+           "https://www.europeana.eu", "share-alike", 1500, 20, prepare_deutsche_fotothek, "about 200 MB"),
     # ---- noncommercial
+    Source("hindi_vg", "Hindi Visual Genome: one part of a photo described in Hindi (personal use)",
+           "CC BY-NC-SA 4.0 (LINDAT, hdl.handle.net/11234/1-3267); Visual Genome photos, no licence stated",
+           "Hindi Visual Genome 1.1 (Parida and Bojar, 2020), CC BY-NC-SA 4.0, http://hdl.handle.net/11234/1-3267; "
+           "photos from Visual Genome", "noncommercial", 2000, 20, prepare_hindi_vg, "about 400 MB",
+           terms="http://hdl.handle.net/11234/1-3267",
+           terms_summary="CC BY-NC-SA 4.0 for the Hindi descriptions: with credit, not for commercial purposes, same "
+                         "licence for anything made from them; no licence is stated for the photos."),
+    Source("thai_coco", "Thai picture descriptions (COCO and NECTEC photos; personal use)",
+           "CC BY-NC-SA 3.0 (huggingface.co/datasets/saksornr/coco_caption-thai-ipu24-train-sample10k; NECTEC IPU24)",
+           "Thai image captions from NECTEC's IPU24 corpus, CC BY-NC-SA 3.0, https://aiforthai.in.th/corpus.php; "
+           "sample by saksornr on Hugging Face", "noncommercial", 1500, 20, prepare_thai_coco,
+           "up to 1.6 GB, read in parts", terms="https://huggingface.co/datasets/saksornr/coco_caption-thai-ipu24-train-sample10k",
+           terms_summary="CC BY-NC-SA 3.0: use with credit, not for commercial purposes, and anything made from it "
+                         "keeps the same licence."),
     Source("plantnet_nc", "Pl@ntNet-300K: plant photos under CC BY-NC (personal use)",
            "Each photo CC BY-NC or CC BY-NC-SA (plantnet300K_metadata.csv, Zenodo 10419064)",
            "Pl@ntNet-300K v2 (Garcin et al., 2021), photos by Pl@ntNet users under CC BY-NC or BY-NC-SA, "
@@ -2102,6 +2465,24 @@ EXTRA_SOURCES = [
            terms="https://cvgl.stanford.edu/projects/lifted_struct/",
            terms_summary="No licence or terms are stated; personal, non-commercial use only (the photos come from "
                          "eBay listings)."),
+]
+
+EXTRA_SOURCES += [
+    Source("uit_viic", "UIT-ViIC: sports photos described in Vietnamese (personal use)",
+           "No licence stated by the makers (copy: huggingface.co/datasets/ttrung1402/UIT-ViIC); COCO photos under "
+           "their own Flickr licences", "UIT-ViIC (Lam et al., 2020), University of Information Technology, "
+           "VNU-HCM; photos from COCO", "research", 3000, 20, prepare_uit_viic, "about 500 MB",
+           terms="https://huggingface.co/datasets/ttrung1402/UIT-ViIC", terms_summary=NO_TERMS),
+    Source("ktvic", "KTVIC: everyday life in Vietnam described in Vietnamese (personal use)",
+           "No licence stated (copy: huggingface.co/datasets/Skyler215/KTVIC)",
+           "KTVIC (Pham et al., 2024), University of Information Technology, VNU-HCM", "research", 500, 20,
+           prepare_ktvic, "up to 3 GB, read in parts", terms="https://huggingface.co/datasets/Skyler215/KTVIC",
+           terms_summary=NO_TERMS),
+    Source("multi30k_coco", "Multi30k: COCO photos described in German and French (personal use)",
+           "No licence stated for the translations (github.com/multi30k/dataset); COCO photos under their own "
+           "Flickr licences", "Multi30k (Elliott et al., 2016 and 2017), https://github.com/multi30k/dataset; "
+           "photos from COCO", "research", 900, 20, prepare_multi30k_coco, "about 100 MB",
+           terms="https://github.com/multi30k/dataset", terms_summary=NO_TERMS),
 ]
 
 # The collections a picture-making model may learn from: whole-picture answers about non-people things (products,
