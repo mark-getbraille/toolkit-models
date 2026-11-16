@@ -148,7 +148,8 @@ BREAST = re.compile(
     r"\b(breasts?|mammary|nipples?|areola\w*|gyn(a)?ecomastia|mastitis|mastectomy|lumpectomy|peau d.orange|"
     r"inframammary|polythelia|supernumerary nipples?|accessory nipples?|chest wall)\b", re.I)
 
-AGE = re.compile(r"\b(\d{1,3})[- ](?:year|yr)s?[- ]old\b|\baged (\d{1,3})\b|\b(\d{1,3}) ?(?:years?|yrs?) (?:of age|old)\b|"
+AGE = re.compile(r"\b(\d{1,3})[- ](?:year|yr)s?[- ]old\b|\baged (\d{1,3})\b|"
+                 r"\b(\d{1,3}) ?(?:years?|yrs?) (?:of age|old)\b|"
                  r"\b(\d{1,3}) ?y/?o\b|\bage[: ]+(\d{1,3})\b", re.I)
 ADULT_WORDS = re.compile(r"\b(adults?|man|men|woman|women|gentleman|lady|elderly|older|middle-aged|"
                          r"postmenopausal|menopaus\w*|grandmother|grandfather|husband|wife)\b", re.I)
@@ -301,7 +302,7 @@ def plain(text):
     """Text with medical words in plain words (the medical word kept in brackets where useful)."""
     for pattern, words in PLAIN_WORDS:
         text = pattern.sub(words, text)
-    return re.sub(r"\b([Aa]) (?=[aeio]|u(?:pper|lcer|nder|nusual))", r"\1n ", text)          # "a upper view" -> "an upper view"
+    return re.sub(r"\b([Aa]) (?=[aeio]|u(?:pper|lcer|nder|nusual))", r"\1n ", text)  # "a upper" -> "an upper"
 
 
 # (pattern, plain name, explanation, warning sign?) for genital and breast anatomy, normal variants and conditions.
@@ -570,7 +571,8 @@ class ReviewWorkspace:
         self.tried = set(self.read_tried())
         with open(os.path.join(self.folder, REVIEW_FILE), "w", encoding="utf-8", newline="\r\n") as f:
             f.write(REVIEW_INSTRUCTIONS.format(name=source["name"], credit=source["credit"],
-                                               licence=f"{source['licence']} ({source['terms_summary']})"))
+                                               licence=f"{source['licence']} ({source['terms_summary']})")
+                    + source.get("instructions_extra", ""))
 
     def read_tried(self):
         """The ids tried in earlier runs."""
@@ -601,14 +603,15 @@ class ReviewWorkspace:
         """Remember that this picture was tried (kept, left out or failed), so a new run does not fetch it again."""
         self.tried.add(name)
 
-    def add(self, name, data, text, credit, licence, page, content=None, note="", skin=GROUPS[3]):
+    def add(self, name, data, text, credit, licence, page, content=None, note="", skin=GROUPS[3], narration=""):
         """Queue one picture (JPEG bytes) with its draft description, credit and skin-type group (GROUPS: only what
         the source states); added in batches."""
         os.makedirs(self.staging, exist_ok=True)
         with open(os.path.join(self.staging, name), "wb") as f:
             f.write(data)
         dp.write_file_text(os.path.join(self.staging, os.path.splitext(name)[0] + ".txt"), text)
-        self.waiting.append((name, credit, licence, page, content or self.source["content"], note, skin))
+        self.waiting.append((name, credit, licence, page, content or self.source["content"], note, skin,
+                             narration))
         self.mark_tried(name)
         if len(self.waiting) >= BATCH:
             self.flush()
@@ -622,7 +625,7 @@ class ReviewWorkspace:
         files = [os.path.join(self.staging, n) for n, *_ in self.waiting]
         dp.add_pictures(self.workspace, files, person="")
         lines = []
-        for name, credit, licence, page, content, note, skin in self.waiting:
+        for name, credit, licence, page, content, note, skin, narration in self.waiting:
             entry = self.workspace.pictures.get(name)
             if entry is None:
                 continue                                  # the same picture was there already
@@ -632,6 +635,8 @@ class ReviewWorkspace:
                          notes=clean(f"REVIEW ONLY. Draft description from the source's own caption or label; a "
                                      f"sighted, trusted adult must check it (see {REVIEW_FILE}). {note} "
                                      f"Credit: {credit}. Licence: {licence}. Source: {page}"))
+            if narration:                                 # a hint only: own_data never reads .narration.txt
+                dp.write_file_text(os.path.join(self.folder, os.path.splitext(name)[0] + ".narration.txt"), narration)
             lines.append(f"{name}\t{credit}\t{licence}\t{page}\tskin type {skin}"
                          + ("\tINTIMATE" if content == "intimate" else ""))
             self.added += 1
@@ -1466,6 +1471,147 @@ def fetch_fitzpatrick17k(folder, cap, say=print):
 
 # ----------------------------------------------------------------- the collections
 
+# ----------------------------------------------------------------- US government venereal-disease training films
+
+# Films checked by hand (November 2026): each has an explicit public-domain mark on archive.org AND is a US
+# government work (made by or for a US federal agency). The reason is kept for CREDITS.txt.
+VD_FILMS = {
+    "SEX.HYGIENE": "Sex Hygiene (1941), made for the US Army (directed by John Ford, produced by Darryl F. Zanuck)",
+    "FightSyphilis1942": "Fight Syphilis (1942), United States Public Health Service",
+    "TothePeo1944": "To the People of the United States (1944), California Department of Public Health with the US "
+                    "Public Health Service",
+    "know_for_sure": "Know for Sure (1941), for the United States Public Health Service (an edited copy)",
+    "gov.dod.dimoc.30540": "VD... It Is Your Problem (1978), US Department of Defense",
+}
+VD_SEARCH = ('(syphilis OR gonorrhea OR gonorrhoea OR venereal OR "social hygiene" OR "sex hygiene") AND '
+             'mediatype:(movies) AND (licenseurl:*publicdomain*) AND (creator:("public health service" OR army OR '
+             'navy OR "war department" OR "department of defense" OR "communicable disease center" OR "signal corps") '
+             'OR sponsor:("public health service" OR army OR navy OR "war department" OR "department of defense"))')
+US_GOVERNMENT = re.compile(r"\b(U\.? ?S\.? (Army|Navy|Air Force|Public Health Service|Government)|United States\.? "
+                           r"(Army|Navy|Public Health Service|War Department|Department of Defense)|Public Health "
+                           r"Service|War Department|Department of Defense|Department of the (Army|Navy)|Signal Corps|"
+                           r"Communicable Disease Center|Centers for Disease Control)\b", re.I)
+FILM_SEXUAL = re.compile(SEXUAL.pattern.replace(r"|condoms?", ""), re.I)    # a VD film may name condoms
+FILM_CLINICAL = re.compile(r"\b(chancre|sores?|ulcers?|lesions?|rash|warts?|discharge|penis|penile|genital\w*|"
+                           r"vulva|vagina|groin|glands?|swelling|examin\w*|symptoms?|infection|syphilis|gonorrh\w*|"
+                           r"spots?)\b", re.I)
+FILM_EXTRA = """
+These are stills from HISTORICAL US government health films (1940s and later). Write only what is visible in the
+still. The medical information in these films is out of date: do not repeat any treatment advice from the films
+(the narration in <name>.narration.txt is only a hint about the scene, not a description and not medical advice).
+Delete stills of anything other than adult clinical pictures or neutral scenes (people talking, doctors, soldiers,
+posters, titles). Delete every still that shows or may show a child, or anything sexual.
+"""
+
+
+def film_check(s, identifier):
+    """(True, metadata, why) when an archive.org film may be used: it names no child and nothing sexual in its
+    title, description or subjects, has an explicit public-domain mark, and is a US government work (VD_FILMS, or a
+    US federal agency named as its creator or sponsor); otherwise (False, metadata, why not)."""
+    data = get_json(s, f"https://archive.org/metadata/{identifier}") or {}
+    meta = data.get("metadata") or {}
+
+    def field(key):
+        """One metadata field as plain text."""
+        value = meta.get(key, "")
+        return no_tags(" ".join(value) if isinstance(value, list) else value)
+    text = " ".join(field(k) for k in ("title", "description", "subject"))
+    who = " ".join(field(k) for k in ("creator", "sponsor", "publisher", "contributor"))
+    if not meta:
+        return False, meta, "not found on archive.org"
+    if not child_free(text):
+        return False, meta, "its title or description mentions a child"
+    if FILM_SEXUAL.search(text):
+        return False, meta, "its title or description names something sexual"
+    if not re.search(r"publicdomain", field("licenseurl"), re.I):
+        return False, meta, f"no explicit public-domain mark (licence: {field('licenseurl') or 'none given'})"
+    if identifier not in VD_FILMS and not US_GOVERNMENT.search(who):
+        return False, meta, "not shown to be a US government work"
+    return True, meta, ""
+
+
+def film_lead(meta, identifier):
+    """The start of a film still's draft: "A black-and-white still from a 1940s US Army health film."."""
+    year = re.search(r"\b(19\d\d)\b", f"{meta.get('year', '')} {meta.get('date', '')} {VD_FILMS.get(identifier, '')}")
+    year = int(year.group(1)) if year else 0
+    who = f"{VD_FILMS.get(identifier, '')} {no_tags(meta.get('creator'))} {no_tags(meta.get('sponsor'))}"
+    agency = ("US Army" if re.search(r"\barmy\b", who, re.I) else "US Navy" if re.search(r"\bnavy\b", who, re.I)
+              else "US Department of Defense" if re.search(r"defense", who, re.I)
+              else "US Public Health Service" if re.search(r"public health", who, re.I) else "US government")
+    colour = "black-and-white " if year and year < 1960 else ""
+    decade = f"{year // 10 * 10}s " if year else ""
+    return f"A {colour}still from a {decade}{agency} health film."
+
+
+def fetch_vd_films(folder, cap, say=print, narration=None):
+    """US government venereal-disease training films (public domain: US government works with an explicit
+    public-domain mark on archive.org), made into stills with video_frames.py (it reads only the parts needed and
+    checks the licence again). Stills about every 2 seconds, the sharpest of each moment; with narration (faster-
+    whisper installed; None: when it is installed) the film's narration near each still goes into
+    <name>.narration.txt as a hint, and stills whose narration names a clinical subject come first. Each still's
+    draft says "A black-and-white still from a 1940s US Army health film. <description needed>": the reviewer must
+    write what is visible. No ages are given: the review must confirm every person shown is an adult."""
+    import video_frames
+    source = source_by_key("vd_films")
+    ws, s = ReviewWorkspace(folder, source, say), session()
+    if narration is None:
+        try:
+            import faster_whisper  # noqa: F401
+            narration = True
+        except ImportError:
+            narration = False
+    films = list(VD_FILMS)
+    found = get_json(s, "https://archive.org/advancedsearch.php",
+                     params={"q": VD_SEARCH, "fl[]": "identifier", "rows": "50", "output": "json"}) or {}
+    films += [d["identifier"] for d in (found.get("response") or {}).get("docs", [])
+              if d.get("identifier") and d["identifier"] not in films]
+    looked = left = 0
+    for number, identifier in enumerate(films):
+        if ws.full(cap):
+            break
+        if f"film-{identifier}" in ws.tried:
+            continue
+        looked += 1
+        ok, meta, why = film_check(s, identifier)
+        if not ok:
+            say(f"Film {identifier}: left out, {why}.")
+            ws.mark_tried(f"film-{identifier}")
+            left += 1
+            continue
+        title = no_tags(meta.get("title")) or identifier
+        out = os.path.join(ws.folder, ".incoming-film")
+        shutil.rmtree(out, ignore_errors=True)
+        share = max(1, (cap - ws.count()) // max(1, len(films) - number))
+        say(f"Film {identifier} ({title}): taking up to {share} stills.")
+        # With narration, a still about every 2 seconds (up to 30 minutes) so the clinical scenes can be chosen;
+        # without it, an even spread of twice the share (the sharpest of each moment).
+        video_frames.make_pictures([f"archive:{identifier}"], out, every=2.0,
+                                   max_frames=900 if narration else share * 2,
+                                   speech=False, online_speech=narration, say=say)
+        stills = sorted(n for n in os.listdir(out) if n.lower().endswith(".jpg")) if os.path.isdir(out) else []
+        heard = {n: dp.read_file_text(os.path.join(out, os.path.splitext(n)[0] + ".narration.txt")) for n in stills}
+        stills.sort(key=lambda n: not FILM_CLINICAL.search(heard[n]))      # clinical narration first
+        lead = film_lead(meta, identifier)
+        credit = VD_FILMS.get(identifier) or f"{title}, {no_tags(meta.get('creator')) or 'US government'}"
+        for name in stills[:share]:
+            if ws.full(cap):
+                break
+            with open(os.path.join(out, name), "rb") as f:
+                data = jpeg(f.read())
+            target = f"film-{name}"
+            if data is None or ws.done(target):
+                continue
+            ws.add(target, data, f"{lead} <description needed>", f"{credit}, archive.org {identifier}, still "
+                   f"{name.rsplit('_', 1)[-1][:-4]}", "public domain (US government work, public-domain mark on "
+                   "archive.org)", f"https://archive.org/details/{identifier}",
+                   note="HISTORICAL FILM: write what is visible; do not repeat the film's out-of-date treatment "
+                        "advice. No age given: confirm every person shown is an adult.", narration=heard[name])
+        shutil.rmtree(out, ignore_errors=True)
+        ws.mark_tried(f"film-{identifier}")
+        ws.flush()
+    return ws.finish(looked, left)
+
+
 PERSONAL = "personal use only"
 REVIEW_SOURCES = [
     dict(key="cdc_phil_intimate", name="CDC clinical photographs of genital and breast conditions (review only)",
@@ -1494,6 +1640,15 @@ REVIEW_SOURCES = [
          terms_summary="CC BY-SA: free to use with credit; anything shared that is made from them must be CC BY-SA",
          credit="Wikimedia Commons authors, CC BY-SA, credited in CREDITS.txt",
          content="intimate", cap=600, download="about 120 MB", fetch=fetch_commons_intimate_sa, review_only=True),
+    dict(key="vd_films", name="US government venereal-disease training films, stills (review only)",
+         category="open", licence="Public domain (US government works, each with a public-domain mark on "
+                                  "archive.org; checked film by film)",
+         terms="https://archive.org/details/prelinger",
+         terms_summary="public domain; no permission needed; credit the film and archive.org",
+         credit="US Army, US Public Health Service and US Department of Defense health films, via archive.org "
+                "(Prelinger Archives and others), public domain",
+         content="intimate", cap=400, download="about 50 MB (only the parts of each film needed are read)",
+         fetch=fetch_vd_films, review_only=True, instructions_extra=FILM_EXTRA),
     dict(key="fitzpatrick17k", name="Fitzpatrick17k skin conditions on all skin tones (review only)",
          category="research",
          licence="Labels CC BY-NC-SA 3.0 (github.com/mattgroh/fitzpatrick17k); pictures belong to the atlases "
@@ -1556,6 +1711,17 @@ NOT_INCLUDED = {
     "Skin Deep (skindeep.dftb.org, Don't Forget the Bubbles)": "not added: the site did not answer from the build "
         "machine (November 2026), and it is a children's skin project (paediatric pictures), so it does not fit "
         "these adults-only collections in any case.",
+    "Venereal-disease films 'Easy to Get' (1947) and 'Pick-Up' (1944)": "not found on archive.org with a "
+        "public-domain mark (November 2026); the National Archives catalogue can be checked later.",
+    "Film 'Three Cadets' (archive.org 45324-three-cadets-vwr)": "left out: that copy is marked CC BY-NC-ND by the "
+        "uploader (Periscope Film), so video_frames.py refuses it.",
+    "Film 'Know For Sure' (archive.org KnowForSure, the full copy)": "left out: its description mentions a newborn "
+        "son (the adults-only rule); the edited copy know_for_sure is used instead.",
+    "Film 'VD - Taking Chances' (1952, US Navy) and other films without a rights mark": "left out: no licence or "
+        "public-domain mark on the item, so video_frames.py refuses it (it is a US government work, so the kit could "
+        "accept federal creators later), and its description mentions 'girls'.",
+    "Films for schools and teenagers (for example 'VD: Name Your Contacts', 'Dance Little Children', 'Innocent "
+    "Party')": "left out: made for young audiences, or not shown to be US government works.",
     "PAD-UFES-20 skin types": "already in the skin_lesion_photos pack (which leaves out intimate sites); it records "
         "Fitzpatrick types, but has no genital or breast pictures to add here.",
 }
