@@ -37,7 +37,8 @@ jobs:
           import json, sys
           known = ["smithsonian", "coco_questions", "commons", "tepapa", "inaturalist", "nutrition5k", "fresh_rotten",
                    "banknotes", "cattle_health", "clothing", "japan_search", "ksamsok", "rijksmuseum", "stair_captions",
-                   "coco_cn", "eggs", "beef"]
+                   "coco_cn", "eggs", "beef", "taiwan_pills", "pharmassist", "mediseg", "open_images_food",
+                   "grocery_store", "fish_eyes", "commons_food"]
           words = [w for w in sys.argv[1].split(",") if w]
           keys = known if words in ([], ["all"]) else [w for w in words if w in known]
           print("keys=" + json.dumps(keys))
@@ -89,6 +90,13 @@ jobs:
             coco_cn) limit=4000 ;;
             eggs) limit=6000 ;;
             beef) limit=60 ;;
+            taiwan_pills) limit=5500 ;;
+            pharmassist) limit=2050 ;;
+            mediseg) limit=6000 ;;
+            open_images_food) limit=10000 ;;
+            grocery_store) limit=5421 ;;
+            fish_eyes) limit=4390 ;;
+            commons_food) limit=1500 ;;
           esac
           python packs/build_packs.py "${{ matrix.key }}" --out build/packs --limit "$limit"
       - name: Upload it to the release

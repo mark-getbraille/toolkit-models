@@ -192,15 +192,17 @@ PA_CREDIT = "Pharmassist dataset (Kapilesh N et al., Vellore Institute of Techno
 # Class labels written as on the pack ("Alprax 0-25" is Alprax 0.25).
 PA_NAMES = {"Alprax 0-25": "Alprax 0.25", "GlimiSave M 0-5": "GlimiSave M 0.5", "Gluxit10": "Gluxit 10",
             "Pacimol650": "Pacimol 650", "Tayo60k": "Tayo 60K", "Sibelium 10mg": "Sibelium 10 mg"}
-# Medicines in the set that are not tablets.
+# Medicines in the set that are not tablets; "" where the form is not certain (vitamin D and cranberry products come
+# as tablets or capsules), so the answer names only the medicine.
 PA_FORMS = {"Strepsils": "lozenges", "Cofsils": "lozenges", "Bifilac": "capsules", "Becozinc": "capsules",
-            "Vitamin E": "capsules"}
+            "Vitamin E": "capsules", "Tayo60k": "", "D-Rise": "", "D3 More 2K": "", "Cranmed": ""}
 
 
 def pa_answer(label):
     """The answer for one Pharmassist class label."""
     name = PA_NAMES.get(label, label)
-    return f"This looks like a blister pack of {name} {PA_FORMS.get(label, 'tablets')}. {SAFETY}"
+    form = PA_FORMS.get(label, "tablets")
+    return f"This looks like a blister pack of {name}{' ' + form if form else ''}. {SAFETY}"
 
 
 def build_pharmassist(limit):

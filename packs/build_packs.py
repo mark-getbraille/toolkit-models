@@ -723,6 +723,10 @@ PACKS.update(WORLD_PACKS)
 from pill_packs import PILL_PACKS
 PACKS.update(PILL_PACKS)
 
+# Food: everyday food photos (Open Images), shop shelves (Grocery Store), fish freshness by the eye, Commons food.
+from food_packs import FOOD_PACKS
+PACKS.update(FOOD_PACKS)
+
 
 def sha256_of(path):
     """The SHA-256 of a file."""
