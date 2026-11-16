@@ -1,3 +1,4 @@
 # Changing this file on main starts .github/workflows/packs.yml for these pack keys (separated by commas), or all.
-# Art, anatomy (wider filter), medical and expression packs; the full rebuild started before them builds the rest.
-art_nudes,anatomy,skin_lesion_photos,isic_skin,gi_endoscopy,chest_xray,case_report_figures,vet_case_figures,cdc_medical,medical_collections,childhood_illness,birth_and_feeding,oi_expressions,commons_expressions,bice_gestures,vqa_expressions
+# Every pack not yet built at full size (the run before built 14 and was stopped to build five at a time), plus the
+# art, anatomy, medical and expression packs.
+rijksmuseum,stair_captions,coco_cn,eggs,mediseg,open_images_food,beef,pharmassist,taiwan_pills,grocery_store,fish_eyes,commons_food,open_images_objects,orbit,core50,lila_camera_traps,commons_breeds,textocr,gbif_species,cord,doclaynet,coco_text,loc_letters,plotqa,uroac_crossings,ptl_crossings,walkway_dhaka,open_images_street,outdoor_navigation,seoul_sidewalks,geode,dollar_street,art_nudes,anatomy,skin_lesion_photos,isic_skin,gi_endoscopy,chest_xray,case_report_figures,vet_case_figures,cdc_medical,medical_collections,childhood_illness,birth_and_feeding,oi_expressions,commons_expressions,bice_gestures,vqa_expressions
