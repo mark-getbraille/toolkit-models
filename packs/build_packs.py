@@ -904,6 +904,20 @@ PACKS.update(DOCUMENTARY_PACKS)
 from disability_packs import DISABILITY_PACKS
 PACKS.update(DISABILITY_PACKS)
 
+# Graphic scenes described plainly (war, disasters, injuries and death) and practical safety scenes: rows marked
+# "content": "graphic" are used by the kit only with the graphic-scenes choice, and never for picture-making.
+from graphic_packs import GRAPHIC_PACKS
+PACKS.update(GRAPHIC_PACKS)
+
+# More archive, museum and news photographs with their makers' captions (US National Archives, New York Public Library,
+# Getty Museum, Digital Commonwealth, Statens Museum for Kunst, Nationaal Archief, kremlin.ru, Australian War
+# Memorial). Danish and Dutch captions get English translation twins; graphic rows carry "content": "graphic".
+from archive_packs import ARCHIVE_PACKS, ARCHIVE_TRANSLATE
+PACKS.update(ARCHIVE_PACKS)
+for _key, (_language, _model, _revision) in ARCHIVE_TRANSLATE.items():
+    TRANSLATE[_key] = _language
+    MT_MODELS.setdefault(_language, (_model, _revision))
+
 
 def sha256_of(path):
     """The SHA-256 of a file."""

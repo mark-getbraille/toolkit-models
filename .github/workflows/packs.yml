@@ -48,7 +48,10 @@ jobs:
                    "xm3600", "europeana_fi", "europeana_cs",
                    "europeana_hu", "europeana_el", "europeana_no", "europeana_pl", "bd_taka", "medpack_id", "fashionpedia",
                    "loc_highsmith", "loc_fsa", "loc_world", "npgallery", "earth_observatory", "eso", "usgs", "commons_valued",
-                   "open_images_disability", "commons_disability", "tapad_tactile_paving"]
+                   "open_images_disability", "commons_disability", "tapad_tactile_paving",
+                   "loc_civil_war", "loc_war_disaster", "nara_war", "ushmm", "commons_war", "commons_disasters",
+                   "commons_safety", "nara", "nypl", "getty_museum", "digital_commonwealth", "smk", "anefo",
+                   "kremlin", "awm"]
           words = [w for w in sys.argv[1].split(",") if w]
           keys = known if words in ([], ["all"]) else [w for w in words if w in known]
           print("keys=" + json.dumps(keys))
@@ -78,7 +81,7 @@ jobs:
           python -m pip install requests pillow pyarrow "huggingface_hub>=0.34"
           # The packs in other languages are also translated into English (OPUS-MT, on the processor).
           case "${{ matrix.key }}" in
-            ksamsok|rijksmuseum|coco_cn|europeana_fi|europeana_cs|europeana_hu|europeana_el|europeana_no|europeana_pl)
+            ksamsok|rijksmuseum|coco_cn|europeana_fi|europeana_cs|europeana_hu|europeana_el|europeana_no|europeana_pl|smk|anefo)
               python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
               python -m pip install "transformers==4.57.6" "sentencepiece==0.2.1" "sacremoses==0.1.1" ;;
             seoul_sidewalks)
@@ -168,6 +171,21 @@ jobs:
             open_images_disability) limit=219 ;;
             commons_disability) limit=1500 ;;
             tapad_tactile_paving) limit=2811 ;;
+            loc_civil_war) limit=3000 ;;
+            loc_war_disaster) limit=3000 ;;
+            nara_war) limit=1500 ;;
+            ushmm) limit=2500 ;;
+            commons_war) limit=2500 ;;
+            commons_disasters) limit=2500 ;;
+            commons_safety) limit=2000 ;;
+            nara) limit=5000 ;;
+            nypl) limit=6000 ;;
+            getty_museum) limit=4000 ;;
+            digital_commonwealth) limit=3000 ;;
+            smk) limit=3000 ;;
+            anefo) limit=6000 ;;
+            kremlin) limit=3000 ;;
+            awm) limit=3000 ;;
           esac
           python packs/build_packs.py "${{ matrix.key }}" --out build/packs --limit "$limit"
       - name: Upload it to the release

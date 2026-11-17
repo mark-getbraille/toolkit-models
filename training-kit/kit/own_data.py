@@ -25,8 +25,8 @@ any folder inside it) ONLY pictures marked "checked" are used; "described" is no
 does not list is never used. A description that is empty or still says "<description needed>" is refused, in any
 folder. Those pictures are counted in the summary as "waiting for review".
 Content: a review workspace's describing.json gives the whole collection a content tag ("content": "medical",
-"intimate" or "sexual"), and a picture's own entry may give it one too ("content": "intimate", as Fitzpatrick17k's
-genital-site pictures have). A picture is used only when EVERY tag it has (its own and its collection's) is among
+"intimate", "sexual" or "graphic": war, disasters, injuries and death), and a picture's own entry may give it one
+too ("content": "intimate", as Fitzpatrick17k's genital-site pictures have). A picture is used only when EVERY tag it has (its own and its collection's) is among
 the contents the caller allows (check_folder's contents=: the training's content choices, see
 sources.allowed_contents); otherwise it is left out and said. The same applies to a tagged picture in any workspace.
 Terms: a review collection's describing.json may say "review_category": "noncommercial" or "research"; such a
@@ -595,7 +595,8 @@ def problem_sentences(problems):
     for tags, files in sorted(p["content"].items()):
         out.append(f"{plural(len(files), 'picture is', 'pictures are')} marked {tags} content, which the content "
                    "choices of this training do not include (intimate needs both art with nudity and medical "
-                   "pictures; sexual needs art with nudity and adult sexual content), so left out: "
+                   "pictures; sexual needs art with nudity and adult sexual content; graphic needs graphic scenes, "
+                   "and a picture-making model never uses it), so left out: "
                    + listed(files, "") + ".")
     for (name, category), files in sorted(p["terms"].items()):
         box = "research-only" if category == "research" else "non-commercial"

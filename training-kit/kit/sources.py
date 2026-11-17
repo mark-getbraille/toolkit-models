@@ -30,6 +30,11 @@ trusted sighted adult screens first, used through own_data.py from "Describe pic
 are chosen, and "sexual" (adult sexual content) only with with_sexual, which itself needs with_nudity; sexual content
 is for personal use only. allowed_contents() gives the tags a training's choices allow. A picture-making model never
 learns from either (PICTURE_MAKING_NEVER), nor from any review collection.
+One more content tag, "graphic" (war, disasters, injuries and death, described plainly: the dead and injured, wounds,
+severe destruction with casualties), is used only with with_graphic (train.py --with-graphic). It can mark a whole
+collection (Source.content) or single rows of any pack ("content": "graphic" in a pack's rows.jsonl, carried by
+prepare_pack; keep_allowed() leaves out the rows a training's choices do not allow). A picture-making model never
+learns from graphic content (PICTURE_MAKING_NEVER, and the graphic packs are in NOT_FOR_PICTURE_MAKING too).
 
 Sizes (--size): each source has a cap for "normal"; "quick" uses a tenth of it (a try of an hour or two) and
 "full" three times as much (several nights on a fast card).
@@ -37,8 +42,8 @@ Sizes (--size): each source has a cap for "normal"; "quick" uses a tenth of it (
 A finished source is not prepared again when the kit is started again (its rows are kept in data/<key>-<size>.jsonl;
 a bigger size prepares it again, but pictures already downloaded are kept).
 
-Main parts: Source, SOURCES, chosen(with_wikipedia, with_nudity=, with_medical=, with_noncommercial=, with_research=),
-content_choices_text, PERSONAL_GROUPS, is_personal, terms_link, terms_summary, PERSONAL_WARNING,
+Main parts: Source, SOURCES, chosen(with_wikipedia, with_nudity=, with_medical=, with_noncommercial=, with_research=,
+with_sexual=, with_graphic=), allowed_contents, keep_allowed, content_choices_text, PERSONAL_GROUPS, is_personal, terms_link, terms_summary, PERSONAL_WARNING,
 prepare_source(source, data_dir, work, cap), questions.
 """
 
@@ -88,9 +93,10 @@ class Source:
     test       how many of its pictures are kept back for the test
     prepare    a function (source, data_dir, work, cap) -> [rows], each with "split" ("train", "test" or "")
     download   roughly how much it downloads, for the screen ("7.6 GB")
-    content    "" for most collections; "nudity" (non-sexual nudes in art: only with --with-nudity) or "medical"
-               (medical and anatomy pictures: only with --with-medical); "intimate" and "sexual" are known too (see
-               allowed_contents), though today only review collections use them
+    content    "" for most collections; "nudity" (non-sexual nudes in art: only with --with-nudity), "medical"
+               (medical and anatomy pictures: only with --with-medical) or "graphic" (war, disasters, injuries and
+               death: only with --with-graphic); "intimate" and "sexual" are known too (see allowed_contents), though
+               today only review collections use them
     terms      for a personal-use collection: the web address of its licence or terms page ("" when none; the first
                web address in its licence or credit is used then)
     terms_summary  for a personal-use collection: its terms in one plain line ("" when none; its licence is used)"""
@@ -106,23 +112,38 @@ class Source:
         self.terms, self.terms_summary = terms, terms_summary
 
 
-# The content choices a collection can need: "" (none), "nudity", "medical", "intimate" and "sexual" (see the module
-# docstring and allowed_contents).
-CONTENTS = ("", "nudity", "medical", "intimate", "sexual")
+# The content choices a collection (or a single row of a pack) can need: "" (none), "nudity", "medical", "intimate",
+# "sexual" and "graphic" (see the module docstring and allowed_contents).
+CONTENTS = ("", "nudity", "medical", "intimate", "sexual", "graphic")
 # The content tags a picture-making model never learns from, whatever is chosen.
-PICTURE_MAKING_NEVER = ("intimate", "sexual")
+PICTURE_MAKING_NEVER = ("intimate", "sexual", "graphic")
 
 
-def allowed_contents(with_nudity=False, with_medical=False, with_sexual=False):
+def allowed_contents(with_nudity=False, with_medical=False, with_sexual=False, with_graphic=False):
     """The content tags a training's choices allow, as a set: "" always; "nudity" with with_nudity; "medical" with
     with_medical; "intimate" only with BOTH with_nudity and with_medical; "sexual" only with with_sexual AND
-    with_nudity (the adult sexual content choice needs art with nudity)."""
+    with_nudity (the adult sexual content choice needs art with nudity); "graphic" (war, disasters, injuries and
+    death) with with_graphic."""
     allowed = {""}
     for tag, on in (("nudity", with_nudity), ("medical", with_medical),
-                    ("intimate", with_nudity and with_medical), ("sexual", with_sexual and with_nudity)):
+                    ("intimate", with_nudity and with_medical), ("sexual", with_sexual and with_nudity),
+                    ("graphic", with_graphic)):
         if on:
             allowed.add(tag)
     return allowed
+
+
+def row_content(row):
+    """The content tag of one row ("" for none): its own "content" when it is a known tag. A row with a tag this kit
+    does not know is treated as "unknown", so it is never used by mistake."""
+    tag = str(row.get("content") or "").strip().lower()
+    return tag if tag in CONTENTS else "unknown"
+
+
+def keep_allowed(rows, allowed):
+    """The rows whose own content tag (row_content: "content": "graphic" from any pack, for example) is in allowed
+    (a set from allowed_contents); the others are left out. Rows without a tag are always kept."""
+    return [r for r in rows if row_content(r) in allowed]
 
 
 # ----------------------------------------------------------------- shared helpers
@@ -851,6 +872,8 @@ def prepare_pack(source, data_dir, work, cap):
                     "split": "no-test" if row.get("translated") else ""}
             if row.get("child"):                     # a picture of a child: never used to make pictures
                 base["child"] = True
+            if row.get("content"):                   # a row's own content tag ("graphic"): used only when chosen
+                base["content"] = str(row["content"]).strip().lower()
             base.update(place_fields(row) or known.get(row.get("file") or row.get("url"), {}))
             if row.get("file"):
                 path = os.path.join(folder, os.path.basename(row["file"]))
@@ -1324,6 +1347,85 @@ SOURCES = [
            'CC BY 4.0 (Zenodo 23388177)',
            'TAPAD tactile paving dataset, Zenodo 23388177, CC BY 4.0', "permissive", 2811, 15, prepare_pack,
            'about 700 MB'),
+    # Graphic scenes described plainly: war, disasters, injuries and death, and practical safety scenes (packs/
+    # graphic_packs.py). Their rows that show the dead or injured, wounds or destruction with casualties carry
+    # "content": "graphic" and are used only with --with-graphic (keep_allowed); the other rows (ruins, signs,
+    # shelters, floods) are used always. None of them is ever used for picture-making (GRAPHIC_PACK_KEYS).
+    Source('loc_civil_war', 'The American Civil War and the Crimean War: battlefields, the dead and wounded, field '
+           'hospitals and ruins (Library of Congress, ready-made pack)',
+           'No known restrictions on publication (Library of Congress)',
+           'Civil War Glass Negatives and Related Prints, and the Roger Fenton Crimean War Photograph Collection, '
+           'Library of Congress, Prints and Photographs Division', "permissive", 2000, 15, prepare_pack,
+           'about 800 MB'),
+    Source('loc_war_disaster', 'The First World War, floods, fires and civil defence, 1900 to 1945 (Bain News Service '
+           'and FSA/OWI, Library of Congress, ready-made pack)',
+           'No known restrictions on publication (Library of Congress)',
+           'George Grantham Bain Collection and Farm Security Administration / Office of War Information collection, '
+           'Library of Congress', "permissive", 2000, 15, prepare_pack, 'about 800 MB'),
+    Source('nara_war', 'War from the First World War to Vietnam: the wounded, aid stations, destruction and refugees '
+           '(US Army Signal Corps, National Archives, ready-made pack)',
+           'Public domain (US government work, National Archives, records marked Unrestricted)',
+           'Photographs of American Military Activities (111-SC), U.S. National Archives and Records Administration, '
+           'public domain', "permissive", 1200, 10, prepare_pack, 'about 500 MB'),
+    Source('ushmm', 'The Holocaust: liberation of the camps, survivors, the dead, ghettos and trials, described '
+           'factually (US Holocaust Memorial Museum, ready-made pack)',
+           'Public domain (only photographs whose museum record says "Copyright: Public Domain")',
+           'United States Holocaust Memorial Museum photo archive, public-domain photographs (mostly US Army Signal '
+           'Corps, National Archives)', "permissive", 2000, 15, prepare_pack, 'about 700 MB'),
+    Source('commons_war', 'War casualties, the wounded, aftermath and war damage, from the World Wars to Ukraine and '
+           'Syria (Wikimedia Commons, ready-made pack)',
+           'Captions CC0; pictures CC0, public domain or CC BY, each author credited',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 2000, 15, prepare_pack,
+           'about 800 MB'),
+    Source('commons_disasters', 'Earthquake, flood, tornado, landslide and fire damage (Wikimedia Commons and FEMA, '
+           'ready-made pack)',
+           'Captions CC0; pictures CC0, public domain or CC BY, each author credited',
+           'Wikimedia Commons authors and FEMA, credited in ATTRIBUTION.txt', "permissive", 2000, 15, prepare_pack,
+           'about 800 MB'),
+    Source('commons_safety', 'Safety in danger: fallen power lines, floods, fire and smoke, unexploded bombs and mine '
+           'signs, checkpoints, shelters, first aid and evacuation signs (Wikimedia Commons, ready-made pack)',
+           'Captions CC0; pictures CC0, public domain or CC BY, each author credited',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 1500, 15, prepare_pack,
+           'about 600 MB'),
+    # More archive, museum and news photographs with their makers' captions (packs/archive_packs.py). Rows whose
+    # caption names the dead, wounds or casualties carry "content": "graphic" and are used only with --with-graphic.
+    Source('nara', 'American life, the environment and national parks, 1940s to 1970s: DOCUMERICA, War Relocation '
+           'Authority and Ansel Adams photographs (US National Archives, ready-made pack)',
+           'Public domain (US government work, National Archives, records marked Unrestricted)',
+           'U.S. National Archives and Records Administration (412-DA, 210-G, 79-AA), public domain', "permissive",
+           3300, 15, prepare_pack, 'about 1.5 GB'),
+    Source('nypl', 'Photographs, stereoviews, postcards and prints with their titles (New York Public Library, '
+           'ready-made pack)',
+           'No known US copyright restrictions (items); metadata CC0 (New York Public Library)',
+           'The New York Public Library, public-domain collections', "permissive", 4000, 15, prepare_pack,
+           'about 1.5 GB'),
+    Source('getty_museum', 'Art and objects with the museum\'s descriptions (J. Paul Getty Museum, ready-made pack)',
+           'No Copyright (Getty Open Content); metadata CC0',
+           'The J. Paul Getty Museum, Los Angeles, Open Content Program', "permissive", 2700, 15, prepare_pack,
+           'about 1 GB'),
+    Source('digital_commonwealth', 'Historic photographs of Massachusetts and beyond (Digital Commonwealth, '
+           'ready-made pack)',
+           'No known copyright restrictions (Digital Commonwealth records)',
+           'Digital Commonwealth, Massachusetts libraries, archives and museums', "permissive", 2000, 15,
+           prepare_pack, 'about 800 MB'),
+    Source('smk', 'Danish art with descriptive titles, in Danish with English (Statens Museum for Kunst, ready-made '
+           'pack)',
+           'Public domain (CC0 / Public Domain Mark, open.smk.dk)',
+           'Statens Museum for Kunst (National Gallery of Denmark), public domain', "permissive", 2000, 15,
+           prepare_pack, 'about 800 MB'),
+    Source('anefo', 'Dutch press photos, 1945 to 1989, in Dutch with English (Nationaal Archief, ready-made pack)',
+           'CC0 or public domain (Nationaal Archief)',
+           'Nationaal Archief, The Hague, mostly the Anefo collection, CC0 or public domain', "permissive", 4000, 15,
+           prepare_pack, 'about 1.5 GB'),
+    Source('kremlin', 'Meetings, ceremonies and visits, with their captions (en.kremlin.ru, ready-made pack)',
+           'CC BY 4.0 (the site\'s own statement)',
+           'Presidential Executive Office of Russia, en.kremlin.ru, CC BY 4.0', "permissive", 2000, 15, prepare_pack,
+           'about 800 MB'),
+    Source('awm', 'The World Wars and later conflicts, with the Memorial\'s captions (Australian War Memorial, '
+           'ready-made pack)',
+           'Copyright expired, public domain (Australian War Memorial records)',
+           'Australian War Memorial, public-domain photographs', "permissive", 2000, 15, prepare_pack,
+           'about 800 MB'),
     Source('skin_lesion_photos', 'Skin spots photographed with a phone, adults (PAD-UFES-20, ready-made pack)',
            'CC BY 4.0 (Mendeley Data zr7vgbcyr2)',
            'PAD-UFES-20 (Pacheco et al., 2020), CC BY 4.0', "permissive", 2000, 20, prepare_pack, 'about 400 MB', content="medical"),
@@ -1381,13 +1483,14 @@ SOURCES = [
 
 
 def chosen(with_wikipedia=False, *, with_nudity=False, with_medical=False, with_noncommercial=False,
-           with_research=False, with_sexual=False):
+           with_research=False, with_sexual=False, with_graphic=False):
     """The sources to train on: the permissive ones; the share-alike ones too with with_wikipedia; the
     "noncommercial" ones with with_noncommercial and the "research" ones with with_research (both for personal use
     only). A collection with content "nudity" is only included with with_nudity, and one with content "medical" only
-    with with_medical; "intimate" needs both, and "sexual" with_sexual and with_nudity (allowed_contents). A
-    collection of any other group is never included."""
-    allowed = allowed_contents(with_nudity, with_medical, with_sexual)
+    with with_medical; "intimate" needs both, "sexual" with_sexual and with_nudity, and "graphic" with_graphic
+    (allowed_contents). A collection of any other group is never included. (Single rows tagged with a content the
+    choices do not allow are left out later, by keep_allowed.)"""
+    allowed = allowed_contents(with_nudity, with_medical, with_sexual, with_graphic)
     groups = {"permissive": True, "share-alike": with_wikipedia, "noncommercial": with_noncommercial,
               "research": with_research}
     return [s for s in SOURCES if groups.get(s.group, False) and s.content in allowed]
@@ -1431,24 +1534,32 @@ def personal_sources(group=None):
 # Collections that a picture-making model (train_pictures.py) never trains on, whatever is chosen: pictures of
 # children with childhood illnesses, and of birth, breastfeeding and newborns, are for describing only.
 NOT_FOR_PICTURE_MAKING = ("childhood_illness", "birth_and_feeding")
+# The graphic-scenes packs (packs/graphic_packs.py): war, disasters, injuries and death. A picture-making model never
+# learns from them at all, not even from their rows that are not marked graphic.
+GRAPHIC_PACK_KEYS = ("loc_civil_war", "loc_war_disaster", "nara_war", "ushmm", "commons_war", "commons_disasters",
+                     "commons_safety")
+NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + GRAPHIC_PACK_KEYS
 
 
 def content_of(key):
-    """The content choice ("", "nudity", "medical", "intimate" or "sexual") of the collection with this key ("" when unknown)."""
+    """The content choice ("", "nudity", "medical", "intimate", "sexual" or "graphic") of the collection with this key
+    ("" when unknown)."""
     return next((s.content for s in SOURCES if s.key == key), "")
 
 
-def content_choices_text(with_nudity, with_medical, with_sexual=False):
+def content_choices_text(with_nudity, with_medical, with_sexual=False, with_graphic=False):
     """The content choices in one plain sentence, for the report and ATTRIBUTION.txt: art with nudity, medical
-    pictures, intimate medical pictures (only with both) and adult sexual content (only with with_sexual and art with
-    nudity; personal use only)."""
-    allowed = allowed_contents(with_nudity, with_medical, with_sexual)
+    pictures, intimate medical pictures (only with both), adult sexual content (only with with_sexual and art with
+    nudity; personal use only) and graphic scenes (war, disasters, injuries and death)."""
+    allowed = allowed_contents(with_nudity, with_medical, with_sexual, with_graphic)
     return ("Content choices: art with nudity (non-sexual) " + ("included" if with_nudity else "not included") +
             "; medical and anatomy pictures " + ("included" if with_medical else "not included") +
             "; intimate medical pictures from reviewed collections (needs both) " +
             ("included" if "intimate" in allowed else "not included") +
             "; adult sexual content from reviewed collections " +
-            ("included (personal use only)" if "sexual" in allowed else "not included") + ".")
+            ("included (personal use only)" if "sexual" in allowed else "not included") +
+            "; graphic scenes (war, disasters, injuries and death, described plainly) " +
+            ("included" if "graphic" in allowed else "not included") + ".")
 
 
 def prepare_source(source, data_dir, work, size="normal", seed=7):
@@ -1575,3 +1686,35 @@ PERSONAL_PICTURE_MAKING_OK |= _disability_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(
     s.key for s in DISABILITY_SOURCES if s.key not in _disability_ok)
 _add_collections(DISABILITY_SOURCES)
+
+# Graphic-scene collections that are not open (share-alike Commons files of war, disaster and safety scenes; the
+# Imperial War Museums' photographs for personal use): war, disasters, injuries and death. A collection marked
+# content "graphic" is used only with the graphic-scenes choice (--with-graphic), and a picture-making model never
+# learns from any of them; the file may be missing.
+try:
+    import graphic_sources as _graphic  # noqa: E402
+except ImportError as _e:
+    _graphic = None
+    if getattr(_e, "name", None) != "graphic_sources":
+        say(f"(The graphic-scene collections could not be loaded: {_e}. They are left out.)")
+GRAPHIC_SOURCES = list(getattr(_graphic, "GRAPHIC_SOURCES", []) or [])
+_graphic_ok = set(getattr(_graphic, "GRAPHIC_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _graphic_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(
+    s.key for s in GRAPHIC_SOURCES if s.key not in _graphic_ok)
+_add_collections(GRAPHIC_SOURCES)
+
+# More archive, museum and news-photo collections that are not open (the V&A and Digital Commonwealth's CC BY-NC-ND
+# photos for personal use, Agência Brasil's journalistic-use photos); the file may be missing.
+try:
+    import archive_sources as _archive  # noqa: E402
+except ImportError as _e:
+    _archive = None
+    if getattr(_e, "name", None) != "archive_sources":
+        say(f"(The archive collections could not be loaded: {_e}. They are left out.)")
+ARCHIVE_SOURCES = list(getattr(_archive, "ARCHIVE_SOURCES", []) or [])
+_archive_ok = set(getattr(_archive, "ARCHIVE_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _archive_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(
+    s.key for s in ARCHIVE_SOURCES if s.key not in _archive_ok)
+_add_collections(ARCHIVE_SOURCES)

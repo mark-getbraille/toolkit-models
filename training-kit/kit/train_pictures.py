@@ -32,6 +32,10 @@ Review collections (review_sources.py, adult_review_sources.py) are NEVER used h
 "sexual" (sources.PICTURE_MAKING_NEVER), whatever is chosen; there is no --review or --with-sexual option here.
 never_for_review() is the last check, on every row, before a picture is learned from.
 
+Graphic scenes (war, disasters, injuries and death) are NEVER used here either: no collection or row tagged "graphic"
+(sources.PICTURE_MAKING_NEVER; never_for_review checks every row's "content"), none of the graphic-scenes packs at all
+(sources.NOT_FOR_PICTURE_MAKING), and there is no --with-graphic option.
+
 Personal-use collections (--personal-noncommercial, --personal-research): as in train.py, the add-on is then for
 PERSONAL USE ONLY (its name gets "-personal"; REPORT.txt starts with the warning; ATTRIBUTION.txt lists them under their
 own heading; the zip gets PERSONAL-USE-ONLY.txt). Only those whose keys are in personal_sources.py's
@@ -259,8 +263,8 @@ def chosen_sources(args):
         never = set(getattr(sources, "NOT_FOR_PICTURE_MAKING", ()))
         # Personal-use collections only when their terms allow picture-making (PERSONAL_PICTURE_MAKING_OK).
         making_ok = set(getattr(sources, "PERSONAL_PICTURE_MAKING_OK", ()) or ())
-        # Intimate and sexual collections are never for picture-making, whatever is chosen.
-        banned = set(getattr(sources, "PICTURE_MAKING_NEVER", ("intimate", "sexual")))
+        # Intimate, sexual and graphic collections are never for picture-making, whatever is chosen.
+        banned = set(getattr(sources, "PICTURE_MAKING_NEVER", REVIEW_NEVER)) | set(REVIEW_NEVER)
         return [s for s in found if s.key not in never and getattr(s, "content", "") not in banned and
                 (getattr(s, "group", "") not in ("noncommercial", "research") or s.key in making_ok)]
     except TypeError:
@@ -294,15 +298,19 @@ def library_rows(work, args):
     return train_rows, test_rows
 
 
-REVIEW_NEVER = ("intimate", "sexual")
+# The content tags never used here, even with a sources.py older than this file (which may not list them all).
+REVIEW_NEVER = ("intimate", "sexual", "graphic")
 
 
 def never_for_review(row):
     """True for a row that a picture-making model must never learn from: a row of a review collection (it has
-    "review", or its source is "review"), or one tagged "intimate" or "sexual" (its "contents" or "content")."""
-    tags = set(row.get("contents") or []) | {row.get("content") or ""}
-    return bool(row.get("review") or row.get("source") == "review" or
-                tags & set(getattr(sources, "PICTURE_MAKING_NEVER", REVIEW_NEVER)))
+    "review", or its source is "review"), one tagged "intimate", "sexual" or "graphic" (its "contents" or
+    "content"), or one of a collection whose own content is one of those."""
+    tags = set(row.get("contents") or []) | {str(row.get("content") or "").lower()}
+    if hasattr(sources, "content_of") and row.get("source"):
+        tags.add(sources.content_of(row["source"]))
+    never = set(getattr(sources, "PICTURE_MAKING_NEVER", REVIEW_NEVER)) | set(REVIEW_NEVER)
+    return bool(row.get("review") or row.get("source") == "review" or tags & never)
 
 
 def own_rows(folder, args=None):
@@ -317,8 +325,8 @@ def own_rows(folder, args=None):
     if not os.path.isdir(folder):
         stop(f"The folder of your own pictures was not found: {folder}")
     say(f"  Your own pictures: reading {folder}.")
-    # Never a review collection's picture, nor an intimate or sexual one (only nudity and medical, when chosen).
-    banned = set(getattr(sources, "PICTURE_MAKING_NEVER", ("intimate", "sexual")))
+    # Never a review collection's picture, nor an intimate, sexual or graphic one (only nudity and medical when chosen).
+    banned = set(getattr(sources, "PICTURE_MAKING_NEVER", REVIEW_NEVER)) | set(REVIEW_NEVER)
     try:
         allowed = sources.allowed_contents(getattr(args, "with_nudity", False),
                                            getattr(args, "with_medical", False)) - banned
@@ -356,7 +364,7 @@ def choose_items(train_rows, test_rows, mine, tokenizer, args, wanted):
     Every picture with a row about a child (mentions_child), in the library or the person's own, is left out
     altogether, whatever its other rows say."""
     children = {r.get("picture") for r in [*train_rows, *test_rows, *mine] if mentions_child(r)}
-    # The last check: never a review collection's picture, nor an intimate or sexual one.
+    # The last check: never a review collection's picture, nor an intimate, sexual or graphic one.
     train_rows, test_rows, mine = ([r for r in rows if not never_for_review(r)] for rows in (train_rows, test_rows,
                                                                                                mine))
 

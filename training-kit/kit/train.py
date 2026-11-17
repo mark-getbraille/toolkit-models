@@ -32,6 +32,10 @@ then CC BY-SA 4.0), --limit N (train on at most N pictures).
 Content choices: --with-nudity also learns from non-sexual nudes in art, and --with-medical from medical and anatomy
 pictures (collections marked so in sources.py; without the choice they are left out, in a follow-up too). The report
 and ATTRIBUTION.txt say which choices were used, and a training with them gets its own name ("4b-nudity-medical").
+--with-graphic also learns from graphic scenes described plainly (war, disasters, injuries and death): collections
+marked "graphic", and rows of any pack marked "content": "graphic" (sources.keep_allowed leaves those rows out
+without the choice). It is remembered like the other choices, and a follow-up never carries on from a training with
+graphic scenes unless the choice is made again.
 
 Review collections (review_sources.py, adult_review_sources.py, downloaded by the program's "Review collections"
 window into "Describe pictures" workspaces under <library>\\Review): --review FOLDER (repeatable) adds the pictures
@@ -242,11 +246,12 @@ def open_library(work, library):
 
 
 def prepare_data(work, state, size, with_wikipedia, keys=None, with_nudity=False, with_medical=False,
-                 with_noncommercial=False, with_research=False, with_sexual=False):
+                 with_noncommercial=False, with_research=False, with_sexual=False, with_graphic=False):
     """Prepare every chosen collection once (each one remembered as done in state, so a restarted kit skips it);
     writes data/train.jsonl (shuffled) and data/test.jsonl and returns (training rows, test rows). A collection that
-    cannot be downloaded now is said and left out, so one broken website never stops the training. with_nudity and
-    with_medical: the content choices; with_noncommercial and with_research: the personal-use choices (see
+    cannot be downloaded now is said and left out, so one broken website never stops the training. with_nudity,
+    with_medical, with_sexual and with_graphic: the content choices (rows tagged with a content they do not allow are
+    left out: sources.keep_allowed); with_noncommercial and with_research: the personal-use choices (see
     sources.chosen)."""
     import random
     data_dir = data_root(work)
@@ -254,8 +259,9 @@ def prepare_data(work, state, size, with_wikipedia, keys=None, with_nudity=False
     train_rows, test_rows = [], []
     chosen = [s for s in sources.chosen(with_wikipedia, with_nudity=with_nudity, with_medical=with_medical,
                                         with_noncommercial=with_noncommercial, with_research=with_research,
-                                        with_sexual=with_sexual)
+                                        with_sexual=with_sexual, with_graphic=with_graphic)
               if keys is None or s.key in keys]
+    allowed = sources.allowed_contents(with_nudity, with_medical, with_sexual, with_graphic)
     for number, source in enumerate(chosen, 1):
         say(f"  Collection {number} of {len(chosen)}: {source.name} (downloads {source.download}).")
         try:
@@ -265,6 +271,12 @@ def prepare_data(work, state, size, with_wikipedia, keys=None, with_nudity=False
                 "Start the kit again later to try it again.")
             continue
         state.mark(f"data-{source.key}-{size}", {"train": len(train), "test": len(test)})
+        kept_train, kept_test = sources.keep_allowed(train, allowed), sources.keep_allowed(test, allowed)
+        left = len(train) + len(test) - len(kept_train) - len(kept_test)
+        train, test = kept_train, kept_test
+        if left:                     # rows marked graphic (or another content) the choices do not allow
+            say(f"    {left} of its questions are about pictures marked with a content choice that is not made "
+                "(such as graphic scenes), so they are left out.")
         say(f"    Ready: {len(train)} pictures for training, {len(test)} for the test.")
         train_rows += train
         test_rows += test
@@ -279,10 +291,10 @@ def prepare_data(work, state, size, with_wikipedia, keys=None, with_nudity=False
 
 def checks_for(content):
     """(content tags allowed, review categories allowed) for own_data.check_folder, from the training's choices
-    (content: the dict main() makes, with with_nudity, with_medical, with_sexual, with_noncommercial and
-    with_research)."""
+    (content: the dict main() makes, with with_nudity, with_medical, with_sexual, with_graphic, with_noncommercial
+    and with_research)."""
     tags = sources.allowed_contents(content.get("with_nudity"), content.get("with_medical"),
-                                    content.get("with_sexual"))
+                                    content.get("with_sexual"), content.get("with_graphic"))
     categories = {"", "open", "share-alike", "permission"}    # permission: checked by review_rows itself
     if content.get("with_noncommercial"):
         categories.add("noncommercial")
@@ -668,10 +680,16 @@ def content_lines(info):
     """The content choices and, when used, the note about the person's own pictures, as lines for the report and
     ATTRIBUTION.txt. A choice made whose collections could not be downloaded is said too."""
     lines = [sources.content_choices_text(info.get("with_nudity", False), info.get("with_medical", False),
-                                          info.get("with_sexual", False))]
+                                          info.get("with_sexual", False), info.get("with_graphic", False))]
     for content, words in (("nudity", "Art with nudity was"), ("medical", "Medical and anatomy pictures were")):
         if info.get(f"with_{content}") and not any(sources.content_of(k) == content for k in info["collections"]):
             lines.append(f"  ({words} chosen, but none of those pictures could be downloaded.)")
+    if info.get("with_graphic"):
+        if info.get("graphic_used"):
+            lines.append("Graphic scenes (war, disasters, injuries and death) were learned from: "
+                         f"{info['graphic_used']} questions about pictures marked graphic, described plainly.")
+        else:
+            lines.append("  (Graphic scenes were chosen, but none of those pictures could be downloaded.)")
     if info.get("review_pictures"):
         lines.append(f"Includes {info['review_pictures']} checked pictures from review collections, each screened by a "
                      "trusted sighted adult: for personal use only.")
@@ -880,13 +898,15 @@ def prepared_collections(state):
 
 
 def follow_up_rows(work, state, plan, with_wikipedia, size, replay, with_nudity=False, with_medical=False,
-                   with_noncommercial=False, with_research=False, with_sexual=False):
+                   with_noncommercial=False, with_research=False, with_sexual=False, with_graphic=False):
     """(training rows, test rows) of a follow-up run: the new collections' pictures, a share (replay) of the earlier
     collections' pictures, and every collection's test pictures. Collections whose content or personal-use group was
-    not chosen (with_nudity, with_medical, with_noncommercial, with_research) are left out, also the earlier ones."""
+    not chosen (with_nudity, with_medical, with_graphic, with_noncommercial, with_research) are left out, also the
+    earlier ones, and so are rows marked with a content that is not chosen (sources.keep_allowed)."""
     import random
     choices = {"with_nudity": with_nudity, "with_medical": with_medical, "with_noncommercial": with_noncommercial,
-               "with_research": with_research, "with_sexual": with_sexual}
+               "with_research": with_research, "with_sexual": with_sexual, "with_graphic": with_graphic}
+    tags = sources.allowed_contents(with_nudity, with_medical, with_sexual, with_graphic)
     new_train, new_test = prepare_data(work, state, size, with_wikipedia, keys=set(plan["new"]), **choices)
     allowed = {s.key for s in sources.chosen(with_wikipedia, **choices)}
     old_train, old_test = [], []
@@ -897,8 +917,8 @@ def follow_up_rows(work, state, plan, with_wikipedia, size, replay, with_nudity=
                 not os.path.exists(os.path.join(data_dir, f"{key}-{old_size}.jsonl")):
             continue
         train, test = sources.prepare_source(source, data_dir, downloads_root(work), old_size)
-        old_train += train
-        old_test += test
+        old_train += sources.keep_allowed(train, tags)
+        old_test += sources.keep_allowed(test, tags)
     random.Random(9).shuffle(old_train)
     mixed = new_train + old_train[:int(len(new_train) * replay)]
     random.Random(10).shuffle(mixed)
@@ -921,6 +941,8 @@ def main(argv=None):
     parser.add_argument("--replay", type=float, default=0.25, help="with --continue: share of earlier pictures")
     parser.add_argument("--with-nudity", action="store_true", help="also learn from non-sexual nudes in art")
     parser.add_argument("--with-medical", action="store_true", help="also learn from medical and anatomy pictures")
+    parser.add_argument("--with-graphic", action="store_true",
+                        help="also learn from graphic scenes described plainly: war, disasters, injuries and death")
     parser.add_argument("--with-sexual", action="store_true",
                         help="also learn from adult sexual content in reviewed collections (needs --with-nudity; "
                              "personal use only)")
@@ -941,7 +963,7 @@ def main(argv=None):
     args.with_sexual = args.with_sexual and args.with_nudity     # adult sexual content needs art with nudity
     content = {"with_nudity": args.with_nudity, "with_medical": args.with_medical,
                "with_noncommercial": args.personal_noncommercial, "with_research": args.personal_research,
-               "with_sexual": args.with_sexual}
+               "with_sexual": args.with_sexual, "with_graphic": args.with_graphic}
     personal = args.personal_noncommercial or args.personal_research
     os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
     os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
@@ -985,11 +1007,12 @@ def main(argv=None):
         # What today's choices allow: a training that learned from art with nudity, medical pictures, your own
         # pictures, or non-commercial or research-only collections (personal use) is only carried on from when that
         # is chosen again now.
-        allowed_now = sources.allowed_contents(args.with_nudity, args.with_medical, args.with_sexual)
+        allowed_now = sources.allowed_contents(args.with_nudity, args.with_medical, args.with_sexual,
+                                               args.with_graphic)
         wanted_now = {"nudity": args.with_nudity, "medical": args.with_medical, "own": bool(args.own),
                       "noncommercial": args.personal_noncommercial, "research": args.personal_research,
                       "intimate": "intimate" in allowed_now, "sexual": "sexual" in allowed_now,
-                      "review": bool(review_used)}
+                      "graphic": "graphic" in allowed_now, "review": bool(review_used)}
         if plan and not state.done(f"after-{plan['run']}") and \
                 any(on and not wanted_now.get(c) for c, on in plan.get("needs", {}).items()):
             say("The follow-up started before carries on from a training made with choices that are not made now "
@@ -1002,11 +1025,11 @@ def main(argv=None):
             if not earlier:
                 # Say when a personal-use training was passed over, so the person knows which choice it needs.
                 skipped = {c for r, _f in finished_runs(work, state) if r.startswith(args.model)
-                           for c in ("noncommercial", "research", "intimate", "sexual", "review")
+                           for c in ("noncommercial", "research", "intimate", "sexual", "graphic", "review")
                            if state.data[f"train-{r}"].get(c) and not wanted_now[c]}
                 names = {"noncommercial": "non-commercial collections", "research": "research-only collections",
                          "intimate": "intimate medical pictures", "sexual": "adult sexual content",
-                         "review": "checked pictures of review collections"}
+                         "graphic": "graphic scenes", "review": "checked pictures of review collections"}
                 hint = (" A training made with " + " and ".join(names[c] for c in sorted(skipped))
                         + " is only carried on from when the same choice is made again." if skipped else "")
                 stop("There is no finished training to carry on from that fits these choices. Train once first "
@@ -1030,6 +1053,8 @@ def main(argv=None):
             needs = {c: bool(state.data[f"train-{base_run}"].get(c)) for c in wanted_now}
             needs.update({c: wanted_now[c] or needs[c] for c in ("noncommercial", "research", "review")})
             needs.update({c: (c in review_contents) or needs[c] for c in ("intimate", "sexual")})
+            # Graphic scenes chosen now: the follow-up may learn from them (rows of any pack), so it needs the choice.
+            needs["graphic"] = needs["graphic"] or wanted_now["graphic"]
             plan = {"run": f"{args.model}-plus-{_time.strftime('%Y%m%d-%H%M')}" + ("-personal" if personal else ""),
                     "from": base_run, "from_final": base_final, "needs": needs,
                     "new": new, "old": {k: v for k, v in old.items() if k not in new}}
@@ -1039,7 +1064,7 @@ def main(argv=None):
     say("")
     say(f"Picture Model Training Kit started for the {args.model.upper()} model, size {args.size}"
         + (", with Wikipedia." if args.with_wikipedia else "."))
-    say(sources.content_choices_text(args.with_nudity, args.with_medical, args.with_sexual))
+    say(sources.content_choices_text(args.with_nudity, args.with_medical, args.with_sexual, args.with_graphic))
     if args.personal_noncommercial or args.personal_research:
         say("Personal-use collections: " + " and ".join(w for w, on in (
             ("non-commercial", args.personal_noncommercial), ("research-only", args.personal_research)) if on)
@@ -1100,6 +1125,7 @@ def main(argv=None):
             tag += "-review-" + review_code
     used = {sources.content_of(r["source"]) for r in train_rows + test_rows}
     used |= {t for r in train_rows + test_rows for t in r.get("contents", [])}     # tagged own or review pictures
+    used |= {r["content"] for r in train_rows + test_rows if r.get("content")}     # tagged rows of any pack
     if any(r["source"] == "own" for r in train_rows):
         used.add("own")
     if any(r.get("review") for r in train_rows):
@@ -1108,7 +1134,7 @@ def main(argv=None):
     if not plan:
         # A training with the content choices is its own training too ("4b-nudity-medical"); named after the
         # collections really prepared, so a training started before those packs existed carries on as it was.
-        extra = "".join(f"-{c}" for c in ("nudity", "medical", "intimate", "sexual") if c in used)
+        extra = "".join(f"-{c}" for c in ("nudity", "medical", "intimate", "sexual", "graphic") if c in used)
         extra += "-personal" if personal else ""     # personal use only: its own training, never mixed up
         run, tag = run + extra, tag + extra
     if not train_rows:
@@ -1147,7 +1173,8 @@ def main(argv=None):
         state.mark(f"train-{run}", {"seconds": seconds, "nudity": "nudity" in used, "medical": "medical" in used,
                                     "own": "own" in used, "noncommercial": args.personal_noncommercial,
                                     "research": args.personal_research, "intimate": "intimate" in used,
-                                    "sexual": "sexual" in used, "review": "review" in used})
+                                    "sexual": "sexual" in used, "graphic": "graphic" in used,
+                                    "review": "review" in used})
         del model, processor
         free()
     else:
@@ -1168,6 +1195,8 @@ def main(argv=None):
             "own_pictures": own_count, "own_only": args.own_only, "places": place_counts(train_rows),
             "review_pictures": len({r["picture"] for r in train_rows + test_rows if r.get("review")}),
             "review_collections": review_used, "sexual_used": "sexual" in used, "intimate_used": "intimate" in used,
+            "graphic_used": sum(1 for r in train_rows + test_rows if r.get("content") == "graphic" or
+                                sources.content_of(r["source"]) == "graphic" or "graphic" in r.get("contents", [])),
             "collections": sorted({r["source"] for r in train_rows}),
             "seconds": state.data[f"train-{run}"]["seconds"], "before": before, "after": after,
             "continued_from": plan["from"] if plan else None,

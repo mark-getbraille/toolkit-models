@@ -17,5 +17,9 @@ Safety rules apply to every category:
   context; never unclothed children elsewhere, never in nude art;
 - adult-only for medical photos of people where ages are known;
 - picture-making never learns from pictures of children, medical pictures, or the birth and childhood-illness
-  collections.
+  collections;
+- graphic scenes (war, disasters, injuries and death) are kept and described plainly from their records; their rows
+  carry "content": "graphic" and are used only with the kit's graphic-scenes choice, never for picture-making;
+  sexual violence, pictures whose focus is a dead or injured child, and torture or execution scenes (unless the
+  record is documented evidence, such as the liberation of the camps) are always left out.
 Every licence is checked at its source, and every picture keeps its credit.

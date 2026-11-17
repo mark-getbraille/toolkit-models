@@ -44,6 +44,13 @@ sexual content from collections you have reviewed?" (its letters: A the explanat
 C Cancel; Escape is Cancel, which leaves it off). The answer is remembered for the describer ("sexual_describer" in
 settings.json); unticking art with nudity turns it off too, and it is always off for a picture-making model. With it,
 train.py gets --with-sexual (only ever together with --with-nudity).
+Graphic scenes (war, disasters, injuries and death, described plainly): there is no free Alt letter for a box either,
+so ticking "Include medical and anatomy pictures" for a picture describer opens GraphicDialog, which asks "Also
+include graphic scenes: war, disasters, injuries and death, described plainly?" (its letters: A the explanation,
+G the check box, O OK, C Cancel; Escape is Cancel, which leaves them out). The box starts ticked for the describer,
+as the owner wants, and the answer is remembered for each kind of training ("graphic_describer" and
+"graphic_pictures" in settings.json); it is used only while medical and anatomy pictures are ticked, and never for a
+picture-making model. With it, train.py gets --with-graphic.
 Review collections: they are downloaded and screened in Describe pictures (its "Review collections" button). For a
 picture describer every review workspace in <library>\\Review is passed to train.py as --review FOLDER; only its
 pictures marked "checked" are used, subject to the content choices, and the training is then for personal use only.
@@ -613,6 +620,71 @@ class SexualDialog(wx.Dialog):
             event.Skip()
 
 
+GRAPHIC_QUESTION = "Also include graphic scenes: war, disasters, injuries and death, described plainly?"
+GRAPHIC_ABOUT = ("Graphic scenes are photographs of war, disasters, injuries and death: the dead and wounded, wounds, "
+                 "destroyed towns, and the dangers around someone caught in a war zone or a disaster, such as rubble, "
+                 "fire, floods, fallen power lines and warning signs. They are described accurately and plainly, from "
+                 "each photograph's own caption, without hiding what they show. Nothing sexual is included, nor "
+                 "pictures whose focus is a dead or injured child. They are never used for a picture-making model. "
+                 "Leave the box unticked to leave them out.")
+
+
+class GraphicDialog(wx.Dialog):
+    """Asked when "Include medical and anatomy pictures" is ticked for a picture describer: "Also include graphic
+    scenes: war, disasters, injuries and death, described plainly?", with an explanation (a read-only field), a check
+    box (ticked when value: at first, for the describer) and OK and Cancel. OK keeps what the box says; Cancel or
+    Escape leaves graphic scenes out. Standard controls, a label before the field, Alt letters named in the tooltips
+    (A, G, O, C), no default button, F1 opens READ ME FIRST.txt."""
+
+    def __init__(self, parent, value=True):
+        """The explanation, the check box (ticked when value) and the two buttons."""
+        super().__init__(parent, title="Graphic scenes", size=(620, 400),
+                         style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+        self.mnemonics = {}
+        panel = wx.Panel(self)
+        s = wx.BoxSizer(wx.VERTICAL)
+        s.Add(wx.StaticText(panel, label="&About this choice:"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 8)
+        self.about = wx.TextCtrl(panel, value=f"{GRAPHIC_QUESTION} {GRAPHIC_ABOUT}",
+                                 style=wx.TE_MULTILINE | wx.TE_READONLY)
+        s.Add(self.about, 1, wx.EXPAND | wx.ALL, 8)
+        self.mnemonics["a"] = self.about
+        self.box = wx.CheckBox(panel, label="Also include &graphic scenes: war, disasters, injuries and death, "
+                                            "described plainly")
+        self.box.SetValue(bool(value))
+        self.box.SetToolTip("Photographs of war, disasters, injuries and death, described plainly; never for "
+                            "picture-making (Alt+G)")
+        s.Add(self.box, 0, wx.ALL, 8)
+        row = wx.BoxSizer(wx.HORIZONTAL)
+        ok = wx.Button(panel, label="&OK")
+        ok.SetToolTip("Keep what the check box says (Alt+O)")
+        ok.Bind(wx.EVT_BUTTON, lambda e: self.EndModal(wx.ID_OK))
+        cancel = wx.Button(panel, label="&Cancel")
+        cancel.SetToolTip("Leave graphic scenes out (Alt+C)")
+        cancel.Bind(wx.EVT_BUTTON, lambda e: self.EndModal(wx.ID_CANCEL))
+        for b in (ok, cancel):
+            row.Add(b, 0, wx.ALL, 4)
+        s.Add(row, 0, wx.ALL, 4)
+        panel.SetSizer(s)
+        self.Bind(wx.EVT_CHAR_HOOK, self.on_key)
+        self.box.SetFocus()
+
+    def chosen(self):
+        """True when the box is ticked."""
+        return self.box.GetValue()
+
+    def on_key(self, event):
+        """Escape is Cancel; F1 opens READ ME FIRST.txt; Alt+A moves to the explanation."""
+        key = event.GetKeyCode()
+        if key == wx.WXK_ESCAPE:
+            self.EndModal(wx.ID_CANCEL)
+        elif key == wx.WXK_F1:
+            open_help(None)
+        elif event.AltDown() and not event.ControlDown() and 0 < key < 256 and chr(key).lower() in self.mnemonics:
+            self.mnemonics[chr(key).lower()].SetFocus()
+        else:
+            event.Skip()
+
+
 def open_help(kit):
     """Open READ ME FIRST.txt (the kit folder's copy when there is one, else the program's)."""
     path = os.path.join(kit, "READ ME FIRST.txt") if kit else resource("READ ME FIRST.txt")
@@ -728,6 +800,11 @@ class Wizard(wx.Frame):
         # Adult sexual content (review collections): asked when art with nudity is ticked (SexualDialog), only for
         # a picture describer, remembered for it; never for a picture-making model.
         self.sexual = {kind: bool(chosen.get(f"sexual_{kind}", False)) and kind == "describer" for kind, _ in KINDS}
+        # Graphic scenes (war, disasters, injuries and death): asked when medical and anatomy pictures are ticked
+        # (GraphicDialog), only for a picture describer, where it starts ticked; remembered for each kind, never used
+        # for a picture-making model.
+        self.graphic = {kind: bool(chosen.get(f"graphic_{kind}", kind == "describer")) and kind == "describer"
+                        for kind, _ in KINDS}
         self.nudity = self.check(page, "Include art with nudit&y (non-sexual)",
                                  "Paintings, drawings, sculptures and photographs from museums that show nude people, "
                                  "described plainly; nothing sexual and no children. For a picture describer, ticking "
@@ -737,7 +814,9 @@ class Wizard(wx.Frame):
         s.Add(self.nudity, 0, wx.ALL, 8)
         self.medical = self.check(page, "Include medical and &anatomy pictures",
                                   "Anatomy textbook figures and old anatomy plates showing the inside and outside of "
-                                  "the human body, with their captions", False)
+                                  "the human body, with their captions. For a picture describer, ticking it asks "
+                                  "whether to include graphic scenes: war, disasters, injuries and death", False)
+        self.medical.Bind(wx.EVT_CHECKBOX, self.on_medical)
         s.Add(self.medical, 0, wx.ALL, 8)
         # The personal-use collections, remembered for each kind of training, both off at first. Few Alt letters are
         # left, so theirs (Q and Z) are shown in brackets.
@@ -812,12 +891,15 @@ class Wizard(wx.Frame):
         self.content[self.shown_kind] = {"nudity": self.nudity.GetValue(), "medical": self.medical.GetValue()}
         self.personal[self.shown_kind] = self.personal_choice()
         self.sexual["pictures"] = False                 # never for a picture-making model
+        self.graphic["pictures"] = False                # never for a picture-making model
         self.shown_kind = self.kind_key()
         self.show_kind(self.shown_kind)
         ticked = [w for w, c in (("art with nudity", self.nudity), ("medical and anatomy pictures", self.medical))
                   if c.GetValue()]
         if self.sexual_on():
             ticked.append("adult sexual content from collections you have reviewed")
+        if self.graphic_on():
+            ticked.append("graphic scenes")
         speak(("Picture-making model chosen: choose Stable Diffusion in Picture-making model. "
                if self.shown_kind == "pictures" else "Picture describer chosen. ")
               + ("Ticked: " + " and ".join(ticked) + "." if ticked else
@@ -856,6 +938,44 @@ class Wizard(wx.Frame):
         dialog = SexualDialog(self, value)
         try:
             speak(f"{SEXUAL_QUESTION} The check box is ticked." if value else SEXUAL_QUESTION, True)
+            return dialog.ShowModal() == wx.ID_OK and dialog.chosen()
+        finally:
+            dialog.Destroy()
+
+    # -- graphic scenes: war, disasters, injuries and death
+    def graphic_on(self):
+        """True when graphic scenes are chosen: only for a picture describer, and only while medical and anatomy
+        pictures are ticked (the question is asked with them)."""
+        kind = self.kind_key()
+        return kind == "describer" and self.medical.GetValue() and self.graphic.get(kind, False)
+
+    def on_medical(self, _event):
+        """Medical and anatomy pictures ticked or unticked. For a picture describer, ticking them asks whether to
+        include graphic scenes (GraphicDialog: its box starts as last answered, ticked at first); unticking them leaves
+        graphic scenes out too (the answer is kept for the next time the box is ticked)."""
+        kind = self.kind_key()
+        if not self.medical.GetValue():
+            self.show_result("Medical and anatomy pictures left out." + (" Graphic scenes are left out too: they are "
+                                                                         "chosen with medical pictures."
+                                                                         if self.graphic.get(kind) else ""))
+            return
+        if kind != "describer":
+            self.graphic[kind] = False                 # never for a picture-making model
+            self.show_result("Medical and anatomy pictures included. Graphic scenes are never used for a "
+                             "picture-making model.")
+            return
+        self.graphic[kind] = self.ask_graphic(self.graphic.get(kind, True))
+        self.show_result("Medical and anatomy pictures included. " + (
+            "Graphic scenes included: war, disasters, injuries and death, described plainly." if self.graphic[kind]
+            else "Graphic scenes left out."))
+        self.medical.SetFocus()
+
+    def ask_graphic(self, value):
+        """Show GraphicDialog; True when the person left its box ticked and pressed OK (Cancel and Escape: False)."""
+        dialog = GraphicDialog(self, value)
+        try:
+            speak(f"{GRAPHIC_QUESTION} The check box is ticked." if value else
+                  f"{GRAPHIC_QUESTION} The check box is not ticked.", True)
             return dialog.ShowModal() == wx.ID_OK and dialog.chosen()
         finally:
             dialog.Destroy()
@@ -992,15 +1112,19 @@ class Wizard(wx.Frame):
 
     def content_checks(self):
         """(content tags allowed, review categories allowed) for own_data.check_folder, from the boxes as they are
-        now (a picture-making model: never intimate or sexual)."""
+        now (a picture-making model: never intimate, sexual or graphic)."""
         nudity, medical = self.nudity.GetValue(), self.medical.GetValue()
         module = sources_module()
         if module is not None and hasattr(module, "allowed_contents"):
-            contents = module.allowed_contents(nudity, medical, self.sexual_on())
+            try:
+                contents = module.allowed_contents(nudity, medical, self.sexual_on(), self.graphic_on())
+            except TypeError:                          # an older sources.py without the graphic-scenes choice
+                contents = module.allowed_contents(nudity, medical, self.sexual_on())
         else:
-            contents = {""} | {t for t, on in (("nudity", nudity), ("medical", medical)) if on}
+            contents = {""} | {t for t, on in (("nudity", nudity), ("medical", medical),
+                                               ("graphic", self.graphic_on())) if on}
         if self.kind_key() != "describer":
-            contents -= {"intimate", "sexual"}
+            contents -= {"intimate", "sexual", "graphic"}
         categories = {"", "open", "share-alike", "permission"} | {c for c, on in self.personal_choice().items() if on}
         return contents, categories
 
@@ -1079,6 +1203,7 @@ class Wizard(wx.Frame):
         self.content[kind] = {"nudity": self.nudity.GetValue(), "medical": self.medical.GetValue()}
         self.personal[kind] = self.personal_choice()
         sexual = self.sexual_on()
+        graphic = self.graphic_on()
         choices = {"folder": self.folder.GetValue(), "library": self.library.GetValue(),
                    "model": MODELS[self.model.GetSelection()][0], "size": size,
                    "wikipedia": self.wikipedia.GetValue(), "prepare": self.prepare.GetValue(), "what": kind,
@@ -1088,6 +1213,8 @@ class Wizard(wx.Frame):
             choices[f"nudity_{name}"], choices[f"medical_{name}"] = values["nudity"], values["medical"]
         choices["sexual_describer"] = bool(self.sexual.get("describer"))   # never remembered for picture-making
         choices["sexual_pictures"] = False
+        choices["graphic_describer"] = bool(self.graphic.get("describer"))  # remembered for each kind
+        choices["graphic_pictures"] = False                                 # never for picture-making
         for name, values in self.personal.items():     # the personal-use boxes, for each kind
             choices[f"noncommercial_{name}"], choices[f"research_{name}"] = values["noncommercial"], values["research"]
         save_choices({**load_choices(), **choices})    # keeps the Describe pictures window's own choices
@@ -1112,6 +1239,8 @@ class Wizard(wx.Frame):
         reviews = self.review_folders() if kind == "describer" else []    # never for a picture-making model
         if sexual and kind == "describer":
             args.append("--with-sexual")             # only ever with --with-nudity (sexual_on)
+        if graphic and kind == "describer":
+            args.append("--with-graphic")            # only while medical pictures are ticked (graphic_on)
         for folder in reviews:
             args += ["--review", folder]
         if reviews:
@@ -1300,6 +1429,7 @@ def self_test():
     window.on_kind(None)
     ResearchTermsDialog(window, research_collections()).Destroy()    # the research-terms window can be made
     SexualDialog(window).Destroy()                                    # the adult sexual content question
+    GraphicDialog(window).Destroy()                                   # the graphic scenes question
     describe = describe_window.DescribeWindow(window, sys.modules[__name__], None, tempfile.gettempdir())
     describe_window.ReviewDialog(describe, sys.modules[__name__], tempfile.gettempdir()).Destroy()
     describe.Destroy()

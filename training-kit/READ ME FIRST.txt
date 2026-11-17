@@ -37,6 +37,12 @@ files): art with nudity (paintings, drawings, sculptures and photographs from mu
 plainly; nothing sexual and no children), and medical and anatomy pictures (anatomy textbook figures and old
 anatomy plates). For a picture describer both are ticked at first, so it can describe such pictures plainly
 instead of refusing; for a picture-making model neither is. The report says which were used.
+Graphic scenes (war, disasters, injuries and death, described plainly, and the dangers around someone caught in a
+war zone or a disaster: rubble, fire, floods, fallen power lines, warning signs): when you tick medical and anatomy
+pictures for a picture describer, the program asks "Also include graphic scenes: war, disasters, injuries and death,
+described plainly?" (its box starts ticked; Alt+G is the box, Alt+O OK, Alt+C Cancel, which leaves them out).
+With the .cmd files: --with-graphic. Nothing sexual is included, nor pictures whose focus is a dead or injured
+child. A picture-making model never uses graphic scenes. The report says whether they were used.
 Your own pictures: you can also teach it with your own described pictures, for personal use. Read "HOW TO ADD YOUR
 OWN PICTURES.txt" in this folder.
 Describing pictures with friends: the program's "Describe pictures" button (Alt+J) lets you and your friends
