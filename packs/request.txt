@@ -2,5 +2,6 @@
 # Queued behind the running build: the munitions, firearms, cartridges, religious rites and things-in-use packs (they
 # were waiting already: a new request replaces a waiting one, so they are listed again), the new mechanical and
 # automotive parts packs, UrOAC again (its zip-inside-a-zip reading is fixed), and USGS, Commons disasters,
-# Fashionpedia and two Library of Congress packs again (they now stop looking at half the time). Built 10 at a time.
-commons_munition_models,commons_uxo,amlid_landmines,commons_firearms,commons_cartridges,commons_child_rites,europeana_child_rites,abo_products,open_images_in_use,open_images_tech,commons_things,commons_in_use,brick_quality,codd_materials,nyuad_materials,commons_car_parts,commons_cycle_parts,commons_machine_parts,commons_engine_bays,iso_machine_symbols,corolla_engine_bay,tyre_condition,spark_plug_condition,planetary_gearbox,uroac_crossings,usgs,commons_disasters,fashionpedia,loc_fsa,loc_world
+# Fashionpedia and two Library of Congress packs again (they now stop looking at half the time), and the seven
+# people-in-daily-activities packs. Built 10 at a time.
+commons_munition_models,commons_uxo,amlid_landmines,commons_firearms,commons_cartridges,commons_child_rites,europeana_child_rites,abo_products,open_images_in_use,open_images_tech,commons_things,commons_in_use,brick_quality,codd_materials,nyuad_materials,commons_car_parts,commons_cycle_parts,commons_machine_parts,commons_engine_bays,iso_machine_symbols,corolla_engine_bay,tyre_condition,spark_plug_condition,planetary_gearbox,uroac_crossings,usgs,commons_disasters,fashionpedia,loc_fsa,loc_world,vcoco_actions,vg_people_actions,open_images_activities,commons_daily_life,dollar_street_routines,coco_actions_nc,coco_actions_sa
