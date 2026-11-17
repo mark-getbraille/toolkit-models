@@ -2,7 +2,8 @@
 Kit: the collections whose licence keeps them out of the open packs (share-alike, non-commercial, research-only or no
 terms written at all), and the open ones too big or too odd for a ready-made pack. The open ones are ready-made packs:
 packs/culture_packs.py (Open Images, Wikidata with Commons pictures under CC0, public domain or CC BY, the Met's
-instruments, Google Landmarks v2 free images, playing cards, chess pieces and positions, DeepScores sheet music).
+instruments, Google Landmarks v2 free images, playing cards, chess pieces and positions, DeepScores sheet music,
+and the computer-drawn chessboards and playing cards, each answer saying it is a drawing).
 The owner's rule: every collection found goes in under its licence group; none is dropped only for its licence.
 
 Nothing here is in a ready-made pack or re-shared by the kit's makers. Each collection is downloaded by the kit on the
@@ -18,8 +19,8 @@ choice. Groups (Source.group, as in sources.py and extra_sources.py):
 The collections (CULTURE_SOURCES):
   permissive
     lego_parts            LegoBricks (pvrancx on Hugging Face, Apache-2.0): computer-drawn pictures (LDraw) of the
-                          1,000 most common LEGO parts, each named from Rebrickable's parts list ("This is a LEGO
-                          piece: Brick 2 x 4, part 3001.").
+                          1,000 most common LEGO parts, each named from Rebrickable's parts list ("This is a computer
+                          drawing of a LEGO piece: Brick 2 x 4 (part 3001).").
   share-alike
     commons_culture_sa    Wikimedia Commons files under CC BY-SA or GFDL (most Wiki Loves Monuments photos are CC BY-SA
                           and come in through these categories) of places of worship of every faith, World Heritage
@@ -151,7 +152,7 @@ def prepare_lego_parts(source, data_dir, work, cap):
             row_id = f"lego-{part}-{group}-{i}"
             picture = sources.save_picture(row_id, (record.get("image") or {}).get("bytes") or b"", folder)
             if picture:
-                rows.append({"question": "What LEGO piece is this?", "answer": f"This is a LEGO piece: {name} "
+                rows.append({"question": "What LEGO piece is this?", "answer": f"This is a computer drawing of a LEGO piece: {name} "
                              f"(part {part}).", "split": "", "picture": picture,
                              "credit": "LegoBricks (pvrancx), Apache-2.0, https://huggingface.co/datasets/pvrancx/"
                                        "legobricks ; part names from Rebrickable's parts list, "
@@ -737,13 +738,6 @@ CULTURE_NOT_INCLUDED = {
                                                                   "generator (vehicles outpainted into new scenes).",
     "Olympic Vision 100 Sports (hoangbang on Hugging Face)": "the same pictures as 100 Sports (sports100), with its "
                                                              "test answers hidden.",
-    "Chessboard digital images with FEN (MohammedHemed on Hugging Face, CC BY 4.0)": "flat computer-drawn boards "
-                                                                                    "from python-chess; the open "
-                                                                                    "chess_positions pack teaches the "
-                                                                                    "same reading on realistic "
-                                                                                    "renders, and chessred on photos.",
-    "Playing cards (JackFurby on Hugging Face, MIT)": "machine-made card pictures (cut-out cards randomly turned and "
-                                                      "scaled); the open playing_cards pack has real photos.",
     "Muse OMR Benchmark (musegroup on Hugging Face, CC0)": "PDF pages and MuseScore files; turning them into answers "
                                                            "needs a music-notation reader the kit does not have.",
     "MUSCIMA++ (CC BY-NC-SA 4.0)": "the copy reachable here (e7mac on Hugging Face) holds only the symbol labels; its "

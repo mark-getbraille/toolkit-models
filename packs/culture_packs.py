@@ -88,7 +88,14 @@ The packs (all open: CC0, public domain, CC BY or MIT, checked at the source in 
                        kind. "What chess pieces are on the board?"
   chess_positions      Chessboard renders (Peter A. Massih, CC BY 4.0; positions from the Lichess database, CC0):
                        rendered boards from real games, each with its position (FEN), said square by square in plain
-                       words. "What is the position on this chessboard?"
+                       words, the answer saying it is a computer-made picture. "What is the position on this
+                       chessboard?"
+  chess_drawings       Chessboard Detection Dataset (Mohammed Hemed on Hugging Face, CC BY 4.0): flat computer drawings
+                       of Lichess positions (python-chess), every piece boxed on its square. "What is the position on
+                       this chessboard?" "This is a computer drawing of a chessboard, not a photo. White: ..."
+  drawn_cards          Playing cards (Jack Furby on Hugging Face, MIT): computer-made pictures of one or three cards,
+                       turned and scaled on drawn backgrounds. "Which playing card is this?" "This is a computer
+                       drawing of a playing card, not a photo: the king of spades."
   deepscores_sheet_music  DeepScoresV2 (Tuggener et al., ZHAW, CC BY 4.0, Zenodo 4012193; the zzsi copy on Hugging
                        Face): computer-engraved pages of sheet music with every symbol named, said as the clefs, the
                        time and key signatures, how many notes and rests, and the dynamics. Reading the actual notes
@@ -1404,6 +1411,13 @@ def fen_answer(fen, turn=""):
             colour = "white" if ch.isupper() else "black"
             squares[colour].setdefault(FEN_PIECES[ch.lower()], []).append("abcdefgh"[file] + str(8 - r))
             file += 1
+    text = squares_words(squares)
+    move = {"w": " It is White's move.", "b": " It is Black's move."}.get(turn, "")
+    return text + move if text else ""
+
+
+def squares_words(squares):
+    """ "White: king on g1, rooks on a1 and f1 ... Black: ..." from {"white": {piece: [squares]}, "black": ...}."""
     parts = []
     for colour in ("white", "black"):
         said = []
@@ -1413,8 +1427,7 @@ def fen_answer(fen, turn=""):
                 said.append(f"{piece} on {where_[0]}" if len(where_) == 1 else f"{piece}s on {listed(where_)}")
         if said:
             parts.append(f"{colour.capitalize()}: {', '.join(said)}.")
-    move = {"w": " It is White's move.", "b": " It is Black's move."}.get(turn, "")
-    return " ".join(parts) + move if parts else ""
+    return " ".join(parts)
 
 
 def build_chess_positions(limit):
@@ -1441,6 +1454,7 @@ def build_chess_positions(limit):
                 data = smaller((row.get("image") or {}).get("bytes") or b"")
                 if not answer or not data:
                     continue
+                answer = "This is a computer-made 3D picture of a chessboard, not a photo. " + answer
                 if row.get("source") == "scattered":
                     answer += " The pieces are placed at random, not from a game."
                 out.append((f"chess-render-{row['id']}.jpg", data,
@@ -1452,6 +1466,121 @@ def build_chess_positions(limit):
                 break
     say(f"Chess positions: {len(out)} rendered boards")
     return out[:limit]
+
+
+# ----------------------------------------------------------------- computer-drawn boards and cards
+
+# Both sets are open but made of computer drawings, not photos, so every answer starts "This is a computer drawing
+# of ..." and the describer does not learn to call a drawing a photo.
+DRAWN_BOARDS = "https://huggingface.co/datasets/MohammedHemed/Chessboard-digital-images_with_fen/resolve/main/" \
+               "chess_yolo_data-20250419T135412Z-{}.zip"
+DRAWN_PIECES = ("white pawn", "white knight", "white bishop", "white rook", "white queen", "white king",
+                "black pawn", "black knight", "black bishop", "black rook", "black queen", "black king")
+
+
+def drawn_board_answer(label_text):
+    """The answer for one drawn board from its YOLO label lines ("class cx cy w h", shares of the picture; the
+    board fills the picture with White at the bottom, as python-chess draws it), or ""."""
+    squares = {"white": {}, "black": {}}
+    for line in label_text.splitlines():
+        cells = line.split()
+        if len(cells) != 5 or not cells[0].isdigit() or int(cells[0]) >= len(DRAWN_PIECES):
+            continue
+        colour, piece = DRAWN_PIECES[int(cells[0])].split()
+        file, rank = min(7, int(float(cells[1]) * 8)), 8 - min(7, int(float(cells[2]) * 8))
+        squares[colour].setdefault(piece, []).append("abcdefgh"[file] + str(rank))
+    text = squares_words(squares)
+    return f"This is a computer drawing of a chessboard, not a photo. {text}" if text else ""
+
+
+def build_chess_drawings(limit):
+    """The drawn chessboards pack: the image and label lists of both zips (1.5 GB each, read through their central
+    directories, never whole; an image and its label may be in different zips), a random pick of positions, each
+    label read and its position said square by square."""
+    from everyday_packs import RemoteZip, fetch_from_zip
+    rng = random.Random(97)
+    zips = {part: RemoteZip(DRAWN_BOARDS.format(part)) for part in ("001", "002")}
+    images, labels = {}, {}
+    for part, z in zips.items():
+        for name, offset, csize, method in z.entries():
+            stem = name.rsplit("/", 1)[-1].rsplit(".", 1)[0]
+            if "/images/" in name and name.endswith(".png"):
+                images[stem] = (part, (offset, csize, method))
+            elif "/labels/" in name and name.endswith(".txt"):
+                labels[stem] = (part, (offset, csize, method))
+    stems = sorted(set(images) & set(labels))
+    rng.shuffle(stems)
+    say(f"Drawn chessboards: {len(stems)} boards with labels")
+    by_zip = {}
+    for stem in stems[:int(limit * 1.1) + 2]:
+        part, where_ = labels[stem]
+        try:
+            answer = drawn_board_answer(zips[part].read(*where_).decode("utf-8", "replace"))
+        except Exception:  # noqa: BLE001 - left out
+            continue
+        if answer:
+            part, where_ = images[stem]
+            by_zip.setdefault(part, []).append((f"chess-drawing-{stem}.jpg", where_, {
+                "question": "What is the position on this chessboard?", "answer": answer,
+                "credit": "Chessboard Detection Dataset (Mohammed Hemed), CC BY 4.0, "
+                          "https://huggingface.co/datasets/MohammedHemed/Chessboard-digital-images_with_fen ; "
+                          "positions from the Lichess database (CC0), drawn with python-chess"}))
+    out = []
+    for part, items in by_zip.items():
+        out += fetch_from_zip(zips[part], items)
+    rng.shuffle(out)
+    return out[:limit]
+
+
+DRAWN_CARDS = "JackFurby/playing-cards"
+CARD_CODE_RANKS = {"A": "ace", "K": "king", "Q": "queen", "J": "jack", "10": "ten", "9": "nine", "8": "eight",
+                   "7": "seven", "6": "six", "5": "five", "4": "four", "3": "three", "2": "two"}
+CARD_CODE_SUITS = {"C": "clubs", "D": "diamonds", "H": "hearts", "S": "spades"}
+
+
+def card_code_words(code):
+    """ "the king of spades" from "KS", "the ten of hearts" from "10H", or ""."""
+    rank, suit = code[:-1], code[-1:]
+    if rank not in CARD_CODE_RANKS or suit not in CARD_CODE_SUITS:
+        return ""
+    return f"the {CARD_CODE_RANKS[rank]} of {CARD_CODE_SUITS[suit]}"
+
+
+def build_drawn_cards(limit):
+    """The drawn playing cards pack: the dataset's "single" set (one card on a drawn background) and "three" set
+    (three cards), half each, the cards named from their labels (card_points)."""
+    s, rng = session(), random.Random(98)
+    base = f"https://huggingface.co/datasets/{DRAWN_CARDS}/resolve/main/splits/"
+    codes = [line.split()[0] for line in s.get(base + "single/classes.txt", timeout=60).text.splitlines()
+             if line.split()]
+    groups = {}
+    for kind in ("single", "three"):
+        for split in ("val", "train"):
+            for sample in s.get(f"{base}{kind}/{split}.json", timeout=300).json().values():
+                cards = [card_code_words(codes[label]) for _, label in sample.get("card_points") or []
+                         if isinstance(label, int) and label < len(codes)]
+                if not cards or not all(cards) or not sample.get("img_path"):
+                    continue
+                if kind == "single":
+                    answer = f"This is a computer drawing of a playing card, not a photo: {cards[0]}."
+                    question = ASK_CARD
+                else:
+                    answer = f"This is a computer drawing of {number_word(len(cards))} playing cards, not a " \
+                             f"photo: {listed(cards)}."
+                    question = "Which playing cards are these?"
+                groups.setdefault(kind, []).append((safe_name("drawn-card", sample["img_path"].replace("/", "-")),
+                                                    hf_url(DRAWN_CARDS, sample["img_path"]),
+                                                    {"question": question, "answer": answer,
+                                                     "credit": "Playing cards (Jack Furby), MIT licence, "
+                                                               "https://huggingface.co/datasets/JackFurby/"
+                                                               "playing-cards"}))
+    items = []
+    for kind, found in groups.items():
+        rng.shuffle(found)
+        items += found[:(limit + 1) // 2 + 2]
+    say(f"Drawn playing cards: {sum(len(v) for v in groups.values())} samples, {len(items)} chosen")
+    rng.shuffle(items)
+    return fetch_all(items, workers=6)[:limit]
 
 
 # ----------------------------------------------------------------- DeepScoresV2: printed sheet music
@@ -1582,6 +1711,13 @@ CULTURE_PACKS = {
                                                "https://huggingface.co/datasets/PeterAM4/chessboard-renders ; positions "
                                                "from the Lichess database (CC0); piece meshes CC0, MIT and CC BY as "
                                                "listed by the dataset."),
+    "chess_drawings": (build_chess_drawings, "Chessboard Detection Dataset (Mohammed Hemed), CC BY 4.0, "
+                                             "https://huggingface.co/datasets/MohammedHemed/"
+                                             "Chessboard-digital-images_with_fen ; positions from the Lichess "
+                                             "database (CC0). Computer drawings, said so in every answer."),
+    "drawn_cards": (build_drawn_cards, "Playing cards (Jack Furby), MIT licence, "
+                                       "https://huggingface.co/datasets/JackFurby/playing-cards . Computer drawings, "
+                                       "said so in every answer."),
     "deepscores_sheet_music": (build_deepscores_sheet_music, "DeepScoresV2 (Tuggener, Satyawan, Pacha, Schmidhuber "
                                                              "and Stadelmann, 2020), CC BY 4.0, "
                                                              "https://zenodo.org/records/4012193 ; copy at "
@@ -1606,6 +1742,8 @@ CULTURE_LIMITS = {
     "chess_pieces": 289,              # every photo
     "chess_positions": 3000,          # of 500,000 renders
     "deepscores_sheet_music": 2000,   # of 255,385 engraved pages
+    "chess_drawings": 500,            # of about 64,000 drawn boards (kept small: computer drawings)
+    "drawn_cards": 500,               # of 20,000 drawn single cards and hands of three (kept small)
 }
 
 
