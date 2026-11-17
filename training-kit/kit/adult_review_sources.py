@@ -986,14 +986,14 @@ COMMONS_GROUPS = {
         generic="It is a drawing of adults having sex or being intimate"),
     "sex_photos": dict(
         categories=[("Human sexual activity", 2), ("Nude couples", 1)],
-        lead="A photograph of adults", people_photo=True, photos_only=True, own_work=True,
+        lead="A photograph", people_photo=True, photos_only=True, own_work=True,
         generic="It is a photograph of adults having sex or being intimate"),
     "inclusive": dict(
         categories=[("LGBT sex", 2), ("Gay sex", 1), ("Lesbian sex", 1), ("Transgender sexuality", 1),
                     ("Interracial sex", 1), ("Sexual activity during pregnancy", 0), ("Gay erotic art", 1),
                     ("Lesbian erotic art", 1), ("Bisexual erotic art", 1), ("Safer sex", 1),
                     ("Disability and sexuality", 1)],
-        lead="A picture of adults", people_photo=True, own_work=True,
+        lead="A picture", people_photo=True, own_work=True,
         generic="It is a picture of adults being intimate or having sex"),
     "sex_toys": dict(
         categories=[("Sex toys", 1), ("Dildos", 1), ("Vibrators", 1), ("Butt plugs", 1), ("Anal beads", 1),

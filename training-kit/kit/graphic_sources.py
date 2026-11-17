@@ -60,7 +60,9 @@ from sources import NARRATE, Source, clean
 
 GRAPHIC = re.compile(r"\b(dead|death|deaths|died|dying|corpses?|cadavers?|bodies|bod(?:y|ies) of|killed|slain|"
                      r"wounded|wounds?|casualt\w*|injur\w*|bleeding|blood\w*|bloodied|mass graves?|graves? of|"
-                     r"burial|buried|burying|massacre\w*|atrocit\w*|skeletons?|skulls?|remains of|human remains|"
+                     r"burial|buried|burying|massacre\w*|atrocit\w*|skeletons?|skulls?|human remains|"
+                     r"remains of (?:the )?(?:dead|soldiers?|victims?|bodies|men|women|people|prisoners?|"
+                     r"inmates?|civilians?)|"
                      r"mutilat\w*|amputat\w*|amputees?|charred|burned alive|cremat\w*|exhum\w*|fatalit\w*|"
                      r"stretchers?|litters?|gunshot|shrapnel|severed|decompos\w*|starv\w*|emaciat\w*|"
                      r"carcass\w*|morgue|body bags?)\b", re.I)

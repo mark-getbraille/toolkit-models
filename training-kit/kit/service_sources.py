@@ -136,7 +136,7 @@ def caption_text(text, most=60):
     """A caption or description as an answer (6 words or more, first sentences, a full stop), or ""."""
     text = re.sub(r"^\s*English\s*:\s*", "", clean(text))
     text = re.sub(r"\{\{[^}]*\}\}|[\[\]]", "", text)
-    text = first_sentences(text, most)
+    text = re.sub(r"\s+([,.;:!?])", r"\1", first_sentences(text, most))
     if len(text.split()) < 6 or re.match(r"^[\d\W]", text) or re.search(r"\b[a-z]{2}:\S", text):
         return ""
     return sentence(text)
@@ -282,7 +282,10 @@ NOT_THE_THING = re.compile(r"\b(drawings?|diagrams?|schem\w*|blueprints?|plans?|
 # Catalogue lines that are not captions, and captions saying the picture is a model or a toy.
 NOT_A_CAPTION = re.compile(r"catalog(ue)? ?#|\btitle:|\btitre\s*:|\bformat\s*:|r[ée]f[ée]rence|corporation name|"
                            r"official nickname|\b(scale )?(models?|miniatures?|toys?|replicas?) of\b|\bscale model|"
-                           r"\bdiorama", re.I)
+                           r"\bdiorama|collectie|beschrijving|bestanddeel|scope and content|finding aid|keywords\s*:|"
+                           r"capture date", re.I)
+# A caption in English has some of these words (Commons captions in other languages are not used: no translation).
+ENGLISH_WORDS = re.compile(r"\b(the|of|and|with|in|at|on|a|an|is|from|during)\b", re.I)
 # Files that are paintings, drawings or prints (by their name or categories), not photos.
 PAINTED = re.compile(r"\b(paintings?|painted by|oil on|watercolou?rs?|drawings?|lithograph\w*|engravings?|etchings?|"
                      r"woodcuts?|prints? (of|by)|illustrations?|retrato|gem[äa]lde|peinture|tableau|portrait "
@@ -330,6 +333,8 @@ def sa_files(s, titles):
             licence = value("LicenseShortName")
             if PAINTED.search(f"{p['title']} {value('Categories')}"):
                 continue                               # a painting, drawing or print: not a photo of the thing
+            if "Nationaal Archief" in value("Categories"):
+                continue                               # already in the open "anefo" pack (archive_packs.py)
             if not COMMONS_SA.match(licence) or re.search(r"\bN[CD]\b", licence.upper()) \
                     or info.get("mime") not in ("image/jpeg", "image/png") or not info.get("thumburl"):
                 continue
@@ -337,7 +342,7 @@ def sa_files(s, titles):
             place = ""                                 # (no offline map of countries in the kit)
             page = "https://commons.wikimedia.org/wiki/" + p["title"].replace(" ", "_")
             caption = caption_text(captions.get(f"M{p['pageid']}")) or caption_text(value("ImageDescription"))
-            if NOT_A_CAPTION.search(caption):
+            if NOT_A_CAPTION.search(caption) or len(ENGLISH_WORDS.findall(caption)) < 2:
                 caption = ""
             # The year only when the caption or file name says it, or the camera recorded its place (an old photo
             # scanned later often carries the scan date).
@@ -506,7 +511,6 @@ BUNDESARCHIV = "Images from the German Federal Archive"
 BUNDESARCHIV_WORDS = ("Soldat", "Soldaten", "Panzer", "Flugzeug", "Kriegsschiff", "U-Boot", "Uniform", "Polizei",
                       "Feuerwehr", "Volkspolizei", "Grenztruppen", "Bundeswehr", "Wehrmacht", "Marine", "Artillerie",
                       "Parade", "Wachregiment")
-ENGLISH = re.compile(r"\b(the|of|and|with|in|at|on)\b")
 
 
 def prepare_bundesarchiv_sa(source, data_dir, work, cap):
@@ -531,7 +535,7 @@ def prepare_bundesarchiv_sa(source, data_dir, work, cap):
     items, pictures = [], 0
     for start in range(0, len(titles), 200):
         for f in sa_files(s, titles[start:start + 200]):
-            if not f["caption"] or len(ENGLISH.findall(f["caption"])) < 2:
+            if not f["caption"]:
                 continue
             keep, extra = safety([f["caption"], f["title"]])
             if not keep:

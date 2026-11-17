@@ -89,6 +89,10 @@ The packs (all open: CC0, public domain, CC BY or MIT, checked at the source in 
   chess_positions      Chessboard renders (Peter A. Massih, CC BY 4.0; positions from the Lichess database, CC0):
                        rendered boards from real games, each with its position (FEN), said square by square in plain
                        words. "What is the position on this chessboard?"
+  deepscores_sheet_music  DeepScoresV2 (Tuggener et al., ZHAW, CC BY 4.0, Zenodo 4012193; the zzsi copy on Hugging
+                       Face): computer-engraved pages of sheet music with every symbol named, said as the clefs, the
+                       time and key signatures, how many notes and rests, and the dynamics. Reading the actual notes
+                       is beyond this; "What can you tell me about this sheet music?"
 
 Share-alike, non-commercial and research collections on the same subjects, and the ones needing sign-up, are kit
 download entries in training-kit/kit/culture_sources.py.
@@ -132,6 +136,9 @@ NOT_A_PHOTO = re.compile(r"\b(drawings?|diagrams?|maps?|plans?|logos?|icons?|emb
                          r"blueprints?|elevations?|sections? of|schematics?)\b|\.(svg|gif|tiff?|pdf|djvu)$", re.I)
 NOT_A_MODEL = re.compile(r"\b(scale models?|toy models?|die-?cast|models? of|miniatures?|lego|matchbox|hot wheels|"
                          r"replicas?|dioramas?)\b", re.I)
+# The same, in a file's caption (a photo of a coin or a stamp showing a church is not a photo of the church).
+NOT_SHOWN_TEXT = re.compile(r"\b(coins?|stamps?|banknotes?|postcards?|drawings?|paintings?|engravings?|"
+                            r"lithographs?|illustrations?|logos?|maps?|diagrams?|floor plans?)\b", re.I)
 YOUNG = re.compile(r"\b(novices?|samanera|schools? children|youth|junior|u-?1[0-9]|under-1[0-9])\b", re.I)
 INSIDE = re.compile(r"\b(interior|inside|innen\w*|intérieur|interieur|nave|choir stalls?|prayer hall|sanctuary|"
                     r"altar|iconostas\w*|mihrab|ceiling|vault\w*)\b", re.I)
@@ -297,6 +304,8 @@ def from_subjects(key, s, chosen, limit, rows_of, per_subject=3, rng=None, deepe
             if title not in got or title in seen or counts.get(subject["label"], 0) >= per_subject:
                 continue
             url, credit, text = got[title]
+            if NOT_SHOWN_TEXT.search(text) or (not models_ok and NOT_A_MODEL.search(text)):
+                continue                           # its caption says it is a coin, stamp, drawing or model
             rows = rows_of(subject, title, text)
             if not rows:
                 continue
@@ -561,6 +570,7 @@ def origin_words(d):
 
 
 SPORT_QUERY = """SELECT ?item ?itemLabel ?cat ?parentLabel ?originLabel WHERE {
+  hint:Query hint:optimizer "None" .
   { SELECT DISTINCT ?item WHERE { %s ?item wdt:P373 ?c ; wikibase:sitelinks ?sl . FILTER(?sl >= %d) } }
   ?item wdt:P373 ?cat .
   OPTIONAL { ?item wdt:P279 ?parent } OPTIONAL { ?item wdt:P495 ?origin }
@@ -601,6 +611,7 @@ def build_wikidata_sports(limit):
 # ----------------------------------------------------------------- Wikidata: musical instruments
 
 INSTRUMENT_QUERY = """SELECT ?item ?itemLabel ?cat ?parentLabel ?originLabel WHERE {
+  hint:Query hint:optimizer "None" .
   { SELECT DISTINCT ?item WHERE { ?item wdt:P279+ wd:Q34379 ; wdt:P373 ?c ; wikibase:sitelinks ?sl .
                                   FILTER(?sl >= 2) } }
   ?item wdt:P373 ?cat .
@@ -608,11 +619,17 @@ INSTRUMENT_QUERY = """SELECT ?item ?itemLabel ?cat ?parentLabel ?originLabel WHE
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". } }"""
 
 
+# Sound equipment that Wikidata files under "musical instrument" but a describer should not call one.
+NOT_INSTRUMENT = re.compile(r"\b(microphones?|loudspeakers?|amplifiers?|headphones?|pickups?|effects? units?|"
+                            r"cables?|software|plug-ins?|apps?|mixing consoles?|turntables?|DJ controllers?)\b", re.I)
+
+
 def build_wikidata_instruments(limit):
     """The instruments pack: every kind of musical instrument on Wikidata with a Commons category (about 1,700),
     shuffled, a few free pictures of each: "This is a saron, a metallophone from Indonesia." """
     s, rng = session(), random.Random(83)
-    found = subjects(sparql(s, INSTRUMENT_QUERY))
+    found = [d for d in subjects(sparql(s, INSTRUMENT_QUERY))
+             if not NOT_INSTRUMENT.search(" ".join([d["label"]] + (d.get("parentLabel") or [])))]
     say(f"Wikidata: {len(found)} kinds of musical instrument with a Commons category")
     rng.shuffle(found)
 
@@ -729,7 +746,11 @@ WORSHIP_KINDS = [
     ("Q743165", "Kingdom Hall", "Jehovah's Witnesses"), ("Q6807904", "meeting house", ""),
     ("Q44613", "monastery", ""),
 ]
+# The fewest Wikipedia articles a place needs, for the kinds with very many places (the query service would take
+# too long to sort them all).
+WORSHIP_MIN_ARTICLES = {"Q16970": 8, "Q1088552": 5, "Q108325": 3, "Q2977": 2, "Q44613": 3, "Q2031836": 3, "Q32815": 2}
 WORSHIP_QUERY = """SELECT ?item ?itemLabel ?image ?cat ?religionLabel ?countryLabel ?placeLabel ?styleLabel WHERE {
+  hint:Query hint:optimizer "None" .
   { SELECT ?item ?sl WHERE { ?item wdt:P31 wd:%s ; wdt:P18 ?i ; wikibase:sitelinks ?sl . FILTER(?sl >= %d) }
     ORDER BY DESC(?sl) LIMIT %d }
   ?item wdt:P18 ?image .
@@ -773,7 +794,7 @@ def build_wikidata_worship(limit):
     per_kind = max(20, int(limit * 1.2 / len(WORSHIP_KINDS)))
     groups = []
     for qid, kind, faith in WORSHIP_KINDS:
-        found = subjects(sparql(s, WORSHIP_QUERY % (qid, 1, per_kind)))
+        found = subjects(sparql(s, WORSHIP_QUERY % (qid, WORSHIP_MIN_ARTICLES.get(qid, 1), per_kind)))
         for d in found:
             d["kind"], d["default_faith"] = kind, faith
         say(f"Wikidata: {len(found)} {kind} places with a picture")
@@ -882,6 +903,7 @@ NOT_WORSHIP = "FILTER NOT EXISTS { ?item wdt:P31 ?w . VALUES ?w { %s } }" % " ".
     f"wd:{q}" for q, _, _ in WORSHIP_KINDS)
 LANDMARK_QUERY = """SELECT ?item ?itemLabel ?image ?cat ?kindLabel ?countryLabel ?placeLabel ?styleLabel ?start
                            ?architectLabel WHERE {
+  hint:Query hint:optimizer "None" .
   { SELECT ?item ?sl WHERE { %s ?item wdt:P18 ?i ; wikibase:sitelinks ?sl . FILTER(?sl >= %d) %s }
     ORDER BY DESC(?sl) LIMIT %d }
   ?item wdt:P18 ?image .
@@ -940,6 +962,7 @@ def build_wikidata_landmarks(limit):
 # ----------------------------------------------------------------- Wikidata: architectural styles and building parts
 
 ARCH_QUERY = """SELECT ?item ?itemLabel ?cat ?originLabel WHERE {
+  hint:Query hint:optimizer "None" .
   { SELECT DISTINCT ?item WHERE { %s ?item wdt:P373 ?c ; wikibase:sitelinks ?sl . FILTER(?sl >= 3) } }
   ?item wdt:P373 ?cat . OPTIONAL { ?item wdt:P495 ?origin }
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". } }"""
@@ -976,13 +999,32 @@ GLD_NOT_FREE = re.compile(r"\b(SA|NC|ND|GFDL|FAL|share ?alike|non-?commercial|no
 GLD_FREE = re.compile(r"^\s*(cc0|cc-zero|public domain|pd\b|pd-|cc[ -]by[ -]\d|cc[ -]by\b|attribution)", re.I)
 
 
+def gld_rows(s, url):
+    """The rows of a large Google Landmarks CSV file, read as it downloads. Lines are split at newline bytes only
+    (requests' iter_lines also splits at Unicode line separators, which some Commons titles contain, and that put
+    the address and licence files out of step)."""
+    def lines():
+        """The file's lines, decoded."""
+        with s.get(url, timeout=600, stream=True) as r:
+            r.raise_for_status()
+            rest = b""
+            for chunk in r.iter_content(1 << 20):
+                rest += chunk
+                *done, rest = rest.split(b"\n")
+                for line in done:
+                    yield line.decode("utf-8", "replace").rstrip("\r")
+            if rest:
+                yield rest.decode("utf-8", "replace")
+    return csv.reader(lines())
+
+
 def gld_names(s):
     """{landmark id: its name} from the Commons category addresses of train_label_to_category.csv."""
     out = {}
-    for row in csv.reader(oi_lines(s, GLD + "train_label_to_category.csv")):
+    for row in gld_rows(s, GLD + "train_label_to_category.csv"):
         if len(row) == 2 and row[0].isdigit():
-            name = urllib.parse.unquote(row[1].rsplit("Category:", 1)[-1]).replace("_", " ")
-            out[row[0]] = clean(name)
+            name = clean(urllib.parse.unquote(row[1].rsplit("Category:", 1)[-1]).replace("_", " "))
+            out[row[0]] = re.sub(r"\s*\(([^()]+)\)$", r", \1", name)     # "X (Bologna)" -> "X, Bologna"
     return out
 
 
@@ -997,11 +1039,11 @@ def gld_licence(text):
 
 def build_gldv2_landmarks(limit, per_landmark=2):
     """The Google Landmarks pack: the "clean" training images (train_clean.csv, 27 MB), read with their addresses
-    (train.csv) and licences (train_attribution.csv) line by line as they download (the two files are in the same
+    (train.csv) and licences (train_attribution.csv) row by row as they download (the two files are in the same
     order), the free ones only, at most per_landmark a landmark; pictures from Commons at 1,280 pixels."""
     s, rng = session(), random.Random(89)
     clean_ids = {}
-    for row in csv.reader(oi_lines(s, GLD + "train_clean.csv")):
+    for row in gld_rows(s, GLD + "train_clean.csv"):
         if len(row) == 2 and row[0].isdigit():
             for image_id in row[1].split():
                 clean_ids[image_id] = row[0]
@@ -1009,10 +1051,8 @@ def build_gldv2_landmarks(limit, per_landmark=2):
     say(f"Google Landmarks v2: {len(clean_ids)} clean images of {len(names)} landmarks")
     items, per, read = [], {}, 0
     want = int(limit * 1.3) + 4
-    for line, credit_line in zip(oi_lines(s, GLD + "train.csv"), oi_lines(s, GLD + "train_attribution.csv")):
+    for a, b in zip(gld_rows(s, GLD + "train.csv"), gld_rows(s, GLD + "train_attribution.csv")):
         read += 1
-        a = next(csv.reader([line]))
-        b = next(csv.reader([credit_line]))
         if len(a) != 3 or len(b) != 5 or a[0] != b[0] or a[0] not in clean_ids:
             continue
         landmark = clean_ids[a[0]]
@@ -1048,6 +1088,7 @@ VEHICLE_KINDS = [("Q3231690", "?item wdt:P31 wd:Q3231690 .", ASK_CAR, "car"),
                  ("Q19832486", "?item wdt:P31 wd:Q19832486 .", "What locomotive or train is this?", "locomotive"),
                  ("Q25653", "?item wdt:P31 wd:Q25653 .", "What boat is this?", "ferry")]
 VEHICLE_QUERY = """SELECT ?item ?itemLabel ?cat ?makerLabel ?parentLabel ?originLabel ?start ?end WHERE {
+  hint:Query hint:optimizer "None" .
   { SELECT ?item ?sl WHERE { %s ?item wdt:P373 ?c ; wikibase:sitelinks ?sl . FILTER(?sl >= %d) }
     ORDER BY DESC(?sl) LIMIT %d }
   ?item wdt:P373 ?cat .
@@ -1157,6 +1198,7 @@ def build_commons_vehicle_kinds(limit):
 # ----------------------------------------------------------------- Wikidata and Commons: toys, games, playing cards
 
 TOY_QUERY = """SELECT ?item ?itemLabel ?cat ?originLabel WHERE {
+  hint:Query hint:optimizer "None" .
   { SELECT DISTINCT ?item WHERE { %s ?item wdt:P373 ?c . } }
   ?item wdt:P373 ?cat . OPTIONAL { ?item wdt:P495 ?origin }
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". } }"""
@@ -1401,6 +1443,86 @@ def build_chess_positions(limit):
     return out[:limit]
 
 
+# ----------------------------------------------------------------- DeepScoresV2: printed sheet music
+
+SCORES_REPO = "zzsi/deep-scores-v2"
+CLEF_WORDS = {"clefG": "treble", "clefF": "bass", "clefCAlto": "alto", "clefCTenor": "tenor",
+              "clefUnpitchedPercussion": "percussion"}
+DYNAMICS = {"dynamicP": "p", "dynamicF": "f", "dynamicM": "m", "dynamicMP": "mp", "dynamicMF": "mf",
+            "dynamicPP": "pp", "dynamicFF": "ff", "dynamicSforzato": "sf", "dynamicForte": "f", "dynamicPiano": "p"}
+
+
+def score_answer(categories):
+    """What a printed page of music shows, from the names of its labelled symbols: the clefs, the numbers of its
+    time signatures, sharps or flats in its key signatures, how many notes and rests, and its dynamics markings."""
+    counts = {}
+    for c in categories:
+        counts[c] = counts.get(c, 0) + 1
+    clefs = [w for k, w in CLEF_WORDS.items() if counts.get(k)]
+    notes = sum(n for k, n in counts.items() if k.startswith("notehead"))
+    rests = sum(n for k, n in counts.items() if k.startswith("rest"))
+    if not notes and not rests:
+        return ""
+    text = "This is a page of printed sheet music" + \
+        (f" with {listed(clefs)} clef{'s' if len(clefs) > 1 else ''}." if clefs else ".")
+    digits = sorted({k[len("timeSig"):] for k in counts if re.fullmatch(r"timeSig\d+", k)}, key=int)
+    if counts.get("timeSigCommon"):
+        text += " The time signature is common time (C)."
+    elif counts.get("timeSigCutCommon"):
+        text += " The time signature is cut time."
+    elif digits:
+        text += f" The time signature uses the number{'s' if len(digits) > 1 else ''} {listed(digits)}."
+    if counts.get("keySharp"):
+        text += " The key signature has sharps."
+    elif counts.get("keyFlat"):
+        text += " The key signature has flats."
+    amounts = [f"about {notes} notes" if notes != 1 else "one note"] + \
+        ([f"{rests} rests" if rests != 1 else "one rest"] if rests else [])
+    text += f" It has {listed(amounts)}."
+    marks = list(dict.fromkeys(w for k, w in DYNAMICS.items() if counts.get(k)))
+    if marks:
+        text += f" Dynamics markings: {', '.join(marks)}."
+    return text
+
+
+def build_deepscores_sheet_music(limit):
+    """The sheet music pack: pages of the DeepScoresV2 "complete" set (computer-engraved scores in five music fonts,
+    every symbol boxed and named), read row group by row group from the Hugging Face copy, each page said from its
+    symbols' names. Pages are big (about 2,700 pixels) and stay at the packs' usual size so the symbols stay
+    readable."""
+    import pyarrow.parquet as pq
+    from huggingface_hub import HfFileSystem
+    fs, rng = HfFileSystem(), random.Random(96)
+    paths = sorted(p for p in hf_files(SCORES_REPO) if p.endswith(".parquet"))
+    rng.shuffle(paths)
+    out = []
+    for path in paths:
+        if len(out) >= limit:
+            break
+        f = pq.ParquetFile(fs.open(f"datasets/{SCORES_REPO}/{path}"))
+        groups = list(range(f.metadata.num_row_groups))
+        rng.shuffle(groups)
+        for g in groups[:2]:
+            table = f.read_row_group(g, columns=["file_name", "image", "annotation_set", "objects"]).to_pylist()
+            rng.shuffle(table)
+            for row in table[:max(1, min(len(table), limit - len(out), 80))]:
+                if row.get("annotation_set") != "deepscores":
+                    continue
+                answer = score_answer((row.get("objects") or {}).get("category") or [])
+                data = smaller((row.get("image") or {}).get("bytes") or b"")
+                if answer and data:
+                    out.append((safe_name("score", row.get("file_name") or len(out)), data,
+                                {"question": "What can you tell me about this sheet music?", "answer": answer,
+                                 "credit": "DeepScoresV2 (Lukas Tuggener, Yvan Putra Satyawan, Alexander Pacha, "
+                                           "Juergen Schmidhuber and Thilo Stadelmann, ICPR 2020), CC BY 4.0, "
+                                           "https://zenodo.org/records/4012193 ; copy at "
+                                           "https://huggingface.co/datasets/zzsi/deep-scores-v2"}))
+            if len(out) >= limit:
+                break
+    say(f"DeepScoresV2: {len(out)} pages")
+    return out[:limit]
+
+
 # ----------------------------------------------------------------- the packs
 
 COMMONS_NOTE = "Wikimedia Commons, https://commons.wikimedia.org : pictures CC0, public domain or CC BY (never BY-SA, " \
@@ -1449,11 +1571,15 @@ CULTURE_PACKS = {
                                                "https://huggingface.co/datasets/PeterAM4/chessboard-renders ; positions "
                                                "from the Lichess database (CC0); piece meshes CC0, MIT and CC BY as "
                                                "listed by the dataset."),
+    "deepscores_sheet_music": (build_deepscores_sheet_music, "DeepScoresV2 (Tuggener, Satyawan, Pacha, Schmidhuber "
+                                                             "and Stadelmann, 2020), CC BY 4.0, "
+                                                             "https://zenodo.org/records/4012193 ; copy at "
+                                                             "https://huggingface.co/datasets/zzsi/deep-scores-v2"),
 }
 
 # How many pictures a full build takes from each collection (about what each offers after the licence checks).
 CULTURE_LIMITS = {
-    "open_images_culture": 8000,      # of about 15,000 free photos with a verified culture label (val and test)
+    "open_images_culture": 8000,      # of about 23,000 free photos with a verified culture label (val and test)
     "wikidata_sports": 3000,          # about 750 sports, kinds of equipment and grounds, at most 4 pictures each
     "wikidata_instruments": 4000,     # about 1,700 kinds of instrument, at most 4 pictures each
     "met_instruments": 3500,          # of about 4,000 instruments with pictures (the public-domain ones)
@@ -1468,6 +1594,7 @@ CULTURE_LIMITS = {
     "playing_cards": 1877,            # every photo
     "chess_pieces": 289,              # every photo
     "chess_positions": 3000,          # of 500,000 renders
+    "deepscores_sheet_music": 2000,   # of 255,385 engraved pages
 }
 
 

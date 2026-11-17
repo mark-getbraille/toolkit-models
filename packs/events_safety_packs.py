@@ -212,7 +212,9 @@ def fetch_pictures(items, workers=3, pause=0.3, flatten=False):
                     return (name, data, rows) if data else None
                 if r.status_code in (429, 503):
                     after = r.headers.get("Retry-After", "")
-                    time.sleep(min(int(after) if after.isdigit() else 10 * (attempt + 1), 120))
+                    wait = min(int(after) if after.isdigit() else 10 * (attempt + 1), 120)
+                    say(f"  The picture server asked to slow down: waiting {wait} seconds")
+                    time.sleep(wait)
                     continue
                 if r.status_code in (403, 404, 410):
                     return None
@@ -939,10 +941,17 @@ def road_items(s, want, rng):
     rng.shuffle(queues)
     say(f"  Road signs: {len(queues)} country categories")
     items, per = [], max(2, want // max(1, len(queues)) + 1)
-    for category, words, country in queues:
+    for visited, (category, words, country) in enumerate(queues[:want * 3 + 10]):
         if len(items) >= want:
             break
+        if visited and visited % 25 == 0:
+            say(f"  Road signs: {visited} categories read, {len(items)} signs")
         titles = category_files(s, category, 120)
+        if len(titles) < per * 2:          # many countries file their signs one level down, by type
+            subs = commons_members(s, category, "subcat")
+            rng.shuffle(subs)
+            for sub in subs[:2]:
+                titles += category_files(s, sub.split(":", 1)[1], 120)
         rng.shuffle(titles)
         got = 0
         for f in commons_files(s, titles[:per * 4], mimes=("image/svg+xml", "image/png"), width=800):
@@ -1025,8 +1034,9 @@ def safety_items(s, want, rng, ok=licence_open):
     """[(file id, address, rows)] from SAFETY_PHOTOS: each category (and, where asked, a few of its
     subcategories) taken in turn, a few files at a time whose licence passes ok; the category's answer and the
     file's English caption as a second row."""
-    queues = []
-    for category, (question, answer, needs, depth) in SAFETY_PHOTOS.items():
+    def titles_of(category, depth):
+        """The file titles of a category and, with depth, of up to six of its subcategories (read when first
+        needed, so a small build reads only a few categories)."""
         titles = category_files(s, category, 300)
         if depth:
             subs = [c for c in commons_members(s, category, "subcat") if not NOT_A_PHOTO_CAT.search(c)]
@@ -1035,14 +1045,19 @@ def safety_items(s, want, rng, ok=licence_open):
                 titles += category_files(s, sub.split(":", 1)[1], 100)
         titles = [t for t in dict.fromkeys(titles) if not NOT_A_PHOTO_CAT.search(t)]
         rng.shuffle(titles)
-        queues.append((category, question, answer, needs, titles))
-    say(f"  Commons safety: {sum(len(q[4]) for q in queues)} files in {len(queues)} categories")
+        return titles
+
+    queues = [(category, question, answer, needs, [None], depth)
+              for category, (question, answer, needs, depth) in SAFETY_PHOTOS.items()]
+    rng.shuffle(queues)
     items, seen = [], set()
     per_round = 4
     while len(items) < want and any(q[4] for q in queues):
-        for category, question, answer, needs, titles in queues:
+        for category, question, answer, needs, titles, depth in queues:
             if not titles or len(items) >= want:
                 continue
+            if titles == [None]:
+                titles[:] = titles_of(category, depth)
             batch, titles[:] = titles[:per_round * 3], titles[per_round * 3:]
             got = 0
             for f in commons_files(s, [t for t in batch if t not in seen], ok=ok):

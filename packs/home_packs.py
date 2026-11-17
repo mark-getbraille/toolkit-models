@@ -45,14 +45,16 @@ The packs (all open: CC0, public domain, CC BY, MIT or Apache, checked at the so
                        US government photos (CDC, USDA, EPA: public domain). "Is there a bed bug in this picture?"
                        and "What pest is this?", and a careful "no" for look-alikes ("No: this is a carpet beetle,
                        not a bed bug.").
-  commons_appliances   Commons: thermostats, cooker and oven knobs and control panels, microwave ovens, washing-machine
-                       controls, kitchen and bathroom scales, thermometers, blood-glucose meters, blood-pressure
-                       monitors, seven-segment and LCD displays, lift (elevator) buttons, cash machines, ticket and
-                       self-service kiosks, remote controls and indicator lights. "What is this?" and the file's own
-                       description (which often gives the reading).
-  commons_connectors   Commons: mains plugs and sockets by standard (Types A to O, with where each is used), USB-A,
-                       USB-C, micro-USB, Lightning, HDMI and audio jacks, battery sizes (AA, AAA, C, D, 9-volt, button
-                       cells) and chargers. "What kind of plug is this, and where is it used?"
+  commons_appliances   Commons: thermostats, control knobs, microwave ovens, washing machines, kitchen and bathroom
+                       scales, thermometers, blood-glucose meters, blood-pressure monitors, seven-segment displays,
+                       lift (elevator) buttons, cash machines, ticket machines and self-service check-in machines.
+                       "What is this?" and the file's own description (which often gives the reading). Commons has
+                       no category for cooker knobs, oven or washing-machine control panels, or indicator lights
+                       (searched in November 2026); Open Images and seven_segment cover some of that.
+  commons_connectors   Commons: mains plugs and sockets by standard (Types A to O, with where each is used), USB
+                       (all kinds), USB-C, micro-USB, Lightning, HDMI and audio jacks, battery sizes (AA, AAA, C, D,
+                       9-volt, button cells) and chargers. Commons has no usable category for the Type C Europlug or
+                       the Danish Type K, so those two are missing. "What kind of plug is this, and where is it used?"
   laundry_symbols      Commons' laundry-symbol files (Category:Laundry symbols and its Tabler icons, CC0, public domain,
                        CC BY or MIT, checked file by file): each symbol with its meaning, taken from the file's own
                        name ("Waschen 30s.svg" -> "Machine wash at 30 °C, gentle cycle."), and computer-made care
@@ -62,14 +64,16 @@ The packs (all open: CC0, public domain, CC BY, MIT or Apache, checked at the so
                        are a GINETEX trademark (a trademark, not a copyright: describing them is not limited by it).
   commons_tools        Commons: hand tools, power tools, screws, nails, bolts, nuts and washers, wall plugs, plumbing
                        parts and garden tools. "What tool is this?"
-  commons_personal     Commons: toiletries and cosmetics (shampoo, toothpaste, deodorant, lipstick, mascara, nail
-                       polish), jewellery, wristwatches, glasses, hats and bags. "What is this?"
-  commons_hairstyles   Commons hairstyle categories (braids, cornrows, dreadlocks, Afro, ponytails, buns, bob cuts,
-                       crew cuts, mohawks, shaved heads, curly, grey and long hair). Adults only: a file whose title or
+  commons_personal     Commons: toiletries and cosmetics (shampoo, conditioner, toothpaste, deodorant, shower gel, soap,
+                       lipstick, mascara, nail polish), jewellery, wristwatches, glasses, hats and bags. "What is
+                       this?" and, for shampoo and conditioner, "Is this shampoo or conditioner?"
+  commons_hairstyles   Commons hairstyle categories (braids, cornrows, dreadlocks, ponytails, crew cuts, shaved heads,
+                       bald men, grey and long hair). Adults only: a file whose title or
                        words name a child is left out. Described plainly: "What hairstyle does this person have?" ->
                        "Their hair is in braids."
-  commons_kitchen      Commons: lit gas burners ("Is the burner on?" -> "Yes: there is a flame."), electric hobs glowing
-                       red, boiling water, table settings, kitchen utensils and cookware. "What is this?"
+  commons_kitchen      Commons: gas flames on a cooker (only files whose words name a stove, burner, hob or pan: "Is the
+                       burner on?" -> "Yes: there is a flame ..."), gas and induction cookers, boiling water, table
+                       settings, kitchen utensils and cookware. "What is this?"
 
 Share-alike, non-commercial and research collections on the same subjects (Open Beauty Facts, Open Products Facts,
 Open Pet Food Facts, Commons BY-SA files, DTD patterns ...) are kit download entries in
@@ -375,11 +379,15 @@ NOT_A_PHOTO = re.compile(r"\b(drawings?|illustrations?|paintings?|logos?|icons?|
                          r"in art|in heraldry|coats? of arms|stamps?|maps?|advertis\w*|videos?|audio|microscop\w*|"
                          r"SEM|micrographs?|slides?|specimens? in alcohol|museum specimens?)\b", re.I)
 COMMONS_PLACES = {}        # {file title: the country at its camera coordinates}
+# An insect's or plant's life stage, which the child check must not take for a child.
+LIFE_STAGE = re.compile(r"\b(juvenile\w*|nymph\w*|larva\w*|instars?|young (ticks?|insects?|roaches|cockroaches|"
+                        r"bugs?|ants?|wasps?|plants?|shoots?))\b", re.I)
 
 
 def home_entries(s, titles, drawings=False):
     """[(title, picture address, credit, caption or description)] for Commons files whose licence is CC0, public
-    domain, CC BY, MIT or Apache, 50 files a request; JPEG and PNG photos, and SVG drawings too when drawings is
+    domain, CC BY, MIT or Apache, 50 files a request (pictures at 1,280 pixels, a width Wikimedia keeps ready, so
+    fetching them is not refused); JPEG and PNG photos, and SVG drawings too when drawings is
     True (Commons sends a PNG of them). Where a file's page gives the camera's coordinates, the country is kept in
     COMMONS_PLACES."""
     from food_packs import commons_description
@@ -388,7 +396,7 @@ def home_entries(s, titles, drawings=False):
     for start in range(0, len(titles), 50):
         batch = titles[start:start + 50]
         data = commons_get(s, {"action": "query", "titles": "|".join(batch), "prop": "imageinfo",
-                               "iiprop": "url|extmetadata|mime", "iiurlwidth": 1024 if drawings else 2048,
+                               "iiprop": "url|extmetadata|mime", "iiurlwidth": 960 if drawings else 1280,
                                "iiextmetadatafilter": "LicenseShortName|Artist|ImageDescription|GPSLatitude|"
                                                       "GPSLongitude",
                                "iiextmetadatalanguage": "en"})
@@ -435,8 +443,9 @@ def category_files(s, category, deeper):
 
 
 def build_commons_topic(specs, limit, prefix, adults_only=False):
-    """A Commons pack from specs: [(category, deeper, rows)], rows being [(question, answer)] for every picture of
-    the category. The categories take turns (in a fixed shuffled order) until the limit is reached, so each gets an
+    """A Commons pack from specs: [(category, deeper, rows)] or [(category, deeper, rows, pattern)], rows being
+    [(question, answer)] for every picture of the category (and, with a pattern, only pictures whose title or words
+    match it). The categories take turns (in a fixed shuffled order) until the limit is reached, so each gets an
     even share; each picture also gets "Write a short description ..." from its own caption or description when it
     is a real, respectful one. adults_only: files whose title or words name a child are left out (else such rows are
     marked "child")."""
@@ -445,8 +454,8 @@ def build_commons_topic(specs, limit, prefix, adults_only=False):
     random.Random(prefix).shuffle(order)
     share = max(3, math.ceil(limit * 1.15 / max(1, len(order))))
     queues = []
-    for category, deeper, rows in order:
-        queues.append([category, deeper, rows, None])
+    for spec in order:
+        queues.append([spec[0], spec[1], spec[2], None, spec[3] if len(spec) > 3 else None])
     want = int(limit * 1.15) + 2
     rounds = 0
     while len(items) < want and queues and rounds < 50:
@@ -454,7 +463,7 @@ def build_commons_topic(specs, limit, prefix, adults_only=False):
         for q in list(queues):
             if len(items) >= want:
                 break
-            category, deeper, rows, titles = q
+            category, deeper, rows, titles, must = q
             if titles is None:
                 titles = [t for t in category_files(s, category, deeper) if t not in seen]
                 random.Random(category).shuffle(titles)
@@ -468,12 +477,13 @@ def build_commons_topic(specs, limit, prefix, adults_only=False):
                 if got >= share or title in seen:
                     continue
                 words = f"{title} {text}"
-                if NUDE.search(words):
+                if NUDE.search(words) or (must and not must.search(words)):
                     continue
                 if adults_only and CHILD.search(words):
                     continue
                 seen.add(title)
                 place = where(COMMONS_PLACES.get(title, ""))
+                words = LIFE_STAGE.sub(" ", words)          # "juvenile" tick or "young" nymph: not a child
                 out = [mark_child({"question": qn, "answer": an, "credit": credit, **place}, words)
                        for qn, an in rows]
                 if text and not NOT_RESPECTFUL.search(text):
@@ -529,7 +539,6 @@ COMMONS_PESTS = [
     ("Camponotus pennsylvanicus", True, pest("a carpenter ant", "It is a large black ant that nests in damp "
                                              "wood.")),
     ("Solenopsis invicta", True, pest("a red imported fire ant", "Its sting burns; keep away from its mounds.")),
-    ("Wasp nests", True, [("What is this?", "This is a wasp nest. Keep away from it: wasps sting to defend it.")]),
     ("Vespula nests", True, [("What is this?", "This is a wasp nest. Keep away from it: wasps sting to defend it.")]),
     ("Vespa velutina nests", False, [("What is this?", "This is an Asian hornet nest. Keep away from it and report "
                                                        "it: the hornets sting to defend it.")]),
@@ -571,29 +580,22 @@ def build_commons_pests(limit):
 
 COMMONS_APPLIANCES = [
     ("Thermostats", True, ask_what("a thermostat")),
-    ("Stove knobs", True, ask_what("a cooker knob")),
     ("Control knobs", False, ask_what("a control knob")),
-    ("Oven controls", True, ask_what("an oven's control panel")),
     ("Microwave ovens", True, ask_what("a microwave oven")),
-    ("Washing machine control panels", True, ask_what("a washing machine's control panel")),
+    ("Washing machines", False, ask_what("a washing machine")),
     ("Kitchen scales", True, ask_what("a kitchen scale")),
     ("Bathroom scales", True, ask_what("a set of bathroom scales")),
     ("Digital thermometers", True, ask_what("a digital thermometer")),
     ("Medical thermometers", True, ask_what("a medical thermometer")),
     ("Meat thermometers", True, ask_what("a meat thermometer")),
     ("Glucose meters", True, ask_what("a blood-glucose meter")),
-    ("Blood pressure monitors", True, ask_what("a blood-pressure monitor")),
+    ("Electronic arm blood pressure monitor", False, ask_what("a blood-pressure monitor")),
     ("Sphygmomanometers", False, ask_what("a blood-pressure monitor")),
-    ("Seven-segment displays", True, ask_what("a seven-segment display")),
-    ("Liquid-crystal displays", False, ask_what("a liquid-crystal display")),
+    ("Seven segment displays", False, ask_what("a seven-segment display")),
     ("Elevator buttons", True, ask_what("a lift's buttons (elevator buttons)")),
-    ("Elevator control panels", True, ask_what("a lift's control panel (elevator buttons)")),
-    ("Automated teller machines", False, ask_what("a cash machine (ATM)")),
+    ("Automatic teller machines", False, ask_what("a cash machine (ATM)")),
     ("Ticket machines", False, ask_what("a ticket machine")),
-    ("Self-service kiosks", True, ask_what("a self-service kiosk")),
-    ("Remote controls", True, ask_what("a remote control")),
-    ("Indicator lights", True, ask_what("an indicator light")),
-    ("Light-emitting diodes in use", False, ask_what("a lit indicator light (LED)")),
+    ("Check-in terminals", True, ask_what("a self-service check-in machine")),
 ]
 
 
@@ -617,10 +619,6 @@ COMMONS_CONNECTORS = [
                              "the USA, Canada, Mexico, Japan and much of Central America")),
     ("NEMA 5–15", True, plug("a Type B plug or socket (NEMA 5-15)", "two flat parallel pins and a round earth pin",
                              "the USA, Canada, Mexico and much of Central America")),
-    ("Europlugs", True, plug("a Type C plug (the Europlug, CEE 7/16)", "two thin round pins",
-                             "most of Europe, South America, Africa and Asia")),
-    ("CEE 7/16", True, plug("a Type C plug (the Europlug, CEE 7/16)", "two thin round pins",
-                            "most of Europe, South America, Africa and Asia")),
     ("BS 546", True, plug("a Type D plug or socket (BS 546)", "three large round pins in a triangle",
                           "India, Nepal, Sri Lanka and parts of Africa")),
     ("CEE 7/5", True, plug("a Type E plug or socket (CEE 7/5)", "two round pins and a hole for the socket's earth pin",
@@ -635,19 +633,14 @@ COMMONS_CONNECTORS = [
                                "earth pin", "Australia, New Zealand, China, Argentina and Pacific islands")),
     ("SN 441011", True, plug("a Type J plug or socket (SEV 1011)", "three round pins", "Switzerland and "
                              "Liechtenstein")),
-    ("Danish plugs and sockets", True, plug("a Type K plug or socket (Danish)", "two round pins and a "
-                                            "half-round earth pin", "Denmark and Greenland")),
     ("CEI 23-50", True, plug("a Type L plug or socket (CEI 23-50)", "three round pins in a row", "Italy and Chile")),
     ("IEC 60906-1", True, plug("a Type N plug or socket (IEC 60906-1)", "three round pins", "Brazil and South Africa")),
     ("TIS 166-2549 plugs", True, plug("a Type O plug (TIS 166-2549)", "three round pins", "Thailand")),
     ("Mains adaptors", True, [("What is this?", "This is a mains plug adaptor, for using a plug from one country "
                                                 "in another country's socket.")]),
-    ("USB Type-A", True, [("What kind of connector is this?", "This is a USB-A connector: flat and rectangular, "
-                                                             "it only goes in one way up.")]),
+    ("USB connectors", True, [("What kind of connector is this?", "This is a USB connector.")]),
     ("USB-C", True, [("What kind of connector is this?", "This is a USB-C connector: small and oval, it goes in "
                                                          "either way up.")]),
-    ("USB Type-C", True, [("What kind of connector is this?", "This is a USB-C connector: small and oval, it goes "
-                                                              "in either way up.")]),
     ("Micro-USB", True, [("What kind of connector is this?", "This is a micro-USB connector: small, with sloping "
                                                              "sides, it only goes in one way up.")]),
     ("Lightning (connector)", True, [("What kind of connector is this?", "This is an Apple Lightning connector.")]),
@@ -660,11 +653,10 @@ COMMONS_CONNECTORS = [
     ("AAA batteries", True, [("What size of battery is this?", "This is an AAA battery.")]),
     ("C batteries", True, [("What size of battery is this?", "This is a C battery.")]),
     ("D batteries", True, [("What size of battery is this?", "This is a D battery.")]),
-    ("9-volt batteries", True, [("What size of battery is this?", "This is a 9-volt battery.")]),
+    ("PP3 batteries", True, [("What size of battery is this?", "This is a 9-volt (PP3) battery.")]),
     ("Button cells", True, [("What size of battery is this?", "This is a button cell (a coin battery).")]),
     ("Mobile phone chargers", True, ask_what("a mobile phone charger")),
     ("Battery chargers", True, ask_what("a battery charger")),
-    ("Power banks", True, ask_what("a power bank (a portable charger)")),
 ]
 
 
@@ -877,32 +869,30 @@ def tool(name, extra=None):
 
 COMMONS_TOOLS = [
     ("Claw hammers", True, tool("a claw hammer")), ("Sledgehammers", False, tool("a sledgehammer")),
-    ("Phillips screwdrivers", True, tool("a Phillips (cross-head) screwdriver")),
-    ("Flat-blade screwdrivers", True, tool("a flat-blade screwdriver")),
-    ("Slip joint pliers", True, tool("a pair of slip-joint pliers")),
+    ("Screwdrivers", True, tool("a screwdriver")), ("Pliers", True, tool("a pair of pliers")),
     ("Needle-nose pliers", True, tool("a pair of needle-nose pliers")),
-    ("Adjustable spanners", True, tool("an adjustable spanner (wrench)")),
+    ("Adjustable wrenches", True, tool("an adjustable spanner (wrench)")),
     ("Combination wrenches", True, tool("a combination spanner (wrench)")),
     ("Pipe wrenches", True, tool("a pipe wrench")), ("Hex keys", True, tool("a hex key (Allen key)")),
     ("Hand saws", True, tool("a hand saw")), ("Hacksaws", True, tool("a hacksaw")),
-    ("Cordless drills", True, tool("a cordless drill")), ("Electric drills", True, tool("an electric drill")),
+    ("Cordless drills", True, tool("a cordless drill")),
     ("Angle grinders", True, tool("an angle grinder")), ("Circular saws", True, tool("a circular saw")),
-    ("Jigsaws (tool)", True, tool("an electric jigsaw")), ("Tape measures", True, tool("a tape measure")),
+    ("Tape measures", True, tool("a tape measure")),
     ("Spirit levels", True, tool("a spirit level")), ("Utility knives", True, tool("a utility knife")),
     ("Chisels", True, tool("a chisel")), ("Soldering irons", True, tool("a soldering iron")),
     ("Wood screws", True, [("What is this?", "These are wood screws.")]),
     ("Machine screws", True, [("What is this?", "These are machine screws.")]),
     ("Nails (fasteners)", True, [("What is this?", "These are nails.")]),
-    ("Bolts (fasteners)", True, [("What is this?", "These are bolts.")]),
+    ("Bolts", True, [("What is this?", "These are bolts.")]),
+    ("Screws", True, [("What is this?", "These are screws.")]),
     ("Nuts (hardware)", True, [("What is this?", "These are nuts (for bolts).")]),
     ("Washers (hardware)", True, [("What is this?", "These are washers.")]),
     ("Wall plugs", True, [("What is this?", "These are wall plugs (anchors), for screws in walls.")]),
     ("Plungers", True, tool("a plunger, for clearing a blocked sink or toilet")),
-    ("Pipe fittings", True, [("What is this?", "These are plumbing pipe fittings.")]),
-    ("Taps (plumbing)", True, [("What is this?", "This is a tap (faucet).")]),
+    ("Water taps", True, [("What is this?", "This is a tap (faucet).")]),
     ("Spades", True, tool("a garden spade")), ("Shovels", True, tool("a shovel")),
     ("Garden forks", True, tool("a garden fork")), ("Rakes", True, tool("a rake")), ("Hoes", True, tool("a hoe")),
-    ("Pruning shears", True, tool("a pair of secateurs (pruning shears)")),
+    ("Secateurs", True, tool("a pair of secateurs (pruning shears)")),
     ("Garden trowels", True, tool("a garden trowel")), ("Wheelbarrows", True, tool("a wheelbarrow")),
     ("Watering cans", True, tool("a watering can")), ("Garden hoses", True, tool("a garden hose")),
     ("Lawn mowers", True, tool("a lawn mower")),
@@ -921,7 +911,7 @@ COMMONS_PERSONAL = [
     ("Hair conditioners", True, ask_what("hair conditioner", ("Is this shampoo or conditioner?",
                                                               "It is conditioner."))),
     ("Toothpaste", True, ask_what("toothpaste")), ("Deodorants", True, ask_what("deodorant")),
-    ("Shower gel", True, ask_what("shower gel")), ("Bar soaps", True, ask_what("a bar of soap")),
+    ("Shower gels", True, ask_what("shower gel")), ("Soap bars", False, ask_what("a bar of soap")),
     ("Liquid soap", True, ask_what("liquid soap")), ("Sunscreen", True, ask_what("sunscreen")),
     ("Lipsticks", True, ask_what("a lipstick")), ("Mascara", True, ask_what("mascara")),
     ("Nail polish", True, ask_what("nail polish")), ("Face powder", True, ask_what("face powder")),
@@ -929,11 +919,10 @@ COMMONS_PERSONAL = [
     ("Rings (jewellery)", True, ask_what("a ring")), ("Earrings", True, ask_what("a pair of earrings")),
     ("Necklaces", True, ask_what("a necklace")), ("Bracelets", True, ask_what("a bracelet")),
     ("Brooches", True, ask_what("a brooch")),
-    ("Analog wristwatches", True, ask_what("an analogue wristwatch")),
-    ("Digital wristwatches", True, ask_what("a digital wristwatch")),
-    ("Eyeglasses", True, ask_what("a pair of glasses")), ("Sunglasses", True, ask_what("a pair of sunglasses")),
+    ("Wristwatches", False, ask_what("a wristwatch")), ("Digital watches", True, ask_what("a digital watch")),
+    ("Spectacles", False, ask_what("a pair of glasses")), ("Sunglasses", True, ask_what("a pair of sunglasses")),
     ("Baseball caps", True, ask_what("a baseball cap")), ("Knit caps", True, ask_what("a knitted hat (beanie)")),
-    ("Sun hats", True, ask_what("a sun hat")), ("Handbags", True, ask_what("a handbag")),
+    ("Handbags", True, ask_what("a handbag")),
     ("Backpacks", True, ask_what("a backpack")), ("Wallets", True, ask_what("a wallet")),
 ]
 
@@ -954,20 +943,14 @@ def hair(answer):
 
 
 COMMONS_HAIRSTYLES = [
-    ("Braids (hairstyle)", True, hair("Their hair is in braids.")),
+    ("Braids", False, hair("Their hair is in braids.")),
     ("Cornrows", True, hair("Their hair is in cornrows (braids close to the scalp).")),
     ("Dreadlocks", True, hair("Their hair is in dreadlocks (locs).")),
-    ("Afro (hairstyle)", True, hair("They have an Afro.")),
     ("Ponytails", True, hair("Their hair is tied back in a ponytail.")),
-    ("Hair buns", True, hair("Their hair is in a bun.")),
-    ("Bob cut", True, hair("They have a bob: hair cut to about chin length.")),
     ("Crew cuts", True, hair("They have a crew cut: hair cut very short.")),
-    ("Mohawk hairstyles", True, hair("They have a mohawk: the sides are shaved and a strip of hair runs down the "
-                                     "middle.")),
     ("Shaved heads", True, hair("Their head is shaved.")),
     ("Bald men", False, hair("He is bald.")),
-    ("Curly hair", True, hair("They have curly hair.")),
-    ("Grey hair", True, hair("They have grey hair.")),
+    ("Gray hair", True, hair("They have grey hair.")),
     ("Long hair", False, hair("They have long hair.")),
 ]
 
@@ -980,17 +963,16 @@ def build_commons_hairstyles(limit):
 # ----------------------------------------------------------------- commons_kitchen
 
 BURNER_Q = "Is the burner on?"
+BURNER_WORDS = re.compile(r"\b(stoves?|burners?|hobs?|cookers?|cooktops?|kitchens?|cooking|pans?|pots?)\b", re.I)
 COMMONS_KITCHEN = [
-    ("Gas stove flames", True, [(BURNER_Q, "Yes: there is a flame, so the burner is lit.")]),
+    ("Gas flames", False, [(BURNER_Q, "Yes: there is a flame, so the burner is lit.")], BURNER_WORDS),
     ("Gas burners", False, [("What is this?", "This is a gas burner on a cooker.")]),
-    ("Electric stoves", True, ask_what("an electric hob")),
+    ("Gas stoves", True, ask_what("a gas cooker")), ("Cookers", False, ask_what("a cooker")),
     ("Induction cookers", True, ask_what("an induction hob")),
     ("Boiling water", True, [("Is it boiling?", "Yes, the water is boiling.")]),
     ("Table settings", True, [("What is on the table?", "The table is set for a meal, with plates, cutlery and "
                                                         "glasses.")]),
-    ("Place settings", True, [("What is on the table?", "The table is set for a meal, with plates, cutlery and "
-                                                        "glasses.")]),
-    ("Kitchen utensils", False, ask_what("a kitchen utensil")),
+    ("Kitchenware", False, ask_what("kitchenware")),
     ("Whisks", True, ask_what("a whisk")), ("Ladles", True, ask_what("a ladle")),
     ("Spatulas", True, ask_what("a spatula")), ("Graters", True, ask_what("a grater")),
     ("Peelers", True, ask_what("a vegetable peeler")), ("Colanders", True, ask_what("a colander")),
@@ -998,7 +980,7 @@ COMMONS_KITCHEN = [
     ("Rolling pins", True, ask_what("a rolling pin")), ("Saucepans", True, ask_what("a saucepan")),
     ("Frying pans", True, ask_what("a frying pan")), ("Pressure cookers", True, ask_what("a pressure cooker")),
     ("Electric kettles", True, ask_what("an electric kettle")), ("Toasters", True, ask_what("a toaster")),
-    ("Rice cookers", True, ask_what("a rice cooker")), ("Air fryers", True, ask_what("an air fryer")),
+    ("Rice cookers", True, ask_what("a rice cooker")),
 ]
 
 

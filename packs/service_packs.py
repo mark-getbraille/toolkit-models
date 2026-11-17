@@ -515,7 +515,10 @@ def commons_year(value):
 # a model or a toy, not the thing itself.
 NOT_A_CAPTION = re.compile(r"catalog(ue)? ?#|\btitle:|\btitre\s*:|\bformat\s*:|r[ée]f[ée]rence|corporation name|"
                            r"official nickname|\b(scale )?(models?|miniatures?|toys?|replicas?) of\b|\bscale model|"
-                           r"\bdiorama", re.I)
+                           r"\bdiorama|collectie|beschrijving|bestanddeel|scope and content|finding aid|keywords\s*:|"
+                           r"capture date", re.I)
+# A caption in English has some of these words (Commons captions in other languages are not used: no translation).
+ENGLISH_WORDS = re.compile(r"\b(the|of|and|with|in|at|on|a|an|is|from|during)\b", re.I)
 # Files that are paintings, drawings or prints (by their name or categories), not photos.
 PAINTED = re.compile(r"\b(paintings?|painted by|oil on|watercolou?rs?|drawings?|lithograph\w*|engravings?|etchings?|"
                      r"woodcuts?|prints? (of|by)|illustrations?|retrato|gem[äa]lde|peinture|tableau|portrait "
@@ -568,16 +571,18 @@ def commons_files(s, titles, free=True):
             value = lambda k: clean((meta.get(k) or {}).get("value"))          # noqa: E731
             if PAINTED.search(f"{p['title']} {value('Categories')}"):
                 continue                               # a painting, drawing or print: not a photo of the thing
+            if "Nationaal Archief" in value("Categories"):
+                continue                               # already in the open "anefo" pack (archive_packs.py)
             artist = value("Artist")[:100] or "unknown"
             page = "https://commons.wikimedia.org/wiki/" + p["title"].replace(" ", "_")
             caption = tidy(captions.get(f"M{p['pageid']}"))
-            if NOT_A_CAPTION.search(caption):
+            if NOT_A_CAPTION.search(caption) or len(ENGLISH_WORDS.findall(caption)) < 2:
                 caption = ""
             if not usable(caption):
                 description = re.sub(r"^\s*English\s*:\s*", "", value("ImageDescription"))
                 caption = tidy(capped_words(description, 60))
                 if not usable(caption) or re.match(r"^[\d\W]", caption) or re.search(r"\b[a-z]{2}:\S", caption) \
-                        or NOT_A_CAPTION.search(caption):
+                        or NOT_A_CAPTION.search(caption) or len(ENGLISH_WORDS.findall(caption)) < 2:
                     caption = ""
             out.append({"title": p["title"], "url": re.sub(r"/\d+px-([^/]+)$", r"/1280px-\1", info["thumburl"]),
                         "credit": f"{p['title']} by {artist}, {licence}, {page}", "caption": caption,
@@ -919,7 +924,8 @@ def nara_text(record):
     text = WRA_FULL.sub("", note) if len(note.split()) > len(title.split()) and len(note.split()) < 120 else title
     text = re.sub(r"\s*--\s*", ", ", NARA_NOTES.sub("", text)).strip(" .")
     text = re.sub(r"^\s*(original caption|caption|photograph of)\s*:?\s*", "", text, flags=re.I)
-    text = re.sub(r"\b(Taken by|Alt\.|F\. ?L\.)\s*:?[^.]*\.\s*", "", text)          # camera notes of aerial photos
+    text = re.sub(r"\bTaken [Bb]y(?: \(unit\))?\s*:\s*[^.]*\.\s*|\bAlt\.\s*[\d,']+'?\s*-?\s*F\.\s*L\.\s*[\d\"]+\.?\s*",
+                  "", text)                                            # camera notes of Navy aerial photos
     places = [clean(x.get("heading")) for x in record.get("subjects") or []
               if x.get("authorityType") == "geographicPlaceName"]
     return sentence_case(text, places), places

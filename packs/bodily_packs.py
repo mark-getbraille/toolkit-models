@@ -371,6 +371,8 @@ OI_TRAIN_LABELS = "https://storage.googleapis.com/openimages/v7/oidv7-train-anno
 OI_ALL_LABELS = (OI_TRAIN_LABELS, "https://storage.googleapis.com/openimages/v7/oidv7-val-annotations-human-imagelabels"
                                   ".csv", "https://storage.googleapis.com/openimages/v7/oidv7-test-annotations-human-"
                                           "imagelabels.csv")
+# The training photos Google copied to its own picture store (the "boxable" ones); the others are fetched from Flickr.
+OI_BOXABLE = "https://storage.googleapis.com/openimages/2018_04/train/train-images-boxable-with-rotation.csv"
 OI_ALL_IMAGES = ("https://storage.googleapis.com/openimages/v6/oidv6-train-images-with-labels-with-rotation.csv",
                  "https://storage.googleapis.com/openimages/2018_04/validation/validation-images-with-rotation.csv",
                  "https://storage.googleapis.com/openimages/2018_04/test/test-images-with-rotation.csv")
@@ -420,7 +422,9 @@ def oi_label_lines(s, mids, leave_mids):
 def build_open_images_bodily(limit):
     """The Open Images bodily pack: [(name, JPEG or None, row)]. Every photo with a bodily label confirmed comes
     first, then about as many with only "not there" checks (the "No" answers); photos with a child, a costume or
-    nudity label confirmed are left out, as are photos whose own licence is not CC BY or that need turning."""
+    nudity label confirmed, or whose Flickr title names a child, are left out, as are photos whose own licence is not
+    CC BY or that need turning. Training photos that Google did not copy to its own store (all but the "boxable"
+    ones) are fetched from Flickr, the original address the dataset gives."""
     s = session()
     names = {}
     for line in csv.reader(oi_lines(s, OI_CLASSES)):
@@ -430,20 +434,26 @@ def build_open_images_bodily(limit):
     leave_mids = {names[n] for n in OI_LEAVE_OUT if n in names}
     labels, leave = oi_label_lines(s, mids, leave_mids)
     wanted = {i for i in labels if i not in leave}
+    boxable = {r["ImageID"] for r in csv.DictReader(oi_lines(s, OI_BOXABLE)) if r["ImageID"] in wanted}
     photos = {}
     for url in OI_ALL_IMAGES:
         subset = "train" if "train" in url else "validation" if "validation" in url else "test"
         for r in csv.DictReader(oi_lines(s, url)):
-            if r["ImageID"] in wanted:
-                licence = oi_licence_name(r.get("License") or "")
-                if licence and (r.get("Rotation") or "0") in ("0", "0.0", ""):
-                    photos[r["ImageID"]] = (subset, licence, clean(r.get("Author")) or "an unnamed photographer",
-                                            r.get("OriginalLandingURL") or "")
+            image_id = r["ImageID"]
+            if image_id not in wanted or CHILD_WORDS.search(r.get("Title") or ""):     # the Flickr title names a child
+                continue
+            licence = oi_licence_name(r.get("License") or "")
+            if licence and (r.get("Rotation") or "0") in ("0", "0.0", ""):
+                address = OI_PICTURE.format(subset=subset, image_id=image_id) \
+                    if subset != "train" or image_id in boxable else r.get("OriginalURL") or ""
+                if address:
+                    photos[image_id] = (address, licence, clean(r.get("Author")) or "an unnamed photographer",
+                                        r.get("OriginalLandingURL") or "")
     yes, no = [], []
     for image_id, found in labels.items():
         if image_id not in photos:
             continue
-        subset, licence, author, page = photos[image_id]
+        address, licence, author, page = photos[image_id]
         credit = (f"Photo by {author}" + (f" ({page})" if page else "") + f", {licence}; labels from Open Images V7 "
                   f"(Google), CC BY 4.0")
         medical = any(found.get(n) == 1 for n in OI_MEDICAL)
@@ -452,11 +462,14 @@ def build_open_images_bodily(limit):
             question, said_yes, said_no = OI_BODILY[label]
             rows.append({"question": question, "answer": said_yes if value == 1 else said_no, "credit": credit,
                          **(MEDICAL if medical else {})})
-        item = (f"oibody-{image_id}.jpg", OI_PICTURE.format(subset=subset, image_id=image_id), rows)
+        item = (f"oibody-{image_id}.jpg", address, rows)
         (yes if any(v == 1 for v in found.values()) else no).append(item)
     say(f"Open Images: {len(yes)} usable photos with a bodily label confirmed, {len(no)} with only 'not there'")
     random.Random(63).shuffle(yes)
     random.Random(64).shuffle(no)
+    # Photos in Google's own store first (Flickr may refuse many requests in a row).
+    yes.sort(key=lambda item: "flickr" in item[1])
+    no.sort(key=lambda item: "flickr" in item[1])
     chosen = yes[:int(limit * 0.6) + 1]
     chosen += no[:int(limit * 1.1) + 2 - len(chosen)]
     return with_twins(fetch_all(chosen, workers=8)[:limit])
@@ -724,7 +737,7 @@ def urine_colour(r, g, b):
     if h < 70:
         if s < 0.35:
             return "pale yellow", "Pale yellow is the usual colour when you drink enough."
-        if s < 0.62:
+        if s < 0.72:
             return "yellow", "Yellow is a usual urine colour."
         return "dark yellow", "Dark yellow urine can mean you need to drink more water."
     if h < 170:
@@ -786,6 +799,33 @@ def urine_table():
     return colours, turbidity
 
 
+def fetch_upright(items, workers=4):
+    """Like build_packs.fetch_all, but each photo is first turned the way its camera says (phone photos store "turn
+    me" in their metadata, which the pack's JPEG copy would lose): [(name, JPEG, rows)] for those that came."""
+    from PIL import Image, ImageOps
+    s = session()
+
+    def one(item):
+        """One photo, or None."""
+        name, url, rows = item
+        for _ in range(2):
+            try:
+                r = s.get(url, timeout=120)
+                if r.status_code != 200:
+                    return None
+                img = ImageOps.exif_transpose(Image.open(io.BytesIO(r.content))).convert("RGB")
+                out = io.BytesIO()
+                img.save(out, "JPEG", quality=95)
+                data = smaller(out.getvalue())
+                return (name, data, rows) if data else None
+            except Exception:  # noqa: BLE001 - tried once more, then left out
+                time.sleep(2)
+        return None
+
+    with concurrent.futures.ThreadPoolExecutor(workers) as pool:
+        return [got for got in pool.map(one, items) if got]
+
+
 def build_urine_samples(limit):
     """The urine samples pack: [(name, JPEG or None, row)]. For each sample, the front photos (position F) of up to
     two of the four phones, each with the colour its makers measured on that photo and the sample's turbidity. The
@@ -819,7 +859,7 @@ def build_urine_samples(limit):
                           URINE_BASE + f"AI/{sample}/{name.replace(' ', '%20')}", rows))
     say(f"Urine samples: {len(by_sample)} samples, {len(items)} photos chosen")
     rng.shuffle(items)
-    return with_twins(fetch_all(items[:int(limit * 1.05) + 2], workers=4)[:limit])
+    return with_twins(fetch_upright(items[:int(limit * 1.05) + 2])[:limit])
 
 
 # ----------------------------------------------------------------- the packs

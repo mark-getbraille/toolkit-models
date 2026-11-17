@@ -101,7 +101,9 @@ from documentary_packs import tidy, picture_rows, get_json, finish, loc_picture,
 # its rows are marked "content": "graphic".
 GRAPHIC = re.compile(r"\b(dead|death|deaths|died|dying|corpses?|cadavers?|bodies|bod(?:y|ies) of|killed|slain|"
                      r"wounded|wounds?|casualt\w*|injur\w*|bleeding|blood\w*|bloodied|mass graves?|graves? of|"
-                     r"burial|buried|burying|massacre\w*|atrocit\w*|skeletons?|skulls?|remains of|human remains|"
+                     r"burial|buried|burying|massacre\w*|atrocit\w*|skeletons?|skulls?|human remains|"
+                     r"remains of (?:the )?(?:dead|soldiers?|victims?|bodies|men|women|people|prisoners?|"
+                     r"inmates?|civilians?)|"
                      r"mutilat\w*|amputat\w*|amputees?|charred|burned alive|cremat\w*|exhum\w*|fatalit\w*|"
                      r"stretchers?|litters?|gunshot|shrapnel|severed|decompos\w*|starv\w*|emaciat\w*|"
                      r"carcass\w*|morgue|body bags?)\b", re.I)
@@ -195,7 +197,8 @@ STATE_WORDS = re.compile(r"(?<![\w.])(" + "|".join(re.escape(k) for k in sorted(
 def caption_of(text, most=80):
     """A record's caption as an answer: tidied (documentary_packs.tidy), US state abbreviations written out, at most
     about most words, put in sentence case when it was typed in capitals."""
-    text = STATE_WORDS.sub(lambda m: STATES[m.group(1)], clean(text))
+    text = re.sub(r"\s*\(v\.\s*\d+,\s*p\.\s*\d+[^)]*\)", "", clean(text))   # "(v.7, p. 313, ...)": a book reference
+    text = STATE_WORDS.sub(lambda m: STATES[m.group(1)], text)
     letters = [c for c in text if c.isalpha()]
     if len(letters) > 10 and sum(c.isupper() for c in letters) >= 0.8 * len(letters):
         text = re.sub(r"(^|[.!?]\s+)([a-z])", lambda m: m.group(1) + m.group(2).upper(), text.lower())
@@ -209,7 +212,8 @@ def words(text):
 
 # ----------------------------------------------------------------- Library of Congress
 
-LOC_NOT_A_PHOTO = re.compile(r"\b(maps?|plans?|drawings?|diagrams?|title cards?|caption cards?|untitled|sheet music|"
+LOC_NOT_A_PHOTO = re.compile(r"\b(maps?|plans?|drawings?|diagrams?|charts?|graphs?|title cards?|caption cards?|"
+                             r"untitled|sheet music|"
                              r"cartoons?|posters?|prints? \(?engraving)\b", re.I)
 CIVIL_WAR = "A photograph from the American Civil War, 1861 to 1865."
 CRIMEA = "A photograph by Roger Fenton from the Crimean War, 1855."
@@ -323,7 +327,8 @@ NARA_WORDS = ("wounded", "casualties", "dead", "killed", "litter", "aid station"
               "ruins", "destroyed", "bomb damage", "rubble", "refugees", "civilians", "burning", "mine field",
               "booby trap", "shell hole", "flood", "Korea wounded", "Vietnam wounded", "first aid")
 NARA_MOST_BYTES = 30_000_000        # the Signal Corps scans are JPEGs of about 22 MB; larger files are left out
-NARA_NOTES = re.compile(r"\s*\((?:NOTE:[^)]*|[^)]*FICHE[^)]*)\)|^\s*Photograph of\s+|\s*\b\d{2,3}-SC-\d+\w*\b", re.I)
+NARA_NOTES = re.compile(r"\s*\((?:NOTE:[^)]*|[^)]*FICHE[^)]*)\)|^\s*(?:Original caption:\s*)?(?:Photograph of\s+)?|"
+                        r"\s*\b\d{2,3}-SC-\d+\w*\b", re.I)
 
 
 def nara_picture(record):
@@ -403,7 +408,8 @@ def build_nara_war(limit):
                 text = note if words(note) > words(title) and words(note) < 120 else title
                 answer = caption_of(NARA_NOTES.sub("", text))
                 picture = nara_picture(record)
-                if not picture or words(answer) < 6 or answer.lower() in answers or not_shown(answer, title, note):
+                if not picture or words(answer) < 6 or answer.lower() in answers or LOC_NOT_A_PHOTO.search(title) \
+                        or not_shown(answer, title, note):
                     continue
                 answers.add(answer.lower())
                 found += 1
@@ -574,6 +580,9 @@ SAFETY = {
 }
 
 
+QUICK_CATEGORIES = 0        # main()'s --categories N: a quick check reads only N random categories (0: all)
+
+
 def commons_answer(text):
     """A Commons caption or description as an answer: tidied and at most about 70 words; "" when it is not in
     English or shorter than 6 words."""
@@ -606,6 +615,9 @@ def build_commons(key, categories, limit, safety=False):
     the safety categories (safety=True: categories is SAFETY), the category's question and answer too. The
     categories share the limit; a file is used once, under the first category it is met in."""
     s, items, seen = session(), [], set()
+    if QUICK_CATEGORIES:                              # a quick check (main --categories): only a few categories
+        categories = dict(random.Random(key).sample(sorted(categories.items()), min(QUICK_CATEGORIES,
+                                                                                     len(categories))))
     per_category = max(6, limit // len(categories) * 2)
     for category, value in categories.items():
         question, answer, deeper = value if safety else (None, None, value)
@@ -712,7 +724,11 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="Try one graphic pack builder.")
     parser.add_argument("key", choices=sorted(GRAPHIC_PACKS))
     parser.add_argument("--limit", type=int, default=8)
+    parser.add_argument("--categories", type=int, default=0,
+                        help="Commons packs: read only this many random categories (a quicker check)")
     args = parser.parse_args(argv)
+    global QUICK_CATEGORIES
+    QUICK_CATEGORIES = args.categories
     entries = GRAPHIC_PACKS[args.key][0](args.limit)
     for name, data, row in entries:
         say(json.dumps({"file": name or row.get("file"), "picture": data is not None, "question": row["question"],
