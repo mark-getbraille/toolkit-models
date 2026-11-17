@@ -192,7 +192,7 @@ def chosen(table, key):
 IN_USE = re.compile(r"\b(dropp\w*|in flight|bomb bays?|pylons?|wings? of|under the wing|aircraft|airplanes?|"
                     r"B-\d+\w*|bombers?|fighters?|jets?|helicopters?|inventor\w*|aboard|carriers?|loaded|loading|"
                     r"ordnancem[ae]n|aviation ordnance|weapons? (loaders?|load\w*)|being fired|firing|launch\w*|"
-                    r"in action)\b", re.I)
+                    r"in action|drops?|tests?|testing|competition|build\w*|prepar\w*|assembl\w*|mount\w*|upload\w*)\b", re.I)
 
 
 def titles_of(s, category, depth, avoid=NOT_THE_DANGER, most_subcats=12):
@@ -603,10 +603,13 @@ GUN_ACTIONS = re.compile(r"\b(fir(e|es|ed|ing)\b|shoot\w*|shot (at|by|dead)|aim(
 # File names left out before their records are read (gun_ok checks the rest).
 GUN_FILES = re.compile(r"\b(drawings?|diagrams?|svg|vector|in art|advertis\w*|patents?|cutaways?|sectioned|toys?|"
                        r"airsoft|replicas?)\b", re.I)
-# Pictures whose focus is people (parades, soldiers, police, hunters, portraits), not the gun: left out.
+# Pictures whose focus is people (parades, soldiers, police, hunters, portraits), not the gun, and museum pictures
+# of several guns ("Revolvers - Starr Model 1863, Joslyn ..."): left out.
 PEOPLE_FOCUS = re.compile(r"\b(soldiers?|troops?|marines?|sailors?|airm[ae]n|parades?|march\w*|defile|ceremon\w*|"
                           r"officers?|police\w*|guards?|hunters?|hunting|portrait|man|men|woman|women|people|"
-                          r"crowd|team|squad|upacara|gelar|reenact\w*|re-enact\w*)\b", re.I)
+                          r"crowd|team|squad|upacara|gelar|prajurit|marinir|tentara|latihan|soldat\w*|marksm[ae]n|"
+                          r"reenact\w*|re-enact\w*)\b|\b(revolvers|pistols|rifles|shotguns|guns|firearms) -|солдат\w*|"
+                          r"военн\w*", re.I)
 GUN_WORDS = re.compile(r"\b(AR-?15|AK-?\d+|M-?16|guns?|pistols?|revolvers?|rifles?|shotguns?|carbines?|muskets?|firearms?|handguns?)\b",
                        re.I)
 AMMO_WORDS = re.compile(r"\b(cartridges?|rounds?|ammo|ammunition|bullets?|shells?|casings?|cases|brass|headstamps?)"

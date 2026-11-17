@@ -186,7 +186,7 @@ ENGLISH = re.compile(r"\b(the|of|and|with|in|at|on|a|an|is|from|during|for|by)\b
 IN_USE = re.compile(r"\b(dropp\w*|in flight|bomb bays?|pylons?|wings? of|under the wing|aircraft|airplanes?|"
                     r"B-\d+\w*|bombers?|fighters?|jets?|helicopters?|inventor\w*|aboard|carriers?|loaded|loading|"
                     r"ordnancem[ae]n|aviation ordnance|weapons? (loaders?|load\w*)|being fired|firing|launch\w*|"
-                    r"in action)\b", re.I)
+                    r"in action|drops?|tests?|testing|competition|build\w*|prepar\w*|assembl\w*|mount\w*|upload\w*)\b", re.I)
 # The same categories as the open commons_uxo pack: (question, answer, depth).
 UXO_CATEGORIES = {
     "Landmines": (ASK_WHAT, "This looks like a landmine.", 0),
@@ -289,10 +289,13 @@ def model_named(label, text):
     return bool(number) and bool(re.search(r"(?<!\d)" + number.group(0) + r"(?!\d)", text))
 
 
-# Pictures whose focus is people (parades, soldiers, police, hunters, portraits), not the gun: left out.
+# Pictures whose focus is people (parades, soldiers, police, hunters, portraits), not the gun, and museum pictures
+# of several guns ("Revolvers - Starr Model 1863, Joslyn ..."): left out.
 PEOPLE_FOCUS = re.compile(r"\b(soldiers?|troops?|marines?|sailors?|airm[ae]n|parades?|march\w*|defile|ceremon\w*|"
                           r"officers?|police\w*|guards?|hunters?|hunting|portrait|man|men|woman|women|people|"
-                          r"crowd|team|squad|upacara|gelar|reenact\w*|re-enact\w*)\b", re.I)
+                          r"crowd|team|squad|upacara|gelar|prajurit|marinir|tentara|latihan|soldat\w*|marksm[ae]n|"
+                          r"reenact\w*|re-enact\w*)\b|\b(revolvers|pistols|rifles|shotguns|guns|firearms) -|солдат\w*|"
+                          r"военн\w*", re.I)
 
 def gun_models(s, want):
     """[(item, Commons category, answer, "gun" or "cartridge", label)]: Wikidata firearm and cartridge models with a Commons
