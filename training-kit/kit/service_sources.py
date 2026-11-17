@@ -209,6 +209,17 @@ def sparql(s, query, tries=5):
     return []
 
 
+def an_or_a(name):
+    """ "a" or "an" before a model's name: "an M4 Sherman", "an F-16" (letters said one by one), "a Mannlicher",
+    "an AK-47", "a US ..."."""
+    first = name.split()[0]
+    if len(first) >= 2 and first.isupper():
+        return "an" if first[0] in "AEFHILMNORSX" else "a"
+    if re.match(r"^(U[sk]|Ugand|Urugu|Uzbek|Europe|Unit|Univ|One)", first):
+        return "a"
+    return "an" if first[0].lower() in "aeiou" else "a"
+
+
 def wd_models(s, kinds, avoid=(), groups=None):
     """[(item, Commons category, answer, group)] for Wikidata's items of kinds with a Commons category and facts to
     say (as packs/service_packs.model_answer), leaving out items of the kinds in avoid."""
@@ -263,7 +274,7 @@ def wd_models(s, kinds, avoid=(), groups=None):
         described = f"{adjective} {phrase}".strip()
         article = "a" if re.match(r"^(US|Ukrain|Ugand|Urugu|Uzbek|Europe|Unite|Utility)", described) \
             or described[0].lower() not in "aeiou" else "an"
-        subject = (("an " if name[0] in "AEFHILMNORSX" else "a ") + name) if how == "model" else \
+        subject = (an_or_a(name) + " " + name) if how == "model" else \
             ("the " + name if phrase == "military decoration" else name)
         answer = f"This is {subject}, {article} {described}" + (f" of {' and '.join(wars)}" if wars else "") + period
         out.append((item, cat, sentence(answer), group))
