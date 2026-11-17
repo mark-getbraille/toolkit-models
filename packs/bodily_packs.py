@@ -38,11 +38,12 @@ The packs (BODILY_PACKS):
                        litter box or cat litter, or a stain: "Is there blood in this picture?" with "yes" from a label
                        people confirmed and "no" from one they checked and rejected. Photos with a child, a costume or
                        Halloween in their labels are left out.
-  commons_bodily       Wikimedia Commons categories of human stool, the Bristol stool chart, vomit, urine and urine
-                       colour charts, urine bags, blood stains, nosebleeds, and dog, cat, horse and bird droppings:
-                       pictures CC0, public domain or CC BY (author credited). The category's own answer, and the
-                       file's English caption or description where it is a real description. Pictures of a person's
-                       body only when the file's words say the person is an adult; signs ("no dog fouling") left out.
+  commons_bodily       Wikimedia Commons categories of human stool, the Bristol stool chart, vomit, discoloured and
+                       bloody urine, urine bags, blood stains, nosebleeds, and dog, cat, horse and bird droppings, and
+                       two urine colour charts: pictures CC0, public domain or CC BY (author credited). The category's
+                       own answer, and the file's English caption or description where it is a real description.
+                       Pictures of a person's body only when the file's words say the person is an adult; signs ("no
+                       dog fouling") left out; a file must name what its category is about.
   case_report_bodily   Figures of case reports in PubMed Central whose article licence is CC BY or CC0 (checked in
                        PMC's own metadata), one-picture photographs of stool (black, bloody or pale stool), vomit
                        (blood or "coffee grounds"), urine (red, dark, purple) or a nosebleed, with the authors' caption.
@@ -488,9 +489,6 @@ COMMONS_BODILY = {
     "Vomits": ("What is this?", "This is vomit. " + VOMIT_ADVICE, True, False, False),
     "Humans vomiting": ("What is happening here?", "Someone is being sick (vomiting). " + VOMIT_ADVICE, True, True,
                         False),
-    "Urine scale": ("What does this chart show?",
-                    "This is a urine colour chart: it shows shades from pale yellow (drinking enough) to dark yellow "
-                    "or amber (drink more water). " + URINE_ADVICE, True, False, False),
     "Urine discoloration": ("What does this urine look like?",
                             "This urine is not its usual pale-yellow colour. " + URINE_ADVICE, True, False, True),
     "Hematuria": ("What does this urine look like?", "It is red or pink: it may have blood in it (haematuria). " +
@@ -510,6 +508,33 @@ COMMONS_BODILY = {
     "Bird feces": ("What is this?", "These are bird droppings.", False, False, False),
     "Litter boxes": ("What is this?", "This is a cat litter box (litter tray).", False, False, False),
 }
+URINE_CHART = ("What does this chart show?",
+               "This is a urine colour chart: it shows shades from pale yellow (drinking enough) to dark yellow or "
+               "amber (drink more water). " + URINE_ADVICE)
+# Single Commons files (not in a category of their own) with their question and answer: urine colour charts.
+COMMONS_FILES = {"File:2601 Urine Color Chart.jpg": URINE_CHART,
+                 "File:Urine color test for dehydration.jpg": URINE_CHART}
+# Words a file's title, caption or description must have for its category (Commons categories hold other things too:
+# a street, a sewer, toilet limescale), by category; a category not listed needs none.
+COMMONS_NEEDS = {
+    "Human feces": r"fa?eces|fa?ecal|stools?|poo+p?s?|excrement|shit|turds?|defecat\w*",
+    "Vomits": r"vomit\w*|puke\w*|sick",
+    "Humans vomiting": r"vomit\w*|puke\w*|being sick|throw\w* up",
+    "Urine discoloration": r"urine",
+    "Hematuria": r"urine|hae?maturia",
+    "Urine bags": r"urine|catheter|bag",
+    "Bloodstains": r"blood\w*",
+    "Bloodstains on asphalt": r"blood\w*",
+    "Bloodstains on snow": r"blood\w*",
+    "Nosebleeds": r"nose|epistaxis",
+    "Dog feces": r"dog|canine|fa?eces|poo+p?s?|excrement|dropping\w*|shit|fouling|turds?",
+    "Dog feces on the streets of the cities": r"dog|fa?eces|poo+p?s?|excrement|dropping\w*|shit|fouling",
+    "Dog fouling": r"dog|fa?eces|poo+p?s?|excrement|dropping\w*|fouling",
+    "Cat feces": r"cat|fa?eces|poo+p?s?|excrement|dropping\w*|scat",
+    "Horse feces": r"horse|manure|dung|fa?eces|poo+p?s?|dropping\w*|apples",
+    "Bird feces": r"bird|guano|dropping\w*|fa?eces|poo+p?s?|excrement|pigeon|gull|goose|geese",
+}
+COMMONS_NEEDS = {k: re.compile(rf"\b({v})\b", re.I) for k, v in COMMONS_NEEDS.items()}
 # Words that mean a picture is not a photograph of the thing (art, signs, products), or is not wanted.
 COMMONS_NOT_THIS = re.compile(r"\b(art|drawings?|paintings?|logos?|icons?|emoji|sculptures?|toys?|models?|"
                               r"in literature|videos?|audio|microscop\w*|micrograph\w*|beetles?|insects?|fossil\w*|"
@@ -556,6 +581,8 @@ def build_commons_bodily(limit):
         found = 0
         for title, url, credit, text in entries:
             words = f"{title} {text}"
+            if category in COMMONS_NEEDS and not COMMONS_NEEDS[category].search(words.replace("_", " ")):
+                continue
             if GENITAL_AREA.search(words) or SIGN_WORDS.search(words) \
                     or (body and (not ADULT_WORDS.search(words) or CHILD.search(words))):
                 continue
@@ -572,6 +599,10 @@ def build_commons_bodily(limit):
             if found >= per_category:
                 break
         say(f"Commons {category}: {found} free pictures ({total} files)")
+    for title, url, credit, text in commons_entries(s, list(COMMONS_FILES)):
+        question, answer = COMMONS_FILES[title]
+        items.append((f"commons-body-{safe_name(title.split(':', 1)[-1].rsplit('.', 1)[0])}.jpg", url,
+                      [{"question": question, "answer": answer, "credit": credit, **MEDICAL}]))
     random.Random(65).shuffle(items)
     return with_twins(fetch_all(items[:int(limit * 1.1) + 2], workers=2, pause=0.5)[:limit])
 

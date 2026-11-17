@@ -26,7 +26,7 @@ Safety and content:
 
 The collections (BODILY_SOURCES):
   share-alike
-    commons_bodily_sa      Wikimedia Commons: human stool, the Bristol stool chart, vomit, urine, urine colour charts,
+    commons_bodily_sa      Wikimedia Commons: human stool, the Bristol stool chart, vomit, discoloured and bloody urine,
                            urine bags, blood stains and nosebleeds, files under CC BY-SA or GFDL (content "medical").
     commons_droppings_sa   Wikimedia Commons: dog, cat, horse and bird droppings and litter boxes, files under CC BY-SA
                            or GFDL.
@@ -221,9 +221,6 @@ COMMONS_HUMAN = {
                             "and 4 are the usual, healthy kinds.", False),
     "Vomits": ("What is this?", "This is vomit. " + VOMIT_ADVICE, False),
     "Humans vomiting": ("What is happening here?", "Someone is being sick (vomiting). " + VOMIT_ADVICE, True),
-    "Urine scale": ("What does this chart show?",
-                    "This is a urine colour chart: it shows shades from pale yellow (drinking enough) to dark yellow "
-                    "or amber (drink more water). " + URINE_ADVICE, False),
     "Urine discoloration": ("What does this urine look like?",
                             "This urine is not its usual pale-yellow colour. " + URINE_ADVICE, False),
     "Hematuria": ("What does this urine look like?", "It is red or pink: it may have blood in it (haematuria). " +
@@ -236,6 +233,11 @@ COMMONS_HUMAN = {
     "Nosebleeds": ("What is happening here?", "This is a nosebleed: blood is coming from the nose. " + BLOOD_ADVICE,
                    True),
 }
+URINE_CHART = ("What does this chart show?",
+               "This is a urine colour chart: it shows shades from pale yellow (drinking enough) to dark yellow or "
+               "amber (drink more water). " + URINE_ADVICE)
+# Single Commons files under CC BY-SA with their question and answer: urine colour (hydration) charts.
+COMMONS_SA_FILES = {"File:Urine Hydration chart.jpg": URINE_CHART}
 COMMONS_ANIMAL = {
     "Dog feces": ("What is this?", "This is dog poop.", False),
     "Dog feces on the streets of the cities": ("What is this on the ground?", "This is dog poop on the street.",
@@ -246,6 +248,27 @@ COMMONS_ANIMAL = {
     "Bird feces": ("What is this?", "These are bird droppings.", False),
     "Litter boxes": ("What is this?", "This is a cat litter box (litter tray).", False),
 }
+# Words a file's title, caption or description must have for its category (Commons categories hold other things too:
+# a street, a sewer, toilet limescale), by category; a category not listed needs none.
+COMMONS_NEEDS = {
+    "Human feces": r"fa?eces|fa?ecal|stools?|poo+p?s?|excrement|shit|turds?|defecat\w*",
+    "Vomits": r"vomit\w*|puke\w*|sick",
+    "Humans vomiting": r"vomit\w*|puke\w*|being sick|throw\w* up",
+    "Urine discoloration": r"urine",
+    "Hematuria": r"urine|hae?maturia",
+    "Urine bags": r"urine|catheter|bag",
+    "Bloodstains": r"blood\w*",
+    "Bloodstains on asphalt": r"blood\w*",
+    "Bloodstains on snow": r"blood\w*",
+    "Nosebleeds": r"nose|epistaxis",
+    "Dog feces": r"dog|canine|fa?eces|poo+p?s?|excrement|dropping\w*|shit|fouling|turds?",
+    "Dog feces on the streets of the cities": r"dog|fa?eces|poo+p?s?|excrement|dropping\w*|shit|fouling",
+    "Dog fouling": r"dog|fa?eces|poo+p?s?|excrement|dropping\w*|fouling",
+    "Cat feces": r"cat|fa?eces|poo+p?s?|excrement|dropping\w*|scat",
+    "Horse feces": r"horse|manure|dung|fa?eces|poo+p?s?|dropping\w*|apples",
+    "Bird feces": r"bird|guano|dropping\w*|fa?eces|poo+p?s?|excrement|pigeon|gull|goose|geese",
+}
+COMMONS_NEEDS = {k: re.compile(rf"\b({v})\b", re.I) for k, v in COMMONS_NEEDS.items()}
 # Files that are not a photograph of the thing (art, signs, bins), or not wanted.
 COMMONS_NOT_THIS = re.compile(r"\b(art|drawings?|paintings?|logos?|icons?|emoji|sculptures?|toys?|models?|"
                               r"in literature|videos?|audio|microscop\w*|micrograph\w*|beetles?|insects?|fossil\w*|"
@@ -269,6 +292,8 @@ def commons_bodily_rows(source, data_dir, categories, prefix, medical):
         found = 0
         for title, url, credit, text in commons_sa_entries(s, titles[:per_category * 3]):
             words = f"{title} {text}"
+            if category in COMMONS_NEEDS and not COMMONS_NEEDS[category].search(words.replace("_", " ")):
+                continue
             if found >= per_category or COMMONS_NOT_THIS.search(words) or INTIMATE_SITE.search(words) \
                     or NUDE.search(words) or (body and (not is_adult_text(words) or CHILD_WORDS.search(words))):
                 continue
@@ -280,11 +305,16 @@ def commons_bodily_rows(source, data_dir, categories, prefix, medical):
                 items.append((name, url, dict({"question": ALT_TEXT, "answer": text}, **extra)))
             found += 1
         say(f"  Commons {category}: {found} files under CC BY-SA or GFDL")
+    if medical:
+        for title, url, credit, text in commons_sa_entries(s, list(COMMONS_SA_FILES)):
+            question, answer = COMMONS_SA_FILES[title]
+            items.append((commons_file_name(prefix, title), url, {"question": question, "answer": answer, "split": "",
+                                                                  "credit": credit, "content": "medical"}))
     return fetch_pictures(items, os.path.join(data_dir, source.key), workers=2, pause=0.5)
 
 
 def prepare_commons_bodily_sa(source, data_dir, work, cap):
-    """Wikimedia Commons: human stool, the Bristol stool chart, vomit, urine, urine colour charts, urine bags, blood
+    """Wikimedia Commons: human stool, the Bristol stool chart, vomit, discoloured and bloody urine, urine bags, blood
     stains and nosebleeds, under CC BY-SA or GFDL. Pictures that may show a person's body only when the file's words
     say the person is an adult."""
     return commons_bodily_rows(source, data_dir, COMMONS_HUMAN, "bodily-sa", True)

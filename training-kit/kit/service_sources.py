@@ -508,6 +508,9 @@ def prepare_commons_uniformed_sa(source, data_dir, work, cap):
 # ----------------------------------------------------------------- Bundesarchiv on Commons
 
 BUNDESARCHIV = "Images from the German Federal Archive"
+# The notice Commons puts before every Bundesarchiv caption, and words that only an English caption has.
+BUNDESARCHIV_NOTE = re.compile(r"For documentary purposes the German Federal Archive[^.]*\.\s*", re.I)
+STRICT_ENGLISH = re.compile(r"\b(the|of|and|with|is|are|from|during|their|his|her)\b")
 BUNDESARCHIV_WORDS = ("Soldat", "Soldaten", "Panzer", "Flugzeug", "Kriegsschiff", "U-Boot", "Uniform", "Polizei",
                       "Feuerwehr", "Volkspolizei", "Grenztruppen", "Bundeswehr", "Wehrmacht", "Marine", "Artillerie",
                       "Parade", "Wachregiment")
@@ -535,8 +538,10 @@ def prepare_bundesarchiv_sa(source, data_dir, work, cap):
     items, pictures = [], 0
     for start in range(0, len(titles), 200):
         for f in sa_files(s, titles[start:start + 200]):
-            if not f["caption"]:
-                continue
+            caption = BUNDESARCHIV_NOTE.sub("", f["caption"]).strip()
+            if len(STRICT_ENGLISH.findall(caption)) < 2 or len(caption.split()) < 6:
+                continue                               # the Archive's German caption only (no translation here)
+            f = dict(f, caption=sentence(caption))
             keep, extra = safety([f["caption"], f["title"]])
             if not keep:
                 continue

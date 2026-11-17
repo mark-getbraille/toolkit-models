@@ -158,8 +158,10 @@ def is_child(*texts):
 def caption_row(text, title):
     """ "Describe this picture." with the file's own caption (6 words or more, nothing sexual), or None."""
     answer = tidy(text)
-    if not usable(answer) or answer.lower().startswith(("file:", "dsc", "img")):
-        return None
+    letters = [c for c in answer if c.isalpha()]
+    if not usable(answer) or answer.lower().startswith(("file:", "dsc", "img")) or \
+            sum(1 for c in letters if c > "\u024f") > len(letters) * 0.1:
+        return None                                # too short, a file name, or not in English letters
     return {"question": ASK_DESCRIBE, "answer": answer}
 
 
@@ -335,7 +337,7 @@ def from_subjects(key, s, chosen, limit, rows_of, per_subject=3, rng=None, deepe
     if queue:
         flush()
     say(f"{key}: {len(items)} free pictures of {len({r[0]['answer'] for _, _, r in items})} subjects")
-    return finish(key, items, limit, workers=3, pause=0.3)
+    return finish(key, items, limit, workers=2, pause=1.0)     # gently: Commons' picture server refuses floods
 
 
 def round_robin(groups, rng):
