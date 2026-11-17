@@ -665,7 +665,7 @@ NUMBERS = re.compile(r"\b(course|trends?|levels?|ratios?|output|volume|ax[ie]s|l
                      # research figures: maps, plots, study designs, laboratory work
                      r"maps?|heat ?maps?|PCA|plots?|models?|design|stud(y|ies)|dilutions?|electron|digest\w*|"
                      r"isolated|metabolit\w*|antibod\w*|osmolality|analys[ie]s|results|statistic\w*|groups?|"
-                     r"sensors?|devices?|collection sites?|sampling|number of|cumulative|abundance|percent\w*|"
+                     r"sensors?|devices?|collection sites?|sampling|views|number of|cumulative|abundance|percent\w*|"
                      r"average|mean|scores?|quantif\w*|training|steps?|OTUs?|phyla|taxonom\w*|relative|"
                      # scans and scopes not named in NOT_A_PHOTO
                      r"fluoroscop\w*|urogra\w*|pyelogra\w*|cholangiogra\w*|\w+scopy|\w+scopic)\b",
@@ -936,11 +936,11 @@ BODILY_PACKS = {
 
 # How many pictures a full build takes from each collection (about what each offers after the checks, November 2026).
 BODILY_LIMITS = {
-    "scatspotter": 3000,           # of about 3,100 pictures with poop and 1,500 'after' pictures (camera orientation)
-    "inat_droppings": 2500,        # upper bound; the domestic animals give a few hundred, birds and wild ones more
-    "open_images_bodily": 3000,    # about 900 photos with a label confirmed, the rest 'not there' checks
-    "commons_bodily": 400,         # upper bound, not counted in full
-    "case_report_bodily": 1500,    # upper bound; a few per cent of the matching articles have a usable photo
+    "scatspotter": 3000,           # 2,503 pictures with poop outlined and 4,757 'after' pictures (two with poop to one)
+    "inat_droppings": 1500,        # upper bound: CC0/CC BY scat photos are about 80 dog, 50 cat, 75 horse, 1,860 bird
+    "open_images_bodily": 3000,    # 902 photos with a label confirmed first, then 'not there' checks (5,875)
+    "commons_bodily": 100,         # about 70 free files pass the checks
+    "case_report_bodily": 150,     # about 1 usable photo in 20 of the 2,343 matching CC BY / CC0 articles
     "urine_samples": 532,          # 266 samples, two phones' front photos each
 }
 
