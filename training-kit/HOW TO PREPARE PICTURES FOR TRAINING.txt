@@ -1,0 +1,86 @@
+HOW TO PREPARE PICTURES FOR TRAINING (the Dataset Preparation program)
+
+Dataset Preparation gets your own pictures and videos ready for training, so the person who reviews them starts
+from a good draft instead of an empty box. You find it next to the training program, as Dataset-Preparation.exe,
+in the same place you got Picture-Model-Training.exe.
+
+Use it when no training is running. The training and the drafts both use the graphics card, and they cannot share
+it. Your first training must have finished, or be stopped, before you write drafts.
+
+WHAT IT DOES, STEP BY STEP
+
+1. Choose a workspace.
+   A workspace is an ordinary folder of pictures, with a description for each picture in a text file of the same
+   name. It is the same kind of workspace as in Describe pictures, in the training program. Choose an empty folder
+   to make a new one (Browse for the workspace folder, Alt+B).
+   The Training kit folder (Alt+F) is where the training kit is, normally C:\Training\Picture Model Training Kit.
+   Its tools and models are used, so nothing is installed twice.
+
+2. Put pictures and videos in.
+   - Add pictures (Alt+P) and Add a picture folder (Alt+O) copy pictures in. A picture already there is not added
+     twice, and very big pictures are made smaller.
+   - Take stills from videos (Alt+V) takes good, sharp still pictures out of videos. It leaves out dark, blurry and
+     repeated ones, gives each still what you said at that moment as its description, and can blur faces. It also
+     removes burned-in marks: a camcorder's date and time stamp, a TV station's logo or a fixed news ticker. Choose
+     "Crop them off" or "Fill them in" under "Date stamps and logos".
+
+3. Clean up (Alt+C).
+   - Set aside dark, blurry and repeated pictures (Alt+E). Nothing is deleted. Set-aside pictures get the status
+     "skip", and you can see them in Describe pictures with Filter, "Set aside or skipped". A picture that already
+     has a description is never set aside. Of two pictures that look the same, the sharper one is kept.
+   - Blur the faces of people (Alt+U).
+   - Date stamps and logos in the pictures (Alt+G): for photos, as for videos. A mark is found by what stays the
+     same over many pictures of the same size, such as all the photos from one camera, or the frames of one news
+     programme. It needs about a dozen pictures of the same size.
+   Whenever a picture is changed, its original is kept in the hidden folder ".originals" inside the workspace.
+
+4. Write the drafts (Alt+A).
+   Several picture models each write a draft description of every new picture that has no description yet:
+   - Qwen3-VL 8B (Alt+Q): long, plain descriptions. It does not refuse pictures of bodies or injuries.
+   - InternVL 3.5 8B (Alt+I): a second opinion from a different family of model. It learned from different
+     pictures, so its mistakes are different ones.
+   - Florence-2 large (Alt+R): small and quick. It gives a detailed caption and reads the text in the picture.
+   - Your own trained describer (Alt+Y): the model your training made. It can be ticked once a training has
+     finished.
+   Combine the drafts (Alt+M): Qwen3-VL looks at each picture again, together with all the drafts, and writes one
+   starting description. It keeps what is right, corrects what is wrong and adds what was missed.
+   The first time, each model is downloaded once (Qwen3-VL and InternVL about 17 GB each, Florence-2 about
+   1.5 GB) and kept in the kit's work folder. Each model is loaded once and describes every picture before the next
+   one starts. Expect roughly 10 to 30 seconds per picture for each large model.
+   Clean up, then write the drafts (Alt+N) does both steps, one after the other. It is good to leave running
+   overnight.
+   Stop (Alt+S) stops the work. Start it again later: pictures that already have a draft are not done again.
+
+5. Review and correct (Alt+W).
+   This opens Describe pictures on the workspace. For a picture without a description:
+   - The Description box already holds the computer's starting draft. When the picture is read out, it is called
+     "Computer's draft, not checked yet". Check it against the picture, correct it, then press Save and next
+     (Alt+S) or Ctrl+S.
+   - "Drafts by each picture model" (Alt+J) has each model's own draft, and says whether they agree well, partly
+     agree or disagree a lot.
+   - The Filter "Not described: drafts that disagree first" lists first the pictures that need the most care.
+   - A draft is only a draft. Moving to another picture without saving leaves it unsaved, and nothing is trained on
+     until a person saves a description. A saved description that started from a draft is marked as such.
+   You can also export the pictures as a package for a sighted friend (Export a package). The drafts travel with
+   the pictures, so your friend starts from them too.
+
+6. Train on it.
+   In the training program, in Describe pictures, press "Use this workspace for training". Then start a training,
+   or a follow-up training. Only described and checked pictures are used.
+
+KEYS
+   Escape closes the program (it asks first while work is running). F1 opens this guide. Every button and check box
+   has an Alt letter, and its tooltip names it. Enter presses only the button you are on.
+   Letters: K workspace folder, B browse for the workspace, F kit folder, D browse for the kit, P add pictures,
+   O add a picture folder, V stills from videos, E set aside, U blur faces, G date stamps and logos, C clean up,
+   Q Qwen3-VL, I InternVL, R Florence-2, Y your own describer, M combine, A write the drafts, N clean up then drafts,
+   W review, S stop, H help, L close.
+   The Status field, the Progress bar and "What was done" show what is happening. The important lines are spoken.
+   Everything is also written into the "Picture Model Training logs" folder on the desktop.
+
+GOOD TO KNOW
+   - Everything runs on this computer. Pictures are never sent anywhere. Only the models are downloaded, once.
+   - The licences: Qwen3-VL and InternVL are Apache-2.0, and Florence-2 is MIT. A draft is a starting point, not a
+     description: the descriptions the training learns from are the ones people saved.
+   - Pictures of children: the same rules as everywhere in the kit. Never describe anyone who may be under 18 in a
+     sexual way. Every model is told this.

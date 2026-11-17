@@ -28,8 +28,13 @@ in the Status field, and written into the desktop logs.
 The letters in the main window: F (Workspace folder), B (Browse), W (Open or make the workspace), M (Your name),
 R (Filter), U (Pictures), Q (Question), D (Description), S (Save and next), P (Previous), C (Mark as checked),
 N (Needs another look), K (Skip this picture), O (Show the other version), A (Add pictures), V (Take stills from
-videos), E (Export a package), I (Import a package), T (Use this workspace for training), Y (Review collections),
-H (Help), L (Close).
+videos), G (Add a folder of pictures), E (Export a package), I (Import a package), T (Use this workspace for
+training), Y (Review collections), J (Drafts by each picture model), H (Help), L (Close).
+Drafts (from the Dataset Preparation program, kit\\prepare_data.py): a picture without a description shows the
+computer's starting draft in Description, and says so when it is read out; it stays a draft until the person saves it
+(Save and next or Ctrl+S, which then records "started_from_draft"). "Drafts by each picture model" (read only) has
+each model's draft and how much they agree; the Filter "Not described: drafts that disagree first" lists the
+pictures needing the most care first, and "Set aside or skipped" shows what the clean-up set aside.
 In "Review collections": C (the collections list), A (About the chosen collection), W (I will have every picture
 screened ...), D (Download into a review workspace), O (Open in Describe pictures), I (Import what they sent, for a
 collection used with permission), H (Help), L (Close); its terms
@@ -52,7 +57,11 @@ import wx
 GUIDE = "HOW TO DESCRIBE PICTURES WITH FRIENDS.txt"
 PICTURE_BOX = (520, 390)        # the largest size a picture is shown at, in pixels
 FILTERS = [("all", "All"), ("not described", "Not described"), ("needs another look", "Needs another look"),
-           ("described", "Described (and checked)"), ("checked", "Checked")]
+           ("described", "Described (and checked)"), ("checked", "Checked"),
+           ("drafts disagree", "Not described: drafts that disagree first"), ("skipped", "Set aside or skipped")]
+# The draft models of Dataset Preparation (kit\prepare_data.py ENGINES), as said in "Drafts by each picture model".
+DRAFT_NAMES = (("qwen", "Qwen3-VL 8B"), ("internvl", "InternVL 3.5 8B"), ("florence", "Florence-2 large"),
+               ("yours", "Your own trained describer"))
 VIDEO_ENDINGS = "*.mp4;*.mov;*.m4v;*.mkv;*.avi;*.webm;*.3gp;*.mts;*.m2ts;*.wmv;*.ogv"
 PICTURE_FILES = "*.jpg;*.jpeg;*.png;*.webp;*.bmp;*.gif;*.tif;*.tiff"
 # What "Take stills from videos" does about burned-in date stamps and logos: (video_frames.py --overlays, shown).
@@ -710,6 +719,10 @@ class DescribeWindow(AccessibleDialog):
         self.description = self.labelled(right, "&Description:", lambda: wx.TextCtrl(
             self.panel, style=wx.TE_MULTILINE), 1)
         self.notes = self.labelled(right, "Notes for each other:", lambda: wx.TextCtrl(self.panel))
+        # The drafts of Dataset Preparation (kit\prepare_data.py): read only; the starting one is in Description.
+        self.drafts = self.labelled(right, "Drafts by each picture model (&J):", lambda: wx.TextCtrl(
+            self.panel, value="No drafts.", style=wx.TE_MULTILINE | wx.TE_READONLY, size=(-1, 110)))
+        self.from_draft = False         # the Description box holds the computer's draft, not yet saved by a person
         top.Add(right, 1, wx.EXPAND)
         s.Add(top, 1, wx.EXPAND)
 
@@ -964,24 +977,45 @@ class DescribeWindow(AccessibleDialog):
         self.current = name
         bitmap = wx.Bitmap(*PICTURE_BOX)
         if name is None or self.workspace is None:
-            text, question, notes, alt = "", "", "", "No picture."
+            text, question, notes, alt, drafts = "", "", "", "No picture.", "No drafts."
         else:
             entry = self.workspace.entry(name)
             text = self.package.description(self.workspace, name)
             question, notes = self.package.question_of(self.workspace, name), entry["notes"]
             alt = text or "No description yet"
+            drafts = self.drafts_text(entry)
             bitmap = self.scaled(self.workspace.path(name)) or bitmap
         self.picture.SetBitmap(bitmap)
         for setter in (self.picture.SetLabel, self.picture.SetName, self.picture.SetToolTip):
             setter(alt)                                # the picture's alternative text for the screen reader
         self.question.SetValue(question or (self.package.DEFAULT_QUESTION if self.package else ""))
-        self.description.SetValue(text)
+        # A picture without a description starts from the computer's draft (Dataset Preparation), which is only
+        # saved when the person saves it (Save and next, Ctrl+S, or changing it): moving on leaves it a draft.
+        draft = self.workspace.entry(name).get("draft", "") if name and self.workspace and not text else ""
+        self.from_draft = bool(draft.strip())
+        self.description.SetValue(text or draft)
+        self.drafts.SetValue(drafts)
         self.notes.SetValue(notes)
-        self.loaded = (text, self.question.GetValue(), notes)
+        self.loaded = (text or draft, self.question.GetValue(), notes)
         has_other = bool(name and self.workspace and self.package.other_versions(self.workspace, name))
         self.other_button.Enable(has_other)
         self.update_progress()
         self.panel.Layout()
+
+    @staticmethod
+    def drafts_text(entry):
+        """The Drafts field for a picture's entry: each model's draft and how much they agree, or "No drafts." """
+        lines = [f"{label}: {entry[f'draft_{key}']}" for key, label in DRAFT_NAMES if entry.get(f"draft_{key}")]
+        if not lines:
+            return "No drafts."
+        try:
+            agree = float(entry.get("draft_agreement", ""))
+        except ValueError:
+            agree = None
+        if agree is not None and len(lines) > 1:
+            lines.insert(0, "The drafts " + ("agree well." if agree >= 0.45 else "partly agree." if agree >= 0.25 else
+                                             "disagree a lot: check this picture carefully."))
+        return "\n\n".join(lines)
 
     def scaled(self, path):
         """The picture at path as a bitmap fitting in PICTURE_BOX, or None when it cannot be shown."""
@@ -1008,8 +1042,10 @@ class DescribeWindow(AccessibleDialog):
         entry = self.workspace.entry(self.current)
         text = self.description.GetValue().strip()
         others = " It has another version: Show the other version, Alt+O." if self.other_button.IsEnabled() else ""
+        kind = ("Computer's draft, not checked yet: check it against the picture and correct it (all drafts: "
+                "Alt+J)" if self.from_draft else "Description")
         self.say(f"{self.progress.GetValue().split('.')[0]}: {self.current}, {entry['status']}. "
-                 + (f"Description: {text}" if text else "No description yet.") + others)
+                 + (f"{kind}: {text}" if text else "No description yet.") + others)
 
     # -- saving
     def changed(self):
@@ -1059,6 +1095,10 @@ class DescribeWindow(AccessibleDialog):
                 self.package.set_notes(self.workspace, name, self.notes.GetValue())
             if text.strip() or self.loaded[0]:
                 self.package.describe(self.workspace, name, text, person, self.question.GetValue())
+                if self.from_draft:                # remembered: this description started from the computer's draft
+                    self.workspace.entry(name)["started_from_draft"] = "yes"
+                    self.workspace.save()
+                    self.from_draft = False
         except OSError as e:
             self.say(f"The description could not be saved: {e}")
             return False

@@ -58,6 +58,10 @@ PLACE_FILE = "place.txt"                 # where in the world the pictures are f
 RESOLVED_FOLDER = ".resolved versions"
 PACKAGE_README = "README.txt"
 PACKAGE_PICTURES = "pictures/"           # the pictures and descriptions are in this folder inside a package
+# The computer's drafts of a picture (kit\prepare_data.py), kept in its entry as text and carried in packages;
+# never used for training (own_data.py reads only descriptions people saved).
+DRAFT_KEYS = ("draft", "draft_agreement", "draft_engines", "draft_qwen", "draft_internvl", "draft_florence",
+              "draft_yours", "started_from_draft")
 FORMAT = 1                               # the version of describing.json's layout
 
 NEW, DESCRIBED, CHECKED, LOOK, SKIP = "new", "described", "checked", "needs another look", "skip"
@@ -616,12 +620,24 @@ def resolve(workspace, name, text, person):
 
 def picture_names(workspace, show="all"):
     """The workspace's pictures in name order, for the window's list; show: "all", "not described",
-    "needs another look", "described" (described and checked) or "checked"."""
+    "needs another look", "described" (described and checked), "checked", "skipped" (set aside or skipped), or
+    "drafts disagree" (not described, the pictures whose drafts agree least first)."""
     workspace = open_workspace(workspace)
     wanted = {"all": STATUSES, "not described": (NEW,), "needs another look": (LOOK,), "described": TRAINED,
-              "checked": (CHECKED,), "skipped": (SKIP,)}.get(show, STATUSES)
-    return [n for n in sorted(workspace.pictures, key=str.lower)
-            if workspace.entry(n)["status"] in wanted and os.path.isfile(workspace.path(n))]
+              "checked": (CHECKED,), "skipped": (SKIP,), "drafts disagree": (NEW,)}.get(show, STATUSES)
+    names = [n for n in sorted(workspace.pictures, key=str.lower)
+             if workspace.entry(n)["status"] in wanted and os.path.isfile(workspace.path(n))]
+    if show == "drafts disagree":            # the drafts that agree least first; pictures without drafts last
+        names.sort(key=lambda n: agreement_of(workspace.entry(n)))
+    return names
+
+
+def agreement_of(entry):
+    """How much a picture's drafts agree (Dataset Preparation's draft_agreement, 0 to 1); 2 when it has none."""
+    try:
+        return float(entry.get("draft_agreement", ""))
+    except ValueError:
+        return 2.0
 
 
 def counts(workspace):
@@ -826,6 +842,9 @@ def add_from_package(workspace, name, data, theirs, text, others, tally):
     entry.update({k: v for k, v in theirs.items() if k in entry})
     if theirs.get("content"):
         entry["content"] = theirs["content"]      # a review picture's content tag ("intimate" ...) comes along
+    for key in DRAFT_KEYS:                         # the computer's drafts (Dataset Preparation) come along too
+        if theirs.get(key):
+            entry[key] = theirs[key]
     entry["added_at"] = entry["added_at"] or now()
     if text:
         write_file_text(description_path(workspace.folder, name), text)
@@ -863,6 +882,9 @@ def merge_picture(workspace, name, theirs, their_text, their_others, sender, tal
     their_newer = (theirs.get("changed_at") or "") > (entry["changed_at"] or "")
     fields = ("status", "described_by", "described_at", "checked_by", "checked_at", "question", "changed_at")
     counted = False
+    for key in DRAFT_KEYS:                         # drafts we do not have yet come along (ours are kept)
+        if theirs.get(key) and not entry.get(key):
+            entry[key] = theirs[key]
     if their_text and not our_text:                                   # only theirs: take it
         write_file_text(description_path(workspace.folder, name), their_text)
         entry.update({k: theirs.get(k, entry[k]) for k in fields})

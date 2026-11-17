@@ -48,6 +48,10 @@ OWN PICTURES.txt" in this folder.
 Describing pictures with friends: the program's "Describe pictures" button (Alt+J) lets you and your friends
 describe pictures together, for example stills from your own videos, and pass the work between you as zip files
 by USB stick, email or a shared drive, with no website. Read "HOW TO DESCRIBE PICTURES WITH FRIENDS.txt".
+Preparing pictures for describing: the second program, Dataset-Preparation.exe (next to Picture-Model-Training.exe),
+takes good stills out of videos, removes date stamps and logos, sets aside dark, blurry and repeated pictures, and
+has two or three picture models write draft descriptions, so the person describing starts from a draft. Run it
+when no training is running. Read "HOW TO PREPARE PICTURES FOR TRAINING.txt".
 It trains a small add-on to the model, then tests whether the model really got better. The model itself is not
 changed. Nothing is sent anywhere; the kit only downloads what it needs. If one collection's website is down, the
 kit says so and carries on with the others.

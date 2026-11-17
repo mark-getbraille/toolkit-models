@@ -340,7 +340,7 @@ def copy_kit(kit):
     os.makedirs(os.path.join(kit, "kit"), exist_ok=True)
     for name in os.listdir(source):
         path = os.path.join(source, name)
-        if name in ("wizard", "__pycache__") or name.startswith("."):
+        if name in ("wizard", "prepare", "tests", "__pycache__") or name.startswith("."):
             continue
         if os.path.isdir(path):
             for inner in os.listdir(path):
