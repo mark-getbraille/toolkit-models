@@ -120,10 +120,33 @@ def first_sentences(text, words=80):
     return out
 
 
+# A pack build may run only so long on GitHub's machines (the workflow sets PACK_TIME_LIMIT_MINUTES). After that
+# time every download through session() fails at once, so the builder finishes quickly with the pictures it already
+# has, and the pack is still written and published, smaller, instead of being cancelled with nothing.
+STARTED = time.time()
+TIME_LIMIT = float(os.environ.get("PACK_TIME_LIMIT_MINUTES", "0") or 0) * 60
+
+
+def out_of_time():
+    """True once the build's time limit (if any) has passed."""
+    return bool(TIME_LIMIT) and time.time() - STARTED > TIME_LIMIT
+
+
 def session():
-    """A requests session with the kit's name (Wikimedia asks for one with a contact)."""
+    """A requests session with the kit's name (Wikimedia asks for one with a contact). Once the build is out of time,
+    every request it makes fails straight away (see TIME_LIMIT)."""
     import requests
-    s = requests.Session()
+
+    class TimedSession(requests.Session):
+        """A session that stops downloading when the build's time is up."""
+
+        def request(self, *args, **kwargs):
+            """Make the request, or fail at once when out of time."""
+            if out_of_time():
+                raise requests.exceptions.ConnectionError("the pack's time limit has passed")
+            return super().request(*args, **kwargs)
+
+    s = TimedSession()
     s.headers["User-Agent"] = USER_AGENT
     return s
 
@@ -387,7 +410,7 @@ def build_commons(limit):
         params = {"action": "query", "format": "json", "generator": "categorymembers", "gcmtitle": category,
                   "gcmtype": "file", "gcmlimit": 50, "prop": "imageinfo|info", "iiprop": "url|extmetadata",
                   "iiurlwidth": LONG_SIDE, "iiextmetadatafilter": "LicenseShortName|Artist|GPSLatitude|GPSLongitude", "maxlag": 5}
-        while len(items) < limit * 1.3:
+        while len(items) < limit * 1.3 and not out_of_time():
             try:
                 data = s.get(COMMONS_API, params=params, timeout=60).json()
             except Exception:  # noqa: BLE001 - wait and try again once

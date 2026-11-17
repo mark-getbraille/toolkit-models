@@ -47,7 +47,7 @@ import zipfile
 import zlib
 
 import build_packs  # noqa: F401 - loaded first: food_packs and build_packs import each other
-from build_packs import session, clean, smaller, fetch_all, say, article  # noqa: F401
+from build_packs import out_of_time, session, clean, smaller, fetch_all, say, article  # noqa: F401
 from food_packs import (sentence, listed, with_twins, count_pictures, oi_lines, oi_licence_name,  # noqa: F401
                         commons_members, commons_entries, OI_LABELS, OI_CLASSES, OI_IMAGES, OI_PICTURE,
                         COMMONS_NOT_FOOD, commons_place)
@@ -961,7 +961,7 @@ def build_commons_breeds(limit, per_breed=4):
         queues.append((animal, question, breeds))
         say(f"Commons breeds: {len(breeds)} {animal} breeds")
     items, seen = [], set()
-    while len(items) < limit * 1.15 and any(q[2] for q in queues):
+    while len(items) < limit * 1.15 and any(q[2] for q in queues) and not out_of_time():
         for animal, question, breeds in queues:
             if not breeds or len(items) >= limit * 1.15:
                 continue

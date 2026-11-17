@@ -274,7 +274,8 @@ jobs:
             safety_training) limit=1200 ;;
             dfire_cameras) limit=4000 ;;
           esac
-          python packs/build_packs.py "${{ matrix.key }}" --out build/packs --limit "$limit"
+          # Stop downloading after 290 minutes, keeping what has come, so the pack is published within the job's time.
+          PACK_TIME_LIMIT_MINUTES=290 python packs/build_packs.py "${{ matrix.key }}" --out build/packs --limit "$limit"
       - name: Upload it to the release
         run: |
           gh release view training-data > /dev/null 2>&1 || gh release create training-data \
