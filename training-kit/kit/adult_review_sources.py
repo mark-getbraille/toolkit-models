@@ -152,7 +152,8 @@ MYTH = re.compile(
 ANIMAL = re.compile(
     r"\b(animals?|beasts?|bestial\w*|zoophil\w*|horses?|stallions?|mares?|dogs?|swans?|bulls?|goats?|donkeys?|"
     r"octop\w*|tentacle\w*|monsters?|creatures?|demons?|kappa|foxe?s?|serpents?|snakes?|apes?|monkeys?|pigs?|"
-    r"sheep|rabbits?|hares?|birds?|cocks? and hens?|hens?|deer|stags?|hond\w*|paard\w*|dier\w*)\b", re.I)
+    r"sheep|rabbits?|hares?|birds?|cocks? and hens?|hens?|deer|stags?|interspecies|aliens?|extraterrestrials?|"
+    r"exophilia|gamiani|hond\w*|paard\w*|dier\w*)\b", re.I)
 
 # Photo-only words: youthful or doubtful wording and Commons problem categories.
 PHOTO_DOUBT = re.compile(
@@ -334,7 +335,7 @@ def art_draft(kind, title, description="", tags=(), maker="", date="", place="",
         parts.append(sentence(f"The {owner}'s subject tags: " + ", ".join(dict.fromkeys(tags))))
     thin = useful_words(title, description, " ".join(tags)) < 5
     if thin and generic:
-        parts.insert(1, sentence(generic))
+        parts.append(sentence(generic))
     return " ".join(p for p in parts if p), thin
 
 
@@ -498,7 +499,7 @@ def fetch_met_erotic(folder, cap, say=print):
                                f"({clean(o.get('medium')).lower() or 'medium not stated'})"),
                                title, "", tags, clean(o.get("artistDisplayName")), clean(o.get("objectDate")),
                                clean(o.get("culture") or o.get("country")),
-                               generic="It is an erotic or nude artwork showing adults")
+                               generic="The record says little more; the museum lists it among erotic or nude art")
         if ws.full(cap):
             continue                              # full: only screened, to show what the filters leave out
         data = rs.download_picture(s, o["primaryImageSmall"])
@@ -565,7 +566,7 @@ def fetch_aic_erotic(folder, cap, say=print):
             text, thin = art_draft(f"A work of art ({clean(x.get('medium_display')).lower() or 'medium not stated'})",
                                    title, desc, x.get("subject_titles") or [], clean(x.get("artist_display")),
                                    clean(x.get("date_display")).rstrip("."), clean(x.get("place_of_origin")),
-                                   generic="It is an erotic or nude artwork showing adults")
+                                   generic="The record says little more; the museum lists it among erotic or nude art")
             items.append((name, f"{AIC_IIIF}/{x['image_id']}/full/843,/0/default.jpg", text,
                           f"{title}, {clean(x.get('artist_display'))}, Art Institute of Chicago", "CC0 (public domain)",
                           f"https://www.artic.edu/artworks/{x['id']}", CONTENT, THIN_NOTE if thin else "",
@@ -613,7 +614,7 @@ def fetch_cleveland_erotic(folder, cap, say=print):
                                                else "")),
                                        title, desc, [], maker, clean(x.get("creation_date")), clean(x.get("culture")
                                                                                                     and x["culture"][0]),
-                                       generic="It is an erotic or nude artwork showing adults")
+                                       generic="The record says little more; the museum lists it among erotic or nude art")
                 found.append((name, web, text, f"{title}, {maker or 'unknown artist'}, Cleveland Museum of Art",
                               "CC0", clean(x.get("url")), CONTENT, THIN_NOTE if thin else "", rs.GROUPS[3]))
             if len(rows) < 100:
@@ -726,7 +727,7 @@ def fetch_rijks_erotic(folder, cap, say=print):
         title_en = r["title"] or dutch_to_english(r["title_nl"]) or f"{r['title_nl']} (Dutch title)"
         text, thin = art_draft(a_an(r['kind'].split(';')[0].lower() or 'work of art'), title_en,
                                english, [], r["maker"], r["date"], "",
-                               generic="It is an erotic artwork showing adults")
+                               generic="The record says little more; it is listed as erotic art")
         if ws.full(cap):
             continue                              # full: only screened, to show what the filters leave out
         data = rs.download_picture(s, r["picture"])
@@ -798,7 +799,7 @@ def fetch_smithsonian_shunga(folder, cap, say=print):
                 text, thin = art_draft(a_an((kind[0] if kind else 'work of art').lower()), title, notes, topics,
                                        "; ".join(si_text(c, "name")[:1]), "; ".join(si_text(c, "date")[:1]),
                                        "; ".join(si_text(c, "place")[:1]),
-                                       generic="It is an erotic artwork showing adults")
+                                       generic="The record says little more; it is listed as erotic art")
                 found.append((name, media[0]["content"] + "&max=1600", text,
                               f"{title}, Smithsonian National Museum of Asian Art", "CC0",
                               clean((dnr.get("record_link") or "")), CONTENT, THIN_NOTE if thin else "",
@@ -864,7 +865,7 @@ def fetch_wellcome_erotica(folder, cap, say=print):
                     continue
                 text, thin = art_draft("A historical picture from the Wellcome Collection", title, "",
                                        [t for t in subjects if not t.isupper()], "", "", "",
-                                       generic="It is an erotic or sexual-health picture showing adults",
+                                       generic="The record says little more; it is listed among erotica or sexual-health pictures",
                                        owner="library")
                 found.append((name, loc["url"].replace("info.json", "full/!1600,1600/0/default.jpg"), text,
                               f"{title}, Wellcome Collection", WELLCOME_LICENCES[lic],
@@ -945,7 +946,7 @@ def fetch_europeana_erotic(folder, cap, say=print):
                 maker = first(x.get("dcCreator"))
                 text, thin = art_draft(f"A work of art ({types.lower()[:60] or 'kind not stated'})", title, desc, [],
                                        maker, first(x.get("year")), "",
-                                       generic="It is an erotic artwork showing adults")
+                                       generic="The record says little more; it is listed as erotic art")
                 if not is_english(desc) or not is_english(title):
                     thin = True
                 note = (THIN_NOTE + " " if thin else "") + (
@@ -975,7 +976,7 @@ COMMONS_GROUPS = {
                     ("Sexuality in ancient Roman sculptures", 1), ("Lupanar (Pompeii)", 1), ("Erotic pottery", 2),
                     ("Fellatio in sculptures", 1), ("Erotic sculptures", 1)],
         lead="A photograph of an erotic artwork (sculpture, fresco or pottery)", people_photo=False,
-        generic="It shows an erotic artwork of adults"),
+        generic="The record says little more; it is filed on Commons among erotic sculpture, frescoes or pottery"),
     "sex_drawings": dict(
         categories=[("Sex positions", 2), ("Human sexual activity diagrams", 1), ("Sex education", 1),
                     ("Kama Sutra", 1), ("I modi - nine fragments - Agostino Veneziano", 0),
@@ -983,30 +984,30 @@ COMMONS_GROUPS = {
                     ("Erotic illustrations", 1), ("Erotic drawings", 1), ("People having sex in art", 1),
                     ("Erotic paintings", 1)],
         lead="A drawing, print or painting", people_photo=False, drawings_only=True,
-        generic="It is a drawing of adults having sex or being intimate"),
+        generic="The record says little more; it is filed on Commons among drawings of sex, sex positions or erotic art"),
     "sex_photos": dict(
         categories=[("Human sexual activity", 2), ("Nude couples", 1)],
         lead="A photograph", people_photo=True, photos_only=True, own_work=True,
-        generic="It is a photograph of adults having sex or being intimate"),
+        generic="The record says little more; it is filed on Commons under human sexual activity"),
     "inclusive": dict(
         categories=[("LGBT sex", 2), ("Gay sex", 1), ("Lesbian sex", 1), ("Transgender sexuality", 1),
                     ("Interracial sex", 1), ("Sexual activity during pregnancy", 0), ("Gay erotic art", 1),
                     ("Lesbian erotic art", 1), ("Bisexual erotic art", 1), ("Safer sex", 1),
                     ("Disability and sexuality", 1)],
         lead="A picture", people_photo=True, own_work=True,
-        generic="It is a picture of adults being intimate or having sex"),
+        generic="The record says little more; it is filed on Commons under LGBTQ+, inclusive or safer sex"),
     "sex_toys": dict(
         categories=[("Sex toys", 1), ("Dildos", 1), ("Vibrators", 1), ("Butt plugs", 1), ("Anal beads", 1),
                     ("Cock rings", 1), ("Sex dolls", 0), ("Personal lubricants", 1)],
         lead="A product photograph of a sex toy", people_photo=True,
-        generic="It is a photograph of a sex toy"),
+        generic="The record says little more; it is filed on Commons among sex toys"),
     "contraception": dict(
         categories=[("Condoms", 1), ("Female condoms", 1), ("Male condoms", 1), ("Contraceptive pills", 1),
                     ("Contraceptive devices", 1), ("Intrauterine devices", 1), ("Contraceptive implants", 1),
                     ("Contraceptive injections", 0), ("Dental dams", 1), ("Latex dental dams", 0),
                     ("Emergency contraception", 1), ("Vaginal rings", 0), ("Spermicides", 1), ("Safer sex", 0)],
         lead="A photograph of a sexual-health item", people_photo=True,
-        generic="It is a photograph of a condom, contraceptive or other sexual-health item"),
+        generic="The record says little more; it is filed on Commons among condoms, contraceptives or sexual-health items"),
 }
 
 DRAWN = re.compile(r"\b(drawings?|drawn|illustrations?|illustrated|diagrams?|vector|svg|sketch\w*|cartoons?|"
@@ -1070,6 +1071,12 @@ def meta_value(info, key):
     return rs.no_tags(((info.get("extmetadata") or {}).get(key) or {}).get("value"))
 
 
+# Commons boilerplate that says nothing about what a picture shows.
+BOILERPLATE = re.compile(r"This is a photo of (an? )?(ASI )?monument[^.]*\.?|This is an image of[^.]*monument[^.]*\.?|"
+                         r"Photo(graph)? taken by [^.]*\.?|Taken (by|with) [^.]*\.?|\bOwn work\b\.?|"
+                         r"Camera location[^.]*\.?|View all coordinates[^.]*\.?", re.I)
+
+
 def english_description(description):
     """The English part of a Commons description (Commons often gives several languages)."""
     m = re.search(r"(?:^|\s)(?:English|en)[:\s]+(.+?)(?=\s(?:Deutsch|Français|Español|Italiano|Nederlands|Polski|"
@@ -1080,7 +1087,7 @@ def english_description(description):
 def commons_check(ws, group, pageid, title, info):
     """(draft, credit, licence, page, note) for a usable Commons file of a group, or None (recorded as left out)."""
     name = f"commons-{pageid}.jpg"
-    description = english_description(meta_value(info, "ImageDescription"))
+    description = clean(BOILERPLATE.sub(" ", english_description(meta_value(info, "ImageDescription"))))
     categories = meta_value(info, "Categories")
     credit_src, licence = meta_value(info, "Credit"), meta_value(info, "LicenseShortName")
     mime = info.get("mime", "")
@@ -1093,7 +1100,8 @@ def commons_check(ws, group, pageid, title, info):
     why = ""
     if not mime.startswith("image/") or "gif" in mime or not info.get("thumburl"):
         why = "not a still picture"
-    elif re.search(r"\b(logos?|icons?|wordmarks?|pictograms?|emblems?|flags?|maps?|charts?|graphs?)\b", text, re.I):
+    elif re.search(r"\b([Ll]ogos?|[Ii]cons?|[Ww]ordmarks?|[Pp]ictograms?|[Ee]mblems?|[Ff]lags?|[Mm]aps?|[Cc]harts?|"
+                   r"[Gg]raphs?)\b", text):     # lower or title case only ("MAP" is a museum's initials)
         why = "a logo, icon, map or chart (teaches nothing about what a picture shows)"
     elif not rs.commons_licence_kind(licence):
         why = f"licence not open ({licence or 'none'})"
@@ -1134,8 +1142,8 @@ def commons_check(ws, group, pageid, title, info):
     else:
         lead = g["lead"]
     lead += " from Wikimedia Commons."
-    parts = [lead, sentence(g["generic"]) if thin else "",
-             f"Its description says: {sentence(caption)}" if caption else ""]
+    parts = [lead, f"Its description says: {sentence(caption)}" if caption else "",
+             sentence(g["generic"]) if thin else ""]
     artist = meta_value(info, "Artist") or "unknown"
     page = "https://commons.wikimedia.org/wiki/File:" + title.replace(" ", "_")
     note = (THIN_NOTE + " " if thin else "") + (f"Original-language description: {original[:300]}. " if original
@@ -1386,8 +1394,9 @@ def fetch_commons_vintage_named(folder, cap, say=print):
         thin = useful_words(description or stem) < 5
         text = " ".join(p for p in [
             f"A vintage photograph from {year} of {', '.join(n for n, _b, _bd in found)}.",
-            "It is a pin-up, burlesque or art-nude photograph of an adult." if thin else "",
-            f"Its description says: {sentence(caption)}"] if p)
+            f"Its description says: {sentence(caption)}" if is_english(caption) else "",
+            "The record says little more; it is filed on Commons among pin-up, burlesque or nude "
+            "photographs." if thin or not is_english(caption) else ""] if p)
         details = "; ".join(f"name: {n}; birth year: {b}; photo year: {year}" for n, b, _bd in found)
         items.append((name, info["thumburl"], text, f"{stem} by {(meta_value(info, 'Artist') or 'unknown')[:100]}, "
                       f"via Wikimedia Commons; shows {who}", licence,
