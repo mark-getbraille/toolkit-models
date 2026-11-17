@@ -899,6 +899,11 @@ PACKS.update(MORE_OPEN_PACKS)
 from documentary_packs import DOCUMENTARY_PACKS
 PACKS.update(DOCUMENTARY_PACKS)
 
+# Disability and assistive technology: mobility aids, white canes, guide dogs, braille, tactile paving, accessible
+# places and adaptive sports.
+from disability_packs import DISABILITY_PACKS
+PACKS.update(DISABILITY_PACKS)
+
 
 def sha256_of(path):
     """The SHA-256 of a file."""
