@@ -93,6 +93,7 @@ MODELS = {   # the toolkit's uncensored picture models (app/toolkit/vision/engin
 }   # key: (Hugging Face repository, commit, the least graphics card memory in GB)
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import sources  # noqa: E402 - the collections, beside this file
+import system_monitor  # noqa: E402 - computer use in the logs (processor, graphics card, disks, temperatures)
 
 # The toolkit's own words (vision/vlm.py SYSTEM), so the add-on learns with the instructions the program sends.
 SYSTEM = "The user is blind. Never describe anyone who may be under 18 in a sexual way."
@@ -110,6 +111,7 @@ def say(text=""):
     print(text, flush=True)
     with open(LOG, "a", encoding="utf-8") as f:
         f.write(f"{datetime.datetime.now():%Y-%m-%d %H:%M:%S}  {text}\n")
+    system_monitor.note(text)               # the computer-use lines say which step they are about
 
 
 def stop(text):
@@ -634,29 +636,45 @@ def train(model, processor, rows, adapter_dir, device, epochs=1, rate=1e-4, accu
     model.train()
     start, started_at, losses = time.time(), position, []
     order = [rows[i % len(rows)] for i in range(total)]
+    timer = system_monitor.Timer()            # where the time goes: written into the logs at each save
+    if torch.cuda.is_available():
+        torch.cuda.reset_peak_memory_stats()
     for index in range(position, total):
         row = order[index]
         try:
+            began = time.time()
             batch = encode(processor, row, device)
+            timer.add("preparing pictures (processor)", time.time() - began)
+            began = time.time()
             loss = model(**batch).loss / accumulate
             loss.backward()
-            losses.append(loss.item() * accumulate)
+            losses.append(loss.item() * accumulate)      # waits for the graphics card, so the timing is true
+            timer.add("graphics card work", time.time() - began)
         except torch.cuda.OutOfMemoryError:
             optimizer.zero_grad(set_to_none=True)
             torch.cuda.empty_cache()
             say(f"    picture {index + 1} was too big for the card's memory and is skipped")
         if (index + 1) % accumulate == 0 or index + 1 == total:
+            began = time.time()
             torch.nn.utils.clip_grad_norm_(params, 1.0)
             optimizer.step()
             scheduler.step()
             optimizer.zero_grad(set_to_none=True)
+            timer.add("learning step (graphics card)", time.time() - began)
         if (index + 1) % SAVE_EVERY == 0 or index + 1 == total:
+            began = time.time()
             os.makedirs(checkpoint, exist_ok=True)
             model.save_pretrained(checkpoint)
             torch.save({"optimizer": optimizer.state_dict(), "scheduler": scheduler.state_dict()},
                        os.path.join(checkpoint, "optimizer.pt"))
             with open(os.path.join(checkpoint, "progress.json"), "w", encoding="utf-8") as f:
                 json.dump({"pictures": index + 1, "seconds": earlier + time.time() - start}, f)
+            timer.add("saving", time.time() - began)
+            peak = (f" The graphics card's memory peaked at {torch.cuda.max_memory_allocated() / 1024 ** 3:.1f} GB "
+                    "used by the training." if torch.cuda.is_available() else "")
+            say("    " + timer.line((index + 1 - started_at) % SAVE_EVERY or SAVE_EVERY) + peak)
+            if torch.cuda.is_available():
+                torch.cuda.reset_peak_memory_stats()
             per = (time.time() - start) / (index + 1 - started_at)
             recent = sum(losses[-SAVE_EVERY:]) / max(len(losses[-SAVE_EVERY:]), 1)
             say(f"    {index + 1} of {total} pictures trained ({(index + 1) * 100 // total} percent); about "
@@ -977,6 +995,7 @@ def main(argv=None):
     os.makedirs(work, exist_ok=True)
     state = State(work)
     keep_awake(True)
+    system_monitor.start(say)                 # computer use into the logs every 5 minutes (system_monitor.py)
     if args.library:
         open_library(work, args.library)
     if args.own_only and not args.own:

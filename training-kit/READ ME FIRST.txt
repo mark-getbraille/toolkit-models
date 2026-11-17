@@ -127,6 +127,18 @@ How to start
      normal add-on stays under a permissive licence.
 4. A console window opens. It says each step in plain words; JAWS and NVDA read it. Every line also goes into the
    file training-log.txt in the kit folder, which you can open at any time.
+   Computer use: at the start the log describes the computer (processor, memory, graphics card and driver, disks,
+   Windows power plan). Every 5 minutes it adds a "Computer use" line covering:
+   - how busy the processor was (and its busiest core);
+   - the processor-area temperature, when Windows gives it;
+   - the memory used;
+   - the graphics card: how busy, its memory, temperature, power, speed, fan, and anything slowing it down;
+   - each disk's read and write speed, and the download speed.
+   During training, a line every 200 pictures also says where the time went: preparing pictures on the processor,
+   work on the graphics card, or saving. "Computer use warning" lines are spoken, for example when the graphics card
+   is very hot or memory is nearly full. Every 15 seconds a row is also added to a spreadsheet, "Picture Model
+   Training computer use <date>.csv", in the "Picture Model Training logs" folder on the desktop. It opens in
+   Excel, for finding what slows the training down.
 5. Leave the computer on. The kit stops Windows from going to sleep while it runs; the screen may turn off.
 
 The steps it says

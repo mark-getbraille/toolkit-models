@@ -750,11 +750,16 @@ def train_lora(base, items, cache_dir, run_dir, steps, device, dtype):
         return torch.autocast("cuda", dtype=torch.bfloat16) if device == "cuda" else contextlib.nullcontext()
     start, started_at, last_said = time.time(), position, time.time()
     per_step = batch * accumulate
+    timer = train.system_monitor.Timer()      # where the time goes: written into the logs with each progress line
+    line_from = position                      # the step of the last progress line
     for step in range(position, steps):
         total = 0.0
         for part in range(accumulate):
             index = step * accumulate + part
+            began = time.time()
             latents, hidden, extra = load_batch(items, batches[index], cache_dir, base, device, dtype)
+            timer.add("reading pictures from the disk", time.time() - began)
+            began = time.time()
             generator = torch.Generator().manual_seed(SEED * 1_000_003 + index)
             noise = torch.randn(latents.shape, generator=generator).to(device)
             timesteps = torch.randint(0, noise_scheduler.config.num_train_timesteps, (latents.shape[0],),
@@ -769,7 +774,8 @@ def train_lora(base, items, cache_dir, run_dir, steps, device, dtype):
             weight = torch.clamp(snr, max=SNR_GAMMA) / (snr if prediction == "epsilon" else snr + 1)
             loss = (loss * weight).mean()
             (loss / accumulate).backward()
-            total += loss.item() / accumulate
+            total += loss.item() / accumulate        # waits for the graphics card, so the timing is true
+            timer.add("graphics card work", time.time() - began)
         torch.nn.utils.clip_grad_norm_(params, 1.0)
         optimizer.step()
         scheduler.step()
@@ -783,6 +789,8 @@ def train_lora(base, items, cache_dir, run_dir, steps, device, dtype):
             say(f"    {done * per_step} of {steps * per_step} pictures trained ({done * 100 // steps} percent, step "
                 f"{done} of {steps}){left}. Mistake score {sum(losses) / len(losses):.3f} (lower is better; it "
                 "goes up and down; this is not an error).")
+            say("    " + timer.line(max(1, (done - line_from) * per_step), "pictures"))
+            line_from = done
         if done % save_every == 0 or done == steps:
             folder = os.path.join(checkpoints, f"step-{done:06d}")
             os.makedirs(folder, exist_ok=True)
@@ -1075,6 +1083,7 @@ def main(argv=None):
     work = os.path.abspath(args.work) if args.work else os.path.join(HERE, "work")
     os.makedirs(work, exist_ok=True)
     keep_awake(True)
+    train.system_monitor.start(say)           # computer use into the logs every 5 minutes (system_monitor.py)
     if args.library:
         train.open_library(work, args.library)       # before Hugging Face is imported: it reads HF_HOME once
     try:

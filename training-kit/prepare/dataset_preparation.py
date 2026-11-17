@@ -481,6 +481,12 @@ class PrepareWindow(wx.Frame):
                 self.update_summary()
                 self.say(f"{text} {self.summary.GetValue()}")
                 continue
+            if wizard.is_computer_line(text):    # computer use: logged and shown in What was done, not said
+                self.log_box.AppendText(text + "\n")
+                wizard.log(f"{TITLE}: {text}")
+                if text.lstrip().startswith("Computer use warning"):
+                    wizard.speak(text.strip())
+                continue
             count = COUNT_LINE.search(text)
             if count and int(count.group(2)):
                 self.gauge.SetValue(min(100, int(count.group(1)) * 100 // int(count.group(2))))

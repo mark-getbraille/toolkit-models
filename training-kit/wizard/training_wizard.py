@@ -166,6 +166,12 @@ SPOKEN = re.compile(r"^(Step \d+ of \d+:|\s*Collection \d+ of \d+:|\s*Ready:|\s+
                     r"\s*Score (before|after)|FINISHED|STOPPED|Getting ready|\s*This collection could not)")
 
 
+def is_computer_line(line):
+    """True for the kit's computer-use lines (kit\\system_monitor.py: "Computer:", "Computer use ..."), which go
+    into the logs and Everything said, but not into Status or speech (a "Computer use warning" is still said)."""
+    return line.lstrip().startswith(("Computer:", "Computer use"))
+
+
 def step_span(step, total):
     """(start, end) percent of a step: STEP_SPAN for the describer's 7 steps, otherwise equal parts."""
     if total == 7 and step in STEP_SPAN:
@@ -363,6 +369,10 @@ def kit_environment(kit):
     env = dict(os.environ, UV_CACHE_DIR=os.path.join(kit, "work", "uv-cache"),
                UV_PYTHON_INSTALL_DIR=os.path.join(kit, "tools", "python"), HF_HOME=os.path.join(kit, "work", "hf-cache"),
                PYTHONUTF8="1", PYTHONUNBUFFERED="1", TRANSFORMERS_VERBOSITY="error", PYTHONWARNINGS="ignore")
+    try:                                     # the computer-use spreadsheet goes beside the desktop logs
+        env["KIT_LOG_FOLDER"] = log_folder()
+    except OSError:
+        pass
     return env
 
 
@@ -1308,6 +1318,10 @@ class Wizard(wx.Frame):
                 continue
             self.log.AppendText(line + "\n")
             log(line)
+            if is_computer_line(line):           # computer use: logged, not put in Status or said (warnings are)
+                if line.lstrip().startswith("Computer use warning"):
+                    speak(line.strip())
+                continue
             self.status.SetValue(line.strip())
             step = STEP_LINE.match(line)
             trained = TRAINED_LINE.search(line)

@@ -1881,6 +1881,8 @@ def main(argv=None):
                         help="with --overlays crop or fill: also remove this box, in percent of the picture from its "
                              "top left corner (can be given more than once)")
     args = parser.parse_args(argv)
+    import system_monitor
+    system_monitor.start(lambda line: print(line, flush=True))   # computer use into the logs (system_monitor.py)
     try:
         boxes = [overlay_box(b) for b in args.overlay_box]
     except ValueError as e:

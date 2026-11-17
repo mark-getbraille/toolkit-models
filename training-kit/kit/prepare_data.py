@@ -99,6 +99,8 @@ shown image picture photo photograph visible background foreground left right to
 def say(text=""):
     """Write one line, at once (the program reads the lines as they come)."""
     print(text, flush=True)
+    import system_monitor
+    system_monitor.note(text)               # the computer-use lines say which model they are about
 
 
 def plural(count, one, many=None):
@@ -597,6 +599,8 @@ def main(argv=None):
     parser.add_argument("--no-combine", action="store_true")
     parser.add_argument("--redo", action="store_true", help="write the drafts again, also those written before")
     args = parser.parse_args(argv)
+    import system_monitor
+    system_monitor.start(say)                 # computer use into the logs every 5 minutes (system_monitor.py)
     try:
         if not package.is_workspace(args.workspace):
             package.make_workspace(args.workspace)
