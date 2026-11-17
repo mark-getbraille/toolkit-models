@@ -136,7 +136,9 @@ VIOLENCE = re.compile(
     r"intoxica\w*|unconscious|drugged|voyeur\w*|peep\w*|spy\w*|spying|surprised|hidden cameras?|upskirt\w*|"
     r"downblouse|creep\w*|leak\w*|revenge|stolen|hacked|non-?consensual|without (her|his|their) (consent|knowledge)"
     r"|unaware|dogging|in public|public sex|sex in public|outdoor sex|glory ?holes?|exhibitionis\w*|incest\w*|martyr\w*|crucif\w*|sacrific\w*|suicide|severed|beheaded|weapons?|swords?|daggers?|guns?|"
-    r"verkracht\w*|ontvoer\w*|geweld\w*|viol|enlèvement|vergewaltig\w*|stupro|violación|seduc\w*)\b", re.I)
+    r"verkracht\w*|ontvoer\w*|geweld\w*|viol|enlèvement|vergewaltig\w*|stupro|violación|seduc\w*|fouets?|"
+    r"fess[ée]e?s?|verges|peitsch\w*|züchtig\w*|rute|frust[ae]|látigo|azot\w*|orties blanches|"
+    r"van ma[eë]le|discipline|dominatri\w*|femdom|slaves?)\b", re.I)
 
 # Stories about rape, abduction or a minor, and other names that need their capital letter (case matters).
 MYTH = re.compile(
@@ -156,7 +158,8 @@ ANIMAL = re.compile(
 PHOTO_DOUBT = re.compile(
     r"\b(teen\w*|girls?|boys?|young\w*|school\w*|uniform\w*|college|coed\w*|amateur porn|porn\w*|xxx|onlyfans|"
     r"camgirl\w*|webcam\w*|sex tape|leak\w*|ex-?girlfriend|ex-?boyfriend|hidden|candid|creepshot\w*|"
-    r"stolen|scraped|reddit|tumblr|imgur|xhamster|pornhub|xvideos|redtube|youporn|motherless)\b", re.I)
+    r"stolen|scraped|reddit|tumblr|imgur|xhamster|pornhub|xvideos|redtube|youporn|motherless|femboys?|twinks?|"
+    r"boyish|girlish|youthful|baby ?face\w*|childlike|barely|tiny|small ?(girl|boy|teen)|daddy|step-?\w+)\b", re.I)
 PROBLEM_CATEGORY = re.compile(r"(deletion|copyright violation|possible copyright|unidentified|no permission|"
                               r"missing permission|personality rights warning|consent missing|"
                               r"without consent|flickr review needed|license review needed|"
@@ -249,7 +252,7 @@ def is_english(text):
     """True when a text reads as English (enough common English words); short texts count as English."""
     words = re.findall(r"[A-Za-z']+", clean(text).lower())
     if len(words) < 4:
-        return True
+        return not re.search(r"[À-ÿĀ-ž]", clean(text))   # a short text with accented letters is not English
     return sum(w in ENGLISH_WORDS for w in words) / len(words) >= 0.12
 
 
@@ -778,7 +781,8 @@ def fetch_smithsonian_shunga(folder, cap, say=print):
                 dnr = c.get("descriptiveNonRepeating") or {}
                 media = [m for m in ((dnr.get("online_media") or {}).get("media") or [])
                          if (m.get("usage") or {}).get("access") == "CC0" and m.get("type") == "Images"]
-                name, title = f"si-{re.sub(r'[^\\w.-]', '_', x.get('url', x.get('id', '')))}.jpg", clean(x.get("title"))
+                record_id = re.sub(r"[^\w.-]", "_", x.get("url") or x.get("id") or "")
+                name, title = f"si-{record_id}.jpg", clean(x.get("title"))
                 if ws.done(name):
                     continue
                 if not media:
@@ -1168,9 +1172,9 @@ def commons_group_fetch(key, group, kind, folder, cap, say):
             if found:
                 say(f"Commons '{cat}': {len(found)} usable files")
             lists.append(found)
-            if sum(len(x) for x in lists) > cap * 2 + 10:
+            if sum(len(x) for x in lists) > cap * 2 + 10 or looked > cap * 30 + 300:
                 break
-        if sum(len(x) for x in lists) > cap * 2 + 10:
+        if sum(len(x) for x in lists) > cap * 2 + 10 or looked > cap * 30 + 300:
             break
     items = take_turns(lists)
     left += rs.fill(ws, items, cap, s, workers=2)
