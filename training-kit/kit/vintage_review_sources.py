@@ -79,9 +79,9 @@ vintage_intimate: only with both nudity and medical); describing.json also
 says "never_for_picture_making": true: these pictures are never used to train picture-making.
 
 PLUMBING the rest of the kit needs (not done here; other files are being edited by others):
-  - wizard/describe_window.review_lists, kit/run_review.all_sources and kit/train.review_details: add
-    ("vintage_review_sources", "VINTAGE_REVIEW_SOURCES", "vintage") beside the adult list, with the same guarded
-    import (a missing or broken list is left out with a note).
+  - wizard/describe_window.review_lists already lists VINTAGE_REVIEW_SOURCES. kit/run_review.all_sources and
+    kit/train.review_details need ("vintage_review_sources", "VINTAGE_REVIEW_SOURCES") beside the adult list, with
+    the same guarded import (a missing or broken list is left out with a note).
   - .github/workflows/training-kit.yml: --hidden-import vintage_review_sources; tools/make_manifests.py: add the
     module to its list and a heading "Vintage nude photographs (review only)".
   - own_data.check_folder already uses only "checked" pictures from a workspace whose describing.json has
@@ -189,7 +189,10 @@ SEXUAL_WORDS = re.compile(
     r"brothels?|bordel\w*|prostitut\w*|courtesans?|harem\w*|odalisques?|demi-?mond\w*|storyville|"
     r"lovers?|love-?making|kiss\w*|embrac\w*|caress\w*|seduc\w*|sensual\w*|voluptu\w*|tempt\w*|"
     r"lingerie|stockings?|garters?|corsets?|negligee|déshabillé|"
-    r"erect\w*|arous\w*|masturbat\w*|penis|phall\w*|coit\w*|intercourse|fellatio|cunnilingus|orgasm\w*)\b", re.I)
+    r"erect\w*|arous\w*|masturbat\w*|phall\w*|coit\w*|intercourse|fellatio|cunnilingus|orgasm\w*)\b", re.I)
+# "penis" counts as sexual wording in the nudity collections (a nude study that names it is usually not a plain
+# figure study); in vintage_intimate it is the plain medical word, and the genitals rule handles it.
+PENIS = re.compile(r"\bpenis\b", re.I)
 
 # Colonial ethnographic and anthropometric "type" photographs, and nude photographs labelled by a colonised people
 # or place (left out: usually taken without real consent, and degrading). "Indian clubs" (an exercise) is allowed.
@@ -261,7 +264,7 @@ def vintage_screen(texts, date_text, maker="", need_nude=True, intimate=False, n
             return f"mentions or suggests a child or young person ('{m.group(0)}')"
     if any(a < 18 for a in rs.ages(text)):
         return "gives an age under 18"
-    m = SEXUAL_WORDS.search(text)
+    m = SEXUAL_WORDS.search(text) or (None if intimate else PENIS.search(text))
     if m:
         return f"sexual, erotic or pornographic wording ('{m.group(0)}')"
     m = MAKERS_LEFT_OUT.search(f"{maker} {text}")
@@ -1001,6 +1004,8 @@ NOT_INCLUDED = {
     "'native types')": "never used: usually taken without real consent, and degrading.",
     "Asylum and hospital photographs of psychiatric patients (Charcot's Salpetriere, Hugh Diamond and the like)":
         "never used: the people could not refuse.",
+    "More searches for vintage_intimate (Wellcome: breast, scrotum, hernia and genitals photographs)": "tried in "
+        "November 2026: none passed (no open licence, no date before 1926, a child word, or not a photograph).",
     "Early naturism (Freikorperkultur) photographs": "not searched on purpose: family naturism photographs very often "
         "include children. An adult naturism photograph found by the other searches is used only when its record "
         "names an adult and no child.",
