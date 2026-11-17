@@ -93,7 +93,7 @@ from extra_sources import (NO_TERMS, NUDE, commons_file_name, commons_members, c
                            commons_session, parquet_picture_rows, per_label, research)
 from more_sources import fetch_shared
 from personal_sources import CHILD_WORDS, listed, remote_zip, zip_members
-from sources import ALT_TEXT, NARRATE, USER_AGENT, Source, download_file, fetch_pictures
+from sources import ALT_TEXT, USER_AGENT, Source, download_file, fetch_pictures
 
 DEVICE_Q = "What assistive device is in this picture?"
 SPORT_Q = "What sport is this?"
@@ -106,6 +106,11 @@ NOT_RESPECTFUL = re.compile(r"\b(suffer\w*|afflict\w*|victims?|wheelchair[- ]bou
                             r"handicapped|invalids?|retard\w*|deaf[- ]and[- ]dumb|deaf[- ]mutes?|dumb|lame|"
                             r"spastics?|mongol\w*|midgets?|defective|abnormal|poor (man|woman|boy|girl)|"
                             r"brave(ly)?|inspir\w*|despite (his|her|their) disabilit\w*|beggars?)\b", re.I)
+
+# A description that is really a place name with language links ("zh:屯門 Tuen Mun ...") or in another script.
+NOT_A_DESCRIPTION = re.compile(r"\b[a-z]{2}:\S|[^\x00-\u024f\u2010-\u2027]")
+# Words that mean a child's device or a child, beyond personal_sources.CHILD_WORDS.
+YOUNG = re.compile(r"\b(p(a)?ediatric\w*|children's)\b", re.I)
 
 
 def say(text):
@@ -238,7 +243,7 @@ COMMONS_DISABILITY = {
     "Blind football": (SPORT_Q, "This is blind football: five-a-side football for blind and partially sighted "
                                 "players, with a ball that rattles.", False),
     "Paralympic sports": (SPORT_Q, "This is a Paralympic sport, played by disabled athletes.", True),
-    "Sports at the Warrior Games": ("What event is this?", "This is the Warrior Games, adaptive sports for wounded, "
+    "Warrior Games": ("What event is this?", "This is the Warrior Games, adaptive sports for wounded, "
                                                            "ill and injured service members and veterans.", True),
     "Images from Disabled and Here": (None, None, False),     # (all CC BY 4.0: in the open pack, none here)
 }
@@ -278,11 +283,13 @@ def prepare_commons_disability_sa(source, data_dir, work, cap):
             if found >= per_category or NUDE.search(f"{title} {text}"):
                 continue
             seen.add(title)
-            child = {"child": True} if title in young or CHILD_WORDS.search(f"{title} {text}") else {}
+            child = {"child": True} if title in young or CHILD_WORDS.search(f"{title} {text}") \
+                or YOUNG.search(f"{title} {text}") else {}
             name = commons_file_name("dis-sa", title)
+            url = re.sub(r"/\d+px-([^/]+)$", r"/960px-\1", url)      # a width Wikimedia keeps ready
             items.append((name, url, {"question": question, "answer": answer, "split": "", "credit": credit,
                                       **child}))
-            if text and not NOT_RESPECTFUL.search(text):
+            if text and not NOT_RESPECTFUL.search(text) and not NOT_A_DESCRIPTION.search(text):
                 items.append((name, url, {"question": ALT_TEXT, "answer": text, "split": "", "credit": credit,
                                           **child}))
             found += 1
@@ -343,7 +350,9 @@ def prepare_mobility_aids(source, data_dir, work, cap):
     for item in picked:
         member, boxes = json.loads(item)
         answer = place_list([(middle, MOBILITY_WORDS[name]) for name, middle in boxes])
-        chosen.append((member, {"question": AIDS_Q, "answer": answer, "split": ""}))
+        chosen.append((member, {"question": AIDS_Q, "answer": answer, "split": "",
+                                "credit": "Mobility Aids Dataset (Vasquez, Kollmitz, Eitel and Burgard, University "
+                                          "of Freiburg, 2017), http://mobility-aids.informatik.uni-freiburg.de"}))
     say(f"  Mobility Aids: {len(chosen)} photos ({', '.join(f'{k} {len(v)}' for k, v in sorted(groups.items()))}).")
     return zip_members(source, data_dir, work, lambda: remote_zip(MOBILITY + "Images_RGB.zip"), chosen, workers=3)
 
@@ -373,7 +382,7 @@ def braille_lines(cells):
     if not cells:
         return []
     heights = sorted(b - t for _, t, _, b, _ in cells)
-    widths = sorted(r - l for l, _, r, _, _ in cells)
+    widths = sorted(right - left for left, _, right, _, _ in cells)
     h, w = heights[len(heights) // 2], widths[len(widths) // 2]
     lines = []
     for cell in sorted(cells, key=lambda c: (c[1] + c[3]) / 2):
@@ -478,7 +487,8 @@ def prepare_dsbi_braille(source, data_dir, work, cap):
                   if p.strip().lower().endswith(".jpg")]
     random.Random(252).shuffle(paths)
     credit = ("DSBI: Double-Sided Braille Image dataset (Renqiang Li, Hong Liu, Xiangdong Wan and Yueliang Qiang, "
-              "Institute of Computing Technology, Chinese Academy of Sciences, 2018), https://github.com/yeluo1994/DSBI")
+              "Institute of Computing Technology, Chinese Academy of Sciences, 2018), "
+              "https://github.com/yeluo1994/DSBI")
     items = []
     for path in paths[:cap + source.test]:
         book = path.split("/")[0]
@@ -589,7 +599,7 @@ def prepare_wheelchair_detection(source, data_dir, work, cap):
 ROTTERDAM = ("https://huggingface.co/datasets/comarti15/accessibility-rotterdam-the-netherlands/resolve/main/"
              "Data%20Challenge.zip")
 ROTTERDAM_ANSWERS = {
-    "Accessible": "It looks accessible: the way looks clear and even enough for a wheelchair, a walker or a pram.",
+    "Accessible": "Yes, it looks accessible: the way looks clear and even enough for a wheelchair, a walker or a pram.",
     "Inaccessible": "No, it looks hard to get through: the people who labelled it saw a barrier for wheelchairs, "
                     "walkers or prams here, such as a blocked or missing pavement, no ramp or dropped kerb, or bikes "
                     "or scooters in the way.",
@@ -769,9 +779,10 @@ DISABILITY_SOURCES = [
     Source("accessparkcv", "AccessParkCV: disability parking spaces in aerial photos of car parks (personal use)",
            "\"MIT\" and \"CC BY 4.0\" stated (huggingface.co/datasets/makeabilitylab/disabilityparking and "
            "AccessParkCV_coco); the aerial photos come from city imagery whose own terms are not given",
-           "AccessParkCV (Jared Hwang, Chu Li, Hanbyul Kang, Maryam Hosseini and Jon E. Froehlich, 'Where Can I Park?', "
-           "ASSETS 2025), https://huggingface.co/datasets/makeabilitylab/AccessParkCV_coco", "research", 1500, 20,
-           prepare_accessparkcv, "about 90 MB", terms="https://huggingface.co/datasets/makeabilitylab/disabilityparking",
+           "AccessParkCV (Jared Hwang, Chu Li, Hanbyul Kang, Maryam Hosseini and Jon E. Froehlich, 'Where Can I "
+           "Park?', ASSETS 2025), https://huggingface.co/datasets/makeabilitylab/AccessParkCV_coco", "research", 1500,
+           20, prepare_accessparkcv, "about 90 MB",
+           terms="https://huggingface.co/datasets/makeabilitylab/disabilityparking",
            terms_summary=research("The labels are MIT or CC BY 4.0, but the aerial photos of Seattle, Washington DC "
                                   "and Spring Hill come from city imagery whose own terms are not stated.")),
 ]

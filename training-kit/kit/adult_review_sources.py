@@ -170,7 +170,8 @@ ART_KIND = re.compile(
     r"ceramic\w*|porcelain|pottery|vessel\w*|vases?|bowls?|cups?|kylix|amphora\w*|krater\w*|lekythos|netsuke|"
     r"scrolls?|albums?|folio\w*|leaf|leaves|miniature\w*|illustration\w*|illuminat\w*|manuscript\w*|book|books|"
     r"ehon|shunga|surimono|kakemono|tile|textile|embroider\w*|lacquer\w*|plaque\w*|medal\w*|coin|gem|cameo\w*|"
-    r"intaglio|lamp|oil lamp|mirror|tsuba|inro|panel)\b", re.I)
+    r"intaglio|lamp|oil lamp|mirror|tsuba|inro|panel|box|boxes|saucers?|dish(es)?|plates?|teapots?|jars?|"
+    r"snuff ?box\w*)\b", re.I)
 PHOTO_WORDS = re.compile(
     r"\b(photograph\w*|photos?|albumen|gelatin silver|silver gelatin|daguerreotype\w*|ambrotype\w*|tintype\w*|"
     r"carte(s)? de visite|cabinet card\w*|stereograph\w*|stereoview\w*|stereo card\w*|collodion|negatives?|"
@@ -319,7 +320,8 @@ def art_draft(kind, title, description="", tags=(), maker="", date="", place="",
         description = ""                         # not English: the caller keeps it in the notes for the reviewer
     if title:
         own = "" if is_english(title) else " (in the original language)"
-        parts.append(f'The {owner}\'s title{own} is "{plain(title).rstrip(".")}".')
+        shown = plain(title).rstrip(".")
+        parts.append(f'The {owner}\'s title{own} is "{shown[:1].upper() + shown[1:]}".')
         if own:
             title = ""
     if description:
@@ -370,7 +372,9 @@ class AdultWorkspace(rs.ReviewWorkspace):
         files = [os.path.join(self.staging, n) for n, *_ in self.waiting]
         dp.add_pictures(self.workspace, files, person="")
         lines = []
-        for name, credit, licence, page, content, note, details in self.waiting:
+        for item in self.waiting:
+            # review_sources may add fields after these seven (it added "narration"); only these are used here.
+            name, credit, licence, page, content, note, details = item[:7]
             if self.workspace.pictures.get(name) is None:
                 continue                                  # the same picture was there already
             entry = self.workspace.entry(name)
@@ -471,9 +475,9 @@ def fetch_met_erotic(folder, cap, say=print):
     say(f"The Met: {len(ids)} objects found by the searches")
     looked = left = 0
     for name, oid in ids:
-        if ws.full(cap) and len(ws.left_out) >= SHOW_LEFT_OUT:
-            break
-        if ws.done(name) or ws.full(cap):
+        if ws.full(cap) and (len(ws.left_out) >= SHOW_LEFT_OUT or looked > cap + 150):
+            break                                 # full, and enough left-out examples to show the filters
+        if ws.done(name):
             continue
         looked += 1
         o = rs.get_json(s, f"{MET}v1/objects/{oid}") or {}
@@ -492,6 +496,8 @@ def fetch_met_erotic(folder, cap, say=print):
                                title, "", tags, clean(o.get("artistDisplayName")), clean(o.get("objectDate")),
                                clean(o.get("culture") or o.get("country")),
                                generic="It is an erotic or nude artwork showing adults")
+        if ws.full(cap):
+            continue                              # full: only screened, to show what the filters leave out
         data = rs.download_picture(s, o["primaryImageSmall"])
         if data is None:
             ws.leave_out(name, title, "the picture could not be downloaded")
@@ -698,9 +704,9 @@ def fetch_rijks_erotic(folder, cap, say=print):
     say(f"Rijksmuseum: {len(ids)} objects found by the searches")
     looked = left = 0
     for name, uri in ids:
-        if ws.full(cap) and len(ws.left_out) >= SHOW_LEFT_OUT:
-            break
-        if ws.done(name) or ws.full(cap):
+        if ws.full(cap) and (len(ws.left_out) >= SHOW_LEFT_OUT or looked > cap + 150):
+            break                                 # full, and enough left-out examples to show the filters
+        if ws.done(name):
             continue
         looked += 1
         r = rijks_record(s, uri)
@@ -710,13 +716,16 @@ def fetch_rijks_erotic(folder, cap, say=print):
             continue
         english = r["desc_en"] or dutch_to_english(r["desc_nl"]) or ""
         texts = [r["title"], r["title_nl"], r["desc_en"], r["desc_nl"]]
-        if not art_check(ws, name, r["title"] or r["title_nl"], texts, [r["kind"], r["desc_nl"], r["desc_en"]]):
+        if not art_check(ws, name, r["title"] or r["title_nl"], texts,
+                         [r["kind"], r["title"], r["desc_nl"], r["desc_en"]]):
             left += 1
             continue
         title_en = r["title"] or dutch_to_english(r["title_nl"]) or f"{r['title_nl']} (Dutch title)"
         text, thin = art_draft(a_an(r['kind'].split(';')[0].lower() or 'work of art'), title_en,
                                english, [], r["maker"], r["date"], "",
                                generic="It is an erotic artwork showing adults")
+        if ws.full(cap):
+            continue                              # full: only screened, to show what the filters leave out
         data = rs.download_picture(s, r["picture"])
         if data is None:
             ws.leave_out(name, r["title"], "the picture could not be downloaded")
@@ -1080,6 +1089,8 @@ def commons_check(ws, group, pageid, title, info):
     why = ""
     if not mime.startswith("image/") or "gif" in mime or not info.get("thumburl"):
         why = "not a still picture"
+    elif re.search(r"\b(logos?|icons?|wordmarks?|pictograms?|emblems?|flags?|maps?|charts?|graphs?)\b", text, re.I):
+        why = "a logo, icon, map or chart (teaches nothing about what a picture shows)"
     elif not rs.commons_licence_kind(licence):
         why = f"licence not open ({licence or 'none'})"
     elif PROBLEM_CATEGORY.search(categories):
@@ -1101,6 +1112,11 @@ def commons_check(ws, group, pageid, title, info):
     if why:
         ws.leave_out(name, stem, why)
         return None
+    original = ""
+    if description and not is_english(description):
+        original, description = description, ""   # not English: kept in the notes for the reviewer
+    if not description and not is_english(stem):
+        original, stem = original or stem, ""
     caption = rs.first_sentences(plain(description) or plain(stem), 70, 3)
     thin = useful_words(description or stem) < 5
     g = COMMONS_GROUPS[group]
@@ -1112,11 +1128,14 @@ def commons_check(ws, group, pageid, title, info):
     else:
         lead = g["lead"]
     lead += " from Wikimedia Commons."
-    parts = [lead, sentence(g["generic"]) if thin else "", f"Its description says: {sentence(caption)}"]
+    parts = [lead, sentence(g["generic"]) if thin else "",
+             f"Its description says: {sentence(caption)}" if caption else ""]
     artist = meta_value(info, "Artist") or "unknown"
     page = "https://commons.wikimedia.org/wiki/File:" + title.replace(" ", "_")
-    note = (THIN_NOTE + " " if thin else "") + (f"Source as stated on Commons: {credit_src[:120]}." if credit_src else "")
-    return (" ".join(p for p in parts if p), f"{stem} by {artist[:120]}, via Wikimedia Commons", licence, page, note)
+    note = (THIN_NOTE + " " if thin else "") + (f"Original-language description: {original[:300]}. " if original
+                                                else "") + \
+        (f"Source as stated on Commons: {credit_src[:120]}." if credit_src else "")
+    return (" ".join(p for p in parts if p), f"{os.path.splitext(title)[0]} by {artist[:120]}, via Wikimedia Commons", licence, page, note)
 
 
 def commons_group_fetch(key, group, kind, folder, cap, say):
@@ -1147,9 +1166,9 @@ def commons_group_fetch(key, group, kind, folder, cap, say):
             if found:
                 say(f"Commons '{cat}': {len(found)} usable files")
             lists.append(found)
-            if sum(len(x) for x in lists) > cap * 3 + 30:
+            if sum(len(x) for x in lists) > cap * 2 + 10:
                 break
-        if sum(len(x) for x in lists) > cap * 3 + 30:
+        if sum(len(x) for x in lists) > cap * 2 + 10:
             break
     items = take_turns(lists)
     left += rs.fill(ws, items, cap, s, workers=2)

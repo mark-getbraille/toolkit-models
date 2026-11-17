@@ -71,6 +71,10 @@ NOT_RESPECTFUL = re.compile(r"\b(suffer\w*|afflict\w*|victims?|wheelchair[- ]bou
                             r"handicapped|invalids?|retard\w*|deaf[- ]and[- ]dumb|deaf[- ]mutes?|dumb|lame|"
                             r"spastics?|mongol\w*|midgets?|defective|abnormal|poor (man|woman|boy|girl)|"
                             r"brave(ly)?|inspir\w*|despite (his|her|their) disabilit\w*|beggars?)\b", re.I)
+# A description that is really a place name with language links ("zh:屯門 Tuen Mun ...") or in another script.
+NOT_A_DESCRIPTION = re.compile(r"\b[a-z]{2}:\S|[^\x00-\u024f\u2010-\u2027]")
+# Words that mean a child's device or a child in a file's name or description, beyond expression_packs.CHILD.
+YOUNG = re.compile(r"\b(p(a)?ediatric\w*|children's)\b", re.I)
 NUDE = re.compile(r"\b(nude|naked|nudity|topless|undress\w*|erotic|sex\w*|porn\w*|lingerie|underwear)\b", re.I)
 
 
@@ -288,7 +292,7 @@ COMMONS_DISABILITY = {
     "Blind football": (SPORT_Q, "This is blind football: five-a-side football for blind and partially sighted "
                                 "players, with a ball that rattles.", False),
     "Paralympic sports": (SPORT_Q, "This is a Paralympic sport, played by disabled athletes.", True),
-    "Sports at the Warrior Games": ("What event is this?", "This is the Warrior Games, adaptive sports for wounded, "
+    "Warrior Games": ("What event is this?", "This is the Warrior Games, adaptive sports for wounded, "
                                                            "ill and injured service members and veterans.", True),
     "Images from Disabled and Here": (None, None, False),     # their own descriptions only (commons_rows)
 }
@@ -299,9 +303,17 @@ COMMONS_NOT_IT = re.compile(r"\b(art|drawings?|illustrations?|paintings?|logos?|
                             r"advertis\w*|posters?|cartoons?|comics?|in literature|organi[sz]ations?|"
                             r"associated|manufacturers?|companies|shops?|museums?|collections?|x-rays?|radiograph\w*|"
                             r"scans?|surgery|operations?|veterinary|dogs? wheelchairs|nude|naked|logo|"
-                            r"history|historical|charts?|penile|breasts?|heart|valves?|spine|dental|dentures?|prosthodontics|"
-                            r"epithes\w*|voice|nose|ocular|eyes?|implants?|licen[cs]e plates?|parent|watches|"
+                            r"history|historical|charts?|penile|breasts?|heart|valves?|spine|dental|dentures?|"
+                            r"prosthodontics|epithes\w*|voice|nose|ocular|eyes?|implants?|licen[cs]e plates?|parent|"
+                            r"watches|"
                             r"cosplay\w*|SVG|ramps? signs)\b", re.I)
+
+
+def standard_thumb(url):
+    """A Commons thumbnail address at 1280 pixels wide, one of the widths Wikimedia keeps ready: other widths (the
+    2048 asked for) are often refused (400 or 429) since Wikimedia limited thumbnail sizes. A file narrower than that
+    comes as its original address and is kept as it is."""
+    return re.sub(r"/\d+px-([^/]+)$", r"/1280px-\1", url)
 
 
 def commons_rows(category, question, answer, title, text, credit, child=False):
@@ -313,8 +325,9 @@ def commons_rows(category, question, answer, title, text, credit, child=False):
     rows = []
     if question:
         rows.append({"question": question, "answer": answer, "credit": credit})
-    if text and not NOT_RESPECTFUL.search(text):
+    if text and not NOT_RESPECTFUL.search(text) and not NOT_A_DESCRIPTION.search(text):
         rows.append({"question": NARRATE if question is None else ALT_TEXT, "answer": text, "credit": credit})
+    child = child or bool(YOUNG.search(f"{title} {text}"))
     return [dict(mark_child(r, title, text), **({"child": True} if child else {}), **commons_place(title))
             for r in rows]
 
@@ -347,7 +360,7 @@ def build_commons_disability(limit):
                 continue
             seen.add(title)
             name = re.sub(r"[^\w.-]+", "_", title.split(":", 1)[-1].rsplit(".", 1)[0])[:80]
-            items.append((f"commons-dis-{name}.jpg", url, rows))
+            items.append((f"commons-dis-{name}.jpg", standard_thumb(url), rows))
             found += 1
             if found >= per_category:
                 break
