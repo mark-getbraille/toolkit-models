@@ -781,8 +781,8 @@ def train_lora(base, items, cache_dir, run_dir, steps, device, dtype):
             per = (time.time() - start) / (done - started_at)
             left = f"; about {duration(per * (steps - done))} left" if done < steps else ""
             say(f"    {done * per_step} of {steps * per_step} pictures trained ({done * 100 // steps} percent, step "
-                f"{done} of {steps}){left}. Error {sum(losses) / len(losses):.3f} (lower is better; it goes up and "
-                "down).")
+                f"{done} of {steps}){left}. Mistake score {sum(losses) / len(losses):.3f} (lower is better; it "
+                "goes up and down; this is not an error).")
         if done % save_every == 0 or done == steps:
             folder = os.path.join(checkpoints, f"step-{done:06d}")
             os.makedirs(folder, exist_ok=True)

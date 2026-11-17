@@ -660,7 +660,8 @@ def train(model, processor, rows, adapter_dir, device, epochs=1, rate=1e-4, accu
             per = (time.time() - start) / (index + 1 - started_at)
             recent = sum(losses[-SAVE_EVERY:]) / max(len(losses[-SAVE_EVERY:]), 1)
             say(f"    {index + 1} of {total} pictures trained ({(index + 1) * 100 // total} percent); about "
-                f"{duration(per * (total - index - 1))} left. Error {recent:.3f} (lower is better). Saved.")
+                f"{duration(per * (total - index - 1))} left. Mistake score {recent:.3f} (lower is better; "
+                "this is not an error). Saved.")
     model.save_pretrained(final)
     return earlier + time.time() - start
 

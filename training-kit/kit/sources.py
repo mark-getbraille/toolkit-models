@@ -823,6 +823,32 @@ def prepare_concadia(source, data_dir, work, cap):
 
 
 PACKS_URL = "https://github.com/mark-getbraille/toolkit-models/releases/download/training-data/"
+_PACKS_MANIFEST = {}
+
+
+def packs_manifest():
+    """The list of ready-made packs (packs.json), read once per run. When the packs are rebuilt, GitHub briefly has no
+    packs.json (the old one is removed just before the new one is uploaded), so a failed or unreadable answer is tried
+    again up to 6 times, a minute apart, before the packs are left out for this run."""
+    import requests
+    if "list" in _PACKS_MANIFEST:
+        return _PACKS_MANIFEST["list"]
+    problem = None
+    for attempt in range(6):
+        if attempt:
+            say("    The list of ready-made packs could not be read just now; trying again in a minute.")
+            time.sleep(60)
+        try:
+            answer = requests.get(PACKS_URL + "packs.json", timeout=60, headers={"User-Agent": USER_AGENT})
+            answer.raise_for_status()
+            listed = answer.json()
+            if isinstance(listed, dict) and listed:
+                _PACKS_MANIFEST["list"] = listed
+                return listed
+            problem = "the list of ready-made packs was empty"
+        except Exception as e:  # noqa: BLE001 - a network or GitHub hiccup: try again
+            problem = str(e).splitlines()[0][:200] if str(e) else type(e).__name__
+    raise RuntimeError(f"the list of ready-made packs could not be read ({problem})")
 
 
 def prepare_pack(source, data_dir, work, cap):
@@ -830,9 +856,8 @@ def prepare_pack(source, data_dir, work, cap):
     its parts are downloaded, joined, checked against packs.json's SHA-256 and unpacked; a row with "url" instead of a
     picture (COCO's photos, which may not be copied) is fetched from its own website."""
     import hashlib
-    import requests
     import zipfile
-    manifest = requests.get(PACKS_URL + "packs.json", timeout=60, headers={"User-Agent": USER_AGENT}).json()
+    manifest = packs_manifest()
     if source.key not in manifest:
         raise RuntimeError("this pack is not published yet")
     info = manifest[source.key]
