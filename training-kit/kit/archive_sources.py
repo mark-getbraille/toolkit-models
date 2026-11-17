@@ -68,8 +68,8 @@ GRAPHIC = re.compile(r"\b(dead(?! sea\b| end\b)|corpses?|bod(y|ies) of|killed|wo
 NEVER = re.compile(r"\b(rape[ds]?|raping|sexual(ly)? (assault\w*|abuse\w*|violence)|molest\w*|estupr\w*|tortur\w*|"
                    r"execut\w*|beheading|lynch\w*|firing squad)\b", re.I)
 # Portuguese words for children that personal_sources.CHILD_WORDS does not have.
-CHILD_PT = re.compile(r"\b(crian[çc]as?|menin[oa]s?|beb[êe]s?|adolescentes?|alunos?|alunas?|estudantes?|filh[oa]s?)\b",
-                      re.I)
+CHILD_PT = re.compile(r"\b(crian[çc]as?|menin[oa]s?|beb[êe]s?|adolescentes?|alunos?|alunas?|estudantes?|"
+                      r"filh[oa]s?)\b", re.I)
 
 
 def say(text):
@@ -140,7 +140,7 @@ def vam_object(s, record):
     if any(m.get("sensitiveImage") for m in meta.get("_images_meta") or []):
         return None
     text = full.get("summaryDescription") or full.get("physicalDescription") or full.get("briefDescription") or ""
-    answer = caption(re.sub(r"\s*\(\d+[:\d\s,to]*\)", "", text))
+    answer = caption(re.sub(r"\s*\(\d+[:\d\s,to]*\)", "", re.sub(r"<[^>]+>", "", text)))     # no HTML tags
     if not answer:
         return None
     title = clean(record.get("_primaryTitle")) or clean(record.get("objectType"))
@@ -151,19 +151,28 @@ def vam_object(s, record):
     return (f"vam-{record['systemNumber']}.jpg", base + "full/!1600,1600/0/default.jpg", answer, credit, place)
 
 
+# Search words, so the pick spreads over many kinds of object (the API's search reaches only the first 10,000
+# records of any one search, so a single search cannot reach the whole collection).
+VAM_WORDS = ("teapot", "chair", "dress", "vase", "ring", "painting", "photograph", "sculpture", "cabinet", "clock",
+             "bowl", "shoe", "hat", "mirror", "jug", "figure", "tile", "plate", "necklace", "quilt", "sword", "fan",
+             "carpet", "lamp", "toy", "doll", "glass", "jewellery", "costume", "landscape", "portrait", "garden",
+             "street", "building", "boat", "horse", "bird", "flower", "table", "box", "cup", "spoon", "helmet",
+             "armour", "instrument", "guitar", "watch", "camera", "poster", "mask", "textile", "basket", "kimono")
+
+
 def prepare_vam(source, data_dir, work, cap):
-    """V&A objects with pictures from random pages of the API's search (about 750,000 records with pictures), each
-    object's own record read for its description."""
+    """V&A objects with pictures found with VAM_WORDS (a random page of each search), each object's own record
+    read for its description."""
     s, rng = session(), random.Random(501)
     want = int((cap + source.test) * 1.2)
-    pages = list(range(1, 7500))
-    rng.shuffle(pages)
+    words = list(VAM_WORDS) * 20
+    rng.shuffle(words)
     items = []
-    for page in pages:
-        if len(items) >= want * 1.4:
+    for word in words:
+        if len({name for name, _, _ in items}) >= want * 1.2:
             break
-        data = get_json(s, VAM + "objects/search", {"q": "", "images_exist": 1, "page_size": 100, "page": page,
-                                                    "order_sort": "asc"}) or {}
+        data = get_json(s, VAM + "objects/search", {"q": word, "images_exist": 1, "page_size": 100,
+                                                    "page": rng.randint(1, 10)}) or {}
         records = data.get("records") or []
         rng.shuffle(records)
         for record in records[:max(3, want // 40)]:
@@ -262,10 +271,12 @@ def ab_caption(text):
     who = clean(m.group(1)) if m else ""
     text = text[:m.start()] if m else text
     place = ""
-    head = re.match(r"^\s*([^-–]{2,60}?)\s*[-–]\s*\d{1,2}[./]\d{1,2}[./]\d{2,4}\s*[-–]\s*", text)
+    head = re.match(r"^\s*([^-–,]{2,60}?)\s*[-–,]?\s*\d{1,2}[./]\d{1,2}[./]\d{2,4}\s*[-–]\s*", text)
     if head:
         text = text[head.end():]
-        city = re.match(r"^(.+?)\s*/\s*([A-Z]{2})$", head.group(1).strip())
+        city = re.match(r"^(.+?)\s*(?:/\s*([A-Z]{2})|\(([A-Z]{2})\))$", head.group(1).strip())   # "X/ MS", "X (DF)"
+        if city and city.group(3):
+            city = re.match(r"^(.+?)\s*\(([A-Z]{2})\)$", head.group(1).strip())
         if city and city.group(2) in BR_STATES:
             place = f"{city.group(1).strip()}, {BR_STATES[city.group(2)]}, Brazil"
         elif head.group(1).strip() in ("Brasília", "Brasilia"):

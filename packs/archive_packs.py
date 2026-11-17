@@ -50,8 +50,9 @@ place names from the record, US states, months and words in quotation marks keep
                       https://www.nationaalarchief.nl/onderzoeken/open-data/fotos). The Archive's own API is
                       "temporarily unavailable", so the files come from the copy the Archive put on Wikimedia Commons
                       ("Images from Nationaal Archief"), with the Dutch caption ("Beschrijving") and place ("Locatie",
-                      or the Netherlands when the file is filed under "Netherlands photographs taken on ..."). Many show public
-                      figures and events. Dutch translation twins with the model already used for Rijksmuseum texts.
+                      or the Netherlands when the file is filed under "Netherlands photographs taken on ...").
+                      Many show public figures and events. Dutch translation twins with the model already used for
+                      Rijksmuseum texts; captions in English are marked "twinned".
   kremlin             Photographs on the Russian President's English website (en.kremlin.ru), with their captions and
                       the place each gallery gives. "All content on this site is licensed under Creative Commons
                       Attribution 4.0 International" (the site's footer). Most show meetings and ceremonies; the place
@@ -186,8 +187,8 @@ def sentence_case(text, names=()):
     def one(m):
         """One word, in lower case unless it is kept."""
         whole = m.group(0)
-        if re.search(r"\d", whole):
-            return whole
+        if re.search(r"\d", whole):                   # codes stay ("H-1", "B-17"); "105TH" -> "105th"
+            return whole.lower() if re.match(r"^\d+(ST|ND|RD|TH)\.?$", whole) else whole
         word = whole.rstrip(".")                      # "BRITAIN." -> "BRITAIN" and "."; "U.S." stays
         if word.lower() + "." in keep:
             word = whole
@@ -854,6 +855,7 @@ def awm_record(s, path):
     words = clean(place_m.group(1)) if place_m else ""
     caption = clean(m.group(1))
     caption = re.sub(r"^([A-Z ,.'-]+\.\s*)?\d{4}-\d{2}-\d{2}\.\s*", lambda mm: mm.group(1) or "", caption)
+    caption = re.sub(r"\bNo\.? ?(\d)", r"Number \1", caption)      # "No 7 Squadron" (tidy drops "No 7" as a code)
     answer = tidy(capped_words(sentence_case(caption, re.split(r"[:,]", words)), 80))
     if not usable(answer) or not_shown(answer):
         return None
