@@ -114,7 +114,7 @@ Licence or terms: {licence}
 # Words that mention or suggest a child or young person, beyond review_sources.CHILD. Wide on purpose; English,
 # Dutch, French, German, Italian and Spanish (museum records are not always in English).
 MINOR = re.compile(
-    r"\b(putt[oi]s?|puttini|cupids?|amor(ino|ini|etto|etti|ini)?|amoretti|cupido|cherub\w*|eros|ganymed\w*|young\w*|"
+    r"\b(putt[oi]s?|puttini|cupids?|amor(ino|ini|etto|etti|ini)?|amoretti|cupido|cherub\w*|ganymed\w*|young\w*|"
     r"youth\w*|juvenile\w*|maiden\w*|lolita\w*|nymphets?|schoolgirls?|schoolboys?|students?|uniforms?|petite|"
     r"barely legal|virgin\w*|innocen\w*|little|lads?|lass(ie)?s?|teenage\w*|tween\w*|loli|shota\w*|chibi|"
     r"kind|kinderen|kindje\w*|meisje\w*|jongen\w*|jonge|knaap\w*|jeune\w*|enfant\w*|fillette\w*|garçon\w*|"
@@ -144,7 +144,7 @@ MYTH = re.compile(
     r"Persephone|Pluto|Hades|Philomela|Tereus|Cassandra|Ajax|Dinah|Tamar|Bathsheba|Lot|Potiphar\w*|Pasipha[eë]|"
     r"Daphne|Syrinx|Arethusa|Boreas|Orithyia|Deianira|Nessus|Lapiths?|Centaur\w*|Satyrs?|Pan|Fauns?|Silenus|"
     r"Hermaphrodit\w*|Salmacis|Medusa|Thetis|Semele|Judith|Holofernes|Salome|Cleopatra|Sebastian|Andromeda|"
-    r"Angelica|Ruggiero|Rinaldo|Armida|Zeus|Jupiter|Jove|Apollo|Poseidon|Neptune|Triton\w*|Nereid\w*)\b")
+    r"Eros|Angelica|Ruggiero|Rinaldo|Armida|Zeus|Jupiter|Jove|Apollo|Poseidon|Neptune|Triton\w*|Nereid\w*)\b")
 
 # Animals and creatures (bestiality is never allowed; animals in erotic scenes are left out altogether).
 ANIMAL = re.compile(
@@ -1097,6 +1097,8 @@ def commons_check(ws, group, pageid, title, info):
         why = "in a deletion, copyright or identity-problem category"
     else:
         why = screen(text, categories, photo=not drawn)
+    if not why and re.search(r"\b(linga\w*|lingam\w*|yoni|shivling\w*|shiva ?linga\w*)\b", f"{text} {categories}", re.I):
+        why = "a religious symbol (linga or yoni), not a picture of adults"
     if not why and group == "sex_drawings" and not drawn:
         why = "not a drawing (this collection is for drawings and illustrations)"
     if not why and COMMONS_GROUPS[group].get("photos_only") and drawn:

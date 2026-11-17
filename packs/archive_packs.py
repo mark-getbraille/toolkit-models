@@ -6,6 +6,12 @@ returns [(file name, JPEG bytes or None, row)], where a row is {"question", "ans
 record says where the photo was taken (see places.py; museum objects say where they were made, place_kind "origin")
 and "child": True when the caption mentions a child. The limit counts pictures.
 
+Graphic pictures (the dead, wounds, disaster casualties: war archives such as the Australian War Memorial have many)
+are kept by the owner's rule, with the record's own plain caption, and every row of such a picture carries
+"content": "graphic" (GRIM finds them; each builder's log says how many). Still left out: anything sexual, sexual
+violence, torture or execution scenes, and pictures whose caption names both a child and death or injury (a dead or
+injured child).
+
 Every picture gets "Describe this picture." with its maker's own caption, tidied (catalogue codes, exhibition notes
 and file notes taken out), at least 6 words long. A picture whose record names the place also gets "Where was this
 photo taken?" as a second row for the same picture (food_packs.with_twins). Nothing is written by an AI model.
@@ -41,9 +47,10 @@ place names from the record, US states, months and words in quotation marks keep
                       English translation twins as for the other languages.
   anefo               Nationaal Archief (the Netherlands) photographs, mostly the Anefo press agency (1945-1989): about
                       430,000 photos with their Dutch captions, CC0 or public domain (both scan and metadata,
-                      https://www.nationaalarchief.nl/onderzoeken/open-data/fotos). The Archive's own API is "temporarily
-                      unavailable", so the files come from the copy the Archive put on Wikimedia Commons ("Images from
-                      Nationaal Archief"), with the Dutch caption and "depicted place" of each file. Many show public
+                      https://www.nationaalarchief.nl/onderzoeken/open-data/fotos). The Archive's own API is
+                      "temporarily unavailable", so the files come from the copy the Archive put on Wikimedia Commons
+                      ("Images from Nationaal Archief"), with the Dutch caption ("Beschrijving") and place ("Locatie",
+                      or the Netherlands when the file is filed under "Netherlands photographs taken on ..."). Many show public
                       figures and events. Dutch translation twins with the model already used for Rijksmuseum texts.
   kremlin             Photographs on the Russian President's English website (en.kremlin.ru), with their captions and
                       the place each gallery gives. "All content on this site is licensed under Creative Commons
@@ -102,7 +109,8 @@ from documentary_packs import tidy, usable, picture_rows, get_json, finish, comm
 # Words that mean a photo shows the dead, wounds, disaster casualties or other graphic scenes (war archives have
 # many). By the owner's rule such photos are kept, described plainly from the record, and their rows carry
 # "content": "graphic" (so the kit can leave them out of picture-making and show them only when chosen).
-GRIM = re.compile(r"\b(dead|death|corpses?|bod(y|ies) of|killed|wounded|wounds?|casualt\w*|injur\w*|bleeding|blood|"
+GRIM = re.compile(r"\b(dead(?! sea\b| end\b)|corpses?|bod(y|ies) of|killed|wounded|wounds?|casualt\w*|injur\w*|"
+                  r"bleeding|blood|"
                   r"grave|graves|burial|buried|massacre|atrocit\w*|skeleton\w*|remains of|mutilat\w*|amputat\w*|"
                   r"lijk\w*|doden|dode|gewond\w*|gesneuveld\w*|slachtoffers?|døde?|lig|såret)\b", re.I)
 # Still left out whatever the record says: sexual violence, and torture or execution scenes (and their propaganda).
@@ -110,7 +118,8 @@ NEVER_SHOWN = re.compile(r"\b(rape[ds]?|raping|sexual(ly)? (assault\w*|abuse\w*|
                          r"voldtægt\w*|tortur\w*|execut\w*|beheading|hanged|hanging bodies|lynch\w*|firing squad|"
                          r"marteling\w*|gemarteld|executie\w*|terechtgesteld|henrettelse\w*)\b", re.I)
 # Words for children in Danish and Dutch that expression_packs.CHILD does not have.
-CHILD_MORE = re.compile(r"\b(kinderen|kindje|børn|barn|barnet|drenge?|drengen|piger?|pigen|spædbarn|kleuters?|peuters?|"
+CHILD_MORE = re.compile(r"\b(kinderen|kindje|børn|barn|barnet|drenge?|drengen|piger?|pigen|spædbarn|kleuters?|"
+                        r"peuters?|"
                         r"scholieren|scholier|schoolkinderen|zuigeling\w*|jeugd)\b", re.I)
 # Words for nudes in Danish and Dutch (documentary_packs.NOT_SHOWN has the English ones).
 NUDE_MORE = re.compile(r"\b(nøgen|nøgne|halvnøgen|akt|aktstudie|aktmodel|afklædt|draperet|half[- ]draped|naakt\w*|"
@@ -147,13 +156,13 @@ CAPITALS = {w.lower(): w for w in (
     "September", "October", "November", "December", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
     "Saturday", "Sunday", "American", "Americans", "Indian", "Indians", "Mexican", "Hawaiian", "Japanese", "Chinese",
     "English", "Spanish", "Navajo", "Hopi", "Christmas", "Easter", "Australia", "Australian", "Australians",
-    "British", "German", "Germans", "Japan", "New", "Guinea", "Papua", "Borneo", "France", "Egypt", "Palestine",
+    "British", "German", "Germans", "Japan", "Guinea", "Papua", "Borneo", "France", "Egypt", "Palestine",
     "Gallipoli", "Europe", "Pacific", "Atlantic", "Mississippi", "Missouri", "Ohio", "Hudson", "Colorado",
     "Sydney", "Melbourne", "Brisbane", "Adelaide", "Perth", "Darwin", "Canberra", "Victoria", "Queensland",
     "Tasmania", "Wales", "London")}
-for _state in US_STATES:
-    for _word in _state.split():
-        CAPITALS[_word.lower()] = _word
+for _state in US_STATES:                 # one-word states; "New", "North" and the like only from the record's places
+    if " " not in _state:
+        CAPITALS[_state.lower()] = _state
 
 
 def mostly_capitals(text):
@@ -176,17 +185,21 @@ def sentence_case(text, names=()):
 
     def one(m):
         """One word, in lower case unless it is kept."""
-        word = m.group(0)
+        whole = m.group(0)
+        if re.search(r"\d", whole):
+            return whole
+        word = whole.rstrip(".")                      # "BRITAIN." -> "BRITAIN" and "."; "U.S." stays
+        if word.lower() + "." in keep:
+            word = whole
+        tail = whole[len(word):]
         low = word.lower()
-        if re.search(r"\d", word):
-            return word
         if low in keep:
-            return keep[low]
-        if low in quoted:
-            return low[:1].upper() + low[1:]
-        return low
+            return keep[low] + tail
+        if low.strip("\"“”") in quoted:
+            return low[:1].upper() + low[1:] + tail
+        return low + tail
 
-    out = re.sub(r"[A-Za-z][A-Za-z'’.-]*", one, text)
+    out = re.sub(r"[A-Za-z0-9][A-Za-z0-9'’.-]*", one, text)
     return re.sub(r"(^|[.!?]\s+)([a-z])", lambda m: m.group(1) + m.group(2).upper(), out)
 
 
@@ -483,8 +496,8 @@ def getty_object(s, uri):
         return None
     picture = re.sub(r"/full/full/0/default\.jpg$", f"/full/!{LONG_SIDE},{LONG_SIDE}/0/default.jpg", pictures[0])
     maker = clean(((record.get("produced_by") or {}).get("_label") or "").replace("Production of Artwork by", ""))
-    page = next((p.get("id") for p in record.get("subject_of") or [] if "/art/collection/object/" in (p.get("id") or "")),
-                uri)
+    page = next((p.get("id") for p in record.get("subject_of") or []
+                 if "/art/collection/object/" in (p.get("id") or "")), uri)
     credit = (f"{title}" + (f", {maker}" if maker and maker.lower() != "unknown" else "")
               + f", The J. Paul Getty Museum, Los Angeles, Open Content (no copyright; metadata CC0), {page}")
     place = place_from_text(getty_text(record, "Creation Place Description"))
@@ -835,20 +848,20 @@ def awm_record(s, path):
     text = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "|", re.sub(r"<script.*?</script>", "", page, flags=re.S)))
     copyright_ok = re.search(r"Copyright expired - public domain|This item is in the Public Domain", text)
     m = re.search(r"\|\s*Description\s*\|[|\s]*([^|]{20,})", text)
-    place_m = re.search(r"\|\s*Place\s*\|[|\s]*([^|]{3,})", text)
+    place_m = re.search(r'<a href="/collection/PL\d+">([^<]+)</a>', page)     # "Europe: France, Somme, Pozieres"
     if not copyright_ok or not m or not picture.startswith("http"):
         return None
     words = clean(place_m.group(1)) if place_m else ""
     caption = clean(m.group(1))
     caption = re.sub(r"^([A-Z ,.'-]+\.\s*)?\d{4}-\d{2}-\d{2}\.\s*", lambda mm: mm.group(1) or "", caption)
-    answer = tidy(capped_words(sentence_case(caption, words.split(",")), 80))
+    answer = tidy(capped_words(sentence_case(caption, re.split(r"[:,]", words)), 80))
     if not usable(answer) or not_shown(answer):
         return None
-    parts = [p.strip() for p in words.split(",") if p.strip()]
-    country = country_named(parts[0]) if parts else ""
-    place = place_name(*list(reversed(parts[1:]))[:2], country) if country else ""
-    credit = (f"{caption[:150]}, Australian War Memorial, {path.rsplit('/', 1)[-1]}, copyright expired - public domain, "
-              f"{AWM}{path}")
+    parts = [p.strip() for p in re.split(r"[:,]", words) if p.strip()]
+    at = next((i for i, p in enumerate(parts) if country_named(p)), -1)        # the first part that is a country
+    place = place_name(*list(reversed(parts[at + 1:]))[:2], country_named(parts[at])) if at >= 0 else ""
+    credit = (f"{caption[:150]}, Australian War Memorial, {path.rsplit('/', 1)[-1]}, copyright expired - public "
+              f"domain, {AWM}{path}")
     return (f"awm-{path.rsplit('/', 1)[-1]}.jpg", picture, picture_rows(answer, credit, place))
 
 
@@ -899,8 +912,8 @@ ARCHIVE_PACKS = {
                                                          "'No known copyright restrictions', each with its holding "
                                                          "library or museum below."),
     "smk": (build_smk, "Statens Museum for Kunst (National Gallery of Denmark), https://open.smk.dk : public-domain "
-                       "works (CC0 / Public Domain Mark), titles from SMK's records (Danish, or English where SMK wrote "
-                       "it)."),
+                       "works (CC0 / Public Domain Mark), titles from SMK's records (Danish, or English where SMK "
+                       "wrote it)."),
     "anefo": (build_anefo, "Nationaal Archief, The Hague (mostly the Anefo collection), CC0 or public domain for scan "
                            "and metadata (https://www.nationaalarchief.nl/onderzoeken/open-data/fotos); the copy on "
                            "Wikimedia Commons, Category:Images from Nationaal Archief. Photographers named below."),
