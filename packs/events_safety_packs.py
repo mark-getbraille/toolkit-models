@@ -1115,15 +1115,18 @@ LOC_POSTER_SEARCHES = [("collections/works-progress-administration-posters/", {"
 POSTER_NOT_SAFETY = re.compile(r"\b(war bonds?|enlist|recruit\w*|propaganda|election|theatre|theater|concert|"
                                r"exhibition|circus|travel|tourism|film|movie)\b", re.I)
 COMMONS_SAFETY_TRAINING = ("Safety posters", "Occupational Safety and Health Administration",
-                           "Occupational safety and health", "Personal protective equipment",
-                           "High-visibility clothing",
-                           "Working at height")
+                           "Personal protective equipment", "High-visibility clothing", "Working at height")
+# A Commons caption must name safety equipment or a hazard, and not be about a meeting or a signing.
+TRAINING_NOT = re.compile(r"\b(meeting|signing|alliance|conference|stakeholder|ceremony|award\w*|speaks?|speech|"
+                          r"secretary|exhibition|press|roundtable|announces?|visit\w*)\b", re.I)
 PHIL_SAFETY_TERMS = ("personal protective equipment", "hard hat", "hearing protection", "face shield", "goggles",
                      "respirator", "NIOSH", "protective clothing", "coal miner", "occupational safety")
 PHIL_SAFETY_WORDS = re.compile(r"\b(protective|PPE|hard hat|helmet|respirator|goggles|face shield|gloves|gown|"
                                r"hearing|earplugs?|ear muffs?|safety|hazard\w*|occupational|NIOSH|worker\w*|miners?)\b",
                                re.I)
 PHIL_NOT_SAFETY = re.compile(r"\b(patient|lesion|rash|wound|micrograph|microscop\w*|specimen|culture|portrait|"
+                             r"pipet\w*|microbiologist|laborator\w*|biological safety cabinet|wastewater|vials?|"
+                             r"samples?|aliquots?|"
                              r"EIS Officer|graphic|infographic|illustration|poster)\b", re.I)
 
 
@@ -1171,7 +1174,7 @@ def commons_training_items(s, want, rng):
     for start in range(0, min(len(titles), want * 4), 50):
         for f in commons_files(s, titles[start:start + 50]):
             caption = tidy(capped_words(f["text"], 70)) if f["text"] else ""
-            if not usable(caption):
+            if not usable(caption) or not PHIL_SAFETY_WORDS.search(caption) or TRAINING_NOT.search(caption):
                 continue
             rows = marked([{"question": ASK_DESCRIBE, "answer": caption, "credit": f["credit"]}], caption,
                           f["title"], " ".join(f["categories"]))

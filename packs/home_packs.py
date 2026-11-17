@@ -377,7 +377,7 @@ def build_open_images_home(limit):
 HOME_FREE = re.compile(r"^(cc0|public domain|pd|cc by \d|cc-by-\d|cc by-\d|mit|expat|apache)", re.I)
 NOT_A_PHOTO = re.compile(r"\b(drawings?|illustrations?|paintings?|logos?|icons?|emoji|cartoons?|clip ?art|diagrams?|"
                          r"in art|in heraldry|coats? of arms|stamps?|maps?|advertis\w*|videos?|audio|microscop\w*|"
-                         r"SEM|micrographs?|slides?|specimens? in alcohol|museum specimens?)\b", re.I)
+                         r"SEM|micrographs?|slides?|specimens? in alcohol|museum specimens?|casent\d+)\b", re.I)
 COMMONS_PLACES = {}        # {file title: the country at its camera coordinates}
 # An insect's or plant's life stage, which the child check must not take for a child.
 LIFE_STAGE = re.compile(r"\b(juvenile\w*|nymph\w*|larva\w*|instars?|young (ticks?|insects?|roaches|cockroaches|"
