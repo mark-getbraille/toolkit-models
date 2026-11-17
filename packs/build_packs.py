@@ -350,9 +350,15 @@ def build_commons(limit):
             ids = [f"M{p['pageid']}" for p in pages if p.get("pageid")]
             labels = {}
             if ids:
-                entities = s.get(COMMONS_API, timeout=60, params={"action": "wbgetentities", "format": "json",
-                                                                  "ids": "|".join(ids), "props": "labels",
-                                                                  "languages": "en"}).json().get("entities", {})
+                entities = {}
+                for attempt in range(4):        # Commons sometimes answers "slow down" with a web page, not data
+                    try:
+                        entities = s.get(COMMONS_API, timeout=60, params={
+                            "action": "wbgetentities", "format": "json", "ids": "|".join(ids), "props": "labels",
+                            "languages": "en", "maxlag": 5}).json().get("entities", {})
+                        break
+                    except Exception:  # noqa: BLE001 - wait longer each time; without labels the files still count
+                        time.sleep(15 * (attempt + 1))
                 labels = {k: ((v.get("labels") or {}).get("en") or {}).get("value", "") for k, v in entities.items()}
             for p in pages:
                 info = (p.get("imageinfo") or [{}])[0]

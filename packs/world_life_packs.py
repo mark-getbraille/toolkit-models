@@ -47,6 +47,7 @@ photographer's country where it lies in the photo's region, else the region.
 """
 
 import csv
+import os
 import io
 import json
 import math
@@ -362,9 +363,31 @@ def build_uroac_crossings(limit):
     """The UrOAC pack's pictures: [(name, JPEG or None, row)]. The labels are read piece by piece from the outer zip;
     the photos are inside a second zip that can only be read from its start, so they are read in order until there
     are enough (all 3.2 GB for a full pack)."""
-    tree = mendeley_tree(*UROAC)
-    address = next(url for name, url in tree.items() if name.lower().endswith(".zip"))
-    outer = remote_zip(address)
+    # The photos must be read from the start of an inner zip, which takes longer than Mendeley's signed download
+    # address lasts; so the archive (about 3.2 GB) is downloaded to the build machine's disk first, with a fresh
+    # address (and resuming) whenever the old one stops working.
+    import tempfile
+    path = os.path.join(tempfile.gettempdir(), "uroac.zip")
+    s = session()
+    for attempt in range(8):
+        tree = mendeley_tree(*UROAC)
+        address = next(url for name, url in tree.items() if name.lower().endswith(".zip"))
+        have = os.path.getsize(path) if os.path.exists(path) else 0
+        try:
+            with s.get(address, stream=True, timeout=300, headers={"Range": f"bytes={have}-"} if have else {}) as r:
+                if r.status_code == 416:                       # already complete
+                    break
+                r.raise_for_status()
+                if have and r.status_code != 206:              # no resuming: start again
+                    have = 0
+                with open(path, "ab" if have else "wb") as f:
+                    for block in r.iter_content(1 << 20):
+                        f.write(block)
+            break
+        except Exception as e:  # noqa: BLE001 - expired address or a dropped connection: a fresh address, carry on
+            say(f"UrOAC download interrupted ({e}); trying again with a fresh address.")
+            time.sleep(10 * (attempt + 1))
+    outer = zipfile.ZipFile(path)
     labels = {n.rsplit("/", 1)[-1].rsplit(".", 1)[0]: yolo_boxes(outer.read(n).decode("utf-8", "replace"))
               for n in outer.namelist() if n.upper().startswith("LABELS/") and n.endswith(".txt")}
     say(f"UrOAC: {len(labels)} labelled photos")
