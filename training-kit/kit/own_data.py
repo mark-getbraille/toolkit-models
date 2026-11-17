@@ -18,6 +18,22 @@ recognised by themselves (several can be mixed in one folder):
 A folder made by the program's "Describe pictures" window (a describing workspace, kit\\describe_package.py) is
 layout a) with a work file, describing.json, that gives each picture a status: only pictures marked "described" or
 "checked" there are used; the others (not described yet, skipped, or needing another look) are left out and said.
+
+REVIEW COLLECTIONS (review_sources.py, adult_review_sources.py): a workspace whose describing.json says
+"review_only": true holds pictures that a trusted sighted adult must screen first. From such a workspace (and from
+any folder inside it) ONLY pictures marked "checked" are used; "described" is not enough, and a picture the work file
+does not list is never used. A description that is empty or still says "<description needed>" is refused, in any
+folder. Those pictures are counted in the summary as "waiting for review".
+Content: a review workspace's describing.json gives the whole collection a content tag ("content": "medical",
+"intimate" or "sexual"), and a picture's own entry may give it one too ("content": "intimate", as Fitzpatrick17k's
+genital-site pictures have). A picture is used only when EVERY tag it has (its own and its collection's) is among
+the contents the caller allows (check_folder's contents=: the training's content choices, see
+sources.allowed_contents); otherwise it is left out and said. The same applies to a tagged picture in any workspace.
+Terms: a review collection's describing.json may say "review_category": "noncommercial" or "research"; such a
+collection is used only when the caller allows that category (categories=: the personal-use boxes).
+Picture-making training calls check_folder with review=False: then every picture in a review workspace is left out.
+Rows from a review workspace have "source": "review" (not "own"), "review" (the collection's key or name),
+"review_category" and "contents" (the tags it needed).
 Its other versions of a description (photo.other-Anna.txt) are never read as descriptions (only photo.txt and
 photo.caption are), and a question written in the window is used instead of the usual one.
 
@@ -44,7 +60,8 @@ more, otherwise "Describe this picture." (the toolkit's own questions, as in sou
 Pictures may be jpg, jpeg, png, webp, bmp, gif or tif. About 1 in 20 pictures (at least 1, at most 50) is kept back
 as a test picture, the same ones every time, so the model can be compared before and after training.
 
-Main part: check_folder(folder, copies=None) -> (rows, problems, summary). Without copies it only checks (the
+Main part: check_folder(folder, copies=None, report=None, contents=(), review=True, categories=OPEN_CATEGORIES) ->
+(rows, problems, summary). Without copies it only checks (the
 program's "Check my pictures" button), and each row's "picture" is the original file. With copies (a folder), a
 smaller training copy of each picture is made there with sources.smaller, and "picture" is that copy.
 
@@ -88,6 +105,11 @@ NOT_DESCRIPTIONS = (".draft.txt", ".narration.txt")         # text files beside 
 OTHER_VERSION = re.compile(r"\.other(-[^\\/]*)?\.txt$", re.IGNORECASE)  # photo.other-Anna.txt
 WORK_FILE = "describing.json"   # a describing workspace's work file (describe_package.py)
 READY = ("described", "checked")  # the statuses in it that are used for training
+REVIEW_READY = ("checked",)       # in a review-only workspace, only this status is used
+NEEDED = "<description needed>"   # a draft that still says this is not a description yet
+REVIEW_SOURCE = "review"          # the "source" of rows from a review workspace
+# The review categories used without a personal-use choice ("" is a review workspace that names none).
+OPEN_CATEGORIES = ("", "open", "share-alike")
 
 LAYOUT_NAMES = {"text file": "with a text file of the same name",
                 "table": "listed in a captions.csv or metadata.csv table",
@@ -284,20 +306,57 @@ def walk(folder):
     return pictures, tables, lists
 
 
+def workspace_info(folder, cache):
+    """What a describing workspace's work file in folder says, as a dict: "pictures" {picture file name in lower
+    case: (status, question, content tag)}, "review" (True when "review_only" is true), "content" (the collection's
+    content tag, "" for none), "category" (its review_category) and "name" (its review_source key, or its name).
+    A folder that is not a workspace, or whose work file cannot be read, gives empty values. cache keeps each
+    folder's answer."""
+    if folder not in cache:
+        info = {"pictures": {}, "review": False, "content": "", "category": "", "name": "", "workspace": False}
+        try:
+            with open(os.path.join(folder, WORK_FILE), encoding="utf-8") as f:
+                data = json.load(f)
+            info["workspace"] = True
+            info["review"] = data.get("review_only") is True or str(data.get("review_only")).lower() == "true"
+            info["content"] = clean(data.get("content", "")).lower()
+            info["category"] = clean(data.get("review_category", "")).lower()
+            info["name"] = clean(data.get("review_source", "")) or clean(data.get("name", "")) or \
+                os.path.basename(folder)
+            for name, entry in data.get("pictures", {}).items():
+                if isinstance(entry, dict):
+                    info["pictures"][name.lower()] = (str(entry.get("status", "new")),
+                                                      clean(entry.get("question", "")),
+                                                      clean(entry.get("content", "")).lower())
+        except (OSError, ValueError, AttributeError):
+            pass
+        cache[folder] = info
+    return cache[folder]
+
+
 def workspace_status(folder, cache):
     """{picture file name in lower case: (status, question)} from a describing workspace's work file in folder
     ({} when the folder is not a workspace or its work file cannot be read); cache keeps each folder's answer."""
-    if folder not in cache:
-        cache[folder] = {}
-        try:
-            with open(os.path.join(folder, WORK_FILE), encoding="utf-8") as f:
-                pictures = json.load(f).get("pictures", {})
-            for name, entry in pictures.items():
-                if isinstance(entry, dict):
-                    cache[folder][name.lower()] = (str(entry.get("status", "new")), clean(entry.get("question", "")))
-        except (OSError, ValueError, AttributeError):
-            pass
-    return cache[folder]
+    return {name: found[:2] for name, found in workspace_info(folder, cache)["pictures"].items()}
+
+
+def review_home(folder, cache, infos):
+    """The review-only workspace folder that folder is (or is inside), or None. Every folder above is looked at,
+    so pictures in a sub-folder of a review collection (which its work file does not list) are never used as
+    ordinary pictures. cache keeps each folder's answer; infos is workspace_info's cache."""
+    key = same_path(folder)
+    if key not in cache:
+        parent = os.path.dirname(key)
+        if workspace_info(folder, infos)["review"]:
+            cache[key] = folder
+        else:
+            cache[key] = review_home(parent, cache, infos) if parent != key else None
+    return cache[key]
+
+
+def needed_contents(picture_tag, collection_tag):
+    """The content tags a picture needs: its own and its collection's (without "")."""
+    return sorted({t for t in (picture_tag, collection_tag) if t})
 
 
 def not_a_description(path):
@@ -350,13 +409,17 @@ def make_copy(original, target):
         sources.ARCHIVE_DIR = keep
 
 
-def check_folder(folder, copies=None, report=None):
+def check_folder(folder, copies=None, report=None, contents=(), review=True, categories=OPEN_CATEGORIES):
     """Read the pictures and descriptions in folder (see the module docstring) and return (rows, problems, summary):
     rows ready for training, problems as plain sentences, and a summary in plain words (with the problems). Nothing
     is trained. copies: a folder for the smaller training copies (None: only check). report(text): says progress
-    for big folders (every 500 pictures)."""
+    for big folders (every 500 pictures). contents: the content tags allowed ("medical", "intimate", "sexual" ...;
+    none by default, so a tagged picture is left out unless the caller allows its tags). review: False leaves out
+    every picture of a review-only workspace (picture-making). categories: the review categories allowed (the
+    personal-use choices add "noncommercial" and "research")."""
     problems = {"tables": [], "lines": [], "missing": [], "empty": [], "undescribed": [], "unreadable": [],
-                "small": [], "not ready": []}
+                "small": [], "not ready": [], "waiting": [], "content": {}, "terms": {}, "review off": []}
+    contents, categories = set(contents or ()), set(categories or ())
     folder = os.path.abspath(folder or "")
     if not folder or not os.path.isdir(folder):
         text = f"The folder {folder} was not found. Choose the folder that holds your pictures."
@@ -374,27 +437,67 @@ def check_folder(folder, copies=None, report=None):
     for path in lists:
         read_jsonl(path, found, problems, places)
     described, waiting, has_text, workspaces, questions = {}, [], set(), {}, {}
+    homes, tags = {}, {}                         # review workspace of each folder; each picture's review details
     for picture in pictures:
         key = same_path(picture)
-        status = workspace_status(os.path.dirname(picture), workspaces).get(os.path.basename(picture).lower())
-        if status and status[0] not in READY:     # a describing workspace's picture that is not ready
-            problems["not ready"].append(os.path.relpath(picture, folder))
+        base = os.path.dirname(picture)
+        relative = os.path.relpath(picture, folder)
+        info = workspace_info(base, workspaces)
+        status = info["pictures"].get(os.path.basename(picture).lower())
+        home = review_home(base, homes, workspaces)
+        if home is not None:                      # a review collection's picture: the strict rules
+            has_text.add(os.path.dirname(key))
+            home_info = workspace_info(home, workspaces)
+            if not review:
+                problems["review off"].append(relative)
+                continue
+            if home_info["category"] not in categories:
+                problems["terms"].setdefault((home_info["name"], home_info["category"]), []).append(relative)
+                continue
+            if not status or same_path(home) != same_path(base) or status[0] not in REVIEW_READY:
+                problems["waiting"].append(relative)
+                continue
+            tags[picture] = (home_info["name"], home_info["category"],
+                             needed_contents(status[2], home_info["content"]))
+        elif status and status[0] not in READY:   # a describing workspace's picture that is not ready
+            problems["not ready"].append(relative)
             has_text.add(os.path.dirname(key))
             continue
-        if key in found:
-            described[picture] = found[key]
+        need = tags[picture][2] if picture in tags else needed_contents(status[2] if status else "",
+                                                                         info["content"])
+        left = [t for t in need if t not in contents]
+        if left:                                  # a content tag the training's choices do not allow
+            problems["content"].setdefault(", ".join(left), []).append(relative)
+            has_text.add(os.path.dirname(key))
+            continue
+        if need and picture not in tags:
+            tags[picture] = ("", "", need)
+        reviewed = picture in tags and bool(tags[picture][0])
+        if key in found and not reviewed:          # a review picture is only ever described by its own .txt
+            entries = [e for e in found[key] if NEEDED not in e[1].lower()]
+            if len(entries) < len(found[key]) and not entries:
+                problems["waiting"].append(relative)
+            else:
+                described[picture] = entries
             has_text.add(os.path.dirname(key))
             continue
         text_file = sidecar(picture)
         if text_file:
             has_text.add(os.path.dirname(key))
             answer = read_text(text_file)
-            if answer:
+            if answer and NEEDED in answer.lower():
+                problems["waiting"].append(relative)        # a draft still waiting for its description
+            elif answer:
                 asked = (status[1] if status and status[1] and status[1] != NARRATE else
                          folder_question(os.path.dirname(picture), folder, questions) or question_for(answer))
                 described[picture] = [(asked, answer, "text file", os.path.relpath(text_file, folder))]
+            elif reviewed:
+                problems["waiting"].append(relative)        # a checked review picture with an empty description
             else:
                 problems["empty"].append(os.path.relpath(text_file, folder))
+            continue
+        if reviewed:
+            problems["waiting"].append(relative)            # a review picture with no description at all
             continue
         waiting.append(picture)
 
@@ -439,10 +542,15 @@ def check_folder(folder, copies=None, report=None):
         place, kind = places.get(same_path(picture)) or (
             folder_question(os.path.dirname(picture), folder, folder_places, PLACE_FILE).strip(" ,."), "photo")
         where = ({"place": place} if kind == "photo" else {"place": place, "place_kind": kind}) if place else {}
+        review_name, review_category, need = tags.get(picture, ("", "", []))
+        extra = {"contents": need} if need else {}
+        if review_name:                           # a checked picture of a review collection
+            extra.update(review=review_name, review_category=review_category)
         for question, answer, layout in dict.fromkeys(entry[:3] for entry in described[picture]):
             rows.append({"picture": path, "question": question, "answer": answer, "split": "",
-                         "source": SOURCE_KEY, "original": picture, "file": relative.replace(os.sep, "/"),
-                         "layout": layout, "credit": CREDIT, **where})
+                         "source": REVIEW_SOURCE if review_name else SOURCE_KEY, "original": picture,
+                         "file": relative.replace(os.sep, "/"), "layout": layout, "credit": CREDIT, **where,
+                         **extra})
         if report and number % 500 == 0:
             report(f"    {number} of {len(described)} of your pictures checked")
 
@@ -455,7 +563,8 @@ def check_folder(folder, copies=None, report=None):
             row["split"] = "test"
 
     sentences = problem_sentences(problems)
-    summary = make_summary(folder, len(pictures), used, rows, test_files, named_folders, sentences)
+    summary = make_summary(folder, len(pictures), used, rows, test_files, named_folders, sentences,
+                           len(problems["waiting"]))
     return rows, sentences, summary
 
 
@@ -476,6 +585,23 @@ def problem_sentences(problems):
         out.append(f"{plural(len(p['not ready']), 'picture')} in a describing workspace "
                    f"{'is' if len(p['not ready']) == 1 else 'are'} not described or checked yet (or skipped, or "
                    "needing another look), so left out: " + listed(p["not ready"], "") + ".")
+    if p["waiting"]:
+        out.append(f"{plural(len(p['waiting']), 'picture is', 'pictures are')} waiting for review (in a review "
+                   "collection only pictures marked checked are used, and a description that is empty or still says "
+                   f"{NEEDED} is never used), so left out: " + listed(p["waiting"], "") + ".")
+    if p["review off"]:
+        out.append(f"{plural(len(p['review off']), 'picture is', 'pictures are')} in a review collection, which is "
+                   "never used for this kind of training, so left out: " + listed(p["review off"], "") + ".")
+    for tags, files in sorted(p["content"].items()):
+        out.append(f"{plural(len(files), 'picture is', 'pictures are')} marked {tags} content, which the content "
+                   "choices of this training do not include (intimate needs both art with nudity and medical "
+                   "pictures; sexual needs art with nudity and adult sexual content), so left out: "
+                   + listed(files, "") + ".")
+    for (name, category), files in sorted(p["terms"].items()):
+        box = "research-only" if category == "research" else "non-commercial"
+        out.append(f"The review collection {name} is {box if category in ('research', 'noncommercial') else category}"
+                   f" ({plural(len(files), 'picture')}): it is left out because Include {box} collections is not "
+                   "ticked" + (" (and its terms agreed)" if category == "research" else "") + ".")
     if p["unreadable"]:
         out.append(f"{plural(len(p['unreadable']), 'picture')} could not be read (damaged, or not really a picture): "
                    + listed(p["unreadable"], "") + ".")
@@ -491,9 +617,15 @@ def problem_sentences(problems):
     return out
 
 
-def make_summary(folder, found, used, rows, test_files, named_folders, sentences):
-    """The summary in plain words: how many pictures, how they are described, the test pictures and the problems."""
-    lines = [f"Your own pictures in {folder}: {plural(found, 'picture')} found, {used} can be used for training."]
+def make_summary(folder, found, used, rows, test_files, named_folders, sentences, waiting=0):
+    """The summary in plain words: how many pictures, how they are described, how many wait for review, the test
+    pictures and the problems."""
+    lines = [f"Your own pictures in {folder}: {plural(found, 'picture')} found, {used} can be used for training"
+             + (f", {waiting} waiting for review." if waiting else ".")]
+    reviewed = len({r["file"] for r in rows if r.get("review")})
+    if reviewed:
+        lines.append(f"{plural(reviewed, 'picture comes', 'pictures come')} from review collections (checked by a "
+                     "trusted sighted adult): the training is then for personal use only.")
     if rows:
         counts = {}
         for layout in [r["layout"] for r in {r["file"]: r for r in rows}.values()]:

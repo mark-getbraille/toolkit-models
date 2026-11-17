@@ -102,6 +102,25 @@ holds the workspace. Press Alt+K (Check my pictures) to hear how many pictures w
 and checked ones; the rest are listed as not ready. Then train as described in "HOW TO ADD YOUR OWN PICTURES.txt"
 (STEP 4 and STEP 5 there).
 
+Review collections
+Review collections are medical and adult picture collections that must be screened by a trusted sighted adult
+before anything is trained on them. Press Review collections (Alt+Y) in this window. The list (Alt+C) shows each
+collection's name, kind of licence with its terms in short, size, content, and how many of its pictures are already
+in your library; "About the chosen collection" (Alt+A) gives the details. Tick collections with Space, tick the
+promise (Alt+W) and press Download into a review workspace (Alt+D); research-only and non-commercial collections
+show their terms first. The download is said as it goes and written into the logs on the desktop. Each collection
+becomes a workspace in the Review folder of the picture library. To screen one, choose it and press Open in Describe
+pictures (Alt+O). At the top of this window it then says: "This is a review collection: only pictures you mark
+checked are used." Read REVIEW-INSTRUCTIONS.txt in its folder. Delete what must not be there, correct each draft
+description (replace any <description needed> with what the picture shows) and mark a picture checked (Alt+C) only
+when it is right. Described pictures are not enough here, and a package can never mark a picture checked for you:
+its checked pictures arrive as described, and you check them yourself. A package made from a review collection makes
+the workspace that imports it a review collection too. You do not need "Use this workspace for training": the
+training finds the review collections in the library by itself.
+A collection used with an organisation's permission says "Permission on file" or "Waiting for permission" in the
+list. Put their reply in the folder the list names (Permissions in the picture library); then it can be downloaded,
+or what they sent added with Import what they sent (Alt+I): choose their zip or folder.
+
 Keyboard commands in the Describe pictures window
 - Control+S: save the description and stay on the picture.
 - Alt+S: save and go to the next picture.
@@ -111,7 +130,7 @@ Keyboard commands in the Describe pictures window
   Pictures, Alt+Q Question, Alt+D Description.
 - Alt+C Mark as checked, Alt+N Needs another look, Alt+K Skip this picture, Alt+O Show the other version.
 - Alt+A Add pictures, Alt+G Add a folder of pictures, Alt+V Take stills from videos, Alt+E Export a package, Alt+I Import a package, Alt+T Use
-  this workspace for training, Alt+H or F1 this guide, Alt+L or Escape close.
+  this workspace for training, Alt+Y Review collections, Alt+H or F1 this guide, Alt+L or Escape close.
 - The Status field says what happened last; the Progress field says where you are, for example "Picture 14 of 120.
   63 described, 20 checked." Long tasks (adding pictures, packages, videos) are said as they go, and everything is
   written into the "Picture Model Training logs" folder on the desktop.

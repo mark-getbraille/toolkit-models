@@ -27,6 +27,11 @@ Command line:
                            [--with-nudity] [--with-medical] [--own FOLDER] [--own-only] [--limit N] [--work FOLDER]
                            [--personal-noncommercial] [--personal-research --accept-research-terms]
 
+Review collections (review_sources.py, adult_review_sources.py) are NEVER used here: no picture of a review-only
+"Describe pictures" workspace (own_data.check_folder with review=False), no picture or collection tagged "intimate" or
+"sexual" (sources.PICTURE_MAKING_NEVER), whatever is chosen; there is no --review or --with-sexual option here.
+never_for_review() is the last check, on every row, before a picture is learned from.
+
 Personal-use collections (--personal-noncommercial, --personal-research): as in train.py, the add-on is then for
 PERSONAL USE ONLY (its name gets "-personal"; REPORT.txt starts with the warning; ATTRIBUTION.txt lists them under their
 own heading; the zip gets PERSONAL-USE-ONLY.txt). Only those whose keys are in personal_sources.py's
@@ -254,7 +259,9 @@ def chosen_sources(args):
         never = set(getattr(sources, "NOT_FOR_PICTURE_MAKING", ()))
         # Personal-use collections only when their terms allow picture-making (PERSONAL_PICTURE_MAKING_OK).
         making_ok = set(getattr(sources, "PERSONAL_PICTURE_MAKING_OK", ()) or ())
-        return [s for s in found if s.key not in never and
+        # Intimate and sexual collections are never for picture-making, whatever is chosen.
+        banned = set(getattr(sources, "PICTURE_MAKING_NEVER", ("intimate", "sexual")))
+        return [s for s in found if s.key not in never and getattr(s, "content", "") not in banned and
                 (getattr(s, "group", "") not in ("noncommercial", "research") or s.key in making_ok)]
     except TypeError:
         if args.with_nudity or args.with_medical:
@@ -287,9 +294,22 @@ def library_rows(work, args):
     return train_rows, test_rows
 
 
-def own_rows(folder):
+REVIEW_NEVER = ("intimate", "sexual")
+
+
+def never_for_review(row):
+    """True for a row that a picture-making model must never learn from: a row of a review collection (it has
+    "review", or its source is "review"), or one tagged "intimate" or "sexual" (its "contents" or "content")."""
+    tags = set(row.get("contents") or []) | {row.get("content") or ""}
+    return bool(row.get("review") or row.get("source") == "review" or
+                tags & set(getattr(sources, "PICTURE_MAKING_NEVER", REVIEW_NEVER)))
+
+
+def own_rows(folder, args=None):
     """The person's own described pictures (own_data.check_folder, without smaller copies: the pictures are read at
-    full size), with its summary and any problems said. Rows marked "test" are kept back for the test."""
+    full size), with its summary and any problems said. Rows marked "test" are kept back for the test. args: the
+    command line's choices (its nudity and medical choices allow pictures tagged so; nothing else tagged is used,
+    and no picture of a review collection)."""
     try:
         import own_data
     except ImportError:
@@ -297,7 +317,15 @@ def own_rows(folder):
     if not os.path.isdir(folder):
         stop(f"The folder of your own pictures was not found: {folder}")
     say(f"  Your own pictures: reading {folder}.")
-    rows, _problems, summary = own_data.check_folder(folder)
+    # Never a review collection's picture, nor an intimate or sexual one (only nudity and medical, when chosen).
+    banned = set(getattr(sources, "PICTURE_MAKING_NEVER", ("intimate", "sexual")))
+    try:
+        allowed = sources.allowed_contents(getattr(args, "with_nudity", False),
+                                           getattr(args, "with_medical", False)) - banned
+        rows, _problems, summary = own_data.check_folder(folder, contents=allowed, review=False)
+    except TypeError:                                    # an older own_data.py without the review rules
+        rows, _problems, summary = own_data.check_folder(folder)
+    rows = [r for r in rows if not never_for_review(r)]
     for line in str(summary or "").splitlines():
         say("    " + line)
     return [dict(r, source="own", picture=r.get("original") or r["picture"]) for r in rows]
@@ -328,6 +356,9 @@ def choose_items(train_rows, test_rows, mine, tokenizer, args, wanted):
     Every picture with a row about a child (mentions_child), in the library or the person's own, is left out
     altogether, whatever its other rows say."""
     children = {r.get("picture") for r in [*train_rows, *test_rows, *mine] if mentions_child(r)}
+    # The last check: never a review collection's picture, nor an intimate or sexual one.
+    train_rows, test_rows, mine = ([r for r in rows if not never_for_review(r)] for rows in (train_rows, test_rows,
+                                                                                               mine))
 
     def items_of(rows, own=False):
         """The rows that are descriptions (and not of a picture of a child), as items."""
@@ -1096,7 +1127,7 @@ def main(argv=None):
         say("Step 3 of 7: choosing the described pictures (only real descriptions, in English) from the picture "
             "library.")
         train_rows, test_rows = ([], []) if args.own_only else library_rows(work, args)
-        mine = own_rows(args.own) if args.own else []
+        mine = own_rows(args.own, args) if args.own else []
         if mine:
             say("  A reminder: pictures of children are left out automatically when their description mentions a "
                 "child; also leave out pictures of anyone who has not agreed.")

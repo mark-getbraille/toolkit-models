@@ -17,6 +17,14 @@ photo.other-Anna.txt, which own_data.py never reads as a description (it only re
 When someone chooses between two versions, the versions not chosen are moved into the hidden sub-folder
 ".resolved versions" (own_data.py skips folders whose name starts with "."), so nothing is ever lost.
 
+REVIEW COLLECTIONS (review_sources.py, adult_review_sources.py): a workspace whose describing.json says
+"review_only": true holds pictures that a trusted sighted adult must screen first. own_data.py trains ONLY its
+"checked" pictures. A package can never approve a picture on someone's behalf: importing into a review workspace
+turns a package's "checked" into "described" (the person importing marks it checked themselves, after looking), and
+a package made from a review workspace carries its review marks (REVIEW_KEYS, and each picture's "content" tag), so
+importing it makes the receiving workspace a review workspace too. A description that still says
+"<description needed>" cannot be marked checked.
+
 People pass their work to each other as PACKAGES: zip files made by export_package and read by import_package,
 carried by USB stick, email or a shared drive. Nothing is sent anywhere by this module.
 
@@ -54,7 +62,12 @@ FORMAT = 1                               # the version of describing.json's layo
 
 NEW, DESCRIBED, CHECKED, LOOK, SKIP = "new", "described", "checked", "needs another look", "skip"
 STATUSES = (NEW, DESCRIBED, CHECKED, LOOK, SKIP)
-TRAINED = (DESCRIBED, CHECKED)           # the statuses own_data.py uses for training
+TRAINED = (DESCRIBED, CHECKED)           # the statuses own_data.py uses for training (only CHECKED in a review one)
+NEEDED = "<description needed>"          # a draft that still needs its description (never checked or trained)
+# The review marks of a review collection's describing.json, carried in packages (never removed by an import).
+REVIEW_KEYS = ("review_only", "content", "review_source", "review_category", "needs_explicit_choice",
+               "never_for_picture_making", "never_publish")
+REVIEW_NOTE = "This is a review collection: only pictures you mark checked are used."
 DEFAULT_QUESTION = "Describe this picture."
 PICTURE_ENDINGS = (".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif", ".tif", ".tiff")
 LONG_SIDE = 2048                         # pixels: bigger pictures are made smaller when added
@@ -254,6 +267,12 @@ class Workspace:
         with open(temporary, "w", encoding="utf-8") as f:
             json.dump(self.data, f, indent=1, ensure_ascii=False, sort_keys=True)
         os.replace(temporary, target)
+
+
+def is_review(workspace):
+    """True when the workspace is a review collection ("review_only": true in describing.json): only its checked
+    pictures are trained on."""
+    return workspace.data.get("review_only") is True
 
 
 def is_workspace(folder):
@@ -563,6 +582,9 @@ def mark_checked(workspace, name, person):
     workspace = open_workspace(workspace)
     if not description(workspace, name):
         raise PackageProblem("This picture has no description yet, so it cannot be checked.")
+    if NEEDED in description(workspace, name).lower():
+        raise PackageProblem(f"The description still says {NEEDED}. Write what the picture shows in its place "
+                             "first, then mark it as checked.")
     if other_versions(workspace, name):
         raise PackageProblem("This picture has another version of its description. Choose one first (Show the "
                              "other version).")
@@ -639,6 +661,8 @@ def export_package(workspace, out_zip, which="all", person="", say=None):
             "pictures": entries, "package": {"made_by": clean(person), "made_at": now(), "which": which}}
     if place_of(workspace):
         meta["place"] = place_of(workspace)            # where the pictures are from (place.txt is not packed)
+    if is_review(workspace):                           # the review marks travel with the pictures
+        meta.update({k: workspace.data[k] for k in REVIEW_KEYS if k in workspace.data})
     folder = os.path.dirname(os.path.abspath(out_zip))
     os.makedirs(folder, exist_ok=True)
     temporary = out_zip + ".new"
@@ -701,6 +725,9 @@ def import_package(workspace, zip_path, say=None):
       - when one text is an earlier version of the other (the newer one remembers replacing it), the newer is kept;
       - when they really differ, the newer one becomes the .txt and the other is saved beside it as
         <name>.other-<person>.txt, and the picture is marked "needs another look", so nothing is ever lost.
+    In a review workspace (or with a package made from one, which makes this workspace a review one too), a
+    package's "checked" becomes "described": only the person importing can mark it checked, after looking at it.
+    A picture checked here stays checked when the package brings the same description.
     Returns a plain summary, such as "12 new pictures, 30 descriptions added, 2 differences to look at."."""
     if not isinstance(workspace, Workspace) and not is_workspace(workspace):
         meta, _members = read_package(zip_path)
@@ -711,8 +738,17 @@ def import_package(workspace, zip_path, say=None):
     if isinstance(meta.get("place"), str) and meta["place"].strip() and not place_of(workspace):
         set_place(workspace, meta["place"])            # the sender's place, when this workspace has none yet
     sender = clean((meta.get("package") or {}).get("made_by", ""))
+    became_review = False
+    if meta.get("review_only") is True:                # a package from a review collection keeps its marks
+        became_review = not is_review(workspace)
+        for key in REVIEW_KEYS:
+            if key in meta and not workspace.data.get(key):
+                workspace.data[key] = meta[key]
+        workspace.data["review_only"] = True
+    review = is_review(workspace)
     known = known_hashes(workspace)
-    tally = {"new": 0, "added": 0, "updated": 0, "differences": 0, "checks": 0, "renamed": 0, "missing": 0}
+    tally = {"new": 0, "added": 0, "updated": 0, "differences": 0, "checks": 0, "renamed": 0, "missing": 0,
+             "unchecked": 0, "review": review, "became review": became_review}
     with zipfile.ZipFile(zip_path) as z:
         for number, (their_name, theirs) in enumerate(sorted(their_entries.items()), 1):
             if not isinstance(theirs, dict) or not is_picture(their_name) or their_name not in members:
@@ -721,6 +757,12 @@ def import_package(workspace, zip_path, say=None):
             data = z.read(members[their_name])
             digest = bytes_hash(data)
             theirs = dict(checked_entry(theirs), hash=digest)
+            if meta.get("review_only") is True and not theirs.get("content") and meta.get("content"):
+                theirs["content"] = meta["content"]    # each picture keeps its collection's content tag
+            if review and theirs.get("status") == CHECKED:
+                # A package cannot approve a picture of a review collection on someone's behalf.
+                theirs.update(status=DESCRIBED, checked_by="", checked_at="")
+                tally["unchecked"] += 1
             their_text_name = os.path.splitext(their_name)[0] + ".txt"
             their_text = clean(z.read(members[their_text_name]).decode("utf-8-sig", "replace")) \
                 if their_text_name in members else ""
@@ -733,7 +775,13 @@ def import_package(workspace, zip_path, say=None):
                 add_from_package(workspace, name, data, theirs, their_text, their_others, tally)
                 known[digest] = name
             else:
+                before = dict(workspace.entry(ours_name)), description(workspace, ours_name)
                 merge_picture(workspace, ours_name, theirs, their_text, their_others, sender, tally)
+                entry = workspace.entry(ours_name)
+                if review and before[0]["status"] == CHECKED and entry["status"] == DESCRIBED and \
+                        description(workspace, ours_name) == before[1]:
+                    # Checked here, and the package brought the same words: the check made here stays.
+                    entry.update({k: before[0][k] for k in ("status", "checked_by", "checked_at")})
             if say and number % 50 == 0:
                 say(f"{number} of {len(their_entries)} pictures of the package looked at.")
     for person in meta.get("people", []) + [sender]:
@@ -776,6 +824,8 @@ def add_from_package(workspace, name, data, theirs, text, others, tally):
         f.write(data)
     entry = workspace.entry(name)
     entry.update({k: v for k, v in theirs.items() if k in entry})
+    if theirs.get("content"):
+        entry["content"] = theirs["content"]      # a review picture's content tag ("intimate" ...) comes along
     entry["added_at"] = entry["added_at"] or now()
     if text:
         write_file_text(description_path(workspace.folder, name), text)
@@ -858,6 +908,8 @@ def merge_picture(workspace, name, theirs, their_text, their_others, sender, tal
             brought = True
     if brought and not counted:
         tally["differences"] += 1                                     # a difference found on their side
+    if theirs.get("content") and not entry.get("content"):
+        entry["content"] = theirs["content"]      # a content tag is never lost (only ever added)
     their_notes = clean(theirs.get("notes", ""))
     if their_notes and their_notes not in entry["notes"]:
         entry["notes"] = clean(f"{entry['notes']} {their_notes}")
@@ -883,6 +935,14 @@ def import_summary(tally, sender):
     if tally["missing"]:
         text += (f" {plural(tally['missing'], 'entry in the package has', 'entries in the package have')} no picture, "
                  "so it was left out." if tally["missing"] == 1 else " so they were left out.")
+    if tally.get("became review"):
+        text += (" The package comes from a review collection, so this workspace is now a review collection too: "
+                 "only pictures you mark checked are used for training.")
+    if tally.get("unchecked"):
+        text += (f" {plural(tally['unchecked'], 'picture was', 'pictures were')} marked checked in the package; in a "
+                 "review collection only a check made here counts, so "
+                 f"{'it is' if tally['unchecked'] == 1 else 'they are'} described here. Look at "
+                 f"{'it' if tally['unchecked'] == 1 else 'each one'} and mark it checked yourself (Alt+C).")
     if tally["differences"]:
         text += (" Choose Needs another look in Filter to find the differences, and use Show the other version on "
                  "each.")

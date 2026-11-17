@@ -38,6 +38,17 @@ train_pictures.py get --personal-noncommercial and --personal-research --accept-
 result and the Status field say. The research-terms window has its own letters: T (the terms list), I (I have read
 these terms), A (Agree), C (Cancel); Escape is Cancel and F1 opens READ ME FIRST.txt.
 
+Adult sexual content (review collections only): every Alt letter of this window is taken, so there is no box for
+it here. Ticking "Include art with nudity" for a picture describer opens SexualDialog, which asks "Also include adult
+sexual content from collections you have reviewed?" (its letters: A the explanation, S the check box, O OK,
+C Cancel; Escape is Cancel, which leaves it off). The answer is remembered for the describer ("sexual_describer" in
+settings.json); unticking art with nudity turns it off too, and it is always off for a picture-making model. With it,
+train.py gets --with-sexual (only ever together with --with-nudity).
+Review collections: they are downloaded and screened in Describe pictures (its "Review collections" button). For a
+picture describer every review workspace in <library>\\Review is passed to train.py as --review FOLDER; only its
+pictures marked "checked" are used, subject to the content choices, and the training is then for personal use only.
+A picture-making model never gets them.
+
 Describe pictures (Alt+J) opens describe_window.py: describing pictures together with friends, offline, in a
 workspace folder that "Your own pictures folder" can then point at (the data side is kit\\describe_package.py).
 
@@ -541,6 +552,67 @@ class ResearchTermsDialog(wx.Dialog):
             event.Skip()
 
 
+SEXUAL_QUESTION = "Also include adult sexual content from collections you have reviewed?"
+SEXUAL_ABOUT = ("Adult sexual content comes only from the adult review collections you downloaded in Describe "
+                "pictures (Review collections), and only from pictures a trusted sighted adult has looked at and "
+                "marked checked. It is used only together with art with nudity, never for a picture-making model, and "
+                "a model trained with it is for personal use only: never publish it, share it or put it in a product. "
+                "Leave the box unticked to leave it out.")
+
+
+class SexualDialog(wx.Dialog):
+    """Asked when "Include art with nudity" is ticked for a picture describer: "Also include adult sexual content
+    from collections you have reviewed?", with an explanation (a read-only field), a check box and OK and Cancel.
+    OK keeps what the box says; Cancel or Escape leaves it off. Standard controls, a label before the field, Alt
+    letters named in the tooltips, no default button, F1 opens READ ME FIRST.txt."""
+
+    def __init__(self, parent, value=False):
+        """The explanation, the check box (ticked when value) and the two buttons."""
+        super().__init__(parent, title="Adult sexual content", size=(620, 400),
+                         style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+        self.mnemonics = {}
+        panel = wx.Panel(self)
+        s = wx.BoxSizer(wx.VERTICAL)
+        s.Add(wx.StaticText(panel, label="&About this choice:"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 8)
+        self.about = wx.TextCtrl(panel, value=f"{SEXUAL_QUESTION} {SEXUAL_ABOUT}",
+                                 style=wx.TE_MULTILINE | wx.TE_READONLY)
+        s.Add(self.about, 1, wx.EXPAND | wx.ALL, 8)
+        self.mnemonics["a"] = self.about
+        self.box = wx.CheckBox(panel, label="Also include adult &sexual content from collections you have reviewed")
+        self.box.SetValue(bool(value))
+        self.box.SetToolTip("Only checked pictures of the adult review collections; personal use only (Alt+S)")
+        s.Add(self.box, 0, wx.ALL, 8)
+        row = wx.BoxSizer(wx.HORIZONTAL)
+        ok = wx.Button(panel, label="&OK")
+        ok.SetToolTip("Keep what the check box says (Alt+O)")
+        ok.Bind(wx.EVT_BUTTON, lambda e: self.EndModal(wx.ID_OK))
+        cancel = wx.Button(panel, label="&Cancel")
+        cancel.SetToolTip("Leave adult sexual content out (Alt+C)")
+        cancel.Bind(wx.EVT_BUTTON, lambda e: self.EndModal(wx.ID_CANCEL))
+        for b in (ok, cancel):
+            row.Add(b, 0, wx.ALL, 4)
+        s.Add(row, 0, wx.ALL, 4)
+        panel.SetSizer(s)
+        self.Bind(wx.EVT_CHAR_HOOK, self.on_key)
+        self.box.SetFocus()
+
+    def chosen(self):
+        """True when the box is ticked."""
+        return self.box.GetValue()
+
+    def on_key(self, event):
+        """Escape is Cancel; F1 opens READ ME FIRST.txt; Alt+A moves to the explanation."""
+        key = event.GetKeyCode()
+        if key == wx.WXK_ESCAPE:
+            self.EndModal(wx.ID_CANCEL)
+        elif key == wx.WXK_F1:
+            open_help(None)
+        elif event.AltDown() and not event.ControlDown() and 0 < key < 256 and chr(key).lower() in self.mnemonics:
+            self.mnemonics[chr(key).lower()].SetFocus()
+        else:
+            event.Skip()
+
+
 def open_help(kit):
     """Open READ ME FIRST.txt (the kit folder's copy when there is one, else the program's)."""
     path = os.path.join(kit, "READ ME FIRST.txt") if kit else resource("READ ME FIRST.txt")
@@ -653,9 +725,15 @@ class Wizard(wx.Frame):
         # The content choices, remembered for each kind of training (see CONTENT_DEFAULTS).
         self.content = {kind: {"nudity": chosen.get(f"nudity_{kind}", CONTENT_DEFAULTS[kind]),
                                "medical": chosen.get(f"medical_{kind}", CONTENT_DEFAULTS[kind])} for kind, _ in KINDS}
+        # Adult sexual content (review collections): asked when art with nudity is ticked (SexualDialog), only for
+        # a picture describer, remembered for it; never for a picture-making model.
+        self.sexual = {kind: bool(chosen.get(f"sexual_{kind}", False)) and kind == "describer" for kind, _ in KINDS}
         self.nudity = self.check(page, "Include art with nudit&y (non-sexual)",
                                  "Paintings, drawings, sculptures and photographs from museums that show nude people, "
-                                 "described plainly; nothing sexual and no children", False)
+                                 "described plainly; nothing sexual and no children. For a picture describer, ticking "
+                                 "it asks whether to include adult sexual content from collections you have reviewed",
+                                 False)
+        self.nudity.Bind(wx.EVT_CHECKBOX, self.on_nudity)
         s.Add(self.nudity, 0, wx.ALL, 8)
         self.medical = self.check(page, "Include medical and &anatomy pictures",
                                   "Anatomy textbook figures and old anatomy plates showing the inside and outside of "
@@ -733,15 +811,54 @@ class Wizard(wx.Frame):
         """Another kind chosen: keep the content choices of the one before, show the fitting fields, and say it."""
         self.content[self.shown_kind] = {"nudity": self.nudity.GetValue(), "medical": self.medical.GetValue()}
         self.personal[self.shown_kind] = self.personal_choice()
+        self.sexual["pictures"] = False                 # never for a picture-making model
         self.shown_kind = self.kind_key()
         self.show_kind(self.shown_kind)
         ticked = [w for w, c in (("art with nudity", self.nudity), ("medical and anatomy pictures", self.medical))
                   if c.GetValue()]
+        if self.sexual_on():
+            ticked.append("adult sexual content from collections you have reviewed")
         speak(("Picture-making model chosen: choose Stable Diffusion in Picture-making model. "
                if self.shown_kind == "pictures" else "Picture describer chosen. ")
               + ("Ticked: " + " and ".join(ticked) + "." if ticked else
                  "Art with nudity and medical pictures are not ticked.")
               + (" " + PERSONAL_NOTE if self.is_personal() else ""), True)
+
+    # -- adult sexual content (review collections)
+    def sexual_on(self):
+        """True when adult sexual content is chosen: only for a picture describer, and only with art with nudity."""
+        kind = self.kind_key()
+        return kind == "describer" and self.nudity.GetValue() and self.sexual.get(kind, False)
+
+    def on_nudity(self, _event):
+        """Art with nudity ticked or unticked. For a picture describer, ticking it asks whether to include adult
+        sexual content from reviewed collections (SexualDialog); unticking it turns that off too."""
+        kind = self.kind_key()
+        if not self.nudity.GetValue():
+            had = self.sexual.get(kind, False)
+            self.sexual[kind] = False
+            self.show_result("Art with nudity left out." + (" Adult sexual content is left out too: it needs art "
+                                                            "with nudity." if had else ""))
+            return
+        if kind != "describer":
+            self.sexual[kind] = False                  # never for a picture-making model
+            self.show_result("Art with nudity included. Adult sexual content is never used for a picture-making "
+                             "model.")
+            return
+        self.sexual[kind] = self.ask_sexual(self.sexual.get(kind, False))
+        self.show_result("Art with nudity included. " + ("Adult sexual content from collections you have reviewed "
+                                                         "included: only checked pictures, for personal use only."
+                                                         if self.sexual[kind] else "Adult sexual content left out."))
+        self.nudity.SetFocus()
+
+    def ask_sexual(self, value):
+        """Show SexualDialog; True when the person ticked its box and pressed OK (Cancel and Escape: False)."""
+        dialog = SexualDialog(self, value)
+        try:
+            speak(f"{SEXUAL_QUESTION} The check box is ticked." if value else SEXUAL_QUESTION, True)
+            return dialog.ShowModal() == wx.ID_OK and dialog.chosen()
+        finally:
+            dialog.Destroy()
 
     # -- the personal-use collections
     def personal_choice(self):
@@ -857,15 +974,43 @@ class Wizard(wx.Frame):
             self.show_result("Your pictures cannot be checked: the kit's own_data.py is missing from the program.")
             return
         self.show_result("Checking your pictures. This can take a minute for a big folder.")
+        contents, categories = self.content_checks()
+        review = self.kind_key() == "describer"         # a picture-making model never uses review collections
 
         def check():
             """Check the folder; the result is shown on the window's own thread."""
             try:
-                _rows, _problems, summary = module.check_folder(folder)
+                try:
+                    _rows, _problems, summary = module.check_folder(folder, contents=contents, categories=categories,
+                                                                   review=review)
+                except TypeError:                       # an older own_data.py without the content rules
+                    _rows, _problems, summary = module.check_folder(folder)
             except Exception as e:  # noqa: BLE001 - said in plain words
                 summary = f"Your pictures could not be checked: {e}"
             wx.CallAfter(self.show_result, summary)
         threading.Thread(target=check, daemon=True).start()
+
+    def content_checks(self):
+        """(content tags allowed, review categories allowed) for own_data.check_folder, from the boxes as they are
+        now (a picture-making model: never intimate or sexual)."""
+        nudity, medical = self.nudity.GetValue(), self.medical.GetValue()
+        module = sources_module()
+        if module is not None and hasattr(module, "allowed_contents"):
+            contents = module.allowed_contents(nudity, medical, self.sexual_on())
+        else:
+            contents = {""} | {t for t, on in (("nudity", nudity), ("medical", medical)) if on}
+        if self.kind_key() != "describer":
+            contents -= {"intimate", "sexual"}
+        categories = {"", "open", "share-alike", "permission"} | {c for c, on in self.personal_choice().items() if on}
+        return contents, categories
+
+    def review_folders(self):
+        """The review workspaces in the picture library's Review folder (passed to train.py as --review)."""
+        try:
+            import describe_window
+            return describe_window.review_workspaces(self.library.GetValue().strip())
+        except Exception:  # noqa: BLE001 - no review collections then
+            return []
 
     def on_describe(self, _event):
         """Open the Describe pictures window; when it says "Use this workspace for training", the workspace goes
@@ -876,7 +1021,8 @@ class Wizard(wx.Frame):
             self.show_result(f"The Describe pictures window cannot be opened: {e}")
             return
         kit = os.path.join(self.folder.GetValue().strip(), KIT_NAME) if self.folder.GetValue().strip() else None
-        with describe_window.DescribeWindow(self, sys.modules[__name__], kit) as window:
+        with describe_window.DescribeWindow(self, sys.modules[__name__], kit,
+                                            self.library.GetValue().strip() or None) as window:
             window.ShowModal()
             folder = window.training_folder
         if folder:
@@ -932,6 +1078,7 @@ class Wizard(wx.Frame):
         self.kit = os.path.join(self.folder.GetValue(), KIT_NAME)
         self.content[kind] = {"nudity": self.nudity.GetValue(), "medical": self.medical.GetValue()}
         self.personal[kind] = self.personal_choice()
+        sexual = self.sexual_on()
         choices = {"folder": self.folder.GetValue(), "library": self.library.GetValue(),
                    "model": MODELS[self.model.GetSelection()][0], "size": size,
                    "wikipedia": self.wikipedia.GetValue(), "prepare": self.prepare.GetValue(), "what": kind,
@@ -939,6 +1086,8 @@ class Wizard(wx.Frame):
                    "own_only": self.own_only.GetValue()}
         for name, values in self.content.items():
             choices[f"nudity_{name}"], choices[f"medical_{name}"] = values["nudity"], values["medical"]
+        choices["sexual_describer"] = bool(self.sexual.get("describer"))   # never remembered for picture-making
+        choices["sexual_pictures"] = False
         for name, values in self.personal.items():     # the personal-use boxes, for each kind
             choices[f"noncommercial_{name}"], choices[f"research_{name}"] = values["noncommercial"], values["research"]
         save_choices({**load_choices(), **choices})    # keeps the Describe pictures window's own choices
@@ -960,6 +1109,17 @@ class Wizard(wx.Frame):
             args.append("--with-nudity")
         if self.medical.GetValue():
             args.append("--with-medical")
+        reviews = self.review_folders() if kind == "describer" else []    # never for a picture-making model
+        if sexual and kind == "describer":
+            args.append("--with-sexual")             # only ever with --with-nudity (sexual_on)
+        for folder in reviews:
+            args += ["--review", folder]
+        if reviews:
+            note = (f"{len(reviews)} review collection{'s' if len(reviews) != 1 else ''} in the library: only their "
+                    "checked pictures are used, as the content choices allow. With any of them this training will be "
+                    "for personal use only.")
+            self.lines.put(note)
+            speak(note)
         if self.noncommercial.GetValue():
             args.append("--personal-noncommercial")
         if self.research.GetValue():                 # only ticked after Agree in the terms window
@@ -1106,7 +1266,8 @@ def self_test():
                  "HOW TO DESCRIBE PICTURES WITH FRIENDS.txt", os.path.join("kit", "train.py"),
                  os.path.join("kit", "sources.py"), os.path.join("kit", "own_data.py"),
                  os.path.join("kit", "describe_package.py"), os.path.join("kit", "run_video.cmd"),
-                 os.path.join("kit", "requirements.txt")):
+                 os.path.join("kit", "run_review.cmd"), os.path.join("kit", "run_review.py"),
+                 os.path.join("kit", "review_sources.py"), os.path.join("kit", "requirements.txt")):
         if not os.path.exists(resource(name)):
             raise SystemExit(f"missing from the program: {name}")
     module = own_data_module()
@@ -1130,6 +1291,7 @@ def self_test():
         rows, _problems, _summary = module.check_folder(os.path.join(folder, "second"))
         if len(rows) != 1:
             raise SystemExit("own_data.check_folder did not read the self-test workspace")
+        review_self_test(package, module, kit_sources, os.path.join(folder, "review"))
     app = wx.App()
     window = Wizard()
     window.kind.SetSelection(1)                    # both kinds of training can be shown
@@ -1137,10 +1299,56 @@ def self_test():
     window.kind.SetSelection(0)
     window.on_kind(None)
     ResearchTermsDialog(window, research_collections()).Destroy()    # the research-terms window can be made
-    describe_window.DescribeWindow(window, sys.modules[__name__], None).Destroy()
+    SexualDialog(window).Destroy()                                    # the adult sexual content question
+    describe = describe_window.DescribeWindow(window, sys.modules[__name__], None, tempfile.gettempdir())
+    describe_window.ReviewDialog(describe, sys.modules[__name__], tempfile.gettempdir()).Destroy()
+    describe.Destroy()
     window.Destroy()
     app.Destroy()
     print("OK")
+
+
+def review_self_test(package, own_data, kit_sources, folder):
+    """For the build: a tiny review-only workspace trains nothing until its picture is marked checked (a described
+    picture, and a draft still saying "<description needed>", are refused), and an intimate picture needs both art
+    with nudity and medical pictures. Raises SystemExit when something is wrong."""
+    workspace = package.make_workspace(folder, "Self-test review")
+    workspace.data.update(review_only=True, content="medical", review_source="self_test", review_category="open")
+    workspace.save()
+    source = os.path.join(os.path.dirname(folder), "review-source")
+    os.makedirs(source, exist_ok=True)
+    with open(os.path.join(source, "grey.png"), "wb") as f:
+        f.write(package.tiny_png())
+    package.add_pictures(workspace, [source], "Tester")
+    every = kit_sources.allowed_contents(True, True, True)
+
+    def used():
+        """How many rows the workspace gives with every content choice made."""
+        return len(own_data.check_folder(folder, contents=every)[0])
+    package.describe(workspace, "grey.png", "A plain grey square. <description needed>", "Tester")
+    if used():
+        raise SystemExit("a review picture that is only described was trained on")
+    try:
+        package.mark_checked(workspace, "grey.png", "Checker")
+        raise SystemExit("a description saying <description needed> could be marked checked")
+    except package.PackageProblem:
+        pass
+    package.describe(workspace, "grey.png", "A plain grey square.", "Tester")
+    if used():
+        raise SystemExit("a described (not checked) review picture was trained on")
+    package.mark_checked(workspace, "grey.png", "Checker")
+    rows = own_data.check_folder(folder, contents=every)[0]
+    if len(rows) != 1 or not rows[0].get("review"):
+        raise SystemExit("a checked review picture was not used")
+    if own_data.check_folder(folder, contents=every, review=False)[0]:
+        raise SystemExit("a review picture was used with review=False (picture-making)")
+    workspace = package.open_workspace(folder)
+    workspace.entry("grey.png")["content"] = "intimate"
+    workspace.save()
+    if own_data.check_folder(folder, contents=kit_sources.allowed_contents(False, True))[0]:
+        raise SystemExit("an intimate picture was used without art with nudity")
+    if len(own_data.check_folder(folder, contents=kit_sources.allowed_contents(True, True))[0]) != 1:
+        raise SystemExit("an intimate picture was not used with art with nudity and medical pictures")
 
 
 def log_crash(kind, value, trace):

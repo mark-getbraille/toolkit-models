@@ -11,7 +11,13 @@ the work with the files; this module is only the window). In the window a person
     skipped, and chooses between two versions of a description (Show the other version);
   - adds pictures, takes stills from videos (kit\\run_video.cmd runs kit\\video_frames.py in the kit's own Python),
     exports a package (a zip) for a friend and imports a friend's package;
-  - points "Your own pictures folder" at the workspace for training (Use this workspace for training).
+  - points "Your own pictures folder" at the workspace for training (Use this workspace for training);
+  - opens "Review collections" (ReviewDialog): the medical and adult review collections (kit\\review_sources.py and
+    kit\\adult_review_sources.py; the adult list may be missing), each downloaded by kit\\run_review.cmd into
+    <library>\\Review\\<key>, a review-only workspace. A review workspace shows "This is a review collection: only
+    pictures you mark checked are used." at the top of this window (and in Progress): only its checked pictures are
+    ever trained on (kit\\own_data.py), and the training finds them by itself (the wizard passes each one to
+    kit\\train.py as --review).
 
 Accessibility (the same rules as the wizard): standard wx controls only; a label ending ":" right before each field
 and list; every button and check box has an Alt letter named in its tooltip, no letter twice in a window; Escape
@@ -22,7 +28,12 @@ in the Status field, and written into the desktop logs.
 The letters in the main window: F (Workspace folder), B (Browse), W (Open or make the workspace), M (Your name),
 R (Filter), U (Pictures), Q (Question), D (Description), S (Save and next), P (Previous), C (Mark as checked),
 N (Needs another look), K (Skip this picture), O (Show the other version), A (Add pictures), V (Take stills from
-videos), E (Export a package), I (Import a package), T (Use this workspace for training), H (Help), L (Close).
+videos), E (Export a package), I (Import a package), T (Use this workspace for training), Y (Review collections),
+H (Help), L (Close).
+In "Review collections": C (the collections list), A (About the chosen collection), W (I will have every picture
+screened ...), D (Download into a review workspace), O (Open in Describe pictures), I (Import what they sent, for a
+collection used with permission), H (Help), L (Close); its terms
+window: T (the terms), I (I have read these terms), A (Agree), C (Cancel).
 In "Take stills from videos": V (Videos), A (Add videos), F (Add a folder), R (Remove), S (seconds), L (Spoken
 language), D (descriptions), B (Blur faces), O (Date stamps and logos, remembered), T (Start), H (Help), C (Cancel).
 The Place field (where the pictures are from, saved in the workspace's place.txt) has no letter: all of its letters
@@ -49,6 +60,13 @@ OVERLAY_CHOICES = [("keep", "Leave them"), ("crop", "Crop them off (fill in when
                    ("fill", "Fill them in")]
 # The lines of the video tool that are spoken (the rest only go into the Status field and the log).
 SPOKEN = re.compile(r"^\s*(Video \d+ of \d+|Online video|Getting ready|STOPPED|Finished|.*still need a description)")
+# The lines of the review download (kit\\run_review.py) that are spoken.
+REVIEW_SPOKEN = re.compile(r"^\s*(Collection \d+ of \d+|Done:|Getting ready|STOPPED|Finished|This collection could not|"
+                           r"The list|The review collection)")
+REVIEW_FOLDER = "Review"        # the review workspaces' folder inside the picture library
+REVIEW_NOTE = "This is a review collection: only pictures you mark checked are used."
+SCREEN_PROMISE = "I &will have every picture screened by a trusted sighted adult before training"
+PERSONAL_CATEGORIES = ("noncommercial", "research")
 
 
 def load_package_module(wizard):
@@ -73,6 +91,83 @@ def open_file(path):
             subprocess.Popen(["xdg-open", path])
     except Exception:  # noqa: BLE001 - nothing to open with
         pass
+
+
+def review_lists(wizard):
+    """([collection dict, ...], [plain notes]) of every review collection in the kit: review_sources.REVIEW_SOURCES,
+    adult_review_sources.ADULT_REVIEW_SOURCES and permission_sources.PERMISSION_SOURCES (collections an organisation
+    has to give permission for: category "permission"). A list that is missing or fails to load (the adult and
+    permission lists may still be unfinished) is left out with a note; the others are still shown. Each item is a
+    copy; a permission collection's copy carries "_permission", its module's permission_on_file(library, key)."""
+    folder = wizard.resource("kit")
+    if folder not in sys.path:
+        sys.path.insert(0, folder)
+    items, notes = [], []
+    for module_name, list_name, what in (("review_sources", "REVIEW_SOURCES", "medical"),
+                                         ("adult_review_sources", "ADULT_REVIEW_SOURCES", "adult"),
+                                         ("permission_sources", "PERMISSION_SOURCES", "permission")):
+        try:
+            module = __import__(module_name)
+            on_file = getattr(module, "permission_on_file", None)
+            for item in getattr(module, list_name, []) or []:
+                if isinstance(item, dict) and item.get("key"):
+                    copy = dict(item)
+                    if copy.get("category") == "permission":
+                        copy["_permission"] = on_file
+                    items.append(copy)
+        except ModuleNotFoundError as e:
+            if e.name != module_name or what != "permission":   # the permission list may simply not be there yet
+                notes.append(f"The {what} review collections could not be loaded ({e}), so they are not listed.")
+        except Exception as e:  # noqa: BLE001 - said in plain words
+            notes.append(f"The {what} review collections could not be loaded ({str(e).splitlines()[0][:120]}), so "
+                         "they are not listed.")
+    return items, notes
+
+
+def item_name(item):
+    """A review collection's name (a permission collection may give only its organisation)."""
+    return item.get("name") or item.get("organisation") or item["key"]
+
+
+def permission_folder(library, key):
+    """Where an organisation's reply (their permission) goes: <library>\\Permissions\\<key>."""
+    return os.path.join(library or "", "Permissions", key)
+
+
+def has_permission(item, library):
+    """True for a collection that needs no permission, or whose permission is on file (permission_on_file);
+    False when it is waiting for permission (or the check cannot be made)."""
+    if item.get("category") != "permission":
+        return True
+    check = item.get("_permission")
+    try:
+        return bool(check and library and check(library, item["key"]))
+    except Exception:  # noqa: BLE001 - not on file then
+        return False
+
+
+def review_folder(library, key=None):
+    """<library>\\Review, or the review workspace of one collection: <library>\\Review\\<key>."""
+    folder = os.path.join(library, REVIEW_FOLDER)
+    return os.path.join(folder, key) if key else folder
+
+
+def review_workspaces(library):
+    """The review-only workspaces in <library>\\Review (their folders, in name order); [] when there are none.
+    The wizard passes each to kit\\train.py as --review."""
+    import json
+    folder = review_folder(library) if library else ""
+    found = []
+    if folder and os.path.isdir(folder):
+        for name in sorted(os.listdir(folder), key=str.lower):
+            path = os.path.join(folder, name)
+            try:
+                with open(os.path.join(path, "describing.json"), encoding="utf-8") as f:
+                    if json.load(f).get("review_only") is True:
+                        found.append(path)
+            except (OSError, ValueError, AttributeError):
+                continue
+    return found
 
 
 # ----------------------------------------------------------------- the shared helpers of every window
@@ -325,15 +420,245 @@ class OtherDialog(AccessibleDialog):
         self.EndModal(wx.ID_OK)
 
 
+class ReviewTermsDialog(AccessibleDialog):
+    """Asked before downloading research-only or non-commercial review collections: lists each with its terms page
+    and terms in one line, and must be agreed to (as the main window's personal-use terms window)."""
+
+    def __init__(self, parent, wizard, items):
+        """items: the chosen research-only or non-commercial collections."""
+        super().__init__(parent, "Review collections: their terms", wizard, (680, 520))
+        parts = [f"{len(items)} of the chosen review collections may only be used for research or personal, "
+                 "non-commercial purposes. A model trained with them is for personal use only."]
+        for number, item in enumerate(items, 1):
+            kind = "research-only" if item.get("category") == "research" else "non-commercial"
+            parts.append(f"{number}. {item_name(item)} ({kind})\nTerms: {item.get('terms') or 'see its licence'}\n"
+                         f"Licence: {item.get('licence', '')}\nIn short: {item.get('terms_summary', '')}")
+        s = wx.BoxSizer(wx.VERTICAL)
+        self.terms = self.labelled(s, "Their &terms:", lambda: wx.TextCtrl(
+            self.panel, value="\n\n".join(parts), style=wx.TE_MULTILINE | wx.TE_READONLY), 1)
+        self.agree_box = self.check("&I have read these terms and will use the result only for personal, "
+                                    "non-commercial purposes", "Needed before Agree", False)
+        s.Add(self.agree_box, 0, wx.ALL, 6)
+        row = wx.BoxSizer(wx.HORIZONTAL)
+        row.Add(self.button("&Agree", "Download these collections too", self.on_agree), 0, wx.ALL, 4)
+        row.Add(self.button("&Cancel", "Do not download now", lambda e: self.EndModal(wx.ID_CANCEL)), 0, wx.ALL, 4)
+        s.Add(row, 0, wx.ALL, 4)
+        self.panel.SetSizer(s)
+        self.terms.SetFocus()
+
+    def on_agree(self, _event):
+        """Agree: only with the check box ticked; otherwise say what is missing and stay open."""
+        if not self.agree_box.GetValue():
+            self.wizard.speak("First tick I have read these terms, with Alt+I, then press Agree.", True)
+            self.agree_box.SetFocus()
+            return
+        self.EndModal(wx.ID_OK)
+
+
+class ReviewDialog(AccessibleDialog):
+    """The "Review collections" window: every review collection (name, kind of licence and its terms in short, size
+    and content, and how many pictures are already in the library), a promise that a trusted sighted adult screens
+    every picture, and the buttons to download the ticked collections or open one in Describe pictures. It only
+    chooses: the Describe pictures window does the download (kit\\run_review.cmd). A permission collection (an
+    organisation must agree first) shows "Permission on file" or "Waiting for permission ..."; it can be downloaded,
+    or what the organisation sent imported (a folder or a zip), only when its permission is on file. After ShowModal,
+    action is ("download", [keys]), ("import", key, path), ("open", folder) or None."""
+
+    def __init__(self, parent, wizard, library):
+        """library: the picture library folder (the review workspaces are in its Review folder)."""
+        super().__init__(parent, "Review collections", wizard, (900, 700))
+        self.library, self.action = library, None
+        self.items, notes = review_lists(wizard)
+        s = wx.BoxSizer(wx.VERTICAL)
+        self.list = self.labelled(s, "Review &collections (tick the ones to download; Space ticks):", lambda:
+                                  wx.CheckListBox(self.panel, choices=[self.line(i) for i in self.items]), 1)
+        self.list.Bind(wx.EVT_LISTBOX, self.on_select)
+        self.list.Bind(wx.EVT_CHECKLISTBOX, self.on_tick)
+        self.about = self.labelled(s, "&About the chosen collection:", lambda: wx.TextCtrl(
+            self.panel, style=wx.TE_MULTILINE | wx.TE_READONLY, size=(-1, 150)))
+        self.promise = self.check(SCREEN_PROMISE, "Needed before downloading: nothing is trained on until a trusted "
+                                  "sighted adult has looked at a picture and marked it checked", False)
+        s.Add(self.promise, 0, wx.ALL, 6)
+        self.status = self.labelled(s, "Status:", lambda: wx.TextCtrl(self.panel, style=wx.TE_READONLY))
+        row = wx.BoxSizer(wx.HORIZONTAL)
+        for b in (self.button("&Download into a review workspace", "Download the ticked collections into the "
+                              "picture library's Review folder", self.on_download),
+                  self.button("&Open in Describe pictures", "Open the chosen collection's review workspace, to "
+                              "screen and check its pictures", self.on_open_workspace),
+                  self.button("&Import what they sent...", "For a collection used with permission: add the pictures "
+                              "the organisation sent (a folder or a zip) to its review workspace", self.on_import_sent),
+                  self.button("&Help (F1)", "Open the guide", self.on_help),
+                  self.button("C&lose", "Close this window (Escape)", lambda e: self.EndModal(wx.ID_CANCEL))):
+            row.Add(b, 0, wx.ALL, 4)
+        s.Add(row, 0, wx.ALL, 4)
+        self.panel.SetSizer(s)
+        if self.items:
+            self.list.SetSelection(0)
+            self.on_select(None)
+        self.say(" ".join(notes + [f"{len(self.items)} review collections. Tick the ones to download with Space, "
+                                   "tick the promise (Alt+W), then press Alt+D."]))
+        self.list.SetFocus()
+
+    def say(self, text):
+        """Show text in Status, write it into the desktop log and have the screen reader say it."""
+        self.status.SetValue(" ".join(text.split()))
+        self.wizard.log("Review collections: " + text)
+        self.wizard.speak(" ".join(text.split()), True)
+
+    def in_library(self, item):
+        """ "Not downloaded yet", or "In your library: 120 pictures, 30 checked"."""
+        path = review_folder(self.library, item["key"]) if self.library else ""
+        try:
+            import json
+            with open(os.path.join(path, "describing.json"), encoding="utf-8") as f:
+                pictures = json.load(f).get("pictures", {})
+        except (OSError, ValueError, AttributeError):
+            return "Not downloaded yet"
+        checked = sum(1 for e in pictures.values() if isinstance(e, dict) and e.get("status") == "checked")
+        return f"In your library: {len(pictures)} pictures, {checked} checked"
+
+    def permission_text(self, item):
+        """ "" for an ordinary collection; for a permission one, "Permission on file" or "Waiting for permission
+        (put their reply in <library>\\Permissions\\<key>)"."""
+        if item.get("category") != "permission":
+            return ""
+        if has_permission(item, self.library):
+            return "Permission on file"
+        return f"Waiting for permission (put their reply in {permission_folder(self.library, item['key'])})"
+
+    def line(self, item):
+        """One collection's line in the list: name, kind of licence with its terms in short, size, content, whether
+        permission is on file (a permission collection) and how many pictures are already there."""
+        terms = item.get("terms_summary") or ("used with permission, personal use only" if
+                                              item.get("category") == "permission" else "")
+        permission = self.permission_text(item)
+        return (f"{item_name(item)}. {item.get('category', '')}: {terms}. Size: "
+                f"{item.get('download', 'not known')}. Content: {item.get('content', '')}. "
+                + (f"{permission}. " if permission else "") + f"{self.in_library(item)}.")
+
+    def chosen_item(self):
+        """The collection the list's cursor is on, or None."""
+        index = self.list.GetSelection()
+        return self.items[index] if 0 <= index < len(self.items) else None
+
+    def on_select(self, _event):
+        """Show the chosen collection's licence, terms, credit, size and folder in About the chosen collection."""
+        item = self.chosen_item()
+        if item is None:
+            self.about.SetValue("")
+            return
+        personal = (" Personal use only: you must agree to its terms before it is downloaded, and a training uses it "
+                    "only when the matching personal-use box is ticked.") if item.get("category") in \
+            PERSONAL_CATEGORIES else ""
+        if item.get("category") == "permission":
+            personal = (f" Used with permission from {item.get('organisation') or item_name(item)}, personal use only. "
+                        f"Contact: {item.get('contact', '')}. {self.permission_text(item)}.")
+        self.about.SetValue(
+            f"{item_name(item)}\nKind of licence: {item.get('category', '')}.{personal}\n"
+            f"Licence: {item.get('licence', '')}\nTerms in short: {item.get('terms_summary', '')}\n"
+            f"Terms page: {item.get('terms', '')}\nCredit: {item.get('credit', '')}\n"
+            f"Content: {item.get('content', '')} (used only with the matching content choices).\n"
+            f"At most {item.get('cap', 0)} pictures; download {item.get('download', 'not known')}.\n"
+            f"Folder: {review_folder(self.library, item['key']) if self.library else 'choose the library first'}.\n"
+            f"{self.in_library(item)}.")
+
+    def on_tick(self, event):
+        """A collection ticked or unticked: say it."""
+        index = event.GetInt()
+        if 0 <= index < len(self.items):
+            ticked = self.list.IsChecked(index)
+            self.say(f"{'Ticked' if ticked else 'Not ticked'}: {item_name(self.items[index])}. "
+                     f"{len(self.list.GetCheckedItems())} ticked.")
+
+    def on_download(self, _event):
+        """Download the ticked collections: needs at least one, the promise ticked, and agreement to the terms of
+        research-only and non-commercial ones."""
+        keys = [self.items[i]["key"] for i in self.list.GetCheckedItems()]
+        if not keys:
+            self.say("Tick at least one collection first: go to the list (Alt+C) and press Space on it.")
+            self.list.SetFocus()
+            return
+        if not self.promise.GetValue():
+            self.say("First tick: I will have every picture screened by a trusted sighted adult before training "
+                     "(Alt+W).")
+            self.promise.SetFocus()
+            return
+        waiting = [i for i in self.items if i["key"] in keys and not has_permission(i, self.library)]
+        if waiting:
+            self.say("Nothing was downloaded: " + "; ".join(f"{item_name(i)} is {self.permission_text(i)}"
+                                                            for i in waiting) + ". Untick it, or wait for permission.")
+            return
+        personal = [i for i in self.items if i["key"] in keys and i.get("category") in PERSONAL_CATEGORIES]
+        if personal:
+            with ReviewTermsDialog(self, self.wizard, personal) as d:
+                if d.ShowModal() != wx.ID_OK:
+                    self.say("Nothing was downloaded: the terms were not agreed to.")
+                    return
+        self.action = ("download", keys)
+        self.EndModal(wx.ID_OK)
+
+    def on_open_workspace(self, _event):
+        """Open the chosen collection's review workspace in Describe pictures (when it was downloaded)."""
+        item = self.chosen_item()
+        if item is None:
+            self.say("Choose a collection in the list first (Alt+C).")
+            return
+        folder = review_folder(self.library, item["key"]) if self.library else ""
+        if not folder or not os.path.isfile(os.path.join(folder, "describing.json")):
+            self.say(f"{item_name(item)} is not downloaded yet. Tick it, tick the promise and press Alt+D.")
+            return
+        self.action = ("open", folder)
+        self.EndModal(wx.ID_OK)
+
+    def on_import_sent(self, _event):
+        """For a permission collection whose permission is on file: choose what the organisation sent (a folder or a
+        zip); it is added to the collection's review workspace by its fetch function (source=the folder or zip)."""
+        item = self.chosen_item()
+        if item is None or item.get("category") != "permission":
+            self.say("Choose a collection used with permission in the list first (Alt+C). Only those can import what "
+                     "an organisation sent.")
+            return
+        if not has_permission(item, self.library):
+            self.say(f"{item_name(item)}: {self.permission_text(item)}. Their pictures can be imported once their "
+                     "permission is on file.")
+            return
+        if not self.promise.GetValue():
+            self.say("First tick: I will have every picture screened by a trusted sighted adult before training "
+                     "(Alt+W).")
+            self.promise.SetFocus()
+            return
+        with wx.SingleChoiceDialog(self, "What did they send?", "Import what they sent",
+                                   ["A zip file", "A folder"]) as d:
+            if d.ShowModal() != wx.ID_OK:
+                return
+            zipped = d.GetSelection() == 0
+        if zipped:
+            with wx.FileDialog(self, "Choose the zip they sent", wildcard="Zip files|*.zip|All files|*.*",
+                               style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as d:
+                if d.ShowModal() != wx.ID_OK:
+                    return
+                path = d.GetPath()
+        else:
+            with wx.DirDialog(self, "Choose the folder they sent") as d:
+                if d.ShowModal() != wx.ID_OK:
+                    return
+                path = d.GetPath()
+        self.action = ("import", item["key"], path)
+        self.EndModal(wx.ID_OK)
+
+
 # ----------------------------------------------------------------- the main window
 
 class DescribeWindow(AccessibleDialog):
     """The "Describe pictures" window (see the module docstring)."""
 
-    def __init__(self, parent, wizard, kit=None):
+    def __init__(self, parent, wizard, kit=None, library=None):
         """wizard: the training_wizard module (its log, speak, settings and kit helpers); kit: the kit folder the
-        training uses ("<training folder>\\Picture Model Training Kit"), for taking stills from videos."""
+        training uses ("<training folder>\\Picture Model Training Kit"), for taking stills from videos and
+        downloading review collections; library: the picture library folder (its Review folder holds the review
+        workspaces; the remembered one when not given)."""
         super().__init__(parent, "Describe pictures", wizard, (1060, 900))
+        self.library = library or wizard.load_choices().get("library") or ""
         self.package = load_package_module(wizard)
         self.kit = kit
         self.workspace = None
@@ -345,6 +670,10 @@ class DescribeWindow(AccessibleDialog):
         self.training_folder = None     # set by "Use this workspace for training"
         chosen = wizard.load_choices()
         s = wx.BoxSizer(wx.VERTICAL)
+        # Shown at the top for a review workspace only (also said when it opens, and written in Progress).
+        self.review_banner = wx.StaticText(self.panel, label=REVIEW_NOTE)
+        s.Add(self.review_banner, 0, wx.ALL, 8)
+        self.review_banner.Hide()
 
         top = wx.BoxSizer(wx.HORIZONTAL)
         left = wx.BoxSizer(wx.VERTICAL)
@@ -411,6 +740,8 @@ class DescribeWindow(AccessibleDialog):
                   self.button("&Import a package...", "Add a friend's package to this workspace", self.on_import),
                   self.button("Use this workspace for &training", "Put this workspace in Your own pictures folder "
                               "and close", self.on_use),
+                  self.button("Review collections (&Y)...", "Download medical and adult review collections for a "
+                              "trusted sighted adult to screen, or open one", self.on_review),
                   self.button("&Help (F1)", "Open the guide", self.on_help),
                   self.button("C&lose", "Close this window (Escape)", lambda e: self.on_escape())):
             tools.Add(b, 0, wx.ALL, 4)
@@ -492,6 +823,7 @@ class DescribeWindow(AccessibleDialog):
                     self.place.SetValue(self.package.place_of(self.workspace))
             except self.package.PackageProblem as e:
                 summary += " " + str(e)
+            self.show_review_banner()                    # an imported package may have made it a review one
         if then:
             then()
         self.refresh(self.current)
@@ -551,8 +883,18 @@ class DescribeWindow(AccessibleDialog):
         self.place.SetValue(self.package.place_of(self.workspace) if hasattr(self.package, "place_of") else "")
         self.keep_settings()
         self.current = None
+        self.show_review_banner()
         self.refresh(None)
         self.say(made + self.progress.GetValue() + " The Pictures list is next; press Alt+U to go there.")
+
+    def is_review(self):
+        """True when the open workspace is a review collection (only its checked pictures are trained on)."""
+        return self.workspace is not None and self.workspace.data.get("review_only") is True
+
+    def show_review_banner(self):
+        """Show "This is a review collection ..." at the top for a review workspace; hide it otherwise."""
+        self.review_banner.Show(self.is_review())
+        self.panel.Layout()
 
     # -- the list
     def filter_key(self):
@@ -590,6 +932,8 @@ class DescribeWindow(AccessibleDialog):
         if self.filter_key() != "all":
             shown += f" Filter: {FILTERS[self.filter.GetSelection()][1]}, of {c['all']} pictures in all."
         text = f"{shown} {c['described'] + c['checked']} described, {c['checked']} checked."
+        if self.is_review():
+            text = f"{REVIEW_NOTE} {text}"
         if c["needs another look"]:
             text += f" {c['needs another look']} need another look."
         self.progress.SetValue(text)
@@ -899,15 +1243,90 @@ class DescribeWindow(AccessibleDialog):
         if not self.ready() or not self.save_changes():
             return
         c = self.package.counts(self.workspace)
-        ready = c["described"] + c["checked"]
+        review = self.is_review()
+        ready = c["checked"] if review else c["described"] + c["checked"]
         if not ready:
-            self.say("No picture is described or checked yet, so there is nothing to train on.")
+            self.say("No picture is checked yet, so there is nothing to train on. " + REVIEW_NOTE if review else
+                     "No picture is described or checked yet, so there is nothing to train on.")
             return
         self.training_folder = self.workspace.folder
         self.keep_settings()
-        self.wizard.speak(f"Your own pictures folder is now the workspace. {ready} described or checked pictures "
+        self.wizard.speak(f"Your own pictures folder is now the workspace. {ready} checked pictures are used for "
+                          "training, subject to the content choices; the others are left out." if review else
+                          f"Your own pictures folder is now the workspace. {ready} described or checked pictures "
                           "are used for training; the others are left out.", True)
         self.EndModal(wx.ID_OK)
+
+    # -- review collections
+    def on_review(self, _event):
+        """Open Review collections: download the ticked collections (kit\\run_review.cmd in the kit's own Python,
+        into <library>\\Review\\<key>) or open one's review workspace here."""
+        if self.busy:
+            self.ready()
+            return
+        if not self.save_changes():
+            return
+        if not self.library:
+            self.say("Choose the picture library folder in the main window first: the review collections are kept "
+                     "in its Review folder.")
+            return
+        with ReviewDialog(self, self.wizard, self.library) as d:
+            d.ShowModal()
+            action = d.action
+        if not action:
+            self.say("Review collections closed; nothing was downloaded.")
+            return
+        if action[0] == "open":
+            self.folder.SetValue(action[1])
+            self.open_folder(action[1])
+            return
+        if action[0] == "import":
+            self.download_reviews([action[1]], source=action[2])
+            return
+        self.download_reviews(action[1])
+
+    def download_reviews(self, keys, source=None):
+        """Run kit\\run_review.cmd for the collections keys (Windows only; the kit must be in the training folder);
+        source: a folder or zip an organisation sent, imported into the one collection's workspace instead."""
+        if os.name != "nt":
+            self.say("Downloading review collections works on Windows only.")
+            return
+        if not self.kit:
+            self.say("Choose the training folder in the main window first: the download tools are installed there.")
+            return
+        library = self.library
+
+        def work(say):
+            """Copy the kit and run the review download; every line goes into the log, the important ones are
+            said."""
+            say(f"Copying the kit's files into {self.kit}. The first time, the tools are installed there too, which "
+                "takes 10 to 30 minutes.")
+            self.wizard.copy_kit(self.kit)
+            script = os.path.join(self.kit, "kit", "run_review.cmd")
+            args = ["--library", library, *(["--source", source] if source else []), *keys]
+            command = f'"{os.environ.get("ComSpec", "cmd.exe")}" /d /s /c ""{script}" {subprocess.list2cmdline(args)}"'
+            env = dict(self.wizard.kit_environment(self.kit), KIT_NO_PAUSE="1")
+            self.wizard.log(f"Review collections: {command}")
+            self.process = subprocess.Popen(command, cwd=self.kit, env=env, stdin=subprocess.DEVNULL,
+                                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+                                            encoding="utf-8", errors="replace", creationflags=self.wizard.NO_WINDOW)
+            last = []
+            for line in self.process.stdout:
+                line = line.rstrip()
+                if not line:
+                    continue
+                last = (last + [line])[-12:]
+                if REVIEW_SPOKEN.match(line):
+                    say(line.strip())
+                else:
+                    wx.CallAfter(self.quiet_status, line)
+            self.process.wait()
+            self.process = None
+            finished = [x for x in last if x.startswith(("Finished", "STOPPED"))]
+            return " ".join(finished[-1:] or ["The review download ended."]) + (
+                " To screen a collection, press Review collections (Alt+Y), choose it and press Open in Describe "
+                "pictures (Alt+O).")
+        self.run_task("downloading the review collections", work)
 
     # -- taking stills from videos
     def on_videos(self, _event):
@@ -986,8 +1405,9 @@ class DescribeWindow(AccessibleDialog):
     def on_escape(self):
         """Close: keep what was written; while stills are being taken, ask first."""
         if self.process is not None and self.process.poll() is None:
-            answer = wx.MessageBox("Stills are still being taken from the videos. Stop and close? Videos already done "
-                                   "are kept.", "Describe pictures", wx.YES_NO | wx.NO_DEFAULT, self)
+            answer = wx.MessageBox(f"{(self.busy or 'The work').capitalize()} is still running. Stop and close? "
+                                   "What is done already is kept.", "Describe pictures",
+                                   wx.YES_NO | wx.NO_DEFAULT, self)
             if answer != wx.YES:
                 return
             subprocess.run(["taskkill", "/PID", str(self.process.pid), "/T", "/F"], capture_output=True,

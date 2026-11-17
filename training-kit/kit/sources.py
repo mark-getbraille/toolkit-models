@@ -24,6 +24,12 @@ Content choices (Source.content): most collections have none (""). A collection 
 in art) is only used with --with-nudity, and one marked "medical" (medical and anatomy pictures) only with
 --with-medical, so the person training decides whether the model learns from those pictures. chosen() leaves out
 what was not chosen; content_choices_text() says the choices in plain words for the report and ATTRIBUTION.txt.
+Two more content tags come from the REVIEW collections (review_sources.py, adult_review_sources.py: pictures a
+trusted sighted adult screens first, used through own_data.py from "Describe pictures" workspaces): "intimate"
+(medical and educational pictures of adult genitals and breasts) is used only when BOTH with_nudity and with_medical
+are chosen, and "sexual" (adult sexual content) only with with_sexual, which itself needs with_nudity; sexual content
+is for personal use only. allowed_contents() gives the tags a training's choices allow. A picture-making model never
+learns from either (PICTURE_MAKING_NEVER), nor from any review collection.
 
 Sizes (--size): each source has a cap for "normal"; "quick" uses a tenth of it (a try of an hour or two) and
 "full" three times as much (several nights on a fast card).
@@ -83,7 +89,8 @@ class Source:
     prepare    a function (source, data_dir, work, cap) -> [rows], each with "split" ("train", "test" or "")
     download   roughly how much it downloads, for the screen ("7.6 GB")
     content    "" for most collections; "nudity" (non-sexual nudes in art: only with --with-nudity) or "medical"
-               (medical and anatomy pictures: only with --with-medical)
+               (medical and anatomy pictures: only with --with-medical); "intimate" and "sexual" are known too (see
+               allowed_contents), though today only review collections use them
     terms      for a personal-use collection: the web address of its licence or terms page ("" when none; the first
                web address in its licence or credit is used then)
     terms_summary  for a personal-use collection: its terms in one plain line ("" when none; its licence is used)"""
@@ -99,8 +106,23 @@ class Source:
         self.terms, self.terms_summary = terms, terms_summary
 
 
-# The content choices a collection can need: "" (none), "nudity" and "medical" (see the module docstring).
-CONTENTS = ("", "nudity", "medical")
+# The content choices a collection can need: "" (none), "nudity", "medical", "intimate" and "sexual" (see the module
+# docstring and allowed_contents).
+CONTENTS = ("", "nudity", "medical", "intimate", "sexual")
+# The content tags a picture-making model never learns from, whatever is chosen.
+PICTURE_MAKING_NEVER = ("intimate", "sexual")
+
+
+def allowed_contents(with_nudity=False, with_medical=False, with_sexual=False):
+    """The content tags a training's choices allow, as a set: "" always; "nudity" with with_nudity; "medical" with
+    with_medical; "intimate" only with BOTH with_nudity and with_medical; "sexual" only with with_sexual AND
+    with_nudity (the adult sexual content choice needs art with nudity)."""
+    allowed = {""}
+    for tag, on in (("nudity", with_nudity), ("medical", with_medical),
+                    ("intimate", with_nudity and with_medical), ("sexual", with_sexual and with_nudity)):
+        if on:
+            allowed.add(tag)
+    return allowed
 
 
 # ----------------------------------------------------------------- shared helpers
@@ -1289,6 +1311,19 @@ SOURCES = [
     Source('commons_valued', 'Wikimedia Commons valued images with their captions (ready-made pack)',
            'Captions CC0; pictures CC0, public domain or CC BY, each author credited',
            'Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 2500, 15, prepare_pack, 'about 1 GB'),
+    Source('open_images_disability', 'Mobility aids and adaptive sports (Open Images, ready-made pack)',
+           'Annotations CC BY 4.0 (Google Open Images); photos CC BY 2.0, each author credited',
+           'Open Images (Google), CC BY 4.0 annotations; photos CC BY 2.0, credited in ATTRIBUTION.txt', "permissive",
+           219, 10, prepare_pack, 'about 60 MB'),
+    Source('commons_disability', 'Assistive technology: white canes, guide dogs, braille, prostheses, hearing aids, '
+           'accessible places (Wikimedia Commons, ready-made pack)',
+           'Captions CC0; pictures CC0, public domain or CC BY, each author credited',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 1500, 10, prepare_pack,
+           'about 500 MB'),
+    Source('tapad_tactile_paving', 'Tactile paving and its condition (TAPAD, Japan, ready-made pack)',
+           'CC BY 4.0 (Zenodo 23388177)',
+           'TAPAD tactile paving dataset, Zenodo 23388177, CC BY 4.0', "permissive", 2811, 15, prepare_pack,
+           'about 700 MB'),
     Source('skin_lesion_photos', 'Skin spots photographed with a phone, adults (PAD-UFES-20, ready-made pack)',
            'CC BY 4.0 (Mendeley Data zr7vgbcyr2)',
            'PAD-UFES-20 (Pacheco et al., 2020), CC BY 4.0', "permissive", 2000, 20, prepare_pack, 'about 400 MB', content="medical"),
@@ -1346,15 +1381,16 @@ SOURCES = [
 
 
 def chosen(with_wikipedia=False, *, with_nudity=False, with_medical=False, with_noncommercial=False,
-           with_research=False):
+           with_research=False, with_sexual=False):
     """The sources to train on: the permissive ones; the share-alike ones too with with_wikipedia; the
     "noncommercial" ones with with_noncommercial and the "research" ones with with_research (both for personal use
     only). A collection with content "nudity" is only included with with_nudity, and one with content "medical" only
-    with with_medical (see the module docstring). A collection of any other group is never included."""
-    allowed = {"": True, "nudity": with_nudity, "medical": with_medical}
+    with with_medical; "intimate" needs both, and "sexual" with_sexual and with_nudity (allowed_contents). A
+    collection of any other group is never included."""
+    allowed = allowed_contents(with_nudity, with_medical, with_sexual)
     groups = {"permissive": True, "share-alike": with_wikipedia, "noncommercial": with_noncommercial,
               "research": with_research}
-    return [s for s in SOURCES if groups.get(s.group, False) and allowed[s.content]]
+    return [s for s in SOURCES if groups.get(s.group, False) and s.content in allowed]
 
 
 # ----------------------------------------------------------------- personal-use collections
@@ -1398,14 +1434,21 @@ NOT_FOR_PICTURE_MAKING = ("childhood_illness", "birth_and_feeding")
 
 
 def content_of(key):
-    """The content choice ("", "nudity" or "medical") of the collection with this key ("" when unknown)."""
+    """The content choice ("", "nudity", "medical", "intimate" or "sexual") of the collection with this key ("" when unknown)."""
     return next((s.content for s in SOURCES if s.key == key), "")
 
 
-def content_choices_text(with_nudity, with_medical):
-    """The content choices in one plain sentence, for the report and ATTRIBUTION.txt."""
+def content_choices_text(with_nudity, with_medical, with_sexual=False):
+    """The content choices in one plain sentence, for the report and ATTRIBUTION.txt: art with nudity, medical
+    pictures, intimate medical pictures (only with both) and adult sexual content (only with with_sexual and art with
+    nudity; personal use only)."""
+    allowed = allowed_contents(with_nudity, with_medical, with_sexual)
     return ("Content choices: art with nudity (non-sexual) " + ("included" if with_nudity else "not included") +
-            "; medical and anatomy pictures " + ("included" if with_medical else "not included") + ".")
+            "; medical and anatomy pictures " + ("included" if with_medical else "not included") +
+            "; intimate medical pictures from reviewed collections (needs both) " +
+            ("included" if "intimate" in allowed else "not included") +
+            "; adult sexual content from reviewed collections " +
+            ("included (personal use only)" if "sexual" in allowed else "not included") + ".")
 
 
 def prepare_source(source, data_dir, work, size="normal", seed=7):
@@ -1517,3 +1560,18 @@ PERSONAL_PICTURE_MAKING_OK |= _documentary_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(
     s.key for s in DOCUMENTARY_SOURCES if s.key not in _documentary_ok)
 _add_collections(DOCUMENTARY_SOURCES)
+
+# Disability and assistive-technology collections that are not open (or not suitable for picture-making); the file
+# may be missing.
+try:
+    import disability_sources as _disability  # noqa: E402
+except ImportError as _e:
+    _disability = None
+    if getattr(_e, "name", None) != "disability_sources":
+        say(f"(The disability collections could not be loaded: {_e}. They are left out.)")
+DISABILITY_SOURCES = list(getattr(_disability, "DISABILITY_SOURCES", []) or [])
+_disability_ok = set(getattr(_disability, "DISABILITY_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _disability_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(
+    s.key for s in DISABILITY_SOURCES if s.key not in _disability_ok)
+_add_collections(DISABILITY_SOURCES)

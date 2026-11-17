@@ -64,6 +64,29 @@ Collections that need a sign-up or a signed agreement (for example MIMIC or Imag
 kit. If you got such a collection yourself, and its terms allow it, you can put its pictures with their descriptions
 into your own pictures folder (see HOW TO ADD YOUR OWN PICTURES.txt); the result is then for personal use only too.
 
+Review collections
+Some picture collections are kept for a blind adult's own private describer only: medical pictures of adult
+genitals and breasts (healthy bodies, normal variation and common conditions), skin conditions on all skin tones,
+and, separately, adult sexual content (artworks, sex education and the like). They are never trained on as they
+come. In the program, press Describe pictures (Alt+J), then Review collections (Alt+Y). Tick the collections to
+download with Space, tick "I will have every picture screened by a trusted sighted adult before training" (Alt+W)
+and press Download into a review workspace (Alt+D). A research-only or non-commercial collection shows its terms
+first, and you must agree. Each collection goes into the Review folder of your picture library.
+A trusted sighted adult then opens each collection (Open in Describe pictures, Alt+O), deletes anything that should
+not be there, corrects each description and marks a picture checked only when it is right. ONLY CHECKED PICTURES ARE
+EVER USED. A description that still says <description needed> is never used, and a package from a friend can never
+mark a picture checked for you.
+When you train a picture describer, the program uses the checked pictures of every review collection by itself, as
+your content choices allow: medical pictures need "Include medical and anatomy pictures"; intimate pictures need
+both that and "Include art with nudity"; adult sexual content needs art with nudity and a yes to the question that
+appears when you tick art with nudity ("Also include adult sexual content from collections you have reviewed?").
+Research-only and non-commercial collections also need their personal-use box. A training with any review picture
+is for personal use only. A picture-making model never uses review collections, intimate or sexual pictures.
+Some collections are used only with an organisation's permission: the list says "Permission on file" or "Waiting for
+permission". Put their reply in the Permissions folder of your picture library (the list names the folder). Only
+then can it be downloaded, or what they sent imported (Import what they sent, Alt+I). The report names the
+organisation and says "used with permission, personal use only".
+
 What you need
 - An NVIDIA graphics card with at least 12 GB of memory for the 4B model, or 16 GB for the 8B model, with an
   up-to-date NVIDIA driver.

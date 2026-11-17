@@ -33,6 +33,16 @@ Content choices: --with-nudity also learns from non-sexual nudes in art, and --w
 pictures (collections marked so in sources.py; without the choice they are left out, in a follow-up too). The report
 and ATTRIBUTION.txt say which choices were used, and a training with them gets its own name ("4b-nudity-medical").
 
+Review collections (review_sources.py, adult_review_sources.py, downloaded by the program's "Review collections"
+window into "Describe pictures" workspaces under <library>\\Review): --review FOLDER (repeatable) adds the pictures
+of such a workspace that a trusted sighted adult has marked "checked" (own_data.py: never "described", never a
+description that still says "<description needed>"), subject to the content choices: "medical" needs
+--with-medical, "intimate" needs both --with-nudity and --with-medical, and "sexual" needs --with-sexual (which
+itself needs --with-nudity). A research-only or non-commercial review collection also needs the matching
+personal-use choice, or it is left out with a plain message. With any review picture the add-on is for PERSONAL USE
+ONLY, like the personal-use collections below; adult sexual content is never to be published. A follow-up never
+carries on from a training with intimate or sexual content, or with review pictures, unless that is chosen again.
+
 Personal-use collections (sources.py, groups "noncommercial" and "research", from personal_sources.py):
 --personal-noncommercial also learns from collections under non-commercial licences (CC BY-NC, BY-NC-SA, BY-NC-ND),
 and --personal-research from research-only ("academic use") collections, which also needs --accept-research-terms
@@ -232,7 +242,7 @@ def open_library(work, library):
 
 
 def prepare_data(work, state, size, with_wikipedia, keys=None, with_nudity=False, with_medical=False,
-                 with_noncommercial=False, with_research=False):
+                 with_noncommercial=False, with_research=False, with_sexual=False):
     """Prepare every chosen collection once (each one remembered as done in state, so a restarted kit skips it);
     writes data/train.jsonl (shuffled) and data/test.jsonl and returns (training rows, test rows). A collection that
     cannot be downloaded now is said and left out, so one broken website never stops the training. with_nudity and
@@ -243,7 +253,8 @@ def prepare_data(work, state, size, with_wikipedia, keys=None, with_nudity=False
     os.makedirs(data_dir, exist_ok=True)
     train_rows, test_rows = [], []
     chosen = [s for s in sources.chosen(with_wikipedia, with_nudity=with_nudity, with_medical=with_medical,
-                                        with_noncommercial=with_noncommercial, with_research=with_research)
+                                        with_noncommercial=with_noncommercial, with_research=with_research,
+                                        with_sexual=with_sexual)
               if keys is None or s.key in keys]
     for number, source in enumerate(chosen, 1):
         say(f"  Collection {number} of {len(chosen)}: {source.name} (downloads {source.download}).")
@@ -266,19 +277,118 @@ def prepare_data(work, state, size, with_wikipedia, keys=None, with_nudity=False
     return train_rows, test_rows
 
 
-def own_rows(work, folder):
+def checks_for(content):
+    """(content tags allowed, review categories allowed) for own_data.check_folder, from the training's choices
+    (content: the dict main() makes, with with_nudity, with_medical, with_sexual, with_noncommercial and
+    with_research)."""
+    tags = sources.allowed_contents(content.get("with_nudity"), content.get("with_medical"),
+                                    content.get("with_sexual"))
+    categories = {"", "open", "share-alike", "permission"}    # permission: checked by review_rows itself
+    if content.get("with_noncommercial"):
+        categories.add("noncommercial")
+    if content.get("with_research"):
+        categories.add("research")
+    return tags, categories
+
+
+def own_rows(work, folder, content=None):
     """(training rows, test rows) of the person's own pictures in folder (own_data.py), with their smaller copies
     in work/own-pictures; the summary and any problems are said. Also returns the folder's short code (own_data.
-    folder_tag), which names the training."""
+    folder_tag), which names the training. content: the training's choices (pictures tagged with content they do
+    not allow, and review collections whose terms they do not allow, are left out)."""
     import own_data
     copies = os.path.join(work, "own-pictures", own_data.folder_tag(folder, []))
     say(f"  Your own pictures: reading {folder} and making the training copies.")
-    rows, _problems, summary = own_data.check_folder(folder, copies=copies, report=say)
+    tags, categories = checks_for(content or {})
+    rows, _problems, summary = own_data.check_folder(folder, copies=copies, report=say, contents=tags,
+                                                     categories=categories)
     for line in summary.splitlines():
         say("    " + line)
     train_rows = [r for r in rows if r["split"] != "test"]
     test_rows = [r for r in rows if r["split"] == "test"]
     return train_rows, test_rows, own_data.folder_tag(folder, rows)
+
+
+def review_details(folder):
+    """What is known about a review workspace: {"key", "name", "category", "content", "licence", "credit",
+    "terms"} from its describing.json and, when the kit has it, its entry in review_sources.REVIEW_SOURCES or
+    adult_review_sources.ADULT_REVIEW_SOURCES. None when folder is not a review-only workspace."""
+    try:
+        with open(os.path.join(folder, "describing.json"), encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, ValueError):
+        return None
+    if not isinstance(data, dict) or data.get("review_only") is not True:
+        return None
+    key = str(data.get("review_source") or os.path.basename(os.path.normpath(folder)))
+    found = {}
+    permission = None
+    for module_name, list_name in (("review_sources", "REVIEW_SOURCES"),
+                                   ("adult_review_sources", "ADULT_REVIEW_SOURCES"),
+                                   ("permission_sources", "PERMISSION_SOURCES")):
+        try:
+            module = __import__(module_name)
+            item = next((d for d in getattr(module, list_name, []) if d.get("key") == key), None)
+            if item is not None:
+                found = item
+                permission = getattr(module, "permission_on_file", None) if item.get("category") == "permission" \
+                    else None
+        except Exception:  # noqa: BLE001 - a missing or unfinished list: describing.json is enough
+            continue
+    return {"key": key, "name": found.get("name") or found.get("organisation") or data.get("name") or key,
+            "organisation": found.get("organisation", ""), "permission_check": permission,
+            "category": str(data.get("review_category") or found.get("category") or ""),
+            "content": str(data.get("content") or found.get("content") or ""),
+            "licence": found.get("licence", "see CREDITS.txt in the review workspace"),
+            "credit": found.get("credit", "see CREDITS.txt in the review workspace"),
+            "terms": found.get("terms", "")}
+
+
+def review_rows(work, folders, content):
+    """(training rows, test rows, collections used, short code) of the checked pictures of the review workspaces in
+    folders (own_data.check_folder with the training's content choices; smaller copies in work/review-pictures).
+    A folder that is not a review workspace, or a research-only or non-commercial collection whose personal-use
+    choice is not made, is left out and said. collections: review_details of each workspace that gave pictures,
+    with "pictures" (how many). The short code changes whenever the checked pictures change."""
+    import own_data
+    tags, categories = checks_for(content)
+    train_rows, test_rows, used, all_rows = [], [], [], []
+    for number, folder in enumerate(folders, 1):
+        details = review_details(folder)
+        if details is None:
+            say(f"  Review collection {number} of {len(folders)}: {folder} is not a review collection (its "
+                "describing.json does not say review_only), so it is left out.")
+            continue
+        say(f"  Review collection {number} of {len(folders)}: {details['name']}.")
+        if details["category"] not in categories:
+            box = "research-only" if details["category"] == "research" else "non-commercial"
+            say(f"    It is {box}: it is left out because Include {box} collections is not ticked"
+                + (" (and its terms agreed)." if details["category"] == "research" else "."))
+            continue
+        if details["category"] == "permission":
+            library = os.path.dirname(os.path.dirname(os.path.abspath(folder)))   # <library>\\Review\\<key>
+            try:
+                on_file = details["permission_check"] is None or details["permission_check"](library, details["key"])
+            except Exception:  # noqa: BLE001 - not on file then
+                on_file = False
+            if not on_file:
+                say(f"    It is used only with permission from {details['organisation'] or details['name']}, and "
+                    "their permission is not on file, so it is left out.")
+                continue
+        details.pop("permission_check", None)             # not kept in the report's data (a function)
+        copies = os.path.join(work, "review-pictures", own_data.folder_tag(folder, []))
+        rows, _problems, summary = own_data.check_folder(folder, copies=copies, report=say, contents=tags,
+                                                         categories=categories)
+        rows = [r for r in rows if r.get("review")]      # only checked pictures of the review collection itself
+        for line in summary.splitlines():
+            say("    " + line)
+        if rows:
+            used.append(dict(details, pictures=len({r["file"] for r in rows})))
+            train_rows += [r for r in rows if r["split"] != "test"]
+            test_rows += [r for r in rows if r["split"] == "test"]
+            all_rows += rows
+    code = own_data.folder_tag("|".join(sorted(os.path.abspath(f) for f in folders)), all_rows) if all_rows else ""
+    return train_rows, test_rows, used, code
 
 
 ASK_COUNTRY = "Which country might this photo be from?"
@@ -549,26 +659,42 @@ def source_name(key):
     """The plain name of a collection key, for the report ("own": the person's own pictures)."""
     if key == "own":
         return "Your own pictures"
+    if key == "review":
+        return "Review collections (checked pictures)"
     return next((s.name for s in sources.SOURCES if s.key == key), key)
 
 
 def content_lines(info):
     """The content choices and, when used, the note about the person's own pictures, as lines for the report and
     ATTRIBUTION.txt. A choice made whose collections could not be downloaded is said too."""
-    lines = [sources.content_choices_text(info.get("with_nudity", False), info.get("with_medical", False))]
+    lines = [sources.content_choices_text(info.get("with_nudity", False), info.get("with_medical", False),
+                                          info.get("with_sexual", False))]
     for content, words in (("nudity", "Art with nudity was"), ("medical", "Medical and anatomy pictures were")):
         if info.get(f"with_{content}") and not any(sources.content_of(k) == content for k in info["collections"]):
             lines.append(f"  ({words} chosen, but none of those pictures could be downloaded.)")
+    if info.get("review_pictures"):
+        lines.append(f"Includes {info['review_pictures']} checked pictures from review collections, each screened by a "
+                     "trusted sighted adult: for personal use only.")
+        if info.get("sexual_used"):
+            lines.append(SEXUAL_NOTE)
     if info.get("own_pictures"):
         lines.append(OWN_NOTE + f" ({info['own_pictures']} questions and answers about your own pictures"
                      + (", trained on alone" if info.get("own_only") else "") + ".)")
     return lines
 
 
+SEXUAL_NOTE = ("Adult sexual content was learned from (checked pictures of reviewed collections): personal use only. "
+               "Never publish this add-on, share it or put it in a product.")
+REVIEW_WARNING = ("PERSONAL USE ONLY. This add-on learned from review collections (pictures screened and checked by "
+                  "a trusted sighted adult). Do not sell it, publish it, put it in a product or share it outside "
+                  "personal, non-commercial use.")
+
+
 def personal_chosen(info):
-    """True when a personal-use choice was made (non-commercial or research-only collections), or a personal-use
-    collection is among those learned from: the add-on is then for personal use only."""
-    return bool(info.get("with_noncommercial") or info.get("with_research") or
+    """True when a personal-use choice was made (non-commercial or research-only collections), a personal-use
+    collection is among those learned from, or pictures of review collections were learned from: the add-on is
+    then for personal use only."""
+    return bool(info.get("with_noncommercial") or info.get("with_research") or info.get("review_pictures") or
                 any(sources.is_personal(s) for s in sources.SOURCES if s.key in info.get("collections", ())))
 
 
@@ -577,7 +703,12 @@ def personal_lines(info):
     personal-use collection learned from with its licence and terms page; [] when no personal-use choice was made."""
     if not personal_chosen(info):
         return []
-    lines = [sources.PERSONAL_WARNING]
+    personal_choice = info.get("with_noncommercial") or info.get("with_research") or \
+        any(sources.is_personal(s) for s in sources.SOURCES if s.key in info.get("collections", ()))
+    lines = [sources.PERSONAL_WARNING if personal_choice else REVIEW_WARNING]
+    lines += review_lines(info)
+    if not personal_choice:
+        return lines
     used = [s for s in sources.SOURCES if sources.is_personal(s) and s.key in info.get("collections", ())]
     if used:
         lines.append("The personal-use collections it learned from:")
@@ -588,6 +719,27 @@ def personal_lines(info):
     else:
         lines.append("(Personal-use collections were chosen, but none of them could be downloaded or none are in this "
                      "kit. The add-on is still labelled for personal use only.)")
+    return lines
+
+
+def review_lines(info):
+    """The review collections learned from (with their licence and terms), and the adult-sexual-content note, for
+    the PERSONAL USE ONLY block and ATTRIBUTION.txt; [] when none were used."""
+    collections = info.get("review_collections") or []
+    if not collections:
+        return []
+    lines = ["The review collections it learned from (only pictures checked by a trusted sighted adult):"]
+    for item in collections:
+        lines += [f"  - {item['name']} ({item['pictures']} pictures; content {item.get('content') or 'none'}; "
+                  f"{item.get('category') or 'open'})", f"    Credit: {item.get('credit', '')}",
+                  f"    Licence: {item.get('licence', '')}"]
+        if item.get("terms"):
+            lines.append(f"    Terms: {item['terms']}")
+        if item.get("category") == "permission":
+            lines.append(f"    Used with permission from {item.get('organisation') or item['name']}, personal use "
+                         "only.")
+    if info.get("sexual_used"):
+        lines.append(SEXUAL_NOTE)
     return lines
 
 
@@ -621,6 +773,8 @@ def attribution(chosen_keys, share_alike, info=None):
             lines += [f"- {source.credit}", f"  Licence: {source.licence}"]
     if "own" in chosen_keys:
         lines += ["- The trainer's own pictures and descriptions (not credited here; not for publishing)."]
+    if info and info.get("review_collections"):
+        lines += [""] + review_lines(info)
     if personal:
         # The personal-use collections under their own heading, with their terms.
         lines += ["", "Personal-use collections (non-commercial licences or research-only terms):",
@@ -726,13 +880,13 @@ def prepared_collections(state):
 
 
 def follow_up_rows(work, state, plan, with_wikipedia, size, replay, with_nudity=False, with_medical=False,
-                   with_noncommercial=False, with_research=False):
+                   with_noncommercial=False, with_research=False, with_sexual=False):
     """(training rows, test rows) of a follow-up run: the new collections' pictures, a share (replay) of the earlier
     collections' pictures, and every collection's test pictures. Collections whose content or personal-use group was
     not chosen (with_nudity, with_medical, with_noncommercial, with_research) are left out, also the earlier ones."""
     import random
     choices = {"with_nudity": with_nudity, "with_medical": with_medical, "with_noncommercial": with_noncommercial,
-               "with_research": with_research}
+               "with_research": with_research, "with_sexual": with_sexual}
     new_train, new_test = prepare_data(work, state, size, with_wikipedia, keys=set(plan["new"]), **choices)
     allowed = {s.key for s in sources.chosen(with_wikipedia, **choices)}
     old_train, old_test = [], []
@@ -767,6 +921,11 @@ def main(argv=None):
     parser.add_argument("--replay", type=float, default=0.25, help="with --continue: share of earlier pictures")
     parser.add_argument("--with-nudity", action="store_true", help="also learn from non-sexual nudes in art")
     parser.add_argument("--with-medical", action="store_true", help="also learn from medical and anatomy pictures")
+    parser.add_argument("--with-sexual", action="store_true",
+                        help="also learn from adult sexual content in reviewed collections (needs --with-nudity; "
+                             "personal use only)")
+    parser.add_argument("--review", action="append", default=[],
+                        help="a review workspace (repeatable): only its checked pictures are used")
     parser.add_argument("--own", default="", help="a folder of your own described pictures (own_data.py)")
     parser.add_argument("--own-only", action="store_true", help="with --own: train on your own pictures alone")
     parser.add_argument("--personal-noncommercial", action="store_true",
@@ -778,8 +937,11 @@ def main(argv=None):
                         help="you have read the research-only collections' terms and will use the result only for "
                              "personal, non-commercial purposes")
     args = parser.parse_args(argv)
+    sexual_without_nudity = args.with_sexual and not args.with_nudity
+    args.with_sexual = args.with_sexual and args.with_nudity     # adult sexual content needs art with nudity
     content = {"with_nudity": args.with_nudity, "with_medical": args.with_medical,
-               "with_noncommercial": args.personal_noncommercial, "with_research": args.personal_research}
+               "with_noncommercial": args.personal_noncommercial, "with_research": args.personal_research,
+               "with_sexual": args.with_sexual}
     personal = args.personal_noncommercial or args.personal_research
     os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
     os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
@@ -798,6 +960,23 @@ def main(argv=None):
         stop("Research-only collections were chosen, but their terms were not accepted. Read their terms and agree "
              "to use the result only for personal, non-commercial purposes (in the program: tick Include "
              "research-only collections and press Agree; with the .cmd files: add --accept-research-terms).")
+    if sexual_without_nudity:
+        say("Adult sexual content was chosen without art with nudity (--with-nudity), which it needs, so it is left "
+            "out.")
+    # The checked pictures of the review collections are read first: whether there are any decides whether this
+    # training is for personal use only (and so its name and which earlier training a follow-up may carry on from).
+    review_train, review_test, review_used, review_code = [], [], [], ""
+    if args.review and args.own_only:
+        say("Review collections are left out: Only my own pictures is chosen (--own-only).")
+    elif args.review:
+        say(f"Reading the checked pictures of {len(args.review)} review collection"
+            f"{'s' if len(args.review) != 1 else ''}.")
+        review_train, review_test, review_used, review_code = review_rows(work, args.review, content)
+        if not review_used:
+            say("  No checked pictures of the review collections can be used now; training goes on without them.")
+    review_contents = {t for r in review_train + review_test for t in r.get("contents", [])}
+    if review_used:
+        personal = True                          # review pictures: personal use only, like personal collections
     tag = ("-wikipedia" if args.with_wikipedia else "") + ("" if args.size == "normal" else f"-{args.size}")
     run = f"{args.model}{tag}"                 # each kind of run keeps its own test results and add-on
     plan = None
@@ -806,8 +985,11 @@ def main(argv=None):
         # What today's choices allow: a training that learned from art with nudity, medical pictures, your own
         # pictures, or non-commercial or research-only collections (personal use) is only carried on from when that
         # is chosen again now.
+        allowed_now = sources.allowed_contents(args.with_nudity, args.with_medical, args.with_sexual)
         wanted_now = {"nudity": args.with_nudity, "medical": args.with_medical, "own": bool(args.own),
-                      "noncommercial": args.personal_noncommercial, "research": args.personal_research}
+                      "noncommercial": args.personal_noncommercial, "research": args.personal_research,
+                      "intimate": "intimate" in allowed_now, "sexual": "sexual" in allowed_now,
+                      "review": bool(review_used)}
         if plan and not state.done(f"after-{plan['run']}") and \
                 any(on and not wanted_now.get(c) for c, on in plan.get("needs", {}).items()):
             say("The follow-up started before carries on from a training made with choices that are not made now "
@@ -820,12 +1002,13 @@ def main(argv=None):
             if not earlier:
                 # Say when a personal-use training was passed over, so the person knows which choice it needs.
                 skipped = {c for r, _f in finished_runs(work, state) if r.startswith(args.model)
-                           for c in ("noncommercial", "research") if state.data[f"train-{r}"].get(c)
-                           and not wanted_now[c]}
-                names = {"noncommercial": "non-commercial", "research": "research-only"}
-                hint = (" A training for personal use only (with " + " and ".join(names[c] for c in sorted(skipped))
-                        + " collections) is only carried on from when the same choice is made again."
-                        if skipped else "")
+                           for c in ("noncommercial", "research", "intimate", "sexual", "review")
+                           if state.data[f"train-{r}"].get(c) and not wanted_now[c]}
+                names = {"noncommercial": "non-commercial collections", "research": "research-only collections",
+                         "intimate": "intimate medical pictures", "sexual": "adult sexual content",
+                         "review": "checked pictures of review collections"}
+                hint = (" A training made with " + " and ".join(names[c] for c in sorted(skipped))
+                        + " is only carried on from when the same choice is made again." if skipped else "")
                 stop("There is no finished training to carry on from that fits these choices. Train once first "
                      "(Start Training)." + hint)
             base_run, base_final = earlier[-1]
@@ -839,13 +1022,14 @@ def main(argv=None):
             new = [k for k in new if k in allowed]
             if args.own_only:
                 new = []                         # only the person's own pictures are added
-            if not new and not args.own:
+            if not new and not args.own and not review_used:
                 stop("Every collection was already in the earlier training: there is nothing new to add yet.")
             import time as _time
             # A follow-up with a personal-use choice is personal too ("-personal" in its name), and remembers which
             # choices it needs (its earlier training's, and the personal-use ones made now).
             needs = {c: bool(state.data[f"train-{base_run}"].get(c)) for c in wanted_now}
-            needs.update({c: wanted_now[c] or needs[c] for c in ("noncommercial", "research")})
+            needs.update({c: wanted_now[c] or needs[c] for c in ("noncommercial", "research", "review")})
+            needs.update({c: (c in review_contents) or needs[c] for c in ("intimate", "sexual")})
             plan = {"run": f"{args.model}-plus-{_time.strftime('%Y%m%d-%H%M')}" + ("-personal" if personal else ""),
                     "from": base_run, "from_final": base_final, "needs": needs,
                     "new": new, "old": {k: v for k, v in old.items() if k not in new}}
@@ -855,11 +1039,15 @@ def main(argv=None):
     say("")
     say(f"Picture Model Training Kit started for the {args.model.upper()} model, size {args.size}"
         + (", with Wikipedia." if args.with_wikipedia else "."))
-    say(sources.content_choices_text(args.with_nudity, args.with_medical))
-    if personal:
+    say(sources.content_choices_text(args.with_nudity, args.with_medical, args.with_sexual))
+    if args.personal_noncommercial or args.personal_research:
         say("Personal-use collections: " + " and ".join(w for w, on in (
             ("non-commercial", args.personal_noncommercial), ("research-only", args.personal_research)) if on)
             + " included. This training will be for personal use only.")
+    if review_used:
+        say(f"With {len({r['picture'] for r in review_train + review_test})} checked pictures from "
+            f"{len(review_used)} review collection{'s' if len(review_used) != 1 else ''}. This training will be for "
+            "personal use only.")
     if args.own:
         say(f"With your own pictures from {args.own}" + (", alone." if args.own_only else ", added to the collections."))
     if plan:
@@ -868,7 +1056,8 @@ def main(argv=None):
                 f"{len(plan['new'])} collection{'s' if len(plan['new']) != 1 else ''}: "
                 + ", ".join(source_name(k).split(":")[0] for k in plan["new"]) + ".")
         else:
-            say(f"This is a follow-up: it carries on from the training {plan['from']} and adds your own pictures.")
+            say(f"This is a follow-up: it carries on from the training {plan['from']} and adds your own pictures"
+                + (" and checked review pictures." if review_used else "."))
     say("Windows will not go to sleep while this runs; the screen may turn off. You can close this window at any time "
         "and start the kit again later: it carries on where it stopped.")
     say("Step 1 of 7: checking the graphics card and the disk.")
@@ -887,7 +1076,7 @@ def main(argv=None):
         train_rows, test_rows = prepare_data(work, state, args.size, args.with_wikipedia, **content)
     own_count = 0
     if args.own:
-        own_train, own_test, own_tag = own_rows(work, args.own)
+        own_train, own_test, own_tag = own_rows(work, args.own, content)
         own_count = len(own_train) + len(own_test)
         if not own_train and args.own_only:
             stop("None of your own pictures can be used. Read the problems above, then start again.")
@@ -901,13 +1090,25 @@ def main(argv=None):
             if not plan:          # a training with own pictures is its own training, named after them
                 run += ("-own-only-" if args.own_only else "-own-") + own_tag
                 tag += ("-own-only-" if args.own_only else "-own-") + own_tag
+    if review_train:
+        import random
+        train_rows = train_rows + review_train
+        random.Random(8).shuffle(train_rows)
+        test_rows = test_rows + review_test
+        if not plan:              # a training with review pictures is its own training, named after them
+            run += "-review-" + review_code
+            tag += "-review-" + review_code
     used = {sources.content_of(r["source"]) for r in train_rows + test_rows}
+    used |= {t for r in train_rows + test_rows for t in r.get("contents", [])}     # tagged own or review pictures
     if any(r["source"] == "own" for r in train_rows):
         used.add("own")
+    if any(r.get("review") for r in train_rows):
+        used.add("review")
+        personal = True
     if not plan:
         # A training with the content choices is its own training too ("4b-nudity-medical"); named after the
         # collections really prepared, so a training started before those packs existed carries on as it was.
-        extra = "".join(f"-{c}" for c in ("nudity", "medical") if c in used)
+        extra = "".join(f"-{c}" for c in ("nudity", "medical", "intimate", "sexual") if c in used)
         extra += "-personal" if personal else ""     # personal use only: its own training, never mixed up
         run, tag = run + extra, tag + extra
     if not train_rows:
@@ -945,7 +1146,8 @@ def main(argv=None):
         seconds = train(model, processor, train_rows, adapter_dir, device)
         state.mark(f"train-{run}", {"seconds": seconds, "nudity": "nudity" in used, "medical": "medical" in used,
                                     "own": "own" in used, "noncommercial": args.personal_noncommercial,
-                                    "research": args.personal_research})
+                                    "research": args.personal_research, "intimate": "intimate" in used,
+                                    "sexual": "sexual" in used, "review": "review" in used})
         del model, processor
         free()
     else:
@@ -964,6 +1166,8 @@ def main(argv=None):
     info = {"model": repo, "revision": revision, "card": card, "train": len(train_rows), "test": len(test_rows),
             "size": args.size, "share_alike": args.with_wikipedia, **content,
             "own_pictures": own_count, "own_only": args.own_only, "places": place_counts(train_rows),
+            "review_pictures": len({r["picture"] for r in train_rows + test_rows if r.get("review")}),
+            "review_collections": review_used, "sexual_used": "sexual" in used, "intimate_used": "intimate" in used,
             "collections": sorted({r["source"] for r in train_rows}),
             "seconds": state.data[f"train-{run}"]["seconds"], "before": before, "after": after,
             "continued_from": plan["from"] if plan else None,
