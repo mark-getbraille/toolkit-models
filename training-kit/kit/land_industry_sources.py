@@ -14,6 +14,7 @@ Groups (Source.group, as in sources.py):
   "share-alike"    CC BY-SA and GFDL: only with the share-alike choice (--with-wikipedia); an add-on trained with them
                    is CC BY-SA.
   "noncommercial"  CC BY-NC, BY-NC-SA and other non-commercial terms: personal use only (--personal-noncommercial).
+  "research"       research or academic terms: personal use only (--personal-research with --accept-research-terms).
 
 The collections (LAND_SOURCES):
   share-alike
@@ -34,6 +35,14 @@ The collections (LAND_SOURCES):
     cropandweed_nc            CropAndWeed (AIT Austrian Institute of Technology, 2023; its own non-commercial terms,
                               no redistribution): field photos with every crop and weed plant outlined and named,
                               many with the growth stage. "What crops and weeds are in this picture?"
+  research
+    agriculture_vision        Agriculture-Vision 2021 (IntelinAir and the Agriculture-Vision Workshop): aerial tiles of
+                              US farmland with field problems outlined (weed clusters, standing water, nutrient
+                              deficiency, planter skips, storm damage ...). The owner agrees to the workshop's terms
+                              and gets the 21 GB archive, then tells the kit where it is: a path or link in the
+                              AGRICULTURE_VISION setting, or on the first line of agriculture-vision.txt in the
+                              downloads folder, or the archive itself in the downloads folder's agriculture_vision
+                              folder. Its terms are narrow (the challenge only; no derivative works): read them first.
 
 Every picture in these collections shows plants, fields, machines or buildings; Commons rows whose words name a child
 carry "child": True, and rows that name an injury or a death carry "content": "graphic" (only the share-alike Commons
@@ -400,6 +409,129 @@ def prepare_cropandweed_nc(source, data_dir, work, cap):
     return rows
 
 
+# ----------------------------------------------------------------- research: Agriculture-Vision
+
+AGVISION_TERMS = "https://drive.google.com/file/d/1tiJpMjcr8mlF1pYU-6U6ZY5jnNgbn9XF/view"
+AGVISION_PAGE = "https://www.agriculture-vision.com/agriculture-vision-2021/dataset-2021"
+AGVISION_HF = "https://huggingface.co/datasets/shi-labs/Agriculture-Vision"
+AGVISION_FILE = "agriculture-vision.txt"           # the owner's note of where the archive is (a path or a link)
+# The field problems people outlined (each a folder of masks), in words.
+AGVISION_LABELS = {"double_plant": "double planting (rows sown twice over)",
+                   "drydown": "drydown (crops drying out early)",
+                   "endrow": "crowded end rows, where the planter turned",
+                   "nutrient_deficiency": "nutrient deficiency (pale, poorly fed patches)",
+                   "planter_skip": "planter skips (gaps in the rows)", "water": "standing water",
+                   "waterway": "a grassed waterway", "weed_cluster": "clusters of weeds",
+                   "storm_damage": "storm damage (flattened crop)"}
+AGVISION_VAL = 18_334                               # tiles in the val part, which comes first in the archive
+
+
+def agvision_location(work):
+    """Where the owner's copy of Agriculture-Vision-2021.tar.gz is, after agreeing to the workshop's terms: the
+    AGRICULTURE_VISION setting (a path or a web link), or the first line of agriculture-vision.txt in the downloads
+    folder (or its agriculture_vision folder), or a .tar.gz put in that agriculture_vision folder. Raises a
+    RuntimeError saying what to do when none is there."""
+    folder = os.path.join(work, "agriculture_vision")
+    given = os.environ.get("AGRICULTURE_VISION", "").strip()
+    for note in (os.path.join(work, AGVISION_FILE), os.path.join(folder, AGVISION_FILE)):
+        if not given and os.path.exists(note):
+            with open(note, encoding="utf-8-sig") as f:
+                given = (f.readline() or "").strip().strip('"')
+    if not given and os.path.isdir(folder):
+        given = next((os.path.join(folder, n) for n in sorted(os.listdir(folder)) if n.endswith(".tar.gz")), "")
+    if not given:
+        raise RuntimeError(
+            "Agriculture-Vision needs your own copy. Read and agree to the workshop's terms (" + AGVISION_TERMS + "), "
+            "get Agriculture-Vision-2021.tar.gz (21 GB) from " + AGVISION_PAGE + " or " + AGVISION_HF + ", then either "
+            "put it in " + folder + ", or write its path or download link on the first line of a text file named "
+            + AGVISION_FILE + " in " + work + ".")
+    return given
+
+
+def agvision_stream(location):
+    """The archive as a stream (a local file, or a web link read as it downloads)."""
+    if re.match(r"https?://", location):
+        import requests
+        r = requests.get(location, stream=True, timeout=120, headers={"User-Agent": USER_AGENT})
+        r.raise_for_status()
+        return r.raw
+    return open(location, "rb")
+
+
+def agvision_answer(found):
+    """The answer for one tile from the problems found on it."""
+    if not found:
+        return "This is an aerial view of farmland. No field problems are marked on it."
+    return sentence("This is an aerial view of farmland showing " + listed([AGVISION_LABELS[k] for k in sorted(found)]))
+
+
+def prepare_agriculture_vision(source, data_dir, work, cap):
+    """Agriculture-Vision 2021 (Chiu et al., CVPR 2020; IntelinAir's workshop terms): 512-pixel aerial tiles of US
+    farmland, with nine kinds of field problem outlined by agronomists. The archive is read once from start to end
+    (its order is: each part's masks, then its colour tiles, then its near-infrared tiles, then its labels): a random
+    share of the colour tiles is kept in the downloads folder until their labels have been read, and reading stops
+    after the first part (val) when it gave enough. "What problems can be seen in this field from the air?" """
+    import hashlib
+    from PIL import Image
+    location = agvision_location(work)
+    keep = os.path.join(work, source.key)
+    folder = os.path.join(data_dir, source.key)
+    os.makedirs(keep, exist_ok=True)
+    os.makedirs(folder, exist_ok=True)
+    want = cap + source.test
+    share = min(1.0, want * 1.3 / AGVISION_VAL)        # enough from the val part alone, for caps up to 14,000
+    say(f"  Reading Agriculture-Vision from {location} (it is read once, from start to end).")
+    tiles, found, part = {}, {}, ""
+
+    def chosen(stem):
+        """True for the tiles kept: a fixed share of them, picked by their name."""
+        return int(hashlib.md5(stem.encode()).hexdigest()[:8], 16) / 0xFFFFFFFF < share
+
+    def finish():
+        """Rows for the kept tiles whose labels have been read."""
+        rows = []
+        for (split, stem), path in sorted(tiles.items()):
+            target = os.path.join(folder, f"agv-{split}-{stem}.jpg")
+            with open(path, "rb") as f:
+                if have(target) or smaller(f.read(), target):
+                    rows.append({"picture": target, "question": "What problems can be seen in this field from the "
+                                                                "air?",
+                                 "answer": agvision_answer(found.get((split, stem), set())), "split": "",
+                                 "credit": "Agriculture-Vision 2021 (Chiu et al., IntelinAir and the Agriculture-Vision "
+                                           "Workshop), " + AGVISION_PAGE})
+        return rows
+
+    stream = agvision_stream(location)
+    try:
+        with tarfile.open(fileobj=stream, mode="r|gz") as tar:
+            for member in tar:
+                parts = member.name.split("/")
+                if len(parts) < 4 or not member.isfile():
+                    continue
+                split, stem = parts[1], os.path.splitext(parts[-1])[0]
+                if split not in ("train", "val"):
+                    continue
+                if part and split != part and len(tiles) >= want:
+                    break                                   # the first part gave enough
+                part = split
+                if parts[2] == "images" and parts[3] == "rgb" and chosen(stem):
+                    path = os.path.join(keep, f"{split}-{stem}.jpg")
+                    if not os.path.exists(path):
+                        with open(path, "wb") as f:
+                            f.write(tar.extractfile(member).read())
+                    tiles[(split, stem)] = path
+                elif parts[2] == "labels" and parts[3] in AGVISION_LABELS and (split, stem) in tiles:
+                    mask = Image.open(io.BytesIO(tar.extractfile(member).read()))
+                    if mask.getbbox():
+                        found.setdefault((split, stem), set()).add(parts[3])
+    finally:
+        stream.close()
+    rows = finish()
+    random.Random(319).shuffle(rows)
+    say(f"  Agriculture-Vision: {len(rows)} tiles.")
+    return rows[:want]
+
+
 # ----------------------------------------------------------------- needing sign-up, and not included
 
 LAND_SIGN_UP = {
@@ -411,11 +543,6 @@ LAND_SIGN_UP = {
     "MVTec AD and MVTec LOCO AD (industrial product defects; CC BY-NC-SA 4.0)":
         "https://www.mvtec.com/company/research/datasets/mvtec-ad/downloads : fill in the download form (name and "
         "e-mail). Non-commercial: personal use only. Describe the pictures as product close-ups, faulty or not.",
-    "Agriculture-Vision (aerial farmland with weed clusters, waterlogging, nutrient deficiency and other field "
-    "problems outlined)":
-        "https://www.agriculture-vision.com/agriculture-vision-2021/dataset-2021 and "
-        "https://huggingface.co/datasets/shi-labs/Agriculture-Vision : by downloading you agree to the workshop's terms "
-        "(a Google Drive PDF); 20 GB of four-band aerial tiles.",
     "Kaggle sets (tea leaf diseases, iCassava, solar-panel dust and defect sets, construction equipment, tool "
     "recognition and others)":
         "https://www.kaggle.com : a Kaggle account is needed; check each set's licence and where its pictures came "
@@ -445,10 +572,6 @@ LAND_NOT_INCLUDED = {
                                  "aubergine and moringa leaves are tagged CC BY-NC but are CC BY 4.0 on Mendeley Data; "
                                  "the wheat heads are tagged CC BY-SA but GWHD 2021 is CC BY 4.0 on Zenodo): the "
                                  "source's licence is used.",
-    "pLitterStreet (street-level plastic litter, CC BY 4.0, Zenodo 8288500), PLP2019 and the Plastic Litter Project "
-    "(drone photos of litter on beaches, CC BY 4.0)":
-        "open, found late in this search; not yet made into packs (TACO and the Commons litter categories cover "
-        "litter for now). They can be added as packs later.",
     "SIMPD medicinal plants (CC BY-NC 3.0)": "medicinal plants rather than farming; outside this subject.",
 }
 
@@ -495,11 +618,28 @@ LAND_SOURCES = [
            terms_summary="Free for non-commercial purposes such as research, teaching or personal experimentation; "
                          "you must not distribute the dataset or changed copies, nor use it or anything made from it "
                          "for commercial gain. Personal, non-commercial use only."),
+    # ---- research (needs the owner's own copy)
+    Source("agriculture_vision", "Agriculture-Vision: field problems in aerial photos of US farmland (personal use; "
+                                 "your own copy)",
+           "Agriculture-Vision Workshop Terms and Conditions (IntelinAir): internal, non-commercial academic use only, "
+           "for the workshop's challenge; no redistribution (" + AGVISION_TERMS + ")",
+           "Agriculture-Vision dataset (Mang Tik Chiu et al., 'Agriculture-Vision: A Large Aerial Image Database for "
+           "Agricultural Pattern Analysis', CVPR 2020), IntelinAir and the Agriculture-Vision Workshop, "
+           + AGVISION_PAGE, "research", 1500, 20, prepare_agriculture_vision,
+           "reads your 21 GB archive once (keeps about 300 MB of tiles)",
+           terms=AGVISION_TERMS,
+           terms_summary="IntelinAir's workshop terms: a limited licence for internal, non-commercial academic use "
+                         "for the Agriculture-Vision challenge; you must not sell, share or redistribute the dataset, "
+                         "must not use it for any commercial product or service, may not make derivative works other "
+                         "than a challenge submission, and are asked to delete it 90 days after the challenge ends. "
+                         "Read them before agreeing: they may not allow training your own model. Personal, "
+                         "non-commercial use only."),
 ]
 
 # The collections a picture-making model may learn from: plants, fields and drone tiles without people. Not the
 # Commons entry (its photos may show farm and factory workers, and children in markets).
-LAND_PICTURE_MAKING_OK = {"plant_seedlings_sa", "soybean_weeds_nc", "weed_growth_stage_nc", "cropandweed_nc"}
+LAND_PICTURE_MAKING_OK = {"plant_seedlings_sa", "soybean_weeds_nc", "weed_growth_stage_nc", "cropandweed_nc",
+                          "agriculture_vision"}
 
 
 def main(argv=None):

@@ -67,6 +67,13 @@ The packs (all open: CC0, public domain, CC BY, MIT or Apache):
                      UPSTREAM") and the place. US government work, "No known restrictions on images made by the U.S.
                      Government"; copies of older pictures from other sources ("PHOTOCOPY OF ...") and drawings are
                      left out.
+  plitter_street     pLitterStreet (Mandhati et al., Zenodo 8288500, CC BY 4.0): photos from cameras on vehicles
+                     driving through towns and villages in Thailand, Sri Lanka and the Mekong region, every piece of
+                     litter boxed (plastic bags, bottles, cups, face masks, sachets, straws, rope, piles). "What
+                     litter is in this picture?" and "Where was this photo taken?".
+  plp_floating_targets  Plastic Litter Projects 2019 and 2021 (University of the Aegean, Zenodo 3752719 and 7085112,
+                     CC BY 4.0): drone photos of floating plastic test targets off Lesvos, Greece, laid out to test
+                     whether satellites can see floating plastic. A few dozen photos; the satellite data is not used.
   usda_ars           US Department of Agriculture, Agricultural Research Service image gallery: field and laboratory
                      research, crops, insects and farm work, with ARS's captions. Public domain ("copyright-free,
                      public domain, images unless otherwise indicated"; pages that say otherwise are left out).
@@ -86,6 +93,7 @@ in training-kit/kit/land_industry_sources.py.
 import csv
 import io
 import json
+import os
 import random
 import re
 import sys
@@ -718,6 +726,154 @@ def build_taco_litter(limit):
     return with_twins(fetched)
 
 
+# ----------------------------------------------------------------- street litter and floating plastic
+
+PLITTER = "https://zenodo.org/records/8288500/files/{}?download=1"
+PLITTER_CREDIT = ("pLitterStreet: Street Level Plastic Litter Detection Dataset (Mandhati, Deshapriya, Mendis and "
+                  "Gunasekara), Zenodo 8288500, CC BY 4.0")
+# The dataset's folders (the start of each file name) and where they were filmed; "" when the record does not say.
+PLITTER_PLACES = {"Rangsit_2021": "Rangsit, Pathum Thani, Thailand", "Taladthai_2021": "Pathum Thani, Thailand",
+                  "Chiangrai_2021": "Chiang Rai, Thailand", "Ubon_2022": "Ubon Ratchathani, Thailand",
+                  "Hanwella_2022": "Hanwella, Sri Lanka", "Mawanella_2022": "Mawanella, Sri Lanka",
+                  "Mekong_2020": ""}
+# The 10 classes: the words for one, and for several.
+PLITTER_WORDS = {"litter": ("a piece of litter", "pieces of litter"), "pile": ("a pile of rubbish", "piles of rubbish"),
+                 "face mask": ("a face mask", "face masks"), "plastic bag": ("a plastic bag", "plastic bags"),
+                 "bottle": ("a bottle", "bottles"), "cup": ("a cup", "cups"), "rope": ("a piece of rope",
+                                                                                     "pieces of rope"),
+                 "sachet": ("a sachet (a small plastic packet)", "sachets (small plastic packets)"),
+                 "straw": ("a drinking straw", "drinking straws")}
+
+
+def plitter_answer(counts):
+    """The answer for one street photo from {class name: count}: the litter, most first, then any rubbish bin."""
+    words = [PLITTER_WORDS[n][0] if c == 1 else f"{c} {PLITTER_WORDS[n][1]}"
+             for n, c in sorted(counts.items(), key=lambda x: -x[1]) if n in PLITTER_WORDS]
+    bins = counts.get("trash bin", 0)
+    answer = f"There is litter beside the street: {listed(words)}." if words else \
+        "No litter is marked beside the street here."
+    if bins:
+        answer += " There is also a rubbish bin." if bins == 1 else f" There are also {bins} rubbish bins."
+    return answer
+
+
+def build_plitter_street(limit):
+    """The street-litter pack: pLitterStreet photos from cameras on vehicles driving through towns and villages in
+    Thailand, Sri Lanka and the Mekong region, every piece of litter boxed by people (its 10-class annotations), an
+    equal share from each place (the photos are frames of drives, so one place would otherwise fill the pack). The
+    pictures are read out of the 13.7 GB images.zip by HTTP ranges. "What litter is in this picture?" and, where
+    known, "Where was this photo taken?"."""
+    import zipfile
+    s = session()
+    notes = zipfile.ZipFile(io.BytesIO(s.get(PLITTER.format("annotations.zip"), timeout=300).content))
+    data = json.loads(notes.read("annotations/10_class_splits/annotations_all.json"))
+    cats = {c["id"]: c["name"] for c in data["categories"]}
+    counts = {}
+    for a in data["annotations"]:
+        one = counts.setdefault(a["image_id"], {})
+        one[cats[a["category_id"]]] = one.get(cats[a["category_id"]], 0) + 1
+    z = remote_zip(PLITTER.format("images.zip"))
+    inside = {n.rsplit("/", 1)[-1]: n for n in z.namelist() if n.lower().endswith((".jpg", ".jpeg", ".png"))}
+    groups = {}
+    for im in data["images"]:
+        folder = (im.get("path") or "").split("/")[2] if (im.get("path") or "").count("/") >= 3 else ""
+        if im["id"] in counts and im["file_name"] in inside and folder in PLITTER_PLACES:
+            groups.setdefault(folder, []).append(im)
+    out, rng = [], random.Random(515)
+    quota = limit // max(1, len(groups)) + 1
+    for folder, images in sorted(groups.items()):
+        rng.shuffle(images)
+        place = PLITTER_PLACES[folder]
+        for im in images[:quota]:
+            picture = smaller(z.read(inside[im["file_name"]]))
+            if not picture:
+                continue
+            rows = [{"question": ASK_LITTER, "answer": plitter_answer(counts[im["id"]]), "credit": PLITTER_CREDIT,
+                     **where(place)}]
+            if place:
+                rows.append(place_row(rows[0], place))
+            out.append((f"plitter-{re.sub(r'[^\w.-]', '_', im['file_name'].rsplit('.', 1)[0])[:80]}.jpg", picture,
+                        rows))
+        say(f"  pLitterStreet {folder}: {min(quota, len(images))} photos")
+    rng.shuffle(out)
+    return with_twins(out[:limit])
+
+
+PLP2019 = "https://zenodo.org/records/3752719/files/PLP2019_dataset.rar?download=1"
+PLP2021 = "https://zenodo.org/records/7085112/files/{}.zip?download=1"
+PLP2021_DATES = ("20210611", "20210621", "20210626", "20210701", "20210706", "20210711", "20210716", "20210721",
+                 "20210726", "20210731", "20210805", "20210810", "20210815", "20210820", "20210825", "20210830",
+                 "20210904", "20210909", "20210914", "20210919", "20210924", "20211004")
+PLP_ASK = "What is floating on the water here?"
+PLP_ANSWER = ("Test targets floating on the sea near the coast: rafts made of plastic and other materials, laid out "
+              "by scientists to check whether satellites can spot floating plastic litter.")
+
+
+def plp_2019_photos():
+    """[(file name, JPEG bytes)] of PLP2019's drone photos: its 68 MB RAR archive is downloaded and the photos taken
+    out with bsdtar or 7-Zip (Python cannot read RAR itself); [] when neither program is there. The 2018 "photo"
+    is a 250-megapixel orthophoto map and is left out by smaller()."""
+    import shutil
+    import subprocess
+    import tempfile
+    with tempfile.TemporaryDirectory() as folder:
+        archive = f"{folder}/plp2019.rar"
+        with open(archive, "wb") as f:
+            f.write(session().get(PLP2019, timeout=600).content)
+        if shutil.which("bsdtar"):
+            command = ["bsdtar", "-xf", archive, "-C", folder]
+        elif shutil.which("7z"):
+            command = ["7z", "x", "-y", f"-o{folder}", archive]
+        else:
+            say("  PLP2019: neither bsdtar nor 7z is installed, so its RAR archive cannot be opened")
+            return []
+        subprocess.run(command, check=True, capture_output=True)
+        out = []
+        for root, _, files in os.walk(folder):
+            for name in sorted(files):
+                if "UAV_photos" in root and name.lower().endswith((".jpg", ".jpeg")):
+                    with open(f"{root}/{name}", "rb") as f:
+                        picture = smaller(f.read())
+                    if picture:
+                        out.append((name, picture))
+        return out
+
+
+def build_plp_floating_targets(limit):
+    """The floating-plastic pack: drone photos of the Plastic Litter Projects of the University of the Aegean's
+    Marine Remote Sensing Group off Lesvos, Greece: PLP2019 (Zenodo 3752719, CC BY 4.0) and PLP2021 (Zenodo 7085112,
+    CC BY 4.0; one photo of the targets inside each date's 5-10 GB zip, read by HTTP ranges). "What is floating on
+    the water here?"."""
+    out = []
+    try:
+        for name, picture in plp_2019_photos():
+            out.append((f"plp2019-{name.rsplit('.', 1)[0]}.jpg", picture,
+                        [{"question": PLP_ASK, "answer": PLP_ANSWER,
+                          "credit": "PLP2019 dataset (Konstantinos Topouzelis, Marine Remote Sensing Group, University "
+                                    "of the Aegean), Zenodo 3752719, CC BY 4.0"}]))
+    except Exception as e:  # noqa: BLE001 - the 2021 photos are still taken
+        say(f"  PLP2019: not read ({str(e)[:100]})")
+    say(f"  PLP2019: {len(out)} drone photos")
+    place = "Gulf of Gera, Lesvos, Greece"
+    for date in PLP2021_DATES:
+        if len(out) >= limit:
+            break
+        try:
+            z = remote_zip(PLP2021.format(date))
+            names = [n for n in z.namelist() if re.search(r"_(UAS_RGB|field)[^/]*\.jpe?g$", n, re.I)]
+            for n in names[:1]:
+                picture = smaller(z.read(n))
+                if picture:
+                    rows = [{"question": PLP_ASK, "answer": PLP_ANSWER, **where(place),
+                             "credit": f"Plastic Litter Project 2021 dataset (Dimitris Papageorgiou and Konstantinos "
+                                       f"Topouzelis), Zenodo 7085112, CC BY 4.0, acquisition {date}"}]
+                    out.append((f"plp2021-{date}.jpg", picture, rows + [place_row(rows[0], place)]))
+        except Exception as e:  # noqa: BLE001 - the next date
+            say(f"  PLP2021 {date}: not read ({str(e)[:100]})")
+    say(f"  PLP 2019 and 2021: {len(out)} photos in all")
+    return with_twins(out[:limit])
+
+
 # ----------------------------------------------------------------- weather and clouds
 
 CCSN = "https://dataverse.harvard.edu/api/access/datafile/3569338"
@@ -1298,6 +1454,14 @@ LAND_PACKS = {
                                  "and-engineering-records/ : 'No known restrictions on images made by the U.S. "
                                  "Government' (https://www.loc.gov/rr/print/res/114_habs.html). Captions from the "
                                  "survey records."),
+    "plitter_street": (build_plitter_street, "pLitterStreet: Street Level Plastic Litter Detection Dataset (Mandhati, "
+                                             "Deshapriya, Mendis and Gunasekara), CC BY 4.0, "
+                                             "https://doi.org/10.5281/zenodo.8288500"),
+    "plp_floating_targets": (build_plp_floating_targets, "PLP2019 dataset (Topouzelis), CC BY 4.0, "
+                                                         "https://doi.org/10.5281/zenodo.3752719 ; Plastic Litter "
+                                                         "Project 2021 dataset (Papageorgiou and Topouzelis), CC BY "
+                                                         "4.0, https://doi.org/10.5281/zenodo.7085112 ; Marine Remote "
+                                                         "Sensing Group, University of the Aegean."),
     "usda_ars": (build_usda_ars, "USDA Agricultural Research Service image gallery, "
                                  "https://www.ars.usda.gov/oc/images/image-gallery/ : public domain "
                                  "(https://www.ars.usda.gov/oc/images/copyright/); credit: USDA ARS."),
@@ -1318,6 +1482,8 @@ LAND_LIMITS = {
     "eurosat": 600,                   # of 27,000, kept few: 64 by 64 pixels
     "commons_land_industry": 4000,    # the free files of about 125 categories
     "loc_haer": 3000,                 # two photos from each of about 1,500 items
+    "plitter_street": 2500,           # of about 13,000 annotated photos, an equal share from each of 7 places
+    "plp_floating_targets": 30,       # all there are: about 5 drone photos of 2019 and one a date in 2021 (22 dates)
     "usda_ars": 300,                  # the whole gallery (a few hundred photo pages)
 }
 
