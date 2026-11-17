@@ -629,16 +629,20 @@ def accesspark_answer(names):
     total = sum(spaces.values())
     if not total:
         return ""
-    parts = []
-    if spaces["dp_one_aisle"] + spaces["dp_two_aisle"]:
-        n = spaces["dp_one_aisle"] + spaces["dp_two_aisle"]
-        parts.append(f"{n} with a striped access aisle beside {'it' if n == 1 else 'them'} for getting a wheelchair "
-                     "in and out")
-    if spaces["dp_no_aisle"]:
-        parts.append(f"{spaces['dp_no_aisle']} with no access aisle")
-    what = "one disability parking space" if total == 1 else f"{total} disability parking spaces"
-    return (f"This is an aerial photo of a car park, seen from straight above. It shows {what}"
-            + (f": {listed(parts)}." if total > 1 else f", {parts[0]}."))
+    aisle = spaces["dp_one_aisle"] + spaces["dp_two_aisle"]
+    beside = "a striped access aisle beside {} for getting a wheelchair in and out"
+    if total == 1:
+        how = f"with {beside.format('it')}" if aisle else "with no access aisle beside it"
+        return f"This is an aerial photo of a car park, seen from straight above. It shows one disability parking " \
+               f"space, {how}."
+    if aisle == total:
+        how = f"all with {beside.format('them')}"
+    elif not aisle:
+        how = "none with an access aisle beside it"
+    else:
+        how = f"{aisle} with {beside.format('them' if aisle > 1 else 'it')} and {total - aisle} without"
+    return f"This is an aerial photo of a car park, seen from straight above. It shows {total} disability parking " \
+           f"spaces, {how}."
 
 
 def prepare_accessparkcv(source, data_dir, work, cap):

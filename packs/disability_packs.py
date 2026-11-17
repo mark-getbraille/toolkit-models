@@ -477,7 +477,7 @@ DISABILITY_PACKS = {
 # How many pictures a full build takes from each collection (about what each offers after the licence and label
 # checks).
 DISABILITY_LIMITS = {
-    "open_images_disability": 2500,    # of about 2,000 to 3,000 usable photos with a device or sport label
+    "open_images_disability": 219,     # all usable: the hand-checked val and test labels hold only 219 such photos
     "commons_disability": 1500,        # the free files of about 60 small categories
     "tapad_tactile_paving": 2811,      # 1,611 bicycle and 1,200 annotated smartphone photos
 }
