@@ -68,7 +68,11 @@ jobs:
                    "commons_connectors", "laundry_symbols", "commons_tools", "commons_personal",
                    "commons_hairstyles", "commons_kitchen",
                    "commons_events", "loc_events", "nara_events", "europeana_events", "safety_signs",
-                   "commons_safety_photos", "safety_training", "dfire_cameras"]
+                   "commons_safety_photos", "safety_training", "dfire_cameras",
+                   "commons_munition_models", "commons_uxo", "amlid_landmines", "commons_firearms",
+                   "commons_cartridges", "commons_child_rites", "europeana_child_rites",
+                   "abo_products", "open_images_in_use", "open_images_tech", "commons_things", "commons_in_use",
+                   "brick_quality", "codd_materials", "nyuad_materials"]
           words = [w for w in sys.argv[1].split(",") if w]
           keys = known if words in ([], ["all"]) else [w for w in words if w in known]
           print("keys=" + json.dumps(keys))
@@ -103,8 +107,9 @@ jobs:
               python -m pip install "transformers==4.57.6" "sentencepiece==0.2.1" "sacremoses==0.1.1" ;;
             seoul_sidewalks|urine_samples)
               python -m pip install "pillow-heif==1.1.1" ;;
-            # PLP2019's drone photos come in a RAR archive, which Python cannot open: bsdtar (libarchive) does.
-            plp_floating_targets)
+            # PLP2019's drone photos come in a RAR archive and AMLID's in a 7-Zip archive, which Python cannot open:
+            # bsdtar (libarchive) does.
+            plp_floating_targets|amlid_landmines)
               sudo apt-get update && sudo apt-get install -y libarchive-tools ;;
           esac
       - name: Build the pack
@@ -273,6 +278,21 @@ jobs:
             commons_safety_photos) limit=4000 ;;
             safety_training) limit=1200 ;;
             dfire_cameras) limit=4000 ;;
+            commons_munition_models) limit=1500 ;;
+            commons_uxo) limit=2000 ;;
+            amlid_landmines) limit=1100 ;;
+            commons_firearms) limit=3000 ;;
+            commons_cartridges) limit=1500 ;;
+            commons_child_rites) limit=1200 ;;
+            europeana_child_rites) limit=400 ;;
+            abo_products) limit=6000 ;;
+            open_images_in_use) limit=4000 ;;
+            open_images_tech) limit=4500 ;;
+            commons_things) limit=2500 ;;
+            commons_in_use) limit=1500 ;;
+            brick_quality) limit=1500 ;;
+            codd_materials) limit=1400 ;;
+            nyuad_materials) limit=208 ;;
           esac
           # Stop downloading after 290 minutes, keeping what has come, so the pack is published within the job's time.
           PACK_TIME_LIMIT_MINUTES=290 python packs/build_packs.py "${{ matrix.key }}" --out build/packs --limit "$limit"

@@ -1033,6 +1033,19 @@ PACKS.update(HOME_PACKS)
 from events_safety_packs import EVENTS_SAFETY_PACKS
 PACKS.update(EVENTS_SAFETY_PACKS)
 
+# Safety around munitions and guns, and children's rites: landmine, grenade, shell, bomb and rocket models,
+# unexploded munitions and demining (Commons, AMLID drone photos), firearm and cartridge models, and baptisms, first
+# communions, bar and bat mitzvahs and other rites (Commons, Europeana) behind a strict child-protection filter. Rows
+# can carry "content": "graphic" or "child". amlid_landmines needs bsdtar or 7-Zip (its photos come in a 7z archive).
+from safety_rites_packs import SAFETY_RITES_PACKS
+PACKS.update(SAFETY_RITES_PACKS)
+
+# Things and materials: Amazon Berkeley Objects products (rows carry "place_kind": "market", the country of the
+# Amazon shop), Open Images people using things and technology, Commons electronics, tools, building supplies,
+# kitchen gadgets and people at work, brick grades and building materials (CODD, NYUAD).
+from things_packs import THINGS_PACKS
+PACKS.update(THINGS_PACKS)
+
 
 def sha256_of(path):
     """The SHA-256 of a file."""

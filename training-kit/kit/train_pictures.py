@@ -224,9 +224,10 @@ def with_place(row, caption, tokenizer):
     """The caption to train on, fitted to the 77 pieces, with the row's place: "Photo taken in Kyoto, Japan. <the
     description>" for a photo, "<the description> Made in Japan." for an object (place_kind "origin"), "<the
     description> It shows Kyoto, Japan." for a picture of a place ("depicted"). The place always stays: the
-    description is shortened to the room left."""
+    description is shortened to the room left. A "market" place (the country of the shop that sells a product) is
+    left out: it is not where the photo was taken."""
     place = sources.clean(row.get("place")).strip(" ,.")
-    if not place:
+    if not place or row.get("place_kind") == "market":
         return fit(caption, tokenizer)
     kind = row.get("place_kind") or "photo"
     words = sources.place_words(place) if hasattr(sources, "place_words") else place
@@ -378,7 +379,7 @@ def choose_items(train_rows, test_rows, mine, tokenizer, args, wanted):
             if caption and row.get("picture"):
                 item = {"picture": row["picture"], "caption": with_place(row, caption, tokenizer),
                         "source": row["source"]}
-                if row.get("place"):
+                if row.get("place") and row.get("place_kind") != "market":     # a shop's country is not taught
                     item["place"] = row["place"]
                 out.append(item)
         return out

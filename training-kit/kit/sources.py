@@ -895,11 +895,13 @@ def prepare_pack(source, data_dir, work, cap):
 
 # A row may carry "place" (a short place name, most specific first, ending with the country in English: "Kyoto,
 # Japan") and "place_kind": "photo" (where the photo was taken; the same as none), "origin" (where an object was
-# made) or "depicted" (the place a picture shows). Places come only from each collection's own records (packs/
-# places.py builds them for the packs), never from a guess. train.py teaches the describer a few "Which country might
-# this photo be from?" and "Where was this object made?" answers from them; train_pictures.py starts a description
-# with its place, so a picture-making add-on learns what places look like.
-PLACE_KINDS = ("photo", "origin", "depicted")
+# made), "depicted" (the place a picture shows) or "market" (the country of the shop that sells a product, as ABO's
+# Amazon shops: not where the photo was taken nor where the thing was made, so it is kept for the record only and
+# never taught). Places come only from each collection's own records (packs/places.py builds them for the packs),
+# never from a guess. train.py teaches the describer a few "Which country might this photo be from?" and "Where was
+# this object made?" answers from them; train_pictures.py starts a description with its place, so a picture-making
+# add-on learns what places look like (both leave "market" places out).
+PLACE_KINDS = ("photo", "origin", "depicted", "market")
 # Collections whose photos show the place itself (streets, homes, shops, landscapes), so a describer may learn to
 # say which country a photo might be from; "own" is the person's own pictures with a place.txt.
 PLACE_VISIBLE = {"dollar_street", "geode", "ptl_crossings", "uroac_crossings", "walkway_dhaka", "outdoor_navigation",
@@ -1777,6 +1779,90 @@ SOURCES = [
            'CC0 1.0 (github.com/gaiasd/DFireDataset)',
            'D-Fire (Gaia, solutions on demand; de Venancio, Lisboa and Barbosa, 2022), CC0 1.0, '
            'https://github.com/gaiasd/DFireDataset', "permissive", 2700, 20, prepare_pack, 'about 600 MB'),
+    # Safety around munitions and guns, and children's rites (packs/safety_rites_packs.py). Every munition answer
+    # ends with a safety warning and every gun answer with a gun safety line; nothing says how to handle, fire or
+    # disarm anything. Rows naming the dead or injured carry "content": "graphic" and are used only with
+    # --with-graphic; rows of a child (mine-risk lessons, every rite pack row) carry "child". None of these packs is
+    # used for picture-making (NOT_FOR_PICTURE_MAKING).
+    Source('commons_munition_models', 'Is this a landmine? Landmine, grenade, shell, bomb and rocket models, with a '
+           'safety warning (Wikimedia Commons with Wikidata, ready-made pack)',
+           'Captions CC0; pictures CC0, public domain or CC BY, each author credited; facts from Wikidata (CC0)',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt; facts from Wikidata, CC0', "permissive", 1000, 15,
+           prepare_pack, 'about 450 MB'),
+    Source('commons_uxo', 'Landmines, minefields, unexploded and loose munitions, demining and bomb disposal, with a '
+           'safety warning (Wikimedia Commons, ready-made pack)',
+           'Captions CC0; pictures CC0, public domain or CC BY, each author credited',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 1300, 15, prepare_pack,
+           'about 600 MB'),
+    Source('amlid_landmines', 'Mines on the ground seen from a drone, with a safety warning (AMLID, ready-made pack)',
+           'CC BY 4.0 (Zenodo 18001447)',
+           'Adaptive Multispectral Landmine Identification Dataset (AMLID), James Gallagher, Zenodo 18001447, CC BY '
+           '4.0, https://zenodo.org/records/18001447', "permissive", 730, 10, prepare_pack, 'about 300 MB'),
+    Source('commons_firearms', 'What gun is this? Pistols, revolvers, shotguns and rifles by model, maker and '
+           'cartridge, with a gun safety line (Wikimedia Commons with Wikidata, ready-made pack)',
+           'Captions CC0; pictures CC0, public domain or CC BY, each author credited; facts from Wikidata (CC0)',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt; facts from Wikidata, CC0', "permissive", 2000, 15,
+           prepare_pack, 'about 900 MB'),
+    Source('commons_cartridges', 'What cartridge is this? Rimfire, centrefire and shotgun cartridges and their '
+           'headstamps (Wikimedia Commons with Wikidata, ready-made pack)',
+           'Captions CC0; pictures CC0, public domain or CC BY, each author credited; facts from Wikidata (CC0)',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt; facts from Wikidata, CC0', "permissive", 1000, 15,
+           prepare_pack, 'about 450 MB'),
+    Source('commons_child_rites', 'Baptisms, christenings, brit milah, first communions, confirmations, bar and bat '
+           'mitzvahs and other rites (Wikimedia Commons, ready-made pack)',
+           'Captions CC0; pictures CC0, public domain or CC BY, each author credited',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 800, 15, prepare_pack,
+           'about 350 MB'),
+    Source('europeana_child_rites', 'Baptisms, first communions and other rites in old photos (Europeana, ready-made '
+           'pack)',
+           'CC0, Public Domain Mark or CC BY, record by record',
+           'Europeana partner museums and libraries, credited in ATTRIBUTION.txt', "permissive", 270, 10,
+           prepare_pack, 'about 120 MB'),
+    # Things and materials (packs/things_packs.py). abo_products rows carry "place_kind": "market" (the country of
+    # the Amazon shop, not where the photo was taken; see PLACE_KINDS). The packs with people in them (Open Images and
+    # Commons people using things, and Open Images technology photos, which often show people) are not used for
+    # picture-making (NOT_FOR_PICTURE_MAKING); products, Commons things, bricks and building materials are.
+    Source('abo_products', 'What is this? Electronics, tools, hardware, kitchen things and furniture from Amazon\'s '
+           'catalogue in 19 countries (Amazon Berkeley Objects, ready-made pack)',
+           'CC BY 4.0 (Amazon Berkeley Objects)',
+           'Amazon Berkeley Objects: data and images by Amazon.com; dataset by Matthieu Guillaumin, Thomas '
+           'Dideriksen, Kenan Deng, Himanshu Arora, Jasmine Collins and Jitendra Malik, CC BY 4.0', "permissive",
+           2700, 20, prepare_pack, 'about 1.2 GB'),
+    Source('open_images_in_use', 'What is the person doing with it? People holding, using, playing, reading, eating '
+           'and riding (Open Images V7, ready-made pack)',
+           'Annotations CC BY 4.0 (Google Open Images); photos CC BY 2.0, each author credited',
+           'Open Images V7 (Google), CC BY 4.0 annotations; photos CC BY 2.0, credited in ATTRIBUTION.txt',
+           "permissive", 2700, 20, prepare_pack, 'about 1.2 GB'),
+    Source('open_images_tech', 'Technology, electronics, building materials, workshop tools and kitchen gadgets in '
+           'everyday photos (Open Images V7, ready-made pack)',
+           'Labels CC BY 4.0; each photo CC BY 2.0, photographer named',
+           'Open Images V7 (Google), labels CC BY 4.0; photos CC BY 2.0, each photographer credited in '
+           'ATTRIBUTION.txt', "permissive", 2700, 20, prepare_pack, 'about 1.2 GB'),
+    Source('commons_things', 'Electronic parts, devices, tools, building supplies and kitchen gadgets (Wikimedia '
+           'Commons, ready-made pack)',
+           'Captions CC0; pictures CC0, public domain or CC BY, each author credited',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 1700, 15, prepare_pack,
+           'about 800 MB'),
+    Source('commons_in_use', 'People using laptops, tools, ladders and irons, cooking and at work (Wikimedia Commons, '
+           'ready-made pack)',
+           'Captions CC0; pictures CC0, public domain or CC BY, each author credited',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 1000, 15, prepare_pack,
+           'about 450 MB'),
+    Source('brick_quality', 'What grade is this brick? First, second and third class, over-burnt and jhama bricks '
+           '(Mendeley Data, ready-made pack)',
+           'CC BY 4.0 (Mendeley Data n4wf5g4nrm)',
+           'Brick quality grading dataset (Rahman, Iesmin, Noyon, Hasan, Rimi and Jahan), Mendeley Data n4wf5g4nrm, '
+           'CC BY 4.0', "permissive", 1000, 15, prepare_pack, 'about 300 MB'),
+    Source('codd_materials', 'Brick, concrete, tile, wood, pipe and other building waste at a recycling plant in '
+           'Cyprus (CODD, ready-made pack)',
+           'CC BY 4.0 (Mendeley Data wds85kt64j)',
+           'CODD, Construction and Demolition Waste Object Detection Dataset (Demetriou, Mavromatidis, Petrou and '
+           'Nicolaides), Mendeley Data wds85kt64j, CC BY 4.0', "permissive", 930, 15, prepare_pack, 'about 300 MB'),
+    Source('nyuad_materials', 'What building material or surface is this? Concrete block, concrete, gypsum, mesh and '
+           'plaster on a building site (NYU Abu Dhabi, ready-made pack)',
+           'CC BY 4.0 (Mendeley Data zv66h54b8j)',
+           'Construction material conditions (Mengiste, Mannem, Prieto and Garcia de Soto, NYU Abu Dhabi), Mendeley '
+           'Data zv66h54b8j, CC BY 4.0', "permissive", 140, 10, prepare_pack, 'about 40 MB'),
     Source('skin_lesion_photos', 'Skin spots photographed with a phone, adults (PAD-UFES-20, ready-made pack)',
            'CC BY 4.0 (Mendeley Data zr7vgbcyr2)',
            'PAD-UFES-20 (Pacheco et al., 2020), CC BY 4.0', "permissive", 2000, 20, prepare_pack, 'about 400 MB', content="medical"),
@@ -1913,6 +1999,12 @@ PEOPLE_AND_BODILY_PACK_KEYS = (
     # events_safety_packs.py: event crowds, graphic war and disaster rows, hazards and workers (safety signs and the
     # D-Fire wildfire cameras are used)
     "commons_events", "loc_events", "nara_events", "europeana_events", "commons_safety_photos", "safety_training",
+    # safety_rites_packs.py: munitions, firearms, cartridges and children's rites (all of them)
+    "commons_munition_models", "commons_uxo", "amlid_landmines", "commons_firearms", "commons_cartridges",
+    "commons_child_rites", "europeana_child_rites",
+    # things_packs.py: people using things, and Open Images technology photos, which often show people (products,
+    # Commons things, bricks and building materials are used)
+    "open_images_in_use", "commons_in_use", "open_images_tech",
 )
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + PEOPLE_AND_BODILY_PACK_KEYS
 
@@ -2185,3 +2277,33 @@ PERSONAL_PICTURE_MAKING_OK |= _events_safety_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(
     s.key for s in EVENTS_SAFETY_SOURCES if s.key not in _events_safety_ok)
 _add_collections(EVENTS_SAFETY_SOURCES)
+
+# Munition, firearm and children's-rite collections that are not open (share-alike Commons landmine, firearm and rite
+# files, and MineInsight's demining robot pictures); the file may be missing. None is used for picture-making
+# (SAFETY_RITES_PICTURE_MAKING_OK is empty).
+try:
+    import safety_rites_sources as _safety_rites  # noqa: E402
+except ImportError as _e:
+    _safety_rites = None
+    if getattr(_e, "name", None) != "safety_rites_sources":
+        say(f"(The munition, firearm and rite collections could not be loaded: {_e}. They are left out.)")
+SAFETY_RITES_SOURCES = list(getattr(_safety_rites, "SAFETY_RITES_SOURCES", []) or [])
+_safety_rites_ok = set(getattr(_safety_rites, "SAFETY_RITES_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _safety_rites_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(
+    s.key for s in SAFETY_RITES_SOURCES if s.key not in _safety_rites_ok)
+_add_collections(SAFETY_RITES_SOURCES)
+
+# Things and materials collections that are not open (EPIC-KITCHENS, Charades, PACO, MINC); the file may be missing.
+try:
+    import things_sources as _things  # noqa: E402
+except ImportError as _e:
+    _things = None
+    if getattr(_e, "name", None) != "things_sources":
+        say(f"(The things and materials collections could not be loaded: {_e}. They are left out.)")
+THINGS_SOURCES = list(getattr(_things, "THINGS_SOURCES", []) or [])
+_things_ok = set(getattr(_things, "THINGS_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _things_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(
+    s.key for s in THINGS_SOURCES if s.key not in _things_ok)
+_add_collections(THINGS_SOURCES)

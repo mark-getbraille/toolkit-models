@@ -60,8 +60,6 @@ PLUMBING the rest of the kit needs (not done here; other files are being edited 
 Only requests and Pillow are needed (as for the rest of the kit). Nothing is sent anywhere except the downloads.
 """
 
-import html
-import json
 import os
 import re
 import shutil

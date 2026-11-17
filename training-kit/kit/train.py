@@ -418,12 +418,14 @@ def place_rows(rows):
         "It was taken in Japan." (the country only; "Which part of the world ..." for a region such as East Asia);
       - an object whose record says where it was made (place_kind "origin"): "Where was this object made?" ->
         "It was made in Kyoto, Japan."
+    A "market" place (the country of the shop that sells a product, place_kind "market") never gets a question: it
+    says nothing about where the photo was taken or the thing was made.
     The place is never put into a description's answer: the model must not learn to state what it cannot see."""
     import zlib
     out, seen = [], set()
     for row in rows:
         place, kind, picture = row.get("place"), row.get("place_kind") or "photo", row.get("picture")
-        if not place or not picture or picture in seen or row.get("split") == "test":
+        if not place or not picture or picture in seen or row.get("split") == "test" or kind == "market":
             continue
         if zlib.crc32(os.path.basename(picture).encode("utf-8")) % PLACE_EVERY:
             continue
@@ -442,9 +444,10 @@ def place_rows(rows):
 
 
 def place_counts(rows):
-    """(pictures with a place, place questions added) among training rows, for the report."""
+    """(pictures with a place, place questions added) among training rows, for the report (a "market" place, the
+    country of the shop that sells a product, is not counted)."""
     asked = (ASK_COUNTRY, ASK_REGION, ASK_MADE)
-    pictures = {r["picture"] for r in rows if r.get("place") and r.get("picture")}
+    pictures = {r["picture"] for r in rows if r.get("place") and r.get("picture") and r.get("place_kind") != "market"}
     return len(pictures), sum(1 for r in rows if r.get("question") in asked and r.get("split") == "no-test")
 
 

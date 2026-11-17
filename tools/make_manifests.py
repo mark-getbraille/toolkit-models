@@ -137,6 +137,7 @@ TOPIC_BY_MODULE = {
     "home_packs": "Home life", "home_sources": "Home life",
     "events_safety_packs": "Events, history and safety", "events_safety_sources": "Events, history and safety",
     "safety_rites_packs": "Ordnance, firearms and family rites", "safety_rites_sources": "Ordnance, firearms and family rites",
+    "things_packs": "Technology, tools and materials", "things_sources": "Technology, tools and materials",
 }
 TOPIC_WORDS = [
     ("Medicines", r"\bpills?\b|medicine|medication|\bdrugs?\b|blister|pharma"),
