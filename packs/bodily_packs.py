@@ -30,25 +30,23 @@ The packs (BODILY_PACKS):
                        the ground I should avoid stepping in?"; the "after" photos taken once the poop was picked up
                        give the "No" answers.
   inat_droppings       iNaturalist observations marked "Evidence of presence: Scat" for dogs, cats, horses, farm
-                       animals, garden birds and animals of yards and parks (fox, deer, rabbit, hedgehog, raccoon, Canada
-                       goose, pigeon), each photo's own licence CC0 or CC BY. "What is this?" -> "This is dog poop
-                       (droppings left by a domestic dog)."
+                       animals, birds and animals of yards and parks (fox, deer, rabbit, hedgehog, raccoon, Canada
+                       goose, pigeon), each photo's own licence CC0 or CC BY. "What is this?" -> "This is dog poop,
+                       left by a domestic dog (Canis familiaris)." and "What animal left these droppings?"
   open_images_bodily   Google Open Images V7 (labels CC BY 4.0; photos CC BY 2.0, checked photo by photo): photos whose
                        labels people checked by hand for blood, an injury, a bandage, a sticking plaster, poop, a cat
                        litter box or cat litter, or a stain: "Is there blood in this picture?" with "yes" from a label
                        people confirmed and "no" from one they checked and rejected. Photos with a child, a costume or
                        Halloween in their labels are left out.
   commons_bodily       Wikimedia Commons categories of human stool, the Bristol stool chart, vomit, urine and urine
-                       colour charts, blood stains, nosebleeds, and dog, cat, horse, cow and bird droppings: pictures
-                       CC0, public domain or CC BY (author credited). The category's own answer, and the file's English
-                       caption or description where it is a real description. Pictures of a person's body only when the
-                       file's words say the person is an adult.
+                       colour charts, urine bags, blood stains, nosebleeds, and dog, cat, horse and bird droppings:
+                       pictures CC0, public domain or CC BY (author credited). The category's own answer, and the
+                       file's English caption or description where it is a real description. Pictures of a person's
+                       body only when the file's words say the person is an adult; signs ("no dog fouling") left out.
   case_report_bodily   Figures of case reports in PubMed Central whose article licence is CC BY or CC0 (checked in
                        PMC's own metadata), one-picture photographs of stool (black, bloody or pale stool), vomit
                        (blood or "coffee grounds"), urine (red, dark, purple) or a nosebleed, with the authors' caption.
                        Adults (18 or over), or a child's report when the photo shows only the stool, urine or vomit.
-  vet_case_bodily      The same for veterinary case reports about dogs, cats, rabbits and horses: diarrhoea, bloody
-                       stool, vomit and urine (content "", pet material).
   urine_samples        Urine samples photographed in clear pots with four phones (celesca/urine-detector on Hugging
                        Face, Apache-2.0): the colour measured on each photo by its makers, and their laboratory's note
                        of whether the urine was clear or cloudy. "What colour is this urine?" The photos are HEIC files:
@@ -74,12 +72,12 @@ import zipfile
 
 import build_packs  # noqa: F401 - loaded first: food_packs and build_packs import each other
 from build_packs import session, clean, smaller, fetch_all, say, article, inat_place, ALT_TEXT  # noqa: F401
-from food_packs import (with_twins, listed, sentence, count_pictures, oi_lines, oi_licence_name, commons_members,
-                        commons_entries, commons_place, commons_description, OI_CLASSES, OI_PICTURE)
+from food_packs import (with_twins, listed, count_pictures, oi_lines, oi_licence_name, commons_members, commons_entries,
+                        commons_place, OI_CLASSES, OI_PICTURE)
 from everyday_packs import RemoteZip, fetch_from_zip, number_word
 from expression_packs import CHILD as CHILD_WORDS, OI_CHILD
-from medical_packs import (europe_pmc, pmc_article, pmc_figures, adult_only, who_with_age, sex_of, animal_of,
-                           safe_name, MULTI_PANEL, GENITAL_AREA, CHILD, PMC_FREE, DOCTOR, VET)
+from medical_packs import (europe_pmc, pmc_article, pmc_figures, adult_only, who_with_age, sex_of, safe_name,
+                           MULTI_PANEL, GENITAL_AREA, CHILD, PMC_FREE)
 from places import where, country_at
 
 # The fixed sentences said after a human medical answer (the owner's wording).
@@ -89,7 +87,6 @@ VOMIT_ADVICE = "If vomit contains blood or looks like coffee grounds, get medica
 URINE_ADVICE = "Only a doctor can diagnose this; if urine looks red, brown or cola-coloured, or stays very dark, " \
                "contact a doctor."
 BLOOD_ADVICE = "If bleeding is heavy or does not stop, get medical help."
-PET_ADVICE = "Only a vet can diagnose this; if a pet has blood in its poop or vomit, or seems unwell, contact a vet."
 
 MEDICAL = {"content": "medical"}
 
@@ -471,33 +468,47 @@ def build_open_images_bodily(limit):
 # and so needs the file's words to say the person is an adult, whether one level of subcategories is used too).
 COMMONS_BODILY = {
     "Human feces": ("What is this?", "This is human poop (stool). " + STOOL_ADVICE, True, False, False),
-    "Melena": ("What does this stool look like?", "It is black and tarry: this can be a sign of bleeding in the gut "
-                                                  "(melena). " + STOOL_ADVICE, True, False, False),
     "Bristol Stool Chart": ("What does this chart show?",
                             "This is the Bristol Stool Form Scale: a chart of seven types of stool, from type 1 "
                             "(separate hard lumps, like nuts) to type 7 (entirely liquid, no solid pieces). Types 3 "
                             "and 4 are the usual, healthy kinds.", True, False, False),
-    "Vomit": ("What is this?", "This is vomit. " + VOMIT_ADVICE, True, False, False),
-    "Urine": ("What is this?", "This is urine. " + URINE_ADVICE, True, False, False),
-    "Urine color charts": ("What does this chart show?",
-                           "This is a urine colour chart: it shows shades from pale yellow (drinking enough) to dark "
-                           "yellow or amber (drink more water). " + URINE_ADVICE, True, False, False),
+    "Vomits": ("What is this?", "This is vomit. " + VOMIT_ADVICE, True, False, False),
+    "Humans vomiting": ("What is happening here?", "Someone is being sick (vomiting). " + VOMIT_ADVICE, True, True,
+                        False),
+    "Urine scale": ("What does this chart show?",
+                    "This is a urine colour chart: it shows shades from pale yellow (drinking enough) to dark yellow "
+                    "or amber (drink more water). " + URINE_ADVICE, True, False, False),
+    "Urine discoloration": ("What does this urine look like?",
+                            "This urine is not its usual pale-yellow colour. " + URINE_ADVICE, True, False, True),
     "Hematuria": ("What does this urine look like?", "It is red or pink: it may have blood in it (haematuria). " +
                   URINE_ADVICE, True, False, False),
-    "Blood stains": ("What is this stain?", "It looks like a blood stain.", True, False, True),
-    "Epistaxis": ("What is happening here?", "This is a nosebleed: blood is coming from the nose. " + BLOOD_ADVICE,
-                  True, True, False),
-    "Dog feces": ("What is this?", "This is dog poop.", False, False, True),
+    "Urine bags": ("What is this?", "This is a urine bag: a bag that collects urine through a tube (a catheter). " +
+                   URINE_ADVICE, True, False, False),
+    "Bloodstains": ("What is this stain?", "It looks like a blood stain.", True, False, True),
+    "Nosebleeds": ("What is happening here?", "This is a nosebleed: blood is coming from the nose. " + BLOOD_ADVICE,
+                   True, True, False),
+    "Dog feces": ("What is this?", "This is dog poop.", False, False, False),
+    "Dog feces on the streets of the cities": ("What is this on the ground?", "This is dog poop on the street.",
+                                               False, False, False),
+    "Dog fouling": ("What is this on the ground?", "This is dog poop that has been left on the ground.", False,
+                    False, False),
     "Cat feces": ("What is this?", "This is cat poop.", False, False, False),
-    "Horse dung": ("What is this?", "This is horse manure (horse droppings).", False, False, True),
-    "Cow dung": ("What is this?", "This is cow dung (a cow pat).", False, False, True),
-    "Bird droppings": ("What is this?", "These are bird droppings.", False, False, True),
+    "Horse feces": ("What is this?", "This is horse manure (horse droppings).", False, False, False),
+    "Bird feces": ("What is this?", "These are bird droppings.", False, False, False),
     "Litter boxes": ("What is this?", "This is a cat litter box (litter tray).", False, False, False),
 }
 # Words that mean a picture is not a photograph of the thing (art, signs, products), or is not wanted.
 COMMONS_NOT_THIS = re.compile(r"\b(art|drawings?|paintings?|logos?|icons?|emoji|sculptures?|toys?|models?|"
                               r"in literature|videos?|audio|microscop\w*|micrograph\w*|beetles?|insects?|fossil\w*|"
-                              r"coprolites?|fuel|briquett\w*|paper|museum|caricatur\w*|cartoons?|signs?)\b", re.I)
+                              r"coprolites?|fuel|briquett\w*|paper|museum|caricatur\w*|cartoons?|signs?|"
+                              r"containers?|bins?|dispensers?|stations?|coproph\w*|Santorum|statues?|fountains?)\b",
+                              re.I)
+# Words of signs and notices ("no dog fouling"), whatever their language: such a picture is a sign, not the thing.
+SIGN_WORDS = re.compile(r"\b(interdi\w*|prohibit\w*|forbidden|verboten|verbod\w*|vietato|prohibido|fine of|"
+                        r"penalty|clean up after|pick up after|notice|warning sign)\b", re.I)
+# A description in English has at least one of these words; other descriptions are not learnt from (the category's
+# own answer is still used).
+ENGLISH = re.compile(r"\b(the|a|an|of|in|on|with|and|is|are|from|after|showing|shows)\b", re.I)
 ADULT_WORDS = re.compile(r"\b(man|woman|men|women|adults?|gentleman|lady|myself|my nose|\d{2}[- ]year[- ]old)\b",
                          re.I)
 
@@ -532,8 +543,11 @@ def build_commons_bodily(limit):
         found = 0
         for title, url, credit, text in entries:
             words = f"{title} {text}"
-            if GENITAL_AREA.search(words) or (body and (not ADULT_WORDS.search(words) or CHILD.search(words))):
+            if GENITAL_AREA.search(words) or SIGN_WORDS.search(words) \
+                    or (body and (not ADULT_WORDS.search(words) or CHILD.search(words))):
                 continue
+            if text and not ENGLISH.search(text):
+                text = ""
             seen.add(title)
             extra = {"credit": credit, **commons_place(title), **(MEDICAL if medical else {}),
                      **({"child": True} if CHILD_WORDS.search(words) else {})}
@@ -557,9 +571,6 @@ FIG_TERMS = ("stool", "stools", "feces", "faeces", "melena", "melaena", "hematoc
 FIG_QUERY = " OR ".join(f'FIG:"{t}"' for t in FIG_TERMS)
 CASE_QUERY = f'IN_PMC:y AND (LICENSE:"cc by" OR LICENSE:"cc0") AND (PUB_TYPE:"Case Reports" OR TITLE:"case") ' \
              f'AND ({FIG_QUERY})'
-VET_CASE_QUERY = CASE_QUERY + ' AND (TITLE:dog OR TITLE:dogs OR TITLE:canine OR TITLE:puppy OR TITLE:cat OR ' \
-                              'TITLE:cats OR TITLE:feline OR TITLE:kitten OR TITLE:rabbit OR TITLE:horse OR ' \
-                              'TITLE:equine OR TITLE:pony)'
 # What the photo is of, from the caption: the first that matches, with the advice for people.
 SUBSTANCES = [
     (re.compile(r"\b(vomit\w*|hae?matemesis|emesis|coffee[- ]ground\w*)\b", re.I), "vomit", VOMIT_ADVICE),
@@ -573,7 +584,7 @@ SUBSTANCES = [
 NOT_A_PHOTO = re.compile(r"\b(CT|MRI|PET|computed tomograph\w*|magnetic resonance|x-?rays?|radiograph\w*|ultrasound|"
                          r"sonograph\w*|echocardiogra\w*|angiogra\w*|endoscop\w*|colonoscop\w*|gastroscop\w*|"
                          r"cystoscop\w*|EGD|sigmoidoscop\w*|capsule endoscop\w*|histolog\w*|histopatholog\w*|"
-                         r"H&E|hae?matoxylin|immunohistochem\w*|microscop\w*|micrograph\w*|magnification|"
+                         r"H&E|hae?matoxylin|immunohistochem\w*|microscop\w*|\w*micrograph\w*|magnification|sediment|"
                          r"cytolog\w*|smear|gram stain\w*|cultures?|colon(ies|y)|agar|electrophoresis|"
                          r"chromatogra\w*|spectr\w*|graph|chart|curve|timeline|flow ?chart|diagram|schematic|"
                          r"table|algorithm|sequenc\w*|eggs? of|ova|oocysts?|larva\w*|parasites? (seen|found)|"
@@ -581,19 +592,48 @@ NOT_A_PHOTO = re.compile(r"\b(CT|MRI|PET|computed tomograph\w*|magnetic resonanc
 # A caption that names a part of the body: for a child's report, the picture may show the child, so it is left out.
 BODY_PART = re.compile(r"\b(face|facial|head|scalp|eyes?|nose|mouth|lips?|neck|chest|abdomen|abdominal|belly|"
                        r"stomach wall|back|arms?|hands?|fingers?|legs?|feet|foot|toes?|skin|body|patient|infant's|"
-                       r"child's|baby's|boy's|girl's|bottom|perine\w*|gluteal)\b", re.I)
+                       r"child's|baby's|boy's|girl's|bottom|perine\w*|gluteal|in situ|catheter\w*|nephrostom\w*|"
+                       r"stoma)\b", re.I)
+
+
+# The caption must say it shows the substance itself: a photograph of it, its colour or look, or the bag, pot or
+# nappy it is in.
+SEEN = re.compile(r"\b(photo\w*|picture|image|appearance|appeared|looked|look(s|ing)? like|gross|macroscopic|"
+                  r"observ\w*|note|showing|shows|shown|seen|visible|colou?red|discolou?r\w*|"
+                  r"black|tarry|bloody|blood-?stained|bright red|red|dark|brown|maroon|pale|white|clay|acholic|"
+                  r"green|purple|milky|cloudy|turbid|frothy|foamy|coffee[- ]ground\w*|mucus|mucoid|watery|"
+                  r"tea-colou?red|cola-colou?red)\b", re.I)
+# Words of charts, tables and laboratory results (a caption with one is about numbers, not a photograph).
+NUMBERS = re.compile(r"\b(course|trends?|levels?|ratios?|output|volume|ax[ie]s|lines?|bars?|indices|index|"
+                     r"concentrations?|creatinine|protein-to|mg/dl|µg|mmol|counts?|days? \d|over time|"
+                     r"follow-up|timeline|lamp|fluorescen\w*|test strips?|dipstick|cultured?|PCR|sequencing|"
+                     r"graphic\w*|illustrat\w*|pathophysiolog\w*|mechanism\w*|created by|schem\w*|"
+                     # inside the body (endoscopy pictures whose caption does not name the endoscope)
+                     r"ulcers?|mucosa\w*|lumen|curvature|duoden\w*|o?esophag\w*|stomach|gastric|colon|rectum|"
+                     r"polyps?|varic\w*|fundus|antrum|bulb|ileum|jejun\w*|bladder wall|renal pelvis|"
+                     r"intra-?operative\w*|"
+                     # research figures: maps, plots, study designs, laboratory work
+                     r"maps?|heat ?maps?|PCA|plots?|models?|design|stud(y|ies)|dilutions?|electron|digest\w*|"
+                     r"isolated|metabolit\w*|antibod\w*|osmolality|analys[ie]s|results|statistic\w*|groups?|"
+                     r"sensors?|devices?|collection sites?|sampling|number of|cumulative|abundance|percent\w*|"
+                     r"average|mean|scores?|quantif\w*|training|steps?|OTUs?|phyla|taxonom\w*|relative|"
+                     # scans and scopes not named in NOT_A_PHOTO
+                     r"fluoroscop\w*|urogra\w*|pyelogra\w*|cholangiogra\w*|\w+scopy|\w+scopic)\b",
+                     re.I)
 
 
 def substance_of(caption):
-    """(substance, advice) for a caption about stool, vomit, urine or a nosebleed, or None."""
+    """(substance, advice) for a caption that shows stool, vomit, urine or a nosebleed itself, or None."""
+    if not SEEN.search(caption) or NUMBERS.search(caption):
+        return None
     return next(((name, advice) for pattern, name, advice in SUBSTANCES if pattern.search(caption)), None)
 
 
-def bodily_figures(query, want, vet, prefix):
+def bodily_figures(query, want, prefix):
     """(name, picture address, row) for one-picture photographs of stool, vomit, urine or a nosebleed in case reports
     a Europe PMC query finds, licence checked in PMC's own metadata (CC BY or CC0). People: articles about adults
     (age 18 or more, no child named), or about a child when the caption is about the substance and names no part of
-    the body (marked "child"). Animals: dogs, cats, rabbits and horses."""
+    the body (marked "child")."""
     s = session()
     records = europe_pmc(s, query, want * 4)
     say(f"Europe PMC: {len(records)} case reports with a matching figure caption")
@@ -603,19 +643,14 @@ def bodily_figures(query, want, vet, prefix):
         """The usable figures of one article ([] when none)."""
         text = f"{record.get('title', '')} {record.get('abstractText', '')}"
         about_child = False
-        if vet:
-            who = animal_of(record.get("title"))
-            if who == "an animal":
-                return []
+        ok, age = adult_only(text)
+        if ok:
+            m = re.search(rf"\b{age}[- ](?:year|yr)s?[- ]old\s+(\w+)", clean(text), re.I)
+            who = who_with_age(age, sex_of(m.group(1) if m else ""))
+        elif CHILD.search(text):
+            who, about_child = "a child", True
         else:
-            ok, age = adult_only(text)
-            if ok:
-                m = re.search(rf"\b{age}[- ](?:year|yr)s?[- ]old\s+(\w+)", clean(text), re.I)
-                who = who_with_age(age, sex_of(m.group(1) if m else ""))
-            elif CHILD.search(text):
-                who, about_child = "a child", True
-            else:
-                return []
+            return []
         meta, xml = pmc_article(s, record["pmcid"])
         if not meta or meta.get("license_code") not in PMC_FREE or meta.get("is_retracted"):
             return []
@@ -627,11 +662,9 @@ def bodily_figures(query, want, vet, prefix):
                 continue
             if GENITAL_AREA.search(caption) or (about_child and BODY_PART.search(caption)):
                 continue
-            if not vet and not about_child and CHILD.search(caption):
+            if not about_child and CHILD.search(caption):
                 continue
             substance, advice = found
-            if vet:
-                advice = PET_ADVICE
             licence = PMC_FREE[meta["license_code"]]
             authors = clean(record.get("authorString"))
             if len(authors) > 120:
@@ -639,11 +672,9 @@ def bodily_figures(query, want, vet, prefix):
             credit = f"{authors}, \"{clean(record.get('title')).rstrip('.')}\", {clean(meta.get('citation'))}, " \
                      f"{label or 'figure'}, {licence}, https://pmc.ncbi.nlm.nih.gov/articles/{meta['pmcid']}/"
             caption = caption if caption.endswith((".", "!", "?")) else caption + "."
-            row = {"question": "What does this picture show?", "credit": credit,
+            row = {"question": "What does this picture show?", "credit": credit, **MEDICAL,
                    "answer": f"This is a photograph from a published case report about {who}. The authors' "
                              f"caption says: {caption} {advice}"}
-            if not vet:
-                row.update(MEDICAL)
             if about_child:
                 row["child"] = True
             out.append((f"{prefix}-{meta['pmcid']}-{safe_name(label or url.rsplit('/', 1)[-1])}.jpg", url, row))
@@ -662,13 +693,7 @@ def bodily_figures(query, want, vet, prefix):
 
 def build_case_report_bodily(limit):
     """The case_report_bodily pack: [(name, JPEG, row)] from human case reports (CC BY or CC0)."""
-    items = bodily_figures(CASE_QUERY, int(limit * 1.1) + 2, False, "pmcbody")
-    return fetch_all(items, workers=4, pause=0.1)[:limit]
-
-
-def build_vet_case_bodily(limit):
-    """The vet_case_bodily pack: [(name, JPEG, row)] from veterinary case reports about pets (CC BY or CC0)."""
-    items = bodily_figures(VET_CASE_QUERY, int(limit * 1.1) + 2, True, "pmcpet")
+    items = bodily_figures(CASE_QUERY, int(limit * 1.1) + 2, "pmcbody")
     return fetch_all(items, workers=4, pause=0.1)[:limit]
 
 
@@ -824,10 +849,6 @@ BODILY_PACKS = {
                            "below with its authors, article and licence. Photographs of stool, vomit, urine or a "
                            "nosebleed; adults, or a child's report when the photo shows only the stool, urine or "
                            "vomit. The captions are the authors' own."),
-    "vet_case_bodily": (build_vet_case_bodily,
-                        "Figures from veterinary case reports about dogs, cats, rabbits and horses in PubMed Central "
-                        "(https://pmc.ncbi.nlm.nih.gov), each article's licence checked in PMC's open-access metadata: "
-                        "CC BY or CC0 only, each figure credited below. The captions are the authors' own."),
     "urine_samples": (build_urine_samples,
                       "urine-detector (celesca on Hugging Face), Apache-2.0, "
                       "https://huggingface.co/datasets/celesca/urine-detector: urine samples photographed with four "
@@ -843,7 +864,6 @@ BODILY_LIMITS = {
     "open_images_bodily": 3000,    # about 900 photos with a label confirmed, the rest 'not there' checks
     "commons_bodily": 400,         # upper bound, not counted in full
     "case_report_bodily": 1500,    # upper bound; a few per cent of the matching articles have a usable photo
-    "vet_case_bodily": 300,        # upper bound
     "urine_samples": 532,          # 266 samples, two phones' front photos each
 }
 

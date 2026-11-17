@@ -44,11 +44,13 @@ The packs (all open: public domain, CC0 or CC BY, checked at the source in Novem
                       cars, fire engines, ambulances and coast guards by country. "What uniform is this person
                       wearing?" ("Police uniform of the UK, photographed in 2014, with a high-visibility jacket"),
                       details only from the file's caption, title and categories (UNIFORM_DETAILS).
-  loc_service         Library of Congress, Prints and Photographs: the Civil War glass negatives (about 8,700) and
-                      searches by subject (the First and Second World Wars, the Korean War, tanks, warships, military
-                      uniforms, police, fire fighters, fire engines, nurses, postal workers). "No known restrictions on
-                      publication" only. The Library's titles; the place and date from the record; the conflict from
-                      the collection or the record's subject headings.
+  loc_service         Library of Congress, Prints and Photographs: the Civil War glass negatives (about 8,700), the
+                      Bain news photos of soldiers and the First World War (about 3,000), and searches by subject
+                      (tanks, warships, military uniforms, police, fire fighters, fire engines, nurses, postal workers).
+                      "No known restrictions on publication" only (the Library's Second World War and Korean War
+                      subject headings lead mostly to Veterans History Project photos, which are restricted). The
+                      Library's titles; the place and date from the record; the conflict from the collection or the
+                      record's subject headings and title.
   nara_military       US National Archives catalogue: General Photographic Files of the Department of the Navy
                       (80-G), the Marine Corps (127), the Coast Guard (26-G) and the Army Signal Corps (111-SC), each
                       with its caption and production date. US government work, public domain; only records marked
@@ -103,13 +105,13 @@ import sys
 import time
 
 import build_packs  # noqa: F401 - loaded first: the other pack files and build_packs import each other
-from build_packs import session, clean, fetch_all, say, LONG_SIDE, COMMONS_FREE, MUSEUM, SI_BUCKET, si_keys, \
+from build_packs import session, clean, fetch_all, say, COMMONS_FREE, MUSEUM, SI_BUCKET, si_keys, \
     first_sentences
 from food_packs import with_twins, count_pictures, commons_get, commons_members
 from expression_packs import CHILD
 from everyday_packs import a_or_an as plain_a_or_an
 from world_packs import capped_words, full_stop
-from places import country_at, country_named, place_name, place_from_text, where
+from places import country_at, country_named, place_from_text, where
 from documentary_packs import tidy, usable, get_json, loc_picture, loc_place, loc_free, place_words, LOC
 from archive_packs import SLURS, sentence_case, lc_place, nara_picture, NARA_SEARCH, NARA, NARA_NOTES, WRA_FULL
 
@@ -219,8 +221,11 @@ def finish(key, items, limit, workers=3, pause=0.3):
 
 
 def a_or_an(phrase):
-    """ "a" or "an" before a phrase, knowing that "US" starts with a "you" sound ("a US medium tank")."""
-    return "a" if re.match(r"^U\.?S\.?\b", phrase) else plain_a_or_an(phrase)
+    """ "a" or "an" before a phrase, knowing that "US", "Ukrainian" and "European" start with a "you" sound ("a US
+    medium tank")."""
+    if re.match(r"^(U\.?S\.?\b|Ukrain|Ugand|Urugu|Uzbek|Europe|Unite|Univers|Union|Utility|Unif)", phrase):
+        return "a"
+    return plain_a_or_an(phrase)
 
 
 # ----------------------------------------------------------------- Wikidata: model facts
@@ -237,16 +242,15 @@ WD_KINDS = [
     ("Q2000908", "self-propelled gun", "vehicle"), ("Q506219", "multiple rocket launcher", "vehicle"),
     ("Q180126", "howitzer", "vehicle"), ("Q1330892", "field gun", "vehicle"), ("Q7325635", "anti-aircraft gun", "vehicle"),
     ("Q81103", "cannon", "vehicle"), ("Q6546105", "military light utility vehicle (a jeep)", "vehicle"),
-    ("Q130368", "armoured fighting vehicle", "vehicle"), ("Q1184840", "military vehicle", "vehicle"),
     ("Q753058", "attack helicopter", "aircraft"), ("Q2735392", "utility helicopter", "aircraft"),
     ("Q1543102", "military helicopter", "aircraft"), ("Q385642", "fighter-bomber", "aircraft"),
     ("Q127771", "fighter aircraft", "aircraft"), ("Q170877", "bomber", "aircraft"),
-    ("Q3041792", "reconnaissance aircraft", "aircraft"), ("Q216916", "military aircraft", "aircraft"),
+    ("Q3041792", "reconnaissance aircraft", "aircraft"),
     ("Q17205", "aircraft carrier", "ship"), ("Q182531", "battleship", "ship"), ("Q104843", "cruiser", "ship"),
     ("Q174736", "destroyer", "ship"), ("Q161705", "frigate", "ship"), ("Q170013", "corvette", "ship"),
     ("Q2811", "submarine", "ship"), ("Q207452", "ship of the line", "ship"), ("Q324233", "torpedo boat", "ship"),
     ("Q214196", "gunboat", "ship"), ("Q202527", "minesweeper", "ship"), ("Q11479410", "patrol boat", "ship"),
-    ("Q474748", "amphibious assault ship", "ship"), ("Q2031121", "warship", "ship"),
+    ("Q474748", "amphibious assault ship", "ship"),
     ("Q177456", "assault rifle", "weapon"), ("Q1194268", "battle rifle", "weapon"),
     ("Q190570", "sniper rifle", "weapon"), ("Q183302", "carbine", "weapon"), ("Q178550", "submachine gun", "weapon"),
     ("Q720711", "light machine gun", "weapon"), ("Q12800", "machine gun", "weapon"),
@@ -255,7 +259,11 @@ WD_KINDS = [
     ("Q12791", "sword", "weapon"), ("Q182780", "dagger", "weapon"), ("Q173366", "bayonet", "weapon"),
     ("Q3579211", "combat helmet", "weapon"), ("Q3391846", "suit of plate armour", "weapon"),
     ("Q1788716", "military decoration", "decoration"),
+    # The general kinds last, so a ship or an aircraft is never called just a military vehicle.
+    ("Q2031121", "warship", "ship"), ("Q216916", "military aircraft", "aircraft"),
+    ("Q130368", "armoured fighting vehicle", "vehicle"), ("Q1184840", "military vehicle", "vehicle"),
 ]
+
 # Civil aircraft, said as airplanes; an item that is also a military kind is left out of this pack.
 WD_CIVIL_KINDS = [
     ("Q210932", "airliner (a passenger airplane)", "civil"), ("Q1062135", "business jet (a small passenger airplane)",
@@ -503,6 +511,26 @@ def commons_year(value):
     return years[0] if years else ""
 
 
+# Catalogue lines that are not captions ("Catalog #: 01_00086067, Title: ..."), and captions that say the picture is
+# a model or a toy, not the thing itself.
+NOT_A_CAPTION = re.compile(r"catalog(ue)? ?#|\btitle:|\btitre\s*:|\bformat\s*:|r[ée]f[ée]rence|corporation name|"
+                           r"official nickname|\b(scale )?(models?|miniatures?|toys?|replicas?) of\b|\bscale model|"
+                           r"\bdiorama", re.I)
+# Files that are paintings, drawings or prints (by their name or categories), not photos.
+PAINTED = re.compile(r"\b(paintings?|painted by|oil on|watercolou?rs?|drawings?|lithograph\w*|engravings?|etchings?|"
+                     r"woodcuts?|prints? (of|by)|illustrations?|retrato|gem[äa]lde|peinture|tableau|portrait "
+                     r"paintings|caricatures?|cartoons?|posters?)\b", re.I)
+
+
+def trusted_year(year, caption, title, latitude):
+    """The file's year when it can be trusted as the year the photo was taken: when the caption or file name says
+    the same year, or when the camera recorded its coordinates (a camera's own date). An old photo scanned or
+    uploaded later often carries the scan date, so otherwise no year is given."""
+    if year and (year in f"{caption} {title}" or latitude):
+        return year
+    return ""
+
+
 def era_words(year):
     """A photo's era after "photographed": "in 2014", "in the 1940s" (before 1980), or ""."""
     if not year:
@@ -538,17 +566,23 @@ def commons_files(s, titles, free=True):
             if info.get("mime") not in ("image/jpeg", "image/png") or not info.get("thumburl"):
                 continue
             value = lambda k: clean((meta.get(k) or {}).get("value"))          # noqa: E731
+            if PAINTED.search(f"{p['title']} {value('Categories')}"):
+                continue                               # a painting, drawing or print: not a photo of the thing
             artist = value("Artist")[:100] or "unknown"
             page = "https://commons.wikimedia.org/wiki/" + p["title"].replace(" ", "_")
             caption = tidy(captions.get(f"M{p['pageid']}"))
+            if NOT_A_CAPTION.search(caption):
+                caption = ""
             if not usable(caption):
                 description = re.sub(r"^\s*English\s*:\s*", "", value("ImageDescription"))
                 caption = tidy(capped_words(description, 60))
-                if not usable(caption) or re.match(r"^[\d\W]", caption) or re.search(r"\b[a-z]{2}:\S", caption):
+                if not usable(caption) or re.match(r"^[\d\W]", caption) or re.search(r"\b[a-z]{2}:\S", caption) \
+                        or NOT_A_CAPTION.search(caption):
                     caption = ""
             out.append({"title": p["title"], "url": re.sub(r"/\d+px-([^/]+)$", r"/1280px-\1", info["thumburl"]),
                         "credit": f"{p['title']} by {artist}, {licence}, {page}", "caption": caption,
-                        "year": commons_year(value("DateTimeOriginal")),
+                        "year": trusted_year(commons_year(value("DateTimeOriginal")), caption, p["title"],
+                                             value("GPSLatitude")),
                         "place": country_at(value("GPSLatitude"), value("GPSLongitude"))
                         if value("GPSLatitude") and value("GPSLongitude") else "",
                         "cats": value("Categories").replace("|", "; ")})
@@ -771,9 +805,9 @@ def build_commons_uniformed(limit):
 LOC_SERVICE_SETS = [
     ("collections/civil-war-glass-negatives/", {}, 8700, "Civil War Glass Negatives and Related Prints",
      "the American Civil War", "Military uniform of {country}"),
-    ("photos/", {"fa": "subject:world war, 1914-1918|online-format:image"}, 132, "", "the First World War", None),
-    ("photos/", {"fa": "subject:world war, 1939-1945|online-format:image"}, 2049, "", "the Second World War", None),
-    ("photos/", {"fa": "subject:korean war, 1950-1953|online-format:image"}, 465, "", "the Korean War", None),
+    ("photos/", {"q": "world war", "fa": "partof:bain collection"}, 2232, "George Grantham Bain Collection", "",
+     None),
+    ("photos/", {"q": "soldiers", "fa": "partof:bain collection"}, 735, "George Grantham Bain Collection", "", None),
     ("photos/", {"fa": "subject:tanks (military science)|online-format:image"}, 231, "", "", None),
     ("photos/", {"fa": "subject:warships|online-format:image"}, 290, "", "", None),
     ("photos/", {"fa": "subject:military uniforms|online-format:image"}, 7345, "", "",
@@ -786,7 +820,8 @@ LOC_SERVICE_SETS = [
      "Postal worker's uniform of {country}"),
 ]
 LOC_NOT_A_PHOTO = re.compile(r"\b(map|maps|plan|plans|drawing|diagram|title card|caption card|untitled|poster|"
-                             r"cartoon|sheet music|letter|envelope|broadside)\b", re.I)
+                             r"cartoon|sheet music|letter|envelope|broadside|certificate|membership|advertisement|"
+                             r"print|lithograph|engraving|illustration)\b", re.I)
 
 
 def loc_service_items(s, path, extra, total, name, conflict, uniform, want, rng):
@@ -816,7 +851,8 @@ def loc_service_items(s, path, extra, total, name, conflict, uniform, want, rng)
             answers.add(answer)
             taken += 1
             link = re.sub(r"^(https?:)?//", "https://", item.get("link") or record.get("id") or "")
-            collection = name or clean(((record.get("partof") or [""])[0])) or "Prints and Photographs Division"
+            collection = name or next((clean(p) for p in record.get("partof") or [] if "collection" in str(p).lower()),
+                                      "Prints and Photographs Division")
             credit = (f"{title[:150]}, {collection}, Library of Congress, no known restrictions on publication, "
                       f"{link}")
             place = loc_place(record)
@@ -829,7 +865,7 @@ def loc_service_items(s, path, extra, total, name, conflict, uniform, want, rng)
             country = place.split(",")[-1].strip() if place else ""
             if uniform and country:
                 details = details_in(title, summary)
-                said = uniform.format(country=place_words(country)) + (f", {when}" if when else "") \
+                said = uniform.format(country=place_words(country)) + (f", photographed {when}" if when else "") \
                     + (f", with {details}" if details else "")
                 rows.insert(0, {"question": ASK_UNIFORM, "answer": full_stop(said), "credit": credit, **where(place),
                                 **safe})
@@ -1201,7 +1237,7 @@ SERVICE_LIMITS = {
     "commons_military": 6000,         # a few files each of about 8,000 Wikidata items with a Commons category
     "commons_airplanes": 2500,        # civil aircraft models with a Commons category and facts
     "commons_uniformed": 4000,        # about 600 service categories by country, a few files each
-    "loc_service": 4000,              # Civil War negatives (8,700) and about 12,000 photos found by subject
+    "loc_service": 4000,              # Civil War negatives (8,700), Bain (3,000) and about 9,000 photos by subject
     "nara_military": 3000,            # 80-G, 127 and 26-G (small files) and 111-SC (large files)
     "army_mil": 250,                  # all the Army's current gallery
     "nasm_aircraft": 1200,            # all usable: about 250 records, up to three pictures each

@@ -152,16 +152,15 @@ WD_KINDS = [
     ("Q2000908", "self-propelled gun", "vehicle"), ("Q506219", "multiple rocket launcher", "vehicle"),
     ("Q180126", "howitzer", "vehicle"), ("Q1330892", "field gun", "vehicle"), ("Q7325635", "anti-aircraft gun", "vehicle"),
     ("Q81103", "cannon", "vehicle"), ("Q6546105", "military light utility vehicle (a jeep)", "vehicle"),
-    ("Q130368", "armoured fighting vehicle", "vehicle"), ("Q1184840", "military vehicle", "vehicle"),
     ("Q753058", "attack helicopter", "vehicle"), ("Q2735392", "utility helicopter", "vehicle"),
     ("Q1543102", "military helicopter", "vehicle"), ("Q385642", "fighter-bomber", "vehicle"),
     ("Q127771", "fighter aircraft", "vehicle"), ("Q170877", "bomber", "vehicle"),
-    ("Q3041792", "reconnaissance aircraft", "vehicle"), ("Q216916", "military aircraft", "vehicle"),
+    ("Q3041792", "reconnaissance aircraft", "vehicle"),
     ("Q17205", "aircraft carrier", "vehicle"), ("Q182531", "battleship", "vehicle"), ("Q104843", "cruiser", "vehicle"),
     ("Q174736", "destroyer", "vehicle"), ("Q161705", "frigate", "vehicle"), ("Q170013", "corvette", "vehicle"),
     ("Q2811", "submarine", "vehicle"), ("Q207452", "ship of the line", "vehicle"), ("Q324233", "torpedo boat", "vehicle"),
     ("Q214196", "gunboat", "vehicle"), ("Q202527", "minesweeper", "vehicle"), ("Q11479410", "patrol boat", "vehicle"),
-    ("Q474748", "amphibious assault ship", "vehicle"), ("Q2031121", "warship", "vehicle"),
+    ("Q474748", "amphibious assault ship", "vehicle"),
     ("Q177456", "assault rifle", "weapon"), ("Q1194268", "battle rifle", "weapon"),
     ("Q190570", "sniper rifle", "weapon"), ("Q183302", "carbine", "weapon"), ("Q178550", "submachine gun", "weapon"),
     ("Q720711", "light machine gun", "weapon"), ("Q12800", "machine gun", "weapon"),
@@ -170,7 +169,11 @@ WD_KINDS = [
     ("Q12791", "sword", "weapon"), ("Q182780", "dagger", "weapon"), ("Q173366", "bayonet", "weapon"),
     ("Q3579211", "combat helmet", "weapon"), ("Q3391846", "suit of plate armour", "weapon"),
     ("Q1788716", "military decoration", "weapon"),
+    # The general kinds last, so a ship or an aircraft is never called just a military vehicle.
+    ("Q2031121", "warship", "vehicle"), ("Q216916", "military aircraft", "vehicle"),
+    ("Q130368", "armoured fighting vehicle", "vehicle"), ("Q1184840", "military vehicle", "vehicle"),
 ]
+
 WD_CIVIL_KINDS = [
     ("Q210932", "airliner (a passenger airplane)", "civil"),
     ("Q1062135", "business jet (a small passenger airplane)", "civil"), ("Q19799", "cargo airplane", "civil"),
@@ -245,8 +248,9 @@ def wd_models(s, kinds, avoid=(), groups=None):
         countries = origins or ([q for q in (f.get("countries") or "").split("|") if q]
                                 if how == "one" or phrase == "military decoration" else [])
         adjective = ADJECTIVES.get(countries[0], "") if len(countries) == 1 else ""
-        wars = [{"World War II": "the Second World War", "World War I": "the First World War"}.get(w, "the " + w)
-                for w in (f.get("wars") or "").split("|") if w][:2]
+        wars = [{"World War II": "the Second World War", "World War I": "the First World War"}.get(
+            w, w if re.match(r"^(Operation|Battle of|Siege of|the )", w) else "the " + w)
+            for w in (f.get("wars") or "").split("|") if w][:2]
         start, end, made = (f.get("start") or "")[:4], (f.get("end") or "")[:4], (f.get("inception") or "")[:4]
         if phrase == "military decoration":
             period = f", established in {made}" if made else ""
@@ -257,7 +261,8 @@ def wd_models(s, kinds, avoid=(), groups=None):
         if not name or (not adjective and not wars and not period):
             continue
         described = f"{adjective} {phrase}".strip()
-        article = "a" if described.startswith("US") or described[0].lower() not in "aeiou" else "an"
+        article = "a" if re.match(r"^(US|Ukrain|Ugand|Urugu|Uzbek|Europe|Unite|Utility)", described) \
+            or described[0].lower() not in "aeiou" else "an"
         subject = (("an " if name[0] in "AEFHILMNORSX" else "a ") + name) if how == "model" else \
             ("the " + name if phrase == "military decoration" else name)
         answer = f"This is {subject}, {article} {described}" + (f" of {' and '.join(wars)}" if wars else "") + period
@@ -274,6 +279,14 @@ NOT_THE_THING = re.compile(r"\b(drawings?|diagrams?|schem\w*|blueprints?|plans?|
                            r"instrument\w*|details?|parts?|video\w*|manuals?|cartoons?|renders?|cgi|3d|games?|"
                            r"screenshots?|ammunition|cartridges?|fictional|statues?|sculptures?|memorials?|"
                            r"graves?|funerals?|in art)\b", re.I)
+# Catalogue lines that are not captions, and captions saying the picture is a model or a toy.
+NOT_A_CAPTION = re.compile(r"catalog(ue)? ?#|\btitle:|\btitre\s*:|\bformat\s*:|r[ée]f[ée]rence|corporation name|"
+                           r"official nickname|\b(scale )?(models?|miniatures?|toys?|replicas?) of\b|\bscale model|"
+                           r"\bdiorama", re.I)
+# Files that are paintings, drawings or prints (by their name or categories), not photos.
+PAINTED = re.compile(r"\b(paintings?|painted by|oil on|watercolou?rs?|drawings?|lithograph\w*|engravings?|etchings?|"
+                     r"woodcuts?|prints? (of|by)|illustrations?|retrato|gem[äa]lde|peinture|tableau|portrait "
+                     r"paintings|caricatures?|cartoons?|posters?)\b", re.I)
 UNIFORM_DETAILS = [(re.compile(r"\b(" + p + r")\b", re.I), said) for p, said in (
     (r"high[- ]?vis\w*|hi[- ]?vis|reflective (vest|jacket)|safety vests?", "a high-visibility jacket"),
     (r"custodian helmets?", "a custodian helmet"), (r"bearskins?", "a bearskin cap"), (r"peaked caps?", "a peaked cap"),
@@ -315,17 +328,23 @@ def sa_files(s, titles):
             meta = info.get("extmetadata") or {}
             value = lambda k: clean(re.sub(r"<[^>]+>", " ", (meta.get(k) or {}).get("value") or ""))  # noqa: E731
             licence = value("LicenseShortName")
+            if PAINTED.search(f"{p['title']} {value('Categories')}"):
+                continue                               # a painting, drawing or print: not a photo of the thing
             if not COMMONS_SA.match(licence) or re.search(r"\bN[CD]\b", licence.upper()) \
                     or info.get("mime") not in ("image/jpeg", "image/png") or not info.get("thumburl"):
                 continue
             years = [y for y in re.findall(r"\b(1[89]\d\d|20[0-2]\d)\b", value("DateTimeOriginal")) if int(y) <= 2026]
             place = ""                                 # (no offline map of countries in the kit)
             page = "https://commons.wikimedia.org/wiki/" + p["title"].replace(" ", "_")
+            caption = caption_text(captions.get(f"M{p['pageid']}")) or caption_text(value("ImageDescription"))
+            if NOT_A_CAPTION.search(caption):
+                caption = ""
+            # The year only when the caption or file name says it, or the camera recorded its place (an old photo
+            # scanned later often carries the scan date).
+            year = years[0] if years and (years[0] in f"{caption} {p['title']}" or value("GPSLatitude")) else ""
             out.append({"title": p["title"], "url": re.sub(r"/\d+px-([^/]+)$", r"/960px-\1", info["thumburl"]),
                         "credit": f"{p['title']} by {value('Artist')[:100] or 'unknown'}, {licence}, {page}",
-                        "caption": caption_text(captions.get(f"M{p['pageid']}")) or
-                        caption_text(value("ImageDescription")),
-                        "year": years[0] if years else "", "place": place,
+                        "caption": caption, "year": year, "place": place,
                         "cats": value("Categories").replace("|", "; ")})
         time.sleep(1)
     return out
@@ -455,9 +474,12 @@ def prepare_commons_uniformed_sa(source, data_dir, work, cap):
                 categories.append((sub, question, start.format(c=COUNTRY_SAID.get(country, country))))
     categories += SERVICE_FIXED
     random.Random(source.key).shuffle(categories)
-    per_category = per_label(int((cap + source.test) * 1.2), len(categories))
+    want = int((cap + source.test) * 1.2)
+    per_category = max(3, per_label(want, len(categories)))
     items, pictures = [], 0
     for category, question, start in categories:
+        if pictures >= want:
+            break
         titles = category_titles(s, category, 4)
         random.Random(category).shuffle(titles)
         taken = 0
