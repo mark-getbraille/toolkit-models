@@ -154,7 +154,8 @@ ABO_TYPES = {
     "INPUT_PEN": "a stylus pen", "MOUSE_PAD": "a mouse mat", "BLANK_MEDIA": "blank discs or media",
     "CE_ACCESSORY": "an electronics accessory", "CE_CARRYING_CASE_OR_BAG": "a case for electronics",
     "ELECTRIC_FAN": "an electric fan", "STRING_LIGHT": "string lights", "LIGHT_BULB": "a light bulb",
-    "LIGHT_SOURCE": "a light", "HOME_LIGHTING_AND_LAMPS": "a lamp", "LAMP": "a lamp", "LIGHT_FIXTURE": "a light fitting",
+    "LIGHT_SOURCE": "a light", "HOME_LIGHTING_AND_LAMPS": "a lamp", "LAMP": "a lamp",
+    "LIGHT_FIXTURE": "a light fitting",
     "WATCH": "a watch", "CELLULAR_PHONE_CASE": "a phone case", "THERMOPLASTIC_FILAMENT": "3D printer filament",
     "ELECTROMECHANICAL_GAUGE": "a gauge", "WEIGH_SCALE": "a weighing scale", "MICROSCOPES": "a microscope",
     # tools and hardware
@@ -218,7 +219,8 @@ ABO_USES = {
     "CAMERA_TRIPOD": "used to hold a camera steady", "WEIGH_SCALE": "used to weigh things",
     "MICROSCOPES": "used to see very small things", "STAPLER": "used to fasten sheets of paper together",
     "BROOM": "used to sweep the floor", "VACUUM_CLEANER": "used to clean floors and carpets by suction",
-    "FOOD_BLENDER": "used to blend food and drinks", "PRESSURE_COOKER": "used to cook food quickly under steam pressure",
+    "FOOD_BLENDER": "used to blend food and drinks",
+    "PRESSURE_COOKER": "used to cook food quickly under steam pressure",
     "RICE_COOKER": "used to cook rice", "RICE_COOKERS": "used to cook rice", "TOASTER": "used to toast bread",
     "ELECTRIC_WATER_BOILER": "used to boil water", "COFFEE_MAKER": "used to make coffee",
     "MARKING_PEN": "used to write or mark", "WATER_PUMP": "used to pump water",
@@ -739,7 +741,8 @@ COMMONS_THINGS = [
     ("Mortars and pestles", False, thing("a mortar and pestle", "used to grind spices and seeds")),
     ("Measuring cups", False, thing("a measuring cup")), ("Blenders", False, thing("a blender")),
     ("Juicers", False, thing("a juicer")), ("Nutcrackers", False, thing("a nutcracker")),
-    ("Coffee grinders", False, thing("a coffee grinder")), ("French presses", False, thing("a cafetiere (French press)")),
+    ("Coffee grinders", False, thing("a coffee grinder")),
+    ("French presses", False, thing("a cafetiere (French press)")),
     ("Tongs", False, thing("a pair of tongs")), ("Cutting boards", False, thing("a chopping board")),
     ("Rocket stoves", False, thing("a rocket stove")), ("Kerosene stoves", False, thing("a kerosene (paraffin) stove")),
     ("Charcoal stoves", False, thing("a charcoal stove")), ("Charcoal irons", False, thing("a charcoal iron")),
@@ -790,6 +793,13 @@ COMMONS_IN_USE = [
 ]
 
 
+def just_the_title(text, title):
+    """Whether a file's "description" only repeats its file name ("Summer in the City 28 October005."), which says
+    nothing about the picture."""
+    words = set(re.findall(r"[a-z]+", text.lower()))
+    return words <= set(re.findall(r"[a-z]+", title.lower()))
+
+
 def build_commons_list(specs, limit, prefix):
     """A Commons pack from specs [(category, deeper, rows[, country])], as home_packs.build_commons_topic does (the
     categories take turns, so each gets an even share; CC0, public domain and CC BY files only; a real, respectful
@@ -828,7 +838,8 @@ def build_commons_list(specs, limit, prefix):
                 words = LIFE_STAGE.sub(" ", words)
                 out = [mark_child({"question": qn, "answer": an, "credit": credit, **place}, words)
                        for qn, an in rows]
-                if text and not NOT_RESPECTFUL.search(text) and not FIRST_PERSON.search(text):
+                if text and not NOT_RESPECTFUL.search(text) and not FIRST_PERSON.search(text) \
+                        and not just_the_title(text, title):
                     out.append(mark_child({"question": ALT_TEXT, "answer": text, "credit": credit, **place}, words))
                 items.append((file_name(prefix, title), url, out))
                 got += 1
@@ -1108,7 +1119,7 @@ THINGS_PACKS = {
 # How many pictures a full build takes from each (about what each offers after the checks, kept so that every pack
 # finishes well within the build's time on GitHub).
 THINGS_LIMITS = {
-    "abo_products": 6000,         # of about 60,000 usable listings (originals about 0.5 MB: about 3 GB fetched)
+    "abo_products": 6000,         # of 85,416 usable listings (21,000 not phone cases); originals about 0.5 MB
     "open_images_in_use": 4000,   # about 1,800 validation and test pictures, the rest from the training set
     "open_images_tech": 4500,     # of 5,187 free photos with a label of this pack confirmed
     "commons_things": 2500,
