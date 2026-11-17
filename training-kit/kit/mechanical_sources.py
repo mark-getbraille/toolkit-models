@@ -183,8 +183,13 @@ def warning_advice(words):
 # ----------------------------------------------------------------- share-alike: Commons parts
 
 def specs(question, names, deeper=()):
-    """[(category, question, answer, deeper)] for commons_sa_items, from {category: what it is}."""
-    return [(c, question, f"This is {name}.", c in deeper) for c, name in names.items()]
+    """[(category, question, answer, deeper)] for commons_sa_items, from {category: what it is}: "This is a gear." or,
+    for a plural name, "These are rivets." """
+    out = []
+    for c, name in names.items():
+        plural = not re.match(r"(a|an|the)\b", name) and re.search(r"s\b", name.split(" (")[0])
+        out.append((c, question, f"{'These are' if plural else 'This is'} {name}.", c in deeper))
+    return out
 
 
 # The categories of packs/mechanical_packs.py's Commons packs, with the plain name of each.
@@ -237,7 +242,7 @@ MECH_PARTS = {
     "Electric motors": "an electric motor", "Stepper motors": "a stepper motor", "Rivets": "rivets",
     "Wing nuts": "a wing nut", "Lock washers": "lock washers", "Cotter pins": "a split pin (cotter pin)",
     "Circlips": "a circlip", "Hose clamps": "a hose clip (hose clamp)", "O-rings": "O-rings", "Gaskets": "a gasket",
-    "Fittings": "a pipe fitting", "Elbow pipe fittings": "an elbow pipe fitting", "Flanges": "a pipe flange",
+    "Elbow pipe fittings": "an elbow pipe fitting", "Tee fittings": "a tee pipe fitting", "Flanges": "a pipe flange",
     "Siphons": "a sink trap (siphon)", "Water meters": "a water meter", "Pressure gauges": "a pressure gauge",
 }
 MECH_THINGS = {
@@ -258,10 +263,26 @@ MECH_DEEPER = {"Spark plugs", "Tires", "Automobile wheels", "Automobile headlamp
 MECH_SA = specs(PART_Q, MECH_PARTS, MECH_DEEPER) + specs(THING_Q, MECH_THINGS, MECH_DEEPER)
 
 
+# Words that show a description is in English, and words that show it is in another language (as in
+# packs/mechanical_packs.py).
+ENGLISH_WORDS = re.compile(r"\b(the|of|with|and|is|are|on|this|from|for|at|by)\b", re.I)
+OTHER_WORDS = re.compile(r"\b(der|die|das|und|mit|ein|eine|le|la|les|des|du|et|est|avec|het|een|van|en|el|los|"
+                         r"con|del|il|di|che|och|på|og|af|na|ze|się|une|aus|den)\b", re.I)
+
+
+def in_english(text):
+    """Whether a description reads as English: Latin letters only, and more English than other common words."""
+    if not text or re.search(r"[^\x00-\u024f\u2010-\u2027\u00b0]", text):
+        return False
+    return len(ENGLISH_WORDS.findall(text)) > len(OTHER_WORDS.findall(text))
+
+
 def prepare_commons_mechanical_sa(source, data_dir, work, cap):
     """Wikimedia Commons mechanical categories, files under CC BY-SA or GFDL (home_sources.commons_sa_items: the
-    categories share the cap; rows whose words name a child are marked "child")."""
+    categories share the cap; rows whose words name a child are marked "child"). A file's own description is kept
+    only when it is in English."""
     items = commons_sa_items(MECH_SA, cap, source.test, "mech-sa")
+    items = [i for i in items if i[2]["question"] != ALT_TEXT or in_english(i[2]["answer"])]
     return fetch_shared(items, os.path.join(data_dir, source.key), workers=2)
 
 

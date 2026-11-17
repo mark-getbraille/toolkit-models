@@ -1888,6 +1888,37 @@ SOURCES = [
            'CC BY 4.0 (Mendeley Data zv66h54b8j)',
            'Construction material conditions (Mengiste, Mannem, Prieto and Garcia de Soto, NYU Abu Dhabi), Mendeley '
            'Data zv66h54b8j, CC BY 4.0', "permissive", 140, 10, prepare_pack, 'about 40 MB'),
+    # Mechanical and automotive parts (packs/mechanical_packs.py): parts, engine bays, symbols, tyres, spark plugs and
+    # gears, without people, so all are used for picture-making too.
+    Source('commons_car_parts', 'What part is this? Car and lorry parts: engine, brakes, exhaust, gearbox, '
+           'suspension, fluids (Wikimedia Commons, ready-made pack)', 'Captions CC0; pictures CC0, public domain or CC BY, each author credited', 'Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 2400, 20,
+           prepare_pack, 'about 400 MB'),
+    Source('commons_cycle_parts', 'What part is this? Bicycle, motorcycle and small-engine parts (Wikimedia Commons, '
+           'ready-made pack)', 'Captions CC0; pictures CC0, public domain or CC BY, each author credited', 'Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 1700, 15, prepare_pack, 'about 300 MB'),
+    Source('commons_machine_parts', 'What part is this? Bearings, gears, belts, valves, pumps, motors, fittings, '
+           'plumbing, heating and air conditioning (Wikimedia Commons, ready-made pack)', 'Captions CC0; pictures CC0, public domain or CC BY, each author credited', 'Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive",
+           2400, 20, prepare_pack, 'about 400 MB'),
+    Source('commons_engine_bays', 'Engine bays and where the battery, dipstick and other parts are, dashboards and '
+           'gauges (Wikimedia Commons, ready-made pack)', 'Captions CC0; pictures CC0, public domain or CC BY, each author credited', 'Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 1000, 15, prepare_pack,
+           'about 180 MB'),
+    Source('iso_machine_symbols', 'What does this symbol mean? ISO 7000 machine symbols and dashboard warning lights '
+           '(Wikimedia Commons, ready-made pack)', 'CC0 or public domain', 'Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 1500, 15,
+           prepare_pack, 'about 60 MB'),
+    Source('corolla_engine_bay', 'Parts under the bonnet of a Toyota Corolla: battery, coolant, oil, fuses (Hugging '
+           'Face, ready-made pack)', 'Apache-2.0 (stevenalbert10/Toyota-Corolla-Car-Parts)',
+           'Toyota Corolla car parts dataset (stevenalbert10 on Hugging Face), Apache-2.0', "permissive", 1000, 15,
+           prepare_pack, 'about 170 MB'),
+    Source('tyre_condition', 'Is this tyre in good condition, and how far has it been driven? (Mendeley Data, '
+           'ready-made pack)', 'CC BY 4.0 (Mendeley Data bn7ch8tvyp, 32b5vfj6tc and dfzbm2ktss)',
+           'Tyre photos from Mendeley Data bn7ch8tvyp, 32b5vfj6tc (TyreNet) and dfzbm2ktss, CC BY 4.0, credited in '
+           'ATTRIBUTION.txt', "permissive", 2800, 20, prepare_pack, 'about 450 MB'),
+    Source('spark_plug_condition', 'Is this spark plug fouled or damaged? (Hugging Face, ready-made pack)',
+           'BSD-3-Clause (eoinedge/spark-plug-classification)',
+           'Spark plug classification dataset (eoinedge on Hugging Face), BSD-3-Clause', "permissive", 470, 10,
+           prepare_pack, 'about 60 MB'),
+    Source('planetary_gearbox', 'How many gears, and which? Planetary gearbox photos (Zenodo, ready-made pack)',
+           'CC BY 4.0 (Zenodo 8223473)', 'Planetary gearbox images, Zenodo 8223473, CC BY 4.0', "permissive", 100, 10,
+           prepare_pack, 'about 20 MB'),
     Source('skin_lesion_photos', 'Skin spots photographed with a phone, adults (PAD-UFES-20, ready-made pack)',
            'CC BY 4.0 (Mendeley Data zr7vgbcyr2)',
            'PAD-UFES-20 (Pacheco et al., 2020), CC BY 4.0', "permissive", 2000, 20, prepare_pack, 'about 400 MB', content="medical"),
@@ -2332,3 +2363,18 @@ PERSONAL_PICTURE_MAKING_OK |= _things_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(
     s.key for s in THINGS_SOURCES if s.key not in _things_ok)
 _add_collections(THINGS_SOURCES)
+
+# Mechanical and automotive collections that are not open (share-alike symbols and parts, AutoVI, dashboard warning
+# icons, car damage and parts sets); the file may be missing.
+try:
+    import mechanical_sources as _mechanical  # noqa: E402
+except ImportError as _e:
+    _mechanical = None
+    if getattr(_e, "name", None) != "mechanical_sources":
+        say(f"(The mechanical and automotive collections could not be loaded: {_e}. They are left out.)")
+MECHANICAL_SOURCES = list(getattr(_mechanical, "MECHANICAL_SOURCES", []) or [])
+_mechanical_ok = set(getattr(_mechanical, "MECHANICAL_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _mechanical_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(
+    s.key for s in MECHANICAL_SOURCES if s.key not in _mechanical_ok)
+_add_collections(MECHANICAL_SOURCES)

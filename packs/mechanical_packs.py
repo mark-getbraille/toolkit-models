@@ -47,8 +47,9 @@ The packs (all open: CC0, public domain, CC BY, Apache-2.0 or BSD, checked at th
                           the space under the bonnet), car and motorcycle dashboards, speedometers, rev counters, fuel
                           gauges and odometers. Where a Commons user drew named boxes on the photo (image notes), the
                           parts are said with their place in the picture: "Where is the battery in this engine bay?"
-                          -> "The battery is at the top left of the picture." Few photos have such notes (seven
-                          engine bays in November 2026).
+                          -> "The 12-volt battery is at the bottom right of the picture." Few photos have such
+                          notes (six engine photos in November 2026, the best a 2023 Subaru Outback with twelve
+                          parts named).
   iso_machine_symbols     Commons' ISO 7000 symbol files ("Graphical symbols for use on equipment", 2,260 files, CC0
                           or public domain as simple shapes) with the title and use written in each file's own
                           description, and the free files of Commons' dashboard-icon and warning-light categories.
@@ -157,9 +158,11 @@ NOT_THE_THING = re.compile(r"\b(compan(y|ies)|manufacturers?|factor(y|ies)|plant
                            r"inventors?|history|exhibitions?|shows?|events?|races?|racing|stores?|shops?|"
                            r"buildings?|streets?|stations?|by country|by year|by decade|by city|in \w+ \d{4}|"
                            r"sculptures?|monuments?|statues?|memorials?)\b", re.I)
-# Descriptions that are only a camera's or an archive's record, not words about the picture.
+# Descriptions that are only a camera's or an archive's record, a link, or the photographer's own story ("We
+# started the jeep's engine ..."), not words about the picture.
 JUST_A_RECORD = re.compile(r"original digital file|descriptive metadata|date picture taken|collectie\s*/\s*archief|"
-                           r"bestanddeelnr|\bexif\b|camera (make|model)|^(img|dsc|p)\d", re.I)
+                           r"bestanddeelnr|\bexif\b|camera (make|model)|^(img|dsc|p)\d|https?://|www\.|"
+                           r"link below|\b(we|our|my|me)\b|\bI\b", re.I)
 # Words the child check would take for a child ("infantry", "infantryman"), taken out before it looks.
 NOT_A_CHILD = re.compile(r"\binfantr\w*", re.I)
 IN_A_PLACE = re.compile(r"\bin (the )?[A-Z]\w+( \w+)?$")      # "... in Germany", "... in the United States"
@@ -229,8 +232,24 @@ def category_files(s, category, deeper, most_subcategories=25):
 
 
 def answer_for(name, purpose=None):
-    """ "This is a spark plug: it makes the spark ..." (or "This is a spark plug." when there is no purpose line)."""
-    return f"This is {name}: {purpose}" if purpose else f"This is {name}."
+    """ "This is a spark plug: it makes the spark ..." (or "This is a spark plug." when there is no purpose line);
+    "These are brake shoes ..." for a plural name ("brake shoes", "wheel nuts (lug nuts)")."""
+    plural = not re.match(r"(a|an|the)\b", name) and re.search(r"s\b", name.split(" (")[0])
+    start = "These are" if plural else "This is"
+    return f"{start} {name}: {purpose}" if purpose else f"{start} {name}."
+
+
+# Words that show a description is in English, and words that show it is in another language.
+ENGLISH_WORDS = re.compile(r"\b(the|of|with|and|is|are|on|this|from|for|at|by)\b", re.I)
+OTHER_WORDS = re.compile(r"\b(der|die|das|und|mit|ein|eine|le|la|les|des|du|et|est|avec|het|een|van|en|el|los|"
+                         r"con|del|il|di|che|och|på|og|af|na|ze|się|une|aus|den)\b", re.I)
+
+
+def in_english(text):
+    """Whether a description reads as English: Latin letters only, and more English than other common words."""
+    if not text or re.search(r"[^\x00-\u024f\u2010-\u2027\u00b0]", text):
+        return False
+    return len(ENGLISH_WORDS.findall(text)) > len(OTHER_WORDS.findall(text))
 
 
 def build_commons_parts(specs, limit, prefix):
@@ -267,7 +286,7 @@ def build_commons_parts(specs, limit, prefix):
                 if got >= share or title in seen:
                     continue
                 words = NOT_A_CHILD.sub(" ", f"{title} {text}")
-                text = "" if JUST_A_RECORD.search(text or "") else text
+                text = "" if JUST_A_RECORD.search(text or "") or not in_english(text) else text
                 if NUDE.search(words):
                     considered(title, url, "its words are about nudity")
                     continue
@@ -541,7 +560,6 @@ COMMONS_MACHINE_PARTS = [
          question=THING_Q),
     part("Scroll compressors", "a scroll compressor", "used in air conditioners and heat pumps."),
     part("Hydraulic cylinders", "a hydraulic cylinder", "oil pressure pushes a rod out of it with great force."),
-    part("Hydraulic hoses in hydraulic machinery", "hydraulic hoses", "they carry high-pressure oil in a machine."),
     part("Electric motors", "an electric motor"),
     part("Stepper motors", "a stepper motor", "an electric motor that turns in small exact steps."),
     part("Servomotors", "a servo motor", "a motor whose position is controlled exactly."),
@@ -558,10 +576,8 @@ COMMONS_MACHINE_PARTS = [
     part("O-rings", "O-rings", "rubber rings that seal a joint."),
     part("Gaskets", "a gasket", "a flat seal between two parts.", True),
     # plumbing
-    part("Fittings", "a pipe fitting", "it joins pipes.", True),
     part("Elbow pipe fittings", "an elbow pipe fitting", "it joins two pipes at an angle."),
     part("Tee fittings", "a tee pipe fitting", "it joins three pipes in a T."),
-    part("Cast iron fittings", "a cast-iron pipe fitting"),
     part("Butt welding fittings", "a butt-welding pipe fitting"),
     part("Flanges", "a pipe flange", "a flat rim bolted to another to join pipes."),
     part("Siphons", "a sink trap (siphon)", "the bend under a sink that holds water to keep drain smells out."),
@@ -598,12 +614,17 @@ ENGINE_BAY = ("This is a vehicle's engine bay: the space that holds the engine, 
 # Title searches for engine bays (Commons has no category for them), and words that show another kind of engine room.
 ENGINE_BAY_SEARCHES = ('intitle:"engine bay"', 'intitle:"engine compartment"', 'intitle:"under bonnet"',
                        'intitle:"under-bonnet"', 'intitle:"underhood"', 'intitle:"under the hood"',
-                       'intitle:"engine room" (car OR automobile OR truck)')
+                       )
 NOT_A_ROAD_VEHICLE = re.compile(r"\b(ship|uss|hms|ns|navy|naval|aircraft|airplane|aeroplane|helicopter|jet|"
                                 r"starfighter|hornet|boat|submarine|locomotive|reactor|tank|train|railcar|f-\d+)\b",
                                 re.I)
-NOTED_BAYS = ('hastemplate:ImageNote ("engine bay" OR "engine compartment" OR "under the hood" OR "under-bonnet" '
-              'OR "underhood" OR "engine room")')
+# Engine-bay photos with image notes (Commons' search takes one phrase at a time here: it has no brackets).
+NOTED_BAYS = tuple(f'hastemplate:ImageNote "{phrase}"' for phrase in ("engine bay", "engine compartment",
+                                                                      "under the hood", "under-bonnet", "underhood",
+                                                                      "under bonnet"))
+# A noted photo is kept only when its title says it shows an engine or what is under the bonnet.
+SHOWS_AN_ENGINE = re.compile(r"\b(engine|bonnet|hood|underhood|motor)\b|engine[ -]?bay|under-bonnet", re.I)
+NOT_A_CAR_ENGINE = re.compile(r"engine house|\bmines?\b|castle|cruiser|vessel|drawing", re.I)
 DASHBOARDS = [
     part("Automobiles with open hoods", "a car with its bonnet (hood) open, showing the engine bay", deeper=True,
          question=THING_Q),
@@ -685,7 +706,10 @@ def build_commons_engine_bays(limit):
     of the limit are engine bays."""
     s = session()
     bays = int(limit * 0.65) + 1
-    noted = [t for t in search_files(s, NOTED_BAYS, 200) if not NOT_A_ROAD_VEHICLE.search(t)]
+    noted = []
+    for query in NOTED_BAYS:
+        noted += [t for t in search_files(s, query, 200) if SHOWS_AN_ENGINE.search(t) and t not in noted
+                  and not NOT_A_ROAD_VEHICLE.search(t) and not NOT_A_CAR_ENGINE.search(t)]
     titles = list(noted)
     for query in ENGINE_BAY_SEARCHES:
         titles += search_files(s, query)
@@ -699,7 +723,7 @@ def build_commons_engine_bays(limit):
         if len(items) >= bays * 1.15:
             break
         words = NOT_A_CHILD.sub(" ", f"{title} {text}")
-        text = "" if JUST_A_RECORD.search(text or "") else text
+        text = "" if JUST_A_RECORD.search(text or "") or not in_english(text) else text
         place = where(PLACES.get(title, ""))
         facts = {"commons_title": title.split(":", 1)[-1].rsplit(".", 1)[0]}
         rows = [mark_child({"question": ENGINE_BAY_Q, "answer": ENGINE_BAY, "credit": credit, "facts": facts,
@@ -838,7 +862,8 @@ def build_iso_machine_symbols(limit):
         dash += commons_members(s, category, "file")
     for title, url, credit, text, description in mech_entries(s, list(dict.fromkeys(dash)), drawings=True):
         words = f"{title} {description}"
-        if re.search(r"\b(paomedia|web fundamentals|icon set|material design)\b", words, re.I) or not text:
+        if re.search(r"\b(paomedia|web fundamentals|icon set|material design)\b", words, re.I) \
+                or not in_english(text):
             considered(title, url, "a software icon, or no description of what it means")
             continue
         picture = symbol_entry(s, url) if title.lower().endswith(".svg") else None
@@ -1186,10 +1211,10 @@ MECHANICAL_PACKS = {
 # How many pictures a full build takes from each (about what each offers after the checks, kept so that every pack
 # finishes well within about four hours on GitHub's machines; Commons answers about one picture a second).
 MECHANICAL_LIMITS = {
-    "commons_car_parts": 3500,       # 77 categories, about 45 free photos each
-    "commons_cycle_parts": 2500,     # 62 categories
-    "commons_machine_parts": 3500,   # 84 categories
-    "commons_engine_bays": 1500,     # about 450 engine-bay files by title, and the dashboard categories
+    "commons_car_parts": 3500,       # 74 categories (with subcategories where marked), about 47 photos each
+    "commons_cycle_parts": 2500,     # 60 categories
+    "commons_machine_parts": 3500,   # 73 categories
+    "commons_engine_bays": 1500,     # 464 engine-bay files by title (6 with notes), 8 dashboard and gauge categories
     "iso_machine_symbols": 2300,     # the 2,260 ISO 7000 files and the few free dashboard icons
     "corolla_engine_bay": 1452,      # all of them (about 3 MB each)
     "tyre_condition": 4100,          # 620 Meerut, up to 1,698 TyreNet (1.9 GB RAR), 1,856 Velammal (2.9 GB)

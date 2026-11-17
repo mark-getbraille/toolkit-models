@@ -1046,6 +1046,11 @@ PACKS.update(SAFETY_RITES_PACKS)
 from things_packs import THINGS_PACKS
 PACKS.update(THINGS_PACKS)
 
+# Mechanical and automotive parts: Commons car, cycle and machine parts, engine bays and gauges, ISO machine symbols
+# and warning lights, the Toyota Corolla engine bay, tyre condition, spark plug condition and planetary gearboxes.
+from mechanical_packs import MECHANICAL_PACKS
+PACKS.update(MECHANICAL_PACKS)
+
 
 def sha256_of(path):
     """The SHA-256 of a file."""
