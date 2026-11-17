@@ -556,6 +556,11 @@ LAND_SIGN_UP = {
 }
 
 LAND_NOT_INCLUDED = {
+    "Agriculture-Vision": "its terms (IntelinAir's workshop licence) allow use only for the 2020 challenge, forbid "
+                          "derivative works other than a challenge entry and ask for deletion 90 days after the "
+                          "challenge, so training a describer would break them. prepare_agriculture_vision is kept "
+                          "here, ready, should IntelinAir give written permission (it could then become a permission "
+                          "collection).",
     "NOAA Photo Library": "public domain, but its new home (www.noaa.gov/digital-library) refused this machine (403); "
                           "its Flickr copy needs a key (LAND_SIGN_UP).",
     "NREL image gallery (images.nrel.gov)": "did not answer from this machine; NREL's Flickr copy needs a key.",
@@ -618,28 +623,11 @@ LAND_SOURCES = [
            terms_summary="Free for non-commercial purposes such as research, teaching or personal experimentation; "
                          "you must not distribute the dataset or changed copies, nor use it or anything made from it "
                          "for commercial gain. Personal, non-commercial use only."),
-    # ---- research (needs the owner's own copy)
-    Source("agriculture_vision", "Agriculture-Vision: field problems in aerial photos of US farmland (personal use; "
-                                 "your own copy)",
-           "Agriculture-Vision Workshop Terms and Conditions (IntelinAir): internal, non-commercial academic use only, "
-           "for the workshop's challenge; no redistribution (" + AGVISION_TERMS + ")",
-           "Agriculture-Vision dataset (Mang Tik Chiu et al., 'Agriculture-Vision: A Large Aerial Image Database for "
-           "Agricultural Pattern Analysis', CVPR 2020), IntelinAir and the Agriculture-Vision Workshop, "
-           + AGVISION_PAGE, "research", 1500, 20, prepare_agriculture_vision,
-           "reads your 21 GB archive once (keeps about 300 MB of tiles)",
-           terms=AGVISION_TERMS,
-           terms_summary="IntelinAir's workshop terms: a limited licence for internal, non-commercial academic use "
-                         "for the Agriculture-Vision challenge; you must not sell, share or redistribute the dataset, "
-                         "must not use it for any commercial product or service, may not make derivative works other "
-                         "than a challenge submission, and are asked to delete it 90 days after the challenge ends. "
-                         "Read them before agreeing: they may not allow training your own model. Personal, "
-                         "non-commercial use only."),
 ]
 
 # The collections a picture-making model may learn from: plants, fields and drone tiles without people. Not the
 # Commons entry (its photos may show farm and factory workers, and children in markets).
-LAND_PICTURE_MAKING_OK = {"plant_seedlings_sa", "soybean_weeds_nc", "weed_growth_stage_nc", "cropandweed_nc",
-                          "agriculture_vision"}
+LAND_PICTURE_MAKING_OK = {"plant_seedlings_sa", "soybean_weeds_nc", "weed_growth_stage_nc", "cropandweed_nc"}
 
 
 def main(argv=None):
