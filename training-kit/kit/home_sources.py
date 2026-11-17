@@ -395,6 +395,8 @@ COMMONS_HAIR = [
 # Drawings, art and microscope pictures are left out, except the care labels (photos of printed symbols).
 HOME_NOT_PHOTO = re.compile(r"\b(drawings?|illustrations?|paintings?|logos?|icons?|emoji|cartoons?|diagrams?|in art|"
                             r"heraldry|stamps?|maps?|advertis\w*|videos?|audio|microscop\w*|micrographs?)\b", re.I)
+# A photographer's own story ("Okay so here is my big rant ..."), not a description of the picture.
+FIRST_PERSON = re.compile(r"(^\s*(okay|ok|so|well)\b)|\b(I|I'm|I've|my|me|we|our)\b")
 NOT_RESPECTFUL = re.compile(r"\b(ugly|weird|freak\w*|bad hair|messy|unkempt|ghetto|nappy|savage|exotic)\b", re.I)
 
 
@@ -423,7 +425,7 @@ def commons_sa_items(specs, cap, test, prefix, adults_only=False):
             name = commons_file_name(prefix, title)
             items.append((name, url, {"question": question, "answer": answer, "split": "", "credit": credit,
                                       **child}))
-            if text and not NOT_RESPECTFUL.search(text):
+            if text and not NOT_RESPECTFUL.search(text) and not FIRST_PERSON.search(text):
                 items.append((name, url, {"question": ALT_TEXT, "answer": text, "split": "", "credit": credit,
                                           **child}))
             found += 1

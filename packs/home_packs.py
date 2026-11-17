@@ -100,6 +100,8 @@ from expression_packs import mark_child, child_count, CHILD, OI_CHILD
 from places import where, country_at
 
 NUDE = re.compile(r"\b(nude|naked|nudity|topless|undress\w*|erotic|sex\w*|porn\w*|lingerie|underwear)\b", re.I)
+# A photographer's own story ("Okay so here is my big rant ..."), not a description of the picture.
+FIRST_PERSON = re.compile(r"(^\s*(okay|ok|so|well)\b)|\b(I|I'm|I've|my|me|we|our)\b")
 NOT_RESPECTFUL = re.compile(r"\b(ugly|weird|freak\w*|bad hair|messy|unkempt|ghetto|nappy|savage|exotic)\b", re.I)
 
 
@@ -519,7 +521,7 @@ def build_commons_topic(specs, limit, prefix, adults_only=False):
                 words = LIFE_STAGE.sub(" ", words)          # "juvenile" tick or "young" nymph: not a child
                 out = [mark_child({"question": qn, "answer": an, "credit": credit, **place}, words)
                        for qn, an in rows]
-                if text and not NOT_RESPECTFUL.search(text):
+                if text and not NOT_RESPECTFUL.search(text) and not FIRST_PERSON.search(text):
                     out.append(mark_child({"question": ALT_TEXT, "answer": text, "credit": credit, **place}, words))
                 items.append((file_name(prefix, title), url, out))
                 got += 1
