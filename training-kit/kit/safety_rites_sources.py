@@ -16,7 +16,7 @@ ticks the matching choice. Groups (Source.group, as in sources.py, extra_sources
 The collections (SAFETY_RITES_SOURCES):
   share-alike
     commons_uxo_sa         Wikimedia Commons photos under CC BY-SA or GFDL of landmines, minefields, cluster
-                           munitions, grenades, mortar and artillery ammunition, bombs, IEDs, loose ammunition,
+                           munitions, grenades, mortar and artillery ammunition, IEDs, loose ammunition,
                            demining and bomb disposal (UXO_CATEGORIES, as the open commons_uxo pack). The category's
                            plain sentence and the file's caption, each ending with SAFETY_LINE.
     commons_firearms_sa    Wikimedia Commons photos under CC BY-SA or GFDL of firearm and cartridge models found
@@ -35,7 +35,8 @@ The collections (SAFETY_RITES_SOURCES):
                            an anti-tank mine, among litter: a metal tuna can and a plastic water bottle." + SAFETY_LINE.
                            The mines' kinds and countries come from Wikidata (MINEINSIGHT_MINES, checked November 2026).
                            The frames are read one by one out of the 3.8 GB and 2.8 GB zips of tracks 1 and 2 (HTTP
-                           ranges); only frames at least a second apart are used, so the robot's video is not repeated.
+                           ranges); only frames at least a second apart are used (about 340), so the robot's video is
+                           not repeated.
 
 SAFETY RULES (the same as packs/safety_rites_packs.py): no answer says how to disarm, handle, move, fire, load,
 clean, change or buy anything; captions naming handling are not learnt; rows whose words name the dead or injured are
@@ -176,7 +177,10 @@ NOT_THE_DANGER = re.compile(r"\b(in art|art|advertis\w*|posters?|stamps?|logos?|
                             r"manuals?|factor(y|ies)|manufactur\w*|workers?|reload\w*|loading|hoisting|training|"
                             r"practice|exercises?|firing|launch\w*|toys?|scale models?|replicas?|memorials?|"
                             r"sculptures?|warning signs|nuclear|timers?|pipe bombs?|suicide vests?|bombings?|"
-                            r"victims|robots?|vehicles?|machines?|unexploded ordnance)\b", re.I)
+                            r"victims|robots?|vehicles?|machines?|unexploded ordnance|monuments?|pomnik|denkmal|statues?|charts?|"
+                            r"graphs?|comparison|bullet drop|ballistics?|design week|expo)\b", re.I)
+# A caption is learnt only when it is in English (no translation here): two or more common English words.
+ENGLISH = re.compile(r"\b(the|of|and|with|in|at|on|a|an|is|from|during|for|by)\b", re.I)
 # Pictures of munitions in use, not lying around: dropped from or loaded on aircraft, stored aboard ships, being
 # fired. Left out of the munition packs (the answer's warning would not fit, and they teach nothing about finding one).
 IN_USE = re.compile(r"\b(dropp\w*|in flight|bomb bays?|pylons?|wings? of|under the wing|aircraft|airplanes?|"
@@ -195,7 +199,6 @@ UXO_CATEGORIES = {
     "Mortar ammunition": (ASK_WHAT, "This looks like a mortar bomb (a mortar shell).", 1),
     "Shells (artillery)": (ASK_WHAT, "This looks like an artillery shell.", 1),
     "Artillery ammunition": (ASK_WHAT, "This looks like artillery ammunition: shells for a large gun.", 0),
-    "Bombs": (ASK_WHAT, "This looks like a bomb.", 1),
     "Improvised explosive devices": (ASK_WHAT, "This looks like an improvised explosive device (IED): a home-made "
                                                "bomb.", 0),
     "Ammunition": (ASK_WHAT, "This looks like ammunition.", 0),
@@ -221,7 +224,7 @@ def prepare_commons_uxo_sa(source, data_dir, work, cap):
             rows = [{"question": question, "answer": with_line(answer, SAFETY_LINE), "split": "",
                      "credit": f["credit"]}]
             text = caption(f["text"])
-            if text and not HANDLING.search(text):
+            if text and not HANDLING.search(text) and len(ENGLISH.findall(text)) >= 2:
                 rows.append({"question": NARRATE, "answer": with_line(text, SAFETY_LINE), "split": "",
                              "credit": f["credit"]})
             return marked(rows, f["title"], " ".join(f["categories"]))
@@ -313,7 +316,9 @@ def gun_models(s, want):
                 noun = phrase if phrase != "cartridge" else "cartridge"
                 answer = f"This is {a_or_an(name)} {name} {noun}."
             else:
-                answer = f"This looks like {a_or_an(label)} {label}, {a_or_an(phrase)} {phrase}"
+                kind_word = phrase.split(" (")[0].split()[-1]
+                answer = f"This looks like {a_or_an(label)} {label}" + \
+                    ("" if kind_word in label.lower() else f", {a_or_an(phrase)} {phrase}")
                 maker = clean(r.get("maker"))
                 if r.get("makers") == "1" and maker and maker.split()[0].lower() not in label.lower():
                     answer += f", made by {maker}"
@@ -326,7 +331,7 @@ def gun_models(s, want):
             out.append((r["item"], r["cat"], answer, kind, label))
         time.sleep(1)
     random.Random(721).shuffle(out)
-    return out[:want]
+    return out
 
 
 def prepare_commons_firearms_sa(source, data_dir, work, cap, per_item=3):
@@ -663,7 +668,7 @@ SAFETY_RITES_SOURCES = [
            terms_summary=COMMONS_TERMS),
     Source("mineinsight", "MineInsight: landmines among litter, seen by a demining robot's camera (personal use)",
            "CC BY-NC-SA 4.0 (https://github.com/mariomlz99/MineInsight, LICENSE)", MINEINSIGHT_CREDIT,
-           "noncommercial", 400, 30, prepare_mineinsight, "about 300 MB read out of 6.6 GB of zips",
+           "noncommercial", 320, 20, prepare_mineinsight, "about 300 MB read out of 6.6 GB of zips",
            terms="https://creativecommons.org/licenses/by-nc-sa/4.0/",
            terms_summary="CC BY-NC-SA 4.0: non-commercial use with credit, and anything made from it keeps the same "
                          "licence. Personal, non-commercial use only."),

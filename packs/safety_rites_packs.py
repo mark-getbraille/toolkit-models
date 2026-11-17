@@ -20,7 +20,7 @@ Wikidata item named beside each one.
                        mine." (the model's English label, the kind, and the country of origin, Wikidata P495), and the
                        file's caption as "Describe this picture.".
   commons_uxo          Wikimedia Commons categories of the same dangers in general (UXO_CATEGORIES): landmines and
-                       minefields, cluster munitions, grenades, mortar and artillery ammunition, shell fragments, bombs,
+                       minefields, cluster munitions, grenades, mortar and artillery ammunition, shell fragments,
                        improvised explosive devices, loose ammunition, ammunition boxes and belts, gun magazines, spent
                        cartridge cases, abandoned military equipment, and the people who deal with them (demining, mine
                        detection, bomb disposal by US Army and Navy explosive ordnance disposal teams, International
@@ -171,7 +171,8 @@ NOT_THE_DANGER = re.compile(r"\b(in art|art|advertis\w*|posters?|stamps?|coins?|
                             r"factor(y|ies)|manufactur\w*|assembly|filling|workers?|production|propellants?|reload\w*|"
                             r"loading|hoisting|transport|throwing|grenadiers?|training|trainers?|practice|exercises?|"
                             r"explosions? of|firing|launch\w*|toys?|scale models?|models? of|replicas?|lego|airsoft|props?|"
-                            r"memorials?|monuments?|sculptures?|statues?|ornaments?|jewel\w*|handwritten|signed|"
+                            r"memorials?|monuments?|pomnik|denkmal|sculptures?|statues?|ornaments?|jewel\w*|handwritten|signed|"
+                            r"bullet drop|ballistics?|comparison|design week|expo|"
                             r"protests?|demonstrations against|campaign|documents?|certificates?|"
                             r"people (throwing|associated)|male people|nuclear|timers?|pipe bombs?|suicide vests?|"
                             r"bombings?|plot|depots?|bunkers?)\b", re.I)
@@ -432,7 +433,6 @@ UXO_CATEGORIES = {
     "Artillery ammunition of Ukraine": (ASK_WHAT, "This looks like artillery ammunition: shells for a large gun.",
                                         1),
     "Shell fragments": (ASK_WHAT, "These look like fragments of an exploded shell.", 1),
-    "Bombs": (ASK_WHAT, "This looks like a bomb.", 0),
     "Improvised explosive devices": (ASK_WHAT, "This looks like an improvised explosive device (IED): a home-made "
                                                "bomb.", 0),                                       # Q1249453
     "Ammunition": (ASK_WHAT, "This looks like ammunition.", 0),                                  # Q185785
@@ -649,6 +649,8 @@ def firearm_answer(item, facts, all_facts, phrase, adjectives):
     if family and family != name:
         answer = f"This looks like {article_for(family)} {family} ({a_or_an(kind)} {kind}), here " \
                  f"{article_for(name)} {name}"
+    elif phrase.split(" (")[0].split()[-1] in name.lower() and not adjective:
+        answer = f"This looks like {article_for(name)} {name}"            # "an Udar revolver", not "..., a revolver"
     else:
         answer = f"This looks like {article_for(name)} {name}, {a_or_an(kind)} {kind}"
     makers = [m for m in facts["makers"] if label_ok(m)]
@@ -1050,7 +1052,7 @@ SAFETY_RITES_PACKS = {
 # How many pictures a full build takes from each collection.
 SAFETY_RITES_LIMITS = {
     "commons_munition_models": 1500,  # about 300 Wikidata munition models with a Commons category, up to 5 files each
-    "commons_uxo": 2000,              # 36 categories, about 60 files each at most (many have fewer free files)
+    "commons_uxo": 2000,              # 35 categories, about 60 files each at most (many have fewer free files)
     "amlid_landmines": 1100,          # all 1,097 plain colour photos with labels (each has mines)
     "commons_firearms": 3000,         # about 1,500 firearm models with a Commons category, up to 4 files each
     "commons_cartridges": 1500,       # about 350 cartridge models with a Commons category, up to 5 files each

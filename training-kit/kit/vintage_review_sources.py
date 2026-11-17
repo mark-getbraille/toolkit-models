@@ -27,7 +27,11 @@ HARD RULES kept by every fetch function here (vintage_screen() below; any one of
     school, student, ephebe, doll and the same in Dutch, French, German, Italian, Spanish, Portuguese, Latin,
     Russian and Greek) or give an age under 18. A record must ALSO name an adult (ADULT: man, woman, adult, female
     or male model, athlete, wrestler, strongman, soldier, mother, father, an age of 18 or over, Muybridge's own
-    "Model 95" numbering, a named adult such as Eugen Sandow ...). No adult word: left out.
+    "Model 95" numbering, a named adult such as Eugen Sandow ...). No adult word: left out. The ONE exception, for
+    The Met only (met_vintage_nudes): a title that is exactly "[Female Nude]" or "[Male Nude]", which is how The Met
+    catalogues its nude studies; such a record must still pass every other rule, must name its photographer, and
+    the review instructions say the age is not stated and the picture must be deleted if the person might be under
+    18.
   - NOTHING SEXUAL. Left out: anything described as erotic, obscene, pornographic, risque, lewd, glamour, boudoir,
     pin-up, burlesque, "French postcard", brothel or prostitution, lovers, kissing or embracing, and the genres
     "Erotica" and "Glamour photographs" (SEXUAL_WORDS). Photographers known for erotic studio photographs, or for
@@ -43,8 +47,10 @@ HARD RULES kept by every fetch function here (vintage_screen() below; any one of
   - NO PEOPLE WHO COULD NOT REFUSE (NO_CONSENT): asylum and psychiatric patients, prisoners, enslaved people,
     "freak show" photographs, Charcot's "hysteria" photographs. Also no violence, wounds or death, no myths about
     rape, and no animals (adult_review_sources.VIOLENCE, MYTH, ANIMAL; a Muybridge rider on a horse is left out too).
-  - NOT INTIMATE: a record about the genitals or breasts (a medical close-up) belongs with the "intimate" medical
-    collections of review_sources.py and is left out here.
+  - CLOSE-UPS SEPARATE: a record about the breasts or genitals (Muybridge's "right hand on breast", a medical
+    close-up) is left out of the nudity collections and goes ONLY into vintage_intimate (content "intimate", used
+    only when both "Include nudity" and "Include medical and anatomy pictures" are ticked, as for review_sources.py's
+    intimate collections). Every other rule applies to it in full; it need not also say "nude".
   - ABOUT NUDITY: the record must say the person is nude, naked, semi-nude or that it is an academy or figure study
     (NUDE_WORDS). A clothed Muybridge plate is simply not part of this collection.
   - PHOTOGRAPHS ONLY: a photograph of a painting, drawing or sculpture ("after a drawing", "process print after
@@ -68,7 +74,8 @@ How to use (for the kit's own code):
     python vintage_review_sources.py count                      (how many records pass at each source; nothing
                                                                  is downloaded)
 
-CONTENT TAG: "nudity" (sources.CONTENTS), used only when the person chooses "Include nudity"; describing.json also
+CONTENT TAG: "nudity" (sources.CONTENTS), used only when the person chooses "Include nudity" ("intimate" for
+vintage_intimate: only with both nudity and medical); describing.json also
 says "never_for_picture_making": true: these pictures are never used to train picture-making.
 
 PLUMBING the rest of the kit needs (not done here; other files are being edited by others):
@@ -111,7 +118,7 @@ that photographs over 100 years old are acceptable for that reason. That advice 
 make a picture of a young person acceptable. Age is the main thing you are checking.
 
 This collection must be screened by a sighted, trusted ADULT.
-
+{extra}
 For every picture:
 1. DELETE the picture (do not just skip it) when anyone in it might be under 18. If you are not sure that everyone
    is an adult, delete it. Old records do not always say a model's age, and some old photographers used young
@@ -121,8 +128,7 @@ For every picture:
 3. DELETE any picture that seems degrading or taken without consent: colonial "native type" or measurement
    photographs, a person held or posed against their will, a patient in an asylum or a prisoner, a "freak show"
    photograph, or a person who looks distressed or humiliated.
-4. DELETE any picture that is not a photograph of real people (a painting, drawing or statue), and any picture that
-   is mainly a close-up of the genitals or breasts (those belong in the medical collections).
+{step4}
 5. Read the draft description. It was made from the record's own title, plate description and subject words, and
    may be wrong or thin. Correct it so that it says plainly, accurately and without judgement who is there (how
    many adults, man or woman), what they are doing, the pose, what is visible and the setting. For a Muybridge plate,
@@ -136,6 +142,15 @@ never used from this collection.
 Where each picture comes from, its date and its licence are in CREDITS.txt and in each picture's notes.
 Source: {credit}
 Licence or terms: {licence}
+"""
+
+STEP4_NUDITY = """4. DELETE any picture that is not a photograph of real people (a painting, drawing or statue), and any picture that
+   is mainly a close-up of the genitals or breasts (those belong in the close-up collection, vintage_intimate)."""
+STEP4_INTIMATE = """4. DELETE any picture that is not a photograph of real people (a painting, drawing or statue). This collection is
+   for pictures that show or focus on an adult's breasts or genitals: keep one only when it is medical, anatomical or
+   a plain motion or figure study, never when it is sexual."""
+MET_EXTRA = """
+These records don't state the person's age; DELETE any picture where the person might be under 18.
 """
 
 # ----------------------------------------------------------------- filters
@@ -225,11 +240,14 @@ def year_of(text):
     return max(years) if years else None
 
 
-def vintage_screen(texts, date_text, maker="", need_nude=True):
+def vintage_screen(texts, date_text, maker="", need_nude=True, intimate=False, nude_study_title=False):
     """"" when a record may be used; otherwise the plain reason it is left out. texts: the record's title,
     description, subject tags, notes and series (all are checked); date_text: the record's own date; maker: the
     photographer or creator (checked against MAKERS_LEFT_OUT). The order of the checks is the order of the rules in
-    this module's docstring."""
+    this module's docstring.
+    intimate=True (the vintage_intimate collection): the record must be about the breasts or genitals (a close-up),
+    instead of being left out for it; it need not also say "nude". nude_study_title=True (The Met only, for a title
+    that is exactly "[Female Nude]" or "[Male Nude]"): no adult word is needed; every other rule still applies."""
     text = " ".join(clean(t) for t in texts if t)
     text = re.sub(r"\banimal (locomotion|movements?)\b", r"Muybridge \1", text, flags=re.I)  # the book's title
     year = year_of(date_text)
@@ -259,14 +277,16 @@ def vintage_screen(texts, date_text, maker="", need_nude=True):
     if why:
         return why
     m = rs.GENITAL.search(text) or rs.BREAST.search(text)
-    if m:
-        return f"about the genitals or breasts (belongs to the intimate medical collections) ('{m.group(0)}')"
+    if m and not intimate:
+        return f"about the genitals or breasts (belongs to the vintage_intimate collection) ('{m.group(0)}')"
+    if intimate and not m:
+        return "not about the breasts or genitals (belongs to the nudity collections, not vintage_intimate)"
     m = ART_COPY.search(text)
     if m:
         return f"a photograph of an artwork, not of real people ('{m.group(0)}')"
-    if not ADULT.search(text):
+    if not ADULT.search(text) and not nude_study_title:
         return "no word in the record says the person is an adult (man, woman, adult model ...)"
-    if need_nude and not NUDE_WORDS.search(text):
+    if need_nude and not intimate and not NUDE_WORDS.search(text):
         return "the record does not say the person is nude (not part of this collection)"
     return ""
 
@@ -311,12 +331,16 @@ class VintageWorkspace(ar.AdultWorkspace):
         rs.ReviewWorkspace.__init__(self, folder, source, say)
         self.left_out = []                       # (title, reason) examples, for the summary
         self.counts = {}                         # {search: [records found, records that passed]}
-        self.workspace.data.update(content=CONTENT, never_for_picture_making=True, review_only=True,
+        self.content = source["content"]          # "nudity", or "intimate" for the close-up collection
+        self.intimate = self.content == "intimate"
+        self.workspace.data.update(content=self.content, never_for_picture_making=True, review_only=True,
                                    made_before=LATEST_YEAR + 1)
         self.workspace.save()
         with open(os.path.join(self.folder, REVIEW_FILE), "w", encoding="utf-8", newline="\r\n") as f:
             f.write(REVIEW_INSTRUCTIONS.format(name=source["name"], credit=source["credit"],
-                                               licence=f"{source['licence']} ({source['terms_summary']})"))
+                                               licence=f"{source['licence']} ({source['terms_summary']})",
+                                               step4=STEP4_INTIMATE if self.intimate else STEP4_NUDITY,
+                                               extra=source.get("instructions_extra", "")))
 
     def tally(self, search, passed):
         """Count one record found by a search, and whether it passed the filters (for the summary)."""
@@ -377,9 +401,10 @@ class VintageWorkspace(ar.AdultWorkspace):
         return summary
 
 
-def check(ws, search, name, title, texts, date, maker="", need_nude=True):
-    """True when a record passes vintage_screen (counted for the search); otherwise it is remembered as left out."""
-    why = vintage_screen(texts, date, maker, need_nude)
+def check(ws, search, name, title, texts, date, maker="", need_nude=True, nude_study_title=False):
+    """True when a record passes vintage_screen (counted for the search); otherwise it is remembered as left out.
+    The workspace says whether this is the close-up (intimate) collection."""
+    why = vintage_screen(texts, date, maker, need_nude, ws.intimate, nude_study_title)
     ws.tally(search, not why)
     if why:
         ws.leave_out(name, title, why)
@@ -448,7 +473,7 @@ def bpl_items(ws, s, most):
             text = draft(muybridge_lead(plate), said, "1887", "Boston Public Library, public domain")
             items.append((name, BPL_IIIF.format(a["exemplary_image_ssi"]), text,
                           f"{title}, Eadweard Muybridge, Boston Public Library Rare Books Department",
-                          "public domain (No Copyright - United States)", clean(a.get("identifier_uri_ss")), CONTENT,
+                          "public domain (No Copyright - United States)", clean(a.get("identifier_uri_ss")), ws.content,
                           f"Volume: {series}." if series else "", "1887"))
         if len(rows) < 100:
             break
@@ -523,7 +548,7 @@ def loc_items(ws, s, most):
                                                                 "Division, no known restrictions")
                 found.append((name, pictures[-1], text, f"{title}, {maker or 'photographer not named'}, Library "
                               f"of Congress", "public domain (no known restrictions on publication)",
-                              clean(x.get("id")), CONTENT, "", str(year_of(date) or date)))
+                              clean(x.get("id")), ws.content, "", str(year_of(date) or date)))
             if len(rows) < 100:
                 break
             page += 1
@@ -598,7 +623,7 @@ def si_items(ws, s, most):
                              f"{dnr.get('data_source') or 'Smithsonian'}, CC0")
                 found.append((name, media[0]["content"] + "&max=1600", text,
                               f"{title}, {maker or 'photographer not named'}, {dnr.get('data_source') or 'Smithsonian'}",
-                              "CC0", clean(dnr.get("record_link")), CONTENT, "", str(year_of(date) or date)))
+                              "CC0", clean(dnr.get("record_link")), ws.content, "", str(year_of(date) or date)))
             if len(rows) < 100:
                 break
             start += 100
@@ -679,7 +704,7 @@ def wellcome_items(ws, s, most):
                 text = draft(lead, said, year_of(f"{date} {title}"), f"Wellcome Collection, {WELLCOME_LICENCES[lic]}")
                 url = thumb["url"].replace("/thumbs/", "/image/").replace("!200,200", "!1600,1600")
                 found.append((name, url, text, f"{title}, Wellcome Collection", WELLCOME_LICENCES[lic],
-                              f"https://wellcomecollection.org/works/{x.get('id')}", CONTENT,
+                              f"https://wellcomecollection.org/works/{x.get('id')}", ws.content,
                               ("Subjects: " + ", ".join(subjects) + ".") if subjects else "",
                               str(year_of(f"{date} {title}"))))
             if (data or {}).get("totalPages", 1) <= page:
@@ -773,7 +798,7 @@ def commons_items(kind):
                              year_of(date), f"{maker[:80] or 'unknown'}, via Wikimedia Commons, {licence}")
                 found.append((name, info["thumburl"], text, f"{stem} by {maker[:120] or 'unknown'}, via Wikimedia "
                               f"Commons", licence, "https://commons.wikimedia.org/wiki/File:" + title.replace(" ", "_"),
-                              CONTENT, f"Commons category: {cat}.", str(year_of(date))))
+                              ws.content, f"Commons category: {cat}.", str(year_of(date))))
                 if len(found) >= most:
                     break
             if found:
@@ -793,6 +818,109 @@ def fetch_commons_vintage_nudes(folder, cap, say=print):
 def fetch_commons_vintage_nudes_sa(folder, cap, say=print):
     """The same as fetch_commons_vintage_nudes, for CC BY-SA files (share-alike)."""
     return run("commons_vintage_nudes_sa", commons_items("share-alike"), folder, cap, say)
+
+
+# ----------------------------------------------------------------- The Metropolitan Museum of Art (CC0)
+
+MET = ar.MET
+MET_QUERIES = ("female nude", "male nude", "nude study", "academie", "Muybridge", "physical culture", "Sandow")
+MET_PHOTOGRAPHS = 19                       # the Met's Department of Photographs
+# The Met catalogues its nude studies with exactly these titles; for The Met only, such a title may pass without an
+# adult word (the reviewer is told the age is not stated). "[Seated Female Nude]" and the like still need one.
+MET_NUDE_STUDY = re.compile(r"^\[?(Female|Male) Nude\]?$")
+
+
+def met_items(ws, s, most):
+    """Usable Met photographs: public domain (CC0), classification Photographs, made before 1926 (objectDate and
+    objectEndDate), by a NAMED photographer (an anonymous vintage nude photograph is left out). An adult word in the
+    title or the Met's tags ("Women", "Men") is needed, except for a title that is exactly "[Female Nude]" or
+    "[Male Nude]" (MET_NUDE_STUDY). Every other rule applies to every record."""
+    lists, looked, left, seen = [], 0, 0, set()
+    for q in MET_QUERIES:
+        found, offset, ids = [], 0, []
+        while len(ids) < 600:
+            data = rs.get_json(s, MET + "v1.1/search", params={"q": q, "hasImages": "true", "limit": 100,
+                                                               "offset": offset, "departmentId": MET_PHOTOGRAPHS})
+            got = (data or {}).get("objectIDs") or []
+            ids += got
+            if len(got) < 100:
+                break
+            offset += 100
+        for oid in ids:
+            if len(found) >= most:
+                break
+            name = f"met-{oid}.jpg"
+            if ws.done(name) or name in seen:
+                continue
+            seen.add(name)
+            looked += 1
+            o = rs.get_json(s, f"{MET}v1/objects/{oid}") or {}
+            title = clean(o.get("title"))
+            tags = [clean(t.get("term")) for t in o.get("tags") or []]
+            maker = clean(o.get("artistDisplayName"))
+            if not o.get("isPublicDomain") or not o.get("primaryImageSmall") or o.get("classification") != \
+                    "Photographs":
+                ws.leave_out(name, title, "not a public-domain photograph, or no picture")
+                ws.tally(q, False)
+                left += 1
+                continue
+            if not maker or re.match(r"(unknown|anonymous|unidentified)", maker, re.I):
+                ws.leave_out(name, title, "anonymous photographer (anonymous vintage nudes are never used)")
+                ws.tally(q, False)
+                left += 1
+                continue
+            date = f"{clean(o.get('objectDate'))} {o.get('objectEndDate') or ''}"
+            texts = [title, " ".join(tags), clean(o.get("medium")), clean(o.get("objectName")),
+                     clean(o.get("culture")), clean(o.get("country"))]
+            if not check(ws, q, name, title, texts, date, maker, nude_study_title=bool(MET_NUDE_STUDY.match(title))):
+                left += 1
+                continue
+            muybridge = "muybridge" in maker.lower()
+            said = "; ".join(p for p in [title.strip("[]"), f"photographed by {maker}" if not muybridge else "",
+                                         clean(o.get("medium")).lower(),
+                                         "the museum's tags: " + ", ".join(t.lower() for t in tags) if tags else ""]
+                             if p)
+            text = draft(muybridge_lead() if muybridge else "A nude-study photograph", said,
+                         clean(o.get("objectDate")), "The Metropolitan Museum of Art, CC0")
+            note = "The record does not state the person's age. " if MET_NUDE_STUDY.match(title) else ""
+            found.append((name, o["primaryImageSmall"], text, f"{title}, {maker}, The Metropolitan Museum of Art, "
+                          f"{clean(o.get('creditLine'))}", "CC0 (Open Access, public domain)",
+                          clean(o.get("objectURL")), ws.content, note, clean(o.get("objectDate"))))
+        lists.append(found)
+    return take_turns(lists), looked, left
+
+
+def fetch_met_vintage_nudes(folder, cap, say=print):
+    """The Met (CC0): nude photographs made before 1926 by named photographers: figure studies made for artists
+    (Eugene Durieu, Julien Vallou de Villeneuve, Humbert de Molard, Thomas Eakins ...), Muybridge plates and
+    physical culture. A title that is just "[Female Nude]" or "[Male Nude]" may pass without an adult word; the
+    review instructions then say the age is not stated. Photographers of erotic studio nudes or young models are left
+    out by name."""
+    return run("met_vintage_nudes", met_items, folder, cap, say)
+
+
+# ----------------------------------------------------------------- close-ups of the breasts or genitals (intimate)
+
+def intimate_items(ws, s, most):
+    """The records of every source above that pass every rule but are about the breasts or genitals (the workspace
+    is the intimate one, so check() keeps exactly those). The sources take turns."""
+    lists, looked, left = [], 0, 0
+    for items_function in (bpl_items, loc_items, si_items, wellcome_items, met_items, commons_items("open")):
+        try:
+            items, n, m = items_function(ws, s, most)
+        except Exception as e:  # noqa: BLE001 - one source failing does not stop the others
+            ws.say(f"Close-ups: one source could not be read ({str(e)[:120]}); the others are still used.")
+            continue
+        lists.append(items)
+        looked, left = looked + n, left + m
+    return take_turns(lists), looked, left
+
+
+def fetch_vintage_intimate(folder, cap, say=print):
+    """Close-ups: photographs made before 1926, from the same sources, whose records are about an adult's breasts
+    or genitals (Muybridge's "right hand on breast", historical medical photographs ...). Content "intimate": used
+    only when both "Include nudity" and "Include medical and anatomy pictures" are ticked. Every other rule applies."""
+    return run("vintage_intimate", intimate_items, folder, cap, say)
 
 
 # ----------------------------------------------------------------- the collections
@@ -836,6 +964,19 @@ VINTAGE_REVIEW_SOURCES = [
          terms_summary="free to use with credit; anything shared that is made from them must be CC BY-SA",
          credit="Wikimedia Commons, CC BY-SA, credited in CREDITS.txt", content=CONTENT, cap=100,
          download="about 20 MB", fetch=fetch_commons_vintage_nudes_sa, review_only=True),
+    dict(key="met_vintage_nudes", name="The Met: nude photographs and figure studies before 1926 (review only)",
+         category="open", licence="CC0 (Open Access; isPublicDomain checked per object)",
+         terms="https://www.metmuseum.org/policies/image-resources",
+         terms_summary="public domain, CC0: free for any use; credit The Met",
+         credit="The Metropolitan Museum of Art, Open Access, CC0", content=CONTENT, cap=200,
+         download="about 30 MB", fetch=fetch_met_vintage_nudes, review_only=True, instructions_extra=MET_EXTRA),
+    dict(key="vintage_intimate", name="Close-ups of adult breasts or genitals in photographs before 1926 (review "
+         "only)", category="open", licence="Public domain, CC0 or CC BY (each item's own licence checked)",
+         terms="https://www.digitalcommonwealth.org/collections/commonwealth:70795t73j",
+         terms_summary="public domain, CC0 or CC BY: free to use with credit (each picture credited in CREDITS.txt)",
+         credit="Boston Public Library, Library of Congress, Smithsonian, Wellcome Collection, The Met and Wikimedia "
+                "Commons, credited per picture in CREDITS.txt", content="intimate", cap=200,
+         download="about 30 MB", fetch=fetch_vintage_intimate, review_only=True, instructions_extra=MET_EXTRA),
 ]
 
 
@@ -851,11 +992,6 @@ NOT_INCLUDED = {
         "added later; some are also on Wikimedia Commons and are read by commons_vintage_nudes.",
     "University of Pennsylvania Archives, Muybridge collection": "not added: no search API; the same plates are read "
         "from the Boston Public Library, the Library of Congress, the Smithsonian, Wellcome and Commons.",
-    "The Met's photographs (Department of Photographs, CC0)": "not added: tried in November 2026. Of 380 "
-        "public-domain nude photographs found by 7 searches, 1 passed: the Met's titles are '[Female Nude]' or "
-        "'[Nude Study]' with no adult word (the adult-word rule), several photographers are left out by name "
-        "(Moulin, Braquehais, d'Olivier), and anonymous photographs are never used. Its Animal Locomotion items are "
-        "whole books, not single plates.",
     "Anonymous vintage nude and erotic photographs ('French postcards', studio erotica, daguerreotype nudes)":
         "never used: they often show minors and their age cannot be verified. The attorney's advice about consent "
         "does not change that.",
@@ -874,7 +1010,8 @@ NOT_INCLUDED = {
 # ----------------------------------------------------------------- quick tests
 
 ITEMS = {"bpl_muybridge": bpl_items, "loc_motion_studies": loc_items, "smithsonian_muybridge": si_items,
-         "wellcome_vintage_nudes": wellcome_items,
+         "wellcome_vintage_nudes": wellcome_items, "met_vintage_nudes": met_items,
+         "vintage_intimate": intimate_items,
          "commons_vintage_nudes": commons_items("open"), "commons_vintage_nudes_sa": commons_items("share-alike")}
 
 
