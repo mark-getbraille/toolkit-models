@@ -54,7 +54,8 @@ SAFETY TRAINING:
                      the ISO 7010 sign W012: warning, electricity."), the nine GHS hazard pictograms (public
                      domain), and road and traffic signs of many countries (the "Diagrams of <kind> road signs of
                      <country>" categories; files CC0, public domain or CC BY, meaning from the English caption).
-  commons_safety     Wikimedia Commons photos of safety equipment (fire extinguishers, defibrillators (AEDs) and
+  commons_safety_photos
+                     Wikimedia Commons photos of safety equipment (fire extinguishers, defibrillators (AEDs) and
                      their signs, first-aid kits, safety showers and eyewash stations, emergency exit signs, fire
                      alarm call points, smoke and carbon monoxide alarms, fire blankets, hose reels, lifebuoys) and
                      of hazards at home and in the street (fire, smoke, wildfires, broken glass, open manholes, wet
@@ -1115,11 +1116,11 @@ def safety_items(s, want, rng, ok=licence_open):
     return items
 
 
-def build_commons_safety(limit):
+def build_commons_safety_photos(limit):
     """The Commons safety equipment and hazards pack (see the module docstring)."""
     s, rng = session(), random.Random(547)
     items = [(f"safety-{n}.jpg", u, r) for n, u, r in safety_items(s, int(limit * 1.2) + 2, rng)]
-    return finish("commons_safety", items, limit, workers=2, pause=0.5)
+    return finish("commons_safety_photos", items, limit, workers=2, pause=0.5)
 
 
 # ----------------------------------------------------------------- safety posters and workplace safety
@@ -1352,9 +1353,10 @@ EVENTS_SAFETY_PACKS = {
                                          "(credited below), rendered from SVG to PNG by Commons and placed on white. "
                                          "Sign meanings from the files' own captions; GHS pictogram names from the "
                                          "UN Globally Harmonized System."),
-    "commons_safety": (build_commons_safety, "Wikimedia Commons photos of safety equipment and hazards, each CC0, "
-                                             "public domain or CC BY, credited below with its author and file page. "
-                                             "https://commons.wikimedia.org"),
+    "commons_safety_photos": (build_commons_safety_photos, "Wikimedia Commons photos of safety equipment and "
+                                                           "hazards, each CC0, public domain or CC BY, credited "
+                                                           "below with its author and file page. "
+                                                           "https://commons.wikimedia.org"),
     "safety_training": (build_safety_training, "Safety posters and workplace safety photographs in the public "
                                                "domain: Library of Congress (WPA Poster Collection and Prints and "
                                                "Photographs, 'No known restrictions on publication'), Wikimedia "
@@ -1376,7 +1378,7 @@ EVENTS_SAFETY_LIMITS = {
     "nara_events": 2500,              # 23 event words among about 1 million online photographs
     "europeana_events": 1500,         # English, open records whose title names an event (a few thousand)
     "safety_signs": 2500,             # about 300 ISO 7010 signs, the 9 GHS pictograms, road signs of ~130 countries
-    "commons_safety": 4000,           # 35 categories, about 6,000 files before the licence check
+    "commons_safety_photos": 4000,    # 35 categories, about 6,000 files before the licence check
     "safety_training": 1200,          # about 600 LoC posters, Commons posters and OSHA photos, PHIL photos
     "dfire_cameras": 4000,            # of about 9,800 camera frames in the copy (fire, smoke and none, a third each)
 }

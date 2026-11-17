@@ -1671,6 +1671,112 @@ SOURCES = [
            'Public domain (US government work, USDA ARS image gallery)',
            'USDA Agricultural Research Service image gallery, public domain; credit: USDA ARS', "permissive", 200, 10,
            prepare_pack, 'about 90 MB'),
+    # Practical home life (packs/home_packs.py): clock faces, seven-segment displays, household pests, appliances,
+    # plugs and batteries, laundry symbols, tools, toiletries, hairstyles and the kitchen. Rows that may show a child
+    # carry "child": true. The packs with people in them (hairstyles, head lice, worn jewellery and hats, Open Images
+    # scenes) are not used for picture-making (NOT_FOR_PICTURE_MAKING).
+    Source('clock_times', 'What time does this clock show? Analogue clocks in everyday photos (It\'s About Time, '
+           'ready-made pack)',
+           'Times: MIT licence (github.com/charigyang/itsabouttime); photos CC BY 2.0 or no known copyright '
+           'restrictions (Open Images, COCO)',
+           'It\'s About Time: Analog Clock Reading in the Wild (Charig Yang, Weidi Xie and Andrew Zisserman, CVPR '
+           '2022), MIT licence; photos from Open Images V7 and COCO, each photographer credited in ATTRIBUTION.txt',
+           "permissive", 870, 15, prepare_pack, 'about 400 MB'),
+    Source('seven_segment', 'What number does this display show? Seven-segment LED and LCD displays (7SEG_OCR, '
+           'ready-made pack)',
+           'MIT licence (huggingface.co/datasets/MiXaiLL76/7SEG_OCR)',
+           '7SEG_OCR by MiXaiLL76, MIT licence, https://huggingface.co/datasets/MiXaiLL76/7SEG_OCR', "permissive",
+           2200, 15, prepare_pack, 'about 100 MB'),
+    Source('open_images_home', 'Household pests, tools, devices, personal care, hairstyles and the kitchen in everyday '
+           'photos (Open Images V7, ready-made pack)',
+           'Labels CC BY 4.0; each photo CC BY 2.0, photographer named',
+           'Open Images V7 (Google), labels CC BY 4.0; photos CC BY 2.0, each photographer credited in '
+           'ATTRIBUTION.txt', "permissive", 2600, 20, prepare_pack, 'about 1.2 GB'),
+    Source('commons_pests', 'Is there a bed bug here? Household pests, mould and damp (Wikimedia Commons, ready-made '
+           'pack)',
+           'Captions CC0; pictures CC0, public domain (including CDC, USDA and EPA photos) or CC BY, each author '
+           'credited',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 600, 10, prepare_pack,
+           'about 300 MB'),
+    Source('commons_appliances', 'Thermostats, knobs, scales, meters, lift buttons and ticket machines (Wikimedia '
+           'Commons, ready-made pack)',
+           'Captions CC0; pictures CC0, public domain or CC BY, each author credited',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 470, 10, prepare_pack,
+           'about 250 MB'),
+    Source('commons_connectors', 'What kind of plug is this? Mains plugs and sockets, USB and other connectors, '
+           'batteries and chargers (Wikimedia Commons, ready-made pack)',
+           'Captions CC0; pictures CC0, public domain or CC BY, each author credited',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 600, 10, prepare_pack,
+           'about 300 MB'),
+    Source('laundry_symbols', 'What does this laundry symbol mean? Care symbols, care labels and label photos '
+           '(Wikimedia Commons, ready-made pack)',
+           'CC0, public domain, CC BY or MIT (Tabler icons), file by file; the symbols are a GINETEX trademark',
+           'Wikimedia Commons laundry symbol files (Tabler icons by Pawel Kuna, MIT licence), credited in '
+           'ATTRIBUTION.txt', "permissive", 400, 10, prepare_pack, 'about 30 MB'),
+    Source('commons_tools', 'Hand tools, power tools, screws, nails, plumbing parts and garden tools (Wikimedia '
+           'Commons, ready-made pack)',
+           'Captions CC0; pictures CC0, public domain or CC BY, each author credited',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 800, 15, prepare_pack,
+           'about 400 MB'),
+    Source('commons_personal', 'Toiletries, cosmetics, jewellery, watches, glasses, hats and bags (Wikimedia Commons, '
+           'ready-made pack)',
+           'Captions CC0; pictures CC0, public domain or CC BY, each author credited',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 670, 10, prepare_pack,
+           'about 350 MB'),
+    Source('commons_hairstyles', 'What hairstyle does this person have? Braids, cornrows, dreadlocks and more, adults '
+           'only (Wikimedia Commons, ready-made pack)',
+           'Captions CC0; pictures CC0, public domain or CC BY, each author credited',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 400, 10, prepare_pack,
+           'about 200 MB'),
+    Source('commons_kitchen', 'Is the burner on? Cookers, flames, boiling water, utensils and cookware (Wikimedia '
+           'Commons, ready-made pack)',
+           'Captions CC0; pictures CC0, public domain or CC BY, each author credited',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 600, 10, prepare_pack,
+           'about 300 MB'),
+    # Historical events by place and time, and safety training (packs/events_safety_packs.py). Rows naming the dead or
+    # wounded carry "content": "graphic". The event packs, the safety photos and the safety training photos show
+    # people or hazards and are not used for picture-making (NOT_FOR_PICTURE_MAKING).
+    Source('commons_events', 'What event does this picture show? Historical events of the whole world, with place and '
+           'date from Wikidata (Wikimedia Commons, ready-made pack)',
+           'Data and captions CC0; pictures CC0, public domain or CC BY, each author credited',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt; event facts from Wikidata (CC0)', "permissive",
+           2700, 20, prepare_pack, 'about 1.2 GB'),
+    Source('loc_events', 'Parades, marches, inaugurations, funerals, fires and floods in news photos, about 1900-1945 '
+           '(Bain and Harris & Ewing, Library of Congress, ready-made pack)',
+           'No known restrictions on publication (Library of Congress)',
+           'Library of Congress, Prints and Photographs Division: George Grantham Bain Collection and Harris & '
+           'Ewing Collection', "permissive", 2000, 15, prepare_pack, 'about 900 MB'),
+    Source('nara_events', 'Ceremonies, demonstrations, parades and other events in US government photographs (US '
+           'National Archives, ready-made pack)',
+           'Public domain (US government work, marked Unrestricted)',
+           'U.S. National Archives and Records Administration, National Archives Catalog', "permissive", 1700, 15,
+           prepare_pack, 'about 800 MB'),
+    Source('europeana_events', 'Coronations, processions, funerals and festivals in old prints, drawings and photos '
+           '(Europeana, ready-made pack)',
+           'CC0, Public Domain Mark or CC BY, record by record',
+           'Europeana partner museums and libraries, credited in ATTRIBUTION.txt', "permissive", 1000, 15,
+           prepare_pack, 'about 500 MB'),
+    Source('safety_signs', 'What does this sign mean? ISO 7010 safety signs, GHS hazard pictograms and road signs of '
+           'many countries (Wikimedia Commons, ready-made pack)',
+           'CC0, public domain or CC BY, file by file',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt; GHS pictogram names from the UN Globally '
+           'Harmonized System', "permissive", 1700, 15, prepare_pack, 'about 150 MB'),
+    Source('commons_safety_photos', 'Fire extinguishers, defibrillators, exit signs and alarms, and hazards at home '
+           'and in the street (Wikimedia Commons, ready-made pack)',
+           'Captions CC0; pictures CC0, public domain or CC BY, each author credited',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 2700, 20, prepare_pack,
+           'about 1.2 GB'),
+    Source('safety_training', 'Safety posters and workplace safety photos (Library of Congress, OSHA, CDC, ready-made '
+           'pack)',
+           'Public domain or no known restrictions; Commons files CC0, public domain or CC BY, item by item',
+           'Library of Congress (WPA Poster Collection, Prints and Photographs), Wikimedia Commons authors and US '
+           'OSHA, CDC Public Health Image Library; credited in ATTRIBUTION.txt', "permissive", 800, 15,
+           prepare_pack, 'about 400 MB'),
+    Source('dfire_cameras', 'Is there fire or smoke? Frames from wildfire-watch cameras in Brazil (D-Fire, ready-made '
+           'pack)',
+           'CC0 1.0 (github.com/gaiasd/DFireDataset)',
+           'D-Fire (Gaia, solutions on demand; de Venancio, Lisboa and Barbosa, 2022), CC0 1.0, '
+           'https://github.com/gaiasd/DFireDataset', "permissive", 2700, 20, prepare_pack, 'about 600 MB'),
     Source('skin_lesion_photos', 'Skin spots photographed with a phone, adults (PAD-UFES-20, ready-made pack)',
            'CC BY 4.0 (Mendeley Data zr7vgbcyr2)',
            'PAD-UFES-20 (Pacheco et al., 2020), CC BY 4.0', "permissive", 2000, 20, prepare_pack, 'about 400 MB', content="medical"),
@@ -1801,6 +1907,12 @@ PEOPLE_AND_BODILY_PACK_KEYS = (
     "poultry_droppings", "commons_land_industry", "loc_haer", "plitter_street", "usda_ars",
     # disability_packs.py: people using wheelchairs, canes, guide dogs and other aids (tactile paving is used)
     "open_images_disability", "commons_disability",
+    # home_packs.py: hairstyles, head lice and other pests on people, worn jewellery, glasses and hats, and Open
+    # Images scenes with people (clocks, displays, appliances, plugs, laundry symbols, tools and the kitchen are used)
+    "open_images_home", "commons_pests", "commons_personal", "commons_hairstyles",
+    # events_safety_packs.py: event crowds, graphic war and disaster rows, hazards and workers (safety signs and the
+    # D-Fire wildfire cameras are used)
+    "commons_events", "loc_events", "nara_events", "europeana_events", "commons_safety_photos", "safety_training",
 )
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + PEOPLE_AND_BODILY_PACK_KEYS
 
@@ -2043,3 +2155,33 @@ PERSONAL_PICTURE_MAKING_OK |= _land_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(
     s.key for s in LAND_SOURCES if s.key not in _land_ok)
 _add_collections(LAND_SOURCES)
+
+# Home-life collections that are not open (Open Beauty, Products and Pet Food Facts, share-alike Commons home and
+# hairstyle files, DTD patterns); the file may be missing.
+try:
+    import home_sources as _home  # noqa: E402
+except ImportError as _e:
+    _home = None
+    if getattr(_e, "name", None) != "home_sources":
+        say(f"(The home-life collections could not be loaded: {_e}. They are left out.)")
+HOME_SOURCES = list(getattr(_home, "HOME_SOURCES", []) or [])
+_home_ok = set(getattr(_home, "HOME_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _home_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(
+    s.key for s in HOME_SOURCES if s.key not in _home_ok)
+_add_collections(HOME_SOURCES)
+
+# Historical-event and safety collections that are not open (share-alike Commons event, safety and hazard files,
+# research PPE sets and D-Fire's web pictures); the file may be missing.
+try:
+    import events_safety_sources as _events_safety  # noqa: E402
+except ImportError as _e:
+    _events_safety = None
+    if getattr(_e, "name", None) != "events_safety_sources":
+        say(f"(The historical-event and safety collections could not be loaded: {_e}. They are left out.)")
+EVENTS_SAFETY_SOURCES = list(getattr(_events_safety, "EVENTS_SAFETY_SOURCES", []) or [])
+_events_safety_ok = set(getattr(_events_safety, "EVENTS_SAFETY_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _events_safety_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(
+    s.key for s in EVENTS_SAFETY_SOURCES if s.key not in _events_safety_ok)
+_add_collections(EVENTS_SAFETY_SOURCES)

@@ -940,6 +940,17 @@ PACKS.update(CULTURE_PACKS)
 from land_industry_packs import LAND_PACKS
 PACKS.update(LAND_PACKS)
 
+# Practical home life: clock faces, seven-segment displays, household pests, appliances and their controls, plugs and
+# batteries, laundry symbols, tools, toiletries, hairstyles and the kitchen (is the burner on?).
+from home_packs import HOME_PACKS
+PACKS.update(HOME_PACKS)
+
+# Historical events by place and time (Commons through Wikidata, Library of Congress, US National Archives,
+# Europeana) and safety training (ISO 7010, GHS and road signs, safety equipment and hazards, safety posters, D-Fire
+# wildfire cameras). Rows naming the dead or wounded carry "content": "graphic".
+from events_safety_packs import EVENTS_SAFETY_PACKS
+PACKS.update(EVENTS_SAFETY_PACKS)
+
 
 def sha256_of(path):
     """The SHA-256 of a file."""

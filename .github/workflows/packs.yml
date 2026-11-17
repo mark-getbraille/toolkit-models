@@ -63,7 +63,12 @@ jobs:
                    "chess_positions", "chess_drawings", "drawn_cards", "deepscores_sheet_music",
                    "agml_plant_health", "agml_weeds", "agml_harvest", "gwhd_wheat", "poultry_droppings",
                    "inat_crops", "trashnet", "taco_litter", "ccsn_clouds", "weather_images", "eurosat",
-                   "commons_land_industry", "loc_haer", "plitter_street", "plp_floating_targets", "usda_ars"]
+                   "commons_land_industry", "loc_haer", "plitter_street", "plp_floating_targets", "usda_ars",
+                   "clock_times", "seven_segment", "open_images_home", "commons_pests", "commons_appliances",
+                   "commons_connectors", "laundry_symbols", "commons_tools", "commons_personal",
+                   "commons_hairstyles", "commons_kitchen",
+                   "commons_events", "loc_events", "nara_events", "europeana_events", "safety_signs",
+                   "commons_safety_photos", "safety_training", "dfire_cameras"]
           words = [w for w in sys.argv[1].split(",") if w]
           keys = known if words in ([], ["all"]) else [w for w in words if w in known]
           print("keys=" + json.dumps(keys))
@@ -249,6 +254,25 @@ jobs:
             plitter_street) limit=2500 ;;
             plp_floating_targets) limit=30 ;;
             usda_ars) limit=300 ;;
+            clock_times) limit=1300 ;;
+            seven_segment) limit=3333 ;;
+            open_images_home) limit=3900 ;;
+            commons_pests) limit=900 ;;
+            commons_appliances) limit=700 ;;
+            commons_connectors) limit=900 ;;
+            laundry_symbols) limit=600 ;;
+            commons_tools) limit=1200 ;;
+            commons_personal) limit=1000 ;;
+            commons_hairstyles) limit=600 ;;
+            commons_kitchen) limit=900 ;;
+            commons_events) limit=4000 ;;
+            loc_events) limit=3000 ;;
+            nara_events) limit=2500 ;;
+            europeana_events) limit=1500 ;;
+            safety_signs) limit=2500 ;;
+            commons_safety_photos) limit=4000 ;;
+            safety_training) limit=1200 ;;
+            dfire_cameras) limit=4000 ;;
           esac
           python packs/build_packs.py "${{ matrix.key }}" --out build/packs --limit "$limit"
       - name: Upload it to the release
