@@ -37,6 +37,16 @@ def fake_smi(tmp_path, monkeypatch):
     return str(tool)
 
 
+def sheet_rows(tmp_path):
+    """The rows of the spreadsheet written so far (none when it is not there yet)."""
+    folder = tmp_path / "logs"
+    names = os.listdir(folder) if folder.exists() else []
+    if not names:
+        return []
+    with open(folder / names[0], encoding="utf-8") as f:
+        return list(csv.DictReader(f))
+
+
 def test_the_graphics_card_reading_and_its_slowdown_in_plain_words(fake_smi):
     row = system_monitor.gpu_sample(fake_smi)
     assert row["gpu_pct"] == 97 and row["gpu_temp_c"] == 84 and row["vram_used_mb"] == 14210
@@ -46,11 +56,15 @@ def test_the_graphics_card_reading_and_its_slowdown_in_plain_words(fake_smi):
 
 def test_the_monitor_writes_the_computer_its_use_warnings_and_a_spreadsheet(fake_smi, tmp_path, monkeypatch):
     monkeypatch.setenv("KIT_LOG_FOLDER", str(tmp_path / "logs"))
+    monkeypatch.setattr(system_monitor, "powershell", lambda *a, **k: "")     # slow on a busy test computer
     lines = []
     monitor = system_monitor.Monitor(lines.append, sample_every=0.3, report_every=0.9)
-    monitor.begin()
     monitor.phase = "Step 5 of 7: training on 77006 pictures."
-    time.sleep(2.5)
+    monitor.begin()
+    deadline = time.time() + 60                  # a slow test computer: wait for three samples and a report
+    while time.time() < deadline and (len(monitor.warned) < 2 or not any(
+            line.startswith("Computer use (last") for line in lines) or len(sheet_rows(tmp_path)) < 3):
+        time.sleep(0.2)
     monitor.end()
     text = "\n".join(lines)
     assert "Computer: graphics card NVIDIA GeForce RTX 5060 Ti, driver 581.42, 16 GB of memory" in text
@@ -74,10 +88,13 @@ def test_the_monitor_writes_the_computer_its_use_warnings_and_a_spreadsheet(fake
 def test_without_nvidia_the_monitor_says_so_and_carries_on(monkeypatch, tmp_path):
     monkeypatch.setenv("KIT_LOG_FOLDER", str(tmp_path))
     monkeypatch.setattr(system_monitor, "nvidia_smi", lambda: None)
+    monkeypatch.setattr(system_monitor, "powershell", lambda *a, **k: "")
     lines = []
     monitor = system_monitor.Monitor(lines.append, sample_every=0.3, report_every=0.6)
     monitor.begin()
-    time.sleep(1.2)
+    deadline = time.time() + 60
+    while time.time() < deadline and not any(line.startswith("Computer use (last") for line in lines):
+        time.sleep(0.2)
     monitor.end()
     assert any("nvidia-smi) was not found" in line for line in lines)
     assert any(line.startswith("Computer use (last") and "processor" in line for line in lines)
