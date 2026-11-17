@@ -918,6 +918,28 @@ for _key, (_language, _model, _revision) in ARCHIVE_TRANSLATE.items():
     TRANSLATE[_key] = _language
     MT_MODELS.setdefault(_language, (_model, _revision))
 
+# Military equipment and the uniformed services, past and present (Commons models and uniforms found through Wikidata,
+# Library of Congress, US National Archives, army.mil, the Smithsonian's air and history museums). War rows showing
+# the dead or injured carry "content": "graphic".
+from service_packs import SERVICE_PACKS
+PACKS.update(SERVICE_PACKS)
+
+# Bodily fluids and waste (dog poop in yards, animal droppings, blood, vomit, stool and urine): human medical rows
+# carry "content": "medical". urine_samples needs pillow-heif (its photos are HEIC files).
+from bodily_packs import BODILY_PACKS
+PACKS.update(BODILY_PACKS)
+
+# Sport, musical instruments, places of worship and religious life, landmarks and architecture, civilian vehicles,
+# and toys, games, playing cards, chess and sheet music.
+from culture_packs import CULTURE_PACKS
+PACKS.update(CULTURE_PACKS)
+
+# The land and the work done on it: crops and plant health, weeds, litter, clouds and weather, satellite views,
+# industry, mining, energy and construction. Industrial accidents carry "content": "graphic". plp_floating_targets
+# needs bsdtar or 7-Zip (its photos come in a RAR archive).
+from land_industry_packs import LAND_PACKS
+PACKS.update(LAND_PACKS)
+
 
 def sha256_of(path):
     """The SHA-256 of a file."""

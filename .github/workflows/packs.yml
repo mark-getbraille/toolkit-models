@@ -51,7 +51,19 @@ jobs:
                    "open_images_disability", "commons_disability", "tapad_tactile_paving",
                    "loc_civil_war", "loc_war_disaster", "nara_war", "ushmm", "commons_war", "commons_disasters",
                    "commons_safety", "nara", "nypl", "getty_museum", "digital_commonwealth", "smk", "anefo",
-                   "kremlin", "awm"]
+                   "kremlin", "awm",
+                   "commons_military", "commons_airplanes", "commons_uniformed", "loc_service",
+                   "nara_military", "army_mil", "nasm_aircraft", "nmah_service",
+                   "scatspotter", "inat_droppings", "open_images_bodily", "commons_bodily",
+                   "case_report_bodily", "urine_samples",
+                   "open_images_culture", "wikidata_sports", "wikidata_instruments", "met_instruments",
+                   "wikidata_worship", "commons_religious_life", "wikidata_landmarks",
+                   "wikidata_architecture", "gldv2_landmarks", "wikidata_vehicle_models",
+                   "commons_vehicle_kinds", "wikidata_toys_games", "playing_cards", "chess_pieces",
+                   "chess_positions", "chess_drawings", "drawn_cards", "deepscores_sheet_music",
+                   "agml_plant_health", "agml_weeds", "agml_harvest", "gwhd_wheat", "poultry_droppings",
+                   "inat_crops", "trashnet", "taco_litter", "ccsn_clouds", "weather_images", "eurosat",
+                   "commons_land_industry", "loc_haer", "plitter_street", "plp_floating_targets", "usda_ars"]
           words = [w for w in sys.argv[1].split(",") if w]
           keys = known if words in ([], ["all"]) else [w for w in words if w in known]
           print("keys=" + json.dumps(keys))
@@ -84,8 +96,11 @@ jobs:
             ksamsok|rijksmuseum|coco_cn|europeana_fi|europeana_cs|europeana_hu|europeana_el|europeana_no|europeana_pl|smk|anefo)
               python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
               python -m pip install "transformers==4.57.6" "sentencepiece==0.2.1" "sacremoses==0.1.1" ;;
-            seoul_sidewalks)
+            seoul_sidewalks|urine_samples)
               python -m pip install "pillow-heif==1.1.1" ;;
+            # PLP2019's drone photos come in a RAR archive, which Python cannot open: bsdtar (libarchive) does.
+            plp_floating_targets)
+              sudo apt-get update && sudo apt-get install -y libarchive-tools ;;
           esac
       - name: Build the pack
         run: |
@@ -186,6 +201,54 @@ jobs:
             anefo) limit=6000 ;;
             kremlin) limit=3000 ;;
             awm) limit=3000 ;;
+            commons_military) limit=4000 ;;
+            commons_airplanes) limit=2500 ;;
+            commons_uniformed) limit=4000 ;;
+            loc_service) limit=4000 ;;
+            nara_military) limit=3000 ;;
+            army_mil) limit=250 ;;
+            nasm_aircraft) limit=1200 ;;
+            nmah_service) limit=1500 ;;
+            scatspotter) limit=3000 ;;
+            inat_droppings) limit=1500 ;;
+            open_images_bodily) limit=3000 ;;
+            commons_bodily) limit=100 ;;
+            case_report_bodily) limit=150 ;;
+            urine_samples) limit=532 ;;
+            open_images_culture) limit=8000 ;;
+            wikidata_sports) limit=3000 ;;
+            wikidata_instruments) limit=4000 ;;
+            met_instruments) limit=3500 ;;
+            wikidata_worship) limit=4000 ;;
+            commons_religious_life) limit=2000 ;;
+            wikidata_landmarks) limit=4000 ;;
+            wikidata_architecture) limit=2500 ;;
+            gldv2_landmarks) limit=4000 ;;
+            wikidata_vehicle_models) limit=4000 ;;
+            commons_vehicle_kinds) limit=1500 ;;
+            wikidata_toys_games) limit=2000 ;;
+            playing_cards) limit=1877 ;;
+            chess_pieces) limit=289 ;;
+            chess_positions) limit=3000 ;;
+            chess_drawings) limit=500 ;;
+            drawn_cards) limit=500 ;;
+            deepscores_sheet_music) limit=2000 ;;
+            agml_plant_health) limit=6000 ;;
+            agml_weeds) limit=3000 ;;
+            agml_harvest) limit=1200 ;;
+            gwhd_wheat) limit=2000 ;;
+            poultry_droppings) limit=2000 ;;
+            inat_crops) limit=2400 ;;
+            trashnet) limit=1500 ;;
+            taco_litter) limit=1500 ;;
+            ccsn_clouds) limit=2500 ;;
+            weather_images) limit=1100 ;;
+            eurosat) limit=600 ;;
+            commons_land_industry) limit=4000 ;;
+            loc_haer) limit=3000 ;;
+            plitter_street) limit=2500 ;;
+            plp_floating_targets) limit=30 ;;
+            usda_ars) limit=300 ;;
           esac
           python packs/build_packs.py "${{ matrix.key }}" --out build/packs --limit "$limit"
       - name: Upload it to the release

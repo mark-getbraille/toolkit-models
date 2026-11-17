@@ -1426,6 +1426,251 @@ SOURCES = [
            'Copyright expired, public domain (Australian War Memorial records)',
            'Australian War Memorial, public-domain photographs', "permissive", 2000, 15, prepare_pack,
            'about 800 MB'),
+    # Military equipment and the uniformed services, past and present (packs/service_packs.py). War rows that show the
+    # dead, wounds or injuries carry "content": "graphic" and are used only with --with-graphic; rows naming a child
+    # carry "child". Only the civil-aircraft pack is used for picture-making (NOT_FOR_PICTURE_MAKING).
+    Source('commons_military', 'Military vehicles, aircraft, warships, small arms, armour and decorations, with facts '
+           'from Wikidata (Wikimedia Commons, ready-made pack)',
+           'Captions CC0; pictures CC0, public domain or CC BY, each author credited; facts from Wikidata (CC0)',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt; facts from Wikidata, CC0', "permissive", 2700, 20,
+           prepare_pack, 'about 1.2 GB'),
+    Source('commons_airplanes', 'Airliners, business jets, light aircraft, airships and civil helicopters, with facts '
+           'from Wikidata (Wikimedia Commons, ready-made pack)',
+           'Captions CC0; pictures CC0, public domain or CC BY, each author credited; facts from Wikidata (CC0)',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt; facts from Wikidata, CC0', "permissive", 1700, 15,
+           prepare_pack, 'about 800 MB'),
+    Source('commons_uniformed', 'Police, fire, ambulance, rangers, nurses, military and ceremonial uniforms and service '
+           'vehicles by country (Wikimedia Commons, ready-made pack)',
+           'Captions CC0; pictures CC0, public domain or CC BY, each author credited',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 2700, 20, prepare_pack,
+           'about 1.2 GB'),
+    Source('loc_service', 'Soldiers, the Civil War and the First World War, tanks, warships, police, fire fighters and '
+           'nurses (Library of Congress, ready-made pack)',
+           'No known restrictions on publication (Library of Congress)',
+           'Library of Congress, Prints and Photographs Division (Civil War glass negatives, Bain News Service and '
+           'photos by subject)', "permissive", 2700, 20, prepare_pack, 'about 1.2 GB'),
+    Source('nara_military', 'The US Navy, Marine Corps, Coast Guard and Army Signal Corps photographs with their '
+           'captions (US National Archives, ready-made pack)',
+           'Public domain (US government work, National Archives, records marked Unrestricted)',
+           'Photo series 80-G, 127, 26-G and 111-SC, U.S. National Archives and Records Administration, public domain',
+           "permissive", 2000, 15, prepare_pack, 'about 900 MB'),
+    Source('army_mil', 'U.S. Army photos with their full captions (army.mil, ready-made pack)',
+           'Public domain (US government work)',
+           'U.S. Army photographers, www.army.mil/photos, public domain, each photographer credited in ATTRIBUTION.txt',
+           "permissive", 170, 10, prepare_pack, 'about 80 MB'),
+    Source('nasm_aircraft', 'Aircraft, flight uniforms, helmets, insignia and medals with the museum\'s records '
+           '(Smithsonian National Air and Space Museum, ready-made pack)',
+           'CC0 (Smithsonian Open Access)',
+           'Smithsonian National Air and Space Museum, Smithsonian Open Access, CC0', "permissive", 800, 10,
+           prepare_pack, 'about 350 MB'),
+    Source('nmah_service', 'Uniforms, insignia, medals, arms and armour, police and fire objects with the museum\'s '
+           'descriptions (Smithsonian National Museum of American History, ready-made pack)',
+           'CC0 (Smithsonian Open Access, CC0 pictures only)',
+           'Smithsonian National Museum of American History, Smithsonian Open Access, CC0', "permissive", 1000, 10,
+           prepare_pack, 'about 450 MB'),
+    # Bodily fluids and waste (packs/bodily_packs.py): dog poop in the yard, animal droppings, blood, vomit, stool and
+    # urine. Human medical rows carry "content": "medical" (used only with --with-medical); the two packs that are all
+    # human medical material are marked so as a whole. None is used for picture-making (NOT_FOR_PICTURE_MAKING).
+    Source('scatspotter', 'Has a dog pooped here, and where? Phone photos of yards, paths and snow (ScatSpotter, '
+           'ready-made pack)',
+           'CC BY 4.0 (huggingface.co/datasets/erotemic/shitspotter)',
+           'ScatSpotter (Jon Crall, Kitware, WACV Workshops 2026), CC BY 4.0, https://github.com/Erotemic/shitspotter',
+           "permissive", 2000, 20, prepare_pack, 'about 900 MB'),
+    Source('inat_droppings', 'Droppings of dogs, cats, horses, farm animals, birds and yard animals (iNaturalist, '
+           'ready-made pack)',
+           'Each photo CC0 or CC BY (its iNaturalist page)',
+           'iNaturalist observers, CC0 or CC BY, credited in ATTRIBUTION.txt', "permissive", 1000, 15, prepare_pack,
+           'about 450 MB'),
+    Source('open_images_bodily', 'Is there blood in this picture? Blood, injuries, bandages, poop, litter boxes and '
+           'stains (Open Images, ready-made pack)',
+           'Labels CC BY 4.0; each photo CC BY 2.0 (Open Images V7)',
+           'Open Images V7 (Google), labels CC BY 4.0; photographers credited in ATTRIBUTION.txt', "permissive",
+           2000, 20, prepare_pack, 'about 900 MB'),
+    Source('commons_bodily', 'Stool, vomit, urine, blood stains and animal droppings, and the Bristol stool chart '
+           '(Wikimedia Commons, ready-made pack)',
+           'Captions CC0; pictures CC0, public domain or CC BY, each author credited',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 70, 10, prepare_pack,
+           'about 30 MB'),
+    Source('case_report_bodily', 'Stool, vomit, urine and nosebleed photos from published case reports, adults '
+           '(PubMed Central, ready-made pack)',
+           'Each article CC BY or CC0 (PubMed Central open access)',
+           'Authors of the case reports in PubMed Central, CC BY or CC0, credited in ATTRIBUTION.txt', "permissive",
+           100, 10, prepare_pack, 'about 40 MB', content="medical"),
+    Source('urine_samples', 'What colour is this urine? Samples in clear pots photographed with phones (urine-detector, '
+           'ready-made pack)',
+           'Apache-2.0 (huggingface.co/datasets/celesca/urine-detector)',
+           'urine-detector (celesca on Hugging Face), Apache-2.0, https://huggingface.co/datasets/celesca/urine-detector',
+           "permissive", 350, 10, prepare_pack, 'about 150 MB', content="medical"),
+    # Sport, music, religion, landmarks, vehicles and games (packs/culture_packs.py): no row has a content tag; rows
+    # naming a child carry "child". The packs with people in them (sport, festivals, street vehicles, Open Images) are
+    # not used for picture-making (NOT_FOR_PICTURE_MAKING).
+    Source('open_images_culture', 'Sports, musical instruments, vehicles, toys and kinds of building in everyday photos '
+           '(Open Images, ready-made pack)',
+           'Labels CC BY 4.0; each photo CC BY 2.0 (Open Images V7)',
+           'Open Images V7 (Google), labels CC BY 4.0; photographers credited in ATTRIBUTION.txt', "permissive",
+           5300, 20, prepare_pack, 'about 2.5 GB'),
+    Source('wikidata_sports', 'Sports of the world, sports equipment and grounds, with facts from Wikidata (Wikimedia '
+           'Commons, ready-made pack)',
+           'Facts CC0 (Wikidata); pictures CC0, public domain or CC BY, each author credited',
+           'Wikidata (CC0) and Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 2000, 15,
+           prepare_pack, 'about 900 MB'),
+    Source('wikidata_instruments', 'Musical instruments of every culture, with facts from Wikidata (Wikimedia Commons, '
+           'ready-made pack)',
+           'Facts CC0 (Wikidata); pictures CC0, public domain or CC BY, each author credited',
+           'Wikidata (CC0) and Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 2700, 15,
+           prepare_pack, 'about 1.2 GB'),
+    Source('met_instruments', 'Musical instruments with the museum\'s records (The Metropolitan Museum of Art, '
+           'ready-made pack)',
+           'CC0 (The Met Open Access, public-domain objects only)',
+           'The Metropolitan Museum of Art, Department of Musical Instruments, Open Access, CC0', "permissive", 2300,
+           15, prepare_pack, 'about 1 GB'),
+    Source('wikidata_worship', 'Places of worship of every faith: what they are, where and of which faith (Wikidata and '
+           'Wikimedia Commons, ready-made pack)',
+           'Facts CC0 (Wikidata); pictures CC0, public domain or CC BY, each author credited',
+           'Wikidata (CC0) and Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 2700, 20,
+           prepare_pack, 'about 1.2 GB'),
+    Source('commons_religious_life', 'Festivals, ceremonies, pilgrimages, religious objects and clergy dress of many '
+           'faiths (Wikimedia Commons, ready-made pack)',
+           'Captions CC0; pictures CC0, public domain or CC BY, each author credited',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 1300, 15, prepare_pack,
+           'about 600 MB'),
+    Source('wikidata_landmarks', 'Landmarks and World Heritage Sites: towers, castles, palaces, bridges, monuments '
+           '(Wikidata and Wikimedia Commons, ready-made pack)',
+           'Facts CC0 (Wikidata); pictures CC0, public domain or CC BY, each author credited',
+           'Wikidata (CC0) and Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 2700, 20,
+           prepare_pack, 'about 1.2 GB'),
+    Source('wikidata_architecture', 'Architectural styles and parts of buildings (Wikidata and Wikimedia Commons, '
+           'ready-made pack)',
+           'Facts CC0 (Wikidata); pictures CC0, public domain or CC BY, each author credited',
+           'Wikidata (CC0) and Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 1700, 15,
+           prepare_pack, 'about 800 MB'),
+    Source('gldv2_landmarks', 'Landmarks and places around the world (Google Landmarks Dataset v2, ready-made pack)',
+           'Labels CC BY 4.0; each image CC0, public domain or CC BY (its Commons page)',
+           'Google Landmarks Dataset v2 (Weyand, Araujo, Cao and Sim, CVPR 2020), '
+           'https://github.com/cvdfoundation/google-landmark ; image authors credited in ATTRIBUTION.txt',
+           "permissive", 2700, 20, prepare_pack, 'about 1.2 GB'),
+    Source('wikidata_vehicle_models', 'Car, motorcycle, bus, truck, tram, locomotive and ferry models, with facts from '
+           'Wikidata (Wikimedia Commons, ready-made pack)',
+           'Facts CC0 (Wikidata); pictures CC0, public domain or CC BY, each author credited',
+           'Wikidata (CC0) and Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 2700, 20,
+           prepare_pack, 'about 1.2 GB'),
+    Source('commons_vehicle_kinds', 'Taxis, rickshaws, minibuses, school buses, bicycles, boats and other vehicles '
+           '(Wikimedia Commons, ready-made pack)',
+           'Captions CC0; pictures CC0, public domain or CC BY, each author credited',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 1000, 15, prepare_pack,
+           'about 450 MB'),
+    Source('wikidata_toys_games', 'Playing cards, board and card games, toys, dice, LEGO and chess sets (Wikidata and '
+           'Wikimedia Commons, ready-made pack)',
+           'Facts CC0 (Wikidata); pictures CC0, public domain or CC BY, each author credited',
+           'Wikidata (CC0) and Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 1300, 15,
+           prepare_pack, 'about 600 MB'),
+    Source('playing_cards', 'Which playing card is this? Photos of real cards (French Playing Cards, ready-made pack)',
+           'MIT licence (huggingface.co/datasets/drFarid/French-Playing-Cards)',
+           'French Playing Cards (drFarid), MIT licence, https://huggingface.co/datasets/drFarid/French-Playing-Cards',
+           "permissive", 1250, 15, prepare_pack, 'about 300 MB'),
+    Source('chess_pieces', 'Chess pieces on a real board (Roboflow 100 Chess Pieces, ready-made pack)',
+           'CC BY 4.0 (universe.roboflow.com/roboflow-100/chess-pieces-mjzgj)',
+           'Chess Pieces (Joseph Nelson and Brad Dwyer, Roboflow), Roboflow 100, CC BY 4.0', "permissive", 200, 10,
+           prepare_pack, 'about 60 MB'),
+    Source('chess_positions', 'The position on a chessboard, square by square: computer-made renders (Chessboard '
+           'renders, ready-made pack)',
+           'CC BY 4.0 (huggingface.co/datasets/PeterAM4/chessboard-renders); positions from Lichess (CC0)',
+           'Chessboard renders (Peter A. Massih, 2026), CC BY 4.0; positions from the Lichess database, CC0',
+           "permissive", 2000, 15, prepare_pack, 'about 500 MB'),
+    Source('chess_drawings', 'The position on a chessboard: flat computer drawings (Chessboard Detection Dataset, '
+           'ready-made pack)',
+           'CC BY 4.0 (huggingface.co/datasets/MohammedHemed/Chessboard-digital-images_with_fen)',
+           'Chessboard Detection Dataset (Mohammed Hemed), CC BY 4.0; positions from the Lichess database, CC0',
+           "permissive", 330, 10, prepare_pack, 'about 40 MB'),
+    Source('drawn_cards', 'Which playing card is this? Computer drawings of cards (Playing cards, ready-made pack)',
+           'MIT licence (huggingface.co/datasets/JackFurby/playing-cards)',
+           'Playing cards (Jack Furby), MIT licence, https://huggingface.co/datasets/JackFurby/playing-cards',
+           "permissive", 330, 10, prepare_pack, 'about 40 MB'),
+    Source('deepscores_sheet_music', 'What a page of sheet music shows: clefs, time and key, notes, rests and dynamics '
+           '(DeepScoresV2, ready-made pack)',
+           'CC BY 4.0 (Zenodo 4012193)',
+           'DeepScoresV2 (Tuggener, Satyawan, Pacha, Schmidhuber and Stadelmann, 2020), CC BY 4.0, '
+           'https://zenodo.org/records/4012193', "permissive", 1300, 15, prepare_pack, 'about 400 MB'),
+    # The land and the work done on it (packs/land_industry_packs.py): crops, weeds, litter, clouds, weather,
+    # satellite views, industry, mining, energy and construction. Industrial accidents carry "content": "graphic".
+    # The packs with people or droppings in them are not used for picture-making (NOT_FOR_PICTURE_MAKING).
+    Source('agml_plant_health', 'Is this plant healthy? Crop leaves with a named disease or pest, Africa and Asia '
+           '(17 datasets, ready-made pack)',
+           'Each dataset CC BY 4.0 (Mendeley Data or Zenodo; iBean MIT)',
+           'Crop disease datasets on Mendeley Data and Zenodo, CC BY 4.0 (iBean: MIT), from the Project-AgML copies, '
+           'each credited in ATTRIBUTION.txt', "permissive", 4000, 20, prepare_pack, 'about 1.5 GB'),
+    Source('agml_weeds', 'Weeds where they grow: Australia, India and Bangladesh (DeepWeeds, MH-Weed16, rice-field '
+           'weeds, ready-made pack)',
+           'CC BY 4.0 (each dataset)',
+           'DeepWeeds, MH-Weed16 (Mendeley Data d3n3mgjjbv) and rice-field weeds of Bangladesh (Mendeley Data '
+           'mt72bmxz73), CC BY 4.0, from the Project-AgML copies', "permissive", 2000, 15, prepare_pack,
+           'about 600 MB'),
+    Source('agml_harvest', 'Ready to pick? Banana bunches and dragon fruit (Mendeley Data, ready-made pack)',
+           'CC BY 4.0 (Mendeley Data kjrsb7ztr9 and 2jpzbx8tm6)',
+           'Banana Bunch Harvesting Dataset and Dragon Fruit Maturity dataset, Mendeley Data, CC BY 4.0',
+           "permissive", 800, 10, prepare_pack, 'about 350 MB'),
+    Source('gwhd_wheat', 'Wheat fields seen from above in 12 countries (Global Wheat Head Dataset 2021, ready-made '
+           'pack)',
+           'CC BY 4.0 (Zenodo 5092309)',
+           'Global Wheat Head Dataset 2021 (David et al.), CC BY 4.0, https://doi.org/10.5281/zenodo.5092309',
+           "permissive", 1300, 15, prepare_pack, 'about 600 MB'),
+    Source('poultry_droppings', 'Do these chicken droppings show signs of disease? Farm photos from Tanzania '
+           '(ready-made pack)',
+           'CC BY 4.0 (Zenodo 4628934)',
+           'Machine Learning Dataset for Poultry Diseases Diagnostics (Machuve et al.), CC BY 4.0, '
+           'https://doi.org/10.5281/zenodo.4628934', "permissive", 1300, 15, prepare_pack, 'about 600 MB'),
+    Source('inat_crops', 'Cultivated crops and fruit trees: wheat, rice, maize, cassava, coffee, tea and more '
+           '(iNaturalist, ready-made pack)',
+           'Each photo CC0 or CC BY (its iNaturalist page)',
+           'iNaturalist observers, CC0 or CC BY, credited in ATTRIBUTION.txt', "permissive", 1600, 15, prepare_pack,
+           'about 700 MB'),
+    Source('trashnet', 'Which bin does it go in? Single pieces of rubbish (TrashNet, ready-made pack)',
+           'MIT licence (github.com/garythung/trashnet)',
+           'TrashNet (Gary Thung and Mindy Yang), MIT licence, https://github.com/garythung/trashnet', "permissive",
+           1000, 10, prepare_pack, 'about 200 MB'),
+    Source('taco_litter', 'Litter where it was dropped: woods, roads and beaches (TACO, ready-made pack)',
+           'CC BY 4.0 (Zenodo 3587843)',
+           'TACO: Trash Annotations in Context (Proenca and Simoes), CC BY 4.0, https://doi.org/10.5281/zenodo.3587843',
+           "permissive", 1000, 10, prepare_pack, 'about 450 MB'),
+    Source('ccsn_clouds', 'What kind of cloud is this? The sky in 11 cloud types and contrails (CCSN, ready-made pack)',
+           'CC0 1.0 (Harvard Dataverse, doi 10.7910/DVN/CADDPD)',
+           'Cirrus Cumulus Stratus Nimbus (CCSN) Database (Pu Liu), CC0, https://doi.org/10.7910/DVN/CADDPD',
+           "permissive", 1700, 15, prepare_pack, 'about 200 MB'),
+    Source('weather_images', 'What is the weather like? Cloudy, rainy, sunny and sunrise scenes (Multi-class Weather '
+           'Dataset, ready-made pack)',
+           'CC BY 4.0 (Mendeley Data 4drtyfjtfy)',
+           'Multi-class Weather Dataset for Image Classification (Gbeminiyi Ajayi), CC BY 4.0, '
+           'https://data.mendeley.com/datasets/4drtyfjtfy/1', "permissive", 700, 10, prepare_pack, 'about 150 MB'),
+    Source('eurosat', 'Small satellite views of European land: crops, forest, rivers, motorways, housing (EuroSAT, '
+           'ready-made pack)',
+           'MIT licence (github.com/phelber/EuroSAT); contains modified Copernicus Sentinel data',
+           'EuroSAT (Helber et al.), MIT licence, https://github.com/phelber/EuroSAT ; contains modified Copernicus '
+           'Sentinel data', "permissive", 400, 10, prepare_pack, 'about 5 MB'),
+    Source('commons_land_industry', 'Farming, the environment, factories, mines, energy and building sites (Wikimedia '
+           'Commons, ready-made pack)',
+           'Captions CC0; pictures CC0, public domain or CC BY, each author credited',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 2700, 20, prepare_pack,
+           'about 1.2 GB'),
+    Source('loc_haer', 'Dams, bridges, mines, mills, factories and railways with the survey\'s captions (Historic '
+           'American Engineering Record, Library of Congress, ready-made pack)',
+           'No known restrictions on images made by the U.S. Government (Library of Congress)',
+           'Historic American Engineering Record, Library of Congress, Prints and Photographs Division', "permissive",
+           2000, 15, prepare_pack, 'about 900 MB'),
+    Source('plitter_street', 'Litter on streets in Thailand, Sri Lanka and the Mekong region, from vehicle cameras '
+           '(pLitterStreet, ready-made pack)',
+           'CC BY 4.0 (Zenodo 8288500)',
+           'pLitterStreet (Mandhati, Deshapriya, Mendis and Gunasekara), CC BY 4.0, '
+           'https://doi.org/10.5281/zenodo.8288500', "permissive", 1700, 15, prepare_pack, 'about 800 MB'),
+    Source('plp_floating_targets', 'Floating plastic test targets off Lesvos, Greece, seen from a drone (Plastic Litter '
+           'Projects, ready-made pack)',
+           'CC BY 4.0 (Zenodo 3752719 and 7085112)',
+           'PLP2019 (Topouzelis) and Plastic Litter Project 2021 (Papageorgiou and Topouzelis), University of the '
+           'Aegean, CC BY 4.0', "permissive", 20, 10, prepare_pack, 'about 15 MB'),
+    Source('usda_ars', 'Farm research, crops, insects and farm work with their captions (USDA Agricultural Research '
+           'Service, ready-made pack)',
+           'Public domain (US government work, USDA ARS image gallery)',
+           'USDA Agricultural Research Service image gallery, public domain; credit: USDA ARS', "permissive", 200, 10,
+           prepare_pack, 'about 90 MB'),
     Source('skin_lesion_photos', 'Skin spots photographed with a phone, adults (PAD-UFES-20, ready-made pack)',
            'CC BY 4.0 (Mendeley Data zr7vgbcyr2)',
            'PAD-UFES-20 (Pacheco et al., 2020), CC BY 4.0', "permissive", 2000, 20, prepare_pack, 'about 400 MB', content="medical"),
@@ -1539,6 +1784,25 @@ NOT_FOR_PICTURE_MAKING = ("childhood_illness", "birth_and_feeding")
 GRAPHIC_PACK_KEYS = ("loc_civil_war", "loc_war_disaster", "nara_war", "ushmm", "commons_war", "commons_disasters",
                      "commons_safety")
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + GRAPHIC_PACK_KEYS
+# Packs whose rows show people (soldiers, uniformed services, athletes, festivals, workers, street scenes, people with
+# mobility aids), weapons, or medical and bodily material (blood, vomit, stool, urine, droppings): describing only.
+# The other packs of those groups may be used for picture-making: civil aircraft, musical instruments, places of
+# worship, landmarks and architecture, vehicle models, toys, cards, chess and sheet music, crops, weeds, litter,
+# clouds, weather and satellite views.
+PEOPLE_AND_BODILY_PACK_KEYS = (
+    # service_packs.py: soldiers and uniformed services, weapons and war (all but commons_airplanes)
+    "commons_military", "commons_uniformed", "loc_service", "nara_military", "army_mil", "nasm_aircraft",
+    "nmah_service",
+    # bodily_packs.py: bodily fluids and waste (all of them)
+    "scatspotter", "inat_droppings", "open_images_bodily", "commons_bodily", "case_report_bodily", "urine_samples",
+    # culture_packs.py: people playing sport, at festivals and ceremonies, and in street vehicles
+    "open_images_culture", "wikidata_sports", "commons_religious_life", "commons_vehicle_kinds",
+    # land_industry_packs.py: farm and factory workers, street scenes, and droppings
+    "poultry_droppings", "commons_land_industry", "loc_haer", "plitter_street", "usda_ars",
+    # disability_packs.py: people using wheelchairs, canes, guide dogs and other aids (tactile paving is used)
+    "open_images_disability", "commons_disability",
+)
+NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + PEOPLE_AND_BODILY_PACK_KEYS
 
 
 def content_of(key):
@@ -1718,3 +1982,64 @@ PERSONAL_PICTURE_MAKING_OK |= _archive_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(
     s.key for s in ARCHIVE_SOURCES if s.key not in _archive_ok)
 _add_collections(ARCHIVE_SOURCES)
+
+# Military and uniformed-services collections that are not open (share-alike Commons files of military models,
+# weapons, civil aircraft and uniforms, Bundesarchiv photos, Europeana 1914-1918); the file may be missing.
+try:
+    import service_sources as _service  # noqa: E402
+except ImportError as _e:
+    _service = None
+    if getattr(_e, "name", None) != "service_sources":
+        say(f"(The military and uniformed-services collections could not be loaded: {_e}. They are left out.)")
+SERVICE_SOURCES = list(getattr(_service, "SERVICE_SOURCES", []) or [])
+_service_ok = set(getattr(_service, "SERVICE_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _service_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(
+    s.key for s in SERVICE_SOURCES if s.key not in _service_ok)
+_add_collections(SERVICE_SOURCES)
+
+# Bodily fluid and waste collections that are not open (share-alike Commons and iNaturalist files, non-commercial
+# iNaturalist droppings, blood stain patterns for personal use); human medical ones are marked "medical". None is for
+# picture-making; the file may be missing.
+try:
+    import bodily_sources as _bodily  # noqa: E402
+except ImportError as _e:
+    _bodily = None
+    if getattr(_e, "name", None) != "bodily_sources":
+        say(f"(The bodily fluid and waste collections could not be loaded: {_e}. They are left out.)")
+BODILY_SOURCES = list(getattr(_bodily, "BODILY_SOURCES", []) or [])
+_bodily_ok = set(getattr(_bodily, "BODILY_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _bodily_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(
+    s.key for s in BODILY_SOURCES if s.key not in _bodily_ok)
+_add_collections(BODILY_SOURCES)
+
+# Sport, music, religion, landmark, vehicle and game collections that are not open, and LEGO parts (open, but read
+# from parquet files rather than a pack); the file may be missing.
+try:
+    import culture_sources as _culture  # noqa: E402
+except ImportError as _e:
+    _culture = None
+    if getattr(_e, "name", None) != "culture_sources":
+        say(f"(The sport, music, religion and landmark collections could not be loaded: {_e}. They are left out.)")
+CULTURE_SOURCES = list(getattr(_culture, "CULTURE_SOURCES", []) or [])
+_culture_ok = set(getattr(_culture, "CULTURE_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _culture_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(
+    s.key for s in CULTURE_SOURCES if s.key not in _culture_ok)
+_add_collections(CULTURE_SOURCES)
+
+# Farming, environment, industry and mining collections that are not open (share-alike Commons files and plant
+# seedlings, non-commercial weed and crop sets); the file may be missing.
+try:
+    import land_industry_sources as _land  # noqa: E402
+except ImportError as _e:
+    _land = None
+    if getattr(_e, "name", None) != "land_industry_sources":
+        say(f"(The farming, environment and industry collections could not be loaded: {_e}. They are left out.)")
+LAND_SOURCES = list(getattr(_land, "LAND_SOURCES", []) or [])
+_land_ok = set(getattr(_land, "LAND_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _land_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(
+    s.key for s in LAND_SOURCES if s.key not in _land_ok)
+_add_collections(LAND_SOURCES)

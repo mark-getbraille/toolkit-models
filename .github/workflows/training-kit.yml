@@ -56,6 +56,7 @@ jobs:
             --hidden-import PIL.ImageOps --hidden-import sources --hidden-import more_sources `
             --hidden-import big_sources --hidden-import personal_sources --hidden-import extra_sources --hidden-import documentary_sources --hidden-import graphic_sources --hidden-import archive_sources `
             --hidden-import disability_sources --hidden-import review_sources --hidden-import adult_review_sources --hidden-import permission_sources `
+            --hidden-import service_sources --hidden-import bodily_sources --hidden-import culture_sources --hidden-import land_industry_sources `
             training-kit/wizard/training_wizard.py
           $p = Start-Process -FilePath "dist\Picture Model Training.exe" -ArgumentList "--self-test" -Wait -PassThru `
             -RedirectStandardOutput selftest.txt
