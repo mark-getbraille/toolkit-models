@@ -20,10 +20,12 @@ It does what the kit's .cmd files do, in one window that a screen reader user ca
      (for a picture-making model also kit\\requirements-pictures.txt), and kit\\train.py (or kit\\train_pictures.py)
      runs without a console window;
   3. the progress page: every line the training says goes into "Everything said:", the latest into "Status:", and
-     the important ones (each step, each collection, the training progress every 200 pictures, FINISHED or STOPPED)
-     are spoken by the running screen reader (Tolk, through cytolk, as in the Digital Accessibility Toolkit).
-     "Read the status" says the status and the percent again; the log, the report and the result folder open from
-     their buttons; "Stop the training" stops it (starting again carries on from the last save).
+     the important ones (each step, each collection, the training progress every 200 pictures, FINISHED or STOPPED,
+     and how to install the result zip in the Digital Accessibility Toolkit: train.py puts the toolkit version of
+     the add-on into it, kit\\make_toolkit_addon.py) are spoken by the running screen reader (Tolk, through cytolk,
+     as in the Digital Accessibility Toolkit). "Read the status" says the status and the percent again; the log, the
+     report and the result folder open from their buttons; "Stop the training" stops it (starting again carries on
+     from the last save).
 
 Accessibility: standard wx controls only; a label ending ":" right before each field; every button and check box
 has an Alt letter, named in its tooltip, and no letter is used twice in the window (both pages together; with this
@@ -163,7 +165,10 @@ STEP_SPAN = {1: (0, 1), 2: (1, 6), 3: (6, 16), 4: (16, 20), 5: (20, 92), 6: (92,
 STEP_LINE = re.compile(r"^Step (\d+) of (\d+):")
 TRAINED_LINE = re.compile(r"(\d+) of (\d+) pictures trained \((\d+) percent\)")
 SPOKEN = re.compile(r"^(Step \d+ of \d+:|\s*Collection \d+ of \d+:|\s*Ready:|\s+\d+ of \d+ pictures trained|"
-                    r"\s*Score (before|after)|FINISHED|STOPPED|Getting ready|\s*This collection could not)")
+                    r"\s*Score (before|after)|FINISHED|STOPPED|Getting ready|\s*This collection could not|"
+                    # the toolkit version of the add-on (kit\\make_toolkit_addon.py): how to install it, or why not
+                    r"To use it in the Digital Accessibility Toolkit|\s*The toolkit version of the add-on could not|"
+                    r"Making the toolkit version of your earlier)")
 
 
 def is_computer_line(line):
@@ -1045,7 +1050,8 @@ class Wizard(wx.Frame):
         self.read_button = self.button(page, "&Read the status", "Say the status and the percent again", self.on_read)
         self.log_button = self.button(page, "Open the lo&g", "Open training-log.txt in Notepad", self.on_open_log)
         self.report_button = self.button(page, "Open the r&eport", "Open the report in Notepad", self.on_open_report)
-        self.result_button = self.button(page, "Open the result &folder", "The zip to send", self.on_open_result)
+        self.result_button = self.button(page, "Open the result &folder",
+                                         "The zip to send, which also installs in the toolkit", self.on_open_result)
         self.restore_button = self.button(page, "Restore the &usual settings", "Undo Prepare this computer",
                                           self.on_restore)
         self.stop_button = self.button(page, "Stop the trai&ning", "Stop; starting again carries on", self.on_stop)
@@ -1410,7 +1416,8 @@ def self_test():
                  os.path.join("kit", "sources.py"), os.path.join("kit", "own_data.py"),
                  os.path.join("kit", "describe_package.py"), os.path.join("kit", "run_video.cmd"),
                  os.path.join("kit", "run_review.cmd"), os.path.join("kit", "run_review.py"),
-                 os.path.join("kit", "review_sources.py"), os.path.join("kit", "requirements.txt")):
+                 os.path.join("kit", "review_sources.py"), os.path.join("kit", "requirements.txt"),
+                 os.path.join("kit", "make_toolkit_addon.py"), "Make Toolkit Add-on.cmd"):
         if not os.path.exists(resource(name)):
             raise SystemExit(f"missing from the program: {name}")
     module = own_data_module()

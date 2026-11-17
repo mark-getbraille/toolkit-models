@@ -149,7 +149,7 @@ The steps it says
 4. Testing the model before training (about half an hour).
 5. Training: the long part. It says how many pictures are done and how long is left every 200 pictures.
 6. Testing the trained model on the same pictures.
-7. Writing the report and the file to send.
+7. Writing the report and the file to send, with the toolkit version of the add-on in it.
 
 If it stops
 You can close the window at any time, or the computer can restart. Press Enter on the same Start file again: it
@@ -163,6 +163,30 @@ It says FINISHED and whether the model got better. Two files matter:
   examples, each with the question, a person's answer, and the model's answer before and after training.
 - The zip in the "result" folder (a few hundred MB): this is what to send. Tell Claude the training has finished
   and you will be told how to send it. The add-on is only published in the toolkit if the tests show it is better.
+  With the program, the result is in "<training folder>\Picture Model Training Kit\result", named like
+  picture-training-4b-full-2026-11-18.zip (the model, the kind of training and the date). "Open the result folder"
+  (Alt+F in the program) opens it.
+
+Using your describer in the Digital Accessibility Toolkit
+You do not need to wait for the add-on to be published: the result zip already holds a version the toolkit can use.
+Inside the zip:
+- adapter: the add-on as it was trained (for sending).
+- toolkit: the same add-on made for the toolkit (describer-addon.gguf, in the format of llama.cpp, the engine the
+  toolkit uses to describe pictures), addon.json (what it is, for the toolkit), and HOW TO USE THIS IN THE
+  TOOLKIT.txt.
+- report.txt, scores.json, ATTRIBUTION.txt (credits and licences) and training-log.txt.
+To install it: open the Digital Accessibility Toolkit, go to the Describe pictures settings, choose "Install a
+trained describer..." and choose the zip itself (not a file inside it).
+To use it on another computer: copy the zip to that computer (USB stick, shared drive or email) and install it there
+the same way.
+It works only with the toolkit's matching picture model, Qwen3-VL 4B for a 4B training and Qwen3-VL 8B for an 8B
+training. A training with your own pictures, personal-use or review collections is for your personal use only, and
+one with Wikipedia is under CC BY-SA 4.0; the toolkit folder's text file says so too.
+If the toolkit version could not be made (the window says "The toolkit version of the add-on could not be made"),
+the zip is made without it: start the kit again, and it tries again before anything else. A zip made by an older kit
+without the toolkit version also gets it at the next start, once, as long as the "work" folder is still there. To do
+it without starting a training, press Enter on "Make Toolkit Add-on.cmd" in the kit folder. Making it downloads
+llama.cpp's converter once (about 40 MB, from GitHub); nothing is sent anywhere.
 
 The picture library
 The program keeps every picture for good in the picture library folder. It suggests "Picture Library" on the drive
@@ -175,7 +199,8 @@ into it the first time the program uses it.
 
 Afterwards
 You can delete the "work" folder inside the kit folder to get space back (keep the "result" folder until the file is
-sent); the picture library stays.
+sent, and keep "work" until every result zip has its toolkit version: the toolkit version is made from the add-on in
+"work"); the picture library stays.
 
 Licences and credits
 The kit is under the Apache License 2.0. The model: Qwen3-VL (Alibaba Cloud) and huihui-ai's version, Apache License
@@ -184,4 +209,6 @@ DOCCI, VizWiz, TextCaps, TextVQA and Localized Narratives are CC BY 4.0 (their O
 Cooper Hewitt, the Art Institute of Chicago and the Met are CC0; Europeana objects are used only when their own
 licence is CC0, public domain or CC BY; NASA's pictures are generally not under copyright (any naming a copyright are
 left out); Wikipedia is CC BY-SA 4.0. The tools it installs (Python, PyTorch, Transformers, PEFT, bitsandbytes and
-others) are under permissive licences; the installer helper uv is from astral.sh (MIT or Apache 2.0).
+others) are under permissive licences; the installer helper uv is from astral.sh (MIT or Apache 2.0). The converter
+that makes the toolkit version of the add-on is llama.cpp's (MIT licence; its LICENSE is kept beside it in the work
+folder).

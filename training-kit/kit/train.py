@@ -20,7 +20,13 @@ The steps:
   6. test again with the add-on, and write the report: the scores before and after for each collection, whether it
      got better, and examples to read;
   7. put the add-on, the report, the scores and ATTRIBUTION.txt (the credits and licences) in one zip in the
-     "result" folder, for sending.
+     "result" folder (result\\picture-training-<run>-<date>.zip), for sending; and the toolkit version of the
+     add-on in its folder "toolkit/" (make_toolkit_addon.py: the add-on converted to llama.cpp's GGUF LoRA format
+     with llama.cpp's own converter, addon.json saying what it is, and HOW TO USE THIS IN THE TOOLKIT.txt), which the
+     Digital Accessibility Toolkit installs with "Install a trained describer..." in its Describe pictures settings.
+     If the toolkit version cannot be made, that is said and the zip is made without it; the training never stops
+     for it. At every start, the kit first adds the toolkit version once to each earlier result zip that lacks it
+     (one made by an older kit) while that training's add-on is still in the work folder.
 
 The questions are the toolkit's own where it has them (vision/vlm.py PICTURE: "Describe this picture in detail."),
 with its SYSTEM text; museum names and NASA captions have their own questions, so they add knowledge without
@@ -879,7 +885,8 @@ def write_report(path, info, before, after, before_rows, after_rows):
 
 
 def package(model_key, final, report, info, tag):
-    """The zip to send: the add-on, the report, scores.json, ATTRIBUTION.txt and the log; returns its path."""
+    """The zip to send: the add-on, the report, scores.json, ATTRIBUTION.txt and the log, then the toolkit version of
+    the add-on in its folder "toolkit/" (add_toolkit_version); returns its path."""
     folder = os.path.join(HERE, "result")
     os.makedirs(folder, exist_ok=True)
     path = os.path.join(folder, f"picture-training-{model_key}{tag}-{datetime.date.today():%Y-%m-%d}.zip")
@@ -892,7 +899,48 @@ def package(model_key, final, report, info, tag):
         if personal_chosen(info):
             z.writestr("PERSONAL-USE-ONLY.txt", "\n".join(personal_lines(info)) + "\n")
         z.write(LOG, "training-log.txt")
+    add_toolkit_version(path, final)
     return path
+
+
+TOOLKIT_FAILED = ("The toolkit version of the add-on could not be made: {reason}; the zip is made without it. Start "
+                  "the kit again to try again.")
+
+
+def add_toolkit_version(path, final):
+    """Add the toolkit version of the add-on in final to the result zip at path (make_toolkit_addon.add_to_zip);
+    True when it was added. A failure is said in plain words and never stops the kit: at its next start, main()
+    tries again (catch_up)."""
+    say("  Making the toolkit version of the add-on (for the Digital Accessibility Toolkit).")
+    try:
+        import make_toolkit_addon
+        addon = make_toolkit_addon.add_to_zip(path, os.path.join(HERE, "work"), final=final, say=say)
+    except Exception as e:  # noqa: BLE001 - said in plain words; the zip stays as it is
+        say("  " + TOOLKIT_FAILED.format(reason=(str(e).splitlines() or [type(e).__name__])[0][:300]))
+        return False
+    say(f"  The toolkit version is in the zip ({addon['size'] / 1024 ** 2:.0f} MB).")
+    return True
+
+
+def catch_up_toolkit_versions():
+    """At the kit's start: add the toolkit version once to each earlier result zip that lacks it (made by an older
+    kit, or when making it failed) while its training's add-on is still in the work folder
+    (make_toolkit_addon.catch_up). Never stops the kit."""
+    try:
+        import make_toolkit_addon
+        make_toolkit_addon.catch_up(HERE, say=say)
+    except Exception as e:  # noqa: BLE001 - said in plain words; the training goes on
+        say(TOOLKIT_FAILED.format(reason=(str(e).splitlines() or [type(e).__name__])[0][:300]).replace(
+            "; the zip is made without it", ""))
+
+
+def has_toolkit_version(path):
+    """True when the result zip at path holds the toolkit version of the add-on."""
+    try:
+        import make_toolkit_addon
+        return make_toolkit_addon.has_toolkit(path)
+    except Exception:  # noqa: BLE001 - not there then
+        return False
 
 
 # ----------------------------------------------------------------- a follow-up run
@@ -1109,6 +1157,7 @@ def main(argv=None):
                 + (" and checked review pictures." if review_used else "."))
     say("Windows will not go to sleep while this runs; the screen may turn off. You can close this window at any time "
         "and start the kit again later: it carries on where it stopped.")
+    catch_up_toolkit_versions()              # earlier result zips without the toolkit version get it, once
     say("Step 1 of 7: checking the graphics card and the disk.")
     card, _ = check_computer(args.model, work)
     say(f"Step 2 of 7: downloading the {args.model.upper()} model (about {9 if args.model == '4b' else 17} GB; "
@@ -1214,7 +1263,8 @@ def main(argv=None):
     say(f"  Score after training: {after['all']:.3f} (before: {before['all']:.3f}).")
     say("Step 7 of 7: writing the report and the zip to send.")
     repo, revision, _ = MODELS[args.model]
-    info = {"model": repo, "revision": revision, "card": card, "train": len(train_rows), "test": len(test_rows),
+    info = {"model": repo, "revision": revision, "run": run, "card": card, "train": len(train_rows),
+            "test": len(test_rows),
             "size": args.size, "share_alike": args.with_wikipedia, **content,
             "own_pictures": own_count, "own_only": args.own_only, "places": place_counts(train_rows),
             "review_pictures": len({r["picture"] for r in train_rows + test_rows if r.get("review")}),
@@ -1234,6 +1284,10 @@ def main(argv=None):
     say("FINISHED. " + words)
     say(f"The report is {report}")
     say(f"The file to send is {path}")
+    if os.path.exists(path) and has_toolkit_version(path):
+        say("To use it in the Digital Accessibility Toolkit: in its Describe pictures settings, choose \"Install a "
+            "trained describer...\" and choose this zip. To use it on another computer, copy the zip there and install "
+            "it the same way.")
     say("Tell Claude that the training has finished; you will be told how to send the file.")
     return 0
 
