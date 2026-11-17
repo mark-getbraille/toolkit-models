@@ -1175,7 +1175,7 @@ SOURCES = [
     Source("taiwan_pills", "Pills and capsules: name, colour, shape, size and imprint (Taiwan FDA, ready-made pack)",
            "Open Government Data License, Taiwan, v1.0 (data.gov.tw/license)",
            "Taiwan Food and Drug Administration, drug appearance open data, Open Government Data License v1.0",
-           "permissive", 4000, 20, prepare_pack, "about 1 GB"),
+           "permissive", 1500, 20, prepare_pack, "about 500 MB"),
     Source("pharmassist", "Medicine blister packs: which medicine (ready-made pack)", "CC BY 4.0 (Mendeley Data zbnhmbbymd)",
            "Pharmassist dataset, Mendeley Data zbnhmbbymd, CC BY 4.0", "permissive", 2050, 15, prepare_pack,
            "about 500 MB"),

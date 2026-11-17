@@ -122,7 +122,7 @@ jobs:
             coco_cn) limit=4000 ;;
             eggs) limit=6000 ;;
             beef) limit=60 ;;
-            taiwan_pills) limit=5500 ;;
+            taiwan_pills) limit=2000 ;;
             pharmassist) limit=2050 ;;
             mediseg) limit=6000 ;;
             open_images_food) limit=10000 ;;
