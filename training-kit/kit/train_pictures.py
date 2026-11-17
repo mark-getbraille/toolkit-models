@@ -19,7 +19,8 @@ The steps (numbered like train.py's, so the wizard's progress bar works the same
      text form (embeddings), once, kept on disk; then make the test pictures with the base model ("before");
   5. train the add-on (LoRA rank 32 on the attention layers of the UNet), saving every so often;
   6. make the test pictures again with the add-on ("after") and score both sets with CLIP;
-  7. write the report and put the add-on (Kohya/ComfyUI/Automatic1111 form and diffusers form), the test pictures,
+  7. write the report and put the add-on (Kohya/ComfyUI/Automatic1111 form, diffusers form, and the folder laid out
+     for Accessible AI Studio: "Accessible AI Studio\trained-<name>" with trained.json), the test pictures,
      REPORT.txt, ATTRIBUTION.txt and HOW TO USE.txt in one zip in the "result" folder.
 
 Command line:
@@ -990,9 +991,55 @@ Licence: {info['licence']}. {LICENCE_NOTE}
         "\n" + "\n".join(personal_lines(info)) + "\n" if personal_lines(info) else "")
 
 
+# Accessible AI Studio (mark-getbraille/accessible-AI-image-and-video-generation): its own "Train add-ons" keeps each
+# add-on in models\trained-<slug>\ with pytorch_lora_weights.safetensors (the diffusers form, loaded with
+# load_lora_weights), trained.json and .complete (its app/training.py register()); the zip carries the same folder.
+STUDIO_FOLDER = "Accessible AI Studio"
+STUDIO_FAMILY = {"sdxl": "sdxl", "sd15": "sd15"}       # the kit's base -> Accessible AI Studio's model family
+
+
+def studio_slug(name):
+    """The folder name Accessible AI Studio gives an add-on of this name (its app/training.py slug(): lower case,
+    every run of other characters one hyphen, at most 40 characters)."""
+    return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")[:40] or "add-on"
+
+
+def studio_trained_json(info, name):
+    """trained.json for Accessible AI Studio: the fields its register() writes (name, family, trigger, kind,
+    trained_on_real) and, for people reading it, where the add-on came from. trained_on_real is true: the kit learns
+    from real photographs, so Accessible AI Studio checks every job that uses it as if a real photo were given (its
+    second content rule). There is no trigger word: the add-on learns to follow plain descriptions."""
+    return json.dumps({"name": name, "family": STUDIO_FAMILY[info["key"]], "trigger": "", "kind": "style",
+                       "trained_on_real": True, "made_by": "Picture Describer Training Wizard (picture-making)",
+                       "base_repo": info["repo"], "base_revision": info.get("revision", ""),
+                       "licence": info.get("licence", ""), "share_alike": bool(info.get("share_alike")),
+                       "personal_use": bool(personal_lines(info) or info.get("own")),
+                       "trained": datetime.date.today().isoformat()}, indent=2)
+
+
+def studio_how_to(info, name):
+    """The steps for Accessible AI Studio, in plain words."""
+    folder = f"trained-{studio_slug(name)}"
+    return f"""How to use this add-on in Accessible AI Studio
+
+The folder "{folder}" here is laid out exactly like an add-on that Accessible AI Studio trained itself: the add-on
+(pytorch_lora_weights.safetensors), trained.json (its name, the model family: {info['base_name']}) and .complete.
+
+1. In Accessible AI Studio, use "Add a trained add-on from a file..." in the Models and settings window ("Your own
+   models") and choose this zip, or the folder "{folder}" in it.
+2. It is then in the AI picture model box as "Your add-on: {name} with <model>", once for each {info['base_name']}
+   picture model you have downloaded. Describe the picture in plain words, like the ones in captions.txt.
+
+It is marked "trained on real photos", because it learned from real photographs: Accessible AI Studio then checks
+every picture made with it as if a real photo were given, as its content rules say.
+To use it on another computer, copy this zip there and add it the same way.
+"""
+
+
 def package(run_dir, final, name, info, report):
     """The zip to send, in the kit's "result" folder: the add-on in both forms, the test pictures, captions.txt,
-    REPORT.txt, ATTRIBUTION.txt, HOW TO USE.txt, settings.json and the log; returns its path."""
+    REPORT.txt, ATTRIBUTION.txt, HOW TO USE.txt, settings.json, the log, and the folder "Accessible AI Studio" (the
+    add-on in that program's own layout, with its steps); returns its path."""
     folder = os.path.join(HERE, "result")
     os.makedirs(folder, exist_ok=True)
     path = os.path.join(folder, f"{name}-{datetime.date.today():%Y-%m-%d}.zip")
@@ -1010,6 +1057,12 @@ def package(run_dir, final, name, info, report):
         if personal_lines(info):
             z.writestr("PERSONAL-USE-ONLY.txt", "\n".join(personal_lines(info)) + "\n")
         z.writestr("settings.json", json.dumps({k: v for k, v in info.items() if k != "captions"}, indent=1))
+        # The add-on in Accessible AI Studio's own layout (see STUDIO_FOLDER).
+        studio = f"{STUDIO_FOLDER}/trained-{studio_slug(name)}/"
+        z.write(os.path.join(final, "pytorch_lora_weights.safetensors"), studio + "pytorch_lora_weights.safetensors")
+        z.writestr(studio + "trained.json", studio_trained_json(info, name))
+        z.writestr(studio + ".complete", "trained by the Picture Describer Training Wizard\n")
+        z.writestr(f"{STUDIO_FOLDER}/HOW TO USE IN ACCESSIBLE AI STUDIO.txt", studio_how_to(info, name))
         if os.path.exists(train.LOG):
             z.write(train.LOG, "training-log.txt")
     return path
