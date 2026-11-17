@@ -191,7 +191,7 @@ MECH_PARTS = {
     "Ignition distributor parts": "a part of an ignition distributor", "Pistons": "a piston",
     "Connecting rods": "a connecting rod", "Crankshafts": "a crankshaft", "Camshafts": "a camshaft",
     "Cylinder heads": "a cylinder head", "Timing belts": "a timing belt", "Flywheels": "a flywheel",
-    "Oil dipsticks": "an engine oil dipstick", "Dipsticks": "a dipstick", "Oil pan": "an engine oil pan (sump)",
+    "Oil dipsticks": "an engine oil dipstick", "Oil pan": "an engine oil pan (sump)",
     "Oil filters": "an oil filter", "Air filters": "an air filter", "Carburetors": "a carburettor",
     "Fuel injectors": "a fuel injector", "Fuel pumps (engine)": "a fuel pump", "Turbochargers": "a turbocharger",
     "Intake manifolds": "an intake manifold", "Exhaust manifolds": "an exhaust manifold",

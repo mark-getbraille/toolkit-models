@@ -157,6 +157,11 @@ NOT_THE_THING = re.compile(r"\b(compan(y|ies)|manufacturers?|factor(y|ies)|plant
                            r"inventors?|history|exhibitions?|shows?|events?|races?|racing|stores?|shops?|"
                            r"buildings?|streets?|stations?|by country|by year|by decade|by city|in \w+ \d{4}|"
                            r"sculptures?|monuments?|statues?|memorials?)\b", re.I)
+# Descriptions that are only a camera's or an archive's record, not words about the picture.
+JUST_A_RECORD = re.compile(r"original digital file|descriptive metadata|date picture taken|collectie\s*/\s*archief|"
+                           r"bestanddeelnr|\bexif\b|camera (make|model)|^(img|dsc|p)\d", re.I)
+# Words the child check would take for a child ("infantry", "infantryman"), taken out before it looks.
+NOT_A_CHILD = re.compile(r"\binfantr\w*", re.I)
 IN_A_PLACE = re.compile(r"\bin (the )?[A-Z]\w+( \w+)?$")      # "... in Germany", "... in the United States"
 PLACES = {}            # {file title: the country at its camera coordinates}
 
@@ -261,7 +266,8 @@ def build_commons_parts(specs, limit, prefix):
             for title, url, credit, text, _ in mech_entries(s, [t for t, _ in batch]):
                 if got >= share or title in seen:
                     continue
-                words = f"{title} {text}"
+                words = NOT_A_CHILD.sub(" ", f"{title} {text}")
+                text = "" if JUST_A_RECORD.search(text or "") else text
                 if NUDE.search(words):
                     considered(title, url, "its words are about nudity")
                     continue
@@ -309,7 +315,6 @@ COMMONS_CAR_PARTS = [
     part("Dual-mass flywheel", "a dual-mass flywheel", "a flywheel in two parts with springs between them, which "
                                                        "smooths the engine's pulses before the gearbox."),
     part("Oil dipsticks", "an engine oil dipstick", "it is pulled out to check the level of the engine oil."),
-    part("Dipsticks", "a dipstick", "it is pulled out to check the level of a liquid, such as engine oil."),
     part("Oil pan", "an engine oil pan (sump)", "it holds the engine oil under the engine."),
     part("Oil filters", "an oil filter", "it cleans dirt out of the engine oil.", True),
     part("Air filters", "an air filter", "it catches dust in the air going into an engine or an air system.", True),
@@ -693,7 +698,8 @@ def build_commons_engine_bays(limit):
     for title, url, credit, text, _ in mech_entries(s, titles[:int(bays * 1.3) + 10]):
         if len(items) >= bays * 1.15:
             break
-        words = f"{title} {text}"
+        words = NOT_A_CHILD.sub(" ", f"{title} {text}")
+        text = "" if JUST_A_RECORD.search(text or "") else text
         place = where(PLACES.get(title, ""))
         facts = {"commons_title": title.split(":", 1)[-1].rsplit(".", 1)[0]}
         rows = [mark_child({"question": ENGINE_BAY_Q, "answer": ENGINE_BAY, "credit": credit, "facts": facts,
@@ -742,9 +748,10 @@ WARNING_LIGHTS = [
     (r"glow plug|pre-?heat|préchauffage", "This is the diesel glow-plug light: wait for it to go out before "
                                           "starting the engine."),
 ]
-# The three ways the ISO 7000 files' descriptions are written on Commons: "... Title/Meaning: X Function/description:
+# The ways the ISO 7000 files' descriptions are written on Commons: "... Title/Meaning: X Function/description:
 # Y", "ISO 7000 - Ref-No 0001 X; Y" and "Symbol 0016 from ISO 7000 - X To indicate Y".
 ISO_WORDINGS = (re.compile(r"Title/Meaning:\s*(?P<name>.+?)\s*(?:Function/description:\s*(?P<use>.+))?$", re.S),
+                re.compile(r"^ISO 7000 - Ref-No \S+\s+(?P<name>.+?);\s*(?P<use>To\b.+)$", re.S),
                 re.compile(r"^ISO 7000 - Ref-No \S+\s+(?P<name>[^;]+);\s*(?P<use>.+)$", re.S),
                 re.compile(r"from ISO 7000 - (?P<name>.+?)\s+(?P<use>To (?:indicate|identify|show|mark)\b.+)$", re.S))
 ISO_NUMBER = re.compile(r"ISO 7000 - (?:Ref-No )?(\d{4}[A-Z]?)")
@@ -760,6 +767,9 @@ def iso_meaning(title, description):
     if not number or not m:
         return None
     name = clean(m.group("name")).strip(" ;.")
+    if ";" in name:                       # "Engaging; mechanical activation" -> "Engaging (mechanical activation)"
+        first, _, others = name.partition(";")
+        name = f"{first.strip()} ({others.strip()})"
     use = clean(m.group("use") or "")
     if not name or len(name.split()) > 15:
         return None
