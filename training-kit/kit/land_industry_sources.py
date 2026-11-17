@@ -144,6 +144,7 @@ COMMONS_LAND_SA = {
     "Industrial accidents": (ASK_SHOWN, "The scene of an industrial accident.", True),
 }
 GRAPHIC_CATEGORIES = {"Industrial accidents"}
+ENGLISH_WORDS = re.compile(r"\b(the|a|an|of|and|in|with|on|at|from|near|view|is|are|by|for|to)\b", re.I)
 COMMONS_NOT_IT = re.compile(r"\b(art|drawings?|illustrations?|paintings?|logos?|icons?|svg|sculptures?|statues?|"
                             r"videos?|audio|maps?|diagrams?|stamps?|coins?|advertis\w*|posters?|cartoons?|comics?|"
                             r"toys?|models?|lego|miniatures?|in literature|manufacturers?|companies|museums?|"
@@ -180,7 +181,8 @@ def prepare_commons_land_industry_sa(source, data_dir, work, cap):
             url = re.sub(r"/\d+px-([^/]+)$", r"/960px-\1", url)      # a width Wikimedia keeps ready
             items.append((name, url, {"question": question, "answer": answer, "split": "", "credit": credit,
                                       **marks}))
-            if text and len(text.split()) >= 6:
+            if text and len(text.split()) >= 6 and not re.search(r"[^\x00-\u024f\u2010-\u2027]", text) \
+                    and ENGLISH_WORDS.search(text):
                 items.append((name, url, {"question": NARRATE, "answer": text, "split": "", "credit": credit,
                                           **marks}))
             found += 1
@@ -329,8 +331,14 @@ def cnw_label_names():
     return {int(i): name for i, name in re.findall(r"(\d+):\s*\('([^']+)'", block)}
 
 
+# First words of plant names that keep their capital letter ("German chamomile").
+PROPER_FIRST = {"German", "Canadian", "Italian", "Persian", "Russian", "Hungarian", "Spanish", "Japanese", "Chinese",
+                "African", "American", "Indian", "English", "French", "Swedish", "Mexican", "Australian"}
+
+
 def cnw_answer(counts, names):
-    """The answer for one photo from {label id: count}: "Maize at the four-leaf stage (3) and grass weeds (12)."."""
+    """The answer for one photo from {label id: count}: "The plants outlined here are maize at the four-leaf stage (3
+    plants) and German chamomile (2 plants)."."""
     parts = []
     for label, n in sorted(counts.items(), key=lambda x: -x[1]):
         name = names.get(label, "")
@@ -338,14 +346,16 @@ def cnw_answer(counts, names):
             continue
         name = re.sub(r"\s+max$", ", fully grown", name, flags=re.I)
         name = re.sub(r"\s+(two|four|six|eight)-leaf stage$", r" at the \1-leaf stage", name)
-        parts.append(f"{name[0].lower() + name[1:] if not name[:2].isupper() else name} ({n})")
+        if name.split()[0] not in PROPER_FIRST and not name[:2].isupper():
+            name = name[0].lower() + name[1:]
+        parts.append(f"{name} ({n} plant{'s' if n != 1 else ''})")
     return sentence("The plants outlined here are " + listed(parts[:8])) if parts else ""
 
 
 def prepare_cropandweed_nc(source, data_dir, work, cap):
     """CropAndWeed (Steininger et al., WACV 2023; AIT's non-commercial terms): field photos with every plant boxed
-    and named. The annotations (110 MB tar) are read first; then the first image tar (3 GB) is read from the web
-    until enough pictures are taken. "What crops and weeds are in this picture?" """
+    and named. The annotations (110 MB tar) are read first; then the image tars (about 3 GB each, four of them) are
+    read from the web, every other photo or so, until enough pictures are taken. "What crops and weeds are in this picture?" """
     import requests
     names = cnw_label_names()
     boxes = {}
@@ -355,9 +365,10 @@ def prepare_cropandweed_nc(source, data_dir, work, cap):
         r.raise_for_status()
         with tarfile.open(fileobj=r.raw, mode="r|") as tar:
             for member in tar:
-                if member.isfile() and "/bboxes/CropAndWeed/" in "/" + member.name and member.name.endswith(".csv"):
+                if member.isfile() and "/bboxes/" in "/" + member.name and member.name.endswith(".csv"):
                     counts = {}
-                    for row in csv.reader(io.TextIOWrapper(tar.extractfile(member), encoding="utf-8")):
+                    text = tar.extractfile(member).read().decode("utf-8", "replace")
+                    for row in csv.reader(io.StringIO(text)):
                         if len(row) >= 5 and row[4].strip().isdigit():
                             counts[int(row[4])] = counts.get(int(row[4]), 0) + 1
                     boxes[os.path.basename(member.name)[:-4]] = counts
@@ -365,7 +376,8 @@ def prepare_cropandweed_nc(source, data_dir, work, cap):
     os.makedirs(folder, exist_ok=True)
     rows, want = [], cap + source.test
     rng = random.Random(317)
-    for part in ("cropandweed_images1of4", "cropandweed_images2of4"):
+    for part in ("cropandweed_images1of4", "cropandweed_images2of4", "cropandweed_images3of4",
+                 "cropandweed_images4of4"):
         if len(rows) >= want:
             break
         with requests.get(CNW + part + ".tar", stream=True, timeout=120, headers={"User-Agent": USER_AGENT}) as r:
@@ -373,7 +385,7 @@ def prepare_cropandweed_nc(source, data_dir, work, cap):
             with tarfile.open(fileobj=r.raw, mode="r|") as tar:
                 for member in tar:
                     stem = os.path.splitext(os.path.basename(member.name))[0]
-                    if not member.isfile() or stem not in boxes or rng.random() > 0.3:
+                    if not member.isfile() or stem not in boxes or rng.random() > 0.5:
                         continue
                     answer = cnw_answer(boxes[stem], names)
                     target = os.path.join(folder, f"cnw-{stem}.jpg")
@@ -425,7 +437,8 @@ LAND_NOT_INCLUDED = {
         "(the EPA's 1970s survey of pollution and American life) is already in the open nara pack.",
     "European Environment Agency photo library": "its pictures carry their own copyright notices and no open "
                                                  "licence for re-use in bulk.",
-    "Project-AgML copies of sets that mix in augmented pictures (JMuBEN arabica coffee, lentil, sunflower)":
+    "Sets that mix in augmented pictures (JMuBEN arabica coffee, lentil, sunflower, and the CS-D tea leaves, whose "
+    "13,500 pictures a class were evened out by augmentation)":
         "CC BY 4.0, but their only copies mix the original photos with rotated and flipped copies, which teach "
         "nothing new.",
     "Project-AgML licence tags": "several copies are tagged with a different licence from their source (cotton, "
@@ -476,8 +489,8 @@ LAND_SOURCES = [
            "AIT's own non-commercial terms, no redistribution (" + CNW_TERMS + ")",
            "CropAndWeed dataset (Daniel Steininger, Andreas Trondl, Gerardus Croonen, Julia Simon and Verena Widhalm, "
            "AIT Austrian Institute of Technology, WACV 2023), https://github.com/cropandweed/cropandweed-dataset",
-           "noncommercial", 1500, 20, prepare_cropandweed_nc, "reads up to 3 GB from the web (nothing kept but the "
-                                                              "pictures used)",
+           "noncommercial", 1500, 20, prepare_cropandweed_nc, "reads up to 12 GB from the web (nothing kept but "
+                                                              "the pictures used)",
            terms=CNW_TERMS,
            terms_summary="Free for non-commercial purposes such as research, teaching or personal experimentation; "
                          "you must not distribute the dataset or changed copies, nor use it or anything made from it "

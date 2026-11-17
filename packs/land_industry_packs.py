@@ -18,12 +18,12 @@ makers' README, or the agency's copyright page), not only on the copy the pictur
 
 The packs (all open: CC0, public domain, CC BY, MIT or Apache):
   agml_plant_health  Crop leaves and plants, healthy or with a named disease or pest, photographed in fields in
-                     Africa and Asia: 18 datasets, each CC BY 4.0 on Mendeley Data or Zenodo (iBean: MIT), read from
+                     Africa and Asia: 17 datasets, each CC BY 4.0 on Mendeley Data or Zenodo (iBean: MIT), read from
                      the Project-AgML copies on Hugging Face (their "raw" photos, never the augmented copies; sets
                      whose only copy mixes in augmented pictures are left out). Maize (Tanzania), beans (Uganda),
                      banana (Ethiopia), potato (Tanzania), apple (Kashmir, India), grape (Niphad, India), soybean
                      (Maharashtra, India), durian (Vietnam), date palm (Iraq), rice, sugarcane, watermelon,
-                     cauliflower, cotton, aubergine, moringa, tea and taro. "Is this plant healthy?" and "What crop is
+                     cauliflower, cotton, aubergine, moringa and taro (West Africa). "Is this plant healthy?" and "What crop is
                      this?". (PlantVillage, PlantDoc and Pl@ntNet are already kit entries.)
   agml_weeds         Weeds where they grow: DeepWeeds (eight weeds of northern Australia, CC BY 4.0), MH-Weed16 (16
                      weeds of Indian farms, CC BY 4.0) and the rice-field weeds of Bangladesh (CC BY 4.0). "What weed
@@ -249,11 +249,6 @@ AGML_HEALTH = [
      "MoringaLeafNet, Mendeley Data w8sr775pjb, CC BY 4.0",
      {"Healthy": "", "Bacterial Leaf Spot": "bacterial leaf spot", "Cercospora Leaf Spot": "Cercospora leaf spot",
       "Yellow": "yellowing of the leaves"}),
-    ("CS-D_tea_leaf_disease_classification", "data/", "tea", "leaf", "",
-     "Tea Leaf Dataset, Mendeley Data 94fzcdz8gz, CC BY 4.0",
-     {"Healthy_leaves": "", "Blister_Blight": "blister blight", "Brown_Blight": "brown blight",
-      "Leaf_Red_Rust": "red rust", "Red_Spider_Mite": "red spider mite damage",
-      "Tea_Mosquito_Bug": "tea mosquito bug damage"}),
     ("taro_blight_stage_classification", "data/", "taro", "leaf", "",
      "An Image Dataset of Taro Leaf Blight Disease Collected from the West African Sub-Region, Mendeley Data "
      "3knm93dkc5, CC BY 4.0",
@@ -1012,6 +1007,14 @@ COMMONS_NOT_IT = re.compile(r"\b(art|drawings?|illustrations?|paintings?|logos?|
                             r"nude|naked)\b", re.I)
 
 
+ENGLISH_WORDS = re.compile(r"\b(the|a|an|of|and|in|with|on|at|from|near|view|is|are|by|for|to)\b", re.I)
+
+
+def looks_english(text):
+    """True for text in English: Latin letters only (no other script) and at least one common English word."""
+    return not re.search(r"[^\x00-\u024f\u2010-\u2027]", text) and bool(ENGLISH_WORDS.search(text))
+
+
 def commons_land_rows(category, question, answer, content, title, text, credit):
     """The rows for one Commons file: the category's question and, where the file has a caption or description of 6
     words or more, "Describe this picture."; then "Where was this photo taken?" from the camera's coordinates. [] when
@@ -1021,7 +1024,7 @@ def commons_land_rows(category, question, answer, content, title, text, credit):
     place = commons_place(title).get("place", "")
     rows = [{"question": question, "answer": answer, "credit": credit}]
     caption = tidy(text) if text else ""
-    if caption and usable(caption):
+    if caption and usable(caption) and looks_english(caption):
         rows.append({"question": NARRATE, "answer": caption, "credit": credit})
     if place:
         rows.append(place_row(rows[0], place))
@@ -1302,7 +1305,7 @@ LAND_PACKS = {
 
 # How many pictures a full build takes from each collection.
 LAND_LIMITS = {
-    "agml_plant_health": 6000,        # about 330 from each of 18 datasets (they hold 1,000 to 18,000 each)
+    "agml_plant_health": 6000,        # about 350 from each of 17 datasets (they hold 1,000 to 18,000 each)
     "agml_weeds": 3000,               # DeepWeeds 8,400 weed photos, MH-Weed16 19,000, rice-field weeds 3,600
     "agml_harvest": 1200,             # banana bunches 2,685, dragon fruit about 1,000 raw photos
     "gwhd_wheat": 2000,               # of 6,500 photos in 47 sessions
