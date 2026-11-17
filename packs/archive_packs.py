@@ -19,8 +19,8 @@ place names from the record, US states, months and words in quotation marks keep
                       Lange among them) and Ansel Adams's photographs of national parks (about 220). US government work,
                       public domain; only records marked "Unrestricted" for use. Place from the record's place
                       headings ("Honolulu (Hawaii)" -> "Honolulu, Hawaii, USA") or, for the WRA, the caption's opening
-                      words ("Heart Mountain Relocation Center, Heart Mountain, Wyoming."). Photos of the dead or of
-                      injuries, and captions with wartime slurs, are left out.
+                      words ("Heart Mountain Relocation Center, Heart Mountain, Wyoming."). Captions with wartime
+                      slurs are left out.
   nypl                The New York Public Library's public-domain items (photographs, stereoviews, postcards and
                       prints; maps, menus and book pages left out), from the Library's bulk metadata release on GitHub
                       (github.com/NYPL-publicdomain/data-and-utilities, metadata CC0, items "no known US copyright
@@ -51,7 +51,7 @@ place names from the record, US states, months and words in quotation marks keep
                       is kept only when the gallery names a Russian place or a country.
   awm                 Australian War Memorial: photographs whose record says "Copyright expired - public domain",
                       with the Memorial's caption (mostly the First and Second World Wars) and the place from the
-                      record. Photos of the dead or of injuries are left out.
+                      record.
 
 Looked at and not used here (checked at the source in November 2026), with the reason; the ones under a licence
 that is not open are kit entries in training-kit/kit/archive_sources.py:
@@ -99,15 +99,22 @@ from world_packs import capped_words, full_stop
 from places import country_named, place_name, place_from_text
 from documentary_packs import tidy, usable, picture_rows, get_json, finish, commons_get, NOT_SHOWN
 
-# Words that mean a photo shows the dead or injuries (war archives have many): such photos are left out.
-GRIM = re.compile(r"\b(dead|death|corpses?|bod(y|ies) of|killed|wounded|wounds?|casualt\w*|injur\w*|grave|graves|"
-                  r"burial|buried|massacre|execut\w*|atrocit\w*|skeleton\w*|remains of|lijk\w*|doden|gesneuveld\w*)\b",
-                  re.I)
+# Words that mean a photo shows the dead, wounds, disaster casualties or other graphic scenes (war archives have
+# many). By the owner's rule such photos are kept, described plainly from the record, and their rows carry
+# "content": "graphic" (so the kit can leave them out of picture-making and show them only when chosen).
+GRIM = re.compile(r"\b(dead|death|corpses?|bod(y|ies) of|killed|wounded|wounds?|casualt\w*|injur\w*|bleeding|blood|"
+                  r"grave|graves|burial|buried|massacre|atrocit\w*|skeleton\w*|remains of|mutilat\w*|amputat\w*|"
+                  r"lijk\w*|doden|dode|gewond\w*|gesneuveld\w*|slachtoffers?|døde?|lig|såret)\b", re.I)
+# Still left out whatever the record says: sexual violence, and torture or execution scenes (and their propaganda).
+NEVER_SHOWN = re.compile(r"\b(rape[ds]?|raping|sexual(ly)? (assault\w*|abuse\w*|violence)|molest\w*|verkracht\w*|"
+                         r"voldtægt\w*|tortur\w*|execut\w*|beheading|hanged|hanging bodies|lynch\w*|firing squad|"
+                         r"marteling\w*|gemarteld|executie\w*|terechtgesteld|henrettelse\w*)\b", re.I)
 # Words for children in Danish and Dutch that expression_packs.CHILD does not have.
 CHILD_MORE = re.compile(r"\b(kinderen|kindje|børn|barn|barnet|drenge?|drengen|piger?|pigen|spædbarn|kleuters?|peuters?|"
                         r"scholieren|scholier|schoolkinderen|zuigeling\w*|jeugd)\b", re.I)
 # Words for nudes in Danish and Dutch (documentary_packs.NOT_SHOWN has the English ones).
-NUDE_MORE = re.compile(r"\b(nøgen|nøgne|akt|aktstudie|aktmodel|naakt\w*|bloot)\b", re.I)
+NUDE_MORE = re.compile(r"\b(nøgen|nøgne|halvnøgen|akt|aktstudie|aktmodel|afklædt|draperet|half[- ]draped|naakt\w*|"
+                       r"bloot|ontkleed|ontbloot\w*|badende|bathers?|bathing)\b", re.I)
 # Old slurs found in some 1940s captions: such captions are left out rather than repeated.
 SLURS = re.compile(r"\b(japs?|nips?|niggers?|negroes|coloreds?|squaws?|redskins?)\b", re.I)
 
@@ -210,10 +217,31 @@ def child_rows(rows, *texts):
 
 
 def not_shown(*texts):
-    """True when any text says something sexual (in English, Danish or Dutch), names the dead or injuries, or holds
-    an old slur: such a picture is left out."""
-    return any(t and (NOT_SHOWN.search(t) or NUDE_MORE.search(t) or GRIM.search(t) or SLURS.search(t))
-               for t in texts)
+    """True when any text says something sexual (in English, Danish or Dutch), names sexual violence, torture or an
+    execution, holds an old slur, or shows a dead or injured child (graphic words and child words together): such
+    a picture is left out. Other graphic pictures are kept and marked (graphic_rows)."""
+    joined = " ".join(t for t in texts if t)
+    if GRIM.search(joined) and (CHILD.search(joined) or CHILD_MORE.search(joined)):
+        return True
+    return bool(joined) and bool(NOT_SHOWN.search(joined) or NUDE_MORE.search(joined) or NEVER_SHOWN.search(joined)
+                                 or SLURS.search(joined))
+
+
+def graphic_rows(rows):
+    """Rows marked "content": "graphic" when their picture's caption names the dead, wounds or casualties."""
+    if any(GRIM.search(r.get("answer", "")) for r in rows):
+        return [dict(r, content="graphic") for r in rows]
+    return rows
+
+
+def finish_marked(key, items, limit, workers=4, pause=0.2):
+    """documentary_packs.finish, after marking the graphic pictures among items (name, address, rows) and leaving
+    out any that not_shown refuses; says how many are graphic."""
+    items = [(n, u, graphic_rows(rows)) for n, u, rows in items if not not_shown(*(r["answer"] for r in rows))]
+    entries = finish(key, items, limit, workers=workers, pause=pause)
+    say(f"{key}: {sum(1 for _, d, r in entries if d is not None and r.get('content') == 'graphic')} pictures marked "
+        "graphic")
+    return entries
 
 
 # ----------------------------------------------------------------- US National Archives
@@ -321,7 +349,7 @@ def build_nara(limit):
     for naid, n, name in NARA_SERIES:
         share = max(1 / 6, n / total)
         items += nara_items(s, naid, n, name, int(limit * share * 1.3) + 3, rng)
-    return finish("nara", items, limit, workers=3, pause=0.5)
+    return finish_marked("nara", items, limit, workers=3, pause=0.5)
 
 
 # ----------------------------------------------------------------- New York Public Library
@@ -416,7 +444,7 @@ def build_nypl(limit):
             rows = [dict(r, place=place, place_kind="depicted") for r in rows] if place else rows
         items.append((f"nypl-{row.get('UUID') or len(items)}.jpg", picture, rows))
     say(f"NYPL: {len(items)} usable items")
-    return finish("nypl", items, limit, workers=4, pause=0.3)
+    return finish_marked("nypl", items, limit, workers=4, pause=0.3)
 
 
 # ----------------------------------------------------------------- J. Paul Getty Museum
@@ -489,7 +517,7 @@ def build_getty_museum(limit):
             if item:
                 items.append(item)
     say(f"Getty Museum: {len(items)} usable objects")
-    return finish("getty_museum", items, limit, workers=3, pause=0.3)
+    return finish_marked("getty_museum", items, limit, workers=3, pause=0.3)
 
 
 # ----------------------------------------------------------------- Digital Commonwealth (Massachusetts)
@@ -514,6 +542,12 @@ def dc_place(a):
     return ""
 
 
+def described(answer, most=3):
+    """True when a title says what is in the picture, not only names and dates: at least most words in lower case
+    ("Mary E. Archer, barn, Enfield, Mass., May 25, 1928." has one: a property list, not a description)."""
+    return len([w for w in re.findall(r"[A-Za-z]+", answer) if w.islower() and len(w) > 2]) >= most
+
+
 def dc_items(s, reuse, want, rng, genre="Photographs"):
     """[(name, picture address, row text, record)] of random result pages of Digital Commonwealth photographs with
     one reuse value ("no restrictions" or "creative commons"); each record's title (and abstract) of 6 words or
@@ -523,9 +557,11 @@ def dc_items(s, reuse, want, rng, genre="Photographs"):
     pages = list(range(1, int(((first.get("meta") or {}).get("pages") or {}).get("total_pages") or 1) + 1))
     rng.shuffle(pages)
     found, answers = [], set()
-    for page in pages[:80]:
+    per_page = max(2, want // 25)          # a page holds one series (pages are in title order): a few from each
+    for page in pages[:120]:
         time.sleep(1)
         data = get_json(s, DC + "search.json", dict(params, page=page)) or {}
+        taken = 0
         for x in data.get("data") or []:
             a = x.get("attributes") or {}
             title = clean(a.get("title_info_primary_tsi"))
@@ -534,9 +570,11 @@ def dc_items(s, reuse, want, rng, genre="Photographs"):
             if abstract and abstract.lower()[:30] not in title.lower():
                 text = f"{full_stop(title)} {abstract}"
             answer = tidy(capped_words(text, 70))
-            if not a.get("exemplary_image_ssi") or not usable(answer) or answer in answers or not_shown(answer):
+            if not a.get("exemplary_image_ssi") or not usable(answer) or not described(answer) \
+                    or answer in answers or not_shown(answer) or taken >= per_page:
                 continue
             answers.add(answer)
+            taken += 1
             found.append((answer, a))
         if len(found) >= want:
             break
@@ -554,7 +592,7 @@ def build_digital_commonwealth(limit):
         picture = DC_IIIF.format(a["exemplary_image_ssi"], LONG_SIDE, LONG_SIDE)
         items.append((f"dc-{a['id'].split(':')[-1]}.jpg", picture, picture_rows(answer, credit, dc_place(a))))
     say(f"Digital Commonwealth: {len(items)} usable photographs")
-    return finish("digital_commonwealth", items, limit, workers=3, pause=0.5)
+    return finish_marked("digital_commonwealth", items, limit, workers=3, pause=0.5)
 
 
 # ----------------------------------------------------------------- Statens Museum for Kunst (Denmark)
@@ -590,14 +628,17 @@ def build_smk(limit):
         time.sleep(0.5)
         data = get_json(s, SMK, {"keys": "*", "offset": offset, "rows": 100, "lang": "en",
                                  "filters": "[has_image:true],[public_domain:true]"}) or {}
+        taken = 0
         for item in data.get("items") or []:
             english, danish = smk_titles(item)
             answer = english or danish
             rights = item.get("rights") or ""
             picture = item.get("image_thumbnail") or ""
             if not answer or not picture or not item.get("public_domain") or not_shown(answer) \
-                    or not re.search(r"publicdomain/(zero|mark)", rights):
+                    or not described(answer) or not re.search(r"publicdomain/(zero|mark)", rights) \
+                    or taken >= max(2, limit // 25):         # a page holds one artist: a few from each
                 continue
+            taken += 1
             artist = ", ".join(clean(p.get("creator")) for p in (item.get("production") or [])[:2]
                                if clean(p.get("creator")))
             credit = (f"{answer[:150].rstrip('.')}" + (f", {artist}" if artist else "")
@@ -608,47 +649,55 @@ def build_smk(limit):
             items.append((f"smk-{re.sub(r'[^\w-]', '_', item.get('object_number') or item['id'])}.jpg", picture,
                           rows))
     say(f"SMK: {len(items)} usable works")
-    return finish("smk", items, limit, workers=3, pause=0.3)
+    return finish_marked("smk", items, limit, workers=3, pause=0.3)
 
 
 # ----------------------------------------------------------------- Nationaal Archief (Anefo), via Commons
 
 ANEFO_CATEGORY = "Category:Images from Nationaal Archief"
-# The Commons copy's caption parts that are not a description ("Beschrijving:", "Datum: 1 januari 1965").
-ANEFO_NOT_CAPTION = re.compile(r"^\s*(Beschrijving|Description)\s*:\s*|\s*\b(Datum|Date|Locatie|Location|Trefwoorden|"
-                               r"Keywords|Persoonsnaam|Person name|Fotograaf|Photographer|Collectie|Collection|"
-                               r"Bestanddeelnummer|Inventarisnummer)\s*:.*$", re.I | re.S)
-
-
 def wiki_param(text, name):
     """The value of a template parameter (|name = value) in wikitext, or ""."""
     m = re.search(r"\|\s*" + re.escape(name) + r"\s*=\s*(.*?)(?=\n\s*\||\n\}\})", text, re.S | re.I)
     return m.group(1).strip() if m else ""
 
 
-def anefo_caption(wikitext):
-    """(Dutch caption, place) of a Nationaal Archief file on Commons: its {{nl|...}} description (or the plain
-    description), without the date, keyword and number lines, and its "depicted place"."""
+def anefo_fields(wikitext):
+    """{field: value} of a Nationaal Archief file's description on Commons, which copies the Archive's record line
+    by line ("Beschrijving : Kaagweek 1959, Regenbogen in actie<br>", "Datum : 19 juli 1959<br>", "Locatie : ...")."""
     description = wiki_param(wikitext, "description")
-    m = re.search(r"\{\{\s*nl\s*\|\s*(?:1\s*=\s*)?(.*?)\}\}", description, re.S)
-    text = m.group(1) if m else description
-    text = re.sub(r"\[\[(?:[^|\]]*\|)?([^\]]*)\]\]", r"\1", text)
-    text = re.sub(r"\{\{[^{}]*\}\}|'''?|<[^>]+>", " ", text)
-    text = ANEFO_NOT_CAPTION.sub("", clean(text))
-    place = clean(re.sub(r"\[\[(?:[^|\]]*\|)?([^\]]*)\]\]|\{\{[^{}]*\}\}", r"\1", wiki_param(wikitext, "depicted place")))
-    return text, place
+    description = re.sub(r"^\{\{\s*nl\s*\|\s*(?:1\s*=\s*)?", "", description)
+    description = re.sub(r"\{\{\s*w\s*\|[^|}]*\|([^}]*)\}\}", r"\1", description)   # {{w|link|text}} -> text
+    description = re.sub(r"\{\{\s*w\s*\|([^}]*)\}\}", r"\1", description)           # {{w|name}} -> name
+    description = re.sub(r"\[\[(?:[^|\]]*\|)?([^\]]*)\]\]", r"\1", description)       # [[link|text]] -> text
+    fields = {}
+    for line in re.split(r"<br\s*/?>|\n", description):
+        m = re.match(r"^\s*([A-Za-zÀ-ÿ /]+?)\s*:\s*(.*?)\s*(\}\})?\s*$", line)
+        if m:
+            fields.setdefault(m.group(1).strip().lower(), clean(m.group(2)))
+    return fields
 
 
-def anefo_place(place):
-    """A depicted place as a row's place: a Dutch town ("Den Haag" -> "Den Haag, Netherlands") or a place naming
-    its country ("Parijs, Frankrijk"); "" when unclear."""
-    if not place:
-        return ""
-    parts = [p.strip() for p in place.split(",") if p.strip()]
-    country = country_named(parts[-1])
-    if country:
-        return place_name(*parts[:-1][:2], country)
-    return place_name(parts[0], "Netherlands") if len(parts) == 1 and len(parts[0]) < 40 else ""
+def english(text):
+    """True when a caption is in English rather than Dutch (more common English little words than Dutch ones)."""
+    words = re.findall(r"[a-z]+", text.lower())
+    return sum(w in ("the", "and", "of", "with", "to", "is", "has", "at", "on") for w in words) > \
+        sum(w in ("de", "het", "een", "en", "van", "met", "op", "bij", "te", "tijdens") for w in words)
+
+
+def anefo_place(fields, wikitext):
+    """The place of a Nationaal Archief photo from its record: the "Locatie" field (a Dutch town, or a place naming
+    its country) and, when the file is in a "Netherlands photographs taken on ..." category, the Netherlands; ""
+    when the record says nothing."""
+    dutch = bool(re.search(r"\[\[Category:Netherlands photographs taken on", wikitext))
+    location = re.sub(r"\[\s*onbekend\s*\]", "", fields.get("locatie", "")).strip(" ,;")
+    parts = [p.strip() for p in re.split(r"[,;]", location) if p.strip()]
+    if parts:
+        country = country_named(parts[-1])
+        if country:
+            return place_name(*parts[:-1][:2], country)
+        if dutch and len(parts[0]) < 40:
+            return place_name(parts[0], "Netherlands")
+    return "Netherlands" if dutch else ""
 
 
 def build_anefo(limit):
@@ -663,7 +712,7 @@ def build_anefo(limit):
         data = commons_get(s, {"action": "query", "generator": "categorymembers", "gcmtitle": ANEFO_CATEGORY,
                                "gcmtype": "file", "gcmlimit": 50, "gcmstartsortkeyprefix": start,
                                "prop": "imageinfo|revisions", "rvprop": "content", "rvslots": "main",
-                               "iiprop": "url|extmetadata|mime", "iiurlwidth": LONG_SIDE,
+                               "iiprop": "url|extmetadata|mime", "iiurlwidth": 1600,
                                "iiextmetadatafilter": "LicenseShortName|Artist"})
         pages = [p for p in ((data.get("query") or {}).get("pages") or {}).values() if p.get("pageid")]
         taken = 0
@@ -671,23 +720,28 @@ def build_anefo(limit):
             info = (p.get("imageinfo") or [{}])[0]
             licence = clean(((info.get("extmetadata") or {}).get("LicenseShortName") or {}).get("value"))
             wikitext = (((p.get("revisions") or [{}])[0].get("slots") or {}).get("main") or {}).get("*", "")
-            caption, place = anefo_caption(wikitext)
-            answer = tidy(capped_words(caption, 70))
+            fields = anefo_fields(wikitext)
+            answer = tidy(capped_words(fields.get("beschrijving", ""), 70))
             if p["pageid"] in seen or not re.match(r"^(cc0|cc-zero|public domain|pd)", licence, re.I) \
                     or not usable(answer) or not_shown(answer) or info.get("mime") != "image/jpeg" \
                     or not info.get("thumburl") or taken >= max(3, limit // 15):
                 continue
             seen.add(p["pageid"])
             taken += 1
-            artist = clean(((info.get("extmetadata") or {}).get("Artist") or {}).get("value")) or "unknown"
-            credit = (f"Foto: {artist[:80]}, Nationaal Archief, {licence} "
+            artist = fields.get("fotograaf") or clean(((info.get("extmetadata") or {}).get("Artist") or {})
+                                                       .get("value")) or "unknown"
+            collection = fields.get("collectie / archief", "")
+            credit = (f"{answer[:120]} Foto: {artist[:80]}, Nationaal Archief"
+                      + (f" / {collection}" if collection else "") + f", {licence} "
                       f"(https://www.nationaalarchief.nl/onderzoeken/open-data/fotos), copy on Wikimedia Commons: "
                       f"https://commons.wikimedia.org/wiki/{p['title'].replace(' ', '_')}")
-            rows = child_rows(picture_rows(answer, credit, anefo_place(place)), answer)
+            rows = child_rows(picture_rows(answer, credit, anefo_place(fields, wikitext)), answer)
+            if english(answer):                 # some captions (mostly from British agencies) are in English
+                rows = [dict(r, twinned=True) for r in rows]
             items.append((f"anefo-{p['pageid']}.jpg", info["thumburl"], rows))
         time.sleep(1)
     say(f"Nationaal Archief: {len(items)} usable photos")
-    return finish("anefo", items, limit, workers=3, pause=0.3)
+    return finish_marked("anefo", items, limit, workers=3, pause=0.3)
 
 
 # ----------------------------------------------------------------- Kremlin (en.kremlin.ru)
@@ -731,7 +785,7 @@ def kremlin_gallery(s, path):
         credit = (f"{title[:120]}: {answer[:150]} Presidential Executive Office of Russia, kremlin.ru, CC BY 4.0 "
                   f"(http://creativecommons.org/licenses/by/4.0/), {KREMLIN}{path}")
         name = "kremlin-" + re.sub(r"\W", "", big.rsplit("/", 1)[-1].split(".")[0])[:40] + ".jpg"
-        out.append((name, big.replace("http://", "https://"), picture_rows(answer, credit, kremlin_place(where_text))))
+        out.append((name, big, picture_rows(answer, credit, kremlin_place(where_text))))   # its picture server: http
     return out
 
 
@@ -759,7 +813,7 @@ def build_kremlin(limit):
                 answers.add(photo[2][0]["answer"])
                 items.append(photo)
     say(f"Kremlin: {len(items)} usable photos")
-    return finish("kremlin", items, limit, workers=3, pause=0.5)
+    return finish_marked("kremlin", items, limit, workers=3, pause=0.5)
 
 
 # ----------------------------------------------------------------- Australian War Memorial
@@ -823,7 +877,7 @@ def build_awm(limit):
             if item:
                 items.append(item)
     say(f"Australian War Memorial: {len(items)} usable photos")
-    return finish("awm", items, limit, workers=3, pause=0.5)
+    return finish_marked("awm", items, limit, workers=3, pause=0.5)
 
 
 # ----------------------------------------------------------------- the packs
@@ -891,7 +945,8 @@ def main(argv=None):
     for name, data, row in entries[:args.rows or None]:
         say(json.dumps({"file": name, "bytes": len(data) if data else None, **row}, ensure_ascii=False))
     say(f"{len(entries)} entries, {count_pictures(entries)} pictures, "
-        f"{sum(1 for _, _, r in entries if r.get('child'))} rows marked child")
+        f"{sum(1 for _, _, r in entries if r.get('child'))} rows marked child, "
+        f"{sum(1 for _, _, r in entries if r.get('content') == 'graphic')} rows marked graphic")
     return 0
 
 
