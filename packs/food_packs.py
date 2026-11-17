@@ -30,7 +30,7 @@ import sys
 import time
 
 from build_packs import (session, clean, smaller, fetch_all, first_sentences, say, article,  # noqa: F401
-                         ALT_TEXT, COMMONS_API, COMMONS_FREE, LONG_SIDE)
+                         ALT_TEXT, COMMONS_API, COMMONS_FREE, LONG_SIDE, considered)
 from places import where, with_place, country_at
 
 
@@ -147,10 +147,14 @@ def oi_lines(s, url):
                 yield line
 
 
-def oi_licence_name(url):
-    """ "CC BY 2.0" (and so on) for a Creative Commons address."""
+def oi_licence_name(url, image_id=None):
+    """ "CC BY 2.0" (and so on) for a Creative Commons address ("" for any other licence). With image_id (a photo the
+    builder wants), a photo whose licence is not allowed is noted as considered and dropped (considered())."""
     m = OI_FREE.search(url)
     if not m:
+        if image_id:
+            considered(f"oi-{image_id}.jpg", "", f"its Open Images licence ({url or 'none given'}) is not CC BY, CC0 "
+                                                 "or the Public Domain Mark")
         return ""
     if m.group(2):
         return f"CC BY {m.group(2)}"
@@ -225,7 +229,7 @@ def build_open_images_food(limit):
     photos = {}
     for url in OI_IMAGES:
         for r in csv.DictReader(oi_lines(s, url)):
-            licence = oi_licence_name(r.get("License") or "")
+            licence = oi_licence_name(r.get("License") or "", r["ImageID"] if r["ImageID"] in labels else None)
             if r["ImageID"] in labels and licence and (r.get("Rotation") or "0") in ("0", "0.0", ""):
                 photos[r["ImageID"]] = (r["Subset"], licence, clean(r.get("Author")) or "an unnamed photographer",
                                         r.get("OriginalLandingURL") or "")
@@ -527,6 +531,11 @@ def commons_entries(s, titles):
             upper = licence.upper()
             if not COMMONS_FREE.match(licence) or "SA" in upper or "NC" in upper or "ND" in upper \
                     or info.get("mime") not in ("image/jpeg", "image/png") or not info.get("thumburl"):
+                considered(p["title"], info.get("thumburl") or info.get("descriptionurl"),
+                           f"its licence ({licence or 'none given'}) is not CC0, public domain or CC BY"
+                           if not COMMONS_FREE.match(licence) or "SA" in upper or "NC" in upper or "ND" in upper else
+                           f"not a JPEG or PNG picture ({info.get('mime') or 'no picture'})"
+                           if info.get("mime") not in ("image/jpeg", "image/png") else "no picture address")
                 continue
             artist = clean((meta.get("Artist") or {}).get("value")) or "unknown"
             page = "https://commons.wikimedia.org/wiki/" + p["title"].replace(" ", "_")

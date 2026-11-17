@@ -387,7 +387,7 @@ def build_open_images_objects(limit):
     photos = {}
     for url in OI_IMAGES:
         for r in csv.DictReader(oi_lines(s, url)):
-            licence = oi_licence_name(r.get("License") or "")
+            licence = oi_licence_name(r.get("License") or "", r["ImageID"] if r["ImageID"] in labels else None)
             if r["ImageID"] in labels and licence and (r.get("Rotation") or "0") in ("0", "0.0", ""):
                 photos[r["ImageID"]] = (r["Subset"], licence, clean(r.get("Author")) or "an unnamed photographer",
                                         r.get("OriginalLandingURL") or "")

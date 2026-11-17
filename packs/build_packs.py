@@ -4,7 +4,8 @@ instead of contacting many museum websites from the trainer's computer.
 
 A pack is a zip: rows.jsonl (one row per picture: {"file" (a picture in the zip) or "url" (a picture the kit fetches
 itself), "question", "answer", "credit"}), the pictures (JPEG, at most 896 pixels on the long side) and CREDITS.txt
-(the licence, and each picture's credit where its licence asks for one). A zip over 1.9 GB is published in numbered
+(the licence, and each picture's credit where its licence asks for one), and considered-<pack>.jsonl (every
+candidate picture the shared checks saw, used or not, with the reason it was dropped: see considered()). A zip over 1.9 GB is published in numbered
 parts (<pack>.zip.001 ...), like the converted models; packs.json lists every pack's parts, size and SHA-256.
 
 Only pictures whose licence allows sharing are put in a pack: CC0, public domain, no known copyright, or CC BY with
@@ -61,6 +62,40 @@ CANNOT_TELL = "I can't tell from this picture."
 def say(text):
     """Print a line at once (the workflow's log)."""
     print(text, flush=True)
+
+
+# Every candidate picture the shared checks saw while this pack was built, and why it was dropped: the Commons, COCO
+# and Open Images licence checks and every picture download (fetch_all) add to it through considered(). write_pack
+# writes it into the pack as considered-<key>.jsonl, so a manifest can list the pictures that were NOT used too.
+CONSIDERED = []
+
+
+def considered(name, url="", reason=""):
+    """Note one candidate picture: its name (the file name it would have in the pack, or its title), its web address,
+    and the reason it was dropped ("" when it passed this check). Any builder may call this; write_pack writes the
+    list into the pack."""
+    CONSIDERED.append({"name": str(name or ""), "url": str(url or ""), "reason": str(reason or "")})
+
+
+def considered_lines(rows, names):
+    """The lines of considered-<key>.jsonl: one per candidate (the notes about the same address or name taken
+    together), each {"name", "url", "used", "reason"}. names: the pictures written into the pack; rows: its rows."""
+    urls = {r["url"] for r in rows if r.get("url")}
+    merged = {}
+    for note in CONSIDERED:
+        one = merged.setdefault(note["url"] or note["name"], {"names": [], "url": note["url"], "reason": ""})
+        if note["name"] and note["name"] not in one["names"]:
+            one["names"].append(note["name"])
+        if note["reason"] and not one["reason"]:
+            one["reason"] = note["reason"]
+    lines = []
+    for one in merged.values():
+        used = one["url"] in urls or any(n in names for n in one["names"])
+        name = next((n for n in one["names"] if n in names), one["names"][0] if one["names"] else "")
+        reason = "" if used else one["reason"] or ("passed the checks but is not in the pack (over the pack's limit, "
+                                                     "or left out by a later check)")
+        lines.append(json.dumps({"name": name, "url": one["url"], "used": used, "reason": reason}) + "\n")
+    return lines
 
 
 def clean(text):
@@ -122,11 +157,15 @@ def fetch_all(items, workers=8, pause=0.0):
                 r = s.get(url, timeout=60)
                 if r.status_code == 200:
                     data = smaller(r.content)
+                    considered(name, url, "" if data else "the picture could not be read, or is smaller than 64 "
+                                                          "pixels")
                     return (name, data, row) if data else None
                 if r.status_code in (403, 404, 410):
+                    considered(name, url, f"could not be downloaded (the server answered {r.status_code})")
                     return None
             except Exception:  # noqa: BLE001 - tried once more, then left out
                 time.sleep(2)
+        considered(name, url, "could not be downloaded (no good answer after two tries)")
         return None
 
     out, done = [], 0
@@ -252,10 +291,13 @@ def build_smithsonian(limit):
 # ----------------------------------------------------------------- COCO questions (rows only)
 
 COCO_FREE = (4, 7)
+COCO_LICENCES = {1: "CC BY-NC-SA 2.0", 2: "CC BY-NC 2.0", 3: "CC BY-NC-ND 2.0", 4: "CC BY 2.0", 5: "CC BY-SA 2.0",
+                 6: "CC BY-ND 2.0", 7: "no known copyright", 8: "United States Government Work"}
 
 
 def coco_licences():
-    """{COCO image id: its photo address} for photos under CC BY 2.0 or no known copyright (phiyodr/coco2017)."""
+    """{COCO image id: its photo address} for photos under CC BY 2.0 or no known copyright (phiyodr/coco2017). The
+    other photos are noted as considered and dropped for their licence."""
     import pyarrow.parquet as pq
     from huggingface_hub import HfApi, hf_hub_download
     free = {}
@@ -263,7 +305,12 @@ def coco_licences():
         if name.endswith(".parquet"):
             table = pq.read_table(hf_hub_download("phiyodr/coco2017", name, repo_type="dataset"),
                                   columns=["license", "image_id", "coco_url"]).to_pylist()
-            free.update({r["image_id"]: r["coco_url"] for r in table if r["license"] in COCO_FREE})
+            for r in table:
+                if r["license"] in COCO_FREE:
+                    free[r["image_id"]] = r["coco_url"]
+                else:
+                    considered(f"coco-{r['image_id']}", r["coco_url"], f"its COCO licence is "
+                               f"{COCO_LICENCES.get(r['license'], r['license'])}, not CC BY 2.0 or no known copyright")
     return free
 
 
@@ -365,8 +412,14 @@ def build_commons(limit):
                 meta = info.get("extmetadata") or {}
                 licence = clean((meta.get("LicenseShortName") or {}).get("value"))
                 caption = clean(labels.get(f"M{p.get('pageid')}"))
-                if p["pageid"] in seen or not caption or len(caption.split()) < 5 or "SA" in licence.upper() \
-                        or "NC" in licence.upper() or not COMMONS_FREE.match(licence) or not info.get("thumburl"):
+                if p["pageid"] in seen:
+                    continue
+                why = ("no English caption of five words or more" if not caption or len(caption.split()) < 5 else
+                       f"its licence ({licence or 'none given'}) is not CC0, public domain or CC BY"
+                       if "SA" in licence.upper() or "NC" in licence.upper() or not COMMONS_FREE.match(licence) else
+                       "no picture address" if not info.get("thumburl") else "")
+                if why:
+                    considered(p.get("title"), info.get("thumburl") or info.get("descriptionurl"), why)
                     continue
                 seen.add(p["pageid"])
                 artist = clean((meta.get("Artist") or {}).get("value"))
@@ -973,17 +1026,21 @@ def write_pack(key, entries, out):
     sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
     os.makedirs(out, exist_ok=True)
     path = os.path.join(out, f"{key}.zip")
-    rows, credits = [], []
+    rows, credits, names = [], [], set()
     with zipfile.ZipFile(path, "w", zipfile.ZIP_STORED, allowZip64=True) as z:
         for name, data, row in entries:
             if data is not None:
                 z.writestr(f"pictures/{name}", data)
+                names.add(name)
                 row = dict(row, file=f"pictures/{name}")       # (a translated twin already names its picture)
             rows.append(row)
             if row.get("credit"):
                 credits.append(f"{row.get('file') or row.get('url')}: {row['credit']}")
         z.writestr("rows.jsonl", "".join(json.dumps(r) + "\n" for r in rows))
         z.writestr("CREDITS.txt", PACKS[key][1] + "\n\n" + "\n".join(credits) + "\n")
+        # Every candidate the shared checks saw, used or not, with the reason it was dropped (see considered()).
+        if CONSIDERED:
+            z.writestr(f"considered-{key}.jsonl", "".join(considered_lines(rows, names)))
     size, digest = os.path.getsize(path), sha256_of(path)
     from convert_models import split_file          # the same splitting as the converted models
     parts = split_file(path, PART_BYTES)
