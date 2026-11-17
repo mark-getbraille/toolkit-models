@@ -75,7 +75,9 @@ jobs:
                    "brick_quality", "codd_materials", "nyuad_materials",
                    "commons_car_parts", "commons_cycle_parts", "commons_machine_parts", "commons_engine_bays",
                    "iso_machine_symbols", "corolla_engine_bay", "tyre_condition", "spark_plug_condition",
-                   "planetary_gearbox"]
+                   "planetary_gearbox",
+                   "vcoco_actions", "vg_people_actions", "open_images_activities", "commons_daily_life",
+                   "dollar_street_routines", "coco_actions_nc", "coco_actions_sa"]
           words = [w for w in sys.argv[1].split(",") if w]
           keys = known if words in ([], ["all"]) else [w for w in words if w in known]
           print("keys=" + json.dumps(keys))
@@ -305,6 +307,13 @@ jobs:
             tyre_condition) limit=4100 ;;
             spark_plug_condition) limit=697 ;;
             planetary_gearbox) limit=150 ;;
+            vcoco_actions) limit=1800 ;;
+            vg_people_actions) limit=1800 ;;
+            open_images_activities) limit=6000 ;;
+            commons_daily_life) limit=3500 ;;
+            dollar_street_routines) limit=1250 ;;
+            coco_actions_nc) limit=16200 ;;
+            coco_actions_sa) limit=2400 ;;
           esac
           # Stop downloading after 290 minutes, keeping what has come, so the pack is published within the job's time.
           PACK_TIME_LIMIT_MINUTES=290 python packs/build_packs.py "${{ matrix.key }}" --out build/packs --limit "$limit"

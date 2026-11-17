@@ -1061,6 +1061,12 @@ PACKS.update(THINGS_PACKS)
 from mechanical_packs import MECHANICAL_PACKS
 PACKS.update(MECHANICAL_PACKS)
 
+# People in daily activities: V-COCO and Visual Genome rows on COCO photos (rows only; the two packs on COCO's
+# non-commercial and share-alike photos are for the kit's personal-use and share-alike choices), Open Images activity
+# labels, Commons daily-life and work categories (with "People at work in" countries), Dollar Street routines.
+from people_activity_packs import PEOPLE_ACTIVITY_PACKS
+PACKS.update(PEOPLE_ACTIVITY_PACKS)
+
 
 def sha256_of(path):
     """The SHA-256 of a file."""
