@@ -156,9 +156,9 @@ NOT_A_PHOTO = re.compile(r"\b(drawings?|illustrations?|paintings?|logos?|icons?|
 NOT_THE_THING = re.compile(r"\b(compan(y|ies)|manufacturers?|factor(y|ies)|plants? in|museums?|people|persons|"
                            r"inventors?|history|exhibitions?|shows?|events?|races?|racing|stores?|shops?|"
                            r"buildings?|streets?|stations?|by country|by year|by decade|by city|in \w+ \d{4}|"
-                           r"in (the )?(united|[A-Z]\w+)( \w+)?$|sculptures?|monuments?|statues?|memorials?)\b")
+                           r"sculptures?|monuments?|statues?|memorials?)\b", re.I)
+IN_A_PLACE = re.compile(r"\bin (the )?[A-Z]\w+( \w+)?$")      # "... in Germany", "... in the United States"
 PLACES = {}            # {file title: the country at its camera coordinates}
-PLACE_NAMES = {}       # {file title: the country}, filled from PLACES once per file
 
 
 def mech_entries(s, titles, drawings=False):
@@ -214,7 +214,8 @@ def category_files(s, category, deeper, most_subcategories=25):
     found = {t: "" for t in commons_members(s, category, "file") if not NOT_A_PHOTO.search(t)}
     if deeper:
         subs = [c.split(":", 1)[-1] for c in commons_members(s, category, "subcat")]
-        subs = [c for c in subs if not NOT_A_PHOTO.search(c) and not NOT_THE_THING.search(c)]
+        subs = [c for c in subs if not NOT_A_PHOTO.search(c) and not NOT_THE_THING.search(c)
+                and not IN_A_PLACE.search(c)]
         for sub in subs[:most_subcategories]:
             for t in commons_members(s, sub, "file"):
                 if not NOT_A_PHOTO.search(t):
@@ -741,8 +742,11 @@ WARNING_LIGHTS = [
     (r"glow plug|pre-?heat|préchauffage", "This is the diesel glow-plug light: wait for it to go out before "
                                           "starting the engine."),
 ]
-ISO_TITLE = re.compile(r"(?:Title/Meaning:\s*)(?P<a>.+?)\s*(?:Function/description:\s*(?P<b>.+))?$|"
-                       r"^ISO 7000 - Ref-No \S+\s+(?P<c>[^;]+);\s*(?P<d>.+)$", re.S)
+# The three ways the ISO 7000 files' descriptions are written on Commons: "... Title/Meaning: X Function/description:
+# Y", "ISO 7000 - Ref-No 0001 X; Y" and "Symbol 0016 from ISO 7000 - X To indicate Y".
+ISO_WORDINGS = (re.compile(r"Title/Meaning:\s*(?P<name>.+?)\s*(?:Function/description:\s*(?P<use>.+))?$", re.S),
+                re.compile(r"^ISO 7000 - Ref-No \S+\s+(?P<name>[^;]+);\s*(?P<use>.+)$", re.S),
+                re.compile(r"from ISO 7000 - (?P<name>.+?)\s+(?P<use>To (?:indicate|identify|show|mark)\b.+)$", re.S))
 ISO_NUMBER = re.compile(r"ISO 7000 - (?:Ref-No )?(\d{4}[A-Z]?)")
 
 
@@ -752,11 +756,11 @@ def iso_meaning(title, description):
     electric motor." -> ("0011", "Electric motor, general", "To indicate an electric motor.")."""
     number = ISO_NUMBER.search(title)
     text = clean(re.sub(r"<br\s*/?>|</?p>", " ", description or ""))
-    m = ISO_TITLE.search(text)
+    m = next((m for m in (w.search(text) for w in ISO_WORDINGS) if m), None)
     if not number or not m:
         return None
-    name = clean(m.group("a") or m.group("c") or "").strip(" ;.")
-    use = clean(m.group("b") or m.group("d") or "")
+    name = clean(m.group("name")).strip(" ;.")
+    use = clean(m.group("use") or "")
     if not name or len(name.split()) > 15:
         return None
     use = use.split(" Note")[0].strip()
