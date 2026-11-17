@@ -899,6 +899,10 @@ STREET_VENDORS_IN = [
 # Words in a file's title or description that leave it out: nudity and bathing, and graphic scenes.
 DAILY_NOT = re.compile(r"\b(bath(e|es|ing)|swim\w*|bikini\w*|shower\w*|beach\w*|corpses?|dead|wounded|injured|"
                        r"blood\w*|executions?|war|refugees? camp)\b", re.I)
+# Descriptions that say nothing about the picture (a photo contest's stock line: "This is an image with the theme
+# "Rites and Rituals" from:.").
+NOT_A_DESCRIPTION = re.compile(r"^this is an? (image|photo|picture)\b.*\btheme\b|\bfrom:\s*\.?$|^(image|photo) "
+                               r"(of|from) (wiki loves|the contest)", re.I)
 DAILY_NOT_A_PHOTO = re.compile(r"\b(drawings?|illustrations?|paintings?|engravings?|prints?|posters?|"
                                r"lithographs?|maps?|logos?|icons?|cartoons?|caricatures?|stamps?|sculptures?|"
                                r"statues?|figurines?|postcards?|videos?|audio)\b", re.I)
@@ -950,7 +954,8 @@ def build_commons_daily_life(limit):
                 if got >= share or title in seen:
                     continue
                 words = NOT_A_CHILD.sub(" ", f"{category} {title} {text}")
-                text = "" if JUST_A_RECORD.search(text or "") or not in_english(text) else text
+                text = "" if JUST_A_RECORD.search(text or "") or NOT_A_DESCRIPTION.search(text or "") \
+                    or not in_english(text) else text
                 if NUDE.search(words) or DAILY_NOT.search(words) or DAILY_NOT_A_PHOTO.search(text or ""):
                     considered(title, url, "its words are about nudity, bathing or a graphic scene, or it is not a "
                                            "photo")
