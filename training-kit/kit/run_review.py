@@ -40,6 +40,7 @@ def all_sources():
     found, notes = {}, []
     for module_name, list_name in (("review_sources", "REVIEW_SOURCES"),
                                    ("adult_review_sources", "ADULT_REVIEW_SOURCES"),
+                                   ("vintage_review_sources", "VINTAGE_REVIEW_SOURCES"),
                                    ("permission_sources", "PERMISSION_SOURCES")):
         try:
             module = __import__(module_name)

@@ -55,7 +55,7 @@ jobs:
             --hidden-import describe_package --hidden-import describe_window --hidden-import PIL.Image `
             --hidden-import PIL.ImageOps --hidden-import sources --hidden-import more_sources `
             --hidden-import big_sources --hidden-import personal_sources --hidden-import extra_sources --hidden-import documentary_sources --hidden-import graphic_sources --hidden-import archive_sources `
-            --hidden-import disability_sources --hidden-import review_sources --hidden-import adult_review_sources --hidden-import permission_sources `
+            --hidden-import disability_sources --hidden-import review_sources --hidden-import adult_review_sources --hidden-import vintage_review_sources --hidden-import permission_sources `
             --hidden-import service_sources --hidden-import bodily_sources --hidden-import culture_sources --hidden-import land_industry_sources `
             --hidden-import home_sources --hidden-import events_safety_sources `
             training-kit/wizard/training_wizard.py

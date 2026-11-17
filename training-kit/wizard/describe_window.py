@@ -105,6 +105,7 @@ def review_lists(wizard):
     items, notes = [], []
     for module_name, list_name, what in (("review_sources", "REVIEW_SOURCES", "medical"),
                                          ("adult_review_sources", "ADULT_REVIEW_SOURCES", "adult"),
+                                         ("vintage_review_sources", "VINTAGE_REVIEW_SOURCES", "vintage"),
                                          ("permission_sources", "PERMISSION_SOURCES", "permission")):
         try:
             module = __import__(module_name)

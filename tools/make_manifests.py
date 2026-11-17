@@ -5,7 +5,7 @@ MANIFEST 1, "Sources": one row per organisation or collection found while making
   - the ready-made packs (packs/*.py: every *_PACKS table, its CREDITS header, its builder's description and its
     limit), built on GitHub and published in this repository's release "training-data";
   - the collections the kit downloads itself on the trainer's computer (training-kit/kit/sources.py SOURCES);
-  - the review collections (REVIEW_SOURCES, ADULT_REVIEW_SOURCES) and the permission collections
+  - the review collections (REVIEW_SOURCES, ADULT_REVIEW_SOURCES, VINTAGE_REVIEW_SOURCES) and the permission collections
     (PERMISSION_SOURCES);
   - everything left out, with the reason the code gives (every *_NOT_INCLUDED, REJECTED, *_SIGN_UP,
     CONTRACT_CANDIDATES and NEEDS_LICENCE_CHECK table);
@@ -72,7 +72,7 @@ def load_code():
         if folder not in sys.path:
             sys.path.insert(0, folder)
     sources = importlib.import_module("sources")
-    for name in ("review_sources", "adult_review_sources", "permission_sources"):
+    for name in ("review_sources", "adult_review_sources", "vintage_review_sources", "permission_sources"):
         importlib.import_module(name)
     build_packs = importlib.import_module("build_packs")
     # Any other *_sources.py or *_packs.py file (for example one being written and not yet wired in): imported too.
@@ -121,6 +121,7 @@ TOPIC_BY_MODULE = {
     "medical_packs": "Medical",
     "review_sources": "Medical (intimate, review only)",
     "adult_review_sources": "Adult content (review only)",
+    "vintage_review_sources": "Vintage non-sexual nudes (review only)",
     "expression_packs": "Faces, expressions and gestures",
     "world_packs": "World collections", "world_more_packs": "World collections",
     "world_portal_packs": "World collections",
@@ -568,7 +569,7 @@ def source_rows(sources, build_packs, manifests, runs, pack_stats):
             "found in": f"training-kit/kit/{s.prepare.__module__}.py (NEEDS_LICENCE_CHECK)"}))
 
     # Review collections (a person checks every picture before it is used) and permission collections.
-    for module, name, table in tables(r"(ADULT_)?REVIEW_SOURCES|PERMISSION_SOURCES"):
+    for module, name, table in tables(r"(ADULT_|VINTAGE_)?REVIEW_SOURCES|PERMISSION_SOURCES"):
         permission = name == "PERMISSION_SOURCES"
         for d in table:
             rows.append(blank_row(**{
