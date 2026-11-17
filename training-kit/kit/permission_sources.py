@@ -381,7 +381,8 @@ class Polite:
         if os.path.isfile(path):
             return path
         if not self.allowed(url):
-            raise OSError(f"robots.txt of {self.site(url)} does not allow downloading {url}.")
+            raise OSError(f"The site {self.site(url)} asks programs not to download {url} (its robots.txt). Download "
+                          f"it in your web browser instead, then choose the downloaded zip file as the source.")
         part = path + ".part"
         os.makedirs(os.path.dirname(path), exist_ok=True)
         for _attempt in range(6):
@@ -784,7 +785,10 @@ def open_source(entry, source, ws, polite, say):
         if not name.lower().endswith(".zip"):
             name += ".zip"
         say(f"{entry['organisation']}: downloading {name} from the address they gave (it carries on if stopped).")
-        source = polite.download_file(source, os.path.join(ws.folder, DOWNLOAD_FOLDER, name))
+        try:
+            source = polite.download_file(source, os.path.join(ws.folder, DOWNLOAD_FOLDER, name))
+        except OSError as e:
+            raise NoPermission(str(e)) from None
     if os.path.isdir(source):
         return source, None
     if os.path.isfile(source) and zipfile.is_zipfile(source):
@@ -1203,6 +1207,8 @@ def listing_skin_of_color_society(polite, say, ws=None):
         words = rs.first_sentences(rs.no_tags(re.sub(r"(?s)<(script|style)[^>]*>.*?</\1>", " ",
                                                      topic[start:] if start >= 0 else "")), 60, 3)
         words = re.sub(r"^.{0,120}?\b(?:MD|DO|PhD|FAAD)\b,?\s+", "", words, count=1)   # title and author first
+        if words.lower().startswith(title.lower() + " "):
+            words = words[len(title) + 1:]
         ok, _why = adults_and_clinical(words)
         if not ok:
             continue
@@ -1622,7 +1628,11 @@ def list_only(key, most=8):
 def main(argv):
     """python permission_sources.py --list <key> [how many]  |  <key> <folder> [cap] [source] [library]"""
     if len(argv) >= 3 and argv[1] == "--list":
-        list_only(argv[2], int(argv[3]) if len(argv) > 3 else 8)
+        try:
+            list_only(argv[2], int(argv[3]) if len(argv) > 3 else 8)
+        except NoPermission as e:
+            print(e)
+            return 2
         return 0
     if len(argv) < 3:
         print(main.__doc__ + "\nkeys: " + ", ".join(s["key"] for s in PERMISSION_SOURCES))
