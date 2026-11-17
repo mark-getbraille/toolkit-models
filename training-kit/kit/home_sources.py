@@ -345,7 +345,7 @@ COMMONS_HOME = [
     ("Kitchen scales", "What is this?", "This is a kitchen scale.", True),
     ("Glucose meters", "What is this?", "This is a blood-glucose meter.", True),
     ("Electronic arm blood pressure monitor", "What is this?", "This is a blood-pressure monitor.", False),
-    ("Elevator buttons", "What is this?", "These are a lift's buttons (elevator buttons).", True),
+    ("Elevator buttons", "What is this?", "These are the buttons of a lift (elevator buttons).", True),
     ("Automatic teller machines", "What is this?", "This is a cash machine (ATM).", False),
     ("BS 1363", "What kind of plug is this, and where is it used?", "This is a Type G plug or socket (BS 1363), "
      "with three rectangular pins. It is used in the UK, Ireland, Malta, Cyprus, Malaysia, Singapore, Hong Kong and "

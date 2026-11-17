@@ -63,7 +63,7 @@ The packs (all open: CC0, public domain, CC BY, MIT or Apache, checked at the so
                        Photos of real care labels (Category:Laundry tags) come with their own descriptions. The symbols
                        are a GINETEX trademark (a trademark, not a copyright: describing them is not limited by it).
   commons_tools        Commons: hand tools, power tools, screws, nails, bolts, nuts and washers, wall plugs, plumbing
-                       parts and garden tools. "What tool is this?"
+                       parts and garden tools. "What tool is in this picture?"
   commons_personal     Commons: toiletries and cosmetics (shampoo, conditioner, toothpaste, deodorant, shower gel, soap,
                        lipstick, mascara, nail polish), jewellery, wristwatches, glasses, hats and bags. "What is
                        this?" and, for shampoo and conditioner, "Is this shampoo or conditioner?"
@@ -625,7 +625,7 @@ COMMONS_APPLIANCES = [
     ("Electronic arm blood pressure monitor", False, ask_what("a blood-pressure monitor")),
     ("Sphygmomanometers", False, ask_what("a blood-pressure monitor")),
     ("Seven segment displays", False, ask_what("a seven-segment display")),
-    ("Elevator buttons", True, ask_what("a lift's buttons (elevator buttons)")),
+    ("Elevator buttons", True, [("What is this?", "These are the buttons of a lift (elevator buttons).")]),
     ("Automatic teller machines", False, ask_what("a cash machine (ATM)")),
     ("Ticket machines", False, ask_what("a ticket machine")),
     ("Check-in terminals", True, ask_what("a self-service check-in machine")),
@@ -889,12 +889,12 @@ def build_laundry_symbols(limit):
 
 # ----------------------------------------------------------------- commons_tools
 
-TOOL_Q = "What tool is this?"
+TOOL_Q = "What tool is in this picture?"
 
 
 def tool(name, extra=None):
-    """Rows for a tool category."""
-    rows = [(TOOL_Q, f"This is {name}.")]
+    """Rows for a tool category (said so that it fits a close-up of the tool and a photo of someone using it)."""
+    rows = [(TOOL_Q, f"I can see {name}.")]
     if extra:
         rows.append(extra)
     return rows
