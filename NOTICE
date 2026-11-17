@@ -3,11 +3,19 @@ Copyright 2026 Company Maker, LLC (GetBraille.com)
 
 The model files in this repository's releases are derived works of:
   - Qwen3 and Qwen3-VL by Alibaba Cloud (Qwen team), Apache License 2.0;
-  - their abliterated versions by huihui-ai (huggingface.co/huihui-ai), Apache License 2.0.
+  - their abliterated versions by huihui-ai (huggingface.co/huihui-ai), Apache License 2.0;
+  - OPUS-MT translation models by Helsinki-NLP, University of Helsinki (huggingface.co/Helsinki-NLP), each under the
+    Apache License 2.0 or the Creative Commons Attribution 4.0 International licence (CC BY 4.0,
+    https://creativecommons.org/licenses/by/4.0/), as its original model page says;
+  - MADLAD-400 3B and 7B translation models by Google (huggingface.co/google/madlad400-3b-mt and
+    huggingface.co/google/madlad400-7b-mt), Apache License 2.0.
 
 Changes made: each model was converted from its original safetensors files to ONNX Runtime GenAI or OpenVINO format,
 with 4-bit (int4) weights, using onnxruntime-genai's model builder or optimum-intel. The tokenizer and chat template
 files are copied unchanged. The weights are otherwise not changed.
+Each translation model was converted from its original files to CTranslate2 format with 8-bit (int8) weights, using
+CTranslate2's converter (ct2-transformers-converter); its SentencePiece files and README.md (which names its authors)
+are copied unchanged. The weights are otherwise not changed.
 
 The Picture Model Training Kit (training-kit/) downloads, when it is used, these separate programs and models; none
 of them is copied into this repository:

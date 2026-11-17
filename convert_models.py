@@ -15,6 +15,9 @@ For each model key:
      OpenVINO models: optimum-cli export openvino --model <download> --task <task> --weight-format int4 <out> (the
      "any" variant, for Intel graphics and processors) and, for text models, the same with --sym --ratio 1.0
      --group-size -1 (the "npu" variant: NPUs need symmetric, channel-wise 4-bit weights);
+     translation models (app/toolkit/vision/translate.py MODELS, engine "ctranslate2": OPUS-MT and MADLAD-400):
+     ct2-transformers-converter --model <download> --output_dir <out> --quantization int8 --copy_files <the
+     SentencePiece files and README.md> (the "any" variant; the README keeps the authors' names, which CC BY asks);
   3. zip each output folder as <key>-<variant>.zip and record its size and SHA-256 in manifest-<key>.json; a zip over
      GitHub's 2 GB limit for one release file is cut into parts of models.PART_BYTES (<zip>.001, .002 ...; split_file),
      and the manifest records how many ("parts"); the program downloads the parts and joins them;
@@ -48,12 +51,22 @@ sys.path.insert(0, os.path.join(ROOT, "app"))
 
 try:
     from toolkit.vision.engines import models   # noqa: E402 - after the path is set
+    from toolkit.vision import translate        # noqa: E402
 except ImportError:                             # in the toolkit-models repository: only plan.json (--plan)
-    models = None
+    models = translate = None
 
 PART_BYTES = models.PART_BYTES if models else 1_900_000_000      # the same value as models.PART_BYTES
 # The models to convert: key -> a model (models.EngineModel, or the same fields read from plan.json by load_plan).
 MODELS = dict(models.MODELS) if models else {}
+if translate is not None:
+    MODELS.update(translate.MODELS)              # the translation models (engine "ctranslate2")
+# The files of a translation model that the conversion copies beside the converted weights.
+CT2_FILES = {"opus": ["source.spm", "target.spm", "README.md"], "madlad": ["spiece.model", "README.md"]}
+# The files downloaded of a translation model's original (not its TensorFlow, Rust or GGUF copies).
+CT2_DOWNLOAD = ["config.json", "generation_config.json", "pytorch_model.bin", "model.safetensors",
+                "model-*.safetensors", "model.safetensors.index.json", "source.spm", "target.spm", "spiece.model",
+                "vocab.json", "tokenizer_config.json", "tokenizer.json", "special_tokens_map.json",
+                "added_tokens.json", "README.md"]
 
 RELEASE_TAG = "engine-models"
 UPLOAD_TRIES = 4
@@ -66,8 +79,12 @@ def planned_keys():
 
 
 def download_command(model, source_dir):
-    """The command that downloads the original model at its pinned commit into source_dir."""
-    return ["hf", "download", model.base_model, "--revision", model.base_revision, "--local-dir", source_dir]
+    """The command that downloads the original model at its pinned commit into source_dir (for a translation model
+    only the files the conversion needs)."""
+    command = ["hf", "download", model.base_model, "--revision", model.base_revision, "--local-dir", source_dir]
+    if model.engine == "ctranslate2":
+        command += ["--include", *CT2_DOWNLOAD]
+    return command
 
 
 def convert_commands(model, source_dir, out_dir, python=sys.executable):
@@ -81,6 +98,10 @@ def convert_commands(model, source_dir, out_dir, python=sys.executable):
             command = [python, "-m", "onnxruntime_genai.models.builder", "-m", model.base_model, "-i", source_dir,
                        "-o", target, "-p", "int4", "-e", provider,
                        "-c", os.path.join(out_dir, "cache")]
+        elif model.engine == "ctranslate2":
+            kind = "madlad" if "madlad" in model.key else "opus"
+            command = ["ct2-transformers-converter", "--model", source_dir, "--output_dir", target, "--quantization",
+                       "int8", "--copy_files", *CT2_FILES[kind]]
         elif model.engine == "openvino":
             task = "image-text-to-text" if model.vision else "text-generation-with-past"
             command = ["optimum-cli", "export", "openvino", "--model", source_dir, "--task", task,

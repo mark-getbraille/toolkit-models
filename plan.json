@@ -110,5 +110,1190 @@
     ]
    }
   ]
+ },
+ {
+  "key": "opus-mt-es-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-es-en",
+  "base_revision": "c96e2c5399ebfae4fc43d9669556b9afa74bb69d",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-fr-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-fr-en",
+  "base_revision": "5fa3b3c9fa3bcd65fbf31206c3ec7419c9d9cd7d",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-de-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-de-en",
+  "base_revision": "1a922f3b32a8e809e17a47d4b32142d8105924e5",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-it-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-it-en",
+  "base_revision": "5009c4525f89c23e195873e918ba6827777d1a27",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-romance-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-ROMANCE-en",
+  "base_revision": "e9ca9975e3972afd80732f08ce01d3a1339f47f8",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-ca-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-ca-en",
+  "base_revision": "b16de52276f0c791f0e4e93ed152481581c2c715",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-gl-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-gl-en",
+  "base_revision": "f61d093dcbe0737c6d8955a35ef7eb476193bb9a",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-nl-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-nl-en",
+  "base_revision": "48af999f2c59b10c05ca6e008dcedc07677a9b15",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-gmq-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-gmq-en",
+  "base_revision": "b243b46fc9e1eaf068ae0d8ae896ac1acd7d2380",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-fi-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-fi-en",
+  "base_revision": "956e13710061738d21f677e4ed16a56546511c0f",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-et-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-et-en",
+  "base_revision": "e06044c24abb0dbc267813fc95626aec1b1bede0",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-hu-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-hu-en",
+  "base_revision": "c184817a80146c4e315c97ae18e59d1fe84972bb",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-cel-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-cel-en",
+  "base_revision": "877e55646ba280c2c52a3c18382f830b74f7bc83",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-eu-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-eu-en",
+  "base_revision": "91766ac1095dd39f9225a730a9c4fb4148f46648",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-mt-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-mt-en",
+  "base_revision": "cb8bd173e246046db9504ac6d74f70a7e61b7ad2",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-zlw-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-zlw-en",
+  "base_revision": "5f2b1d3591f4b835b20bd7f2c70ad193df2379b9",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-ces-slk-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-ces_slk-en",
+  "base_revision": "2c4f1841a6cf8a4a79cf8b523c7e8169b5711342",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-lt-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-lt-en",
+  "base_revision": "19488d4ca36c1e5ff72934f042c0549a0d89648f",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-lv-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-lv-en",
+  "base_revision": "f941f56496bf9a21df30839d477ad1b375a52d0c",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-sq-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-sq-en",
+  "base_revision": "10c8d34bcc202e0d8d75bd454b5e34bbea4c2909",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-el-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-el-en",
+  "base_revision": "a69108562775c6727edf3540346f9d8900b73634",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-zls-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-zls-en",
+  "base_revision": "c52478f738ad47408224c8183984560ba0ebb3b0",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-bg-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-bg-en",
+  "base_revision": "97e1267dfb71b5bd8cab7288cd36d8d899229a54",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-zle-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-zle-en",
+  "base_revision": "09a40f722d6d8b76aaad6fe51a06c914622a13d1",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-ka-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-ka-en",
+  "base_revision": "b609b8bb802c0402e296ee3cd3ec3d3cc3ae813a",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-hy-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-hy-en",
+  "base_revision": "79b0a5051bdb77155f96bb5f091c054ff575b04b",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-tr-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-tr-en",
+  "base_revision": "2261c8fc7b1af59caee87f8ff0ecf3fbccfe8391",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-ar-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-ar-en",
+  "base_revision": "bcb4acd39ee8e3552e171653a8e31a10729b4330",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-ur-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-ur-en",
+  "base_revision": "1425fec421641ff8b064596e77d42a2450d684c2",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-he-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-he-en",
+  "base_revision": "134c5a850dcaa763eec85bd1f4eb25112fecedbb",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-zh-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-zh-en",
+  "base_revision": "cf109095479db38d6df799875e34039d4938aaa6",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-ja-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-ja-en",
+  "base_revision": "0770961a39ba6bd66305b149c3f4110bcafca2e6",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-ko-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-ko-en",
+  "base_revision": "fa26583a41d95346933f26b4cb8f9b700da0d445",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-vi-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-vi-en",
+  "base_revision": "c8d2853e77f5fae31124d993e0b35176b1c8914e",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tl-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tl-en",
+  "base_revision": "8d2dee91f8b3fa48dda8ec06ee2af8f24970dcbc",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-ht-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-ht-en",
+  "base_revision": "5f25535b33b39d5bc20b79db40f8a5d37542e7a3",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-hi-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-hi-en",
+  "base_revision": "a7d96a16729f812578bd55e7366147beda625d86",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-bn-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-bn-en",
+  "base_revision": "098d427088fba65d683639e91742c783cc7c1434",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-pa-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-pa-en",
+  "base_revision": "649fdc8517948a723fd0352d4734d677137c98a2",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-th-en",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-th-en",
+  "base_revision": "0fff80be1c3f40d6180efd59f566ece956ace689",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-en-es",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-en-es",
+  "base_revision": "8f4d4924189681076e9c642b2fd85278d793fd4d",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-en-fr",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-en-fr",
+  "base_revision": "6e062862ced6f5622a589ab2aadc2a1d4978db78",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-en-it",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-en-it",
+  "base_revision": "592d2cfb0797867f1dd223e49141de051faa65c7",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-en-pt",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-en-pt",
+  "base_revision": "9f2863d807ecf91a374bdbecb8d01e402e90622e",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-en-ca",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-en-ca",
+  "base_revision": "b68b9d6a3652d8d0875d9e5054e50bf17e81e1cc",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-en-romance",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-en-ROMANCE",
+  "base_revision": "f8f3a28e8b6272d0ccc0290b832f699e154ae431",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-en-ro",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-en-ro",
+  "base_revision": "3853a10c485323cbcd870553e846071052c0c070",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-en-de",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-en-de",
+  "base_revision": "6183067f769a302e3861815543b9f312c71b0ca4",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-en-nl",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-en-nl",
+  "base_revision": "8aad73b34ff36c090e7fc8a2eb7e2e7cca235d31",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-en-gmq",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-en-gmq",
+  "base_revision": "1011a691a63e61b4beb68d47332790e072f685f0",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-en-gmq",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-en-gmq",
+  "base_revision": "2f5da939880f7b69e9b5142074474b74889b8685",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-en-fi",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-en-fi",
+  "base_revision": "8e570bbad861fb72104883353cf307ce1fe7b5e0",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-en-et",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-en-et",
+  "base_revision": "6db2922a7cb505df729e0b75e0980e591b5570bc",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-en-hu",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-en-hu",
+  "base_revision": "26a12a751fa08f3ea33d690a7bd0acd48971ed24",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-en-ga",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-en-ga",
+  "base_revision": "10337fc4a7a24e2ac0c7443b1dca3ed187207d0d",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-en-cy",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-en-cy",
+  "base_revision": "38e54ea77bca4ad924a04d6ca9a765cffa84d80f",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-en-eu",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-en-eu",
+  "base_revision": "d0aea41286540e4bc3af139a58d1c7ab39725d1b",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-en-mt",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-en-mt",
+  "base_revision": "c0ce1eed30f6c419955730df41faffb3f0b1119c",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-en-zlw",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-en-zlw",
+  "base_revision": "92ffd5aa936924688bd715b26d6bb75393082c03",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-en-ces-slk",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-en-ces_slk",
+  "base_revision": "170aa4ed3f0ed7f6315f4b2f917b390081c8a969",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-en-lt",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-en-lt",
+  "base_revision": "2e08d64d805b30cdcf8e31ad8158f4f9b30da230",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-en-lv",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-en-lv",
+  "base_revision": "ab7643b9b00a02b4495ad5925ba5e3d0d0f938e5",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-en-sq",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-en-sq",
+  "base_revision": "3fb16c7fae5d3293060997dff628656de259d46e",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-en-el",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-en-el",
+  "base_revision": "bb9aa4d8929451dd2396f399f7aa184c788d565b",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-en-zls",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-en-zls",
+  "base_revision": "f127a88f95d3550a38f6fe8075f91d0548220f3a",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-en-bg",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-en-bg",
+  "base_revision": "558a7fa51deb7da5a214174be73423ffee1807c6",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-en-zle",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-en-zle",
+  "base_revision": "708be1d372fe4c358a352f404e6dc9ca0126ba48",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-en-tr",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-en-tr",
+  "base_revision": "e539fc16a8a1a0ea5950eb339b595bfcce990e90",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-en-ar",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-en-ar",
+  "base_revision": "ae9f1b2fd512000ca9440eb3b8ec9aa9acb298ac",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-en-he",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-en-he",
+  "base_revision": "b3df900afbb13bc343b0d28a03ac6f7990091f54",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-en-sw",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-en-sw",
+  "base_revision": "28780399d37e1161afc94577a717d7fcfa54fecc",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-en-zh",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-en-zh",
+  "base_revision": "408d9bc410a388e1d9aef112a2daba955b945255",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-tc-big-en-ko",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-tc-big-en-ko",
+  "base_revision": "ae8606b7b29a495f31ce679cee2007f536a3a5ce",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-en-vi",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-en-vi",
+  "base_revision": "989c9fb9ec63987901022baf0182dcec3e149be6",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-en-tl",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-en-tl",
+  "base_revision": "e46e1761492cb6a6fb9515a72bb55ca654815ca5",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-en-ht",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-en-ht",
+  "base_revision": "8496a98a61df57c1ce7fd9d0d1060c0395480248",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "opus-mt-en-hi",
+  "engine": "ctranslate2",
+  "base_model": "Helsinki-NLP/opus-mt-en-hi",
+  "base_revision": "75d7f7c9232b2891c7d65fe4ef635616c72be867",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "madlad400-3b",
+  "engine": "ctranslate2",
+  "base_model": "google/madlad400-3b-mt",
+  "base_revision": "fa184c675da0b5c9e1c8694fccd4e12e2d422094",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
+ },
+ {
+  "key": "madlad400-7b",
+  "engine": "ctranslate2",
+  "base_model": "google/madlad400-7b-mt",
+  "base_revision": "1ff63ce7ddd571a69d45cad9672c553428419671",
+  "vision": false,
+  "variants": [
+   {
+    "name": "any",
+    "devices": [
+     "cpu"
+    ]
+   }
+  ]
  }
 ]

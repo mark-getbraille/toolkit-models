@@ -27,10 +27,26 @@ other models refuse. Use them responsibly.
 
 The exact source commit of each model is in `plan.json`.
 
+### Translation models
+
+79 translation models for the toolkit's offline translation, converted to CTranslate2 with 8-bit (int8) weights:
+
+- 77 OPUS-MT models (keys `opus-mt-...`) by Helsinki-NLP, University of Helsinki
+  ([huggingface.co/Helsinki-NLP](https://huggingface.co/Helsinki-NLP)), each for one pair of languages or one
+  family of languages, into or out of English;
+- MADLAD-400 3B and 7B (keys `madlad400-3b`, `madlad400-7b`) by Google
+  ([google/madlad400-3b-mt](https://huggingface.co/google/madlad400-3b-mt),
+  [google/madlad400-7b-mt](https://huggingface.co/google/madlad400-7b-mt)), about 400 languages in any direction.
+
+Each zip also holds the original model's `README.md`, which names its authors, and the original SentencePiece files.
+
 ## Licence
 
-The models are under the **Apache License 2.0**, the licence of Qwen3 and Qwen3-VL (Alibaba Cloud) and of
-huihui-ai's versions. The full text is in [LICENSE](LICENSE). See [NOTICE](NOTICE) for what was changed. The
+The Qwen3 and Qwen3-VL models are under the **Apache License 2.0**, the licence of Qwen3 and Qwen3-VL (Alibaba
+Cloud) and of huihui-ai's versions. MADLAD-400 is under the Apache License 2.0. Each OPUS-MT model keeps its own
+licence: Apache License 2.0, or **CC BY 4.0** (https://creativecommons.org/licenses/by/4.0/; the authors are
+Helsinki-NLP, University of Helsinki, OPUS-MT). The licence of each is in the toolkit's licence list and in the
+original model's page. The full text is in [LICENSE](LICENSE). See [NOTICE](NOTICE) for what was changed. The
 conversion script `convert_models.py` is also under the Apache License 2.0.
 
 ## How the models are made
@@ -38,7 +54,8 @@ conversion script `convert_models.py` is also under the Apache License 2.0.
 The workflow `.github/workflows/convert.yml` converts each model and uploads it:
 
 1. download the original model at its pinned commit;
-2. convert it with `onnxruntime_genai.models.builder` or `optimum-cli export openvino`, with 4-bit weights;
+2. convert it with `onnxruntime_genai.models.builder` or `optimum-cli export openvino`, with 4-bit weights, or, for
+   a translation model, with CTranslate2's `ct2-transformers-converter`, with 8-bit weights;
 3. zip it, then record its size and SHA-256.
 
 The workflow runs when someone starts it from the Actions page, or when `convert-request.txt` changes on main.

@@ -1,5 +1,5 @@
-# Convert the models in plan.json (written from the Digital Accessibility Toolkit's model table) to ONNX Runtime GenAI
-# int4 and OpenVINO int4, and publish the zips with their sizes and SHA-256 to this repository's release
+# Convert the models in plan.json (written from the Digital Accessibility Toolkit's model tables) to ONNX Runtime GenAI
+# int4, OpenVINO int4 and, for the translation models (keys opus-mt-*, madlad400-*), CTranslate2 int8, and publish the zips with their sizes and SHA-256 to this repository's release
 # "engine-models", where the toolkit downloads them. Run by hand (Actions > Convert engine models > Run workflow) or
 # by changing convert-request.txt on main; convert_models.py does the work.
 #
@@ -8,8 +8,14 @@
 # job removes unused tool folders (about 40 GB more), puts a 20 GB swap file and the work folder on the runner's second
 # disk (/mnt) when it has room, and publishes each zip as soon as it is made (then deletes it), so an 8B model fits
 # (16 GB download, 5 GB output, 5 GB zip; 17 GB of memory in 16-bit form). A 4B model takes about 15 minutes per
-# variant, an 8B model about 30. After the run, copy the printed sizes and SHA-256
-# into models.py; only then does the toolkit offer the models.
+# variant, an 8B model about 30.
+# Translation models: an OPUS-MT model (0.2 to 0.4 GB) takes 2 to 3 minutes and needs no clean-up (the runner has
+# over 60 GB free at the start). MADLAD-400 3B (12 GB download, 32-bit weights) fits like an 8B model. MADLAD-400 7B
+# (33 GB download, held whole in memory in 32-bit form by the converter, plus about 8 GB of int8 output) gets a 40 GB
+# swap file: about 90 GB of disk in all, of the about 105 GB free after the clean-up; the job stops at once with a
+# message when there is less.
+# After the run, copy the printed sizes and SHA-256 into models.py (engine models) or the PUBLISHED table of
+# vision/translate.py (translation models); only then does the toolkit offer the models.
 name: Convert engine models
 
 on:
@@ -57,7 +63,9 @@ jobs:
       HF_HUB_DISABLE_TELEMETRY: "1"
     steps:
       - uses: actions/checkout@v4
+      # Not needed for the small OPUS-MT translation models.
       - name: Free disk space and add swap
+        if: ${{ !startsWith(matrix.key, 'opus-mt-') }}
         run: |
           # Tools this job never uses (about 40 GB), and the image's small swap file ("Text file busy" otherwise).
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL \
@@ -65,25 +73,48 @@ jobs:
             /opt/microsoft /opt/google /opt/az /usr/local/lib/node_modules
           sudo docker image prune --all --force > /dev/null 2>&1 || true
           sudo swapoff -a && sudo rm -f /swapfile
-          # The runner's second disk (/mnt), when it has room, takes the 20 GB swap file and, with more room, the work
+          # The swap file: 20 GB, or 40 GB for MADLAD-400 7B (33 GB of 32-bit weights in memory while it converts).
+          swap_gb=20
+          need_gb=0
+          case "${{ matrix.key }}" in
+            madlad400-7b) swap_gb=40; need_gb=90 ;;   # swap, 33 GB download, 8 GB output, 8 GB zip
+          esac
+          # The runner's second disk (/mnt), when it has room, takes the swap file and, with more room, the work
           # folder (build/engine-models becomes a link to it).
           swap=/swapfile
           mnt_free=$(df --output=avail -BG /mnt 2>/dev/null | tail -1 | tr -dc 0-9)
-          if [ "${mnt_free:-0}" -ge 24 ]; then swap=/mnt/swapfile; fi
+          if [ "${mnt_free:-0}" -ge $((swap_gb + 4)) ]; then swap=/mnt/swapfile; fi
           if [ "${mnt_free:-0}" -ge 60 ]; then
             sudo mkdir -p /mnt/engine-models && sudo chown "$(id -u):$(id -g)" /mnt/engine-models
             mkdir -p build && ln -sfn /mnt/engine-models build/engine-models
           fi
-          sudo fallocate -l 20G "$swap" && sudo chmod 600 "$swap" && sudo mkswap "$swap" && sudo swapon "$swap"
+          root_free=$(df --output=avail -BG / | tail -1 | tr -dc 0-9)
+          if [ "$need_gb" -gt 0 ] && [ "$(( ${mnt_free:-0} > root_free ? ${mnt_free:-0} : root_free ))" -lt "$need_gb" ]; then
+            echo "::error::${{ matrix.key }} needs about $need_gb GB of free disk; this runner has ${root_free} GB on / and ${mnt_free:-0} GB on /mnt"
+            exit 1
+          fi
+          sudo fallocate -l "${swap_gb}G" "$swap" && sudo chmod 600 "$swap" && sudo mkswap "$swap" && sudo swapon "$swap"
           df -h / /mnt && free -g
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       # Permissive licences only: onnxruntime-genai (MIT) and its model builder, optimum-intel, openvino and nncf
-      # (Apache-2.0), transformers and huggingface_hub (Apache-2.0), torch (BSD-style).
+      # (Apache-2.0), transformers and huggingface_hub (Apache-2.0), torch (BSD-style), CTranslate2 (MIT),
+      # SentencePiece (Apache-2.0).
       - name: Install the converters
         run: |
           python -m pip install --upgrade pip
+          case "${{ matrix.key }}" in
+            # Translation models: CTranslate2's converter, pinned (each version at least two weeks old when chosen).
+            # ctranslate2 4.8.3: the toolkit's faster-whisper accepts 4.x, and a model converted by 4.8.3 loads in
+            # 4.8.3 or newer. sentencepiece 0.2.2: the conversion only copies the SentencePiece files, so the version
+            # does not change them (the toolkit runs 0.2.3). CPU-only torch (no CUDA download).
+            opus-mt-*|madlad400-*)
+              python -m pip install "torch==2.9.1" --index-url https://download.pytorch.org/whl/cpu
+              python -m pip install "ctranslate2==4.8.3" "transformers==4.57.6" "huggingface_hub==0.36.2" \
+                "sentencepiece==0.2.2"
+              exit 0 ;;
+          esac
           python -m pip install "huggingface_hub>=0.34" "transformers>=4.57,<5.6" torch torchvision \
             --extra-index-url https://download.pytorch.org/whl/cpu
           case "${{ matrix.key }}" in
