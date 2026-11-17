@@ -929,7 +929,7 @@ def prepare_pack(source, data_dir, work, cap):
 PLACE_KINDS = ("photo", "origin", "depicted", "market")
 # Collections whose photos show the place itself (streets, homes, shops, landscapes), so a describer may learn to
 # say which country a photo might be from; "own" is the person's own pictures with a place.txt.
-PLACE_VISIBLE = {"dollar_street", "geode", "ptl_crossings", "uroac_crossings", "walkway_dhaka", "outdoor_navigation",
+PLACE_VISIBLE = {"dollar_street", "dollar_street_routines", "geode", "ptl_crossings", "uroac_crossings", "walkway_dhaka", "outdoor_navigation",
                  "seoul_sidewalks", "open_images_street", "commons", "lila_camera_traps", "grocery_store", "own"}
 # Places that are parts of the world, not countries (GeoDE's regions and the like).
 PLACE_REGIONS = {"africa", "the americas", "americas", "east asia", "europe", "south-east asia", "southeast asia",
@@ -1919,6 +1919,36 @@ SOURCES = [
     Source('planetary_gearbox', 'How many gears, and which? Planetary gearbox photos (Zenodo, ready-made pack)',
            'CC BY 4.0 (Zenodo 8223473)', 'Planetary gearbox images, Zenodo 8223473, CC BY 4.0', "permissive", 100, 10,
            prepare_pack, 'about 20 MB'),
+    # People in daily activities (packs/people_activity_packs.py): what people are doing, from V-COCO and Visual
+    # Genome (rows only: the photos are fetched from COCO, CC BY 2.0 or no known copyright), Open Images activity
+    # labels, Commons daily-life and work categories and Dollar Street routines. All show people, so none is used for
+    # picture-making (PEOPLE_AND_BODILY_PACK_KEYS). The non-commercial and share-alike COCO rows are in
+    # people_activity_sources.py.
+    Source('vcoco_actions', 'What is the person doing? Riding, holding, eating, reading, phoning and 20 more '
+           'actions marked on COCO photos (V-COCO, ready-made pack)',
+           'V-COCO MIT (github.com/s-gupta/v-coco); COCO boxes CC BY 4.0; photos CC BY 2.0 or no known copyright',
+           'V-COCO (Gupta and Malik, 2015), MIT, https://github.com/s-gupta/v-coco; photos from COCO '
+           '(cocodataset.org)', "permissive", 1700, 20, prepare_pack, 'about 300 MB (photos fetched from COCO)'),
+    Source('vg_people_actions', 'What are the people doing? Relationships people drew on COCO photos (Visual '
+           'Genome, ready-made pack)',
+           'CC BY 4.0 (visualgenome.org); photos CC BY 2.0 or no known copyright',
+           'Visual Genome (Krishna et al., 2017), CC BY 4.0, https://visualgenome.org; photos from COCO '
+           '(cocodataset.org)', "permissive", 1700, 20, prepare_pack, 'about 300 MB (photos fetched from COCO)'),
+    Source('open_images_activities', 'What is happening? Cooking, shopping, knitting, fishing, harvesting, a '
+           'barber or a street vendor at work (Open Images V7, ready-made pack)',
+           'Annotations CC BY 4.0 (Google Open Images); photos CC BY 2.0, each author credited',
+           'Open Images V7 (Google), CC BY 4.0 annotations; photos CC BY 2.0, credited in ATTRIBUTION.txt',
+           "permissive", 2700, 20, prepare_pack, 'about 1.8 GB'),
+    Source('commons_daily_life', 'What is the person doing? Eating, reading, praying, queueing, carrying water, '
+           'selling in the street and at work in about 70 countries (Wikimedia Commons, ready-made pack)',
+           'Captions CC0; pictures CC0, public domain or CC BY, each author credited',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 2400, 20, prepare_pack,
+           'about 500 MB'),
+    Source('dollar_street_routines', 'Daily routines in homes around the world: washing hands and clothes, '
+           'getting water, cleaning, guests at dinner (Dollar Street, ready-made pack)',
+           'CC BY 4.0 (Gapminder Dollar Street), photographers credited',
+           'Dollar Street by Gapminder, CC BY 4.0, https://www.gapminder.org/dollar-street', "permissive", 1100, 15,
+           prepare_pack, 'about 250 MB'),
     Source('skin_lesion_photos', 'Skin spots photographed with a phone, adults (PAD-UFES-20, ready-made pack)',
            'CC BY 4.0 (Mendeley Data zr7vgbcyr2)',
            'PAD-UFES-20 (Pacheco et al., 2020), CC BY 4.0', "permissive", 2000, 20, prepare_pack, 'about 400 MB', content="medical"),
@@ -2061,6 +2091,8 @@ PEOPLE_AND_BODILY_PACK_KEYS = (
     # things_packs.py: people using things, and Open Images technology photos, which often show people (products,
     # Commons things, bricks and building materials are used)
     "open_images_in_use", "commons_in_use", "open_images_tech",
+    # people_activity_packs.py: people in daily activities (all of them)
+    "vcoco_actions", "vg_people_actions", "open_images_activities", "commons_daily_life", "dollar_street_routines",
 )
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + PEOPLE_AND_BODILY_PACK_KEYS
 
@@ -2378,3 +2410,19 @@ PERSONAL_PICTURE_MAKING_OK |= _mechanical_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(
     s.key for s in MECHANICAL_SOURCES if s.key not in _mechanical_ok)
 _add_collections(MECHANICAL_SOURCES)
+
+# People-in-daily-activity collections that are not open (share-alike Commons files, the COCO rows on non-commercial
+# and share-alike photos, Stanford 40 Actions, SWiG and HAR); the file may be missing. None is used for
+# picture-making (PEOPLE_ACTIVITY_PICTURE_MAKING_OK is empty).
+try:
+    import people_activity_sources as _people_activity  # noqa: E402
+except ImportError as _e:
+    _people_activity = None
+    if getattr(_e, "name", None) != "people_activity_sources":
+        say(f"(The people-in-daily-activity collections could not be loaded: {_e}. They are left out.)")
+PEOPLE_ACTIVITY_SOURCES = list(getattr(_people_activity, "PEOPLE_ACTIVITY_SOURCES", []) or [])
+_people_activity_ok = set(getattr(_people_activity, "PEOPLE_ACTIVITY_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _people_activity_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(
+    s.key for s in PEOPLE_ACTIVITY_SOURCES if s.key not in _people_activity_ok)
+_add_collections(PEOPLE_ACTIVITY_SOURCES)
