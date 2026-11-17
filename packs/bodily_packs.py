@@ -533,7 +533,10 @@ COMMONS_NEEDS = {
     "Cat feces": r"cat|fa?eces|poo+p?s?|excrement|dropping\w*|scat",
     "Horse feces": r"horse|manure|dung|fa?eces|poo+p?s?|dropping\w*|apples",
     "Bird feces": r"bird|guano|dropping\w*|fa?eces|poo+p?s?|excrement|pigeon|gull|goose|geese",
+    "Litter boxes": r"litter\w*|tray",
 }
+# Animal words: a file in a human category (vomit) that names an animal is about an animal and is left out.
+ANIMAL_WORDS = re.compile(r"\b(birds?|cats?|dogs?|animals?|owls?|pellets?|horses?|cows?|fox(es)?)\b", re.I)
 COMMONS_NEEDS = {k: re.compile(rf"\b({v})\b", re.I) for k, v in COMMONS_NEEDS.items()}
 # Words that mean a picture is not a photograph of the thing (art, signs, products), or is not wanted.
 COMMONS_NOT_THIS = re.compile(r"\b(art|drawings?|paintings?|logos?|icons?|emoji|sculptures?|toys?|models?|"
@@ -586,8 +589,11 @@ def build_commons_bodily(limit):
             if GENITAL_AREA.search(words) or SIGN_WORDS.search(words) \
                     or (body and (not ADULT_WORDS.search(words) or CHILD.search(words))):
                 continue
-            if text and not ENGLISH.search(text):
-                text = ""
+            if medical and ANIMAL_WORDS.search(words):
+                continue
+            if text and (not ENGLISH.search(text) or (category in COMMONS_NEEDS
+                                                       and not COMMONS_NEEDS[category].search(text))):
+                text = ""                           # a description that does not name the thing is not learnt from
             seen.add(title)
             extra = {"credit": credit, **commons_place(title), **(MEDICAL if medical else {}),
                      **({"child": True} if CHILD_WORDS.search(words) else {})}

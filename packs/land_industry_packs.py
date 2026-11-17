@@ -854,7 +854,7 @@ def build_plp_floating_targets(limit):
     except Exception as e:  # noqa: BLE001 - the 2021 photos are still taken
         say(f"  PLP2019: not read ({str(e)[:100]})")
     say(f"  PLP2019: {len(out)} drone photos")
-    place = "Gulf of Gera, Lesvos, Greece"
+    place = "Lesvos, Greece"                     # the Gulf of Gera (the record)
     for date in PLP2021_DATES:
         if len(out) >= limit:
             break

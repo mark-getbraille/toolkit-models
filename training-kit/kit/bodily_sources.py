@@ -267,7 +267,10 @@ COMMONS_NEEDS = {
     "Cat feces": r"cat|fa?eces|poo+p?s?|excrement|dropping\w*|scat",
     "Horse feces": r"horse|manure|dung|fa?eces|poo+p?s?|dropping\w*|apples",
     "Bird feces": r"bird|guano|dropping\w*|fa?eces|poo+p?s?|excrement|pigeon|gull|goose|geese",
+    "Litter boxes": r"litter\w*|tray",
 }
+# Animal words: a file in a human category (vomit) that names an animal is about an animal and is left out.
+ANIMAL_WORDS = re.compile(r"\b(birds?|cats?|dogs?|animals?|owls?|pellets?|horses?|cows?|fox(es)?)\b", re.I)
 COMMONS_NEEDS = {k: re.compile(rf"\b({v})\b", re.I) for k, v in COMMONS_NEEDS.items()}
 # Files that are not a photograph of the thing (art, signs, bins), or not wanted.
 COMMONS_NOT_THIS = re.compile(r"\b(art|drawings?|paintings?|logos?|icons?|emoji|sculptures?|toys?|models?|"
@@ -301,7 +304,10 @@ def commons_bodily_rows(source, data_dir, categories, prefix, medical):
                      **({"child": True} if CHILD_WORDS.search(words) else {})}
             name = commons_file_name(prefix, title)
             items.append((name, url, dict({"question": question, "answer": answer}, **extra)))
-            if text and ENGLISH.search(text):
+            if medical and ANIMAL_WORDS.search(words):
+                continue
+            named = category not in COMMONS_NEEDS or COMMONS_NEEDS[category].search(text)
+            if text and ENGLISH.search(text) and named:
                 items.append((name, url, dict({"question": ALT_TEXT, "answer": text}, **extra)))
             found += 1
         say(f"  Commons {category}: {found} files under CC BY-SA or GFDL")

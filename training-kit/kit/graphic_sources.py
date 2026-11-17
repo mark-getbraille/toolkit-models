@@ -105,9 +105,10 @@ def not_shown(*texts):
 
 
 def tagged(row, *texts):
-    """row with "content": "graphic" when its answer or texts are graphic, and "child": True when they name a
-    child."""
-    words = (row.get("answer", ""), *texts)
+    """row with "content": "graphic" when the picture's own words (texts: its caption, file name or title) are
+    graphic, and "child": True when they name a child. (A category's own answer, written for the kit, does not
+    count.)"""
+    words = texts
     if any(GRAPHIC.search(t or "") for t in words):
         row = dict(row, content="graphic")
     if child_in(*words):
@@ -284,7 +285,7 @@ def prepare_iwm_photos(source, data_dir, work, cap):
                 if not answer or not_shown(answer, title):
                     continue
                 credit = f"{title[:150]}, Imperial War Museums, {licence} ({IWM_LICENCE}), {IWM}{path}"
-                row = tagged({"question": NARRATE, "answer": answer, "split": "", "credit": credit}, title)
+                row = tagged({"question": NARRATE, "answer": answer, "split": "", "credit": credit}, answer, title)
                 items.append((f"iwm-{path.rsplit('/', 1)[-1]}.jpg", picture, row))
                 found += 1
                 if found >= per_word:

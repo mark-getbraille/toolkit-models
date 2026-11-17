@@ -54,7 +54,7 @@ The packs (licences checked at the source in November 2026):
                     domain or CC BY (each author credited; the CC BY-SA files are a share-alike kit entry,
                     training-kit/kit/graphic_sources.py), with the file's English caption or description.
   commons_disasters Wikimedia Commons categories of earthquake, flood, tornado, landslide and fire damage, collapsed
-                    and destroyed buildings, debris and rubble, and the FEMA photographs on Commons (US government
+                    buildings, debris and rubble, and the FEMA photographs on Commons (US government
                     work). Licences as commons_war.
   commons_safety    Wikimedia Commons categories of practical safety scenes: fallen power lines, flooded roads,
                     smoke, burning buildings, unexploded ordnance and its warning signs, landmine warning signs,
@@ -173,8 +173,8 @@ def marked(rows, *texts):
 
 def finish_graphic(key, items, limit, workers=4, pause=0.2):
     """documentary_packs.finish (shuffle, download, twin rows), after leaving out what not_shown refuses (on every
-    row's answer) and marking the graphic pictures; says how many pictures are graphic."""
-    items = [(name, url, marked(rows)) for name, url, rows in items if not not_shown(*(r["answer"] for r in rows))]
+    row's answer); the builders have marked the graphic pictures already. Says how many pictures are graphic."""
+    items = [(name, url, rows) for name, url, rows in items if not not_shown(*(r["answer"] for r in rows))]
     entries = finish(key, items, limit, workers=workers, pause=pause)
     say(f"{key}: {sum(1 for _, d, r in entries if d is not None and r.get('content') == 'graphic')} pictures marked "
         "graphic")
@@ -501,6 +501,9 @@ COMMONS_NOT_IT = re.compile(r"\b(art|arts|artworks?|drawings?|illustrations?|pai
                             r"newspapers?|portraits?|people by name)\b", re.I)
 # A description that is not in English or is not a description (codes, other scripts).
 NOT_ENGLISH = re.compile(r"[^\x00-ɏ‐-‧]|\b[a-z]{2}:\S")
+# Descriptions that are catalogue records rather than descriptions ("Format: Lysbilde / Dias Dato / Date: 1952 ...").
+METADATA = re.compile(r"\b(format|dato|date|fotograf|photographer|sted|place|photo source|source|digitized by|"
+                      r"oppdatert|update|author|license|licence|camera|wikipedia|accession|object number)\s*:", re.I)
 ENGLISH_WORDS = re.compile(r"\b(the|of|in|and|on|after|with|at|by|from|a|an|is|are|was|were)\b", re.I)
 
 COMMONS_WAR = {
@@ -528,7 +531,7 @@ COMMONS_DISASTERS = {
     "Damage of the 2023 Kahramanmaraş earthquakes in Adıyaman": False, "Flood damage": True, "Floods": True,
     "2011 Brisbane flood damage": False, "Johnstown Flood": True, "1966 flood of Florence": True,
     "Bridges destroyed by floods": True, "Tornado damage": True, "Landslides": True, "Collapsed buildings": True,
-    "Destroyed buildings": True, "Destroyed houses": True, "Debris": True, "Rubble": True, "House fires": True,
+    "Debris": True, "Rubble": True, "House fires": True,
     "Images from FEMA": True,
 }
 # The practical safety scenes: category -> (question, answer about the hazard or sign, whether one level of its
@@ -587,7 +590,8 @@ def commons_answer(text):
     """A Commons caption or description as an answer: tidied and at most about 70 words; "" when it is not in
     English or shorter than 6 words."""
     answer = caption_of(text, 70)
-    if words(answer) < 6 or NOT_ENGLISH.search(answer) or len(ENGLISH_WORDS.findall(answer)) < 1:
+    if words(answer) < 6 or NOT_ENGLISH.search(answer) or METADATA.search(answer) \
+            or len(ENGLISH_WORDS.findall(answer)) < 1:
         return ""
     return answer
 
@@ -638,10 +642,12 @@ def build_commons(key, categories, limit, safety=False):
             if child_in(described, name_words):
                 rows = [dict(r, child=True) for r in rows]
             rows = [dict(r, **commons_place(title)) for r in rows]
+            if is_graphic(described, name_words):    # the file's own words (not the category's answer) decide
+                rows = [dict(r, content="graphic") for r in rows]
             seen.add(title)
             name = re.sub(r"[^\w.-]+", "_", title.split(":", 1)[-1].rsplit(".", 1)[0])[:80]
             items.append((f"{key.replace('_', '-')}-{name}.jpg", re.sub(r"/\d+px-([^/]+)$", r"/1280px-\1", url),
-                          marked(rows, name_words)))
+                          rows))
             found += 1
             if found >= per_category:
                 break
