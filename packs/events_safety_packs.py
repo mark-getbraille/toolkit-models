@@ -136,6 +136,7 @@ def the(name):
     if name.lower().startswith("the "):
         return "the " + name[4:]
     if re.search(r"\b(Front|War|Wars|Revolution|Games|Olympics|Campaign|Offensive|Crisis|Movement|Uprising|"
+                 r"Parade|March|Festival|Carnival|Fair|Rally|Strike|Riot|Coronation|Funeral|Wedding|Earthquake|"
                  r"Expedition|Programme|Program|Rebellion|Blitz|Exposition|Exhibition|Conference|Congress)$", name):
         return "the " + name
     if re.match(r"^\d", name) or re.match(r"^[A-Z][\w'’-]*( [A-Z][\w'’-]*)? (of|on|to|at|for|in|against|between) ",
@@ -422,12 +423,13 @@ EVENT_CLASSES = {
 # Event kinds never taken, even when an item is also an instance of a class above.
 EVENT_NEVER = re.compile(r"\b(massacre|genocide|pogrom|murder|lynching|execution|shooting|beheading|rape|"
                          r"holocaust|extermination)\b", re.I)
-EVENT_QUERY = """SELECT ?e ?eLabel ?cat ?t ?tp ?s ?sp ?f ?fp ?locLabel ?countryLabel ?partLabel WHERE {
+EVENT_QUERY = """SELECT ?e ?eLabel ?cat ?t ?tp ?s ?sp ?f ?fp ?l ?lp ?locLabel ?countryLabel ?partLabel WHERE {
   ?e wdt:P31 wd:%s ; wdt:P373 ?cat .
   OPTIONAL { ?e p:P585/psv:P585 [ wikibase:timeValue ?t ; wikibase:timePrecision ?tp ] }
   OPTIONAL { ?e p:P580/psv:P580 [ wikibase:timeValue ?s ; wikibase:timePrecision ?sp ] }
   OPTIONAL { ?e p:P582/psv:P582 [ wikibase:timeValue ?f ; wikibase:timePrecision ?fp ] }
-  FILTER(BOUND(?t) || BOUND(?s))
+  OPTIONAL { ?e p:P619/psv:P619 [ wikibase:timeValue ?l ; wikibase:timePrecision ?lp ] }
+  FILTER(BOUND(?t) || BOUND(?s) || BOUND(?l))
   OPTIONAL { ?e wdt:P276 ?loc }
   OPTIONAL { ?e wdt:P17 ?country }
   OPTIONAL { ?e wdt:P361 ?part }
@@ -467,9 +469,10 @@ def wikidata_events(s, qclass, most):
         if not name or EVENT_NEVER.search(name):
             continue
         point = time_parts((b.get("t") or {}).get("value"), (b.get("tp") or {}).get("value"))
+        launch = time_parts((b.get("l") or {}).get("value"), (b.get("lp") or {}).get("value"))     # P619
         start = time_parts((b.get("s") or {}).get("value"), (b.get("sp") or {}).get("value"))
         end = time_parts((b.get("f") or {}).get("value"), (b.get("fp") or {}).get("value"))
-        when = when_words(point, start, end)
+        when = when_words(point, start, end) or ("launched " + when_words(launch) if launch else "")
         country_label = label(b, "countryLabel")
         country = country_named(country_label) or country_label
         location = label(b, "locLabel")
@@ -479,14 +482,36 @@ def wikidata_events(s, qclass, most):
     return list(events.values())
 
 
+def event_name(name):
+    """An event's Wikidata name without a year or place added after a comma ("Gay Easter Parade, New Orleans, 2017"
+    -> "Gay Easter Parade") and whether something was cut (then the answer does not repeat it)."""
+    short = re.sub(r"(,\s*[^,]+)*,\s*(1[0-9]|20)\d\d$", "", name).strip()
+    return (short, True) if short and short != name else (name, False)
+
+
+def year_clash(event, f):
+    """True when the file's title names a year (1800-2029) that is not the event's year or period, a sign that the
+    file is filed under the wrong year's event."""
+    years = {int(y) for y in re.findall(r"\b(1[89]\d\d|20[0-2]\d)\b", f["title"])}
+    known = [int(y) for y in re.findall(r"\b(\d{4})\b", event["when"])]
+    if not years or not known:
+        return False
+    return not any(min(known) <= y <= max(known) for y in years)
+
+
 def event_rows(event, f):
     """The rows of one Commons file showing an event: what event (from Wikidata), where and when, and the file's own
-    caption when it is a description of 6 words or more; [] when the file is refused (not_shown)."""
+    caption when it is a description of 6 words or more; [] when the file is refused (not_shown) or its title names
+    another year than the event's."""
+    if year_clash(event, f):
+        return []
     credit = f"{f['credit']}; event facts from Wikidata ({event['qid']}, CC0)"
     place_fields = where(event["place"], "depicted")
     caption = tidy(capped_words(f["text"], 70)) if f["text"] else ""
     rows = [{"question": ASK_DESCRIBE, "answer": caption, "credit": credit, **place_fields}] if usable(caption) else []
-    rows.append({"question": ASK_EVENT, "answer": event_answer(the(event["name"]), event["place"], event["when"],
+    name, cut = event_name(event["name"])
+    rows.append({"question": ASK_EVENT, "answer": event_answer(the(name), event["place"] if not cut or event["place"]
+                                                               not in event["name"] else "", event["when"],
                                                                event["part"]), "credit": credit, **place_fields})
     where_when = where_when_answer(event["place"], event["when"])
     if where_when:
@@ -1019,7 +1044,6 @@ SAFETY_PHOTOS = {
     "Lifebuoys": (ASK_WHAT, "It shows a lifebuoy, a ring to throw to someone in the water.", None, 1),
     "Fire hydrants": (ASK_WHAT, "It shows a fire hydrant.", None, 0),
     "Wet floor signs": (ASK_HAZARD, "Yes: a sign warns that the floor is wet and may be slippery.", None, 1),
-    "Wet floors": (ASK_HAZARD, "Yes: the floor is wet and may be slippery.", None, 0),
     "Broken glass": (ASK_HAZARD, "Yes: there is broken glass, which can cut.", None, 1),
     "Manholes": (ASK_HAZARD, "Yes: there is an open manhole, a hole someone could fall into.", r"\bopen(ed)?\b", 1),
     "Construction sites": (ASK_HAZARD, "Yes: this is a construction site, with hazards such as machines, holes and "
@@ -1034,8 +1058,8 @@ SAFETY_PHOTOS = {
                       None, 1),
     "Icy roads": (ASK_HAZARD, "Yes: the road is icy and slippery.", None, 1),
     "Potholes": (ASK_HAZARD, "Yes: there is a pothole in the road.", None, 1),
-    "Downed power lines": (ASK_HAZARD, "Yes: power lines have fallen down; they may still carry electricity.", None,
-                           0),
+    "Downed power lines": (ASK_HAZARD, "Yes: power lines have fallen down; they may still carry electricity.",
+                           r"\b(power|electric\w*) ?lines?\b|\bwires?\b", 0),
     "Fallen trees": (ASK_HAZARD, "Yes: a tree has fallen.", None, 0),
     "Sinkholes": (ASK_HAZARD, "Yes: there is a sinkhole, where the ground has fallen in.", None, 0),
     "Traffic cones": (ASK_WHAT, "It shows traffic cones, which mark a hazard or roadworks.", None, 0),

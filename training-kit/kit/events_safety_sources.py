@@ -186,12 +186,13 @@ EVENT_CLASSES = ("Q273120", "Q175331", "Q657449", "Q1413045", "Q51404", "Q898830
                  "Q1644573", "Q10931", "Q45382", "Q178561", "Q188055", "Q198")
 EVENT_NEVER = re.compile(r"\b(massacre|genocide|pogrom|murder|lynching|execution|shooting|beheading|rape|"
                          r"holocaust|extermination)\b", re.I)
-EVENT_QUERY = """SELECT ?e ?eLabel ?cat ?t ?tp ?s ?sp ?f ?fp ?locLabel ?countryLabel ?partLabel WHERE {
+EVENT_QUERY = """SELECT ?e ?eLabel ?cat ?t ?tp ?s ?sp ?f ?fp ?l ?lp ?locLabel ?countryLabel ?partLabel WHERE {
   ?e wdt:P31 wd:%s ; wdt:P373 ?cat .
   OPTIONAL { ?e p:P585/psv:P585 [ wikibase:timeValue ?t ; wikibase:timePrecision ?tp ] }
   OPTIONAL { ?e p:P580/psv:P580 [ wikibase:timeValue ?s ; wikibase:timePrecision ?sp ] }
   OPTIONAL { ?e p:P582/psv:P582 [ wikibase:timeValue ?f ; wikibase:timePrecision ?fp ] }
-  FILTER(BOUND(?t) || BOUND(?s))
+  OPTIONAL { ?e p:P619/psv:P619 [ wikibase:timeValue ?l ; wikibase:timePrecision ?lp ] }
+  FILTER(BOUND(?t) || BOUND(?s) || BOUND(?l))
   OPTIONAL { ?e wdt:P276 ?loc }
   OPTIONAL { ?e wdt:P17 ?country }
   OPTIONAL { ?e wdt:P361 ?part }
@@ -246,7 +247,9 @@ def the(name):
     if name.lower().startswith("the "):
         return "the " + name[4:]
     if re.match(r"^\d", name) or re.search(r"\b(Front|War|Wars|Revolution|Games|Olympics|Campaign|Offensive|Crisis|"
-                                           r"Movement|Uprising|Expedition|Rebellion|Exhibition|Exposition)$", name) \
+                                           r"Movement|Uprising|Expedition|Rebellion|Exhibition|Exposition|Parade|March|"
+                                           r"Festival|Carnival|Fair|Rally|Strike|Riot|Coronation|Funeral|Wedding|"
+                                           r"Earthquake)$", name) \
             or re.match(r"^[A-Z][\w'’-]*( [A-Z][\w'’-]*)? (of|on|to|at|for|in|against|between) ", name):
         return "the " + name
     return name
@@ -283,9 +286,11 @@ def wikidata_events(s, qclass, most):
         name = label(b, "eLabel")
         if qid in events or not name or EVENT_NEVER.search(name):
             continue
+        launch = time_parts((b.get("l") or {}).get("value"), (b.get("lp") or {}).get("value"))     # P619
         when = when_words(time_parts((b.get("t") or {}).get("value"), (b.get("tp") or {}).get("value")),
                           time_parts((b.get("s") or {}).get("value"), (b.get("sp") or {}).get("value")),
                           time_parts((b.get("f") or {}).get("value"), (b.get("fp") or {}).get("value")))
+        when = when or ("launched " + when_words(launch) if launch else "")
         country = label(b, "countryLabel")
         country = SHORT_COUNTRIES.get(country, country)
         location = label(b, "locLabel")
@@ -296,10 +301,17 @@ def wikidata_events(s, qclass, most):
 
 
 def event_rows(event, f):
-    """The kit rows of one Commons file showing an event, or []."""
+    """The kit rows of one Commons file showing an event, or [] (also when the file's title names a year outside the
+    event's dates: a file filed under the wrong year's event)."""
+    years = {int(y) for y in re.findall(r"\b(1[89]\d\d|20[0-2]\d)\b", f["title"])}
+    known = [int(y) for y in re.findall(r"\b(\d{4})\b", event["when"])]
+    if years and known and not any(min(known) <= y <= max(known) for y in years):
+        return []
     credit = f"{f['credit']}; event facts from Wikidata ({event['qid']}, CC0)"
     place = sources.place_fields({"place": event["place"], "place_kind": "depicted"}) if event["place"] else {}
-    answer = f"This shows {the(event['name'])}" + (f", in {place_words(event['place'])}" if event["place"] else "") \
+    name = re.sub(r"(,\s*[^,]+)*,\s*(1[0-9]|20)\d\d$", "", event["name"]).strip() or event["name"]
+    say_place = event["place"] and (name == event["name"] or event["place"] not in event["name"])
+    answer = f"This shows {the(name)}" + (f", in {place_words(event['place'])}" if say_place else "") \
         + (f", {event['when']}" if event["when"] else "") + "."
     if event["part"] and event["part"].lower() not in event["name"].lower():
         answer += f" It was part of {the(event['part'])}."
@@ -381,14 +393,15 @@ HAZARDS = {
     "Building fires": "Yes: a building is on fire.", "Burning buildings": "Yes: a building is on fire.",
     "House fires": "Yes: a house is on fire.", "Wildfires": "Yes: there is a wildfire, a fire burning through open "
                                                             "land.",
-    "Oil spills": "Yes: oil has been spilled.", "Wet floors": "Yes: the floor is wet and may be slippery.",
+    "Oil spills": "Yes: oil has been spilled.",
     "Flooded roads": "Yes: the road is flooded; the water may be deeper or faster than it looks.",
     "Icy roads": "Yes: the road is icy and slippery.", "Potholes": "Yes: there is a pothole in the road.",
     "Downed power lines": "Yes: power lines have fallen down; they may still carry electricity.",
     "Fallen trees": "Yes: a tree has fallen.", "Sinkholes": "Yes: there is a sinkhole, where the ground has fallen in.",
     "Smoke": "Yes: there is smoke, which may come from a fire.",
 }
-HAZARD_NEEDS = {"Manholes": r"\bopen(ed)?\b", "Smoke": r"\b(fire|burning|smoke from)\b"}
+HAZARD_NEEDS = {"Manholes": r"\bopen(ed)?\b", "Smoke": r"\b(fire|burning|smoke from)\b",
+                "Downed power lines": r"\b(power|electric\w*) ?lines?\b|\bwires?\b"}
 NOT_A_PHOTO = re.compile(r"\b(art|drawings?|diagrams?|illustrations?|icons?|logos?|maps?|videos?|paintings?|stamps?|"
                          r"toys?|models?|sculptures?|SVG|charts?|animations?)\b", re.I)
 
