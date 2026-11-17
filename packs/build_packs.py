@@ -132,6 +132,16 @@ def out_of_time():
     return bool(TIME_LIMIT) and time.time() - STARTED > TIME_LIMIT
 
 
+LISTING_SHARE = 0.5     # the share of the time limit a pack may spend finding its pictures before fetching them
+
+
+def listing_out_of_time():
+    """True once a pack has spent LISTING_SHARE of the time limit on finding its pictures: it then stops looking and
+    fetches what it has found (the USGS and Library of Congress packs spent the whole limit looking, so their
+    downloads were refused and they came out empty or were cancelled, 17 November)."""
+    return bool(TIME_LIMIT) and time.time() - STARTED > TIME_LIMIT * LISTING_SHARE
+
+
 def session():
     """A requests session with the kit's name (Wikimedia asks for one with a contact). Once the build is out of time,
     every request it makes fails straight away (see TIME_LIMIT)."""

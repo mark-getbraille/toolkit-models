@@ -75,6 +75,7 @@ import time
 
 import build_packs  # noqa: F401 - loaded first: the other pack files and build_packs import each other
 from build_packs import session, clean, fetch_all, say, LONG_SIDE, COMMONS_API, COMMONS_FREE
+from build_packs import listing_out_of_time, out_of_time
 from food_packs import with_twins, count_pictures
 from expression_packs import CHILD
 from world_packs import capped_words, full_stop
@@ -131,6 +132,8 @@ def picture_rows(answer, credit, place="", texts=()):
 def get_json(s, url, params=None, tries=4, pause=5):
     """The JSON at url, waiting and trying again when the server is busy (429 or 5xx); None when it never came."""
     for attempt in range(tries):
+        if out_of_time():                  # no waiting and trying again once the time is up
+            return None
         try:
             r = s.get(url, params=params, timeout=120)
             if r.status_code == 200:
@@ -223,6 +226,9 @@ def loc_items(s, path, extra, total, name, want, rng):
     items, answers = [], set()
     per_page = max(3, want // 25)          # a few from each page: a page holds one place or one photographer's day
     for page in pages[:60]:
+        if listing_out_of_time():          # leave the rest of the time for fetching what was found
+            say(f"  {name.split(',')[0]}: stopped looking at half the time limit")
+            break
         taken = 0
         time.sleep(2)
         data = get_json(s, LOC + path, {"fo": "json", "c": 100, "sp": page, "at": "results", **extra}, pause=15)
@@ -254,6 +260,8 @@ def build_loc(key, limit):
     sets = LOC_SETS[key]
     total = sum(n for _, _, n, _ in sets)
     for path, extra, n, name in sets:
+        if listing_out_of_time():
+            break
         share = max(0.25, n / total) if len(sets) > 1 else 1.0
         items += loc_items(s, path, extra, n, name, int(limit * share * 1.3) + 4, rng)
     return finish(key, items, limit, workers=3, pause=0.5)
@@ -514,7 +522,7 @@ def build_usgs(limit):
     pages = list(range(0, last + 1))
     random.Random(75).shuffle(pages)
     for page in pages:
-        if len(items) >= limit * 1.3:
+        if len(items) >= limit * 1.3 or listing_out_of_time():
             break
         time.sleep(1)
         try:

@@ -47,6 +47,7 @@ import time
 
 import build_packs  # noqa: F401 - loaded first: the other pack files and build_packs import each other
 from build_packs import session, clean, say
+from build_packs import listing_out_of_time  # noqa: E402
 from food_packs import listed, count_pictures
 from everyday_packs import RemoteZip, fetch_from_zip, a_or_an, number_word, plural
 from expression_packs import mark_child, child_count
@@ -345,6 +346,8 @@ def build_fashionpedia(limit):
     def credited(candidate):
         """The candidate with its credit and child mark, or None when Flickr now shows a licence that is not free."""
         image, licence, zip_url, question, answer = candidate
+        if listing_out_of_time():          # half the time is gone: keep the photos already checked, fetch them
+            return None
         photo = flickr_id(image.get("original_url"))
         info = flickr_page(s, photo) if photo else {}
         if info.get("licence") is not None and info["licence"] not in FLICKR_FREE:

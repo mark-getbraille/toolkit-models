@@ -449,9 +449,10 @@ COMMONS_ON_FOOD = re.compile(r"bread|fruit|food|strawberr|tomato|peach|grape|ber
                              r"cake|meal|cheese|onion|pepper|melon|banana|plum|citrus|orange|lemon", re.I)
 
 
-def commons_get(s, params, tries=8):
+def commons_get(s, params, tries=12):
     """A Commons API answer (JSON), waiting and trying again politely when the server asks to slow down (429, 503,
-    "maxlag"): it waits as long as the server says, or 5, 10, 20 ... seconds up to two minutes."""
+    "maxlag"): it waits as long as the server says, or 5, 10, 20 ... seconds up to five minutes, 12 times (about 40
+    minutes in all) before giving up."""
     params = dict(params, format="json", maxlag=5)
     wait = 5
     for _ in range(tries):
@@ -469,9 +470,9 @@ def commons_get(s, params, tries=8):
             pause = wait
         except Exception:  # noqa: BLE001 - network trouble: wait and try again
             pause = wait
-        say(f"  Commons asked to slow down: waiting {min(pause, 120)} seconds")
-        time.sleep(min(pause, 120))
-        wait = min(wait * 2, 120)
+        say(f"  Commons asked to slow down: waiting {min(pause, 300)} seconds")
+        time.sleep(min(pause, 300))
+        wait = min(wait * 2, 300)        # up to five minutes between tries: Commons asks for patience
     raise RuntimeError("Wikimedia Commons kept refusing requests (429); try again later.")
 
 
