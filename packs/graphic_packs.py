@@ -105,7 +105,8 @@ GRAPHIC = re.compile(r"\b(dead|death|deaths|died|dying|corpses?|cadavers?|bodies
                      r"remains of (?:the )?(?:dead|soldiers?|victims?|bodies|men|women|people|prisoners?|"
                      r"inmates?|civilians?)|"
                      r"mutilat\w*|amputat\w*|amputees?|charred|burned alive|cremat\w*|exhum\w*|fatalit\w*|"
-                     r"stretchers?|litters?|gunshot|shrapnel|severed|decompos\w*|starv\w*|emaciat\w*|"
+                     r"stretchers?|litters?|gunshot|shrapnel|severed|decompos\w*|starv\w*|emaciat\w*|burn victims?|"
+                     r"hit by (?:a |an )?(?:fire ?bomb|bomb|shell|bullet|shrapnel|sniper)|"
                      r"carcass\w*|morgue|body bags?)\b", re.I)
 # Sexual violence: always left out.
 SEXUAL_VIOLENCE = re.compile(r"\b(rape[ds]?|raping|rapists?|sexual(?:ly)? (?:assault\w*|abuse\w*|violence|"
@@ -328,7 +329,9 @@ NARA_WORDS = ("wounded", "casualties", "dead", "killed", "litter", "aid station"
               "booby trap", "shell hole", "flood", "Korea wounded", "Vietnam wounded", "first aid")
 NARA_MOST_BYTES = 30_000_000        # the Signal Corps scans are JPEGs of about 22 MB; larger files are left out
 NARA_NOTES = re.compile(r"\s*\((?:NOTE:[^)]*|[^)]*FICHE[^)]*)\)|^\s*(?:Original caption:\s*)?(?:Photograph of\s+)?|"
-                        r"\s*\b\d{2,3}-SC-\d+\w*\b", re.I)
+                        r"\s*\b\d{2,3}-SC-\d+\w*\b|\s*\bPhotographer:.*$", re.I)
+# A heading of capitalised words before a Signal Corps caption ("KOREA KOREAN CONFLICT Three Korean women ...").
+NARA_HEADING = re.compile(r"^(?:[A-Z][A-Z.'-]+\s+){2,}(?=[A-Z][a-z])")
 
 
 def nara_picture(record):
@@ -406,7 +409,7 @@ def build_nara_war(limit):
                     continue
                 title, note = clean(record.get("title")), clean(record.get("scopeAndContentNote"))
                 text = note if words(note) > words(title) and words(note) < 120 else title
-                answer = caption_of(NARA_NOTES.sub("", text))
+                answer = caption_of(NARA_NOTES.sub("", NARA_HEADING.sub("", text)))
                 picture = nara_picture(record)
                 if not picture or words(answer) < 6 or answer.lower() in answers or LOC_NOT_A_PHOTO.search(title) \
                         or not_shown(answer, title, note):

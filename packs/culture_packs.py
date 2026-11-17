@@ -155,11 +155,16 @@ def is_child(*texts):
     return any(CHILD.search(t or "") or YOUNG.search(t or "") for t in texts)
 
 
+# Captions written by a template, not by the photographer (Wiki Loves Monuments and heritage uploads).
+BOILERPLATE = re.compile(r"identified by the ID|^this is a photo of (a|an) (monument|cultural heritage|listed|"
+                         r"historic|protected|natural heritage)", re.I)
+
+
 def caption_row(text, title):
     """ "Describe this picture." with the file's own caption (6 words or more, nothing sexual), or None."""
     answer = tidy(text)
     letters = [c for c in answer if c.isalpha()]
-    if not usable(answer) or answer.lower().startswith(("file:", "dsc", "img")) or \
+    if not usable(answer) or answer.lower().startswith(("file:", "dsc", "img")) or BOILERPLATE.search(answer) or \
             sum(1 for c in letters if c > "\u024f") > len(letters) * 0.1:
         return None                                # too short, a file name, or not in English letters
     return {"question": ASK_DESCRIBE, "answer": answer}
@@ -1107,6 +1112,10 @@ def vehicle_rows(d, title, text):
         return []                                  # details, not the vehicle seen whole
     kinds = [k for k in d.get("parentLabel") or [] if k.lower() not in VEHICLE_GENERIC and not re.match(r"^\d", k)]
     kind = sorted(kinds, key=len)[0] if kinds else d["default_kind"]
+    if not re.search(r"\b(car|vehicle|truck|lorry|van|bus|coach|motorcycle|bike|scooter|tram|train|locomotive|"
+                     r"multiple unit|ferry|ship|boat|SUV|sedan|saloon|coupé|coupe|hatchback|estate|roadster|"
+                     r"convertible|limousine|pickup|minivan|taxi)s?$", kind, re.I):
+        kind = f"{kind} {d['default_kind']}"           # "A-segment" -> "A-segment car"
     makers = d.get("makerLabel") or []
     by = f" made by {makers[0]}" if len(makers) == 1 else ""
     name = d["label"] if d["default_kind"] != "ferry" else named(d["label"])

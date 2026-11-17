@@ -306,6 +306,11 @@ def culture_sa_subjects():
     return out
 
 
+# Captions written by a template, not by the photographer (Wiki Loves Monuments and heritage uploads).
+BOILERPLATE = re.compile(r"identified by the ID|^this is a photo of (a|an) (monument|cultural heritage|listed|"
+                         r"historic|protected|natural heritage)", re.I)
+
+
 def culture_sa_rows(kind, d, title, text):
     """The rows of one share-alike picture from its subject's Wikidata facts (or its category's fixed sentence)."""
     def kind_of():
@@ -346,7 +351,7 @@ def culture_sa_rows(kind, d, title, text):
             + (f" made by {makers[0]}" if len(makers) == 1 else "") + origin())})
     else:
         rows.append({"question": d["ask"], "answer": d["say"]})
-    if text:
+    if text and not BOILERPLATE.search(text):
         rows.append({"question": NARRATE, "answer": text})
     extra = sources.place_fields({"place": place}) if place else {}
     return [dict(r, **extra) for r in rows]

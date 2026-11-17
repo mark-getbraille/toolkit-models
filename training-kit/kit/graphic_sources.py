@@ -64,7 +64,8 @@ GRAPHIC = re.compile(r"\b(dead|death|deaths|died|dying|corpses?|cadavers?|bodies
                      r"remains of (?:the )?(?:dead|soldiers?|victims?|bodies|men|women|people|prisoners?|"
                      r"inmates?|civilians?)|"
                      r"mutilat\w*|amputat\w*|amputees?|charred|burned alive|cremat\w*|exhum\w*|fatalit\w*|"
-                     r"stretchers?|litters?|gunshot|shrapnel|severed|decompos\w*|starv\w*|emaciat\w*|"
+                     r"stretchers?|litters?|gunshot|shrapnel|severed|decompos\w*|starv\w*|emaciat\w*|burn victims?|"
+                     r"hit by (?:a |an )?(?:fire ?bomb|bomb|shell|bullet|shrapnel|sniper)|"
                      r"carcass\w*|morgue|body bags?)\b", re.I)
 SEXUAL_VIOLENCE = re.compile(r"\b(rape[ds]?|raping|rapists?|sexual(?:ly)? (?:assault\w*|abuse\w*|violence|"
                              r"slavery|exploit\w*)|molest\w*|forced prostitution|comfort women)\b", re.I)
