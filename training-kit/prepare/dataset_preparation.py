@@ -534,7 +534,8 @@ def main():
     if "--self-test" in sys.argv:
         self_test()
         return
-    sys.excepthook = wizard.log_crash
+    sys.excepthook = wizard.log_crash          # any unexpected error goes into the desktop log, as in the wizard
+    threading.excepthook = lambda args: wizard.log_crash(args.exc_type, args.exc_value, args.exc_traceback)
     app = wx.App(False)
     PrepareWindow().Show()
     app.MainLoop()
