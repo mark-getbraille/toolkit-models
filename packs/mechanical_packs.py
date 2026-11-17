@@ -781,6 +781,8 @@ def iso_meaning(title, description):
 
 def warning_advice(words):
     """The standard warning-light sentence for a symbol whose words match WARNING_LIGHTS, or ""."""
+    if re.search(r"\btrailer\b", words, re.I):        # a trailer's own light: its description says it
+        return ""
     for pattern, sentence in WARNING_LIGHTS:
         if re.search(pattern, words, re.I):
             return sentence
