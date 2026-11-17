@@ -48,6 +48,7 @@ photographer's country where it lies in the photo's region, else the region.
 
 import csv
 import os
+import shutil
 import io
 import json
 import math
@@ -169,7 +170,11 @@ def zip_entries(stream):
             data, rest = b"".join(parts), unzip.unused_data
             if len(rest) < 16:
                 rest += stream.read(16 - len(rest))
-            stream = _Joined(rest[16:] if rest[:4] == b"PK\x07\x08" else rest[12:], stream)
+            left = rest[16:] if rest[:4] == b"PK\x07\x08" else rest[12:]
+            if isinstance(stream, _Joined):     # one layer only: deeper layers ran out of Python's call depth
+                stream.head = left + stream.head
+            else:
+                stream = _Joined(left, stream)
         else:
             data = stream.read(size)
             if method == 8:
@@ -392,8 +397,14 @@ def build_uroac_crossings(limit):
               for n in outer.namelist() if n.upper().startswith("LABELS/") and n.endswith(".txt")}
     say(f"UrOAC: {len(labels)} labelled photos")
     inner = next(n for n in outer.namelist() if n.lower().endswith(".zip"))
+    # The photos are in a zip inside the zip: copied out to disk once and read as an ordinary zip (reading it as a
+    # stream nested one reader per photo and ran out of Python's call depth after about a thousand).
+    inner_path = path + ".inner.zip"
+    with outer.open(inner) as source, open(inner_path, "wb") as target:
+        shutil.copyfileobj(source, target, 1 << 20)
+    inner_zip = zipfile.ZipFile(inner_path)
     out = []
-    for name, data in zip_entries(outer.open(inner)):
+    for name, data in ((n, inner_zip.read(n)) for n in inner_zip.namelist() if not n.endswith("/")):
         key = name.rsplit("/", 1)[-1].rsplit(".", 1)[0]
         if key not in labels or not name.lower().endswith((".jpg", ".jpeg", ".png")):
             continue
