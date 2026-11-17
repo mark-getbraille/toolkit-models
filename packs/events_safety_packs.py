@@ -841,7 +841,21 @@ ROAD_KINDS = {"warning": "a warning road sign", "prohibitory": "a prohibitory ro
               "information": "an information road sign", "speed limit": "a speed limit road sign"}
 ROAD_STRIP = re.compile(r"\b(road|traffic|street|highway|warning|regulatory|prohibitory|prohibition|mandatory|"
                         r"priority|information|informative|danger|caution)\s+signs?\b|\bsigns?\b|\bSVG\b|"
-                        r"\bdiagram\b|\b[A-Z]{0,3}[- ]?\d+(\.\d+)*[a-z]?\b|\bno\.\s*", re.I)
+                        r"\bdiagram\b|\bfig\.?|\b[A-Z]{1,3}[- ]?\d+(\.\d+)*[a-z]?\b|\b\d+-\d+[a-z]?\b|"
+                        r"\b\d{3,}[a-z]?\b(?!\s*(km|mph|t\b|m\b))|\bno\.\s*", re.I)
+# A road sign meaning must use at least one of these English words (captions in other languages are left out).
+ROAD_ENGLISH = re.compile(r"\b(no|not|end|entry|parking|stop|give|way|yield|speed|limit|turn|left|right|ahead|only|"
+                          r"road|roads|crossing|pedestrians?|children|school|bicycles?|cycl\w*|lane|lanes|priority|"
+                          r"overtaking|vehicles?|lorr(y|ies)|trucks?|goods|keep|roundabout|slippery|bend|bends|curve|"
+                          r"junction|works|animals?|deer|cattle|falling|rocks|traffic|lights|signals?|tunnel|bridge|"
+                          r"narrows|hill|steep|descent|ascent|danger\w*|minimum|maximum|height|width|weight|length|"
+                          r"horn|u-turn|straight|motorway|expressway|bus|tram|railway|level|wind|two-way|one-way|"
+                          r"dead|hospital|airport|horses?|riders?|uneven|bumps?|ice|snow|fog|queues?|motorcycles?|"
+                          r"cars?|tractors?|camels?|kangaroos?|ducks?|frogs?|low|flying|aircraft|ford|quay|river|bank|"
+                          r"gravel|loose|chippings|merging|ends|zone|toll|customs|police|direction|detour|closed|"
+                          r"prohibited|compulsory|must|permitted|allowed|waiting|loading|uturn|reverse|crossroads|"
+                          r"intersection|cats?|dogs?|jumping|crossing|pass|side|centre|center)\b",
+                          re.I)
 
 
 def iso_meaning(f, code):
@@ -922,7 +936,8 @@ def road_meaning(text, country):
     text = ROAD_STRIP.sub(" ", text)
     text = re.sub(r"\s*[-–:;,]+\s*$|^\s*[-–:;,]+\s*", "", " ".join(text.split())).strip(" .:-–")
     words = text.split()
-    if not 1 <= len(words) <= 8 or not re.match(r"^[A-Za-z][A-Za-z ,'()/-]*$", text) \
+    if not 1 <= len(words) <= 8 or not re.match(r"^[A-Za-z0-9][A-Za-z0-9 ,'()/.-]*$", text) \
+            or not ROAD_ENGLISH.search(text) \
             or re.search(r"\b(of|in|for|and|the|a)$", text, re.I) or len(text) < 3:
         return ""
     return " ".join(w if w.isupper() and len(w) > 1 else w.lower() for w in text.split())

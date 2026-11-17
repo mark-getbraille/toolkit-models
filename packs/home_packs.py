@@ -426,6 +426,39 @@ def home_entries(s, titles, drawings=False):
     return out
 
 
+def commons_fetch(items, workers=2, raw=False):
+    """Download Commons pictures (items are (name, address, row)) as fetch_all does, but patiently: when Wikimedia's
+    picture server says "too many requests" (429) it waits as long as asked (or 10, 20, 40 ... seconds, at most a
+    minute) and tries again, up to five times, instead of leaving the picture out. raw: the bytes as sent (a
+    drawing's see-through PNG), not made into a JPEG."""
+    import concurrent.futures
+    s = session()
+
+    def one(item):
+        """One picture as (name, JPEG, row), or None."""
+        name, url, row = item
+        wait = 10
+        for _ in range(5):
+            time.sleep(0.5)
+            try:
+                r = s.get(url, timeout=60)
+            except Exception:  # noqa: BLE001 - network trouble: wait and try again
+                time.sleep(wait)
+                continue
+            if r.status_code == 200:
+                data = r.content if raw else smaller(r.content)
+                return (name, data, row) if data else None
+            if r.status_code not in (429, 500, 502, 503, 504):
+                return None
+            after = r.headers.get("Retry-After", "")
+            time.sleep(min(int(after) if after.isdigit() else wait, 60))
+            wait = min(wait * 2, 60)
+        return None
+
+    with concurrent.futures.ThreadPoolExecutor(workers) as pool:
+        return [x for x in pool.map(one, items) if x]
+
+
 def file_name(prefix, title):
     """A pack picture's file name for a Commons file."""
     return f"{prefix}-" + re.sub(r"[^\w.-]+", "_", title.split(":", 1)[-1].rsplit(".", 1)[0])[:80] + ".jpg"
@@ -493,7 +526,7 @@ def build_commons_topic(specs, limit, prefix, adults_only=False):
             if not q[3]:
                 queues.remove(q)
     random.Random(prefix + "-order").shuffle(items)
-    return with_twins(fetch_all(items[:want], workers=2, pause=0.5)[:limit])
+    return with_twins(commons_fetch(items[:want])[:limit])
 
 
 def ask_what(thing, extra=""):
@@ -803,11 +836,11 @@ def build_laundry_symbols(limit):
     say(f"Laundry symbols: {len(entries)} free symbol files with a known meaning (of {len(titles)})")
     symbols = []                        # (kind, meaning, credit, picture)
     for title, url, credit, _ in entries:
-        r = s.get(url, timeout=60)
-        if r.status_code != 200:
+        got = commons_fetch([("symbol", url, None)], workers=1, raw=True)
+        if not got:
             continue
         try:
-            picture = symbol_picture(r.content)
+            picture = symbol_picture(got[0][1])
         except Exception:  # noqa: BLE001 - a drawing that cannot be read is left out
             continue
         kind, meaning = LAUNDRY_SYMBOLS[title.split(":", 1)[-1]]
@@ -847,7 +880,7 @@ def build_laundry_symbols(limit):
             rows.append({"question": ALT_TEXT, "answer": text, "credit": credit,
                          **where(COMMONS_PLACES.get(title, ""))})
         photos.append((file_name("laundry-tag", title), url, rows))
-    out += with_twins(fetch_all(photos, workers=2, pause=0.5))
+    out += with_twins(commons_fetch(photos))
     rng.shuffle(out)
     pictures = [e for e in out if e[1] is not None][:limit]
     keep = {e[0] for e in pictures}
@@ -1024,9 +1057,10 @@ HOME_PACKS = {
 # How many pictures a full build takes from each collection (about what each offers after the licence and label
 # checks; the Commons ones are estimates from the categories' sizes, the free share being about half).
 HOME_LIMITS = {
-    "clock_times": 2400,          # of 2,605 one-clock photos (1,127 Open Images, 1,478 COCO), before licence checks
+    "clock_times": 1300,          # one-clock photos: at most 1,127 Open Images (those in its boxable training list)
+                                  # and the 254 of 1,378 COCO ones that are CC BY 2.0 or no known copyright
     "seven_segment": 3333,        # all of them
-    "open_images_home": 4000,     # the hand-checked validation and test labels (pests and tools are the rare ones)
+    "open_images_home": 3900,     # 3,949 free photos with a home label checked by hand (validation and test sets)
     "commons_pests": 900,
     "commons_appliances": 700,
     "commons_connectors": 900,

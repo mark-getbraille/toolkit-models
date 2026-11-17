@@ -27,7 +27,7 @@ The collections (HOME_SOURCES):
                                batteries, nappies, sanitary pads, toothbrushes). "Is this laundry detergent or fabric
                                softener?" ...
     openproductsfacts_labels   Open Products Facts: ingredient-list photos, read out (few household goods have their
-                               ingredients typed in English: about 1 in 80, so this one is small).
+                               ingredients typed in English or INCI: about 1 in 80, so this one is small).
     openpetfoodfacts           Open Pet Food Facts: cat, dog, bird, rodent, rabbit and fish food. "Is this cat food or
                                dog food?" and "Is this dry food or wet food?"
     openpetfoodfacts_labels    Open Pet Food Facts: ingredient-list photos, read out.
@@ -255,13 +255,13 @@ def prepare_facts_fronts(site, source, data_dir, cap):
 
 
 def ingredients_text(site, hit):
-    """(language, ingredient list) people typed for a product, in English or (for cosmetics) in INCI names, when
-    it is 120 words or fewer; (None, "") otherwise."""
+    """(language, ingredient list) people typed for a product, in English or (for cosmetics and household goods) in
+    INCI names, when it is 120 words or fewer; (None, "") otherwise."""
     for lang, text in (("en", hit.get("ingredients_text_en")), (hit.get("lang") or "", hit.get("ingredients_text"))):
         text = clean(re.sub(r"_", "", text or ""))
         if not text or not lang or len(text.split()) > 120:
             continue
-        if looks_english(text) or (site == "beauty" and len(INCI.findall(text)) >= 2):
+        if looks_english(text) or (site in ("beauty", "products") and len(INCI.findall(text)) >= 2):
             return lang, text
     return None, ""
 
@@ -507,7 +507,7 @@ HOME_SOURCES = [
                                        "(share-alike)",
            FACTS_LICENCE.format(site="world.openproductsfacts.org"),
            FACTS_CREDIT_LINE.format(name="Open Products Facts", site="https://world.openproductsfacts.org"),
-           "share-alike", 100, 5, prepare_openproductsfacts_labels, "about 50 MB of photos"),
+           "share-alike", 50, 5, prepare_openproductsfacts_labels, "about 25 MB of photos"),
     Source("openpetfoodfacts", "Open Pet Food Facts: pet food, cat or dog, dry or wet (share-alike)",
            FACTS_LICENCE.format(site="world.openpetfoodfacts.org"),
            FACTS_CREDIT_LINE.format(name="Open Pet Food Facts", site="https://world.openpetfoodfacts.org"),
