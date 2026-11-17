@@ -52,7 +52,10 @@ def walk(window):
         if isinstance(child, wx.TopLevelWindow):
             continue
         yield child
-        yield from walk(child)
+        # A spin box or combo box is one control to a screen reader; on Windows it is built from an inner text box
+        # (its own part, already labelled through the control), which is not checked as a separate field.
+        if not isinstance(child, (wx.SpinCtrl, wx.SpinCtrlDouble, wx.ComboBox)):
+            yield from walk(child)
 
 
 def letter_of(label):
