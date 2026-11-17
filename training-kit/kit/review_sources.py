@@ -1047,7 +1047,9 @@ MEDICAL_WORDS = re.compile(
     r"infections?|infected|symptoms?|signs? of|normal|variation|variant|diversity|examination|dermatolog\w*|"
     r"urolog\w*|gyn(a)?ecolog\w*|surg\w*|post-?operative|operation|scars?|lesions?|rash|ulcers?|cysts?|tumou?rs?|"
     r"cancer|carcinoma|swelling|inflammation|diagram|textbook|atlas|health|education\w*)\b", re.I)
-NOT_EDUCATIONAL = re.compile(r"\b(ribbons?|logos?|awareness|posters?|stamps?|march|walk|race|run|campaign|"
+NOT_EDUCATIONAL = re.compile(r"\b(reclin\w*|on (a|the|her|his) (bed|sofa|couch)|posing|poses|bikini|yoga|"
+                             r"brazilian|shaved|shaven|"
+                             r"ribbons?|logos?|awareness|posters?|stamps?|march|walk|race|run|campaign|"
                              r"fundrais\w*|t-shirts?|merchandise|pink ribbon|celebrit\w*|portrait|protest\w*)\b",
                              re.I)
 # Not a picture of a body: microscope and laboratory pictures (useful elsewhere, not for describing a body).

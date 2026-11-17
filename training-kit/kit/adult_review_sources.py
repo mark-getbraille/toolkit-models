@@ -984,7 +984,7 @@ COMMONS_GROUPS = {
         generic="It is a picture of adults being intimate or having sex"),
     "sex_toys": dict(
         categories=[("Sex toys", 1), ("Dildos", 1), ("Vibrators", 1), ("Butt plugs", 1), ("Anal beads", 1),
-                    ("Cock rings", 1), ("Sex dolls", 0), ("Sex shops", 0), ("Personal lubricants", 1)],
+                    ("Cock rings", 1), ("Sex dolls", 0), ("Personal lubricants", 1)],
         lead="A product photograph of a sex toy", people_photo=True,
         generic="It is a photograph of a sex toy"),
     "contraception": dict(
@@ -1074,7 +1074,9 @@ def commons_check(ws, group, pageid, title, info):
     stem = os.path.splitext(title)[0].replace("_", " ")
     text = f"{stem} {meta_value(info, 'ObjectName')} {description}"
     drawn = mime == "image/svg+xml" or bool(DRAWN.search(f"{text} {categories}"))
-    has_person = bool(PERSON.search(text)) or not group in ("sex_toys", "contraception")
+    # A photograph of people (any photo in the sexual-activity groups; in the product groups, one whose text names
+    # a person or body) must be the uploader's own work, so that consent rests with the person who uploaded it.
+    has_person = bool(PERSON.search(text)) or group not in ("sex_toys", "contraception")
     why = ""
     if not mime.startswith("image/") or "gif" in mime or not info.get("thumburl"):
         why = "not a still picture"
@@ -1089,7 +1091,7 @@ def commons_check(ws, group, pageid, title, info):
     if not why and COMMONS_GROUPS[group].get("photos_only") and drawn:
         why = "a drawing (counted in the drawings collection)"
     if not why and not drawn and has_person and COMMONS_GROUPS[group]["people_photo"]:
-        if COMMONS_GROUPS[group].get("own_work") and not re.search(r"\bown work\b", credit_src, re.I):
+        if not re.search(r"\bown work\b", credit_src, re.I):
             why = "a photograph of people that is not the uploader's own work (consent cannot be checked)"
         elif PHOTO_WORDS.search(f"{text} {categories}") and re.search(r"\b1[89]\d\d\b|vintage|antique", text, re.I):
             why = "an old photograph (anonymous: age and consent cannot be checked)"
@@ -1102,8 +1104,14 @@ def commons_check(ws, group, pageid, title, info):
     caption = rs.first_sentences(plain(description) or plain(stem), 70, 3)
     thin = useful_words(description or stem) < 5
     g = COMMONS_GROUPS[group]
-    lead = ("A drawing or illustration" if drawn and group != "sex_drawings" else g["lead"]) + \
-        " from Wikimedia Commons."
+    if drawn and group != "sex_drawings":
+        lead = "A drawing or illustration"
+    elif not drawn and group in ("sex_toys", "contraception") and PERSON.search(text):
+        lead = "A photograph of a person with a sex toy" if group == "sex_toys" else \
+            "A photograph of a person with a sexual-health item"
+    else:
+        lead = g["lead"]
+    lead += " from Wikimedia Commons."
     parts = [lead, sentence(g["generic"]) if thin else "", f"Its description says: {sentence(caption)}"]
     artist = meta_value(info, "Artist") or "unknown"
     page = "https://commons.wikimedia.org/wiki/File:" + title.replace(" ", "_")
