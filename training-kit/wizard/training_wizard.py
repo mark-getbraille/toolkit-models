@@ -33,12 +33,25 @@ many controls some labels have no letter); Escape closes (asking first while tra
 FIRST.txt; Enter presses only the focused button (no default button). Letters: first page B, L, W, Y (nudity),
 A (anatomy), Q (non-commercial collections, shown in brackets), Z (research-only collections, in brackets), O (own
 pictures folder), K (check my pictures), J (describe pictures), M (only my own), P, C, S, I and the labels T and H;
-second page R, G, E, F, U, N, D and the label V; X (Exit) on both.
+second page R, G, E, F, U, N, D and the label V; X (Exit) on both. Every letter is then taken, so the
+"Personal use: everything allowed" box uses the digit: Alt+1 (shown in brackets).
 
 Personal-use collections: when either box is ticked the training is for personal use only (train.py and
 train_pictures.py get --personal-noncommercial and --personal-research --accept-research-terms), which the Check
 result and the Status field say. The research-terms window has its own letters: T (the terms list), I (I have read
 these terms), A (Agree), C (Cancel); Escape is Cancel and F1 opens READ ME FIRST.txt.
+
+Personal use: everything allowed (Alt+1): one box that, after EverythingDialog explains in plain words what it means
+(personal, private use; never published; the licences of the non-commercial and research collections forbid selling
+the model or what it makes), shows how many collections it adds and their total download size, lists the
+research-only terms and asks "I understand ...", ticks Wikipedia (share-alike), the non-commercial and the
+research-only boxes at once. The sign-up collections (kit\\signup_sources.py) are in those groups and are used when
+their key or files are on the computer. It never ticks the content choices (nudity, medical, graphic, adult sexual
+content), and a picture-making model still leaves out everything in NOT_FOR_PICTURE_MAKING. Unticking it puts the
+three boxes back as they were; unticking one of them by hand turns the switch off. It is remembered for each kind
+("everything_<kind>" and "before_everything_<kind>" in settings.json). Its window's letters: A (the explanation),
+I (I understand), O (OK), K (Sign-up keys), C (Cancel). Sign-up keys (SignupKeysDialog: A, S Save, C Cancel) keeps the
+owner's own keys in signup-keys.json in the same settings folder, never in the kit folder and never in the log.
 
 Adult sexual content (review collections only): every Alt letter of this window is taken, so there is no box for
 it here. Ticking "Include art with nudity" for a picture describer opens SexualDialog, which asks "Also include adult
@@ -700,6 +713,250 @@ class GraphicDialog(wx.Dialog):
             event.Skip()
 
 
+# ----------------------------------------------------------------- "Personal use: everything allowed"
+
+# The boxes the switch ticks: share-alike (Wikipedia and the other CC BY-SA collections), non-commercial and
+# research-only. It never touches the content choices (art with nudity, medical and anatomy pictures, graphic scenes,
+# adult sexual content): those keep their own explicit questions.
+EVERYTHING_BOXES = ("wikipedia", "noncommercial", "research")
+EVERYTHING_GROUPS = ("share-alike", "noncommercial", "research")
+EVERYTHING_ABOUT = (
+    "Personal use: everything allowed ticks every collection you may use for your own, private training: the open "
+    "ones, the share-alike ones (Wikipedia and other CC BY-SA collections), the non-commercial ones, the research-only "
+    "ones, and the sign-up ones whose key or files are on this computer. "
+    "What it means: the model you train is for your personal, private use only. Never publish it, share it, sell it "
+    "or put it in a product. The licences of the non-commercial and research collections forbid selling the model or "
+    "anything it makes. "
+    "What it does not do: it does not tick art with nudity, medical and anatomy pictures, graphic scenes or adult "
+    "sexual content; those keep their own questions. For a picture-making model, collections of people and every "
+    "collection not allowed for picture-making are still left out. "
+    "Unticking it puts the three boxes back as they were before.")
+
+
+def parse_size(text):
+    """The number of bytes in a download size written for people ("7.6 GB", "about 400 MB of pictures"); 0 when
+    none is given."""
+    m = re.search(r"([\d.,]+)\s*(KB|MB|GB|TB)\b", str(text or ""), re.I)
+    if not m:
+        return 0
+    try:
+        number = float(m.group(1).replace(",", ""))
+    except ValueError:
+        return 0
+    return int(number * 1024 ** ("KB", "MB", "GB", "TB").index(m.group(2).upper()) * 1024)
+
+
+def size_words(size):
+    """A size in bytes in plain words ("about 12.5 gigabytes")."""
+    if size >= 1024 ** 4:
+        return f"about {size / 1024 ** 4:.1f} terabytes"
+    if size >= 1024 ** 3:
+        return f"about {size / 1024 ** 3:.1f} gigabytes"
+    return f"about {max(1, round(size / 1024 ** 2))} megabytes"
+
+
+def everything_collections(module, kind, contents):
+    """(collections the switch would add, sign-up collections left out for want of a key or files) for a kind of
+    training: the collections of EVERYTHING_GROUPS whose content the current content choices allow; for a
+    picture-making model not those in NOT_FOR_PICTURE_MAKING, and a personal-use one only when it is in
+    PERSONAL_PICTURE_MAKING_OK. module is the kit's sources.py; contents a set from allowed_contents."""
+    if module is None:
+        return [], []
+    never = set(getattr(module, "NOT_FOR_PICTURE_MAKING", ()) or ())
+    making_ok = set(getattr(module, "PERSONAL_PICTURE_MAKING_OK", ()) or ())
+    ready = getattr(module, "signup_ready", lambda s: True)
+    added, waiting = [], []
+    for s in module.SOURCES:
+        if s.group not in EVERYTHING_GROUPS or s.content not in contents:
+            continue
+        if kind == "pictures" and (s.key in never or (s.group in ("noncommercial", "research")
+                                                       and s.key not in making_ok)):
+            continue
+        (added if ready(s) else waiting).append(s)
+    return added, waiting
+
+
+def everything_on(before):
+    """The three boxes with the switch ticked (before, the boxes as they were, is kept by the caller)."""
+    return {box: True for box in EVERYTHING_BOXES}
+
+
+def everything_off(before):
+    """The three boxes after unticking the switch: as they were before it was ticked (all off when unknown)."""
+    before = before or {}
+    return {box: bool(before.get(box, False)) for box in EVERYTHING_BOXES}
+
+
+def everything_text(module, kind, contents):
+    """The switch's explanation with the collections it adds, their total download size and the sign-up collections
+    still waiting for a key, and the research-only terms, for EverythingDialog."""
+    added, waiting = everything_collections(module, kind, contents)
+    total = sum(parse_size(s.download) for s in added)
+    parts = [EVERYTHING_ABOUT,
+             f"It adds {len(added)} collection{'s' if len(added) != 1 else ''}, {size_words(total)} to download in all "
+             "(roughly; pictures already in your picture library are not downloaded again)."]
+    if waiting:
+        parts.append("Sign-up collections left out until their key or files are on this computer (press Sign-up "
+                     "keys to add keys): " + "; ".join(s.name for s in waiting) + ".")
+    parts.append(research_terms_text(research_collections()))
+    return "\n\n".join(parts)
+
+
+class EverythingDialog(wx.Dialog):
+    """Asked when "Personal use: everything allowed" is ticked: what it means in plain words, the collections it adds
+    with their total download size, the research-only terms (one read-only field), "I understand ..." (needed), and
+    OK, Sign-up keys and Cancel. OK without the tick says what is missing; Cancel or Escape leaves everything as it
+    was. Standard controls, a label before the field, Alt letters named in the tooltips (A, I, O, K, C), no default
+    button, F1 opens READ ME FIRST.txt."""
+
+    def __init__(self, parent, text):
+        """The explanation, the agreement box and the three buttons."""
+        super().__init__(parent, title="Personal use: everything allowed", size=(700, 560),
+                         style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+        self.mnemonics = {}
+        panel = wx.Panel(self)
+        s = wx.BoxSizer(wx.VERTICAL)
+        s.Add(wx.StaticText(panel, label="&About this choice:"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 8)
+        self.about = wx.TextCtrl(panel, value=text, style=wx.TE_MULTILINE | wx.TE_READONLY)
+        s.Add(self.about, 1, wx.EXPAND | wx.ALL, 8)
+        self.mnemonics["a"] = self.about
+        self.agree_box = wx.CheckBox(panel, label="&I understand: personal, private use only, never published or "
+                                                  "sold, and I agree to the research-only terms")
+        self.agree_box.SetToolTip("Needed before OK (Alt+I)")
+        s.Add(self.agree_box, 0, wx.ALL, 8)
+        row = wx.BoxSizer(wx.HORIZONTAL)
+        ok = wx.Button(panel, label="&OK")
+        ok.SetToolTip("Tick every collection allowed for personal use (Alt+O)")
+        ok.Bind(wx.EVT_BUTTON, self.on_ok)
+        keys = wx.Button(panel, label="Sign-up &keys...")
+        keys.SetToolTip("Enter your own keys for the sign-up collections (Alt+K)")
+        keys.Bind(wx.EVT_BUTTON, self.on_keys)
+        cancel = wx.Button(panel, label="&Cancel")
+        cancel.SetToolTip("Leave the boxes as they are (Alt+C)")
+        cancel.Bind(wx.EVT_BUTTON, lambda e: self.EndModal(wx.ID_CANCEL))
+        for b in (ok, keys, cancel):
+            row.Add(b, 0, wx.ALL, 4)
+        s.Add(row, 0, wx.ALL, 4)
+        panel.SetSizer(s)
+        self.Bind(wx.EVT_CHAR_HOOK, self.on_key)
+        self.about.SetFocus()
+
+    def on_ok(self, _event):
+        """OK: only with the agreement ticked; otherwise say what is missing and stay open."""
+        if not self.agree_box.GetValue():
+            speak("First tick I understand, with Alt+I, then press OK.", True)
+            self.agree_box.SetFocus()
+            return
+        self.EndModal(wx.ID_OK)
+
+    def on_keys(self, _event):
+        """Open the Sign-up keys window."""
+        dialog = SignupKeysDialog(self)
+        try:
+            dialog.ShowModal()
+        finally:
+            dialog.Destroy()
+
+    def on_key(self, event):
+        """Escape is Cancel; F1 opens READ ME FIRST.txt; Alt+A moves to the explanation."""
+        key = event.GetKeyCode()
+        if key == wx.WXK_ESCAPE:
+            self.EndModal(wx.ID_CANCEL)
+        elif key == wx.WXK_F1:
+            open_help(None)
+        elif event.AltDown() and not event.ControlDown() and 0 < key < 256 and chr(key).lower() in self.mnemonics:
+            self.mnemonics[chr(key).lower()].SetFocus()
+        else:
+            event.Skip()
+
+
+def signup_module():
+    """The kit's signup_sources.py (bundled into the program, or beside the wizard in the kit); None when it cannot
+    be loaded."""
+    folder = resource("kit")
+    if folder not in sys.path:
+        sys.path.insert(0, folder)
+    try:
+        import signup_sources
+        return signup_sources
+    except Exception:  # noqa: BLE001 - said by the caller
+        return None
+
+
+class SignupKeysDialog(wx.Dialog):
+    """The owner's own keys for the sign-up collections: an explanation (where to get each key, the terms line agreed
+    to, what it adds, and never to paste a key into a chat or an e-mail), one hidden-text field per key, Save and
+    Cancel. The keys are saved only in the user's own settings folder (signup_sources.KEY_FILE), never in the kit
+    folder, and never written to the log or said. A key already set as a Windows environment variable is used first;
+    its field says so. Letters: A (the explanation), S (Save), C (Cancel); the key fields have labels without letters.
+    Escape is Cancel; F1 opens READ ME FIRST.txt; no default button."""
+
+    def __init__(self, parent):
+        """The explanation, the key fields and the two buttons."""
+        super().__init__(parent, title="Sign-up keys", size=(700, 620), style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+        self.module = signup_module()
+        self.mnemonics = {}
+        self.fields = {}
+        panel = wx.Panel(self)
+        s = wx.BoxSizer(wx.VERTICAL)
+        s.Add(wx.StaticText(panel, label="&About these keys:"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 8)
+        text = self.module.keys_text() if self.module else "The sign-up collections are missing from this program."
+        self.about = wx.TextCtrl(panel, value=text, style=wx.TE_MULTILINE | wx.TE_READONLY)
+        s.Add(self.about, 1, wx.EXPAND | wx.ALL, 8)
+        self.mnemonics["a"] = self.about
+        saved = self.module.load_key_file() if self.module else {}
+        for name, (label, _where) in (self.module.SIGNUP_KEYS.items() if self.module else []):
+            in_windows = bool(os.environ.get(name, "").strip()) and name not in saved
+            s.Add(wx.StaticText(panel, label=f"{label} ({name}{', set in Windows' if in_windows else ''}):"), 0,
+                  wx.LEFT | wx.RIGHT | wx.TOP, 8)
+            field = wx.TextCtrl(panel, value=saved.get(name, ""), style=wx.TE_PASSWORD)
+            s.Add(field, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, 8)
+            self.fields[name] = field
+        row = wx.BoxSizer(wx.HORIZONTAL)
+        save = wx.Button(panel, label="&Save")
+        save.SetToolTip("Keep the keys in your own settings folder on this computer (Alt+S)")
+        save.Bind(wx.EVT_BUTTON, self.on_save)
+        cancel = wx.Button(panel, label="&Cancel")
+        cancel.SetToolTip("Close without saving (Alt+C)")
+        cancel.Bind(wx.EVT_BUTTON, lambda e: self.EndModal(wx.ID_CANCEL))
+        for b in (save, cancel):
+            row.Add(b, 0, wx.ALL, 4)
+        s.Add(row, 0, wx.ALL, 4)
+        panel.SetSizer(s)
+        self.Bind(wx.EVT_CHAR_HOOK, self.on_key)
+        self.about.SetFocus()
+
+    def values(self):
+        """{key name: what is typed} (never logged)."""
+        return {name: field.GetValue().strip() for name, field in self.fields.items()}
+
+    def on_save(self, _event):
+        """Save the keys in the user's own settings folder and say how many (never their values)."""
+        if self.module is None:
+            self.EndModal(wx.ID_CANCEL)
+            return
+        values = self.values()
+        if self.module.save_key_file(values):
+            count = sum(1 for v in values.values() if v)
+            speak(f"{count} key{'s' if count != 1 else ''} saved on this computer.", True)
+            log(f"Sign-up keys saved: {count} (the keys themselves are never written here).")
+            self.EndModal(wx.ID_OK)
+        else:
+            speak("The keys could not be saved in your settings folder.", True)
+
+    def on_key(self, event):
+        """Escape is Cancel; F1 opens READ ME FIRST.txt; Alt+A moves to the explanation."""
+        key = event.GetKeyCode()
+        if key == wx.WXK_ESCAPE:
+            self.EndModal(wx.ID_CANCEL)
+        elif key == wx.WXK_F1:
+            open_help(None)
+        elif event.AltDown() and not event.ControlDown() and 0 < key < 256 and chr(key).lower() in self.mnemonics:
+            self.mnemonics[chr(key).lower()].SetFocus()
+        else:
+            event.Skip()
+
+
 def open_help(kit):
     """Open READ ME FIRST.txt (the kit folder's copy when there is one, else the program's)."""
     path = os.path.join(kit, "READ ME FIRST.txt") if kit else resource("READ ME FIRST.txt")
@@ -848,6 +1105,21 @@ class Wizard(wx.Frame):
                                    "terms and must agree first. Personal use only", False)
         self.research.Bind(wx.EVT_CHECKBOX, self.on_research)
         s.Add(self.research, 0, wx.ALL, 8)
+        # "Personal use: everything allowed": ticks the share-alike, non-commercial and research boxes at once (after
+        # EverythingDialog), and unticking it puts them back as they were. Remembered for each kind with the boxes
+        # as they were before ("everything_<kind>", "before_everything_<kind>"). Every letter of this window is
+        # taken, so its key is Alt+1.
+        self.everything = {kind: bool(chosen.get(f"everything_{kind}", False)) for kind, _ in KINDS}
+        self.before_everything = {kind: dict(chosen.get(f"before_everything_{kind}") or {}) for kind, _ in KINDS}
+        self.everything_box = self.check(page, "Personal use: everything allowed (&1)",
+                                         "Ticks every collection you may use for personal, private training: "
+                                         "share-alike, non-commercial, research-only and the sign-up ones with your "
+                                         "own keys; never published or sold; not the content choices", False)
+        self.everything_box.Bind(wx.EVT_CHECKBOX, self.on_everything)
+        s.Add(self.everything_box, 0, wx.ALL, 8)
+        if self.everything.get(self.kind_key()):
+            self.wikipedia.SetValue(True)
+        self.wikipedia.Bind(wx.EVT_CHECKBOX, self.on_wikipedia)
         self.own = self.labelled(page, s, "Your own pictures folder:", lambda: wx.TextCtrl(
             page, value=chosen.get("own_folder") or ""))
         self.own.SetToolTip("Optional: a folder of your own pictures with their descriptions, for personal use. "
@@ -898,6 +1170,12 @@ class Wizard(wx.Frame):
         self.medical.SetValue(self.content[kind]["medical"])
         self.noncommercial.SetValue(self.personal[kind]["noncommercial"])
         self.research.SetValue(self.personal[kind]["research"])
+        if hasattr(self, "everything_box"):         # not yet while the page is being built
+            self.everything_box.SetValue(self.everything.get(kind, False))
+            if self.everything.get(kind):
+                self.wikipedia.SetValue(True)
+                self.noncommercial.SetValue(True)
+                self.research.SetValue(True)
         if getattr(self, "first", None):          # not yet while the page is being built
             self.first.Layout()
 
@@ -905,6 +1183,7 @@ class Wizard(wx.Frame):
         """Another kind chosen: keep the content choices of the one before, show the fitting fields, and say it."""
         self.content[self.shown_kind] = {"nudity": self.nudity.GetValue(), "medical": self.medical.GetValue()}
         self.personal[self.shown_kind] = self.personal_choice()
+        self.everything[self.shown_kind] = self.everything_box.GetValue()
         self.sexual["pictures"] = False                 # never for a picture-making model
         self.graphic["pictures"] = False                # never for a picture-making model
         self.shown_kind = self.kind_key()
@@ -1011,6 +1290,7 @@ class Wizard(wx.Frame):
 
     def on_noncommercial(self, _event):
         """The non-commercial box changed: say what it means."""
+        self.box_changed_by_hand(self.noncommercial)
         if self.noncommercial.GetValue():
             self.say_personal("Non-commercial collections included. " + NONCOMMERCIAL_HINT)
         else:
@@ -1019,6 +1299,7 @@ class Wizard(wx.Frame):
     def on_research(self, _event):
         """The research box was ticked: show the research-only collections' terms; it stays ticked only when the
         person ticks "I have read these terms ..." and presses Agree (Cancel unticks it)."""
+        self.box_changed_by_hand(self.research)
         if not self.research.GetValue():
             self.say_personal("Research-only collections left out.")
             return
@@ -1028,6 +1309,61 @@ class Wizard(wx.Frame):
             self.research.SetValue(False)
             self.say_personal("Research-only collections left out: their terms were not agreed to.")
         self.research.SetFocus()
+
+    # -- "Personal use: everything allowed"
+    def boxes(self):
+        """{"wikipedia", "noncommercial", "research": ticked} as the boxes are now."""
+        return {"wikipedia": self.wikipedia.GetValue(), "noncommercial": self.noncommercial.GetValue(),
+                "research": self.research.GetValue()}
+
+    def set_boxes(self, values):
+        """Tick or untick the three boxes (no questions asked)."""
+        self.wikipedia.SetValue(values["wikipedia"])
+        self.noncommercial.SetValue(values["noncommercial"])
+        self.research.SetValue(values["research"])
+
+    def box_changed_by_hand(self, box):
+        """One of the three boxes was unticked by hand while the switch is on: the switch goes off (the boxes stay as
+        they are now)."""
+        if self.everything_box.GetValue() and not box.GetValue():
+            self.everything_box.SetValue(False)
+            self.everything[self.kind_key()] = False
+
+    def on_wikipedia(self, _event):
+        """The Wikipedia (share-alike) box changed by hand."""
+        self.box_changed_by_hand(self.wikipedia)
+
+    def on_everything(self, _event):
+        """The switch ticked: explain it first (EverythingDialog, with the total download size); OK ticks the
+        share-alike, non-commercial and research boxes, keeping how they were. Unticked: the boxes go back."""
+        kind = self.kind_key()
+        if not self.everything_box.GetValue():
+            self.set_boxes(everything_off(self.before_everything.get(kind)))
+            self.everything[kind] = False
+            self.say_personal("Personal use: everything allowed is off. The collection boxes are back as they were.")
+            return
+        module = sources_module()
+        contents, _categories = self.content_checks()
+        dialog = EverythingDialog(self, everything_text(module, kind, contents))
+        try:
+            speak("Personal use: everything allowed. Read what it means, tick I understand, then press OK.", True)
+            agreed = dialog.ShowModal() == wx.ID_OK
+        finally:
+            dialog.Destroy()
+        if not agreed:
+            self.everything_box.SetValue(False)
+            self.say_personal("Personal use: everything allowed was not turned on; nothing changed.")
+            self.everything_box.SetFocus()
+            return
+        self.before_everything[kind] = self.boxes()
+        self.set_boxes(everything_on(self.before_everything[kind]))
+        self.everything[kind] = True
+        added, waiting = everything_collections(module, kind, contents)
+        size = size_words(sum(parse_size(s.download) for s in added))
+        self.say_personal(f"Personal use: everything allowed is on: {len(added)} collections, {size} to download. "
+                          + (f"{len(waiting)} sign-up collections wait for a key. " if waiting else "")
+                          + "Never publish or sell what you train.")
+        self.everything_box.SetFocus()
 
     def agree_to_research_terms(self):
         """Show ResearchTermsDialog; True when the person agreed."""
@@ -1218,6 +1554,7 @@ class Wizard(wx.Frame):
         self.kit = os.path.join(self.folder.GetValue(), KIT_NAME)
         self.content[kind] = {"nudity": self.nudity.GetValue(), "medical": self.medical.GetValue()}
         self.personal[kind] = self.personal_choice()
+        self.everything[kind] = self.everything_box.GetValue()
         sexual = self.sexual_on()
         graphic = self.graphic_on()
         choices = {"folder": self.folder.GetValue(), "library": self.library.GetValue(),
@@ -1233,6 +1570,9 @@ class Wizard(wx.Frame):
         choices["graphic_pictures"] = False                                 # never for picture-making
         for name, values in self.personal.items():     # the personal-use boxes, for each kind
             choices[f"noncommercial_{name}"], choices[f"research_{name}"] = values["noncommercial"], values["research"]
+        for name, on in self.everything.items():     # the switch, and the boxes as they were before it, for each kind
+            choices[f"everything_{name}"] = bool(on)
+            choices[f"before_everything_{name}"] = self.before_everything.get(name) or {}
         save_choices({**load_choices(), **choices})    # keeps the Describe pictures window's own choices
         self.first.Hide()
         self.second.Show()
@@ -1451,6 +1791,8 @@ def self_test():
     ResearchTermsDialog(window, research_collections()).Destroy()    # the research-terms window can be made
     SexualDialog(window).Destroy()                                    # the adult sexual content question
     GraphicDialog(window).Destroy()                                   # the graphic scenes question
+    EverythingDialog(window, everything_text(kit_sources, "describer", {""})).Destroy()   # the switch's window
+    SignupKeysDialog(window).Destroy()                                # the sign-up keys window
     describe = describe_window.DescribeWindow(window, sys.modules[__name__], None, tempfile.gettempdir())
     describe_window.ReviewDialog(describe, sys.modules[__name__], tempfile.gettempdir()).Destroy()
     describe.Destroy()

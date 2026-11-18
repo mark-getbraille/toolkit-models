@@ -140,9 +140,28 @@ def test_the_wizard_is_accessible(wizard):
     assert_accessible(wizard)
 
 
+def test_the_everything_switch_has_its_own_key(wizard):
+    """The "Personal use: everything allowed" box: its own Alt key (1), named in its tooltip, used once."""
+    box = wizard.everything_box
+    assert letter_of(box.GetLabel()) == "1"
+    assert "Alt+1" in box.GetToolTipText()
+    assert_accessible(wizard)
+
+
+def test_the_everything_windows_keys(app, wizard, monkeypatch):
+    import training_wizard
+    for window in (training_wizard.EverythingDialog(wizard, "About."), training_wizard.SignupKeysDialog(wizard)):
+        ended = []
+        monkeypatch.setattr(window, "EndModal", lambda code, ended=ended: ended.append(code))
+        assert_keys(window, monkeypatch, lambda w, ended=ended: bool(ended))
+        window.Destroy()
+
+
 def test_the_wizard_small_windows_are_accessible(app, wizard):
     import training_wizard
-    windows = [training_wizard.SexualDialog(wizard, False), training_wizard.GraphicDialog(wizard, True)]
+    windows = [training_wizard.SexualDialog(wizard, False), training_wizard.GraphicDialog(wizard, True),
+               training_wizard.EverythingDialog(wizard, training_wizard.EVERYTHING_ABOUT),
+               training_wizard.SignupKeysDialog(wizard)]
     collections = training_wizard.research_collections()
     if collections:
         windows.append(training_wizard.ResearchTermsDialog(wizard, collections))
