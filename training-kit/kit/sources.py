@@ -2029,6 +2029,16 @@ SOURCES = [
            "Public domain or CC BY, each Commons file's own licence checked", "US state agencies via Wikimedia Commons (credited in CREDITS.txt)", "permissive", 800, 10, prepare_pack, "about 200 MB"),
     Source("commons_state_community", "US cities, counties and state agencies at work in their communities (public works, events, redevelopment, archives; Wikimedia Commons, ready-made pack)",
            "Public domain or CC BY, each Commons file's own licence checked", "US state agencies via Wikimedia Commons (credited in CREDITS.txt)", "permissive", 2500, 20, prepare_pack, "about 600 MB"),
+    # Colleges and universities (packs/university_packs.py); DPLA CC BY-SA / BY-NC entries are in university_sources.py.
+    Source("dpla_campus", "Campus life, college towns, farms and everyday scenes from US college and university libraries (Digital Public Library of America, ready-made pack)",
+           "Each item No Copyright - United States, Public Domain Mark, CC0 or CC BY (its rights URI in DPLA); metadata CC0",
+           "US college and university libraries via the Digital Public Library of America (credited in CREDITS.txt), https://dp.la", "permissive", 4000, 20, prepare_pack, "about 2 GB"),
+    Source("commons_college_streams", "US college life since 1990: classes, sports, campus events and buildings, from colleges' own photo streams (Wikimedia Commons, ready-made pack)",
+           "Public domain or CC BY, each file checked (credited in CREDITS.txt); captions by the colleges",
+           "Wikimedia Commons copies of US colleges' photo streams (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 3000, 20, prepare_pack, "about 1.2 GB"),
+    Source("commons_university_archives", "Everyday life about 1860 to 1960 in Washington, Ohio, the Prairies and Texas, from university libraries (Wikimedia Commons, ready-made pack)",
+           "No known copyright restrictions or public domain (each file checked); descriptions from the libraries' records",
+           "University of Washington, Miami University, University of Alberta and SMU libraries via Wikimedia Commons (credited in CREDITS.txt)", "permissive", 2500, 15, prepare_pack, "about 900 MB"),
     # Canada (packs/canada_packs.py): Canadian equivalents of the US packs. The share-alike, non-commercial and research
     # Canadian collections are in canada_sources.py.
     Source("commons_ca_homes", "Canadian houses, house styles and rooms (Wikimedia Commons, ready-made pack)",
@@ -2242,6 +2252,8 @@ PEOPLE_AND_BODILY_PACK_KEYS = (
     "commons_ca_streets", "commons_ca_cars", "commons_ca_shops", "commons_ca_holidays",
     "commons_ca_eating_out", "commons_ca_getting_around", "commons_ca_public_places", "commons_ca_archives",
     "commons_ca_provincial", "commons_ca_daily_life",
+    # university_packs.py: campus life, students and townspeople (all of them)
+    "dpla_campus", "commons_college_streams", "commons_university_archives",
 )
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + PEOPLE_AND_BODILY_PACK_KEYS
 
@@ -2693,3 +2705,16 @@ def signup_ready(source):
     """True when a collection has what it needs on this computer: a sign-up collection its keys or files
     (signup_sources.ready); every other collection True."""
     return _signup.ready(source) if _signup is not None else True
+
+# College and university collections that are not open (DPLA CC BY-SA and CC BY-NC items); the file may be missing.
+try:
+    import university_sources as _university  # noqa: E402
+except ImportError as _e:
+    _university = None
+    if getattr(_e, "name", None) != "university_sources":
+        say(f"(The college and university collections could not be loaded: {_e}. They are left out.)")
+UNIVERSITY_SOURCES = list(getattr(_university, "UNIVERSITY_SOURCES", []) or [])
+_university_ok = set(getattr(_university, "UNIVERSITY_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _university_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in UNIVERSITY_SOURCES if s.key not in _university_ok)
+_add_collections(UNIVERSITY_SOURCES)

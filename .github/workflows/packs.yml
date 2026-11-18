@@ -98,7 +98,8 @@ jobs:
                    "dental_instruments", "open_images_medical", "cdc_phil_supplies",
                    "commons_ca_homes", "commons_ca_streets", "commons_ca_cars", "inaturalist_ca", "commons_ca_money",
                    "ca_road_signs", "commons_ca_shops", "commons_ca_holidays", "commons_ca_eating_out", "commons_ca_getting_around",
-                   "commons_ca_public_places", "commons_ca_archives", "commons_ca_provincial", "commons_ca_daily_life"]
+                   "commons_ca_public_places", "commons_ca_archives", "commons_ca_provincial", "commons_ca_daily_life",
+                   "dpla_campus", "commons_college_streams", "commons_university_archives"]
           words = [w for w in sys.argv[1].split(",") if w]
           # "key+" is a top-up pass of key and "key?" a needs-only run (kept with the mark, which the build job reads);
           # "all?" asks for a needs-only run of every pack.
@@ -123,6 +124,8 @@ jobs:
       HF_HUB_DISABLE_TELEMETRY: "1"
       # Europeana's free API key (a repository secret); without it the builders use the public demonstration key.
       EUROPEANA_KEY: ${{ secrets.EUROPEANA_KEY }}
+      # The Digital Public Library of America's key (a repository secret); without it dpla_campus publishes nothing.
+      DPLA_API_KEY: ${{ secrets.DPLA_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -397,6 +400,9 @@ jobs:
             commons_ca_archives) limit=3000 ;;
             commons_ca_provincial) limit=1500 ;;
             commons_ca_daily_life) limit=2000 ;;
+            dpla_campus) limit=6000 ;;
+            commons_college_streams) limit=4000 ;;
+            commons_university_archives) limit=3000 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in

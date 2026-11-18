@@ -1507,6 +1507,11 @@ PACKS.update(CANADA_PACKS)
 from work_farm_mech_packs import WORK_FARM_MECH_PACKS
 PACKS.update(WORK_FARM_MECH_PACKS)
 
+# Colleges and universities (packs/university_packs.py): DPLA college and university items (needs DPLA_API_KEY),
+# colleges' Commons photo streams and university libraries' digitized photographs.
+from university_packs import UNIVERSITY_PACKS
+PACKS.update(UNIVERSITY_PACKS)
+
 # US state, county and city government photo streams on Commons (packs/state_packs.py).
 from state_packs import STATE_PACKS
 PACKS.update(STATE_PACKS)
