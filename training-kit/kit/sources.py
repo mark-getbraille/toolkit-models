@@ -2029,6 +2029,17 @@ SOURCES = [
            "Public domain or CC BY, each Commons file's own licence checked", "US state agencies via Wikimedia Commons (credited in CREDITS.txt)", "permissive", 800, 10, prepare_pack, "about 200 MB"),
     Source("commons_state_community", "US cities, counties and state agencies at work in their communities (public works, events, redevelopment, archives; Wikimedia Commons, ready-made pack)",
            "Public domain or CC BY, each Commons file's own licence checked", "US state agencies via Wikimedia Commons (credited in CREDITS.txt)", "permissive", 2500, 20, prepare_pack, "about 600 MB"),
+    # Open sets from big technology companies (packs/bigtech_packs.py); none shows people. The research entries
+    # (ScreenQA, PixMo, FinTabNet) are in bigtech_sources.py.
+    Source("gso_objects", "What is this? Real products scanned in 3D by Google, computer-made views (Google Scanned Objects, ready-made pack)",
+           "CC BY 4.0 (each model on Gazebo Fuel)", "Google Scanned Objects (Downs et al., Google Research, 2022), CC BY 4.0, https://app.gazebosim.org/GoogleResearch/fuel/models",
+           "permissive", 2000, 20, prepare_pack, "about 60 MB"),
+    Source("oi_crowdsourced", "Everyday things photographed by people around the world, mostly in India (Open Images Extended crowdsourced, ready-made pack)",
+           "Each photo CC BY 4.0 with its giver's name; labels CC BY 4.0 (Google)", "Google Crowdsource givers (credited in CREDITS.txt); Open Images Extended (Google)",
+           "permissive", 4000, 20, prepare_pack, "about 1.5 GB"),
+    Source("pubtabnet_tables", "Tables from scientific articles, read out (PubTabNet, IBM; CC BY and CC0 articles only, ready-made pack)",
+           "Annotations CDLA-Permissive-1.0 (IBM); each table from a CC BY or CC0 PubMed Central article", "PubTabNet (Zhong et al., IBM Research, 2020) and the articles' authors (credited in CREDITS.txt)",
+           "permissive", 3000, 20, prepare_pack, "about 80 MB"),
     # Colleges and universities (packs/university_packs.py); DPLA CC BY-SA / BY-NC entries are in university_sources.py.
     Source("dpla_campus", "Campus life, college towns, farms and everyday scenes from US college and university libraries (Digital Public Library of America, ready-made pack)",
            "Each item No Copyright - United States, Public Domain Mark, CC0 or CC BY (its rights URI in DPLA); metadata CC0",
@@ -2718,3 +2729,17 @@ _university_ok = set(getattr(_university, "UNIVERSITY_PICTURE_MAKING_OK", ()) or
 PERSONAL_PICTURE_MAKING_OK |= _university_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in UNIVERSITY_SOURCES if s.key not in _university_ok)
 _add_collections(UNIVERSITY_SOURCES)
+
+# Research collections from big technology companies (ScreenQA on Rico screens, PixMo spoken captions and counting,
+# FinTabNet tables); the file may be missing.
+try:
+    import bigtech_sources as _bigtech  # noqa: E402
+except ImportError as _e:
+    _bigtech = None
+    if getattr(_e, "name", None) != "bigtech_sources":
+        say(f"(The big-company collections could not be loaded: {_e}. They are left out.)")
+BIGTECH_SOURCES = list(getattr(_bigtech, "BIGTECH_SOURCES", []) or [])
+_bigtech_ok = set(getattr(_bigtech, "BIGTECH_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _bigtech_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in BIGTECH_SOURCES if s.key not in _bigtech_ok)
+_add_collections(BIGTECH_SOURCES)

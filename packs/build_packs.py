@@ -1512,6 +1512,11 @@ PACKS.update(WORK_FARM_MECH_PACKS)
 from university_packs import UNIVERSITY_PACKS
 PACKS.update(UNIVERSITY_PACKS)
 
+# Open sets from big technology companies (packs/bigtech_packs.py): Google Scanned Objects, Open Images Extended
+# crowdsourced photos and IBM's PubTabNet tables from CC BY and CC0 articles.
+from bigtech_packs import BIGTECH_PACKS
+PACKS.update(BIGTECH_PACKS)
+
 # US state, county and city government photo streams on Commons (packs/state_packs.py).
 from state_packs import STATE_PACKS
 PACKS.update(STATE_PACKS)
