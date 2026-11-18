@@ -635,11 +635,12 @@ def commons_thumb(fetch, image_url):
 # --------------------------------------------------------------------------------------------- openFDA UDI
 
 def udi_entries(fetch, term, limit):
-    """Devices of the FDA's identifier database (GUDID, through openFDA) whose GMDN term has the words."""
+    """Devices of the FDA's identifier database (GUDID, through openFDA) whose GMDN term has the words, only those
+    sold over the counter (is_otc: the ones a person has at home, not hospital kits)."""
     out, skip = [], 0
     while len(out) < limit and not listing_out_of_time():
         url = "https://api.fda.gov/device/udi.json?" + urllib.parse.urlencode(
-            {"search": f"gmdn_terms.name:{term}", "limit": 100, "skip": skip})
+            {"search": f"gmdn_terms.name:{term} AND is_otc:true", "limit": 100, "skip": skip})
         try:
             results = fetch.json(url).get("results") or []
         except RuntimeError:
