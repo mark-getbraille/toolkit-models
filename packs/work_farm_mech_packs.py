@@ -795,10 +795,10 @@ WORK_FARM_MECH_PACKS = {
 
 # How many pictures a full build takes from each (about what each offers after the checks).
 WORK_FARM_MECH_LIMITS = {
-    "work_commons_workplaces": 2000,
-    "farm_commons_equipment": 3000,
-    "mech_commons_building": 2000,
-    "farm_usda_nrcs": 3000,
+    "work_commons_workplaces": 1500,      # about 45 categories; many small, and the US and Canadian ones are thin
+    "farm_commons_equipment": 2500,       # about 65 categories, tractors by state and maker the largest
+    "mech_commons_building": 1200,        # about 35 categories, most of them under 200 files
+    "farm_usda_nrcs": 3000,               # 12,400 files; about half have a caption of six words or more
 }
 
 
