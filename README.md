@@ -94,6 +94,18 @@ and why):
 - **Reference works** of international bodies (the WHO's Model List of Essential Medicines, the World Bank's World
   Development Report 2024, FAO's State of Food and Agriculture 2024), from their open repositories, with the licence
   of each record (CC BY 3.0 IGO, or CC BY-NC-SA 3.0 IGO).
+- **Reference, non-profits** (group `nonprofit`): openly licensed guides of non-profit organisations, from their
+  web pages: the Electronic Frontier Foundation's Surveillance Self-Defense (CC BY 4.0), People's Law School's
+  plain-language legal information for British Columbia (CC BY-NC-SA 4.0, text only) and the W3C Web Accessibility
+  Initiative's Curricula on Web Accessibility (CC BY 4.0). Each guide's licence page is checked at every build, and a
+  page without the guide's licence line is left out.
+- **Reference, field manuals** (group `fieldmanual`): US military manuals on survival, first aid, map reading,
+  rigging, field sanitation, cold weather and mountaineering, US government works (public domain), only when their
+  own front matter says "Approved for public release; distribution is unlimited" (Distribution Statement A) and
+  shows no restricted marking; chapters about weapons or tactics are left out. Copies from the Internet Archive
+  (armypubs.army.mil's robots.txt shuts out automated readers).
+- **Reference, governments** (group `government`): Government of Alberta publications under the Open Government
+  Licence - Alberta (the Driver's Guide, seniors' safety guides, power-outage preparedness), the newest official PDF.
 - Never a "NoDerivatives" work: a ZIM file is an adaptation (pages rewritten as web pages, formulas as text).
 
 How the books are made accessible: one page per chapter and section with headings; an index page listing every unit,
@@ -105,7 +117,7 @@ The ZIM files are written by `textbooks/zimwrite.py`, our own writer made from t
 library (libzim) is used, not even in the build.
 
 The workflow `.github/workflows/textbooks.yml` builds the books when someone starts it from the Actions page, or when
-`textbooks/request.txt` changes on main (keys separated by commas, or `all`). `python -m pytest textbooks` tests the
-builder with a made-up book.
+`textbooks/request.txt` changes on main (keys separated by commas, or `all`; also `nonprofit`, `fieldmanuals`,
+`government`). `python -m pytest textbooks` tests the builder with a made-up book and a made-up website.
 
 Each book keeps its own licence; the credit and licence are on its welcome page and in `textbooks.json`.

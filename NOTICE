@@ -35,7 +35,14 @@ on the book's welcome page, on every page's credit line and in textbooks.json:
     (https://openstax.org; source: github.com/openstax/osbooks-*);
   - Siyavula Education's textbooks, CC BY 4.0 (https://www.siyavula.com);
   - World Health Organization (CC BY-NC-SA 3.0 IGO), World Bank (CC BY 3.0 IGO) and FAO (CC BY-NC-SA 3.0 IGO)
-    publications, from their open repositories.
+    publications, from their open repositories;
+  - Electronic Frontier Foundation, Surveillance Self-Defense, CC BY 4.0 (https://ssd.eff.org);
+  - People's Law School (British Columbia), CC BY-NC-SA 4.0, text only (https://www.peopleslawschool.ca);
+  - W3C Web Accessibility Initiative, Curricula on Web Accessibility, Copyright World Wide Web Consortium, CC BY 4.0
+    (https://www.w3.org/WAI/curricula/);
+  - US Army field manuals with Distribution Statement A, US government works not subject to copyright (17 U.S.C.
+    105), copies from the Internet Archive (https://archive.org);
+  - Government of Alberta publications, Open Government Licence - Alberta (https://open.alberta.ca/licence).
 Changes made: each book was split into one web page per chapter and section, its formulas were written as text, its
 pictures were replaced by their descriptions and captions (unless the pictures were requested), teacher-only notes
 were left out, and an index page was added. The reference works' text was taken from their PDF files page by page.

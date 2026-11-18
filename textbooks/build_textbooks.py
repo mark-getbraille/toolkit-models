@@ -10,6 +10,12 @@ What is built (sources.py lists every book, the licence lines checked by hand, a
   siyavula   Siyavula's South African school textbooks (mathematics, physical and natural sciences), from its
              online reader
   dspace     reference works of international bodies (WHO, World Bank, FAO) from their open repositories (PDF)
+  pdf        official PDF documents (sources.PDF_DOCS): US military field manuals with Distribution Statement A
+             (survival, first aid, map reading, knots, hygiene, cold weather, mountaineering; key fieldmanuals) and
+             Alberta's publications under its Open Government Licence (key government); key pdf:<name> builds one
+  nonprofit  reference works of non-profit organisations published as openly licensed web guides (sources.NONPROFIT:
+             the EFF's Surveillance Self-Defense, People's Law School, the W3C WAI Curricula); key nonprofit:<name>
+             builds one
 Each book's licence is read again from its source while building; a book whose licence is not allowed
 (sources.ALLOWED: never NoDerivatives) is left out and listed in the manifest's "left_out".
 
@@ -31,9 +37,11 @@ Usage:
   python textbooks/build_textbooks.py osbooks:physics --out build/textbooks
   python textbooks/build_textbooks.py siyavula --out build/textbooks --cache build/textbooks-cache
   python textbooks/build_textbooks.py dspace --out build/textbooks
+  python textbooks/build_textbooks.py nonprofit:eff_surveillance_self_defense --out build/textbooks
   python textbooks/build_textbooks.py --local-osbooks path/to/osbooks-repo --out build/textbooks   (no network)
 Each run writes <id>.zim for each book and manifest-<key>.json (the books' catalogue entries and the left-out
-ones). Keys: osbooks (every repository), osbooks:<repository>, siyavula, dspace, or all.
+ones). Keys: osbooks (every repository), osbooks:<repository>, siyavula, dspace, nonprofit (every non-profit
+guide), nonprofit:<name>, fieldmanuals, government, pdf:<name>, or all.
 """
 
 import argparse
@@ -92,7 +100,7 @@ class Book:
     title: str
     subject: str
     level: str                   # "school", "college" or "reference"
-    group: str                   # "textbooks" or "reference"
+    group: str                   # "textbooks", "reference", "nonprofit", "government", "university" or "fieldmanual"
     publisher: str               # "OpenStax, Rice University"
     country: str                 # "United States", "South Africa", "International"
     licence: str                 # "CC BY 4.0"
@@ -106,6 +114,7 @@ class Book:
     original_pdf: dict = field(default_factory=dict)
     original_epub: dict = field(default_factory=dict)
     flavour: str = "nopic"
+    changes: str = ""            # what was changed, for the credit line ("" for the textbooks' usual words)
 
 
 def licence_short(text, url=""):
@@ -183,8 +192,9 @@ def two_letters(code):
 
 def credit_line(book):
     """"From Physics by OpenStax, Rice University, CC BY 4.0 (https://...). Original: https://openstax.org/..."."""
+    changes = book.changes or "made into web pages, with the formulas written as text"
     return (f"From {book.title} by {book.publisher}, {licence_words(book.licence)} ({book.licence_url}). "
-            f"Original: {book.source}. Changed: made into web pages, with the formulas written as text.")
+            f"Original: {book.source}. Changed: {changes}.")
 
 
 def index_page(book):
@@ -285,6 +295,7 @@ def manifest_entry(book, file_id, path, count, date):
 # ====================================================================== polite downloads
 
 _last = {}
+CRAWL_DELAY = {}                 # {host: seconds} a site's robots.txt asks for between requests (allowed_by_robots)
 
 
 def fetch(url, cache=None, binary=False, tries=4):
@@ -298,7 +309,7 @@ def fetch(url, cache=None, binary=False, tries=4):
         return data if binary else data.decode("utf-8", "replace")
     host = urllib.parse.urlsplit(url).hostname
     for attempt in range(tries):
-        wait = PAUSE - (time.monotonic() - _last.get(host, 0))
+        wait = max(PAUSE, CRAWL_DELAY.get(host, 0)) - (time.monotonic() - _last.get(host, 0))
         if wait > 0:
             time.sleep(wait)
         try:
@@ -1107,6 +1118,422 @@ def _licence_address(short):
     return f"https://creativecommons.org/licenses/{m.group(1).lower()}/{m.group(2)}/" + ("igo/" if m.group(3) else "")
 
 
+# ====================================================================== non-profit web guides (sources.NONPROFIT)
+
+_robots = {}
+
+
+def allowed_by_robots(url, cache=None):
+    """True when the site's robots.txt lets our USER_AGENT read url (a site without a robots.txt allows it). The
+    robots.txt of each site is read once per run."""
+    import urllib.robotparser
+    parts = urllib.parse.urlsplit(url)
+    site = f"{parts.scheme}://{parts.netloc}"
+    if site not in _robots:
+        rp = urllib.robotparser.RobotFileParser()
+        try:
+            rp.parse(fetch(site + "/robots.txt", cache).splitlines())
+        except urllib.error.HTTPError as e:
+            rp.parse([] if e.code in (404, 410) else ["User-agent: *", "Disallow: /"])
+        except (urllib.error.URLError, OSError):
+            rp.parse(["User-agent: *", "Disallow: /"])
+        _robots[site] = rp
+        try:
+            delay = float(rp.crawl_delay(USER_AGENT) or 0)
+        except (TypeError, ValueError):
+            delay = 0
+        if delay:
+            CRAWL_DELAY[parts.hostname] = min(delay, 60.0)
+    return _robots[site].can_fetch(USER_AGENT, url)
+
+
+def page_links(page_html_text, base):
+    """The absolute addresses linked from a web page, in order, without "#..." parts and repeats."""
+    out = []
+    for href in re.findall(r'<a\b[^>]*?\bhref="([^"]+)"', page_html_text):
+        url = urllib.parse.urljoin(base, html.unescape(href)).split("#")[0]
+        if url not in out:
+            out.append(url)
+    return out
+
+
+def drop_hidden(text):
+    """The HTML without what screen readers are told to skip (aria-hidden="true": anchor marks, icons)."""
+    text = re.sub(r'<img\b[^>]*\baria-hidden="true"[^>]*>', "", text)
+    return re.sub(r'<(\w+)\b[^>]*\baria-hidden="true"[^>]*>(?:(?!<\1\b).)*?</\1>', "", text, flags=re.S)
+
+
+def first_heading(page_html_text):
+    """The words of a web page's first <h1> (or its <title>), "" when it has neither."""
+    m = re.search(r"<h1\b[^>]*>(.*?)</h1>", page_html_text, re.S) or \
+        re.search(r"<title\b[^>]*>(.*?)</title>", page_html_text, re.S)
+    if not m:
+        return ""
+    words = re.sub(r"<small\b[^>]*>.*?</small>", " ", m.group(1), flags=re.S)     # a subtitle, not the title
+    words = re.sub(r'<span class="in-resource-sub">.*$', " ", words, flags=re.S)   # W3C's "in <the resource>"
+    words = re.sub(r"<br\b[^>]*>", " ", words)
+    return " ".join(html.unescape(re.sub(r"<[^>]+>", " ", words)).split())
+
+
+def article_content(page_html_text, entry):
+    """The article's own HTML: between entry["content"]'s start and end marks, without its first <h1> (the page
+    gets its own), the parts entry["drop"] names, and what is hidden from screen readers."""
+    start, end = entry["content"]
+    m = re.search(start, page_html_text)
+    body = page_html_text[m.end():] if m else page_html_text
+    m = re.search(end, body)
+    body = body[:m.start()] if m else body
+    body = re.sub(r"<h1\b[^>]*>.*?</h1>", "", body, count=1, flags=re.S)
+    for pattern in entry.get("drop", []):
+        body = re.sub(pattern, "", body, flags=re.S)
+    return drop_hidden(body)
+
+
+def webguide_plan(entry, cache=None):
+    """[(article address, part name)] of a non-profit guide, in reading order: the articles linked from its part
+    pages (entry["units"]) or contents pages (entry["start"]), or listed in its sitemap (sorted into parts by
+    entry["unit_rules"]); at most entry["limit"]."""
+    plan, seen = [], set()
+    pages = re.compile(entry["pages"])
+
+    def add(url, unit):
+        """Add one article once."""
+        if pages.match(url) and url not in seen:
+            seen.add(url)
+            plan.append((url, unit))
+    for start in entry.get("start", []):
+        text = fetch(start, cache)
+        links = page_links(text, start)
+        units = [u for u in links if entry.get("units") and re.match(entry["units"], u)]
+        for unit_url in units:
+            if not allowed_by_robots(unit_url, cache):
+                continue
+            unit_text = fetch(unit_url, cache)
+            unit = first_heading(unit_text)
+            for url in page_links(unit_text, unit_url):
+                add(url, unit)
+        for url in links:
+            add(url, "")
+    if entry.get("sitemap"):
+        found = [html.unescape(u) for u in re.findall(r"<loc>\s*([^<\s]+)\s*</loc>", fetch(entry["sitemap"], cache))]
+        rules = entry.get("unit_rules") or [(r".", "")]
+        for _pattern, unit in rules:              # the parts in the order of the rules
+            for url in found:
+                if next((u for p, u in rules if re.search(p, url)), None) == unit:
+                    add(url, unit)
+    return plan[:entry.get("limit", 500)]
+
+
+def webguide_book(entry, cache=None, left_out=None):
+    """The Book of one non-profit guide (a sources.NONPROFIT entry), or None when its licence page no longer says
+    what was checked (then it is added to left_out). Pages robots.txt does not allow, and pages without the
+    guide's licence line (entry["page_mark"]), are left out and said in left_out. Each article keeps its headings,
+    lists, tables and links; a picture is kept as "Picture: " and its description (alt text), pictures without one
+    are left out; every page ends with the credit and licence line."""
+    left_out = left_out if left_out is not None else []
+    title = entry["title"]
+    if not allowed_by_robots(entry["licence_page"], cache) or \
+            not re.search(entry["licence_text"], fetch(entry["licence_page"], cache)):
+        left_out.append({"title": title, "reason": f"Its licence page ({entry['licence_page']}) no longer states "
+                         "the licence that was checked."})
+        return None
+    licence = licence_short(entry["licence"])
+    if not licence_kind(licence):
+        left_out.append({"title": title, "reason": f"Its licence ({licence}) is not one the toolkit may repackage."})
+        return None
+    book = Book(name=entry["name"], title=title, subject=entry["subject"], level="reference", group="nonprofit",
+                publisher=entry["publisher"], country=entry["country"], licence=licence,
+                licence_url=entry["licence_url"], source=entry["source"], description=entry["description"],
+                changes="made into web pages with the site's menus and pictures left out (their descriptions kept)")
+    plan = webguide_plan(entry, cache)
+    paths, skipped = {}, 0
+    for url, _unit in plan:
+        path = slug(urllib.parse.urlsplit(url).path.strip("/").rsplit("/", 1)[-1] or "page", 50)
+        while path in paths.values() or path in ("index", "style-css"):
+            path += "-2"
+        paths[url] = path
+    for number, (url, unit) in enumerate(plan, 1):
+        if not allowed_by_robots(url, cache):
+            skipped += 1
+            continue
+        try:
+            text = fetch(url, cache)
+        except (urllib.error.URLError, OSError):
+            skipped += 1
+            continue
+        if entry.get("page_mark") and not re.search(entry["page_mark"], text):
+            left_out.append({"title": f"{title}: {url}", "reason": "This page does not carry the guide's licence "
+                             "line."})
+            continue
+        body = _Cleaner(paths, url).clean(article_content(text, entry))
+        body = re.sub(r'<a href="[^"]*#top">.*?</a>', "", body, flags=re.S)        # "Back to Top" links
+        body = re.sub(r'<a href="[^"]*">\s*</a>', "", body)                        # links without words
+        book.pages.append(Page(paths[url], first_heading(text) or paths[url], body, 0, unit))
+    if skipped:
+        left_out.append({"title": title, "reason": f"{skipped} pages could not be read or are not allowed by the "
+                         "site's robots.txt."})
+    return book
+
+
+# ====================================================================== official PDF documents (sources.PDF_DOCS)
+
+# Distribution Statement A, as US military publications print it ("DISTRIBUTION RESTRICTION: Approved for public
+# release; distribution is unlimited."), and the words of every other (restricted) marking.
+DISTRIBUTION_A = re.compile(r"approved\s+for\s+public\s+release\s*[;:,.]?\s*distribution\s+is\s+unlimited", re.I)
+RESTRICTED = re.compile(r"distribution\s+(statement\s+)?[B-F]\b|distribution\s+authorized\s+to|authorized\s+to\s+U\.?\s?"
+                        r"S\.?\s+Government\s+agencies|for\s+official\s+use\s+only|\bFOUO\b|controlled\s+unclassified"
+                        r"|\bCUI\b|\bNOFORN\b|export[- ]controlled", re.I)
+# Part titles that are never kept from a field manual: weapons, tactics, combat and anything meant to harm.
+NOT_FIELD_SAFE = re.compile(r"\b(weapons?|small\s+arms|ammunition|firing|marksmanship|ambush\w*|combat\s+operations?|"
+                            r"tactic\w*|camouflage|evasion|resistance|escape|explosives?|demolitions?|mines?|"
+                            r"grenades?|booby|sniper|patrol\w*|raids?|assault|interrogation|captivity|"
+                            r"mountain\s+warfare|offensive|defensive\s+operations)\b", re.I)
+FIGURE_LINE = re.compile(r"^\s*(Figure\s+[A-Z]?-?\d+(?:-\d+)?[a-z]?\.?)\s+(.{2,200}?)\s*$")
+
+
+class PdfText:
+    """The words of a PDF's pages: read with pypdfium2 (BSD/Apache) when it is installed, which keeps words whole
+    where pypdf sometimes spaces out letters ("a f t e r"), else with pypdf. Lines are cleaned: a page's garbled
+    running head (made of control characters) is dropped, and the Wingdings bullet a manual's lists start with
+    ("z Look for ...") becomes "•"."""
+
+    def __init__(self, path):
+        """Open the PDF at path."""
+        try:
+            import pypdfium2 as pdfium
+            self._doc, self._pypdf = pdfium.PdfDocument(path), None
+            self.count = len(self._doc)
+        except ImportError:
+            from pypdf import PdfReader
+            self._doc, self._pypdf = None, PdfReader(path)
+            self.count = len(self._pypdf.pages)
+
+    def raw(self, n):
+        """The text of page n as the library gives it ("" when it cannot be read)."""
+        try:
+            if self._doc is not None:
+                return self._doc[n].get_textpage().get_text_range()
+            return self._pypdf.pages[n].extract_text() or ""
+        except Exception:  # noqa: BLE001 - a page that cannot be read
+            return ""
+
+    def lines(self, n):
+        """The cleaned lines of page n."""
+        out = []
+        for line in self.raw(n).replace("\r", "").split("\n"):
+            if re.search(r"[\x00-\x08\x0e-\x1f]", line):
+                continue
+            line = re.sub(r"^\s*[z\uf06e\uf0b7\uf0a7]\s+(?=[A-Z0-9(])", "• ", line).strip()
+            if line:
+                out.append(line)
+        return out
+
+
+def archive_pdf(identifier, cache=None):
+    """(download address, item page) of the PDF of an Internet Archive item (its metadata lists the files; the
+    "Text PDF", the one with the words, is preferred)."""
+    meta = json.loads(fetch(f"https://archive.org/metadata/{identifier}", cache))
+    files = [f for f in meta.get("files", []) if f.get("name", "").lower().endswith(".pdf")]
+    if not files:
+        raise ValueError("the item has no PDF")
+    files.sort(key=lambda f: (f.get("format") != "Text PDF", -int(f.get("size") or 0)))
+    name = files[0]["name"]
+    return (f"https://archive.org/download/{identifier}/{urllib.parse.quote(name)}",
+            f"https://archive.org/details/{identifier}")
+
+
+def newest_pdf(page_text, base, pattern=r"\.pdf$"):
+    """The newest PDF linked from an official publication page: the one whose address has the latest year and month
+    ("...-2026-10.pdf"), else the last one listed. "" when the page links none."""
+    pdfs = [urllib.parse.urljoin(base, html.unescape(h)) for h in re.findall(r'href="([^"]+\.pdf)"', page_text)]
+    pdfs = list(dict.fromkeys(u for u in pdfs if re.search(pattern, u, re.I)))
+    if not pdfs:
+        return ""
+
+    def when(url):
+        """(year, month) found in the address, (0, 0) when none."""
+        m = re.findall(r"(?<!\d)(19\d\d|20\d\d)(?:[-_](0[1-9]|1[0-2]))?(?!\d)", url.rsplit("/", 1)[-1])
+        return max(((int(y), int(mo or 0)) for y, mo in m), default=(0, 0))
+    return max(enumerate(pdfs), key=lambda x: (when(x[1]), x[0]))[1]
+
+
+def front_text(pdf_path, pages=12):
+    """The words of the first pages of a PDF (where the title page, the distribution statement and the copyright
+    lines are), in one line."""
+    text = PdfText(pdf_path)
+    return " ".join(" ".join(text.raw(n) for n in range(min(pages, text.count))).split())
+
+
+def without_page_number(title):
+    """A part title without the printed page number at its end ("Licensing Information 19" -> "Licensing
+    Information"); a bare label such as "Chapter 3" or "Appendix A" is kept as it is."""
+    title = " ".join(title.split())
+    if re.fullmatch(r"(chapter|appendix|part|section|annex)\s+\S+", title, re.I):
+        return title
+    return re.sub(r"(?<=\D)\s*\.*\s*\d+$", "", title) or title
+
+
+def manual_parts(pdf_path):
+    """[(title, first page index, last page index + 1)] of a manual: its top bookmarks (or the bookmarks under a
+    single top one); without useful bookmarks, the pages that begin with "CHAPTER 3" or "APPENDIX A" and the title
+    on the next line. A bookmark that only says "Chapter 3" gets the title printed on its page."""
+    from pypdf import PdfReader
+    reader = PdfReader(pdf_path)
+    total = len(reader.pages)
+
+    text = PdfText(pdf_path)
+
+    def lines(n):
+        """The first lines of page n."""
+        return text.lines(n)[:12]
+
+    def printed_title(n, label):
+        """The title printed after "Chapter 3" (or "APPENDIX A") on page n, "" when it is not found."""
+        got = lines(n)
+        for i, line in enumerate(got):
+            if re.fullmatch(re.escape(label) + r"\.?", line, re.I) and i + 1 < len(got):
+                return got[i + 1].title() if got[i + 1].isupper() else got[i + 1]
+            m = re.match(re.escape(label) + r"\.?\s+(.{3,80})$", line, re.I)
+            if m:
+                return m.group(1).title() if m.group(1).isupper() else m.group(1)
+        return ""
+
+    marks = []
+    try:
+        outline = reader.outline
+        tops = [o for o in outline if not isinstance(o, list)]
+        if len(tops) == 1 and len(outline) > 1 and isinstance(outline[1], list):
+            tops = [o for o in outline[1] if not isinstance(o, list)]
+        for o in tops:
+            try:
+                marks.append((without_page_number(str(o.title)), reader.get_destination_page_number(o)))
+            except Exception:  # noqa: BLE001 - a bookmark without a page
+                continue
+    except Exception:  # noqa: BLE001
+        marks = []
+    if len(marks) < 2:
+        marks = []
+        for n in range(total):
+            for line in lines(n)[:4]:
+                m = re.match(r"^(?:\d+-1\s+)?(CHAPTER|APPENDIX)\s+(\d+|[A-Z])\.?\s*(.*)$", line, re.I)
+                if m:
+                    label = f"{m.group(1).title()} {m.group(2)}"
+                    title = m.group(3).strip()
+                    title = title.title() if title.isupper() else title
+                    marks.append((without_page_number(f"{label}: {title}") if title else label, n))
+                    break
+        last = {}
+        for title, n in marks:                    # a label seen twice: the first was the table of contents
+            last[title.split(":")[0]] = (title, n)
+        marks = sorted(last.values(), key=lambda x: x[1])
+        if marks and marks[0][1] > 0:
+            marks.insert(0, ("Front matter", 0))
+    marks = sorted({p: (t.title() if t.isupper() else t, p) for t, p in marks}.values(), key=lambda x: x[1])
+    out = []
+    for i, (title, start) in enumerate(marks):
+        m = re.fullmatch(r"(Chapter|Appendix)\s+(\d+|[A-Z])", title, re.I)
+        if m:
+            words = printed_title(start, title)
+            title = f"{m.group(1).title()} {m.group(2)}: {words}" if words else title
+        end = marks[i + 1][1] if i + 1 < len(marks) else total
+        out.append((title, start, max(start + 1, end)))
+    if not out:
+        out = [(f"Pages {i + 1} to {min(total, i + 10)}", i, min(total, i + 10)) for i in range(0, total, 10)]
+    return out
+
+
+def part_html(text, start, end):
+    """The text of pages start..end-1 as HTML paragraphs, with "[Page 12]" marks, and every figure's caption line
+    ("Figure 4-12. Square knot") as a paragraph of its own marked as a figure, so the reader hears which drawing the
+    text speaks of (the drawings themselves are not in the book)."""
+    parts = []
+    for n in range(start, end):
+        parts.append(f'<p class="pagenum" id="page-{n + 1}">[Page {n + 1}]</p>')
+        para = []
+        for line in text.lines(n) + [""]:
+            if line.startswith("• ") and para:            # a list item starts a paragraph of its own
+                parts.append(f"<p>{esc(' '.join(' '.join(para).split()))}</p>")
+                para = []
+            m = FIGURE_LINE.match(line)
+            if m and not re.search(r"\.{4,}|\s\d+-\d+\s*$", line):      # not a list-of-figures line
+                if para:
+                    parts.append(f"<p>{esc(' '.join(' '.join(para).split()))}</p>")
+                    para = []
+                parts.append(f'<p class="figure" role="note"><strong>{esc(m.group(1))}</strong> '
+                             f'{esc(m.group(2))} (a drawing in the original)</p>')
+            elif line.strip():
+                para.append(line)
+            elif para:
+                parts.append(f"<p>{esc(' '.join(' '.join(para).split()))}</p>")
+                para = []
+        if para:
+            parts.append(f"<p>{esc(' '.join(' '.join(para).split()))}</p>")
+    return "\n".join(parts)
+
+
+def pdfdoc_book(entry, work, cache=None, left_out=None):
+    """The Book of one official PDF (a sources.PDF_DOCS entry): the PDF is found (an Internet Archive item, or the
+    newest PDF on an official publication page), its licence checked (the page's licence line, or for a US military
+    manual Distribution Statement A in its own front matter and no restricted marking), then made into one page per
+    chapter; for a field manual, parts about weapons, tactics or harm (NOT_FIELD_SAFE) are left out. None when it is
+    not allowed (said in left_out)."""
+    left_out = left_out if left_out is not None else []
+    title = entry["title"]
+    if entry.get("archive"):
+        pdf_url, page = archive_pdf(entry["archive"], cache)
+    else:
+        page = entry["page"]
+        if not allowed_by_robots(page, cache):
+            left_out.append({"title": title, "reason": "The site's robots.txt does not allow reading its page."})
+            return None
+        text = fetch(page, cache)
+        if not re.search(entry["licence_text"], " ".join(html.unescape(re.sub(r"<[^>]+>", " ", text)).split())):
+            left_out.append({"title": title, "reason": f"Its page ({page}) no longer states the licence that was "
+                             "checked."})
+            return None
+        pdf_url = newest_pdf(text, page, entry.get("pdf_pattern", r"\.pdf$"))
+        if not pdf_url:
+            left_out.append({"title": title, "reason": "Its page links no PDF."})
+            return None
+    if not allowed_by_robots(pdf_url, cache):
+        left_out.append({"title": title, "reason": "The site's robots.txt does not allow reading its PDF."})
+        return None
+    os.makedirs(work, exist_ok=True)
+    local = os.path.join(work, f"{entry['name']}.pdf")
+    if not os.path.exists(local):
+        with open(local, "wb") as f:
+            f.write(fetch(pdf_url, None, binary=True))
+    front = front_text(local)
+    if entry.get("distribution_a"):
+        bad = RESTRICTED.search(front)
+        if not DISTRIBUTION_A.search(front) or bad:
+            left_out.append({"title": title, "reason": "Its front matter does not show Distribution Statement A "
+                             f"(approved for public release; distribution is unlimited){' but ' + bad.group(0) if bad else ''}."})
+            return None
+    licence = entry["licence"]
+    if not licence_kind(licence_short(licence)) and not licence_kind(licence):
+        left_out.append({"title": title, "reason": f"Its licence ({licence}) is not one the toolkit may repackage."})
+        return None
+    text = PdfText(local)
+    book = Book(name=entry["name"], title=title, subject=entry["subject"], level="reference", group=entry["group"],
+                publisher=entry["publisher"], country=entry["country"], licence=licence,
+                licence_url=entry["licence_url"], source=page, description=entry["description"],
+                original_pdf={"url": pdf_url, "size": os.path.getsize(local), "sha256": file_sha256(local)},
+                changes="its text made into web pages, one per chapter, with each drawing's caption kept as text"
+                        + ("; parts about weapons and tactics left out" if entry.get("distribution_a") else ""))
+    skipped = []
+    for i, (part_title, start, end) in enumerate(manual_parts(local), 1):
+        if entry.get("distribution_a") and NOT_FIELD_SAFE.search(part_title):
+            if part_title not in skipped:
+                skipped.append(part_title)
+            continue
+        label = f"{part_title} (pages {start + 1} to {end})" if end - start > 1 else f"{part_title} (page {start + 1})"
+        book.pages.append(Page(f"part-{i}-{slug(part_title, 40)}", label, part_html(text, start, end), i))
+    if skipped:
+        book.description += " Left out: " + "; ".join(skipped) + "."
+    return book
+
+
 # ====================================================================== the run
 
 def build(keys, out_dir, cache=None, pictures=False, local_osbooks=None, date=None):
@@ -1118,9 +1545,15 @@ def build(keys, out_dir, cache=None, pictures=False, local_osbooks=None, date=No
     plan = []
     for key in keys:
         if key == "all":
-            plan += [f"osbooks:{r}" for r in sources.OSBOOKS] + ["siyavula", "dspace"]
+            plan += [f"osbooks:{r}" for r in sources.OSBOOKS] + ["siyavula", "dspace"] + \
+                [f"nonprofit:{e['name']}" for e in sources.NONPROFIT] + [f"pdf:{e['name']}" for e in sources.PDF_DOCS]
         elif key == "osbooks":
             plan += [f"osbooks:{r}" for r in sources.OSBOOKS]
+        elif key == "nonprofit":
+            plan += [f"nonprofit:{e['name']}" for e in sources.NONPROFIT]
+        elif key in ("fieldmanuals", "government"):
+            group = "fieldmanual" if key == "fieldmanuals" else "government"
+            plan += [f"pdf:{e['name']}" for e in sources.PDF_DOCS if e["group"] == group]
         else:
             plan.append(key)
     if local_osbooks:
@@ -1151,6 +1584,30 @@ def build(keys, out_dir, cache=None, pictures=False, local_osbooks=None, date=No
                         b = None
                     if b is not None:
                         books.append(b)
+            elif key.startswith("pdf:"):
+                entry = next((e for e in sources.PDF_DOCS if e["name"] == key[4:]), None)
+                if entry is None:
+                    print(f"Unknown key {key}; skipped.")
+                    continue
+                try:
+                    b = pdfdoc_book(entry, work, cache, left_out)
+                except Exception as e:  # noqa: BLE001 - said in the manifest
+                    left_out.append({"title": entry["title"], "reason": f"It could not be read ({e})."})
+                    b = None
+                if b is not None:
+                    books.append(b)
+            elif key.startswith("nonprofit:"):
+                entry = next((e for e in sources.NONPROFIT if e["name"] == key[10:]), None)
+                if entry is None:
+                    print(f"Unknown key {key}; skipped.")
+                    continue
+                try:
+                    b = webguide_book(entry, cache, left_out)
+                except Exception as e:  # noqa: BLE001 - said in the manifest
+                    left_out.append({"title": entry["title"], "reason": f"It could not be read ({e})."})
+                    b = None
+                if b is not None:
+                    books.append(b)
             else:
                 print(f"Unknown key {key}; skipped.")
                 continue

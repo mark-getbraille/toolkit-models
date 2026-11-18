@@ -80,10 +80,191 @@ LICENCE_LINES = {
     "worldbank": "World Bank OKR record 10986/41919: dc.rights \"CC BY 3.0 IGO\".",
     "fao": "FAO record 20.500.14283/cd2616en: dc.rights.license \"CC BY NC SA 3.0 IGO\" (its page also mentions a "
            "CC BY 4.0 copyright page; the stricter licence of the record is used).",
+    "eff": "www.eff.org/copyright: \"Any and all original material on the EFF website may be freely distributed at "
+           "will under the Creative Commons Attribution 4.0 International License (CC-BY), unless otherwise noted.\" "
+           "Every Surveillance Self-Defense page ends \"Copyright (CC BY)\", linking there.",
+    "peoples_law_school": "www.peopleslawschool.ca/terms-use/: \"The content on the People's Law School website, "
+                          "except for the images and videos, is licensed under a Creative Commons Attribution-"
+                          "NonCommercial-ShareAlike 4.0 International Licence\" (so the book has the text only; "
+                          "its pictures are left out).",
+    "w3c_wai_curricula": "www.w3.org/WAI/curricula/ and each module page: \"This work is licensed under a Creative "
+                         "Commons Attribution 4.0 International License.\" (Most other WAI pages are under the W3C "
+                         "Document License, which allows no changes, so they are not included.)",
 }
+
+# Reference works of non-profit organisations (the toolkit's collection "Reference, non-profits"): guides published
+# as web pages under an open licence, made into one ZIM book each by build_textbooks.webguide_book. Checked by hand
+# on 2026-11-18 (robots.txt allows the pages; the licence line is quoted in LICENCE_LINES). Each entry:
+#   name, title, subject, publisher, country, licence (expected), licence_url, source (the guide's home page),
+#   description
+#   licence_page + licence_text  a page fetched at every build that must still contain licence_text (a regular
+#                                expression), or the whole guide is left out
+#   page_mark                    a regular expression every page must contain (the page's own licence line), or
+#                                "" when the licence page covers the whole site; a page without it is left out
+#   start                        the pages read first (the guide's contents pages)
+#   units                        a regular expression for the part pages linked from start ("" for none); each
+#                                part's title (its <h1>) becomes a heading of the book's contents
+#   pages                        a regular expression for the article pages, linked from the part pages (or from
+#                                start, or listed in sitemap)
+#   sitemap                      a sitemap.xml whose addresses matching pages are the articles ("" for none)
+#   unit_rules                   [(regular expression, part name)] to sort sitemap articles into parts
+#   content                      (start, end): the article's text is between the first match of start and the
+#                                first match of end after it (regular expressions)
+#   drop                         regular expressions of parts of the article to leave out (menus, "print" links)
+#   limit                        the most articles read (a guard against a site that changed shape)
+NONPROFIT = [
+    {
+        "name": "eff_surveillance_self_defense", "title": "Surveillance Self-Defense",
+        "subject": "Digital security and privacy", "publisher": "Electronic Frontier Foundation (EFF)",
+        "country": "International", "licence": "CC BY 4.0",
+        "licence_url": "https://creativecommons.org/licenses/by/4.0/", "source": "https://ssd.eff.org/",
+        "description": "The Electronic Frontier Foundation's guides to protecting yourself from surveillance and "
+                       "online threats: strong passwords, two-factor authentication, phishing, encryption, safe "
+                       "messaging, phones and computers, with step-by-step tool guides and security scenarios.",
+        "licence_page": "https://www.eff.org/copyright",
+        "licence_text": r"Creative Commons Attribution 4\.0 International License",
+        "page_mark": r"Copyright \(CC BY\)",
+        "start": ["https://ssd.eff.org/"],
+        "units": r"^https://ssd\.eff\.org/module-categories/[a-z0-9-]+$",
+        "pages": r"^https://ssd\.eff\.org/module/[a-z0-9-]+$",
+        "sitemap": "", "unit_rules": [],
+        "content": (r'id="main-content"[^>]*>', r"<footer"),
+        "drop": [r'<p class="breadcrumbs".*?</p>', r'<div class="[^"]*share[^"]*".*?</div>'],
+        "limit": 300,
+    },
+    {
+        "name": "peoples_law_school_bc", "title": "People's Law School: everyday legal problems (British Columbia)",
+        "subject": "Law (British Columbia, Canada)", "publisher": "People's Law School", "country": "Canada",
+        "licence": "CC BY-NC-SA 4.0", "licence_url": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+        "source": "https://www.peopleslawschool.ca/",
+        "description": "Plain-language legal information for British Columbia, Canada, from the non-profit People's "
+                       "Law School: work, renting, consumer problems and scams, cars, health, money and debt, "
+                       "families, wills and estates, planning for future care, and its questions and answers. It is "
+                       "general information, not legal advice, and applies to British Columbia.",
+        "licence_page": "https://www.peopleslawschool.ca/terms-use/",
+        "licence_text": r"Creative Commons Attribution-NonCommercial-ShareAlike 4\.0 International",
+        "page_mark": "",
+        "start": [],
+        "units": "",
+        "pages": r"^https://www\.peopleslawschool\.ca/(qa/)?(?!fr/|zh-Hans/|category/|news/|webinar/|person/|about/"
+                 r"|publications/|privacy-policy/|terms-use/)[a-z0-9-]+/$",
+        "sitemap": "https://www.peopleslawschool.ca/sitemap.xml",
+        "unit_rules": [(r"^(?!.*/qa/)", "Guides"), (r"/qa/", "Questions and answers")],
+        "content": (r"<main\b[^>]*>", r"</main>"),
+        "drop": [r"<aside\b.*?</aside>", r"<svg\b.*?</svg>", r"<img\b[^>]*>"],   # its pictures are not licensed
+        "limit": 700,
+    },
+    {
+        "name": "w3c_wai_curricula", "title": "Curricula on Web Accessibility (W3C WAI)",
+        "subject": "Web accessibility", "publisher": "W3C Web Accessibility Initiative (WAI)",
+        "country": "International", "licence": "CC BY 4.0",
+        "licence_url": "https://creativecommons.org/licenses/by/4.0/", "source": "https://www.w3.org/WAI/curricula/",
+        "description": "Curricula on Web Accessibility: A Framework to Build Your Own Courses, by the W3C Web "
+                       "Accessibility Initiative (Daniel Montalvo and Shadi Abou-Zahra, eds.; Copyright World Wide "
+                       "Web Consortium). Teaching modules on accessibility foundations and on accessible content, "
+                       "design and development.",
+        "licence_page": "https://www.w3.org/WAI/curricula/",
+        "licence_text": r"licensed under a\s*<a[^>]*>\s*Creative Commons Attribution 4\.0 International License",
+        "page_mark": r"Creative Commons Attribution 4\.0 International License",
+        "start": ["https://www.w3.org/WAI/curricula/"],
+        "units": r"^https://www\.w3\.org/WAI/curricula/[a-z-]+-modules/$",
+        "pages": r"^https://www\.w3\.org/WAI/curricula/[a-z-]+-modules/[a-z0-9-]+/$",
+        "sitemap": "", "unit_rules": [],
+        "content": (r"<main\b[^>]*>", r"</main>"),
+        "drop": [r'<nav\b.*?</nav>'],
+        "limit": 80,
+    },
+]
+
+# Official PDF documents (the toolkit's collections "Reference, field manuals" and "Reference, governments"), made into
+# one ZIM book each by build_textbooks.pdfdoc_book. Each entry: name, title, subject, publisher, country, group
+# ("fieldmanual" or "government"), licence, licence_url, description, and where the PDF is:
+#   archive          an Internet Archive item holding a copy of a US military manual (the official site,
+#                    armypubs.army.mil, shuts out automated readers in its robots.txt; marines.mil, the Coast Guard's
+#                    and FEMA's sites refuse automated requests). distribution_a: True makes the builder read the
+#                    manual's own front matter and keep it only when it says "Approved for public release;
+#                    distribution is unlimited" (Distribution Statement A) and shows no restricted marking
+#                    (Distribution B to F, FOUO, CUI); its parts about weapons, tactics or harm are left out.
+#   page + licence_text + pdf_pattern   an official publication page that must still state licence_text (a regular
+#                    expression, checked at every build); its newest PDF matching pdf_pattern is used.
+# The field manuals were checked by hand on 2026-11-18: each front page reads "DISTRIBUTION RESTRICTION: Approved
+# for public release; distribution is unlimited." They are works of the US government (17 U.S.C. 105), so public
+# domain. Only survival, first aid, map reading, knots and rigging, field hygiene and cold-weather and mountain
+# safety are chosen; never anything about weapons, explosives or tactics.
+US_GOV = "Public domain (US government work)"
+US_GOV_URL = "https://www.copyright.gov/title17/92chap1.html#105"
+FIELD = dict(group="fieldmanual", country="United States", licence=US_GOV, licence_url=US_GOV_URL,
+             distribution_a=True)
+PDF_DOCS = [
+    dict(FIELD, name="army_atp_3_50_21_survival", title="Survival (ATP 3-50.21, 2018)", subject="Survival",
+         publisher="Headquarters, Department of the Army", archive="survival-atp-3-50-21",
+         description="The US Army's survival manual: survival medicine, water, food, fire, shelter and clothing, "
+                     "movement and navigation, survival equipment, and knots and rope."),
+    dict(FIELD, name="army_fm_4_25_11_first_aid", title="First Aid (FM 4-25.11, 2002)", subject="First aid",
+         publisher="Headquarters, Department of the Army (with the Navy and Air Force)", archive="FM4-25x11",
+         description="The US armed forces' first-aid manual for everyone: checking a casualty, breathing, "
+                     "bleeding, shock, fractures, burns, heat and cold injuries, bites and stings, and "
+                     "psychological first aid."),
+    dict(FIELD, name="army_fm_3_25_26_map_reading", title="Map Reading and Land Navigation (FM 3-25.26, 2001)",
+         subject="Maps and navigation", publisher="Headquarters, Department of the Army", archive="FM3-25x26",
+         description="The US Army's manual of map reading and land navigation: map symbols, grids, scale and "
+                     "distance, direction, the compass, elevation and relief, terrain association, orienteering "
+                     "and GPS."),
+    dict(FIELD, name="army_fm_4_25_12_field_sanitation", title="Unit Field Sanitation Team (FM 4-25.12, 2002)",
+         subject="Field hygiene and sanitation", publisher="Headquarters, Department of the Army",
+         archive="FM4-25x12",
+         description="The US Army's field sanitation manual: safe drinking water, food safety, waste disposal, "
+                     "insects and pests, and heat and cold injury prevention in the field."),
+    dict(FIELD, name="army_fm_5_125_rigging", title="Rigging Techniques, Procedures, and Applications (FM 5-125, 1995)",
+         subject="Knots, rope and rigging", publisher="Headquarters, Department of the Army",
+         archive="fm-5-125-rigging-techniques-procedures-and-applications-1995",
+         description="The US Army's rigging manual: fibre and wire rope, knots, hitches and splices, anchors, "
+                     "blocks and tackle, and lifting safely."),
+    dict(FIELD, name="army_tc_3_97_61_mountaineering", title="Military Mountaineering (TC 3-97.61, 2025)",
+         subject="Mountaineering and mountain safety", publisher="Headquarters, Department of the Army",
+         archive="military-mountaineering-tc-3-97.61-november-2025",
+         description="The US Army's mountaineering manual: the mountain environment, environmental injuries, "
+                     "avalanches, moving in the mountains, navigation, knots and rope, anchors, climbing, fixed "
+                     "ropes, stream crossing, glacier travel, and mountain rescue."),
+    dict(FIELD, name="army_tc_21_3_cold_weather", title="Soldier's Handbook for Individual Operations and Survival "
+         "in Cold-Weather Areas (TC 21-3, 1986)", subject="Cold-weather safety and survival",
+         publisher="Headquarters, Department of the Army",
+         archive="soldiers-handbook-for-individual-operations-and-survival-in-cold-weather-areas-tc-21-3",
+         description="The US Army's cold-weather handbook: clothing, shelters, rations, hygiene and first aid in "
+                     "the cold (hypothermia, frostbite, carbon monoxide), skis and snowshoes, navigation and "
+                     "survival."),
+]
+
+# Provincial publications under Alberta's open licence (open.alberta.ca: "Usage / Licence ... Open Government Licence
+# - Alberta", checked by hand on 2026-11-18 and again from each page at every build).
+ALBERTA = dict(group="government", country="Canada", licence="OGL-Alberta",
+               licence_url="https://open.alberta.ca/licence", publisher="Government of Alberta",
+               licence_text=r"Licence\s+Open Government Licence - Alberta")
+PDF_DOCS += [
+    dict(ALBERTA, name="alberta_drivers_guide", title="Alberta Driver's Guide: cars and light trucks",
+         subject="Driving", page="https://open.alberta.ca/publications/drivers-guide",
+         pdf_pattern=r"drivers-guide[^/]*\.pdf$",
+         description="Alberta's official driver's guide for cars and light trucks: licences, the rules of the "
+                     "road, signs and signals, safe driving, and sharing the road."),
+    dict(ALBERTA, name="alberta_spot_the_difference_elder_abuse",
+         title="Spot the difference: elder abuse, bullying, frauds and scams (Alberta)", subject="Seniors' safety",
+         page="https://open.alberta.ca/publications/spot-the-difference-learn-to-recognize-elder-abuse-bullying-and-"
+              "frauds-and-scams",
+         description="Alberta's guide to telling elder abuse, bullying, frauds and scams apart, and where to get "
+                     "help."),
+    dict(ALBERTA, name="alberta_its_your_money_financial_abuse",
+         title="It's your money: protect yourself from financial abuse (Alberta)", subject="Seniors' safety",
+         page="https://open.alberta.ca/publications/its-your-money-financial-abuse",
+         description="Alberta's guide for older adults on recognising and preventing financial abuse."),
+    dict(ALBERTA, name="alberta_power_outages", title="Power outages: be prepared (Alberta)",
+         subject="Emergency preparedness", page="https://open.alberta.ca/publications/power-outages",
+         description="Alberta's emergency fact sheet on getting ready for a power outage and staying safe during "
+                     "one."),
+]
 
 ALLOWED = {
     "CC0": "open", "PD": "open", "OGL": "open", "CC BY": "open", "CC BY-SA": "share-alike",
+    US_GOV: "open", "OGL-Alberta": "open", "OGL-Canada": "open", "OGL-Ontario": "open", "OGL-BC": "open",
     "CC BY-NC": "non-commercial", "CC BY-NC-SA": "non-commercial",
 }
 
@@ -113,3 +294,41 @@ NOT_INCLUDED = [
     ("Siyavula Mathematical Literacy and Life Sciences", "Only PDFs without a reader version with text formulas; "
      "left out until their pictures of formulas can be described."),
 ]
+
+# Non-profit reference works looked at for "Reference, non-profits" and not built, with the reason. Many good ones
+# are already in the Kiwix library (Khan Academy, PhET, MedlinePlus, Ready.gov, the CDC's Travelers' Health, the
+# OpenStreetMap wiki, DevDocs with the MDN Web Docs for HTML, CSS and JavaScript, Appropedia, Wikivoyage, Project
+# Gutenberg, the Post Disaster, Medical and Water Treatment libraries), so they are not built again here.
+NONPROFIT_NOT_INCLUDED = [
+    ("Hesperian Health Guides (Where There Is No Doctor and the other HealthWiki books)", "Their own \"open "
+     "copyright\" lets anyone copy and adapt the books to be given away free or at cost, not for profit, and asks to "
+     "be contacted before an adaptation; it is not a standard licence the builder can check, and the toolkit is a "
+     "paid program, so Hesperian's written permission is asked for first."),
+    ("MSF medical guidelines (Médecins Sans Frontières)", "Copyright MSF; its robots.txt also shuts out automated "
+     "readers of AI companies."),
+    ("IFRC International First Aid, Resuscitation and Education Guidelines", "The IFRC website refuses automated "
+     "requests (403), and no open licence was found."),
+    ("Rules of Unified English Braille (ICEB)", "CC BY-NC-ND 2.5 Australia (NoDerivatives): may be shared whole and "
+     "unchanged but not made into web pages. Download the PDF from iceb.org and add it with \"Your own "
+     "documents\" instead."),
+    ("W3C WAI guidance other than the Curricula (WCAG, tutorials, Easy Checks)", "W3C Document License: copies of "
+     "whole documents are allowed, changes are not (and a ZIM book changes them); WCAG itself is in the toolkit's "
+     "own help."),
+    ("Practical Action technical briefs", "Their resource pages state no licence; each PDF would have to be checked "
+     "one by one."),
+    ("Steps to Justice (CLEO, Ontario)", "Copyright CLEO: pages may be printed whole for non-commercial or "
+     "educational use, not repackaged."),
+    ("Paths to Literacy (Perkins School for the Blind and TSBVI)", "All rights reserved (Perkins terms and "
+     "conditions); permission needed."),
+    ("DAISY Consortium knowledge base", "© The DAISY Consortium; no open licence was found."),
+    ("American Printing House, NFB, AFB, CNIB, RNIB and BANA guides", "Copyright of each organisation; only with "
+     "written permission."),
+    ("CK-12", "Its own CK-12 licence and terms of use, not a standard open licence the builder can check."),
+    ("Our World in Data articles", "CC BY and allowed, but their pages are built around interactive charts that do "
+     "not read well as text; its chart pictures with their titles are used in the picture describer's training "
+     "instead (packs/ngo_packs.py)."),
+    ("UNICEF and UNHCR publications", "Licences differ per publication (many all rights reserved); not checked one "
+     "by one."),
+    ("AARP, GCFGlobal (Goodwill) and WebAIM", "No open licence was found (copyright of each organisation)."),
+]
+NOT_INCLUDED = NOT_INCLUDED + NONPROFIT_NOT_INCLUDED

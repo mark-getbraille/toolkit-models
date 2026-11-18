@@ -1,6 +1,7 @@
 # Build the open textbooks of the Digital Accessibility Toolkit as ZIM files (textbooks/build_textbooks.py: OpenStax
 # from the openstax/osbooks-* repositories, Siyavula from its online reader, the WHO, World Bank and FAO reference
-# works from their open repositories) and publish them in the release "textbooks", with textbooks.json listing each
+# works from their open repositories, non-profit guides (EFF, People's Law School, W3C WAI Curricula), US military
+# field manuals with Distribution Statement A and Alberta's open-licence publications) and publish them in the release "textbooks", with textbooks.json listing each
 # book's id, title, subject, level, licence, credit, language, size, SHA-256, article count, date and the official
 # address of the publisher's original PDF (never a copy of it). The toolkit's Offline libraries window reads it
 # (collection "Textbooks").
@@ -17,7 +18,7 @@ on:
   workflow_dispatch:
     inputs:
       keys:
-        description: "Keys separated by commas (osbooks, osbooks:<repository>, siyavula, dspace, pictures), or all"
+        description: "Keys separated by commas (osbooks, osbooks:<repository>, siyavula, dspace, nonprofit, fieldmanuals, government, pictures), or all"
         required: true
         default: "all"
 
@@ -47,13 +48,22 @@ jobs:
           words = [w for w in sys.argv[1].split(",") if w]
           pictures = "pictures" in words
           words = [w for w in words if w != "pictures"]
-          every = [f"osbooks:{r}" for r in sources.OSBOOKS] + ["siyavula", "dspace"]
+          nonprofit = [f"nonprofit:{e['name']}" for e in sources.NONPROFIT]
+          pdfs = {g: [f"pdf:{e['name']}" for e in sources.PDF_DOCS if e["group"] == g] for g in ("fieldmanual", "government")}
+          every = [f"osbooks:{r}" for r in sources.OSBOOKS] + ["siyavula", "dspace"] + nonprofit + pdfs["fieldmanual"] + \
+              pdfs["government"]
           keys = []
           for w in words or ["all"]:
               if w == "all":
                   keys += every
               elif w == "osbooks":
                   keys += [f"osbooks:{r}" for r in sources.OSBOOKS]
+              elif w == "nonprofit":
+                  keys += nonprofit
+              elif w == "fieldmanuals":
+                  keys += pdfs["fieldmanual"]
+              elif w == "government":
+                  keys += pdfs["government"]
               elif w in every:
                   keys.append(w)
           print("keys=" + json.dumps(list(dict.fromkeys(keys))))
@@ -77,8 +87,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install what the builder needs (zstandard BSD, pypdf BSD)
-        run: python -m pip install zstandard pypdf
+      - name: Install what the builder needs (zstandard BSD, pypdf BSD, pypdfium2 Apache/BSD)
+        run: python -m pip install zstandard pypdf "pypdfium2==5.15.2"
       - name: Keep the pages read between runs
         uses: actions/cache@v4
         with:

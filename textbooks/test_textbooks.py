@@ -10,6 +10,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_textbooks as B  # noqa: E402
+import sources  # noqa: E402
 import mathtext  # noqa: E402
 from sample_book import make_sample_repo  # noqa: E402
 
@@ -55,3 +56,111 @@ def test_sample_book(tmp_path):
     data = B.merge([os.path.join(out, n) for n in os.listdir(out) if n.startswith("manifest-")])
     assert data["books"][0]["name"] == "openstax_tiny_science" and data["not_included"]
     json.dumps(data)
+
+
+# ---------------------------------------------------------------- non-profit guides and official PDFs (made-up pages)
+
+GUIDE_PAGES = {
+    "https://guide.example.org/robots.txt": "User-agent: *\nDisallow: /private/\n",
+    "https://guide.example.org/licence": "<p>All our guides are under the Creative Commons Attribution 4.0 "
+                                         "International License.</p>",
+    "https://guide.example.org/": '<a href="/part/basics">Basics</a> <a href="/private/x">Hidden</a>',
+    "https://guide.example.org/part/basics": '<h1>The Basics</h1><a href="/guide/passwords">Passwords</a> '
+                                             '<a href="/guide/phishing">Phishing</a> '
+                                             '<a href="/private/secret">Secret</a> <a href="/guide/unmarked">U</a>',
+    "https://guide.example.org/guide/passwords": (
+        '<nav>MENU</nav><div id="main-content"><h1>Strong <small>a subtitle</small>Passwords</h1>'
+        '<p class="crumbs">Home &gt; Basics</p>'
+        '<h2>Use a manager <a href="#use" aria-hidden="true">#</a></h2><p>See <a href="/guide/phishing">phishing'
+        '</a>.</p><img src="dice.png" alt="Five dice showing 6, 2, 4, 1 and 5"><img src="icon.png" alt="">'
+        '<a href="#top">Back to Top</a></div><footer>Copyright (CC BY)</footer>'),
+    "https://guide.example.org/guide/phishing": '<div id="main-content"><h1>Phishing</h1><p>Check the sender.</p>'
+                                                 '</div><footer>Copyright (CC BY)</footer>',
+    "https://guide.example.org/guide/unmarked": '<div id="main-content"><h1>Unmarked</h1><p>No licence here.</p>'
+                                                 '</div><footer>All rights reserved</footer>',
+}
+GUIDE = {
+    "name": "example_guide", "title": "Example Guide", "subject": "Safety", "publisher": "Example Charity",
+    "country": "International", "licence": "CC BY 4.0", "licence_url": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://guide.example.org/", "description": "A made-up guide.",
+    "licence_page": "https://guide.example.org/licence",
+    "licence_text": r"Creative Commons Attribution 4\.0 International License", "page_mark": r"Copyright \(CC BY\)",
+    "start": ["https://guide.example.org/"], "units": r"^https://guide\.example\.org/part/[a-z]+$",
+    "pages": r"^https://guide\.example\.org/(guide|private)/[a-z]+$", "sitemap": "", "unit_rules": [],
+    "content": (r'id="main-content"[^>]*>', r"<footer"), "drop": [r'<p class="crumbs">.*?</p>'], "limit": 20,
+}
+
+
+def _fake_fetch(pages):
+    """A stand-in for build_textbooks.fetch that answers from a dict (404 for anything else)."""
+    import urllib.error
+
+    def fetch(url, cache=None, binary=False, tries=4):
+        """The made-up page of url."""
+        if url not in pages:
+            raise urllib.error.HTTPError(url, 404, "not found", {}, None)
+        return pages[url].encode() if binary else pages[url]
+    return fetch
+
+
+def test_webguide_book(monkeypatch):
+    """A non-profit guide: parts from its contents page, robots.txt obeyed, pages without the licence line left out,
+    menus, hidden marks and "Back to Top" dropped, picture descriptions kept, links pointed at the book's pages, and
+    the credit and licence on every page."""
+    monkeypatch.setattr(B, "fetch", _fake_fetch(GUIDE_PAGES))
+    monkeypatch.setattr(B, "_robots", {})
+    left = []
+    book = B.webguide_book(GUIDE, None, left)
+    assert book.group == "nonprofit" and book.licence == "CC BY 4.0"
+    assert [(p.unit, p.title) for p in book.pages] == [("The Basics", "Strong Passwords"), ("The Basics", "Phishing")]
+    body = book.pages[0].body
+    assert "MENU" not in body and "crumbs" not in body and "Home &gt;" not in body and ">#<" not in body
+    assert "Back to Top" not in body and "a subtitle" not in body
+    assert "Picture: Five dice showing 6, 2, 4, 1 and 5" in body and 'href="phishing"' in body
+    assert any("unmarked" in x["title"] for x in left) and not any("secret" in x["title"] for x in left)
+    assert "CC BY 4.0" in B.page_html(book, book.pages[1]) and "menus and pictures left out" in B.credit_line(book)
+    index = B.index_page(book)
+    assert "<h3>The Basics</h3>" in index
+
+
+def test_webguide_licence_gone(monkeypatch):
+    """When the licence page no longer says what was checked, the whole guide is left out."""
+    pages = dict(GUIDE_PAGES)
+    pages["https://guide.example.org/licence"] = "<p>All rights reserved.</p>"
+    monkeypatch.setattr(B, "fetch", _fake_fetch(pages))
+    monkeypatch.setattr(B, "_robots", {})
+    left = []
+    assert B.webguide_book(GUIDE, None, left) is None and "no longer states" in left[0]["reason"]
+
+
+def test_field_manual_rules():
+    """Distribution Statement A is recognised in its printed forms; restricted markings and unsafe parts are not
+    allowed; the newest official PDF is chosen."""
+    assert B.DISTRIBUTION_A.search("DISTRIBUTION RESTRICTION: Approved for public release; distribution is unlimited.")
+    assert B.DISTRIBUTION_A.search("Approved for public release: distribution is unlimited")
+    assert B.RESTRICTED.search("DISTRIBUTION STATEMENT C: Distribution authorized to U.S. Government agencies")
+    assert B.RESTRICTED.search("FOR OFFICIAL USE ONLY") and not B.RESTRICTED.search("DESTRUCTION NOTICE: Destroy")
+    assert B.NOT_FIELD_SAFE.search("Chapter 4: Small Arms and Ammunition")
+    assert not B.NOT_FIELD_SAFE.search("Chapter 8: Knot Tying and Rope Management")
+    page = ('<a href="/d/1/download/guide-2023-04.pdf">old</a><a href="/d/2/download/guide-2026-10.pdf">new</a>'
+            '<a href="/d/3/download/guide-2025-03.pdf">x</a>')
+    assert B.newest_pdf(page, "https://open.example.ca/p") == "https://open.example.ca/d/2/download/guide-2026-10.pdf"
+    assert B.licence_kind(sources.US_GOV) == "open" and B.licence_kind("OGL-Alberta") == "open"
+    assert B.without_page_number("Chapter 1: Licensing Information 19") == "Chapter 1: Licensing Information"
+    assert B.without_page_number("Chapter 3") == "Chapter 3"
+
+
+def test_reference_sources():
+    """Every non-profit guide and official PDF has a unique name, an allowed licence (never NoDerivatives) and the
+    fields the builder needs; field manuals are checked for Distribution Statement A."""
+    import sources
+    names = [e["name"] for e in sources.NONPROFIT + sources.PDF_DOCS] + [d[2] for d in sources.DSPACE]
+    assert len(names) == len(set(names))
+    for e in sources.NONPROFIT:
+        assert B.licence_kind(B.licence_short(e["licence"])) and e["content"] and e["licence_text"]
+    for e in sources.PDF_DOCS:
+        assert e["group"] in ("fieldmanual", "government", "university")
+        assert B.licence_kind(e["licence"]) == "open"
+        assert e.get("archive") or (e.get("page") and e.get("licence_text"))
+        if e["group"] == "fieldmanual":
+            assert e["distribution_a"] and not B.NOT_FIELD_SAFE.search(e["title"])
