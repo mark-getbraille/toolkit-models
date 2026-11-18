@@ -29,7 +29,11 @@ Sources, and why each may be used by a program:
   The Picture Describers website (describe.getbraille.com)   its export of volunteer-checked instructions, read with
       the API key in the repository secret DESCRIBE_SITE_KEY ("Authorization: Bearer", never in this repository; a
       key that may fetch, 2,000 uses a day), paged with next_since; skipped without it.
-  Not used: ManualsLib and other manual-copying sites (their terms forbid automated use); the FCC's equipment pages
+  Not used: ManualsLib and other manual-copying sites (their terms forbid automated use), nor the Internet Archive's
+      copies of them (items such as manualsbase-id-2170, manualsonline-id-..., manualzilla-id-..., manualsplus_...:
+      COPY_SITE_ITEMS, or an item whose metadata names one of NEVER_SITES): never put into any index (the owner's
+      decision); other Archive items (scans people uploaded, makers' manuals) stay, each with its rights. The FCC's
+      equipment pages
       (its Akamai protection refuses programs from cloud machines; the toolkit reads them on the owner's computer).
 
 Politeness: one request at a time, a pause for each site (GAPS), the builder's User-Agent, answers kept in a cache
@@ -83,6 +87,20 @@ DESCRIBE_EXPORT_FALLBACK = "https://describe.getbraille.com/instructions_json.ph
 VOLUNTEER_PAGE = 1000
 IA_ROWS = 100
 IA_PAGES = 5                 # pages of one IA search at most
+# The manual-copying sites, never used, and the start of the identifiers of the Internet Archive's copies of them
+# (followed by "-" or "_"), never put into an index. They MUST match NEVER_SITES of app/toolkit/manuals/websearch.py
+# and COPY_SITE_ITEMS of app/toolkit/manuals/archive.py in the toolkit (mark-getbraille/video-transcriber): this
+# builder cannot import the toolkit, so the lists are copied here; change them together.
+NEVER_SITES = ("manualslib.com", "manualzz.com", "manualsonline.com", "manua.ls", "manualowl.com", "safemanuals.com",
+               "all-guidesbox.com", "manualsdir.com", "manualsbase.com", "manualzilla.com", "usermanual.wiki",
+               "manualsplus.com", "manuals.plus", "device.report", "fccid.io", "manualsbrain.com", "manualmachine.com",
+               "manualsfile.com", "libble.eu", "manualzz.net", "manuallib.com")
+COPY_SITE_ITEMS = ("manualslib", "manualzz", "manualsonline", "manua-ls", "manuals-ls", "manualowl", "safemanuals",
+                   "manualsbase", "manualzilla", "manualsdir", "usermanual-wiki", "usermanualwiki", "manualsplus",
+                   "manuals-plus", "device-report", "devicereport", "fccid-io", "fccidio", "fccid", "all-guidesbox",
+                   "allguidesbox", "manualsbrain", "manualmachine", "manualsfile", "libble", "manuallib")
+_COPY_ID = re.compile(r"^(?:" + "|".join(re.escape(p) for p in COPY_SITE_ITEMS) + r")[-_]", re.I)
+SOURCE_FIELDS = ("source", "originalurl", "original_url", "originalUrl", "url", "external-identifier")
 BAD_KINDS = re.compile(r"software|program|library|application|website|programming|package|game|framework|"
                        r"operating system|distribution|utility|service|database|web|protocol|format|font", re.I)
 
@@ -473,18 +491,76 @@ def add_volunteers(entries, records, fetch=None):
 
 # ----------------------------------------------------------------------------------------- Internet Archive
 
+def _ia_text(value):
+    """A metadata field that may be a list, as text."""
+    if isinstance(value, list):
+        return "; ".join(str(v) for v in value if v)
+    return str(value or "").strip()
+
+
+def copy_site_item(identifier, doc=None):
+    """True when an Internet Archive item is a copy of a manual-copying site (never put into an index): its
+    identifier starts with one of COPY_SITE_ITEMS, or its fields (doc: a search answer's doc or an item's
+    metadata) name one of NEVER_SITES as where it came from ("source", "originalurl" ...) or in its "subject"
+    words ("manualsbase; manuals;"). The same test as archive.copy_site_item in the toolkit."""
+    if _COPY_ID.match(str(identifier or "").strip()):
+        return True
+    doc = doc if isinstance(doc, dict) else {}
+    if not doc:
+        return False
+    if _COPY_ID.match(_ia_text(doc.get("identifier"))):
+        return True
+    for name in SOURCE_FIELDS:
+        value = _ia_text(doc.get(name)).lower()
+        if value and any(re.search(r"(?<![a-z0-9-])" + re.escape(s) + r"(?![a-z0-9-])", value) for s in NEVER_SITES):
+            return True
+    words = {w.strip().lower() for w in re.split(r"[;,]", _ia_text(doc.get("subject")))}
+    return bool(words & ((set(COPY_SITE_ITEMS) | set(NEVER_SITES)) - {"fccid"}))
+
+
+def copy_site_manual(manual):
+    """True when a manual record names a copy of a manual-copying site: its "ia" item, or the archive.org item of
+    its "url", "page" or "text_url"."""
+    if manual.get("ia") and copy_site_item(manual["ia"]):
+        return True
+    for key in ("url", "page", "text_url"):
+        m = re.match(r"https?://(?:www\.)?archive\.org/(?:download|details|metadata)/([^/?#]+)",
+                     str(manual.get(key) or ""), re.I)
+        if m and copy_site_item(urllib.parse.unquote(m.group(1))):
+            return True
+    return False
+
+
+def without_copy_sites(entries):
+    """The entries with every manual that is a copy of a manual-copying site taken out (also those ia_fill found
+    out by their metadata, marked "copy_site"); an entry left with no manual and no instructions is dropped."""
+    out = []
+    for e in entries:
+        manuals = e.get("manuals") or []
+        kept = [m for m in manuals if not m.get("copy_site") and not copy_site_manual(m)]
+        if manuals and not kept and not e.get("instructions"):
+            continue
+        if len(kept) != len(manuals):
+            e = dict(e, manuals=kept)
+        out.append(e)
+    return out
+
+
 def ia_search(fetch, words, collections=("manuals", "computermanuals"), limit=200):
-    """Items of the manual collections whose title has the words (each word in quotes)."""
+    """Items of the manual collections whose title has the words (each word in quotes), without the copies of
+    manual-copying sites (left out by the search itself, and again by copy_site_item)."""
     title = " AND ".join('"' + w.replace('"', "") + '"' for w in words.split())
     where = " OR ".join(f"collection:{c}" for c in collections)
+    not_copies = " OR ".join(f"identifier:{p}-* OR identifier:{p}_*" for p in COPY_SITE_ITEMS)
     items, page = [], 1
     while len(items) < limit and page <= IA_PAGES and not listing_out_of_time():
         url = "https://archive.org/advancedsearch.php?" + urllib.parse.urlencode(
-            [("q", f"mediatype:texts AND ({where}) AND title:({title})")] +
-            [("fl[]", f) for f in ("identifier", "title", "item_size", "collection", "rights", "licenseurl")] +
+            [("q", f"mediatype:texts AND ({where}) AND title:({title}) AND NOT ({not_copies})")] +
+            [("fl[]", f) for f in ("identifier", "title", "item_size", "collection", "rights", "licenseurl",
+                                   "subject", "source", "originalurl")] +
             [("rows", IA_ROWS), ("page", page), ("output", "json")])
         docs = ((fetch.json(url).get("response") or {}).get("docs") or [])
-        items += docs
+        items += [d for d in docs if not copy_site_item(d.get("identifier"), d)]
         if len(docs) < IA_ROWS:
             break
         page += 1
@@ -511,9 +587,15 @@ def ia_rights(doc):
     return str(rights or doc.get("licenseurl") or "not stated (the manual belongs to its maker)")
 
 
+class CopySite(ValueError):
+    """An item whose metadata shows it is a copy of a manual-copying site."""
+
+
 def ia_files(fetch, identifier):
-    """(pdf name, size, text name) of an item."""
+    """(pdf name, size, text name) of an item. Raises CopySite when its metadata names a manual-copying site."""
     meta = fetch.json(f"https://archive.org/metadata/{urllib.parse.quote(identifier)}")
+    if copy_site_item(identifier, meta.get("metadata")):
+        raise CopySite(identifier)
     pdfs, text = [], ""
     for f in meta.get("files") or []:
         name = str(f.get("name") or "")
@@ -551,6 +633,9 @@ def ia_fill(fetch, entries):
                 pdf, size, text = ia_files(fetch, m["ia"])
             except OutOfTime:
                 return done
+            except CopySite:
+                m["copy_site"] = True       # taken out by without_copy_sites
+                continue
             except (RuntimeError, ValueError):
                 continue
             base = f"https://archive.org/download/{urllib.parse.quote(m['ia'])}/"
@@ -797,6 +882,7 @@ def write(key, entries, out_dir, notes=(), requests_made=0):
     """Write manuals-<key>.json.gz and manifest-<key>.json; return the manifest."""
     cat = C.CATEGORIES[key]
     built = time.strftime("%Y-%m-%d")
+    entries = without_copy_sites(entries)      # never an Internet Archive copy of a manual-copying site
     index = {"key": key, "name": cat["name"], "description": cat["description"], "kind": cat["kind"],
              "licence": cat["licence"], "built": built,
              "credit": "Open Food Facts, Open Beauty Facts and Open Products Facts contributors; the Internet "
