@@ -7,7 +7,9 @@ Packages window (category Manual collections) downloads them.
     python manuals/build_manuals.py all --out build/manuals --limit 5        (a quick local check)
 
 What is published, and what is not (the owner's copyright rule; this repository is public):
-  - facts and links: brand, model, product name, barcodes, FCC IDs, the official addresses of manuals and their
+  - facts and links: brand, model, product name, barcodes, FCC IDs, Canadian certification numbers ("ic_ids", from
+    Internet Archive items whose title or description prints "IC: 4492A-XYZ123"; empty for every other source,
+    EnerGuide included, which prints none), the official addresses of manuals and their
     rights, and small thumbnails only when their licence allows passing them on (Open Food Facts photos, CC BY-SA;
     Wikimedia Commons files under CC0, public domain, CC BY or CC BY-SA);
   - the full text of openly licensed instructions (Open Food Facts' and its sister databases' photos and fields,
@@ -582,8 +584,8 @@ def ia_search(fetch, words, collections=("manuals", "computermanuals"), limit=20
     while len(items) < limit and page <= IA_PAGES and not listing_out_of_time():
         url = "https://archive.org/advancedsearch.php?" + urllib.parse.urlencode(
             [("q", f"mediatype:texts AND ({where}) AND title:({title}) AND NOT ({not_copies})")] +
-            [("fl[]", f) for f in ("identifier", "title", "item_size", "collection", "rights", "licenseurl",
-                                   "subject", "source", "originalurl", "year", "date")] +
+            [("fl[]", f) for f in ("identifier", "title", "description", "item_size", "collection", "rights",
+                                   "licenseurl", "subject", "source", "originalurl", "year", "date")] +
             [("rows", IA_ROWS), ("page", page), ("output", "json")])
         docs = ((fetch.json(url).get("response") or {}).get("docs") or [])
         items += [d for d in docs if not copy_site_item(d.get("identifier"), d) and not before_1990(d)]
@@ -633,16 +635,39 @@ def ia_files(fetch, identifier):
     return (pdfs[0][1], pdfs[0][2], text) if pdfs else ("", 0, text)
 
 
+# Canadian certification numbers (ISED, formerly Industry Canada): "IC: 4492A-XYZ123", "IC 4492A-XYZ123",
+# "ISED: 4492A-XYZ123": a company number of up to 5 digits with an optional letter, a hyphen, a product number of up
+# to 11 letters and digits. The SAME rule as app/toolkit/manuals/ised.py in the toolkit (mark-getbraille/
+# video-transcriber), which reads the "ic_ids" written here: after "IC" the number counts only with ":" (or "#",
+# "."), "ID", or the company number's letter, so "IC 555-TIMER" (a chip) and "CAN ICES-3(B)" are not numbers.
+IC_NUMBER = re.compile(r"\b(?P<word>IC|ISEDC?)(?P<id>\s*ID)?\s*(?P<sep>[:#.])?\s*(?P<digits>\d{1,5})(?P<letter>[A-Z]?)"
+                       r"\s*-\s*(?P<product>[A-Z0-9]{1,11})(?![A-Z0-9]|-[A-Z0-9])", re.I)
+
+
+def ic_numbers(text):
+    """The Canadian certification numbers printed in text, as "4492A-XYZ123" (without "IC:"), each once, in order."""
+    out = []
+    for m in IC_NUMBER.finditer(str(text or "")):
+        if not (m.group("word").upper().startswith("ISED") or m.group("sep") or m.group("id") or m.group("letter")):
+            continue
+        number = f"{m.group('digits')}{m.group('letter')}-{m.group('product')}".upper()
+        if number not in out:
+            out.append(number)
+    return out
+
+
 def ia_entry(doc):
-    """The index entry of an item (its manual's address is filled in later by ia_fill)."""
+    """The index entry of an item (its manual's address is filled in later by ia_fill). Its "ic_ids" are the
+    Canadian certification numbers its title or description prints ("IC: 4492A-XYZ123")."""
     ident, title = str(doc.get("identifier")), str(doc.get("title") or "")
     if isinstance(doc.get("title"), list):
         title = str(doc["title"][0])
     name = clean_title(title)
     brand = ia_brand(doc, title)
     page = f"https://archive.org/details/{urllib.parse.quote(ident)}"
+    description = re.sub(r"<[^>]+>", " ", html.unescape(_ia_text(doc.get("description"))))
     return {"id": f"ia-{ident}", "brand": brand, "model": model_of(title), "name": name, "barcodes": [],
-            "fcc_ids": [], "source": "Internet Archive",
+            "fcc_ids": [], "ic_ids": ic_numbers(title + "\n" + description), "source": "Internet Archive",
             "manuals": [{"title": title, "url": "", "page": page, "kind": "page", "ia": ident,
                          "size": int(doc.get("item_size") or 0), "rights": ia_rights(doc),
                          "source": "Internet Archive"}]}
@@ -710,7 +735,7 @@ def wikidata_entries(rows, key):
         e = by_item.setdefault(qid, {"id": f"wd-{qid}", "name": r.get("itemLabel", ""),
                                      "brand": r.get("brandLabel") or r.get("makerLabel") or "",
                                      "model": model_of(r.get("itemLabel", "")), "category": kind, "barcodes": [],
-                                     "fcc_ids": [], "manuals": [], "source": "Wikidata (CC0)",
+                                     "fcc_ids": [], "ic_ids": [], "manuals": [], "source": "Wikidata (CC0)",
                                      "page": r["item"], "image": r.get("image", "")})
         if r.get("gtin") and r["gtin"] not in e["barcodes"]:
             e["barcodes"].append(r["gtin"])
@@ -766,7 +791,8 @@ def udi_entries(fetch, term, limit):
             out.append({"id": f"udi-{gtins[0]}", "brand": brand, "model": model,
                         "name": str(r.get("device_description") or gmdn)[:160],
                         "maker": str(r.get("company_name") or ""), "category": gmdn, "barcodes": gtins,
-                        "fcc_ids": [], "manuals": [], "source": "FDA device identifiers (openFDA; public domain)"})
+                        "fcc_ids": [], "ic_ids": [], "manuals": [],
+                        "source": "FDA device identifiers (openFDA; public domain)"})
         if len(results) < 100:
             break
         skip += 100
@@ -788,7 +814,8 @@ def energystar_entries(fetch, dataset, limit):
         kind = str(r.get("type") or r.get("product_type") or "").strip()
         out.append({"id": f"es-{dataset}-{r.get('pd_id') or model}", "brand": brand, "model": model,
                     "name": " ".join(w for w in (brand, model, kind) if w), "category": kind, "barcodes": upcs,
-                    "fcc_ids": [], "manuals": [], "source": "ENERGY STAR certified products (US EPA)"})
+                    "fcc_ids": [], "ic_ids": [], "manuals": [],
+                    "source": "ENERGY STAR certified products (US EPA)"})
     return out
 
 
@@ -831,7 +858,7 @@ def energuide_models(data, kind, limit):
         what = " ".join(w for w in (str(r.get("TYPE_LABEL_EN") or "").strip(), kind) if w)
         out.append({"id": f"eg-{r.get('REC_REF_KEY') or model}", "brand": brand, "model": model,
                     "name": f"{brand} {model} ({what})", "category": kind, "barcodes": [], "fcc_ids": [],
-                    "manuals": [], "source": ENERGUIDE_SOURCE, "market": "Canada"})
+                    "ic_ids": [], "manuals": [], "source": ENERGUIDE_SOURCE, "market": "Canada"})
         if len(out) >= limit:
             break
     return out
@@ -850,7 +877,8 @@ def energuide_entries(fetch, kinds, limit):
 
 
 def attach_manuals(entries, manual_entries):
-    """Give device records (openFDA) the manuals of Internet Archive items of the same brand and model."""
+    """Give device records (openFDA, ENERGY STAR, EnerGuide) the manuals of Internet Archive items of the same brand
+    and model, and the Canadian certification numbers those items print."""
     by_model = {}
     for m in manual_entries:
         if m.get("model"):
@@ -860,6 +888,8 @@ def attach_manuals(entries, manual_entries):
         for m in by_model.get(key, []) if len(key) >= 3 else []:
             if not e.get("brand") or e["brand"].lower()[:4] in (m.get("brand") or "").lower() + m["name"].lower():
                 e["manuals"] += [x for x in m["manuals"] if x not in e["manuals"]]
+                e["ic_ids"] = list(e.get("ic_ids") or []) + [i for i in m.get("ic_ids") or []
+                                                             if i not in (e.get("ic_ids") or [])]
 
 
 # ------------------------------------------------------------------------------------------------ building
