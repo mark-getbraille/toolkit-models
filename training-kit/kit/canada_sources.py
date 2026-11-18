@@ -35,8 +35,11 @@ The collections (CANADA_SOURCES):
     openfacts_ca           Open Food Facts, Open Beauty Facts and Open Products Facts (photos CC BY-SA 3.0, data ODbL
                            1.0; https://world.openfoodfacts.org/terms-of-use): front photos of products sold in Canada
                            (countries_tags en:canada) with a North American or GS1 Canada barcode (GS1 prefixes 000 to
-                           139, or 754 and 755), with the name, brand and size people typed in, and "What languages is
-                           the label in?" when the product's record says English and French.
+                           139, or 754 and 755), with the name, brand and size people typed in, and, for Open Beauty
+                           and Products Facts, "What languages is the label in?" when the product's record
+                           (languages_codes) says English and French (the food search service does not return it).
+                           Supplements, vitamins, cough drops and throat lozenges are skipped (med_vet_sources.
+                           openfacts_supplements takes them).
     inaturalist_ca_sa      iNaturalist research-grade observations in each province and territory, photos CC BY-SA.
   noncommercial
     inaturalist_ca_nc      The same, photos under CC BY-NC, BY-NC-SA or BY-NC-ND.
@@ -234,7 +237,7 @@ def ca_food_items(want):
                 data = get_json(OFF_SEARCH, {"q": f'countries_tags:"en:canada" AND categories_tags:"en:{category}"',
                                              "page_size": 100, "page": page, "sort_by": "-unique_scans_n",
                                              "fields": "code,product_name,product_name_en,brands,quantity,images,"
-                                                       "languages_codes,categories_tags"})
+                                                       "categories_tags"})
             except RuntimeError:
                 break
             batch = data.get("hits") or []
@@ -253,9 +256,6 @@ def ca_food_items(want):
             extra = {"split": "", "credit": CA_FACTS_CREDIT.format(code=hit["code"]), "place": CANADA,
                      "place_kind": "market"}
             items.append((name, url, dict(extra, question=PRODUCT_Q, answer=answer)))
-            row = bilingual_row(hit, extra)
-            if row:
-                items.append((name, url, row))
             got += 1
         say(f"  Open Food Facts (Canada) {category}: {got} products")
     return items
@@ -268,7 +268,8 @@ def ca_site_items(site, want):
     while len(hits) < want * 2 and page <= 10:
         try:
             data = get_json(f"{base}/api/v2/search", {"countries_tags_en": "canada", "page_size": 100, "page": page,
-                                                      "sort_by": "unique_scans_n", "fields": FACTS_FIELDS})
+                                                      "sort_by": "unique_scans_n",
+                                                      "fields": FACTS_FIELDS + ",languages_codes"})
         except RuntimeError:
             break
         batch = data.get("products") or []
@@ -291,6 +292,9 @@ def ca_site_items(site, want):
         file_name = f"{site}-front-{hit['code']}.jpg"
         items.append((file_name, url, dict(extra, question=PRODUCT_Q, answer=answer)))
         items += [(file_name, url, dict(extra, **row)) for row in kind_rows(site, hit)]
+        row = bilingual_row(hit, extra)
+        if row:
+            items.append((file_name, url, row))
     say(f"  {name} (Canada): {len({i[0] for i in items})} products")
     return items
 
