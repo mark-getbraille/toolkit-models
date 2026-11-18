@@ -1,4 +1,4 @@
 # Changing this file on main starts .github/workflows/packs.yml for these pack keys (separated by commas), or all.
-# The Library of Congress events pack again: cancelled at six hours on the old code; its searches now stop at half
-# the time limit. (The 41 waiting packs are building now, in the run started by the previous request.)
-loc_events
+# Again: four Library of Congress packs (their pictures were refused when several tried at once; downloads now wait
+# and try again when a server is busy) and Commons disasters (Commons asked to slow down while ten packs ran).
+loc_fsa,loc_civil_war,loc_war_disaster,loc_service,commons_disasters
