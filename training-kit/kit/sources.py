@@ -2009,6 +2009,17 @@ SOURCES = [
     Source('nmah_devices', 'Household devices in the National Museum of American History (Smithsonian, ready-made pack)',
            'CC0 (Smithsonian Open Access)', 'National Museum of American History, Smithsonian Institution, CC0',
            "permissive", 140, 10, prepare_pack, 'about 90 MB'),
+    # Workplaces, farms and building mechanical systems in the US and Canada (packs/work_farm_mech_packs.py); the
+    # share-alike entries are in work_farm_mech_sources.py.
+    Source("work_commons_workplaces", "US and Canadian factories, warehouses, forklifts, pallet jacks, conveyors, machine shops and safety equipment (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain, CC BY or an open government licence (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1500, 20, prepare_pack, "about 500 MB"),
+    Source("farm_commons_equipment", "Tractors, combines, balers, sprayers, silos, grain elevators, barns, milking parlours and greenhouses in the US and Canada (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain, CC BY or an open government licence (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 2500, 20, prepare_pack, "about 850 MB"),
+    Source("mech_commons_building", "Furnaces, boilers, air conditioners, ducts, well pumps, septic tanks, electrical panels, meters, propane tanks and chimneys (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain, CC BY or an open government licence (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1200, 20, prepare_pack, "about 400 MB"),
+    Source("farm_usda_nrcs", "Conservation on US farms and ranches, with USDA NRCS captions (Wikimedia Commons, ready-made pack)",
+           "Public domain (US government work); each Commons file checked",
+           "USDA Natural Resources Conservation Service via Wikimedia Commons (credited in CREDITS.txt)", "permissive", 3000, 20, prepare_pack, "about 1 GB"),
     Source('skin_lesion_photos', 'Skin spots photographed with a phone, adults (PAD-UFES-20, ready-made pack)',
            'CC BY 4.0 (Mendeley Data zr7vgbcyr2)',
            'PAD-UFES-20 (Pacheco et al., 2020), CC BY 4.0', "permissive", 2000, 20, prepare_pack, 'about 400 MB', content="medical"),
@@ -2159,6 +2170,8 @@ PEOPLE_AND_BODILY_PACK_KEYS = (
     # ImageInWords are used)
     "commons_us_agencies", "commons_us_holidays", "commons_us_eating_out", "commons_us_getting_around",
     "commons_us_public_places",
+    # work_farm_mech_packs.py: workers at work and NRCS field photos (the farm and building packs are used)
+    "work_commons_workplaces", "farm_usda_nrcs",
 )
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + PEOPLE_AND_BODILY_PACK_KEYS
 
@@ -2534,3 +2547,16 @@ _device_ok = set(getattr(_device, "DEVICE_PICTURE_MAKING_OK", ()) or ())
 PERSONAL_PICTURE_MAKING_OK |= _device_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in DEVICE_SOURCES if s.key not in _device_ok)
 _add_collections(DEVICE_SOURCES)
+
+# Workplace, farm and building collections that are not open (Commons BY-SA and GFDL files); the file may be missing.
+try:
+    import work_farm_mech_sources as _wfm  # noqa: E402
+except ImportError as _e:
+    _wfm = None
+    if getattr(_e, "name", None) != "work_farm_mech_sources":
+        say(f"(The workplace, farm and building collections could not be loaded: {_e}. They are left out.)")
+WORK_FARM_MECH_SOURCES = list(getattr(_wfm, "WORK_FARM_MECH_SOURCES", []) or [])
+_wfm_ok = set(getattr(_wfm, "WORK_FARM_MECH_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _wfm_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in WORK_FARM_MECH_SOURCES if s.key not in _wfm_ok)
+_add_collections(WORK_FARM_MECH_SOURCES)

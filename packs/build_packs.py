@@ -1499,6 +1499,10 @@ PACKS.update(US_MODERN_PACKS)
 from device_packs import DEVICE_PACKS
 PACKS.update(DEVICE_PACKS)
 
+# Workplaces, farms and building mechanical systems (US and Canada): Commons categories and USDA NRCS photos.
+from work_farm_mech_packs import WORK_FARM_MECH_PACKS
+PACKS.update(WORK_FARM_MECH_PACKS)
+
 
 def sha256_of(path):
     """The SHA-256 of a file."""
