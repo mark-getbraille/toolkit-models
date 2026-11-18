@@ -1,5 +1,7 @@
-"""Pack builder for the DRAWINGS IN US MILITARY FIELD MANUALS: the numbered figures of survival, first-aid, map-reading,
-knots and rigging, field-sanitation, cold-weather and mountaineering manuals, each with its own printed caption
+"""Pack builder for the DRAWINGS IN US MILITARY FIELD MANUALS AND NAVY COURSES: the numbered figures of survival,
+first-aid, map-reading, knots and rigging, field-sanitation, cold-weather and mountaineering manuals, and of the US
+Navy's nonresident training courses (the NEETS electricity and electronics modules, Basic Machines, Culinary
+Specialist, Hospital Corpsman), each with its own printed caption
 ("Figure 8-12. Square knot"). Line drawings of knots, shelters, compasses, map symbols, splints and bandages are
 good teaching pictures for a describer, and their captions are the publisher's own words. Used by build_packs.py in
 the same way as its own PACKS: build_field_manual_figures(limit) returns [(file name, JPEG bytes, row)], where a row
@@ -65,7 +67,20 @@ MANUALS = [
      False),
     ("soldiers-handbook-for-individual-operations-and-survival-in-cold-weather-areas-tc-21-3",
      "the US Army's cold-weather handbook (TC 21-3, 1986)", False),
-]
+    # US Navy nonresident training courses (NAVEDTRA), the same Distribution Statement A.
+    ("navedtra-14037-basic-machines-1994", "the US Navy's course Basic Machines (NAVEDTRA 14037, 1994)", False),
+    ("navedtra-15008-culinary-specialist-2010", "the US Navy's course Culinary Specialist (NAVEDTRA 15008, 2010)",
+     False),
+    ("hospital-corpsman-nonresident-training-course-navedtra-14295",
+     "the US Navy's course Hospital Corpsman (NAVEDTRA 14295, 2000)", True),
+] + [(f"NEETSModule{n:02d}", f"the US Navy's electricity and electronics course NEETS module {n} ({words})", False)
+     for n, words in ((1, "matter, energy and direct current"), (2, "alternating current and transformers"),
+                      (3, "circuit protection, control and measurement"), (4, "conductors, wiring and schematics"),
+                      (5, "generators and motors"), (6, "electron tubes and power supplies"),
+                      (7, "solid-state devices"), (8, "amplifiers"), (9, "wave generation and shaping"),
+                      (10, "wave propagation, transmission lines and antennas"), (13, "number systems and logic"),
+                      (14, "microelectronics"), (16, "test equipment"), (19, "the technician's handbook"),
+                      (22, "digital computers"), (24, "fiber optics"))]
 
 DISTRIBUTION_A = re.compile(r"approved\s+for\s+public\s+release\s*[;:,.]?\s*distribution\s+is\s+unlimited", re.I)
 RESTRICTED = re.compile(r"distribution\s+(statement\s+)?[B-F]\b|distribution\s+authorized\s+to|authorized\s+to\s+U\.?\s?"
@@ -78,7 +93,10 @@ NOT_SAFE = re.compile(r"\b(weapons?|rifles?|pistols?|guns?|firing|fire\s+team|ma
 MEDICAL = re.compile(r"\b(wounds?|injur\w*|fractur\w*|bleed\w*|tourniquet|splint\w*|bandag\w*|dressings?|burns?|"
                      r"casualt\w*|resuscitat\w*|airway|CPR|frostbite|hypothermia|blisters?|bites?|stings?|medic\w*|"
                      r"pulse|shock|skin|eye|eyes|teeth|tooth|anatomy|lungs?|heart)\b", re.I)
-CAPTION = re.compile(r"^\s*Figure\s+([A-Z]?-?\d+(?:-\d+)?[a-z]?)\.?\s+(.{2,200}?)\s*$")
+CAPTION = re.compile(r"^\s*Figure\s+([A-Z]?-?\d+(?:-\d+)?[a-z]?)(?:\.?\s*[\u2014\u2013]\s*|\.?\s+)(.{2,200}?)\s*$")
+# A sentence that only mentions a figure ("Figure 1-15 shows you ...") is not its caption.
+SENTENCE = re.compile(r"^(shows?|illustrates?|is|are|was|gives|lists|depicts|presents|contains|compares|and|or|in|on"
+                      r"|of|as|for|to|with|from|at|by|above|below)\b", re.I)
 LIST_LINE = re.compile(r"\.{4,}|\s\d+-\d+\s*$|\s[ivx]+\s*$")
 TOO_LITTLE = re.compile(r"^\(?(continued|cont\.?|example|examples|sample|figure|\d+)\)?\.?$", re.I)
 DPI = 180
@@ -136,7 +154,7 @@ def captions(page):
         return []                                       # the list of figures
     out = []
     for m, line in found:
-        if LIST_LINE.search(line):
+        if LIST_LINE.search(line) or SENTENCE.match(m.group(2)):
             continue
         caption = " ".join(m.group(2).split())
         searcher = textpage.search(f"Figure {m.group(1)}", match_case=True, match_whole_word=False)
@@ -234,7 +252,8 @@ def manual_figures(data, identifier, manual, medical, pdf_url, page_url):
         considered(identifier, pdf_url, why)
         return []
     skip = unsafe_pages(doc)
-    credit = f"Figure from {manual}, Headquarters, Department of the Army; {PD_CREDIT}; copy at {page_url}"
+    who = "the US Navy" if "Navy" in manual else "Headquarters, Department of the Army"
+    credit = f"Figure from {manual}, {who}; {PD_CREDIT}; copy at {page_url}"
     base = re.sub(r"[^a-z0-9]+", "_", identifier.lower()).strip("_")[:40]
     out, seen = [], set()
     for n in range(len(doc)):
@@ -306,12 +325,13 @@ def build_field_manual_figures(limit):
 
 FIELD_MANUAL_PACKS = {
     "field_manual_figures": (build_field_manual_figures,
-                             "Drawings from US military field manuals with Distribution Statement A (approved for "
-                             "public release): survival, first aid, map reading, rigging, field sanitation, cold "
-                             "weather and mountaineering; US government works, public domain (17 U.S.C. 105). "
+                             "Drawings from US military field manuals and Navy training courses with Distribution "
+                             "Statement A (approved for public release): survival, first aid, map reading, rigging, "
+                             "field sanitation, cold weather, mountaineering, electricity and electronics, machines, "
+                             "cooking and hospital care; US government works, public domain (17 U.S.C. 105). "
                              "Copies from the Internet Archive, https://archive.org"),
 }
-FIELD_MANUAL_LIMITS = {"field_manual_figures": 1500}     # about 600 to 900 usable figures in the seven manuals
+FIELD_MANUAL_LIMITS = {"field_manual_figures": 2500}     # about 700 in the Army manuals, 1,500 or more in the Navy courses
 
 
 def main(argv=None):

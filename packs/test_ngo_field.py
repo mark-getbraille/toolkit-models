@@ -56,6 +56,8 @@ def test_field_manual_words():
     m = fm.CAPTION.match("Figure 8-12. Square knot")
     assert m and m.group(1) == "8-12" and m.group(2) == "Square knot"
     assert fm.CAPTION.match("Figure A-3. Bowline") and fm.CAPTION.match("Figure 2-1 Jaw Thrust Method")
+    assert fm.CAPTION.match("Figure 1-4.\u2014Magnetic field around a conductor.").group(2).startswith("Magnetic")
+    assert fm.SENTENCE.match("shows you a couple of people lifting") and not fm.SENTENCE.match("Square knot")
     assert fm.LIST_LINE.search("Figure 2-1. Jaw thrust method ............ 2-6")
     assert fm.NOT_SAFE.search("Firing positions") and fm.NOT_SAFE.search("Improvised weapons")
     assert not fm.NOT_SAFE.search("Lean-to shelter") and not fm.NOT_SAFE.search("Snare for small game")
