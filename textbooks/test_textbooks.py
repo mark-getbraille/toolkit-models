@@ -75,6 +75,9 @@ GUIDE_PAGES = {
         '</a>.</p><img src="dice.png" alt="Five dice showing 6, 2, 4, 1 and 5"><img src="icon.png" alt="">'
         '<a href="#top">Back to Top</a></div><footer>Copyright (CC BY)</footer>'),
     "https://guide.example.org/guide/phishing": '<div id="main-content"><h1>Phishing</h1><p>Check the sender.</p>'
+                                                 '<h3><button aria-expanded="false"><span aria-hidden="true">v</span>'
+                                                 'If you clicked</button></h3><div id="p"><div aria-hidden="true">'
+                                                 '<p>Change your password.</p></div></div>'
                                                  '</div><footer>Copyright (CC BY)</footer>',
     "https://guide.example.org/guide/unmarked": '<div id="main-content"><h1>Unmarked</h1><p>No licence here.</p>'
                                                  '</div><footer>All rights reserved</footer>',
@@ -118,6 +121,7 @@ def test_webguide_book(monkeypatch):
     assert "Back to Top" not in body and "a subtitle" not in body
     assert "Picture: Five dice showing 6, 2, 4, 1 and 5" in body and 'href="phishing"' in body
     assert any("unmarked" in x["title"] for x in left) and not any("secret" in x["title"] for x in left)
+    assert "<h3>If you clicked</h3>" in book.pages[1].body and "Change your password." in book.pages[1].body
     assert "CC BY 4.0" in B.page_html(book, book.pages[1]) and "menus and pictures left out" in B.credit_line(book)
     index = B.index_page(book)
     assert "<h3>The Basics</h3>" in index

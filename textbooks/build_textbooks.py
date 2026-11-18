@@ -1161,9 +1161,16 @@ def page_links(page_html_text, base):
 
 
 def drop_hidden(text):
-    """The HTML without what screen readers are told to skip (aria-hidden="true": anchor marks, icons)."""
+    """The HTML without what screen readers are told to skip (aria-hidden="true": anchor marks, icons). A hidden part
+    that holds paragraphs, lists, tables or headings is kept: that is a collapsed section ("accordion") whose text
+    is only hidden until it is opened. A heading's toggle button keeps its words as the heading."""
+    text = re.sub(r'(<h[1-6]\b[^>]*>)\s*<button\b[^>]*>(.*?)</button>', r"\1\2", text, flags=re.S)
     text = re.sub(r'<img\b[^>]*\baria-hidden="true"[^>]*>', "", text)
-    return re.sub(r'<(\w+)\b[^>]*\baria-hidden="true"[^>]*>(?:(?!<\1\b).)*?</\1>', "", text, flags=re.S)
+
+    def small(m):
+        """"" for a hidden mark or icon, the whole text for a collapsed section."""
+        return m.group(0) if re.search(r"<(p|ul|ol|table|h[1-6]|dl|blockquote)\b", m.group(0)) else ""
+    return re.sub(r'<(\w+)\b[^>]*\baria-hidden="true"[^>]*>(?:(?!<\1\b).)*?</\1>', small, text, flags=re.S)
 
 
 def first_heading(page_html_text):
