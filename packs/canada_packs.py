@@ -548,7 +548,18 @@ HOLIDAYS = [
 def build_commons_ca_holidays(limit):
     """The Commons Canadian holidays, events and seasons pack (the US pack's filters: adult graduations only, no
     official speeches or military events)."""
-    return commons_specs_pack(HOLIDAYS, limit, "caholiday", after=everyday_holidays)
+    return commons_specs_pack(HOLIDAYS, limit, "caholiday", after=canadian_holidays)
+
+
+# Party politics filed under holiday categories (a candidate's campaign office under "Easter eggs in Canada").
+POLITICS = re.compile(r"\b((?i:campaign\w*|candidates?|riding|party leader|premier|prime minister)|MLA|MPP|MNA|"
+                      r"M\.?P\.?|NDP|Liberal|Conservative|Bloc)\b")
+
+
+def canadian_holidays(items):
+    """The US pack's everyday filter (no official speeches or military events, adult graduations only), and no
+    party politics."""
+    return drop_items(everyday_holidays(items), POLITICS, "party politics, not an everyday holiday")
 
 
 # ----------------------------------------------------------------- commons_ca_eating_out

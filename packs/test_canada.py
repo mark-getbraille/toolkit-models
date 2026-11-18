@@ -82,6 +82,13 @@ def test_sign_meaning():
     assert [i[0] for i in c.drop_items(rooms, c.NOT_A_HOME, "vehicles")] == ["b"]
 
 
+def test_holidays_without_politics():
+    """A campaign office filed under Easter eggs is left out; an Easter egg hunt stays."""
+    items = [("a", "u", [{"answer": "This is Easter in Canada.", "facts": {"commons_title": "Bowinn Ma Campaign Office"}}]),
+             ("b", "u", [{"answer": "This is Easter in Canada.", "facts": {"commons_title": "Easter egg hunt"}}])]
+    assert [i[0] for i in c.canadian_holidays(items)] == ["b"]
+
+
 def test_inaturalist():
     """Québec is matched to Quebec inside Canada (not Lake Ontario, not a US place); only CC0 and CC BY photos."""
     results = [{"id": 1, "name": "Québec", "admin_level": 20, "ancestor_place_ids": [6712]},
