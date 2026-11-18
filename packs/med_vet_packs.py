@@ -454,8 +454,9 @@ def build_med_commons_supplies(limit):
 INSTRUMENT_SPECS = [
     instrument("Scalpels", "a scalpel", "A scalpel is a very sharp small knife that surgeons use to cut skin and "
                                         "tissue.", 1),
+    # (its own files only: its subcategories include Tweezers, used in fur, watch and craft workshops)
     instrument("Forceps", "a pair of forceps", "Forceps are tongs or tweezers for gripping and holding tissue or "
-                                               "small objects.", 1),
+                                               "small objects."),
     instrument("Surgical forceps", "a pair of surgical forceps", "Surgical forceps grip and hold tissue, or clamp "
                                                                  "a blood vessel, during an operation.", 1),
     instrument("Surgical retractors", "a surgical retractor", "A retractor holds the edges of a cut apart, so the "
@@ -554,7 +555,8 @@ VET_SPECS = [
     caption_only("Veterinary medicine in the United States", 1),
     caption_only("Veterinary medicine in Canada", 1),
     caption_only("Veterinary pharmacology", 1),
-    thing("Ear tags", "This is an ear tag: a plastic tag clipped to a farm animal's ear with its number."),
+    thing("Ear tags", "This is an ear tag: a numbered tag clipped to an animal's ear, used on farm animals and on "
+                      "wild animals that are being studied."),
     place("Veterinary clinics in the United States", "This is a veterinary clinic (vet's office) in the USA, where "
                                                      "pets are examined and treated.", 1),
     place("Veterinary clinics in Canada", "This is a veterinary clinic (vet's office) in Canada.", 1),
