@@ -12,7 +12,9 @@ What is built (sources.py lists every book, the licence lines checked by hand, a
   dspace     reference works of international bodies (WHO, World Bank, FAO) from their open repositories (PDF)
   pdf        official PDF documents (sources.PDF_DOCS): US military field manuals with Distribution Statement A
              (survival, first aid, map reading, knots, hygiene, cold weather, mountaineering; key fieldmanuals) and
-             Alberta's publications under its Open Government Licence (key government); key pdf:<name> builds one
+             Alberta's publications under its Open Government Licence (key government), US Navy nonresident
+             training courses with Distribution Statement A (key courses) and UK Maritime and Coastguard Agency and
+             Ministry of Defence guidance under the Open Government Licence v3.0; key pdf:<name> builds one
   nonprofit  reference works of non-profit organisations published as openly licensed web guides (sources.NONPROFIT:
              the EFF's Surveillance Self-Defense, People's Law School, the W3C WAI Curricula); key nonprofit:<name>
              builds one
@@ -41,7 +43,7 @@ Usage:
   python textbooks/build_textbooks.py --local-osbooks path/to/osbooks-repo --out build/textbooks   (no network)
 Each run writes <id>.zim for each book and manifest-<key>.json (the books' catalogue entries and the left-out
 ones). Keys: osbooks (every repository), osbooks:<repository>, siyavula, dspace, nonprofit (every non-profit
-guide), nonprofit:<name>, fieldmanuals, government, pdf:<name>, or all.
+guide), nonprofit:<name>, fieldmanuals, government, courses, pdf:<name>, or all.
 """
 
 import argparse
@@ -100,7 +102,8 @@ class Book:
     title: str
     subject: str
     level: str                   # "school", "college" or "reference"
-    group: str                   # "textbooks", "reference", "nonprofit", "government", "university" or "fieldmanual"
+    group: str                   # "textbooks", "reference", "nonprofit", "government", "university", "fieldmanual"
+                                 # or "course"
     publisher: str               # "OpenStax, Rice University"
     country: str                 # "United States", "South Africa", "International"
     licence: str                 # "CC BY 4.0"
@@ -1288,7 +1291,7 @@ NOT_FIELD_SAFE = re.compile(r"\b(weapons?|small\s+arms|ammunition|firing|marksma
                             r"tactic\w*|camouflage|evasion|resistance|escape|explosives?|demolitions?|mines?|"
                             r"grenades?|booby|sniper|patrol\w*|raids?|assault|interrogation|captivity|"
                             r"mountain\s+warfare|offensive|defensive\s+operations)\b", re.I)
-FIGURE_LINE = re.compile(r"^\s*(Figure\s+[A-Z]?-?\d+(?:-\d+)?[a-z]?\.?)\s+(.{2,200}?)\s*$")
+FIGURE_LINE = re.compile(r"^\s*(Figure\s+[A-Z]?-?\d+(?:-\d+)?[a-z]?\.?)(?:\s*[\u2014\u2013]\s*|\s+)(.{2,200}?)\s*$")
 
 
 class PdfText:
@@ -1404,19 +1407,43 @@ def manual_parts(pdf_path):
         tops = [o for o in outline if not isinstance(o, list)]
         if len(tops) == 1 and len(outline) > 1 and isinstance(outline[1], list):
             tops = [o for o in outline[1] if not isinstance(o, list)]
+        else:
+            # A Navy course groups its chapters under bookmarks without a page ("CHAPTERS", "APPENDIX"), next to
+            # lists of every figure and page ("FIGURES", "PAGES"): the groups' entries are taken, those lists not.
+            grouped, heading = [], None
+            for o in outline:
+                if isinstance(o, list):
+                    if heading is not None and not re.match(r"(figures?|pages?|tables?|assignments?)$",
+                                                            str(heading.title).strip(), re.I):
+                        grouped += [x for x in o if not isinstance(x, list)]
+                    heading = None
+                    continue
+                try:
+                    has_page = reader.get_destination_page_number(o) is not None
+                except Exception:  # noqa: BLE001
+                    has_page = False
+                if has_page:
+                    grouped.append(o)
+                    heading = None
+                else:
+                    heading = o
+            if len(grouped) > len(tops):
+                tops = grouped
         for o in tops:
             try:
-                marks.append((without_page_number(str(o.title)), reader.get_destination_page_number(o)))
+                page = reader.get_destination_page_number(o)
+                if page is not None:
+                    marks.append((without_page_number(str(o.title)), page))
             except Exception:  # noqa: BLE001 - a bookmark without a page
                 continue
     except Exception:  # noqa: BLE001
         marks = []
-    if len(marks) < 2:
-        marks = []
+    if len({t.casefold() for t, _p in marks}) < max(2, len(marks) // 2):
+        marks = []                                # no bookmarks, or the same title on all of them
         for n in range(total):
             for line in lines(n)[:4]:
-                m = re.match(r"^(?:\d+-1\s+)?(CHAPTER|APPENDIX)\s+(\d+|[A-Z])\.?\s*(.*)$", line, re.I)
-                if m:
+                m = re.match(r"^(?:\d+-1\s+)?(CHAPTER|APPENDIX)\s+(\d+|[A-Z]|[IVX]+)\b\.?\s*(.*)$", line, re.I)
+                if m and not re.match(r"[,;(]|[a-z]|.*\bpages?\s+\d", m.group(3)):   # not "chapter 12, pages ..."
                     label = f"{m.group(1).title()} {m.group(2)}"
                     title = m.group(3).strip()
                     title = title.title() if title.isupper() else title
@@ -1426,8 +1453,8 @@ def manual_parts(pdf_path):
         for title, n in marks:                    # a label seen twice: the first was the table of contents
             last[title.split(":")[0]] = (title, n)
         marks = sorted(last.values(), key=lambda x: x[1])
-        if marks and marks[0][1] > 0:
-            marks.insert(0, ("Front matter", 0))
+    if marks and min(n for _t, n in marks) > 0:
+        marks.insert(0, ("Front matter", 0))      # the pages before the first part are kept too
     marks = sorted({p: (t.title() if t.isupper() else t, p) for t, p in marks}.values(), key=lambda x: x[1])
     out = []
     for i, (title, start) in enumerate(marks):
@@ -1455,7 +1482,9 @@ def part_html(text, start, end):
                 parts.append(f"<p>{esc(' '.join(' '.join(para).split()))}</p>")
                 para = []
             m = FIGURE_LINE.match(line)
-            if m and not re.search(r"\.{4,}|\s\d+-\d+\s*$", line):      # not a list-of-figures line
+            if m and not re.search(r"\.{4,}|\s\d+-\d+\s*$", line) and not re.match(
+                    r"(shows?|illustrates?|is|are|gives|lists|depicts|contains|and|in|on|of|as|for|to)\b",
+                    m.group(2), re.I):                    # not a list-of-figures line nor a sentence about it
                 if para:
                     parts.append(f"<p>{esc(' '.join(' '.join(para).split()))}</p>")
                     para = []
@@ -1503,6 +1532,13 @@ def pdfdoc_book(entry, work, cache=None, left_out=None):
     if not os.path.exists(local):
         with open(local, "wb") as f:
             f.write(fetch(pdf_url, None, binary=True))
+    text = PdfText(local)
+    sample = range(0, text.count, max(1, text.count // 40))
+    with_words = sum(1 for n in sample if len(" ".join(text.lines(n))) > 80)
+    if with_words < 0.5 * len(sample):
+        left_out.append({"title": title, "reason": "Most of its pages are scanned pictures without their words (no "
+                         "text layer), so it cannot be read aloud from this copy."})
+        return None
     front = front_text(local)
     if entry.get("distribution_a"):
         bad = RESTRICTED.search(front)
@@ -1514,7 +1550,6 @@ def pdfdoc_book(entry, work, cache=None, left_out=None):
     if not licence_kind(licence_short(licence)) and not licence_kind(licence):
         left_out.append({"title": title, "reason": f"Its licence ({licence}) is not one the toolkit may repackage."})
         return None
-    text = PdfText(local)
     book = Book(name=entry["name"], title=title, subject=entry["subject"], level="reference", group=entry["group"],
                 publisher=entry["publisher"], country=entry["country"], licence=licence,
                 licence_url=entry["licence_url"], source=page, description=entry["description"],
@@ -1551,8 +1586,8 @@ def build(keys, out_dir, cache=None, pictures=False, local_osbooks=None, date=No
             plan += [f"osbooks:{r}" for r in sources.OSBOOKS]
         elif key == "nonprofit":
             plan += [f"nonprofit:{e['name']}" for e in sources.NONPROFIT]
-        elif key in ("fieldmanuals", "government"):
-            group = "fieldmanual" if key == "fieldmanuals" else "government"
+        elif key in ("fieldmanuals", "government", "courses"):
+            group = {"fieldmanuals": "fieldmanual", "government": "government", "courses": "course"}[key]
             plan += [f"pdf:{e['name']}" for e in sources.PDF_DOCS if e["group"] == group]
         else:
             plan.append(key)

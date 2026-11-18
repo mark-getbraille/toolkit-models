@@ -40,8 +40,10 @@ on the book's welcome page, on every page's credit line and in textbooks.json:
   - People's Law School (British Columbia), CC BY-NC-SA 4.0, text only (https://www.peopleslawschool.ca);
   - W3C Web Accessibility Initiative, Curricula on Web Accessibility, Copyright World Wide Web Consortium, CC BY 4.0
     (https://www.w3.org/WAI/curricula/);
-  - US Army field manuals with Distribution Statement A, US government works not subject to copyright (17 U.S.C.
-    105), copies from the Internet Archive (https://archive.org);
+  - US Army field manuals and US Navy nonresident training courses with Distribution Statement A, US government
+    works not subject to copyright (17 U.S.C. 105), copies from the Internet Archive (https://archive.org);
+  - Maritime and Coastguard Agency and Ministry of Defence (UK) publications, Crown copyright, Open Government
+    Licence v3.0 (https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/);
   - Government of Alberta publications, Open Government Licence - Alberta (https://open.alberta.ca/licence).
 Changes made: each book was split into one web page per chapter and section, its formulas were written as text, its
 pictures were replaced by their descriptions and captions (unless the pictures were requested), teacher-only notes

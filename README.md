@@ -103,7 +103,12 @@ and why):
   rigging, field sanitation, cold weather and mountaineering, US government works (public domain), only when their
   own front matter says "Approved for public release; distribution is unlimited" (Distribution Statement A) and
   shows no restricted marking; chapters about weapons or tactics are left out. Copies from the Internet Archive
-  (armypubs.army.mil's robots.txt shuts out automated readers).
+  (armypubs.army.mil's robots.txt shuts out automated readers). Also two UK documents under the Open Government
+  Licence v3.0 from gov.uk: the Maritime and Coastguard Agency's Survival at Sea notice (MSN 1560) and the Ministry
+  of Defence's first-aid chapter of JSP 375.
+- **Courses** (group `course`): US Navy nonresident training courses with Distribution Statement A: sixteen modules
+  of the Navy Electricity and Electronics Training Series (NEETS), Basic Machines, Culinary Specialist and Hospital
+  Corpsman (US government works). PDFs that are scans without words are refused.
 - **Reference, governments** (group `government`): Government of Alberta publications under the Open Government
   Licence - Alberta (the Driver's Guide, seniors' safety guides, power-outage preparedness), the newest official PDF.
 - Never a "NoDerivatives" work: a ZIM file is an adaptation (pages rewritten as web pages, formulas as text).
@@ -118,6 +123,6 @@ library (libzim) is used, not even in the build.
 
 The workflow `.github/workflows/textbooks.yml` builds the books when someone starts it from the Actions page, or when
 `textbooks/request.txt` changes on main (keys separated by commas, or `all`; also `nonprofit`, `fieldmanuals`,
-`government`). `python -m pytest textbooks` tests the builder with a made-up book and a made-up website.
+`government`, `courses`). `python -m pytest textbooks` tests the builder with a made-up book and a made-up website.
 
 Each book keeps its own licence; the credit and licence are on its welcome page and in `textbooks.json`.

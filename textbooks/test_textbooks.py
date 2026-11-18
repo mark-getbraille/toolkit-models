@@ -159,8 +159,8 @@ def test_reference_sources():
     for e in sources.NONPROFIT:
         assert B.licence_kind(B.licence_short(e["licence"])) and e["content"] and e["licence_text"]
     for e in sources.PDF_DOCS:
-        assert e["group"] in ("fieldmanual", "government", "university")
+        assert e["group"] in ("fieldmanual", "government", "university", "course")
         assert B.licence_kind(e["licence"]) == "open"
         assert e.get("archive") or (e.get("page") and e.get("licence_text"))
-        if e["group"] == "fieldmanual":
+        if e.get("archive"):
             assert e["distribution_a"] and not B.NOT_FIELD_SAFE.search(e["title"])

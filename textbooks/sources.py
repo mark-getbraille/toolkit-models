@@ -87,6 +87,13 @@ LICENCE_LINES = {
                           "except for the images and videos, is licensed under a Creative Commons Attribution-"
                           "NonCommercial-ShareAlike 4.0 International Licence\" (so the book has the text only; "
                           "its pictures are left out).",
+    "field_manuals": "Each manual's own front page, for example ATP 3-50.21: \"DISTRIBUTION RESTRICTION: Approved "
+                     "for public release; distribution is unlimited.\"; the Navy courses: \"DISTRIBUTION STATEMENT "
+                     "A: Approved for public release; distribution is unlimited.\" US government works (17 U.S.C. "
+                     "105).",
+    "gov_uk": "Each gov.uk publication page: \"All content is available under the Open Government Licence v3.0, "
+              "except where otherwise stated\"; MSN 1560: \"© Crown copyright 1994\".",
+    "alberta": "Each open.alberta.ca publication page: \"Usage / Licence ... Open Government Licence - Alberta\".",
     "w3c_wai_curricula": "www.w3.org/WAI/curricula/ and each module page: \"This work is licensed under a Creative "
                          "Commons Attribution 4.0 International License.\" (Most other WAI pages are under the W3C "
                          "Document License, which allows no changes, so they are not included.)",
@@ -235,6 +242,77 @@ PDF_DOCS = [
                      "survival."),
 ]
 
+# US Navy nonresident training courses (NAVEDTRA), the toolkit's collection "Courses": correspondence courses made
+# for sailors to study on their own, with Distribution Statement A on their own front page (checked by hand on
+# 2026-11-18: "DISTRIBUTION STATEMENT A: Approved for public release; distribution is unlimited.", and again by the
+# builder in every PDF); US government works. Copies from the Internet Archive (the Navy's own course site needs a
+# login).
+COURSE = dict(FIELD, group="course", publisher="Naval Education and Training Professional Development and "
+              "Technology Center (US Navy)")
+PDF_DOCS += [
+    dict(COURSE, name="navy_basic_machines", title="Basic Machines (NAVEDTRA 14037, 1994)",
+         subject="Mechanics", archive="navedtra-14037-basic-machines-1994",
+         description="The US Navy's course on levers, pulleys, the wheel and axle, the inclined plane, the screw, "
+                     "gears, work and power, hydraulics, and machines built from them."),
+    dict(COURSE, name="navy_culinary_specialist", title="Culinary Specialist (NAVEDTRA 15008, 2010)",
+         subject="Cooking and food service", archive="navedtra-15008-culinary-specialist-2010",
+         description="The US Navy's course for cooks: food safety and sanitation, nutrition, menus, recipes and "
+                     "cooking methods, baking, and running a galley."),
+    dict(COURSE, name="navy_hospital_corpsman", title="Hospital Corpsman (NAVEDTRA 14295, 2000)",
+         subject="Medicine and first aid", archive="hospital-corpsman-nonresident-training-course-navedtra-14295",
+         description="The US Navy's course for hospital corpsmen: anatomy and physiology, first aid and emergency "
+                     "care, patient care, pharmacy, laboratory, dental and preventive medicine."),
+]
+
+# United Kingdom: Maritime and Coastguard Agency and Ministry of Defence publications on gov.uk ("All content is
+# available under the Open Government Licence v3.0, except where otherwise stated", checked on each publication page
+# at every build; the PDFs say "© Crown copyright"). Checked by hand on 2026-11-18.
+UK = dict(group="fieldmanual", country="United Kingdom", licence="OGL-UK-3.0",
+          licence_url="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/",
+          licence_text=r"Open Government Licence v3\.0")
+PDF_DOCS += [
+    dict(UK, name="uk_mca_msn_1560_survival_at_sea", title="Survival at Sea (MSN 1560, Maritime and Coastguard "
+         "Agency)", subject="Sea survival", publisher="Maritime and Coastguard Agency (UK)",
+         page="https://www.gov.uk/government/publications/msn-1560-survival-at-sea", pdf_pattern=r"msn1560\.pdf$",
+         description="The UK merchant shipping notice on sea survival training: what a basic sea survival course "
+                     "teaches (lifejackets, liferafts, abandoning ship, survival in the water and in a craft)."),
+    dict(UK, name="uk_mod_jsp_375_first_aid", title="First Aid at Work in Defence (JSP 375, volume 1, chapter 5)",
+         subject="First aid", publisher="Ministry of Defence (UK)",
+         page="https://www.gov.uk/government/publications/management-of-health-and-safety-in-defence-chapter-5-"
+              "first-aid-jsp-375-volume-1", pdf_pattern=r"First_Aid[^/]*\.pdf$",
+         description="The UK Ministry of Defence's rules for first aid at work: assessing first-aid needs, "
+                     "first-aiders, kits and rooms, and training."),
+]
+
+# The Navy Electricity and Electronics Training Series (NEETS): module number and title. The copies named
+# "NEETSModuleNN" on the Internet Archive have their words (other copies are scans without a text layer, which the
+# builder refuses).
+NEETS = [
+    (1, "Introduction to Matter, Energy, and Direct Current"),
+    (2, "Introduction to Alternating Current and Transformers"),
+    (3, "Introduction to Circuit Protection, Control, and Measurement"),
+    (4, "Introduction to Electrical Conductors, Wiring Techniques, and Schematic Reading"),
+    (5, "Introduction to Generators and Motors"),
+    (6, "Introduction to Electronic Emission, Tubes, and Power Supplies"),
+    (7, "Introduction to Solid-State Devices and Power Supplies"),
+    (8, "Introduction to Amplifiers"),
+    (9, "Introduction to Wave Generation and Wave Shaping"),
+    (10, "Introduction to Wave Propagation, Transmission Lines, and Antennas"),
+    (13, "Introduction to Number Systems and Logic"),
+    (14, "Introduction to Microelectronics"),
+    (16, "Introduction to Test Equipment"),
+    (19, "The Technician's Handbook"),
+    (22, "Introduction to Digital Computers"),
+    (24, "Introduction to Fiber Optics"),
+]
+PDF_DOCS += [
+    dict(COURSE, name=f"navy_neets_module_{n:02d}", title=f"NEETS Module {n}: {words}",
+         subject="Electricity and electronics", archive=f"NEETSModule{n:02d}",
+         description=f"Module {n} of the US Navy's Electricity and Electronics Training Series (NEETS), a self-study "
+                     f"course: {words[0].lower() + words[1:]}.")
+    for n, words in NEETS
+]
+
 # Provincial publications under Alberta's open licence (open.alberta.ca: "Usage / Licence ... Open Government Licence
 # - Alberta", checked by hand on 2026-11-18 and again from each page at every build).
 ALBERTA = dict(group="government", country="Canada", licence="OGL-Alberta",
@@ -264,7 +342,7 @@ PDF_DOCS += [
 
 ALLOWED = {
     "CC0": "open", "PD": "open", "OGL": "open", "CC BY": "open", "CC BY-SA": "share-alike",
-    US_GOV: "open", "OGL-Alberta": "open", "OGL-Canada": "open", "OGL-Ontario": "open", "OGL-BC": "open",
+    US_GOV: "open", "OGL-UK-3.0": "open", "OGL-Alberta": "open", "OGL-Canada": "open", "OGL-Ontario": "open", "OGL-BC": "open",
     "CC BY-NC": "non-commercial", "CC BY-NC-SA": "non-commercial",
 }
 
@@ -331,4 +409,43 @@ NONPROFIT_NOT_INCLUDED = [
      "by one."),
     ("AARP, GCFGlobal (Goodwill) and WebAIM", "No open licence was found (copyright of each organisation)."),
 ]
-NOT_INCLUDED = NOT_INCLUDED + NONPROFIT_NOT_INCLUDED
+# Courses and the manuals of other English-speaking forces and coastguards looked at on 2026-11-18 and not built (yet),
+# with the licence line found or why it could not be checked.
+COURSES_AND_FORCES_NOT_INCLUDED = [
+    ("NEETS modules from other Internet Archive copies (\"NeetsModule1introductionTo...\")", "Scans without a text "
+     "layer: the builder refuses them; the \"NEETSModuleNN\" copies with words are used."),
+    ("Saylor Academy courses (learn.saylor.org)", "Its footer: \"content authored by Saylor University is available "
+     "under a Creative Commons Attribution 3.0 Unported license. Third-party materials are the copyright of their "
+     "respective owners\". Allowed, but each course mixes Saylor's own pages with third-party readings in a Moodle "
+     "site; not built yet (each page's own licence would have to be checked)."),
+    ("Open Yale Courses (oyc.yale.edu)", "Its terms: \"Most of the lectures and course material within Open Yale "
+     "Courses are licensed under a Creative Commons Attribution-Noncommercial-Share Alike 3.0 license\" (third-party "
+     "content excluded). Allowed (not for commercial use); not built yet."),
+    ("MIT OpenCourseWare", "CC BY-NC-SA 4.0 (each course page). Not in the Kiwix library. Most course material is "
+     "PDF lecture notes and videos; not built yet."),
+    ("OpenLearn (The Open University)", "Its site refuses automated requests (403), as noted above."),
+    ("Coursera, edX, Udemy", "Copyright, all rights reserved."),
+    ("US Army Correspondence Course Program subcourses", "Not found as copies with text and Distribution Statement A "
+     "on the Internet Archive in this search; the Army's own site needs a login."),
+    ("US Coast Guard Navigation Rules handbook", "The Internet Archive's copies are lending-library scans that "
+     "cannot be downloaded; uscg.mil refuses automated requests (403)."),
+    ("Other US Navy rate training manuals (Boatswain's Mate, Damage Controlman, Engineman, Seabee rates)", "Not "
+     "found as downloadable copies with text on the Internet Archive in this search (Damage Controlman only as a "
+     "microfiche scan)."),
+    ("armypubs.army.mil, marines.mil, uscg.mil, fema.gov", "armypubs' robots.txt disallows every automated reader; the "
+     "others refuse automated requests (403). Internet Archive copies are used where their own front matter shows "
+     "Distribution Statement A."),
+    ("UK Ministry of Defence and Maritime and Coastguard Agency, other documents", "gov.uk: \"All content is "
+     "available under the Open Government Licence v3.0, except where otherwise stated\". Allowed; the MOD publishes "
+     "few non-combat training documents there (most are policy). Two are built; more can be added to PDF_DOCS."),
+    ("RNLI (charity)", "Its website refuses automated requests (403); its guides are its own copyright."),
+    ("Canadian Armed Forces and Canadian Coast Guard manuals; Transport Canada's Safe Boating Guide", "Crown "
+     "copyright under the canada.ca terms (non-commercial reproduction only, not an open licence): personal use at "
+     "most, so not built. The Safe Boating Guide's page was not found at its old address (404)."),
+    ("Australian Department of Defence and Australian Maritime Safety Authority", "amsa.gov.au refuses automated "
+     "requests (403), its copyright page included, so its CC BY statement could not be checked."),
+    ("New Zealand Defence Force and Maritime New Zealand", "maritimenz.govt.nz refuses automated requests (403) to "
+     "its copyright page, so its CC BY statement could not be checked."),
+    ("Irish Defence Forces and Irish Coast Guard", "Not checked in this search."),
+]
+NOT_INCLUDED = NOT_INCLUDED + NONPROFIT_NOT_INCLUDED + COURSES_AND_FORCES_NOT_INCLUDED
