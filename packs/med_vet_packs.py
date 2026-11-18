@@ -26,8 +26,11 @@ a year before 2000 or a decade before the 2000s ("1950s"), a century ("19th cent
 "historic(al)", "history of", "vintage", "museum", "accession", "catalogue number", "circa", "obsolete",
 "old-fashioned", "replica", "exhibit", "World War", "Victorian" (OLD); when the Commons file is dated before 2000
 (current_only); when a PHIL photo is undated or dated before 2000; and when an Open Images photographer is an
-archive, museum, library or history body (OLD_SOURCE). Medicines the source says are discontinued or withdrawn are left out by the same words
-("discontinued", "withdrawn", "no longer sold"). See test_med_vet.py.
+archive, museum, library or history body (OLD_SOURCE); files found in subcategories of old medicine containers
+("Ointment tins", "Patent medicines", apothecary jars: OLD_CATEGORY) are not even looked at. Medicines the source
+says are discontinued or withdrawn are left out by the same words ("discontinued", "withdrawn", "no longer sold").
+A recent photo of an old object whose words say nothing of its age can still slip through (a Commons limitation:
+see the report). See test_med_vet.py.
 
 Every answer is a fixed sentence written here from the source's own words, never by an AI model and never guessed:
   - the name of the Commons category a photo sits in ("Pill organizers" -> "This is a pill organizer: a box with a
@@ -153,6 +156,11 @@ OLD = re.compile(r"\b(1[0-8]\d\d|19\d\d)s?\b" + DOSE + r"|\b(19)?[1-9]0s\b|\b\d{
                  # museum accession numbers: "(AM 2017.92.14-13)", "1992.3.4", "inv. no. 123"
                  r"\b[A-Z]{1,4}\s?\d{2,4}\.\d{1,4}\.\d{1,4}|\b\d{4}\.\d{1,4}\.\d{1,4}\b|\binv(entory)?\.? ?no\b",
                  re.I)
+
+
+# Subcategory names of old medicine containers (a recent photo of an old tin does not say the tin is old).
+OLD_CATEGORY = re.compile(r"\b(tins|apothecar\w*|pharmacy jars|drug jars|patent medicines?|quack\w*|"
+                          r"pharmacy museums?|history of)\b", re.I)
 
 
 def is_old(text):
@@ -310,7 +318,8 @@ def commons_items(specs, limit, prefix, people_ok=False, current=True, also_out=
                 break
             sp, files = q
             if files is None:
-                files = [(t, c) for t, c in spec_files(s, sp) if t not in seen and not (current and is_old(c))]
+                files = [(t, c) for t, c in spec_files(s, sp) if t not in seen
+                         and not (current and (is_old(c) or OLD_CATEGORY.search(c)))]
                 pass_random(sp["category"]).shuffle(files)
                 say(f"Commons {sp['category']}: {len(files)} files")
             batch, q[1] = files[:share * 2], files[share * 2:]
@@ -508,11 +517,11 @@ MEDICINE_SPECS = [
                        "a time.", 1),
     thing("Nasal sprays", "This is a nasal spray: medicine in a small bottle with a nozzle, sprayed into the "
                           "nose.", 1),
-    thing("Ointments", "This is an ointment: a greasy medicine or skin cream, usually in a tube or tub.", 1),
+    thing("Ointments", "This is an ointment: a greasy medicine or skin cream, usually in a tube or tub."),
     thing("Vitamins", "These are vitamins: tablets, capsules or gummies taken as a supplement.", 1),
     thing("Multivitamins", "These are multivitamins: a supplement with many vitamins and minerals in one tablet."),
     thing("Dietary supplements", "This is a dietary supplement: vitamins, minerals or other things taken as pills, "
-                                 "capsules or powder in addition to food.", 1),
+                                 "capsules or powder in addition to food."),
     medicine("Paracetamol", looks_like("acetaminophen (also called paracetamol)", "a medicine for pain and fever"),
              1),
     medicine("Tylenol", looks_like("Tylenol, a brand of acetaminophen", "a medicine for pain and fever"), 1),
@@ -956,7 +965,7 @@ MED_VET_LIMITS = {
     "open_images_medical": 900,       # 984 photos pass the licence and picture-store checks (of 2,184 with a
     #                                   medical label confirmed)
     "cdc_phil_supplies": 400,         # PHIL photos of supplies dated 2000 or later
-    "voa_commons_photos": 700,        # 1,084 files; those with a caption of six words or more
+    "voa_commons_photos": 400,        # 1,084 files; in a trial most had only a short tweet caption (set aside)
 }
 
 

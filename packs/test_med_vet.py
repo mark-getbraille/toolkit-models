@@ -41,6 +41,8 @@ def test_current_items_only():
     for new in ("Paracetamol 1000 mg tablets", "Ibuprofen 1200mg", "COVID-19 vaccine vial", "Tylenol box, 2015",
                 "Box of 100 tablets", "Insulin pen 300 units"):
         assert not m.is_old(new), new
+    assert m.OLD_CATEGORY.search("Ointment tins") and m.OLD_CATEGORY.search("Patent medicines")
+    assert not m.OLD_CATEGORY.search("Ointments")
 
 
 def test_current_only_dates(monkeypatch):
