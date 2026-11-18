@@ -89,6 +89,7 @@ import time
 
 import build_packs  # noqa: F401 - loaded first: the other pack files and build_packs import each other
 from build_packs import session, clean, say, NARRATE
+from build_packs import listing_out_of_time
 from food_packs import count_pictures, commons_members, commons_entries, commons_place
 from expression_packs import CHILD
 from world_packs import capped_words
@@ -268,6 +269,8 @@ def loc_graphic_items(s, path, extra, total, name, added, least, want, rng, answ
     items = []
     per_page = max(3, want // 10)
     for page in pages[:30]:
+        if listing_out_of_time():          # leave the rest of the time for fetching what was found
+            break
         taken = 0
         results = (first if page == 1 else page_of(page)).get("results") or []
         for record in results:
@@ -302,6 +305,8 @@ def build_loc_graphic(key, limit):
     sets = LOC_GRAPHIC_SETS[key]
     total = sum(n for _, _, n, _, _, _ in sets)
     for path, extra, n, name, added, least in sets:
+        if listing_out_of_time():
+            break
         share = max(1 / (len(sets) * 2), n / total)
         items += loc_graphic_items(s, path, extra, n, name, added, least, int(limit * share * 1.4) + 4, rng, answers)
     return finish_graphic(key, items, limit, workers=3, pause=0.5)
@@ -399,6 +404,8 @@ def build_nara_war(limit):
         pages = list(range(1, max(1, min(total, 10000) // 100) + 1))
         rng.shuffle(pages)
         for page in pages[:6]:
+            if listing_out_of_time():          # leave the rest of the time for fetching
+                break
             data = first if page == 1 else nara_search(s, {"ancestorNaId": NARA_SIGNAL_CORPS,
                                                            "availableOnline": "true", "limit": 100, "page": page,
                                                            "q": word})
@@ -467,6 +474,8 @@ def build_ushmm(limit):
         pages = list(range(1, total_pages + 1))
         rng.shuffle(pages)
         for page in pages[:4]:
+            if listing_out_of_time():          # leave the rest of the time for fetching
+                break
             time.sleep(1)
             data = first if page == 1 else get_json(s, USHMM + "catalog.json", dict(params, page=page)) or {}
             for doc in (data.get("response") or {}).get("docs") or []:

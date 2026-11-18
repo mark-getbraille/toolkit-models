@@ -105,6 +105,7 @@ import sys
 import time
 
 import build_packs  # noqa: F401 - loaded first: the other pack files and build_packs import each other
+from build_packs import listing_out_of_time
 from build_packs import session, clean, fetch_all, say, COMMONS_FREE, MUSEUM, SI_BUCKET, si_keys, \
     first_sentences
 from food_packs import with_twins, count_pictures, commons_get, commons_members
@@ -839,6 +840,8 @@ def loc_service_items(s, path, extra, total, name, conflict, uniform, want, rng)
     items, answers = [], set()
     per_page = max(3, want // 15)
     for page in pages[:40]:
+        if listing_out_of_time():          # leave the rest of the time for fetching what was found
+            break
         time.sleep(2)
         data = get_json(s, LOC + path, {"fo": "json", "c": 100, "sp": page, "at": "results", **extra}, pause=15)
         taken = 0
@@ -888,6 +891,8 @@ def build_loc_service(limit):
     s, rng, items = session(), random.Random(81), []
     total = sum(n for _, _, n, _, _, _ in LOC_SERVICE_SETS)
     for path, extra, n, name, conflict, uniform in LOC_SERVICE_SETS:
+        if listing_out_of_time():
+            break
         share = max(0.05, n / total)
         items += loc_service_items(s, path, extra, n, name, conflict, uniform, int(limit * share * 1.3) + 3, rng)
     return finish("loc_service", items, limit, workers=3, pause=0.5)
@@ -940,6 +945,8 @@ def nara_military_items(s, naid, total, name, most, want, rng):
     items, answers = [], set()
     per_page = max(3, want // 15)
     for page in pages[:40]:
+        if listing_out_of_time():          # leave the rest of the time for fetching
+            break
         time.sleep(1)
         data = get_json(s, NARA_SEARCH, {"ancestorNaId": naid, "availableOnline": "true", "limit": 100,
                                          "page": page}, pause=10)

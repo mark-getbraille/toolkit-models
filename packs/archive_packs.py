@@ -101,6 +101,7 @@ import time
 
 import build_packs  # noqa: F401 - loaded first: the other pack files and build_packs import each other
 from build_packs import session, clean, say, LONG_SIDE
+from build_packs import listing_out_of_time  # noqa: E402
 from food_packs import count_pictures
 from expression_packs import CHILD
 from world_packs import capped_words, full_stop
@@ -325,6 +326,8 @@ def nara_items(s, naid, total, name, want, rng):
     items, answers = [], set()
     per_page = max(3, want // 20)
     for page in pages[:60]:
+        if listing_out_of_time():          # leave the rest of the time for fetching
+            break
         time.sleep(1)
         data = get_json(s, NARA_SEARCH, {"ancestorNaId": naid, "availableOnline": "true", "limit": 100,
                                          "page": page}, pause=10)
@@ -573,6 +576,8 @@ def dc_items(s, reuse, want, rng, genre="Photographs"):
     found, answers = [], set()
     per_page = max(2, want // 25)          # a page holds one series (pages are in title order): a few from each
     for page in pages[:120]:
+        if listing_out_of_time():          # leave the rest of the time for fetching
+            break
         time.sleep(1)
         data = get_json(s, DC + "search.json", dict(params, page=page)) or {}
         taken = 0
