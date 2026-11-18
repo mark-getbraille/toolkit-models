@@ -70,3 +70,42 @@ Change them there, not here.
 on your own NVIDIA graphics card. It trains a small add-on (a LoRA adapter) on DOCCI and VizWiz Captions (both CC BY
 4.0) and tests the model before and after. Download it from the release **training-kit**, unpack it, and read
 `READ ME FIRST.txt`. A trained add-on is published here only if its test shows it describes better.
+
+## Open textbooks
+
+The release **textbooks** holds open textbooks and reference works as ZIM files (the offline library format of
+Kiwix), one file per book, and `textbooks.json`, the list the Digital Accessibility Toolkit reads (Offline libraries,
+Get more, collection "Textbooks"). Each entry has the book's id, title, subject, level (school, college or
+reference), publisher and credit, country, licence (non-commercial ones are marked "not for commercial use"),
+language, size, SHA-256, number of pages, date, and the official address of the publisher's original PDF (and EPUB)
+when there is one. The original PDFs are never copied here; the toolkit downloads them from the publisher.
+
+The files are ordinary ZIM files, so the free Kiwix apps (Windows, Android, iOS, kiwix-serve) open them too.
+
+What is built (`textbooks/sources.py` lists every source, the licence lines that were checked, and what was left out
+and why):
+
+- **OpenStax** (Rice University) textbooks, from the openstax/osbooks-* repositories on GitHub. Each book's licence
+  is read from its own collection file every time it is built: some are CC BY 4.0, many are now CC BY-NC-SA 4.0
+  (shown as "not for commercial use"). Retired editions are left out.
+- **Siyavula** (South Africa) mathematics, physical sciences and natural sciences school textbooks, CC BY 4.0, from
+  Siyavula's online reader (allowed by its robots.txt); the books are named by subject and grade, crediting
+  Siyavula Education (its "Everything Maths" and "Everything Science" names are its trademarks and are not used).
+- **Reference works** of international bodies (the WHO's Model List of Essential Medicines, the World Bank's World
+  Development Report 2024, FAO's State of Food and Agriculture 2024), from their open repositories, with the licence
+  of each record (CC BY 3.0 IGO, or CC BY-NC-SA 3.0 IGO).
+- Never a "NoDerivatives" work: a ZIM file is an adaptation (pages rewritten as web pages, formulas as text).
+
+How the books are made accessible: one page per chapter and section with headings; an index page listing every unit,
+chapter and section; every figure's number, the publisher's description of the picture and its caption as text
+(pictures themselves only when the request asks for them); formulas as readable text; tables with captions;
+teacher-only notes left out; and on every page the credit and licence.
+
+The ZIM files are written by `textbooks/zimwrite.py`, our own writer made from the openZIM format description: no GPL
+library (libzim) is used, not even in the build.
+
+The workflow `.github/workflows/textbooks.yml` builds the books when someone starts it from the Actions page, or when
+`textbooks/request.txt` changes on main (keys separated by commas, or `all`). `python -m pytest textbooks` tests the
+builder with a made-up book.
+
+Each book keeps its own licence; the credit and licence are on its welcome page and in `textbooks.json`.

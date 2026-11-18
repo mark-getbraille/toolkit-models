@@ -1,0 +1,138 @@
+# Build the open textbooks of the Digital Accessibility Toolkit as ZIM files (textbooks/build_textbooks.py: OpenStax
+# from the openstax/osbooks-* repositories, Siyavula from its online reader, the WHO, World Bank and FAO reference
+# works from their open repositories) and publish them in the release "textbooks", with textbooks.json listing each
+# book's id, title, subject, level, licence, credit, language, size, SHA-256, article count, date and the official
+# address of the publisher's original PDF (never a copy of it). The toolkit's Offline libraries window reads it
+# (collection "Textbooks").
+# The ZIM files are written by our own writer (textbooks/zimwrite.py, from the openZIM format description); no GPL
+# library (libzim) is used. Every book's licence is checked again from its source while it is built
+# (textbooks/sources.py lists what was checked by hand and what was left out, and why).
+# Runs by hand (Actions > Build textbooks > Run workflow) or when textbooks/request.txt changes on main.
+name: Build textbooks
+
+on:
+  push:
+    branches: ["main"]
+    paths: ["textbooks/request.txt"]
+  workflow_dispatch:
+    inputs:
+      keys:
+        description: "Keys separated by commas (osbooks, osbooks:<repository>, siyavula, dspace, pictures), or all"
+        required: true
+        default: "all"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: textbooks
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      keys: ${{ steps.keys.outputs.keys }}
+      pictures: ${{ steps.keys.outputs.pictures }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: keys
+        run: |
+          keys='${{ inputs.keys }}'
+          if [ -z "$keys" ]; then keys=$(grep -v '^#' textbooks/request.txt | tr -d '[:space:]'); fi
+          python3 - "$keys" >> "$GITHUB_OUTPUT" <<'PY'
+          import json, sys
+          sys.path.insert(0, "textbooks")
+          import sources
+          words = [w for w in sys.argv[1].split(",") if w]
+          pictures = "pictures" in words
+          words = [w for w in words if w != "pictures"]
+          every = [f"osbooks:{r}" for r in sources.OSBOOKS] + ["siyavula", "dspace"]
+          keys = []
+          for w in words or ["all"]:
+              if w == "all":
+                  keys += every
+              elif w == "osbooks":
+                  keys += [f"osbooks:{r}" for r in sources.OSBOOKS]
+              elif w in every:
+                  keys.append(w)
+          print("keys=" + json.dumps(list(dict.fromkeys(keys))))
+          print("pictures=" + ("--pictures" if pictures else ""))
+          PY
+
+  build:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      # Few at a time: one request at a time per site, with a pause, is the rule; GitHub's clones are cheap.
+      max-parallel: 4
+      matrix:
+        key: ${{ fromJSON(needs.plan.outputs.keys) }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install what the builder needs (zstandard BSD, pypdf BSD)
+        run: python -m pip install zstandard pypdf
+      - name: Keep the pages read between runs
+        uses: actions/cache@v4
+        with:
+          path: build/textbooks-cache
+          key: textbooks-cache-${{ matrix.key }}-${{ github.run_id }}
+          restore-keys: textbooks-cache-${{ matrix.key }}-
+      - name: Build the books
+        run: |
+          python textbooks/build_textbooks.py "${{ matrix.key }}" --out build/textbooks --cache build/textbooks-cache \
+            ${{ needs.plan.outputs.pictures }}
+      - name: Upload them to the release
+        run: |
+          gh release view textbooks > /dev/null 2>&1 || gh release create textbooks \
+            --title "Open textbooks" \
+            --notes "Open textbooks and reference works as ZIM files for the Digital Accessibility Toolkit's offline libraries (they open in the free Kiwix apps too). Each book's licence, credit and original are in textbooks.json and on its welcome page. Built by textbooks/build_textbooks.py."
+          for manifest in build/textbooks/manifest-*.json; do
+            files=$(python -c "import json,sys;print(' '.join(json.load(open(sys.argv[1]))['files']))" "$manifest")
+            for f in $files $(basename "$manifest"); do
+              src="build/textbooks/$f"
+              for attempt in 1 2 3 4; do
+                gh release upload textbooks "$src" --clobber && break
+                sleep 30
+              done
+            done
+          done
+
+  catalogue:
+    needs: build
+    if: always()
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Merge the manifests into textbooks.json
+        run: |
+          mkdir -p merged && cd merged
+          gh release download textbooks -p 'manifest-*.json' --clobber || true
+          gh release download textbooks -p 'textbooks.json' -O previous.json --clobber || true
+          cd ..
+          python textbooks/build_textbooks.py --merge merged/manifest-*.json --existing merged/previous.json --out merged
+          for attempt in 1 2 3 4; do
+            gh release upload textbooks merged/textbooks.json --clobber && break
+            sleep 30
+          done
+      - name: Delete the book files no longer listed (older releases of the same books)
+        run: |
+          keep=$(python -c "import json;print(' '.join(b['file'] for b in json.load(open('merged/textbooks.json'))['books']))")
+          for asset in $(gh release view textbooks --json assets -q '.assets[].name' | grep '\.zim$'); do
+            case " $keep " in
+              *" $asset "*) ;;
+              *) gh release delete-asset textbooks "$asset" -y || true ;;
+            esac
+          done

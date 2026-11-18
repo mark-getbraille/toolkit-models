@@ -28,3 +28,14 @@ of them is copied into this repository:
     (MIT), YuNet face detector (MIT).
   The wizard program (Picture Model Training.exe) includes wxPython (wxWindows Library Licence) and cytolk (MIT).
 Each picture collection's licence and credit is in the kit's ATTRIBUTION.txt of every trained add-on.
+
+The release "textbooks" holds ZIM files made from openly licensed works, each under its own licence, which is shown
+on the book's welcome page, on every page's credit line and in textbooks.json:
+  - OpenStax textbooks, (c) Rice University, CC BY 4.0 or CC BY-NC-SA 4.0 as each book states
+    (https://openstax.org; source: github.com/openstax/osbooks-*);
+  - Siyavula Education's textbooks, CC BY 4.0 (https://www.siyavula.com);
+  - World Health Organization (CC BY-NC-SA 3.0 IGO), World Bank (CC BY 3.0 IGO) and FAO (CC BY-NC-SA 3.0 IGO)
+    publications, from their open repositories.
+Changes made: each book was split into one web page per chapter and section, its formulas were written as text, its
+pictures were replaced by their descriptions and captions (unless the pictures were requested), teacher-only notes
+were left out, and an index page was added. The reference works' text was taken from their PDF files page by page.
