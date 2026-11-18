@@ -5,5 +5,6 @@
 # A key with a question mark (loc_highsmith?) is a needs-only run: only the pictures dropped for a missing or poor
 # description are collected and published in the release needs-description; the pack itself is not changed.
 # Now (the run with the five rebuilt packs, the needs-only runs and the US packs is already going): the eight
-# modern-America packs, the three household device packs and the four workplace, farm and building packs.
-commons_us_agencies,commons_us_controls,commons_us_holidays,commons_us_eating_out,commons_us_getting_around,commons_us_public_places,us_federal_forms,imageinwords,wikidata_devices,commons_devices,nmah_devices,work_commons_workplaces,farm_commons_equipment,mech_commons_building,farm_usda_nrcs
+# modern-America packs, the three household device packs, the four workplace, farm and building packs, and Commons
+# disasters again (Commons kept refusing; a pack now keeps what it found when that happens).
+commons_us_agencies,commons_us_controls,commons_us_holidays,commons_us_eating_out,commons_us_getting_around,commons_us_public_places,us_federal_forms,imageinwords,wikidata_devices,commons_devices,nmah_devices,work_commons_workplaces,farm_commons_equipment,mech_commons_building,farm_usda_nrcs,commons_disasters

@@ -690,7 +690,13 @@ def build_commons(key, categories, limit, safety=False):
         titles = [t for t in titles if t not in seen]
         pass_random(category).shuffle(titles)
         found = 0
-        for title, url, credit, text in commons_entries(s, titles[:per_category * 3]):
+        try:
+            refused = False
+            entries = list(commons_entries(s, titles[:per_category * 3]))
+        except RuntimeError as e:                    # Commons kept refusing: keep what was found and stop asking
+            say(f"  Commons {category}: {e} The pack keeps the {len(items)} pictures found so far.")
+            entries, refused = [], True
+        for title, url, credit, text in entries:
             described = commons_answer(text)
             name_words = re.sub(r"[_-]+", " ", title.split(":", 1)[-1].rsplit(".", 1)[0])
             if not_shown(described, name_words):
@@ -723,6 +729,8 @@ def build_commons(key, categories, limit, safety=False):
             if found >= per_category:
                 break
         say(f"  Commons {category}: {found} free pictures ({len(titles)} files)")
+        if refused:
+            break
     return finish_graphic(key, items, limit, workers=2, pause=0.5)
 
 
