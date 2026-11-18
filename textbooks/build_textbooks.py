@@ -134,6 +134,8 @@ class Book:
     region: str = ""             # the state or province a law or guide applies to ("California", "Ontario"; "" for
                                  # a whole country)
     notice: str = ""             # a statement the licence asks to show with the work (on the welcome page)
+    unchanged: bool = False      # kept whole with its text unchanged, only its format converted (a NoDerivatives or
+                                 # other no-changes licence allows that: sources.WHOLE_AND_UNCHANGED)
 
 
 def licence_short(text, url=""):
@@ -164,18 +166,31 @@ def licence_short(text, url=""):
     return "CC " + "-".join(parts) + (f" {version.group(1)}" if version else "") + igo
 
 
-def licence_kind(short):
-    """"open", "share-alike", "non-commercial", or "" when it is not allowed (any ND, or unknown)."""
-    if "ND" in short.split("-") or "-ND" in short:
-        return ""
+UNCHANGED = "Converted to an accessible format; the text is unchanged."
+
+
+def licence_kind(short, whole=False):
+    """"open", "share-alike", "non-commercial", or "" when it is not allowed (unknown, or NoDerivatives for a book
+    that is rearranged). With whole=True (a work kept whole with its text unchanged, only its format converted:
+    see sources.WHOLE_AND_UNCHANGED) a NoDerivatives licence, or a no-changes licence of sources.NO_CHANGES, gives
+    "no-changes" ("non-commercial-no-changes" for CC BY-NC-ND)."""
+    if short in sources.NO_CHANGES:
+        return sources.NO_CHANGES[short] if whole else ""
     base = re.sub(r"\s+\d\.\d.*$", "", short).strip()
+    if "ND" in base.split("-") or "-ND" in base:
+        if not whole:
+            return ""
+        kind = sources.ALLOWED.get(base.replace("-ND", ""), "")
+        return {"open": "no-changes", "non-commercial": "non-commercial-no-changes"}.get(kind, "")
     return sources.ALLOWED.get(base, "")
 
 
-def licence_words(short):
+def licence_words(short, whole=False):
     """The licence as the toolkit shows it: "CC BY-NC-SA 4.0, not for commercial use" for the non-commercial
-    ones."""
-    return short + (", not for commercial use" if licence_kind(short) == "non-commercial" else "")
+    ones, "CC BY-ND 4.0, no changes allowed" for a whole and unchanged work under a no-changes licence."""
+    kind = licence_kind(short, whole)
+    return short + (", not for commercial use" if kind.startswith("non-commercial") else "") + \
+        (", no changes allowed" if kind.endswith("no-changes") else "")
 
 
 def slug(text, limit=60):
@@ -284,6 +299,9 @@ def two_letters(code):
 
 def credit_line(book):
     """"From Physics by OpenStax, Rice University, CC BY 4.0 (https://...). Original: https://openstax.org/..."."""
+    if book.unchanged:
+        return (f"From {book.title} by {book.publisher}, {licence_words(book.licence, True)} ({book.licence_url}). "
+                f"Original: {book.source}. {UNCHANGED}")
     changes = book.changes or "made into web pages, with the formulas written as text"
     return (f"From {book.title} by {book.publisher}, {licence_words(book.licence)} ({book.licence_url}). "
             f"Original: {book.source}. Changed: {changes}.")
@@ -377,12 +395,12 @@ def manifest_entry(book, file_id, path, count, date):
     licence_kind, licence_text (as shown), language, flavour, date (when the ZIM file was made), published (when the
     publisher published or last revised the work: "YYYY-MM-DD", "YYYY-MM" or "YYYY", "" when unknown), region (state
     or province, "" for a whole country), size, sha256, article_count, file, url, description, source, original_pdf and
-    original_epub ({url, size, sha256} or {})."""
+    original_epub ({url, size, sha256} or {}), and unchanged (true for a work kept whole with its text unchanged)."""
     return {
         "id": file_id, "name": book.name, "title": book.title, "subject": book.subject, "level": book.level,
         "group": book.group, "publisher": book.publisher, "credit": book.publisher, "country": book.country,
-        "licence": book.licence, "licence_url": book.licence_url, "licence_kind": licence_kind(book.licence),
-        "licence_text": licence_words(book.licence), "language": book.language, "flavour": book.flavour,
+        "licence": book.licence, "licence_url": book.licence_url, "licence_kind": licence_kind(book.licence, book.unchanged),
+        "licence_text": licence_words(book.licence, book.unchanged), "unchanged": book.unchanged, "language": book.language, "flavour": book.flavour,
         "date": date.isoformat(), "published": book.published, "region": book.region,
         "size": os.path.getsize(path), "sha256": file_sha256(path),
         "article_count": count, "file": os.path.basename(path), "url": f"{RELEASE}/{os.path.basename(path)}",
@@ -1361,13 +1379,14 @@ def webguide_book(entry, cache=None, left_out=None):
         left_out.append({"title": title, "reason": f"Its licence page ({entry['licence_page']}) no longer states "
                          "the licence that was checked."})
         return None
-    licence = licence_short(entry["licence"])
-    if not licence_kind(licence):
+    whole = bool(entry.get("unchanged"))       # a no-changes licence: every page whole, its text unchanged
+    licence = entry["licence"] if entry["licence"] in sources.NO_CHANGES else licence_short(entry["licence"])
+    if not licence_kind(licence, whole):
         left_out.append({"title": title, "reason": f"Its licence ({licence}) is not one the toolkit may repackage."})
         return None
     book = Book(name=entry["name"], title=title, subject=entry["subject"], level="reference",
                 group=entry.get("group", "nonprofit"), publisher=entry["publisher"], country=entry["country"],
-                licence=licence, licence_url=entry["licence_url"], source=entry["source"],
+                licence=licence, licence_url=entry["licence_url"], source=entry["source"], unchanged=whole,
                 description=entry["description"], region=entry.get("region", ""), notice=entry.get("notice", ""),
                 changes=entry.get("changes") or "made into web pages with the site's menus and pictures left out "
                                                  "(their descriptions kept)")
@@ -1402,6 +1421,9 @@ def webguide_book(entry, cache=None, left_out=None):
         body = _Cleaner(paths, url).clean(article_content(text, entry))
         body = re.sub(r'<a href="[^"]*#top">.*?</a>', "", body, flags=re.S)        # "Back to Top" links
         body = re.sub(r'<a href="[^"]*">\s*</a>', "", body)                        # links without words
+        if whole:                                 # the licence asks for each document's address and notice
+            body += (f'<p class="original">Original: <a href="{esc(url)}">{esc(url)}</a>. '
+                     f'{esc(entry.get("notice", ""))} {UNCHANGED}</p>')
         book.pages.append(Page(paths[url], first_heading(text) or paths[url], body, 0, unit))
     if skipped:
         left_out.append({"title": title, "reason": f"{skipped} pages could not be read or are not allowed by the "
@@ -1681,6 +1703,9 @@ def pdfdoc_book(entry, work, cache=None, left_out=None):
                          "text layer), so it cannot be read aloud from this copy."})
         return None
     front = front_text(local)
+    if entry.get("pdf_licence_text") and not re.search(entry["pdf_licence_text"], " ".join(front.split())):
+        left_out.append({"title": title, "reason": "Its PDF no longer states the licence that was checked."})
+        return None
     if entry.get("distribution_a"):
         bad = RESTRICTED.search(front)
         if not DISTRIBUTION_A.search(front) or bad:
@@ -1688,7 +1713,8 @@ def pdfdoc_book(entry, work, cache=None, left_out=None):
                              f"(approved for public release; distribution is unlimited){' but ' + bad.group(0) if bad else ''}."})
             return None
     licence = entry["licence"]
-    if not licence_kind(licence_short(licence)) and not licence_kind(licence):
+    whole = bool(entry.get("unchanged"))         # a no-changes licence: the whole PDF, its text unchanged
+    if not licence_kind(licence_short(licence), whole) and not licence_kind(licence, whole):
         left_out.append({"title": title, "reason": f"Its licence ({licence}) is not one the toolkit may repackage."})
         return None
     book = Book(name=entry["name"], title=title, subject=entry["subject"], level="reference", group=entry["group"],
@@ -1696,7 +1722,7 @@ def pdfdoc_book(entry, work, cache=None, left_out=None):
                 licence_url=entry["licence_url"], source=page, description=entry["description"],
                 original_pdf={"url": pdf_url, "size": os.path.getsize(local), "sha256": file_sha256(local)},
                 published=entry.get("published") or pdf_date(local), region=entry.get("region", ""),
-                notice=entry.get("notice", ""),
+                notice=entry.get("notice", ""), unchanged=whole,
                 changes="its text made into web pages, one per chapter, with each drawing's caption kept as text"
                         + ("; parts about weapons and tactics left out" if entry.get("distribution_a") else ""))
     skipped = []

@@ -362,6 +362,26 @@ ALLOWED = {
     CANADA_LAW: "open",
     US_GOV: "open", "OGL-UK-3.0": "open", "OGL-Alberta": "open", "OGL-Canada": "open", "OGL-Ontario": "open", "OGL-BC": "open",
     "CC BY-NC": "non-commercial", "CC BY-NC-SA": "non-commercial",
+    # Old works in the US public domain (more than 95 years after publication): the historic newspapers.
+    "Public domain (published before 1931)": "open",
+}
+
+# The whole-and-unchanged rule (the owner's decision of 2026-11-18). A NoDerivatives licence (CC BY-ND, CC BY-NC-ND)
+# or another no-changes licence (NO_CHANGES) is allowed when the work is kept WHOLE with its TEXT UNCHANGED and only
+# its format is converted for accessibility: Creative Commons 4.0 section 2(a)(4) allows "technical modifications
+# necessary to exercise the Licensed Rights in all media and formats" and says they "never produce Adapted
+# Material"; CC 2.5 and 3.0 have the same clause ("modifications as are technically necessary to exercise the
+# rights in other media and formats"). So such a work is never excerpted, cut, summarised or reworded: only its
+# HTML is cleaned up (menus, scripts and decorative pictures left out, headings and the descriptions of pictures
+# kept, links kept), and every page carries the credit, the licence's name and address, the original address and
+# the line "Converted to an accessible format; the text is unchanged." (build_textbooks.UNCHANGED). Such entries
+# have "unchanged": True; the builder gives their books unchanged=True and licence_kind "no-changes" (or
+# "non-commercial-no-changes"). Without that mark an ND licence is still refused.
+WHOLE_AND_UNCHANGED = True
+NO_CHANGES = {
+    # W3C Document License (2023): "permission to copy, and distribute the contents of this document ... in any
+    # medium for any purpose" on condition of the URL, the copyright notice and the status; no modifications.
+    "W3C Document License": "no-changes",
 }
 
 # What was looked at and not included, with the reason (shown in textbooks.json and the toolkit's manual).
@@ -404,12 +424,11 @@ NONPROFIT_NOT_INCLUDED = [
      "readers of AI companies."),
     ("IFRC International First Aid, Resuscitation and Education Guidelines", "The IFRC website refuses automated "
      "requests (403), and no open licence was found."),
-    ("Rules of Unified English Braille (ICEB)", "CC BY-NC-ND 2.5 Australia (NoDerivatives): may be shared whole and "
-     "unchanged but not made into web pages. Download the PDF from iceb.org and add it with \"Your own "
-     "documents\" instead."),
-    ("W3C WAI guidance other than the Curricula (WCAG, tutorials, Easy Checks)", "W3C Document License: copies of "
-     "whole documents are allowed, changes are not (and a ZIM book changes them); WCAG itself is in the toolkit's "
-     "own help."),
+    ("ICEB Guidelines for Technical Material (2014)", "Its PDF states no licence (the Rules of Unified English "
+     "Braille do, and are built whole and unchanged); ask ICEB."),
+    ("BANA guidelines (Braille Formats and the other BANA codes)", "Copyright of the Braille Authority of North "
+     "America; no Creative Commons or other open licence was found automatically (its site states none on the "
+     "pages read). Ask BANA, or check each PDF's copyright page by hand."),
     ("Practical Action technical briefs", "Their resource pages state no licence; each PDF would have to be checked "
      "one by one."),
     ("Steps to Justice (CLEO, Ontario)", "Copyright CLEO: pages may be printed whole for non-commercial or "
@@ -478,7 +497,67 @@ GROUPS = {
     "law": "Reference, laws and rights", "consumer": "Reference, consumer and money",
     "health": "Reference, health and safety", "disability": "Reference, disability and accessibility",
     "science": "Reference, science and nature",
+    # Publications that come out again and again (periodicals.py; keys pub:...), and history:
+    "reports": "Reference, government reports", "journals": "Articles, open-access journals",
+    "news": "News, open-licensed", "periodicals": "Magazines and newsletters", "history": "Reference, history",
 }
+
+# W3C WAI documents under the W3C Document License, kept whole and unchanged (WHOLE_AND_UNCHANGED). Checked by hand
+# on 2026-11-18: www.w3.org/WAI/about/using-wai-material/ says "Most WAI material (including the standards and
+# guidelines) is provided under the W3C Document License, which grants permission to copy and distribute complete
+# documents in any medium for any purpose, without fee or royalty, provided that you include the URL, copyright,
+# and status (if it exists)"; robots.txt allows /TR/ and /WAI/.
+W3C_NOTICE = ("Copyright © World Wide Web Consortium (W3C®). Used under the W3C Document License "
+              "(https://www.w3.org/copyright/document-license-2023/); the status of each document is on its page.")
+W3C = dict(group="disability", subject="Web accessibility", publisher="W3C Web Accessibility Initiative (WAI)",
+           country="International", licence="W3C Document License",
+           licence_url="https://www.w3.org/copyright/document-license-2023/", unchanged=True, notice=W3C_NOTICE,
+           licence_page="https://www.w3.org/WAI/about/using-wai-material/",
+           licence_text=r"W3C Document License\s*,?\s*which grants permission to copy and distribute complete documents "
+                        r"in any medium",
+           page_mark=r"World Wide Web Consortium", sitemap="", unit_rules=[], units="",
+           content=(r"<main\b[^>]*>", r"</main>"), drop=[], limit=200)
+NONPROFIT += [
+    dict(W3C, name="w3c_wcag22", title="Web Content Accessibility Guidelines (WCAG) 2.2",
+         source="https://www.w3.org/TR/WCAG22/",
+         description="The W3C Recommendation WCAG 2.2 (with its status section), whole and unchanged.",
+         start=["https://www.w3.org/WAI/standards-guidelines/wcag/"],
+         pages=r"^https://www\.w3\.org/TR/WCAG22/$", content=(r"<body\b[^>]*>", r"</body>"), limit=1),
+    dict(W3C, name="w3c_understanding_wcag22", title="Understanding WCAG 2.2 (W3C WAI)",
+         source="https://www.w3.org/WAI/WCAG22/Understanding/",
+         description="W3C's explanations of each WCAG 2.2 success criterion: its intent, benefits, examples and "
+                     "techniques; every page whole and unchanged.",
+         start=["https://www.w3.org/WAI/WCAG22/Understanding/"],
+         pages=r"^https://www\.w3\.org/WAI/WCAG22/Understanding/[a-z0-9-]+(?:\.html)?$"),
+    dict(W3C, name="w3c_wai_tutorials", title="Web Accessibility Tutorials (W3C WAI)",
+         source="https://www.w3.org/WAI/tutorials/",
+         description="W3C WAI's tutorials on accessible page structure, menus, tables, forms, images and carousels; "
+                     "every page whole and unchanged.",
+         start=["https://www.w3.org/WAI/tutorials/"], units=r"^https://www\.w3\.org/WAI/tutorials/[a-z-]+/$",
+         pages=r"^https://www\.w3\.org/WAI/tutorials/[a-z-]+/[a-z0-9-]+/$"),
+]
+
+# The ICEB Rules of Unified English Braille, kept whole and unchanged (WHOLE_AND_UNCHANGED). Its copyright page,
+# checked by hand on 2026-11-18 and checked again in the PDF at every build (pdf_licence_text): "This publication is
+# licensed under the Creative Commons Attribution-Noncommercial-No Derivative Works 2.5 Australia Licence."
+# iceb.org's robots.txt only disallows /wp-admin/. The braille examples are in Unicode braille in the PDF's text.
+PDF_DOCS += [
+    dict(name="iceb_rules_of_ueb_2024", title="Rules of Unified English Braille, Third Edition 2024",
+         subject="Braille (Unified English Braille)", group="disability", country="International",
+         publisher="International Council on English Braille (ICEB)", licence="CC BY-NC-ND 2.5 AU",
+         licence_url="https://creativecommons.org/licenses/by-nc-nd/2.5/au/", unchanged=True,
+         pdf="https://iceb.org/wp-content/uploads/2025/10/Rules-of-Unified-English-Braille-2024.pdf",
+         page="https://iceb.org/ueb.html", licence_page="https://iceb.org/ueb.html",
+         licence_text=r"Rules of Unified English Braille",
+         pdf_licence_text=r"Creative\s+Commons\s+Attribution\W*Noncommercial\W*No\s+Derivative\s+Works\s+2\.5\s+"
+                          r"Australia",              # (the PDF's text has an odd hyphen character there)
+         notice="Third Edition © 2024, International Council on English Braille. Second Edition © 2013 (original © "
+                "2010), Round Table on Information Access for People with Print Disabilities Inc. and International "
+                "Council on English Braille. Licensed under the Creative Commons Attribution-Noncommercial-No "
+                "Derivative Works 2.5 Australia Licence.",
+         description="The rulebook of Unified English Braille (UEB), the whole book with its braille examples in "
+                     "Unicode braille, unchanged."),
+]
 
 # US federal works: 17 U.S.C. 105, as quoted on govinfo.gov's policy page (checked at every build for the laws, the
 # IRS and Medicare publications, whose own sites state no copyright policy).
@@ -488,6 +567,15 @@ DOJ_POLICY = "https://www.justice.gov/legalpolicies"
 DOJ_TEXT = r"Unless otherwise indicated, information on Department of Justice websites is in the public domain"
 
 LICENCE_LINES.update({
+    "w3c_document_license": "www.w3.org/WAI/about/using-wai-material/: \"Most WAI material (including the standards "
+                            "and guidelines) is provided under the W3C Document License, which grants permission to "
+                            "copy and distribute complete documents in any medium for any purpose, without fee or "
+                            "royalty, provided that you include the URL, copyright, and status (if it exists). This "
+                            "does not allow modifications or the creation of derivative works\" (kept whole and "
+                            "unchanged: WHOLE_AND_UNCHANGED).",
+    "iceb_ueb": "Rules of Unified English Braille, Third Edition 2024, page ii: \"This publication is licensed under "
+                "the Creative Commons Attribution-Noncommercial-No Derivative Works 2.5 Australia Licence.\" (kept "
+                "whole and unchanged: WHOLE_AND_UNCHANGED).",
     "us_federal": "govinfo.gov/about/policies (Public Domain & Copyright Notice): \"Title 17, Section 105, United "
                   "States Code, provides that: Copyright protection under this title is not available for any work "
                   "of the United States Government\". Used for the US Code and the Code of Federal Regulations (from "

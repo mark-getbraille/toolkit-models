@@ -29,6 +29,11 @@ def test_licences():
     assert B.licence_short("", "http://creativecommons.org/licenses/by/4.0/") == "CC BY 4.0"
     assert B.licence_short("CC BY NC SA 3.0 IGO") == "CC BY-NC-SA 3.0 IGO"
     assert B.licence_kind("CC BY-ND 4.0") == "" and B.licence_kind("CC BY 4.0") == "open"
+    # NoDerivatives only for a work kept whole with its text unchanged (sources.WHOLE_AND_UNCHANGED)
+    assert B.licence_kind("CC BY-ND 4.0", whole=True) == "no-changes"
+    assert B.licence_kind("CC BY-NC-ND 2.5 AU", whole=True) == "non-commercial-no-changes"
+    assert B.licence_kind("W3C Document License") == "" and B.licence_kind("W3C Document License", True)
+    assert B.licence_words("CC BY-NC-ND 4.0", True) == "CC BY-NC-ND 4.0, not for commercial use, no changes allowed"
     assert B.licence_words("CC BY-NC-SA 4.0") == "CC BY-NC-SA 4.0, not for commercial use"
 
 
@@ -162,9 +167,15 @@ def test_reference_sources():
     names = [e["name"] for e in sources.NONPROFIT + sources.PDF_DOCS] + [d[2] for d in sources.DSPACE]
     assert len(names) == len(set(names))
     for e in sources.NONPROFIT:
-        assert B.licence_kind(B.licence_short(e["licence"])) and e["content"] and e["licence_text"]
+        whole = bool(e.get("unchanged"))         # a no-changes licence, kept whole and unchanged
+        licence = e["licence"] if e["licence"] in sources.NO_CHANGES else B.licence_short(e["licence"])
+        assert B.licence_kind(licence, whole) and e["content"] and e["licence_text"]
+        assert not whole or (B.licence_kind(licence) == "" and not e["drop"])
     for e in sources.PDF_DOCS:
         assert e["group"] in sources.GROUPS
+        if e.get("unchanged"):
+            assert B.licence_kind(e["licence"], True).endswith("no-changes") and e.get("pdf_licence_text")
+            continue
         assert B.licence_kind(e["licence"]) == "open"
         assert e.get("archive") or (e.get("page") and e.get("licence_text"))
         if e.get("archive"):
