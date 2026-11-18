@@ -2,6 +2,8 @@
 # A key with a plus (loc_fsa+) is a top-up pass: the published pack is kept and new pictures are added to it, up to
 # its limit (for a pack that stopped at the time limit; it can be asked for again and again). Without the plus the
 # pack is built again from the start. A top-up that fails or finds nothing new leaves the published pack as it was.
-# Again: four Library of Congress packs (their pictures were refused when several tried at once; downloads now wait
-# and try again when a server is busy) and Commons disasters (Commons asked to slow down while ten packs ran).
-loc_fsa,loc_civil_war,loc_war_disaster,loc_service,commons_disasters
+# A key with a question mark (loc_highsmith?) is a needs-only run: only the pictures dropped for a missing or poor
+# description are collected and published in the release needs-description; the pack itself is not changed.
+# Now: the five packs that failed, built again (they set aside their own needs pictures), and a needs-only run of
+# every other pack that drops pictures for their description.
+loc_fsa,loc_civil_war,loc_war_disaster,loc_service,commons_disasters,loc_highsmith?,loc_world?,npgallery?,earth_observatory?,eso?,usgs?,commons_valued?,nara?,nypl?,getty_museum?,digital_commonwealth?,smk?,anefo?,kremlin?,awm?,nara_war?,ushmm?,commons_war?,commons_safety?,nara_military?,army_mil?,nmah_service?,met_instruments?,iso_machine_symbols?,commons_daily_life?,commons_disability?,europeana_fi?,europeana_cs?,europeana_hu?,europeana_el?,europeana_no?,europeana_pl?,europeana_events?,japan_search?,ksamsok?,rijksmuseum?,loc_haer?,usda_ars?
