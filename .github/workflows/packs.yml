@@ -95,7 +95,10 @@ jobs:
                    "work_commons_workplaces", "farm_commons_equipment", "mech_commons_building", "farm_usda_nrcs",
                    "commons_state_roads", "commons_state_outdoors", "commons_state_response", "commons_state_community",
                    "med_commons_supplies", "med_commons_instruments", "med_commons_medicines", "vet_commons_medicine",
-                   "dental_instruments", "open_images_medical", "cdc_phil_supplies"]
+                   "dental_instruments", "open_images_medical", "cdc_phil_supplies",
+                   "commons_ca_homes", "commons_ca_streets", "commons_ca_cars", "inaturalist_ca", "commons_ca_money",
+                   "ca_road_signs", "commons_ca_shops", "commons_ca_holidays", "commons_ca_eating_out", "commons_ca_getting_around",
+                   "commons_ca_public_places", "commons_ca_archives", "commons_ca_provincial", "commons_ca_daily_life"]
           words = [w for w in sys.argv[1].split(",") if w]
           # "key+" is a top-up pass of key and "key?" a needs-only run (kept with the mark, which the build job reads);
           # "all?" asks for a needs-only run of every pack.
@@ -380,6 +383,20 @@ jobs:
             dental_instruments) limit=800 ;;
             open_images_medical) limit=900 ;;
             cdc_phil_supplies) limit=400 ;;
+            commons_ca_homes) limit=2500 ;;
+            commons_ca_streets) limit=2000 ;;
+            commons_ca_cars) limit=1200 ;;
+            inaturalist_ca) limit=4000 ;;
+            commons_ca_money) limit=600 ;;
+            ca_road_signs) limit=1500 ;;
+            commons_ca_shops) limit=800 ;;
+            commons_ca_holidays) limit=1500 ;;
+            commons_ca_eating_out) limit=1200 ;;
+            commons_ca_getting_around) limit=2000 ;;
+            commons_ca_public_places) limit=2000 ;;
+            commons_ca_archives) limit=3000 ;;
+            commons_ca_provincial) limit=1500 ;;
+            commons_ca_daily_life) limit=2000 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in

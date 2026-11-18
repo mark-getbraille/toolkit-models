@@ -2029,6 +2029,37 @@ SOURCES = [
            "Public domain or CC BY, each Commons file's own licence checked", "US state agencies via Wikimedia Commons (credited in CREDITS.txt)", "permissive", 800, 10, prepare_pack, "about 200 MB"),
     Source("commons_state_community", "US cities, counties and state agencies at work in their communities (public works, events, redevelopment, archives; Wikimedia Commons, ready-made pack)",
            "Public domain or CC BY, each Commons file's own licence checked", "US state agencies via Wikimedia Commons (credited in CREDITS.txt)", "permissive", 2500, 20, prepare_pack, "about 600 MB"),
+    # Canada (packs/canada_packs.py): Canadian equivalents of the US packs. The share-alike, non-commercial and research
+    # Canadian collections are in canada_sources.py.
+    Source("commons_ca_homes", "Canadian houses, house styles and rooms (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain, CC BY or an open government licence (OGL-Canada or provincial; credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 2500, 20, prepare_pack, "about 500 MB"),
+    Source("commons_ca_streets", "Canadian city streets, including Québec (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain, CC BY or an open government licence (OGL-Canada or provincial; credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 2000, 20, prepare_pack, "about 450 MB"),
+    Source("commons_ca_cars", "Cars in Canada: which model, and its colour (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain, CC BY or an open government licence (OGL-Canada or provincial; credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1200, 20, prepare_pack, "about 250 MB"),
+    Source("inaturalist_ca", "Wild plants and animals in each province and territory, named (iNaturalist) (ready-made pack)",
+           "Photos CC0 or CC BY (each photographer credited in CREDITS.txt)",
+           "iNaturalist contributors (photos CC0 or CC BY, credited in CREDITS.txt), https://www.inaturalist.org", "permissive", 4000, 20, prepare_pack, "about 600 MB"),
+    Source("commons_ca_money", "Canadian banknotes and coins (old designs out of copyright, and freely licensed files) (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain, CC BY or an open government licence (OGL-Canada or provincial; credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 600, 20, prepare_pack, "about 100 MB"),
+    Source("ca_road_signs", "Canadian road signs, including Québec's French signs (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain, CC BY or an open government licence (OGL-Canada or provincial; credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1500, 20, prepare_pack, "about 120 MB"),
+    Source("commons_ca_shops", "Canadian shops and supermarkets, dépanneurs and chains (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain, CC BY or an open government licence (OGL-Canada or provincial; credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 800, 20, prepare_pack, "about 180 MB"),
+    Source("commons_ca_holidays", "Canadian holidays and events: Canada Day, Thanksgiving, Victoria Day, Remembrance Day, Saint-Jean-Baptiste (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain, CC BY or an open government licence (OGL-Canada or provincial; credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1500, 20, prepare_pack, "about 350 MB"),
+    Source("commons_ca_eating_out", "Coffee shops, diners and eating out in Canada (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain, CC BY or an open government licence (OGL-Canada or provincial; credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1200, 20, prepare_pack, "about 250 MB"),
+    Source("commons_ca_getting_around", "Getting around Canada: TTC, STM, TransLink, GO Transit, VIA Rail, ferries and airports (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain, CC BY or an open government licence (OGL-Canada or provincial; credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 2000, 20, prepare_pack, "about 450 MB"),
+    Source("commons_ca_public_places", "Canadian public places: pharmacies, post offices, libraries, service centres (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain, CC BY or an open government licence (OGL-Canada or provincial; credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 2000, 20, prepare_pack, "about 450 MB"),
+    Source("commons_ca_archives", "Canadian archive photos: Library and Archives Canada, Toronto, BAnQ (Commons copies under open licences) (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain, CC BY or an open government licence (OGL-Canada or provincial; credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 3000, 20, prepare_pack, "about 700 MB"),
+    Source("commons_ca_provincial", "Provincial and territorial government photos under their open licences (Ontario, Alberta, BC, New Brunswick, Yukon) (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain, CC BY or an open government licence (OGL-Canada or provincial; credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1500, 20, prepare_pack, "about 350 MB"),
+    Source("commons_ca_daily_life", "Everyday life in Canada: winter, skating, pond hockey, camping, cottage country, commuting, markets (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain, CC BY or an open government licence (OGL-Canada or provincial; credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 2000, 20, prepare_pack, "about 450 MB"),
     # Current medicines, medical supplies and instruments and veterinary medicines (packs/med_vet_packs.py): nothing old
     # or from museum collections. Medicine answers say "This looks like ..." and end "Check the packaging or ask a
     # pharmacist to be sure." The share-alike, Open Facts supplements and DailyMed label entries are in med_vet_sources.py.
@@ -2207,6 +2238,10 @@ PEOPLE_AND_BODILY_PACK_KEYS = (
     "commons_state_roads", "commons_state_outdoors", "commons_state_response", "commons_state_community",
     # med_vet_packs.py: Open Images and CDC photos of people using medical things
     "open_images_medical", "cdc_phil_supplies",
+    # canada_packs.py: Canadian streets, cars, shops, holidays, eating out, transit, public places, archives, daily life
+    "commons_ca_streets", "commons_ca_cars", "commons_ca_shops", "commons_ca_holidays",
+    "commons_ca_eating_out", "commons_ca_getting_around", "commons_ca_public_places", "commons_ca_archives",
+    "commons_ca_provincial", "commons_ca_daily_life",
 )
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + PEOPLE_AND_BODILY_PACK_KEYS
 
@@ -2622,3 +2657,18 @@ _med_vet_ok = set(getattr(_med_vet, "MED_VET_PICTURE_MAKING_OK", ()) or ())
 PERSONAL_PICTURE_MAKING_OK |= _med_vet_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in MED_VET_SOURCES if s.key not in _med_vet_ok)
 _add_collections(MED_VET_SOURCES)
+
+# Canadian collections that are not open (Commons BY-SA; Open Facts sold in Canada; iNaturalist BY-SA and BY-NC by
+# province; Montréal archive photos (CC BY-NC-SA); blank CRA forms (non-commercial); Health Canada recall photos
+# (research)); the file may be missing.
+try:
+    import canada_sources as _canada  # noqa: E402
+except ImportError as _e:
+    _canada = None
+    if getattr(_e, "name", None) != "canada_sources":
+        say(f"(The Canadian collections could not be loaded: {_e}. They are left out.)")
+CANADA_SOURCES = list(getattr(_canada, "CANADA_SOURCES", []) or [])
+_canada_ok = set(getattr(_canada, "CANADA_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _canada_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in CANADA_SOURCES if s.key not in _canada_ok)
+_add_collections(CANADA_SOURCES)

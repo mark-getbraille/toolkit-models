@@ -1499,6 +1499,10 @@ PACKS.update(US_MODERN_PACKS)
 from device_packs import DEVICE_PACKS
 PACKS.update(DEVICE_PACKS)
 
+# Canada (packs/canada_packs.py): the Canadian equivalents of the US packs, archive and provincial photos, daily life.
+from canada_packs import CANADA_PACKS
+PACKS.update(CANADA_PACKS)
+
 # Workplaces, farms and building mechanical systems (US and Canada): Commons categories and USDA NRCS photos.
 from work_farm_mech_packs import WORK_FARM_MECH_PACKS
 PACKS.update(WORK_FARM_MECH_PACKS)
