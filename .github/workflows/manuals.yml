@@ -1,0 +1,129 @@
+# Build the manual and instruction collections of the Digital Accessibility Toolkit (manuals/build_manuals.py) and
+# publish them in the release "manuals", with manuals.json listing each collection's index file, size, SHA-256 and the
+# estimated size of its manuals (the toolkit's Packages window reads it, category "Manual collections").
+# Only facts, links, openly licensed instruction text and openly licensed thumbnails are published: never the
+# manuals themselves (the toolkit fetches them from their official addresses for the owner's own use).
+# Runs by hand (Actions > Build manual collections > Run workflow) or when manuals/request.txt changes on main (its
+# text: the category keys, separated by commas, or all).
+name: Build manual collections
+
+on:
+  push:
+    branches: ["main"]
+    paths: ["manuals/request.txt"]
+  workflow_dispatch:
+    inputs:
+      keys:
+        description: "Category keys, separated by commas, or all"
+        required: true
+        default: "all"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: manual-collections
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      keys: ${{ steps.keys.outputs.keys }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: keys
+        run: |
+          keys='${{ inputs.keys }}'
+          if [ -z "$keys" ]; then keys=$(grep -v '^#' manuals/request.txt | tr -d '[:space:]'); fi
+          python3 - "$keys" >> "$GITHUB_OUTPUT" <<'PY'
+          import json, sys
+          sys.path.insert(0, "manuals")
+          import categories
+          known = list(categories.CATEGORIES)
+          words = [w for w in sys.argv[1].split(",") if w]
+          keys = known if words in ([], ["all"]) else [w for w in words if w in known]
+          print("keys=" + json.dumps(keys))
+          PY
+
+  build:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      # Few at a time: Open Food Facts allows 10 searches a minute from one address, and the categories share sites.
+      max-parallel: 3
+      matrix:
+        key: ${{ fromJSON(needs.plan.outputs.keys) }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      # The Picture Describers website's export key (a repository secret); without it that source is skipped.
+      DESCRIBE_SITE_KEY: ${{ secrets.DESCRIBE_SITE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install what the builder needs
+        run: |
+          python -m pip install requests pillow
+          case "${{ matrix.key }}" in
+            # Back-of-pack photos that Open Food Facts has no OCR text for are read with tesseract.
+            frozen_meals|product_directions)
+              sudo apt-get update && sudo apt-get install -y tesseract-ocr tesseract-ocr-eng ;;
+          esac
+      - name: Keep the answers between runs
+        uses: actions/cache@v4
+        with:
+          path: build/manuals-cache
+          key: manuals-cache-${{ matrix.key }}-${{ github.run_id }}
+          restore-keys: manuals-cache-${{ matrix.key }}-
+      - name: Build the collection
+        run: |
+          case "${{ matrix.key }}" in
+            frozen_meals) limit=2400 ;;
+            product_directions) limit=1200 ;;
+            health_devices) limit=1500 ;;
+            cars) limit=600 ;;
+            *) limit=1500 ;;
+          esac
+          # Stop requesting after 290 minutes (listing stops at half of that), so the index is published in time.
+          MANUALS_TIME_LIMIT_MINUTES=290 python manuals/build_manuals.py "${{ matrix.key }}" --out build/manuals \
+            --cache build/manuals-cache --limit "$limit"
+      - name: Upload it to the release
+        run: |
+          gh release view manuals > /dev/null 2>&1 || gh release create manuals \
+            --title "Manual and instruction collections" \
+            --notes "Indexes of product manuals (facts and official addresses only: the manuals belong to their makers and are not published here) and openly licensed plain-text instructions, for the Digital Accessibility Toolkit (manuals/build_manuals.py)."
+          files=$(python -c "import json;print(' '.join(json.load(open('build/manuals/manifest-${{ matrix.key }}.json'))['files']))")
+          for f in $files manifest-${{ matrix.key }}.json; do
+            for attempt in 1 2 3 4; do
+              gh release upload manuals "build/manuals/$f" --clobber && break
+              sleep 30
+            done
+          done
+
+  catalogue:
+    needs: build
+    if: always()
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Merge the manifests into manuals.json
+        run: |
+          mkdir -p merged && cd merged
+          gh release download manuals -p 'manifest-*.json' --clobber || true
+          python3 - <<'PY'
+          import glob, json, time
+          collections = {}
+          for path in sorted(glob.glob("manifest-*.json")):
+              data = json.load(open(path))
+              collections[data["key"]] = data
+          json.dump({"built": time.strftime("%Y-%m-%d"), "collections": collections}, open("manuals.json", "w"),
+                    indent=1)
+          print(json.dumps(collections, indent=1))
+          PY
+          gh release upload manuals manuals.json --clobber

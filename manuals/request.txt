@@ -1,0 +1,3 @@
+# The manual and instruction collections to build (.github/workflows/manuals.yml runs when this file changes on
+# main): category keys from manuals/categories.py, separated by commas, or all.
+all
