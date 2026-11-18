@@ -310,7 +310,16 @@ def build_wikidata_devices(limit):
     per_kind = max(10, min(150, limit // 20 + 5))
     groups = device_models(s, DEVICE_KINDS, per_kind)
     chosen = round_robin(groups, rng)
-    return from_subjects("wikidata_devices", s, chosen, limit, device_picture_rows, per_subject=2, rng=rng)
+    entries = from_subjects("wikidata_devices", s, chosen, limit, device_picture_rows, per_subject=2, rng=rng)
+    return english_captions_only(entries)
+
+
+def english_captions_only(entries):
+    """The pack entries without the file captions that are not in English (culture_packs.from_subjects adds each
+    file's caption as "Describe this picture."; an Italian or German caption is left out, as no translation is made
+    here). A caption is never a picture's first row, so no picture is lost."""
+    return [(name, data, row) for name, data, row in entries
+            if row.get("question") != "Describe this picture." or len(ENGLISH_WORDS.findall(row["answer"])) >= 2]
 
 
 # ----------------------------------------------------------------- commons_devices

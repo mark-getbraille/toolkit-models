@@ -151,3 +151,14 @@ def test_kit_answers_and_frames():
                                                                              "toaster/1_2_3/pointcloud.ply"]
     assert k.co3d_frames(names) == {"toaster/1_2_3": "toaster/1_2_3/images/frame000002.jpg"}
     assert k.wd_year("1981-07-01T00:00:00Z") == "1981" and k.wd_year("2090-01-01T00:00:00Z") == ""
+
+
+def test_english_captions_only():
+    """A file caption in Italian is left out; the picture and its other rows stay."""
+    entries = [("a.jpg", b"x", {"question": d.WHAT_Q, "answer": "This is an Olivetti ET Personal 540, a typewriter."}),
+               (None, None, {"question": "Describe this picture.", "file": "pictures/a.jpg",
+                             "answer": "La macchina da scrivere elettronica Olivetti ET Personal 540 chiusa."}),
+               (None, None, {"question": "Describe this picture.", "file": "pictures/a.jpg",
+                             "answer": "An Olivetti electronic typewriter with its cover closed."})]
+    kept = d.english_captions_only(entries)
+    assert len(kept) == 2 and kept[0][1] == b"x" and kept[1][2]["answer"].startswith("An Olivetti")
