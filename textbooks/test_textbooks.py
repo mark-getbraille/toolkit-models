@@ -4,6 +4,7 @@ Run it from the repository's folder:   python3 -m pytest textbooks/test_textbook
 """
 
 import json
+import re
 import os
 import struct
 import sys
@@ -348,3 +349,41 @@ def test_new_sources():
     assert not any(k == f"law:{e['name']}" for e in sources.LAWS_MORE for k in keys)
     assert "law:cfr_12_1026_regulation_z" in sources.expand_keys(["laws-more"])
     assert "pdf:medicare_and_you" in sources.expand_keys(["group:health"])
+
+
+class _FakePdfText:
+    """A stand-in for build_textbooks.PdfText: pages of made-up lines."""
+
+    def __init__(self, pages):
+        """pages: a list of lists of lines."""
+        self.pages, self.count = pages, len(pages)
+
+    def lines(self, n):
+        """The lines of page n."""
+        return list(self.pages[n])
+
+
+def test_rulebook_sections():
+    """A rulebook kept whole and unchanged is split at its own numbered headings only (contents lines, running heads
+    and cross-references are not taken), and its pages read one after another are exactly the whole text."""
+    text = _FakePdfText([
+        ["Rules of Made-up Braille", "Contents", "Section 1: Introduction ........ 1", "1.1 Basics ......... 1"],
+        ["Preface words.", "Section 11: Technical Material summarises things."],
+        ["Section 1: Introduction", "1.1 Basics", "Basic rule text.", "• a list item", "1.2 More rules",
+         "See Section 2.1 for more."],
+        ["Running head 2: Signs", "Section 2: Signs", "2.1 Arrows", "Arrow text.", "3.1 Not a heading yet"],
+        ["Appendix 1: Word List", "word one", "Appendix 1: Word List", "word two"],
+    ])
+    pages = B.section_pages(text)
+    titles = [p.title for p in pages]
+    assert titles == ["Front matter (pages 1 to 2)", "Section 1: Introduction (page 3)", "1.1 Basics (page 3)",
+                      "1.2 More rules (pages 3 to 4)", "Section 2: Signs (page 4)", "2.1 Arrows (page 4)",
+                      "Appendix 1: Word List (page 5)"]
+
+    def words(h):
+        """The words of some HTML."""
+        import html as h2
+        return h2.unescape(re.sub(r"<[^>]+>", " ", h)).split()
+    whole = words(B.part_html(text, 0, text.count))
+    assert words(" ".join(p.body for p in pages)) == whole
+    assert "<h3>1.1 Basics</h3>" in pages[2].body and "[Page 3]" in pages[1].body

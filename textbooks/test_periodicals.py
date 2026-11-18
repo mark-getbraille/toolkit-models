@@ -121,30 +121,6 @@ def test_crs_book(monkeypatch, tmp_path):
 
 # ---------------------------------------------------------------- journals: eLife and Europe PMC
 
-ELIFE = json.dumps({"total": 2, "items": [
-    {"id": "1", "title": "Made-up digest", "published": "2026-05-01T00:00:00Z", "impactStatement": "In short.",
-     "subjects": [{"name": "Neuroscience"}], "relatedContent": [{"id": "1", "title": "Paper", "authorLine": "A et al.",
-                                                                  "doi": "10.0/x"}],
-     "content": [{"type": "paragraph", "text": "Plain words."},
-                 {"type": "image", "image": {"alt": ""}, "caption": [{"type": "paragraph", "text": "A mouse."}]},
-                 {"type": "section", "title": "More", "content": [{"type": "paragraph", "text": "Inside."}]}]},
-    {"id": "2", "title": "Closed digest", "published": "2026-04-01T00:00:00Z", "content": []},
-    {"id": "3", "title": "Old digest", "published": "2025-04-01T00:00:00Z", "content": []}]})
-
-
-def test_elife(monkeypatch):
-    """eLife digests of one year: each digest's article licence is checked; pictures become their caption."""
-    use(monkeypatch, [("/digests?", ELIFE),
-                      ("/articles/1", json.dumps({"copyright": {"license": "CC-BY-4.0"}, "title": "Paper"})),
-                      ("/articles/2", json.dumps({"copyright": {"license": "all-rights-reserved"}}))])
-    left = []
-    items = P.elife_items(P.SOURCES["elife_digests"], "2026", None, left, TODAY)
-    assert [i["title"] for i in items] == ["Made-up digest"] and items[0]["licence"] == "CC BY 4.0"
-    body = items[0]["body"]
-    assert "<em>In short.</em>" in body and "Picture: A mouse." in body and "<h2>More</h2>" in body
-    assert "1 digests were left out" in left[0]["reason"]
-
-
 def jats(licence_xml, extra=""):
     """A made-up JATS article with the given <license>."""
     return (f'<article xmlns:xlink="http://www.w3.org/1999/xlink"><front><journal-meta><journal-title-group>'
@@ -160,6 +136,28 @@ def jats(licence_xml, extra=""):
             f'</math></inline-formula>.</p><fig><label>Figure 1</label><caption><p>An eye.</p></caption>'
             f'<graphic/></fig>{extra}</sec><sec><title>References</title><ref-list><ref>Old paper</ref></ref-list>'
             f'</sec></body></article>')
+
+
+def test_elife_from_europepmc(monkeypatch):
+    """eLife digests come from Europe PMC (eLife's own API host disallows all robots): only the digest of each
+    CC BY paper, with the paper's credit; papers without a digest, or under another licence, are left out."""
+    with_digest = jats('<license xlink:href="http://creativecommons.org/licenses/by/4.0/"><license-p>Open'
+                       '</license-p></license>').replace('abstract-type="summary"><title>Author summary',
+                                                         'abstract-type="plain-language-summary"><title>eLife digest')
+    no_digest = jats('<license xlink:href="http://creativecommons.org/licenses/by/4.0/"><license-p>Open'
+                     '</license-p></license>').replace('<abstract abstract-type="summary"><title>Author summary'
+                                                       '</title><p>Plain summary.</p></abstract>', '')
+    search = json.dumps({"resultList": {"result": [
+        {"pmcid": "PMC7", "firstPublicationDate": "2025-06-01"},
+        {"pmcid": "PMC8", "firstPublicationDate": "2025-05-01"}]},
+        "nextCursorMark": "*"})
+    use(monkeypatch, [("/search?", search), ("/PMC7/fullTextXML", with_digest), ("/PMC8/fullTextXML", no_digest)])
+    assert "elifesciences" not in json.dumps(P.SOURCES["elife_digests"], default=str)
+    items = P.elife_digest_items(P.SOURCES["elife_digests"], "2025", None, [], TODAY)
+    assert len(items) == 1 and items[0]["licence"] == "CC BY 4.0" and items[0]["date"] == "2025-06-01"
+    assert "Plain summary." in items[0]["body"] and "Eyes need light" not in items[0]["body"]
+    assert items[0]["byline"].startswith("Digest of: Jan Doe. Seeing Well. Made-up Journal")
+    assert any("eLife's own API" in t and "disallows all" in r for t, r in P.NOT_INCLUDED)
 
 
 def test_jats_and_europepmc(monkeypatch):
@@ -244,7 +242,8 @@ def test_voa(monkeypatch):
 ARTICLE = ("<p>First paragraph, with a <a href='https://x.example/'>link</a>.</p><h2>A heading with nothing under "
            "it</h2><h2>Second part</h2><p>Second paragraph &amp; more.</p><ul><li>One</li><li>Two</li></ul>"
            "<figure><img src='p.jpg' alt='A described photo'><figcaption>Photo: Someone</figcaption></figure>"
-           "<p>Last words.</p><img src='https://counter.example/c.gif' alt='The Conversation' width='1'>")
+           "<p>Last words.</p><img src='https://counter.theconversation.com/content/1/count.gif' "
+           "alt='The Conversation' width='1'>")
 FEED = ('<feed xmlns="http://www.w3.org/2005/Atom"><entry><title>An unchanged article</title>'
         '<link rel="alternate" href="https://theconversation.com/an-article-1"/>'
         '<published>2026-11-17T09:00:00Z</published><author><name>Dr A, University of B</name></author>'
@@ -267,8 +266,9 @@ def test_whole_and_unchanged_never_trimmed(monkeypatch, tmp_path):
     book = P.books_for_key("pub:the_conversation:us", None, left, TODAY)[0]
     assert book.unchanged and len(book.pages) == 1 and "1 articles were left out" in left[0]["reason"]
     page = B.page_html(book, book.pages[0])
-    original = [w for w in words(ARTICLE)]
+    original = words(ARTICLE.split("<img src='https://counter")[0])
     assert in_order(original, words(page)), "a whole-and-unchanged article lost words"
+    assert "counter.theconversation.com" not in page and "Picture: The Conversation" not in page   # the pixel
     assert "Picture: A described photo" in page and "A heading with nothing under it" in page
     assert "This article is republished from The Conversation under a Creative Commons license." in page
     assert "CC BY-ND 4.0, no changes allowed" in page and "https://creativecommons.org/licenses/by-nd/4.0/" in page
@@ -282,6 +282,7 @@ def test_whole_and_unchanged_never_trimmed(monkeypatch, tmp_path):
 def test_clean_keeps_words_when_whole():
     """The cleaner never drops words in whole mode; outside it, only empty headings go."""
     assert in_order(words(ARTICLE)[:-2], words(P.clean(ARTICLE, "https://x.example/", whole=True)))
+    assert "Picture: The Conversation" in P.clean(ARTICLE, "https://x.example/", whole=True)   # dropped by atom
     assert "nothing under" not in P.clean(ARTICLE, "https://x.example/")
 
 
@@ -301,6 +302,7 @@ def test_kff_whole_posts(monkeypatch):
     assert "This story was produced by KFF Health News." in book.pages[0].body          # the tagline it asks for
     assert "not for commercial use, no changes allowed" in book.pages[0].body
     assert "All Rights Reserved" in left[0]["reason"]
+    assert "permission" in P.catalogue_extra(book)["note"]                 # commercial use needs KFF's permission
 
 
 # ---------------------------------------------------------------- history

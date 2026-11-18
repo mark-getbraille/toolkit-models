@@ -13,7 +13,8 @@ build_periodicals(), and sources.expand_keys() expands "publications" and "pub:.
 
 Groups (the "group" field of each catalogue entry; the names are in sources.GROUPS):
   reports      Reference, government reports   Congressional Research Service reports (public domain)
-  journals     Articles, open-access journals  eLife digests (plain-language summaries, CC BY 4.0); review
+  journals     Articles, open-access journals  eLife digests (plain-language summaries, CC BY, read from Europe
+                                               PMC: eLife's own API host disallows all robots); review
                                                articles from the Europe PMC open-access subset (CC BY and CC0 only)
                                                on topics useful to a blind adult
   news         News, open-licensed             Global Voices (CC BY 3.0); Voice of America's own reporting (public
@@ -36,8 +37,11 @@ is never excerpted, cut, summarised or reworded: each article is kept entire (no
 out of it, and headings are never dropped even when empty), its HTML is only cleaned up (menus, scripts and
 decorative pictures left out; headings, links and the descriptions of pictures kept), and every page carries the
 credit, the licence's name and address, the original address and the line "Converted to an accessible format; the
-text is unchanged." Whole articles that are not under the licence (a partner's story, one marked "All Rights
-Reserved") are left out entirely, never trimmed. Each site's robots.txt and republishing terms are obeyed too.
+text is unchanged." An invisible tracking picture (The Conversation's 1-pixel page-view counter) is not part of an
+article's text and is left out: The Conversation's guidelines ask for it only "when republishing online", and a ZIM
+book is read offline, so leaving it out is the reading closest to their written terms. Whole articles that are not
+under the licence (a partner's story, one marked "All Rights Reserved") are left out entirely, never trimmed. Each
+site's robots.txt and republishing terms are obeyed too.
 
 Keys (one ZIM book per piece):
   pub:all                      every source, its default pieces (the newspapers have none: ask for them by name)
@@ -138,14 +142,12 @@ SOURCES = {
         pieces=lambda today: ["2020s", "2010s", "2000s"], piece_rule=r"^(19|20)\d0s$"),
     "elife_digests": dict(
         group="journals", driver="elife", series_title="eLife digests (plain-language summaries of research)",
-        subject="Science and medicine explained", publisher="eLife Sciences Publications", country="International",
-        licence="CC BY 4.0", licence_url=CC_BY_4, source="https://elifesciences.org/digests",
-        description="Short plain-language summaries (digests) of new research papers in biology and medicine, "
-                    "written by eLife's editors for everyone. One book per year.",
-        changes="made into web pages with the pictures left out (their captions kept)",
-        # api.elifesciences.org's robots.txt says "Disallow: /" to every crawler; this is eLife's documented public
-        # API for programs (no key), read at one request a second; see the module's report and LICENCE_LINES.
-        api_robots_exempt=True,
+        subject="Science and medicine explained", publisher="eLife Sciences Publications and the papers' authors "
+        "(from Europe PMC)", country="International", licence="CC BY 4.0", licence_url=CC_BY_4,
+        source="https://europepmc.org/",
+        description="The plain-language summaries (\"eLife digests\") of research papers in eLife, written for "
+                    "everyone, from the papers' open-access full text in Europe PMC. One book per year.",
+        changes="the digest of each paper only (the rest of the paper left out), made into web pages",
         pieces=lambda today: _years(4, today), piece_rule=r"^20\d\d$"),
     "europepmc_reviews": dict(
         group="journals", driver="europepmc", series_title="Open-access health reviews",
@@ -184,6 +186,8 @@ SOURCES = {
         notice="KFF Health News is a national newsroom that produces in-depth journalism about health issues and is "
                "one of the core operating programs at KFF (its standard attribution). Its stories are shared under "
                "CC BY-NC-ND 4.0; stories marked \"All Rights Reserved\" and stories from other outlets are left out.",
+        catalogue_note="Not for commercial use: commercial use needs KFF Health News's permission (its terms ask to "
+                       "be contacted first for use in commercial products such as academic textbooks).",
         page_credit="This story was produced by KFF Health News. KFF Health News is a national newsroom that "
                     "produces in-depth journalism about health issues and is one of the core operating programs at KFF "
                     "— the independent source for health policy research, polling, and journalism.",
@@ -212,6 +216,8 @@ SOURCES = {
         source="https://theconversation.com/",
         feed="https://theconversation.com/{piece}/articles.atom", rights=r"attribution, no derivatives",
         credit="This article is republished from The Conversation under a Creative Commons license.",
+        # The 1-pixel page-view counter is not text; asked for only "when republishing online" (a ZIM is offline).
+        drop_html=[r'<img\b[^>]*counter\.theconversation\.com[^>]*>'],
         description="Articles written by university researchers and edited by journalists, from one edition of The "
                     "Conversation (its latest articles, as its news feed lists them), each whole and unchanged.",
         notice="Republished from The Conversation under a Creative Commons licence (CC BY-ND 4.0), whole and "
@@ -298,11 +304,9 @@ LICENCE_LINES = {
            "offers its bulk list (reports.csv) and every report's HTML for download; it has no robots.txt.",
     "amber_waves": "A work of the USDA Economic Research Service (17 U.S.C. 105). www.ers.usda.gov/robots.txt: "
                    "\"User-agent: * Allow: /\". No separate licence page was found on ers.usda.gov.",
-    "elife_digests": "Each research article in eLife's API (/articles/<id>): copyright.license \"CC-BY-4.0\", "
-                     "statement \"This article is distributed under the terms of the Creative Commons Attribution "
-                     "License\"; each digest is checked against its article's licence at every build. "
-                     "api.elifesciences.org/robots.txt says \"User-agent: * Disallow: /\" (meant for crawlers; the "
-                     "API is eLife's documented public interface for programs).",
+    "elife_digests": "Each eLife paper's own <license> in Europe PMC (for example PMC11655060: ali:license_ref "
+                     "https://creativecommons.org/licenses/by/4.0/); its digest is the abstract titled \"eLife "
+                     "digest\" (abstract-type plain-language-summary). eLife's own API is not used.",
     "europepmc_reviews": "Each article's own <license> in its full text (for example PMC13194245: \"This article "
                          "is licensed under a Creative Commons Attribution 4.0 International License\"); only CC BY "
                          "(any version) and CC0 are kept. www.ebi.ac.uk/robots.txt does not restrict the Europe PMC "
@@ -376,6 +380,8 @@ NOT_INCLUDED = [
     ("New Zealand Parliament research papers and Irish government publications", "No licence page could be "
      "confirmed automatically (404); not checked by hand yet."),
     ("Cochrane plain-language summaries", "Copyright of Cochrane and Wiley; not openly licensed."),
+    ("eLife's own API (api.elifesciences.org)", "API host robots.txt disallows all (\"User-agent: * Disallow: /\"); "
+     "the eLife digests are taken from Europe PMC's open-access full texts instead."),
     ("PLOS journals", "CC BY; their review articles are included through Europe PMC's open-access subset (the same "
      "articles, with each one's licence checked), so PLOS is not read separately."),
     ("arXiv", "Most papers are not under an open licence that allows changes, and few are useful to a general "
@@ -518,8 +524,8 @@ def json_ld(page_text):
 
 
 def robots_ok(spec, url, cache):
-    """True when the site's robots.txt allows url (or the source is a documented public API, api_robots_exempt)."""
-    return spec.get("api_robots_exempt") or B.allowed_by_robots(url, cache)
+    """True when the site's robots.txt allows url (spec: the source; no source is exempt)."""
+    return B.allowed_by_robots(url, cache)
 
 
 def licence_still_stated(spec, cache):
@@ -631,87 +637,6 @@ def amber_waves_items(spec, piece, cache, left_out, today):
         left_out.append({"title": f"{spec['series_title']}, {piece}", "reason": f"{failed} articles could not be "
                          "read or are not allowed by the site's robots.txt."})
     out.sort(key=lambda i: i["date"], reverse=True)
-    return out
-
-
-# ====================================================================== eLife digests
-
-ELIFE_API = "https://api.elifesciences.org"
-ELIFE_LICENCES = {"CC-BY-4.0": ("CC BY 4.0", CC_BY_4),
-                  "CC0-1.0": ("CC0 1.0", "https://creativecommons.org/publicdomain/zero/1.0/")}
-
-
-def elife_blocks(blocks, depth=2):
-    """The HTML of eLife's content blocks (paragraph, section, list, quote, image: its caption as "Picture: ")."""
-    out = []
-    for b in blocks or []:
-        kind = b.get("type")
-        if kind == "paragraph":
-            out.append(f"<p>{b.get('text', '')}</p>")
-        elif kind == "section":
-            out.append(f"<h{depth}>{B.esc(b.get('title', ''))}</h{depth}>" + elife_blocks(b.get("content"),
-                                                                                       min(depth + 1, 6)))
-        elif kind == "list":
-            tag = "ol" if b.get("prefix") in ("number", "alpha-lower", "alpha-upper", "roman-lower") else "ul"
-            items = "".join(f"<li>{x if isinstance(x, str) else elife_blocks(x)}</li>" for x in b.get("items", []))
-            out.append(f"<{tag}>{items}</{tag}>")
-        elif kind == "quote":
-            out.append(f"<blockquote>{elife_blocks(b.get('text'))}</blockquote>")
-        elif kind == "image":
-            image = b.get("image", {})
-            words = " ".join(re.sub(r"<[^>]+>", " ", c.get("text", "")) for c in b.get("caption", [])
-                             if c.get("type") == "paragraph")
-            words = " ".join(html.unescape(f"{image.get('alt', '')} {words}").split())
-            if words:
-                out.append(f"<p>Picture: {B.esc(words)}</p>")
-    return "".join(out)
-
-
-def elife_items(spec, piece, cache, left_out, today):
-    """The eLife digests published in the year piece, from eLife's public API (newest first, 100 a page). Each
-    digest's research article is read to check its licence (CC BY 4.0 or CC0); a digest whose article has another
-    licence is left out."""
-    year, out, wrong = piece, [], 0
-    for page in range(1, 100):
-        data = json.loads(B.fetch(f"{ELIFE_API}/digests?per-page=100&page={page}&order=desc", None))
-        found = data.get("items", [])
-        if not found:
-            break
-        for d in found:
-            when = B.iso_date(d.get("published", ""))
-            if not when.startswith(year):
-                continue
-            related = (d.get("relatedContent") or [{}])[0]
-            article_id = related.get("id") or d["id"]
-            try:
-                article = json.loads(B.fetch(f"{ELIFE_API}/articles/{article_id}", cache))
-            except (urllib.error.URLError, OSError, ValueError):
-                wrong += 1
-                continue
-            lic = ELIFE_LICENCES.get((article.get("copyright") or {}).get("license", ""))
-            if not lic:
-                wrong += 1
-                continue
-            about = article.get("title") or related.get("title", "")
-            authors = article.get("authorLine") or related.get("authorLine", "")
-            doi = article.get("doi") or related.get("doi", "")
-            body = (f"<p><em>{B.esc(d.get('impactStatement', ''))}</em></p>" if d.get("impactStatement") else "") + \
-                elife_blocks(d.get("content"))
-            body = clean(body, "https://elifesciences.org/")
-            body += (f"<p>This digest explains the research article \"{B.esc(re.sub(r'<[^>]+>', '', about))}\" by "
-                     f"{B.esc(authors)}, eLife{(', DOI ' + B.esc(doi)) if doi else ''}.</p>")
-            subjects = ", ".join(s.get("name", "") for s in d.get("subjects", []))
-            out.append(item(f"https://elifesciences.org/digests/{d['id']}", d.get("title", ""), when, body,
-                            month_unit(when), byline=f"Subjects: {subjects}" if subjects else "",
-                            licence=lic[0], licence_url=lic[1]))
-        if all(B.iso_date(d.get("published", ""))[:4] < year for d in found) or len(found) < 100:
-            break                                            # newest first: the rest are older (or no more pages)
-        if len(out) >= spec.get("limit", MAX_ITEMS):
-            out = out[:spec.get("limit", MAX_ITEMS)]
-            break
-    if wrong:
-        left_out.append({"title": f"{spec['series_title']}, {piece}", "reason": f"{wrong} digests were left out: "
-                         "their article's licence is not CC BY 4.0 or CC0, or it could not be read."})
     return out
 
 
@@ -843,27 +768,25 @@ def jats_article(xml_text):
     parts = []
     abstracts = [a for a in meta.iter() if _tag(a) == "abstract"]
     abstracts.sort(key=lambda a: a.get("abstract-type") not in SUMMARY_TYPES)
+    summary = ""
     for a in abstracts:
         kind = a.get("abstract-type", "")
         t = a.find("{*}title")
         heading = _words(t) or ("Plain-language summary" if kind in SUMMARY_TYPES else "Abstract")
         parts.append(f"<h2>{B.esc(heading)}</h2>" + j.html(a, 3))
+        if not summary and (kind in SUMMARY_TYPES or "digest" in heading.lower()):
+            summary = Jats().html(a, 2)
     body = next((x for x in root if _tag(x) == "body"), None)
     if body is not None:
         parts.append(j.html(body, 2))
     return {"title": title, "authors": authors, "journal": journal, "date": date, "doi": doi, "licence": licence,
-            "licence_url": licence_url, "body": "".join(parts)}
+            "licence_url": licence_url, "body": "".join(parts), "summary": summary}
 
 
-def europepmc_items(spec, piece, cache, left_out, today):
-    """The newest review articles on the topic piece (EPMC_TOPICS) in Europe PMC's open-access subset under CC BY
-    or CC0 (asked for in the search, and checked again in each article's own text), at most spec["per_piece"]."""
-    year = (today or datetime.date.today()).year
-    name, words = EPMC_TOPICS[piece]
-    query = (f"(TITLE:({words}) OR KW:({words})) AND (LICENSE:\"cc by\" OR LICENSE:\"cc0\") AND OPEN_ACCESS:y AND "
-             f"PUB_TYPE:\"review\" AND LANG:eng AND IN_EPMC:y AND FIRST_PDATE:[{year - spec['years_back']}-01-01 TO "
-             f"{year}-12-31]")
-    want = spec.get("per_piece", 150)
+def epmc_articles(spec, query, want, cache, left_out, title, wanted=None):
+    """The newest articles a Europe PMC search finds (newest first, 100 a page), each read from its full text
+    (jats_article) and kept only when its own licence is CC BY or CC0, and wanted(article) is true; at most want.
+    Returns [(search result, article)]."""
     out, cursor, refused, seen = [], "*", 0, set()
     while len(out) < want:
         params = urllib.parse.urlencode({"query": query, "format": "json", "resultType": "lite", "pageSize": 100,
@@ -883,22 +806,62 @@ def europepmc_items(spec, piece, cache, left_out, today):
             if not open_enough(art["licence"]):
                 refused += 1
                 continue
-            # The first day it was public (online); the issue date in the article can lie in the future.
-            when = B.iso_date(r.get("firstPublicationDate", "")) or art["date"]
-            credit = (f"{art['authors']}. {art['title']}. {art['journal']}, {when}."
-                      f"{(' DOI ' + art['doi'] + '.') if art['doi'] else ''}")
-            body = clean(art["body"], "https://europepmc.org/")
-            body += "<p>The article's list of references is left out; it is in the original.</p>"
-            out.append(item(f"https://europepmc.org/article/PMC/{pmcid}", art["title"] or r.get("title", ""), when,
-                            body, month_unit(when)[-4:], byline=credit, licence=art["licence"],
-                            licence_url=art["licence_url"] or B._licence_address(art["licence"])))
+            if wanted is None or wanted(art):
+                out.append((r, art))
         nxt = data.get("nextCursorMark")
         if not results or not nxt or nxt == cursor:
             break
         cursor = nxt
     if refused:
-        left_out.append({"title": f"{spec['series_title']}: {name}", "reason": f"{refused} articles were left out: "
-                         "their own licence is not CC BY or CC0, or their text could not be read."})
+        left_out.append({"title": title, "reason": f"{refused} articles were left out: their own licence is not "
+                         "CC BY or CC0, or their text could not be read."})
+    return out
+
+
+def epmc_credit(r, art):
+    """(date, credit line) of a Europe PMC article: the first day it was public online (the issue date in the
+    article can lie in the future), and its authors, title, journal, date and DOI."""
+    when = B.iso_date(r.get("firstPublicationDate", "")) or art["date"]
+    return when, (f"{art['authors']}. {art['title']}. {art['journal']}, {when}."
+                  f"{(' DOI ' + art['doi'] + '.') if art['doi'] else ''}")
+
+
+def europepmc_items(spec, piece, cache, left_out, today):
+    """The newest review articles on the topic piece (EPMC_TOPICS) in Europe PMC's open-access subset under CC BY
+    or CC0 (asked for in the search, and checked again in each article's own text), at most spec["per_piece"]."""
+    year = (today or datetime.date.today()).year
+    name, words = EPMC_TOPICS[piece]
+    query = (f"(TITLE:({words}) OR KW:({words})) AND (LICENSE:\"cc by\" OR LICENSE:\"cc0\") AND OPEN_ACCESS:y AND "
+             f"PUB_TYPE:\"review\" AND LANG:eng AND IN_EPMC:y AND FIRST_PDATE:[{year - spec['years_back']}-01-01 TO "
+             f"{year}-12-31]")
+    out = []
+    for r, art in epmc_articles(spec, query, spec.get("per_piece", 150), cache, left_out,
+                                f"{spec['series_title']}: {name}"):
+        when, credit = epmc_credit(r, art)
+        body = clean(art["body"], "https://europepmc.org/")
+        body += "<p>The article's list of references is left out; it is in the original.</p>"
+        out.append(item(f"https://europepmc.org/article/PMC/{r['pmcid']}", art["title"] or r.get("title", ""), when,
+                        body, month_unit(when)[-4:], byline=credit, licence=art["licence"],
+                        licence_url=art["licence_url"] or B._licence_address(art["licence"])))
+    out.sort(key=lambda i: i["date"], reverse=True)
+    return out
+
+
+def elife_digest_items(spec, piece, cache, left_out, today):
+    """The eLife digests (the plain-language summaries eLife's editors write for some of its papers) of the papers
+    first published in the year piece, taken from each paper's open-access full text in Europe PMC (CC BY or CC0,
+    checked per paper): the digest only, with the paper's credit. eLife's own API is not used (its robots.txt
+    disallows all)."""
+    query = (f"JOURNAL:\"eLife\" AND \"eLife digest\" AND OPEN_ACCESS:y AND (LICENSE:\"cc by\" OR LICENSE:\"cc0\") "
+             f"AND FIRST_PDATE:[{piece}-01-01 TO {piece}-12-31]")
+    out = []
+    for r, art in epmc_articles(spec, query, spec.get("limit", MAX_ITEMS), cache, left_out,
+                                f"{spec['series_title']}, {piece}", wanted=lambda a: bool(a["summary"])):
+        when, credit = epmc_credit(r, art)
+        body = clean(art["summary"], "https://elifesciences.org/")
+        out.append(item(f"https://europepmc.org/article/PMC/{r['pmcid']}", art["title"] or r.get("title", ""), when,
+                        body, month_unit(when), byline=f"Digest of: {credit}", licence=art["licence"],
+                        licence_url=art["licence_url"] or B._licence_address(art["licence"])))
     out.sort(key=lambda i: i["date"], reverse=True)
     return out
 
@@ -976,7 +939,10 @@ def atom_items(spec, piece, cache, left_out, today):
         when = B.iso_date(_words(e.find(f"{ATOM}published")) or _words(e.find(f"{ATOM}updated")))
         authors = "; ".join(_words(a.find(f"{ATOM}name")) for a in e.findall(f"{ATOM}author"))
         content = e.find(f"{ATOM}content")
-        body = clean(content.text if content is not None and content.text else "", link, whole)
+        raw = content.text if content is not None and content.text else ""
+        for pattern in spec.get("drop_html", []):                # invisible counters only, never text
+            raw = re.sub(pattern, "", raw)
+        body = clean(raw, link, whole)
         credit = f"{spec['credit']} " if spec.get("credit") else ""
         out.append(item(link, _words(e.find(f"{ATOM}title")), when, body, month_unit(when),
                         byline=f"{credit}By {authors}" if authors else credit.strip()))
@@ -1333,7 +1299,8 @@ def chronam_items(spec, piece, cache, left_out, today):
     return out
 
 
-DRIVERS = {"crs": crs_items, "amber_waves": amber_waves_items, "elife": elife_items, "europepmc": europepmc_items,
+DRIVERS = {"crs": crs_items, "amber_waves": amber_waves_items, "elife": elife_digest_items,
+           "europepmc": europepmc_items,
            "wordpress": wordpress_items, "atom": atom_items, "voa": voa_items, "milestones": milestones_items,
            "frus": frus_items, "chronam": chronam_items}
 
@@ -1433,9 +1400,11 @@ def catalogue_extra(book):
     name), series and piece (the source and which part of it), items (how many articles), newest and oldest (their
     publication dates), and note (for news: that it ages fast)."""
     dates = sorted(d for d in getattr(book, "item_dates", []) if d)
+    spec = SOURCES.get(getattr(book, "series", ""), {})
+    note = " ".join(x for x in (GROUP_NOTES.get(book.group, ""), spec.get("catalogue_note", "")) if x)
     return {"group_name": GROUPS.get(book.group, book.group), "series": getattr(book, "series", ""),
             "piece": getattr(book, "piece", ""), "items": len(book.pages), "newest": dates[-1] if dates else "",
-            "oldest": dates[0] if dates else "", "note": GROUP_NOTES.get(book.group, "")}
+            "oldest": dates[0] if dates else "", "note": note}
 
 
 def build_periodicals(keys, out_dir, cache=None, date=None, today=None):

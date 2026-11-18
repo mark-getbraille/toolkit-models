@@ -1627,31 +1627,95 @@ def part_html(text, start, end):
     """The text of pages start..end-1 as HTML paragraphs, with "[Page 12]" marks, and every figure's caption line
     ("Figure 4-12. Square knot") as a paragraph of its own marked as a figure, so the reader hears which drawing the
     text speaks of (the drawings themselves are not in the book)."""
-    parts = []
-    for n in range(start, end):
-        parts.append(f'<p class="pagenum" id="page-{n + 1}">[Page {n + 1}]</p>')
-        para = []
-        for line in text.lines(n) + [""]:
-            if line.startswith("• ") and para:            # a list item starts a paragraph of its own
-                parts.append(f"<p>{esc(' '.join(' '.join(para).split()))}</p>")
-                para = []
-            m = FIGURE_LINE.match(line)
-            if m and not re.search(r"\.{4,}|\s\d+-\d+\s*$", line) and not re.match(
-                    r"(shows?|illustrates?|is|are|gives|lists|depicts|contains|and|in|on|of|as|for|to)\b",
-                    m.group(2), re.I):                    # not a list-of-figures line nor a sentence about it
-                if para:
-                    parts.append(f"<p>{esc(' '.join(' '.join(para).split()))}</p>")
-                    para = []
-                parts.append(f'<p class="figure" role="note"><strong>{esc(m.group(1))}</strong> '
-                             f'{esc(m.group(2))} (a drawing in the original)</p>')
-            elif line.strip():
-                para.append(line)
-            elif para:
-                parts.append(f"<p>{esc(' '.join(' '.join(para).split()))}</p>")
-                para = []
+    return lines_html([(n, i, line) for n in range(start, end) for i, line in enumerate(text.lines(n) or [""])])
+
+
+def lines_html(items, headings=None):
+    """The HTML of a run of a PDF's lines [(page index, line number on the page, line)], as part_html describes: a
+    "[Page 12]" mark before each page's first line, paragraphs, list items and figure captions. headings: {position
+    in items: level} of lines that are headings (sections_of_pdf); they become <h2>/<h3> with their words unchanged."""
+    parts, para = [], []
+
+    def close():
+        """End the open paragraph."""
         if para:
             parts.append(f"<p>{esc(' '.join(' '.join(para).split()))}</p>")
+            para.clear()
+    for k, (n, i, line) in enumerate(items):
+        if i == 0:
+            close()
+            parts.append(f'<p class="pagenum" id="page-{n + 1}">[Page {n + 1}]</p>')
+        if headings and k in headings:
+            close()
+            parts.append(f"<h{headings[k]}>{esc(line)}</h{headings[k]}>")
+            continue
+        if line.startswith("• ") and para:            # a list item starts a paragraph of its own
+            close()
+        m = FIGURE_LINE.match(line)
+        if m and not re.search(r"\.{4,}|\s\d+-\d+\s*$", line) and not re.match(
+                r"(shows?|illustrates?|is|are|gives|lists|depicts|contains|and|in|on|of|as|for|to)\b",
+                m.group(2), re.I):                    # not a list-of-figures line nor a sentence about it
+            close()
+            parts.append(f'<p class="figure" role="note"><strong>{esc(m.group(1))}</strong> '
+                         f'{esc(m.group(2))} (a drawing in the original)</p>')
+        elif line.strip():
+            para.append(line)
+        if k + 1 == len(items) or items[k + 1][0] != n:
+            close()                                   # a paragraph ends with its page, as before
+    close()
     return "\n".join(parts)
+
+
+def sections_of_pdf(text):
+    """A rulebook's own numbered headings, found in its text in order: "Section 1: Introduction", then "1.1
+    Definition of braille", "1.2 ...", "Section 2: ...", and "Appendix 1: ...". A line counts only when it is the next
+    number expected (so contents lines, running heads and cross-references such as "Section 3.17 for the ..." are not
+    taken). Returns (items, headings, titles): every line of the PDF [(page index, line number, line)], {position:
+    level} and [(position, title)] of the headings."""
+    items = [(n, i, line) for n in range(text.count) for i, line in enumerate(text.lines(n) or [""])]
+    headings, titles = {}, []
+    section, sub, appendix = 0, 0, 0
+    for k, (_n, _i, line) in enumerate(items):
+        if "...." in line:
+            continue
+        m = re.fullmatch(r"Section (\d+): (\S.*)", line)
+        if m and int(m.group(1)) == section + 1:
+            section, sub = section + 1, 0
+            headings[k] = 2
+            titles.append((k, line))
+            continue
+        m = re.fullmatch(r"(\d{1,2})\.(\d{1,2}) (\S.*)", line)
+        if m and section and int(m.group(1)) == section and int(m.group(2)) == sub + 1:
+            sub += 1
+            headings[k] = 3
+            titles.append((k, line))
+            continue
+        m = re.fullmatch(r"Appendix (\d+): (\S.*)", line)
+        if m and section and int(m.group(1)) == appendix + 1:
+            appendix += 1
+            headings[k] = 2
+            titles.append((k, line))
+    return items, headings, titles
+
+
+def section_pages(text):
+    """[Page] of a rulebook split at its own numbered headings (sections_of_pdf): what comes before the first
+    section ("Front matter"), then one page per section and per numbered part of a section, then the appendices.
+    Only the places where pages begin change: every line stays, in order, so the pages read one after another are the
+    whole text (only format and navigation, which a no-changes licence allows)."""
+    items, headings, titles = sections_of_pdf(text)
+    starts = [0] + [k for k, _t in titles if k] if titles else [0]
+    names = dict(titles)
+    pages = []
+    for number, (a, b) in enumerate(zip(starts, starts[1:] + [len(items)]), 1):
+        if a == b:
+            continue
+        title = names.get(a, "Front matter")
+        first, last = items[a][0] + 1, items[b - 1][0] + 1
+        label = f"{title} (pages {first} to {last})" if last > first else f"{title} (page {first})"
+        part = {k - a: lvl for k, lvl in headings.items() if a <= k < b}
+        pages.append(Page(f"part-{number}-{slug(title, 40)}", label, lines_html(items[a:b], part), number))
+    return pages
 
 
 def pdfdoc_book(entry, work, cache=None, left_out=None):
@@ -1726,6 +1790,9 @@ def pdfdoc_book(entry, work, cache=None, left_out=None):
                 changes="its text made into web pages, one per chapter, with each drawing's caption kept as text"
                         + ("; parts about weapons and tactics left out" if entry.get("distribution_a") else ""))
     skipped = []
+    if entry.get("split_sections"):              # one page per numbered section of its own text (sections_of_pdf)
+        book.pages += section_pages(text)
+        return book
     for i, (part_title, start, end) in enumerate(manual_parts(local), 1):
         if entry.get("distribution_a") and NOT_FIELD_SAFE.search(part_title):
             if part_title not in skipped:

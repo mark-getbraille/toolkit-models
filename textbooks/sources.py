@@ -545,7 +545,7 @@ PDF_DOCS += [
     dict(name="iceb_rules_of_ueb_2024", title="Rules of Unified English Braille, Third Edition 2024",
          subject="Braille (Unified English Braille)", group="disability", country="International",
          publisher="International Council on English Braille (ICEB)", licence="CC BY-NC-ND 2.5 AU",
-         licence_url="https://creativecommons.org/licenses/by-nc-nd/2.5/au/", unchanged=True,
+         licence_url="https://creativecommons.org/licenses/by-nc-nd/2.5/au/", unchanged=True, split_sections=True,
          pdf="https://iceb.org/wp-content/uploads/2025/10/Rules-of-Unified-English-Braille-2024.pdf",
          page="https://iceb.org/ueb.html", licence_page="https://iceb.org/ueb.html",
          licence_text=r"Rules of Unified English Braille",
