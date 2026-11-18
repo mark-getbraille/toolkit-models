@@ -6,6 +6,11 @@
 # added to it, up to its limit (build_packs.py --top-up). If the pass fails or finds nothing new, the published pack
 # stays as it is. A top-up pack's files are named <key>.pass<N>.zip; the last job removes a pack's old files once
 # packs.json names the new ones.
+# Pictures that pass every rule but were dropped only because their description is missing or poor are set aside
+# (build_packs.py needs_description) and published in a SEPARATE release, "needs-description", as
+# needs-<key>.v<N>.zip with needs-manifest.json (the release "training-data" is not touched by this). A key written
+# with a question mark ("loc_fsa?") asks for a "needs only" run: the pack's listing is read again and only its
+# set-aside pictures are collected and published; the pack itself is not built, changed or republished.
 name: Build training packs
 
 on:
@@ -15,7 +20,7 @@ on:
   workflow_dispatch:
     inputs:
       keys:
-        description: "Pack keys, separated by commas, or all (a key with a plus, as loc_fsa+, adds to the published pack)"
+        description: "Pack keys, separated by commas, or all (loc_fsa+ adds to the published pack; loc_fsa? collects only the pictures that need a description)"
         required: true
         default: "all"
 
@@ -83,8 +88,12 @@ jobs:
                    "vcoco_actions", "vg_people_actions", "open_images_activities", "commons_daily_life",
                    "dollar_street_routines", "coco_actions_nc", "coco_actions_sa"]
           words = [w for w in sys.argv[1].split(",") if w]
-          # "key+" is a top-up pass of key (kept with its plus, which the build job reads).
-          keys = known if words in ([], ["all"]) else [w for w in words if w.rstrip("+") in known]
+          # "key+" is a top-up pass of key and "key?" a needs-only run (kept with the mark, which the build job reads);
+          # "all?" asks for a needs-only run of every pack.
+          if words in (["all?"],):
+              keys = [k + "?" for k in known]
+          else:
+              keys = known if words in ([], ["all"]) else [w for w in words if w.rstrip("+?") in known]
           print("keys=" + json.dumps(keys))
           PY
 
@@ -111,8 +120,11 @@ jobs:
         run: |
           python -m pip install requests pillow pyarrow "huggingface_hub>=0.34"
           key="${{ matrix.key }}"
-          # The packs in other languages are also translated into English (OPUS-MT, on the processor).
-          case "${key%+}" in
+          key="${key%+}"
+          # The packs in other languages are also translated into English (OPUS-MT, on the processor); a needs-only
+          # run ("key?") translates nothing.
+          if [ "${key%\?}" != "$key" ]; then key="needs-only"; fi
+          case "$key" in
             ksamsok|rijksmuseum|coco_cn|europeana_fi|europeana_cs|europeana_hu|europeana_el|europeana_no|europeana_pl|smk|anefo)
               python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
               python -m pip install "transformers==4.57.6" "sentencepiece==0.2.1" "sacremoses==0.1.1" ;;
@@ -127,6 +139,7 @@ jobs:
         run: |
           key="${{ matrix.key }}"
           key="${key%+}"                 # "key+": a top-up pass of key
+          key="${key%\?}"                # "key?": a needs-only run of key
           case "$key" in
             smithsonian) limit=6000 ;;
             coco_questions) limit=8000 ;;
@@ -323,11 +336,16 @@ jobs:
             coco_actions_nc) limit=16200 ;;
             coco_actions_sa) limit=2400 ;;
           esac
-          topup=""
-          if [ "$key" != "${{ matrix.key }}" ]; then topup="--top-up"; fi
-          # Stop downloading after 290 minutes, keeping what has come, so the pack is published within the job's time.
+          mode=""
+          case "${{ matrix.key }}" in
+            *+) mode="--top-up" ;;
+            *\?) mode="--needs-only" ;;
+          esac
+          # Stop downloading after 290 minutes, keeping what has come, so the pack is published within the job's time;
+          # the pictures set aside for a description then get up to 25 minutes more to download.
           # A top-up pass that adds nothing writes no manifest: the next step then publishes nothing.
-          PACK_TIME_LIMIT_MINUTES=290 python packs/build_packs.py "$key" --out build/packs --limit "$limit" $topup
+          PACK_TIME_LIMIT_MINUTES=290 NEEDS_TIME_LIMIT_MINUTES=25 \
+            python packs/build_packs.py "$key" --out build/packs --limit "$limit" $mode
       - name: Upload it to the release
         run: |
           gh release view training-data > /dev/null 2>&1 || gh release create training-data \
@@ -335,6 +353,7 @@ jobs:
             --notes "Picture packs for the Picture Model Training Kit (packs/build_packs.py); each zip has CREDITS.txt."
           key="${{ matrix.key }}"
           key="${key%+}"
+          key="${key%\?}"
           if [ ! -f "build/packs/manifest-$key.json" ]; then
             echo "Nothing new to publish for $key: the published pack is kept as it was."
             exit 0
@@ -344,6 +363,28 @@ jobs:
           for f in $files manifest-$key.json; do
             for attempt in 1 2 3 4; do
               gh release upload training-data "build/packs/$f" --clobber && break
+              sleep 30
+            done
+          done
+      - name: Upload the pictures that need a description
+        run: |
+          # A separate release: training-data is never touched here. The zip has a new name for each version
+          # (needs-<key>.v<N>.zip), so someone downloading the old one while this runs still gets a whole file.
+          gh release view needs-description > /dev/null 2>&1 || gh release create needs-description \
+            --title "Pictures that need a description" \
+            --notes "Pictures the pack builders set aside because their description was missing or poor (packs/build_packs.py needs_description). Each needs-<key>.vN.zip opens in the training kit's Describe pictures (Import a package) or with Build a Review Pack.cmd. Nothing here is trained on until a person describes and checks it."
+          key="${{ matrix.key }}"
+          key="${key%+}"
+          key="${key%\?}"
+          if [ ! -f "build/packs/needs-manifest-$key.json" ]; then
+            echo "No pictures were set aside for a description in $key."
+            exit 0
+          fi
+          file=$(python -c "import json;print(json.load(open('build/packs/needs-manifest-$key.json'))['file'])")
+          # The zip first, its manifest last, so needs-manifest.json never names a file that is not there yet.
+          for f in $file needs-manifest-$key.json; do
+            for attempt in 1 2 3 4; do
+              gh release upload needs-description "build/packs/$f" --clobber && break
               sleep 30
             done
           done
@@ -389,4 +430,52 @@ jobs:
           for f in $(cat stale.txt); do
             echo "Removing $f (an earlier file of its pack)"
             gh release delete-asset training-data "$f" --yes || true
+          done
+
+  needs-manifest:
+    needs: build
+    if: always()
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Merge the needs zips' manifests into needs-manifest.json
+        run: |
+          gh release view needs-description > /dev/null 2>&1 || { echo "No needs-description release yet."; exit 0; }
+          mkdir -p merged && cd merged
+          gh release download needs-description -p 'needs-manifest-*.json' --clobber || true
+          python3 - <<'PY'
+          import glob, json
+          needs = {}
+          for path in sorted(glob.glob("needs-manifest-*.json")):
+              data = json.load(open(path))
+              needs[data["key"]] = data
+          json.dump(needs, open("needs-manifest.next.json", "w"), indent=1)
+          print(json.dumps(needs, indent=1))
+          PY
+          # Replace needs-manifest.json without a moment when a reader finds none: the new copy is uploaded as
+          # needs-manifest.next.json first (readers fall back to it), the old one is removed and the new one renamed.
+          repo="${{ github.repository }}"
+          gh release upload needs-description needs-manifest.next.json --clobber
+          assets="repos/$repo/releases/tags/needs-description"
+          old=$(gh api "$assets" --jq '.assets[] | select(.name=="needs-manifest.json") | .id')
+          if [ -n "$old" ]; then gh api -X DELETE "repos/$repo/releases/assets/$old"; fi
+          new=$(gh api "$assets" --jq '.assets[] | select(.name=="needs-manifest.next.json") | .id')
+          gh api -X PATCH "repos/$repo/releases/assets/$new" -f name=needs-manifest.json > /dev/null
+      - name: Remove needs zips that needs-manifest.json no longer names
+        run: |
+          gh release view needs-description > /dev/null 2>&1 || exit 0
+          cd merged
+          gh release view needs-description --json assets -q '.assets[].name' > assets.txt
+          python3 - > stale.txt <<'PY'
+          import json, re
+          needs = json.load(open("needs-manifest.next.json"))
+          for asset in open("assets.txt").read().split():
+              m = re.match(r"^needs-(.+)\.v\d+\.zip$", asset)
+              if m and m.group(1) in needs and asset != needs[m.group(1)]["file"]:
+                  print(asset)
+          PY
+          for f in $(cat stale.txt); do
+            echo "Removing $f (an earlier version of its needs zip)"
+            gh release delete-asset needs-description "$f" --yes || true
           done
