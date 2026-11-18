@@ -42,6 +42,7 @@ def test_sample_book(tmp_path):
     assert entry["licence"] == "CC BY 4.0" and entry["credit"] == "OpenStax, Rice University"
     path = os.path.join(out, entry["file"])
     assert entry["size"] == os.path.getsize(path) and len(entry["sha256"]) == 64
+    assert "published" in entry and "region" in entry
     with open(path, "rb") as f:
         assert struct.unpack("<I", f.read(4))[0] == 72173914
     book = B.osbooks_books(repo)[0]
@@ -163,8 +164,176 @@ def test_reference_sources():
     for e in sources.NONPROFIT:
         assert B.licence_kind(B.licence_short(e["licence"])) and e["content"] and e["licence_text"]
     for e in sources.PDF_DOCS:
-        assert e["group"] in ("fieldmanual", "government", "university", "course")
+        assert e["group"] in sources.GROUPS
         assert B.licence_kind(e["licence"]) == "open"
         assert e.get("archive") or (e.get("page") and e.get("licence_text"))
         if e.get("archive"):
             assert e["distribution_a"] and not B.NOT_FIELD_SAFE.search(e["title"])
+        if e.get("pdf"):
+            assert e["pdf"].startswith("https://") and e.get("licence_page") and e.get("licence_text")
+
+
+# ---------------------------------------------------------------- publication dates, laws and government guides
+
+
+def test_dates():
+    """Dates written in the usual ways become "YYYY-MM-DD" (or "YYYY-MM", "YYYY"); a web page's own "last reviewed"
+    or modified date is found; the newest of several is chosen."""
+    assert B.iso_date("2025-04-10T16:00:15+00:00") == "2025-04-10"
+    assert B.iso_date("D:20250410120000Z") == "2025-04-10" and B.iso_date("20240103") == "2024-01-03"
+    assert B.iso_date("07 April 2025") == "2025-04-07" and B.iso_date("OCT 29, 2026") == "2026-10-29"
+    assert B.iso_date("November 2024") == "2024-11" and B.iso_date("(FM 5-125, 1995)") == "1995"
+    assert B.iso_date("no date here") == ""
+    assert B.page_date('<p>Page last reviewed: 07 April 2025</p>') == "2025-04-07"
+    assert B.page_date('<meta name="govuk:public-updated-at" content="2024-11-06T10:53:35+00:00">') == "2024-11-06"
+    assert B.page_date('{"dateModified": "2026-05-05T12:00:00Z"}') == "2026-05-05"
+    assert B.newest_date(["2024", "", "2025-01-02", "2024-12"]) == "2025-01-02"
+
+
+CFR_XML = """<?xml version="1.0"?><CFRGRANULE><FDSYS><CFRTITLE>99</CFRTITLE><DATE>2025-07-01</DATE></FDSYS>
+<PART><EAR>Pt. 900</EAR><HD SOURCE="HED">PART 900—MADE-UP RULES FOR TESTING</HD>
+<CONTENTS><SUBPART><HD SOURCE="HED">Subpart A—General</HD><SECTNO>900.1</SECTNO><SUBJECT>TOC ONLY</SUBJECT>
+</SUBPART></CONTENTS>
+<AUTH><HD SOURCE="HED">Authority:</HD><P>99 U.S.C. 1.</P></AUTH>
+<SUBPART><HD SOURCE="HED">Subpart A—General</HD>
+<SECTION><SECTNO>§ 900.1</SECTNO><SUBJECT>What is this part for?</SUBJECT>
+<P>(a) It tests the <E T="03">builder</E>.</P><PRTPAGE P="12"/></SECTION>
+<SECTION><SECTNO>§ 900.2</SECTNO><SUBJECT>Definitions.</SUBJECT><P>A word means a word.</P>
+<GPOTABLE><TTITLE>Table 1—Sizes</TTITLE><BOXHD><CHED>Item</CHED><CHED>Size</CHED></BOXHD>
+<ROW><ENT>Cane</ENT><ENT>1 m</ENT></ROW></GPOTABLE></SECTION></SUBPART>
+<SUBPART><HD SOURCE="HED">Subpart F—Relay Services</HD>
+<SECTION><SECTNO>§ 900.601</SECTNO><SUBJECT>Relay.</SUBJECT><P>Relay text.</P></SECTION></SUBPART>
+<APPENDIX><HD SOURCE="HED">Appendix A to Part 900—Forms</HD><P>A form.</P><GPH><GID>X</GID></GPH></APPENDIX>
+</PART></CFRGRANULE>"""
+
+LAW_PAGES = {
+    "https://law.example.gov/robots.txt": "User-agent: *\nDisallow: /private/\n",
+    "https://law.example.gov/policy": "<p>Anyone may copy our laws without charge.</p>",
+    "https://law.example.gov/act/full": (
+        "<nav>MENU</nav><div id='doc'><p>Act current to 2026-10-29 and last amended on 2024-03-01.</p>"
+        "<h1>Made-up Access Act</h1><p>An Act to test the builder, with an introduction long enough to keep as a "
+        "page of its own, because it says what the Act is for and who it applies to.</p>"
+        "<h2 class='Part'>PART 1 Interpretation</h2><p class='MarginalNote'>Definitions</p><p><strong>1</strong> "
+        "In this Act, <a href='#x'>barrier</a> means anything that hinders.</p><div class='note'>EDITORIAL</div>"
+        "<h2 class='Part'>PART 2 Duties</h2><h3>(1) Plans</h3><p><strong>2</strong> Everyone must plan.</p>"
+        "</div><footer>footer</footer>"),
+}
+LAW = {
+    "name": "madeup_access_act", "title": "Made-up Access Act", "subject": "Disability rights", "group": "law",
+    "publisher": "Made-up Justice Department", "country": "Canada", "region": "Testland", "licence": "PD",
+    "licence_url": "https://law.example.gov/policy", "licence_page": "https://law.example.gov/policy",
+    "licence_text": r"Anyone may copy our laws", "source": "https://law.example.gov/act/full",
+    "description": "A made-up law.", "notice": "This copy is not the official version.",
+    "urls": ["https://law.example.gov/act/full"], "content": (r"<div id='doc'>", r"<footer"),
+    "split": r"<h2 class='Part'", "drop": [r"<div class='note'>.*?</div>"],
+    "rewrite": [(r"<h3>(\(\d+\))\s*([^<]*)</h3>", r"<p>\1 \2</p>")],
+    "date_pattern": r"last amended on (\d{4}-\d\d-\d\d)",
+}
+
+
+def test_cfr_xml():
+    """A CFR part from govinfo's XML: subparts and sections become headings (the table of contents and printed page
+    numbers are left out), italics, tables with their title, the authority note and a drawing's place are kept;
+    one subpart can be taken alone; the pages are one per section, listed under their subpart."""
+    body = B.cfr_xml_html(CFR_XML)
+    assert "TOC ONLY" not in body and "Pt. 900" not in body and "MADE-UP RULES" not in body
+    assert '<h2 class="cfr-subpart">Subpart A—General</h2>' in body
+    assert '<h3 class="cfr-section">§ 900.1 What is this part for?</h3>' in body and "<em>builder</em>" in body
+    assert "<caption>Table 1—Sizes</caption>" in body and "<th>Item</th>" in body and "<td>1 m</td>" in body
+    assert "Authority: 99 U.S.C. 1." in body and "drawing or formula" in body
+    only_f = B.cfr_xml_html(CFR_XML, "F")
+    assert "Relay text." in only_f and "900.1" not in only_f
+    pages = B.law_pages(body, {"split": r'<h3 class="cfr-section"', "unit": r'<h2 class="cfr-subpart"'})
+    titles = [(u, t) for u, t, _b in pages]
+    assert ("Subpart A—General", "§ 900.2 Definitions.") in titles
+    assert ("Subpart F—Relay Services", "§ 900.601 Relay.") in titles
+    assert titles[-1][1].startswith("Appendix A to Part 900")
+
+
+def test_govinfo_edition(monkeypatch):
+    """The newest annual edition is found: missing years (404) are skipped and a volume number one off is tried."""
+    import datetime
+    year = datetime.date.today().year - 1
+    url = f"https://www.govinfo.gov/content/pkg/CFR-{year}-title99-vol3/xml/CFR-{year}-title99-vol3-part900.xml"
+    monkeypatch.setattr(B, "fetch", _fake_fetch({url: CFR_XML}))
+    assert B.govinfo_edition("cfr", {"title": 99, "volume": 2, "part": 900}) == (url, CFR_XML)
+    import pytest
+    with pytest.raises(LookupError):
+        B.govinfo_edition("usc", {"title": 99, "file": "chap1"})
+
+
+def test_lawdoc_book(monkeypatch):
+    """A law from its official full-text page: the licence page is checked, menus, editorial notes and links are
+    left out, one page per part with an introduction, the publication date and region recorded, and the licence's
+    notice on the welcome page."""
+    monkeypatch.setattr(B, "fetch", _fake_fetch(LAW_PAGES))
+    monkeypatch.setattr(B, "_robots", {})
+    left = []
+    book = B.lawdoc_book(LAW, None, left)
+    assert not left and book.group == "law" and book.region == "Testland" and book.published == "2024-03-01"
+    assert [p.title for p in book.pages] == ["Introduction", "PART 1 Interpretation", "PART 2 Duties"]
+    part1 = book.pages[1].body
+    assert "EDITORIAL" not in part1 and "MENU" not in part1 and "<a" not in part1 and "barrier" in part1
+    assert "<p>(1) Plans</p>" in book.pages[2].body
+    assert "not the official version" in B.index_page(book) and "Published (or last revised): 2024-03-01" in \
+        B.index_page(book)
+    assert "not an official version" in B.credit_line(book)
+
+
+def test_lawdoc_licence_gone(monkeypatch):
+    """A law whose licence page no longer says what was checked is left out."""
+    pages = dict(LAW_PAGES)
+    pages["https://law.example.gov/policy"] = "<p>All rights reserved.</p>"
+    monkeypatch.setattr(B, "fetch", _fake_fetch(pages))
+    monkeypatch.setattr(B, "_robots", {})
+    left = []
+    assert B.lawdoc_book(LAW, None, left) is None and "no longer states" in left[0]["reason"]
+
+
+def test_government_guide(monkeypatch):
+    """A government guide: its group is its own, pages are found through a sitemap index, a guide's one-page
+    "/print" version is read when there is one (else the page itself), and its newest page date is recorded."""
+    pages = {
+        "https://gov.example.gov/robots.txt": "User-agent: *\nDisallow:\n",
+        "https://gov.example.gov/policy": "<p>Our content is in the public domain.</p>",
+        "https://gov.example.gov/sitemap.xml": "<sitemapindex><sitemap><loc>https://gov.example.gov/sitemap-1.xml</loc>"
+                                               "</sitemap></sitemapindex>",
+        "https://gov.example.gov/sitemap-1.xml": "<urlset><url><loc>https://gov.example.gov/help/benefits</loc></url>"
+                                                 "<url><loc>https://gov.example.gov/help/taxes</loc></url></urlset>",
+        "https://gov.example.gov/help/benefits/print": '<main><h1>Benefits</h1><p>All parts.</p></main>'
+                                                       '<p>Page last reviewed: 07 April 2025</p>',
+        "https://gov.example.gov/help/taxes": '<main><h1>Taxes</h1><p>One part.</p></main>'
+                                              '<meta name="govuk:public-updated-at" content="2026-01-02T00:00:00Z">',
+    }
+    entry = dict(GUIDE, name="gov_guide", group="consumer", region="", licence="PD",
+                 licence_page="https://gov.example.gov/policy", licence_text=r"in the public domain", page_mark="",
+                 start=[], units="", pages=r"^https://gov\.example\.gov/help/[a-z]+$",
+                 sitemap="https://gov.example.gov/sitemap.xml", content=(r"<main>", r"</main>"),
+                 fetch_as=(r"$", "/print"))
+    monkeypatch.setattr(B, "fetch", _fake_fetch(pages))
+    monkeypatch.setattr(B, "_robots", {})
+    left = []
+    book = B.webguide_book(entry, None, left)
+    assert book.group == "consumer" and [p.title for p in book.pages] == ["Benefits", "Taxes"]
+    assert "All parts." in book.pages[0].body and book.published == "2026-01-02"
+
+
+def test_new_sources():
+    """Every law and government guide has a unique name, an allowed licence, a group the toolkit knows, a licence
+    page and line to check at every build, and where its text is; the keys expand as the workflow expects."""
+    names = [e["name"] for e in sources.NONPROFIT + sources.PDF_DOCS + sources.GOV_GUIDES + sources.LAWS +
+             sources.LAWS_MORE] + [d[2] for d in sources.DSPACE]
+    assert len(names) == len(set(names))
+    for e in sources.LAWS + sources.LAWS_MORE:
+        assert e["group"] in sources.GROUPS and B.licence_kind(e["licence"]) == "open"
+        assert e["licence_page"].startswith("https://") and e["licence_text"] and e["split"]
+        assert e.get("cfr") or e.get("usc") or e.get("urls")
+    for e in sources.GOV_GUIDES:
+        assert e["group"] in sources.GROUPS
+        assert B.licence_kind(e["licence"]) or B.licence_kind(B.licence_short(e["licence"]))
+        assert e["licence_page"] and e["licence_text"] and e["content"]
+    keys = sources.expand_keys(["all"])
+    assert "law:us_code_ada" in keys and "guide:cfpb_ask_cfpb" in keys
+    assert not any(k == f"law:{e['name']}" for e in sources.LAWS_MORE for k in keys)
+    assert "law:cfr_12_1026_regulation_z" in sources.expand_keys(["laws-more"])
+    assert "pdf:medicare_and_you" in sources.expand_keys(["group:health"])

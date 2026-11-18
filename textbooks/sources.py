@@ -264,6 +264,18 @@ PDF_DOCS += [
                      "care, patient care, pharmacy, laboratory, dental and preventive medicine."),
 ]
 
+# When each manual and course was published (the year on its own title page; "published" in textbooks.json, which the
+# toolkit uses to rank newer works higher).
+PUBLISHED_YEARS = {
+    "army_atp_3_50_21_survival": "2018", "army_fm_4_25_11_first_aid": "2002", "army_fm_3_25_26_map_reading": "2001",
+    "army_fm_4_25_12_field_sanitation": "2002", "army_fm_5_125_rigging": "1995",
+    "army_tc_3_97_61_mountaineering": "2025-11", "army_tc_21_3_cold_weather": "1986", "navy_basic_machines": "1994",
+    "navy_culinary_specialist": "2010", "navy_hospital_corpsman": "2000",
+}
+for _e in PDF_DOCS:
+    if _e["name"] in PUBLISHED_YEARS:
+        _e["published"] = PUBLISHED_YEARS[_e["name"]]
+
 # United Kingdom: Maritime and Coastguard Agency and Ministry of Defence publications on gov.uk ("All content is
 # available under the Open Government Licence v3.0, except where otherwise stated", checked on each publication page
 # at every build; the PDFs say "© Crown copyright"). Checked by hand on 2026-11-18.
@@ -340,8 +352,14 @@ PDF_DOCS += [
                      "one."),
 ]
 
+# Federal laws of Canada: the Reproduction of Federal Law Order (SI/97-5) allows copying and publishing them without
+# charge (with due diligence for accuracy, and a copy is not presented as the official version: said on each book's
+# welcome page).
+CANADA_LAW = "Reproduction of Federal Law Order (Canada)"
+
 ALLOWED = {
     "CC0": "open", "PD": "open", "OGL": "open", "CC BY": "open", "CC BY-SA": "share-alike",
+    CANADA_LAW: "open",
     US_GOV: "open", "OGL-UK-3.0": "open", "OGL-Alberta": "open", "OGL-Canada": "open", "OGL-Ontario": "open", "OGL-BC": "open",
     "CC BY-NC": "non-commercial", "CC BY-NC-SA": "non-commercial",
 }
@@ -449,3 +467,546 @@ COURSES_AND_FORCES_NOT_INCLUDED = [
     ("Irish Defence Forces and Irish Coast Guard", "Not checked in this search."),
 ]
 NOT_INCLUDED = NOT_INCLUDED + NONPROFIT_NOT_INCLUDED + COURSES_AND_FORCES_NOT_INCLUDED
+
+# ====================================================================== reference groups added on 2026-11-18
+# The toolkit's collections ("group" in textbooks.json -> the name it shows). New keys: law, consumer, health,
+# disability, science.
+GROUPS = {
+    "textbooks": "Textbooks", "reference": "Reference works", "nonprofit": "Reference, non-profits",
+    "government": "Reference, governments", "university": "Reference, universities",
+    "fieldmanual": "Reference, field manuals", "course": "Courses",
+    "law": "Reference, laws and rights", "consumer": "Reference, consumer and money",
+    "health": "Reference, health and safety", "disability": "Reference, disability and accessibility",
+    "science": "Reference, science and nature",
+}
+
+# US federal works: 17 U.S.C. 105, as quoted on govinfo.gov's policy page (checked at every build for the laws, the
+# IRS and Medicare publications, whose own sites state no copyright policy).
+GOVINFO_POLICY = "https://www.govinfo.gov/about/policies"
+GOVINFO_TEXT = r"Copyright protection under this title is not available for any work of the United States Government"
+DOJ_POLICY = "https://www.justice.gov/legalpolicies"
+DOJ_TEXT = r"Unless otherwise indicated, information on Department of Justice websites is in the public domain"
+
+LICENCE_LINES.update({
+    "us_federal": "govinfo.gov/about/policies (Public Domain & Copyright Notice): \"Title 17, Section 105, United "
+                  "States Code, provides that: Copyright protection under this title is not available for any work "
+                  "of the United States Government\". Used for the US Code and the Code of Federal Regulations (from "
+                  "govinfo.gov), and for IRS and Medicare publications.",
+    "doj_ada": "www.justice.gov/legalpolicies: \"Unless otherwise indicated, information on Department of Justice "
+               "websites is in the public domain and may be copied and distributed without permission.\" (ADA.gov is "
+               "the Department of Justice's ADA website.)",
+    "section508": "www.section508.gov/website-policies/: \"Most material on our site is free of copyright and may be "
+                  "copied and distributed without permission.\"",
+    "cfpb": "www.consumerfinance.gov/privacy/website-privacy-policy/: \"Information created by the CFPB is in the "
+            "public domain and you may reproduce, publish, or otherwise use it without the Bureau's permission.\"",
+    "niddk": "www.niddk.nih.gov/copyright: \"The majority of information on this site is copyright free and can be "
+             "freely downloaded and reproduced.\" (\"Generally, copyrighted materials will include a copyright "
+             "statement.\")",
+    "fda": "www.fda.gov website policies: the contents of the FDA website \"both text and graphics — are not "
+           "copyrighted. They are in the public domain and may be republished, reprinted and otherwise used freely by "
+           "anyone without the need to obtain permission from FDA.\"",
+    "nci": "www.cancer.gov/policies/copyright-reuse: \"Unless otherwise indicated, all text within National Cancer "
+           "Institute (NCI) products is free of copyright and may be reused without our permission.\" Graphics are a "
+           "mix, so only text and picture descriptions are kept; changed pages say they are adapted from NCI.",
+    "usgs": "www.usgs.gov/information-policies-and-instructions/copyrights-and-credits: \"While the content of most "
+            "USGS websites is in the U.S. Public Domain, not all information, illustrations, or photographs on our "
+            "site are.\" (text kept, pictures left out)",
+    "nhs": "www.nhs.uk/our-policies/terms-and-conditions/: \"Copyright and database rights in NHS Website Content are "
+           "released free-of-charge under the current version of the Open Government Licence (\"OGL\"), except where "
+           "specified\".",
+    "legislation_gov_uk": "Every legislation.gov.uk page: \"All content is available under the Open Government Licence "
+                          "v3.0 except where otherwise stated\".",
+    "justice_laws_canada": "Reproduction of Federal Law Order, SI/97-5 (laws-lois.justice.gc.ca): \"Anyone may, "
+                           "without charge or request for permission, reproduce enactments and consolidations of "
+                           "enactments of the Government of Canada ... provided due diligence is exercised in ensuring "
+                           "the accuracy of the materials reproduced and the reproduction is not represented as an "
+                           "official version.\"",
+})
+
+# ---------------------------------------------------------------------- laws and regulations (lawdoc_book, key law:)
+# Each is one ZIM book, so a reader downloads only the laws wanted. Fields: see build_textbooks.lawdoc_book and
+# law_pages. US laws come from govinfo.gov's annual editions (the newest one is found at build time).
+US_LAW = dict(group="law", country="United States", licence=US_GOV, licence_url=US_GOV_URL,
+              licence_page=GOVINFO_POLICY, licence_text=GOVINFO_TEXT)
+CFR = dict(US_LAW, publisher="Office of the Federal Register (Code of Federal Regulations, annual edition from "
+           "govinfo.gov)", split=r'<h3 class="cfr-section"', unit=r'<h2 class="cfr-subpart"')
+USC = dict(US_LAW, publisher="Office of the Law Revision Counsel, US House of Representatives (United States Code, "
+           "from govinfo.gov)", content=(r"<body[^>]*>", r"</body>"), split=r'<h3 class="section-head"',
+           unit=r'<h3 class="subchapter-head"',
+           drop=[r'<h4 class="note-head">.*?(?=<h3 class="(?:section|subchapter)-head"|\Z)',
+                 r'<div class="analysis">.*?</div>', r"<!--.*?-->"])
+
+
+def _cfr(name, title, subject, t, vol, part, description, subpart="", group="law"):
+    """A CFR part as a LAWS entry."""
+    where = f"title-{t}/part-{part}" + (f"/subpart-{subpart}" if subpart else "")
+    return dict(CFR, name=name, title=title, subject=subject, group=group,
+                cfr=dict(title=t, volume=vol, part=part, subpart=subpart),
+                source=f"https://www.ecfr.gov/current/{where}", description=description)
+
+
+def _usc(name, title, subject, t, files, description):
+    """Chapters of the US Code as a LAWS entry."""
+    return dict(USC, name=name, title=title, subject=subject, usc=[dict(title=t, file=f) for f in files],
+                source=f"https://uscode.house.gov/browse/prelim@title{t}", description=description)
+
+
+CANADA = dict(group="law", country="Canada", licence=CANADA_LAW,
+              licence_url="https://laws-lois.justice.gc.ca/eng/regulations/SI-97-5/FullText.html",
+              licence_page="https://laws-lois.justice.gc.ca/eng/regulations/SI-97-5/FullText.html",
+              licence_text=r"Anyone may, without charge or request for permission, reproduce enactments",
+              publisher="Department of Justice Canada (Justice Laws website)",
+              notice="This copy is not the official version; the official version is on the Justice Laws website "
+                     "(laws-lois.justice.gc.ca).",
+              content=(r"<div class='docContents' id='docCont'>", r"<footer|</main>"),
+              split=r'<h2 class="(?:Part|Subheading)"', date_pattern=r"last amended(?:</a>)? on (\d{4}-\d\d-\d\d)")
+
+
+def _canada(name, title, subject, path, description):
+    """A federal act or regulation of Canada from Justice Laws (path "acts/A-0.6")."""
+    url = f"https://laws-lois.justice.gc.ca/eng/{path}/FullText.html"
+    return dict(CANADA, name=name, title=title, subject=subject, urls=[url], source=url, description=description)
+
+
+# legislation.gov.uk makes every subsection number, such as "(1)" or "(a)", a heading of its own; they become the
+# start of their paragraph (a number can be wrapped in <ins> when it was inserted by a later act).
+UK_NUMBER = r'<h[2-6]><span class="num">((?:<[^>]+>)*\([^<]*\)(?:</[^>]+>)*)</span></h[2-6]>'
+UK_LAW = dict(group="law", country="United Kingdom", licence="OGL-UK-3.0",
+              licence_url="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/",
+              licence_text=r"Open Government Licence v3\.0", publisher="The National Archives (legislation.gov.uk)",
+              content=(r"<article\b[^>]*>", r"</article>"), split=r'<section class="(?:section|schedule)"',
+              unit=r'<section class="(?:part|chapter)"',
+              drop=[r'<footer class="annotations">.*?</footer>', r'<a class="noteRef[^"]*"[^>]*>.*?</a>',
+                    r'<span class="noteRef[^"]*"[^>]*>.*?</span>'],
+              rewrite=[(UK_NUMBER + r"((?:\s*<div\b[^>]*>)*)\s*<p>", r"\2<p>\1 "),   # "(1)" starts its paragraph
+                       (UK_NUMBER, r"<span>\1 </span>"),
+                       (r'</span><span class="heading">', '</span> <span class="heading">')],
+              date_pattern=r'http-equiv="Last-Modified" content="([0-9-]+)',
+              notice="Revised (consolidated) text as published on legislation.gov.uk; amendment notes left out.")
+
+
+def _uk(name, title, subject, path, description):
+    """A UK act from legislation.gov.uk (path "ukpga/2010/15")."""
+    return dict(UK_LAW, name=name, title=title, subject=subject,
+                licence_page=f"https://www.legislation.gov.uk/{path}/contents",
+                urls=[f"https://www.legislation.gov.uk/{path}/data.html"],
+                source=f"https://www.legislation.gov.uk/{path}/contents", description=description)
+
+
+LAWS = [
+    # United States Code (statutes)
+    _usc("us_code_ada", "Americans with Disabilities Act (42 U.S.C. chapter 126)", "Disability rights", 42,
+         ["chap126"], "The Americans with Disabilities Act as codified in the United States Code: employment, state "
+         "and local government services and public transportation, public accommodations, telecommunications relay "
+         "services, and miscellaneous provisions."),
+    _usc("us_code_rehabilitation_act", "Rehabilitation Act (29 U.S.C. chapter 16)", "Disability rights", 29,
+         ["chap16"], "The Rehabilitation Act of 1973 as codified: vocational rehabilitation services, independent "
+         "living, the Access Board, and sections 501, 503, 504 and 508 (nondiscrimination and accessible "
+         "electronic and information technology)."),
+    _usc("us_code_idea", "Individuals with Disabilities Education Act (20 U.S.C. chapter 33)", "Disability and "
+         "education", 20, ["chap33"], "The Individuals with Disabilities Education Act (IDEA) as codified: free "
+         "appropriate public education, individualized education programs, procedural safeguards, and early "
+         "intervention for infants and toddlers."),
+    _usc("us_code_fair_housing", "Fair Housing Act (42 U.S.C. chapter 45)", "Housing rights", 42, ["chap45"],
+         "The Fair Housing Act as codified: discrimination in the sale, rental and financing of housing, including "
+         "reasonable accommodations and accessible design for people with disabilities, and enforcement."),
+    _usc("us_code_consumer_credit", "Consumer Credit Protection Act (15 U.S.C. chapter 41)", "Consumer credit", 15,
+         ["chap41"], "The Consumer Credit Protection Act as codified: Truth in Lending, Fair Credit Billing, Fair "
+         "Credit Reporting, Equal Credit Opportunity, Fair Debt Collection Practices and Electronic Fund Transfers."),
+    _usc("us_code_social_security_benefits", "Social Security Act: retirement, survivors and disability insurance "
+         "(Title II) and Supplemental Security Income (Title XVI)", "Social Security", 42,
+         ["chap7-subchapII", "chap7-subchapXVI"], "Titles II and XVI of the Social Security Act as codified (42 U.S.C. "
+         "chapter 7, subchapters II and XVI): retirement, survivors and disability insurance benefits, and "
+         "Supplemental Security Income for aged, blind and disabled people."),
+    # Code of Federal Regulations
+    _cfr("cfr_14_382_air_travel_disability", "Nondiscrimination on the Basis of Disability in Air Travel (14 CFR "
+         "part 382)", "Air travel and disability", 14, 4, 382, "The Department of Transportation's Air Carrier Access "
+         "Act rules: assistance, wheelchairs and other devices, service animals, seating, accessible information "
+         "and websites, and complaints."),
+    _cfr("cfr_28_35_ada_state_local_government", "ADA Title II regulations: state and local government services "
+         "(28 CFR part 35)", "Disability rights", 28, 1, 35, "The Department of Justice's rules for state and local "
+         "governments under ADA Title II, including effective communication and the web and mobile app "
+         "accessibility rule."),
+    _cfr("cfr_28_36_ada_public_accommodations", "ADA Title III regulations: public accommodations and commercial "
+         "facilities (28 CFR part 36)", "Disability rights", 28, 1, 36, "The Department of Justice's rules for "
+         "businesses open to the public under ADA Title III: auxiliary aids and services, service animals, "
+         "examinations and courses, and new construction and alterations."),
+    _cfr("cfr_29_1630_ada_employment", "ADA Title I regulations: employment (29 CFR part 1630)", "Disability rights",
+         29, 4, 1630, "The Equal Employment Opportunity Commission's rules for employment under ADA Title I, with its "
+         "interpretive guidance (reasonable accommodation, undue hardship, medical examinations)."),
+    _cfr("cfr_24_100_fair_housing", "Fair Housing Act regulations (24 CFR part 100)", "Housing rights", 24, 1, 100,
+         "The Department of Housing and Urban Development's rules on discriminatory housing practices, including "
+         "reasonable accommodations, reasonable modifications and accessible design."),
+    _cfr("cfr_49_37_transportation_ada", "Transportation services for individuals with disabilities (49 CFR part 37)",
+         "Transportation and disability", 49, 1, 37, "The Department of Transportation's ADA rules for buses, rail, "
+         "paratransit and other public and private transportation services."),
+    dict(_cfr("cfr_47_telecom_accessibility", "Telecommunications accessibility rules (47 CFR parts 6, 7 and 14, and "
+              "part 64 subpart F)", "Telecommunications and disability", 47, 1, 6, "The Federal Communications "
+              "Commission's accessibility rules: telecommunications equipment and services (parts 6 and 7), advanced "
+              "communications services (part 14) and telecommunications relay services (part 64, subpart F)."),
+         cfr=[dict(title=47, volume=1, part=6), dict(title=47, volume=1, part=7), dict(title=47, volume=1, part=14),
+              dict(title=47, volume=3, part=64, subpart="F")], source="https://www.ecfr.gov/current/title-47"),
+    _cfr("cfr_36_1194_section_508_standards", "Section 508 Standards and Section 255 Guidelines (36 CFR part 1194)",
+         "Digital accessibility", 36, 3, 1194, "The US Access Board's Information and Communication Technology "
+         "standards and guidelines (Section 508 of the Rehabilitation Act and Section 255 of the Communications "
+         "Act), which incorporate WCAG 2.0 Level AA."),
+    _cfr("cfr_34_300_idea_regulations", "IDEA regulations: assistance to states for the education of children with "
+         "disabilities (34 CFR part 300)", "Disability and education", 34, 2, 300, "The Department of Education's "
+         "rules for special education under IDEA Part B: evaluations, individualized education programs, "
+         "procedural safeguards and discipline."),
+    _cfr("cfr_21_101_food_labeling", "Food labeling (21 CFR part 101)", "Food labeling", 21, 2, 101, "The Food and "
+         "Drug Administration's food labeling rules: nutrition facts, ingredient lists, allergens, nutrient content "
+         "and health claims."),
+    # Canada (federal)
+    _canada("canada_accessible_canada_act", "Accessible Canada Act (S.C. 2019, c. 10)", "Disability rights",
+            "acts/A-0.6", "Canada's federal accessibility law: identifying, removing and preventing barriers in "
+            "federal jurisdiction, accessibility plans, the Accessibility Commissioner and Accessibility Standards "
+            "Canada."),
+    _canada("canada_human_rights_act", "Canadian Human Rights Act (R.S.C. 1985, c. H-6)", "Human rights",
+            "acts/H-6", "Canada's federal human rights law: prohibited grounds of discrimination (including "
+            "disability), discriminatory practices, the Canadian Human Rights Commission and Tribunal."),
+    _canada("canada_employment_equity_act", "Employment Equity Act (S.C. 1995, c. 44)", "Employment rights",
+            "acts/E-5.401", "Canada's federal employment equity law for women, Indigenous peoples, persons with "
+            "disabilities and members of visible minorities."),
+    _canada("canada_accessible_canada_regulations", "Accessible Canada Regulations (SOR/2021-241)",
+            "Disability rights", "regulations/SOR-2021-241", "The regulations under the Accessible Canada Act: "
+            "accessibility plans, feedback processes, progress reports, and penalties."),
+    _canada("canada_accessible_transportation_regulations", "Accessible Transportation for Persons with Disabilities "
+            "Regulations (SOR/2019-244)", "Transportation and disability", "regulations/SOR-2019-244",
+            "The Canadian Transportation Agency's rules for air, rail, bus and ferry travel by persons with "
+            "disabilities: services, communication, equipment and terminals."),
+    # United Kingdom
+    _uk("uk_equality_act_2010", "Equality Act 2010 (United Kingdom)", "Equality and disability rights",
+        "ukpga/2010/15", "The UK's equality law: protected characteristics including disability, discrimination, "
+        "reasonable adjustments, services, work, education, premises and transport."),
+    _uk("uk_consumer_rights_act_2015", "Consumer Rights Act 2015 (United Kingdom)", "Consumer rights",
+        "ukpga/2015/15", "The UK's consumer law: rights for goods, digital content and services, unfair terms, and "
+        "enforcement."),
+    _uk("uk_care_act_2014", "Care Act 2014 (United Kingdom)", "Social care", "ukpga/2014/23",
+        "England's law on adult social care and support: assessments, eligibility, care and support plans, carers "
+        "and safeguarding."),
+    _uk("uk_landlord_and_tenant_act_1985", "Landlord and Tenant Act 1985 (United Kingdom)", "Tenants and landlords",
+        "ukpga/1985/70", "UK law on rented homes: information for tenants, repairing obligations, service charges "
+        "and fitness for human habitation."),
+]
+
+# "More titles" (key laws-more): larger regulations built only when asked for.
+LAWS_MORE = [
+    _cfr("cfr_36_1191_ada_aba_guidelines", "ADA and ABA Accessibility Guidelines (36 CFR part 1191)",
+         "Accessible buildings", 36, 3, 1191, "The US Access Board's accessibility guidelines for buildings and "
+         "facilities under the ADA and the Architectural Barriers Act (scoping and technical requirements)."),
+    _cfr("cfr_12_1026_regulation_z", "Truth in Lending (Regulation Z, 12 CFR part 1026)", "Consumer credit", 12, 9,
+         1026, "The Consumer Financial Protection Bureau's Truth in Lending rules: credit cards, mortgages and other "
+         "consumer credit disclosures, with the official interpretations."),
+    _cfr("cfr_12_1006_regulation_f", "Debt Collection Practices (Regulation F, 12 CFR part 1006)", "Debt collection",
+         12, 9, 1006, "The Consumer Financial Protection Bureau's rules for debt collectors."),
+    _cfr("cfr_12_1022_regulation_v", "Fair Credit Reporting (Regulation V, 12 CFR part 1022)", "Credit reports", 12,
+         8, 1022, "The Consumer Financial Protection Bureau's rules under the Fair Credit Reporting Act."),
+    _cfr("cfr_20_404_social_security_disability", "Federal Old-Age, Survivors and Disability Insurance (20 CFR part "
+         "404)", "Social Security", 20, 2, 404, "The Social Security Administration's rules for retirement, survivors "
+         "and disability benefits, including the disability evaluation process and the listing of impairments."),
+    _cfr("cfr_20_416_supplemental_security_income", "Supplemental Security Income for the Aged, Blind, and Disabled "
+         "(20 CFR part 416)", "Social Security", 20, 3, 416, "The Social Security Administration's rules for "
+         "Supplemental Security Income."),
+    _cfr("cfr_45_84_section_504_hhs", "Section 504 regulations of the Department of Health and Human Services (45 CFR "
+         "part 84)", "Disability rights", 45, 1, 84, "Nondiscrimination on the basis of disability in programs "
+         "receiving HHS funds (health care, social services), including accessible medical equipment and web "
+         "content."),
+]
+
+# ---------------------------------------------------------------------- government web guides (webguide_book, guide:)
+GOV_GUIDES = [
+    dict(name="section508_gov", title="Section508.gov: accessible technology guidance", subject="Digital "
+         "accessibility", group="disability", publisher="US General Services Administration (Section508.gov)",
+         country="United States", licence=US_GOV, licence_url=US_GOV_URL, source="https://www.section508.gov/",
+         description="The US government's guidance on accessible information and communication technology: "
+                     "creating accessible documents, PDFs, presentations, spreadsheets and video; testing; buying "
+                     "accessible products; and running an accessibility programme.",
+         licence_page="https://www.section508.gov/website-policies/",
+         licence_text=r"Most material on our site is free of copyright", page_mark="", start=[], units="",
+         pages=r"^https://www\.section508\.gov/(develop|test|buy|manage|create|training|content|policy)/[a-z0-9/-]*$",
+         sitemap="https://www.section508.gov/sitemap.xml",
+         unit_rules=[(r"/create/", "Create accessible content"), (r"/develop/", "Design and develop"),
+                     (r"/test/", "Test"), (r"/buy/", "Buy accessible products"), (r"/manage/", "Manage a programme"),
+                     (r"/(training|content|policy)/", "Training and policy")],
+         content=(r"<main\b[^>]*>", r"</main>"), drop=[r"<nav\b.*?</nav>"], limit=400),
+    dict(name="ada_gov_guidance", title="ADA.gov: guidance on the Americans with Disabilities Act",
+         subject="Disability rights", group="disability", publisher="US Department of Justice, Civil Rights "
+         "Division (ADA.gov)", country="United States", licence=US_GOV, licence_url=US_GOV_URL,
+         source="https://www.ada.gov/", description="The Department of Justice's plain-language ADA guidance: service "
+         "animals, effective communication, web accessibility, mobility devices, businesses, state and local "
+         "governments, and how to file a complaint.",
+         licence_page=DOJ_POLICY, licence_text=DOJ_TEXT, page_mark="", start=[], units="",
+         pages=r"^https://www\.ada\.gov/(resources|topics)/[a-z0-9-]+/$", sitemap="https://www.ada.gov/sitemap.xml",
+         unit_rules=[(r"/topics/", "Topics"), (r"/resources/", "Guidance and resources")],
+         content=(r"<main\b[^>]*>", r"</main>"), drop=[r"<nav\b.*?</nav>"], limit=150),
+    dict(name="cfpb_ask_cfpb", title="Ask CFPB: answers to money questions", subject="Money and credit",
+         group="consumer", publisher="Consumer Financial Protection Bureau (CFPB)", country="United States",
+         licence=US_GOV, licence_url=US_GOV_URL, source="https://www.consumerfinance.gov/ask-cfpb/",
+         description="The Consumer Financial Protection Bureau's plain answers to common money questions: credit "
+                     "reports and scores, credit cards, debt collection, bank accounts, mortgages, auto loans, "
+                     "student loans, prepaid cards, money transfers, and frauds and scams.",
+         licence_page="https://www.consumerfinance.gov/privacy/website-privacy-policy/",
+         licence_text=r"Information created by the CFPB is in the public domain", page_mark="", start=[], units="",
+         pages=r"^https://www\.consumerfinance\.gov/ask-cfpb/[a-z0-9-]+-en-\d+/$",
+         sitemap="https://www.consumerfinance.gov/sitemap.xml", unit_rules=[],
+         content=(r"<main\b[^>]*>", r"</main>"),
+         drop=[r"<nav\b.*?</nav>", r'<div class="[^"]*(?:feedback|related|o-well)[^"]*".*?</div>'], limit=900),
+    dict(name="niddk_health_information", title="NIDDK health information: diabetes, digestive, kidney and other "
+         "diseases", subject="Health", group="health", publisher="National Institute of Diabetes and Digestive and "
+         "Kidney Diseases (NIDDK), National Institutes of Health", country="United States", licence=US_GOV,
+         licence_url=US_GOV_URL, source="https://www.niddk.nih.gov/health-information",
+         description="Patient health information from the NIDDK: diabetes, digestive diseases, kidney disease, "
+                     "weight management, liver, urologic, endocrine and blood diseases, diet and nutrition, and "
+                     "diagnostic tests.",
+         licence_page="https://www.niddk.nih.gov/copyright",
+         licence_text=r"The majority of information on this site is copyright free", page_mark="", start=[],
+         units="", pages=r"^https://www\.niddk\.nih\.gov/health-information/[a-z0-9/-]+$",
+         sitemap="https://www.niddk.nih.gov/sitemap.xml",
+         unit_rules=[(r"/diabetes", "Diabetes"), (r"/digestive-diseases", "Digestive diseases"),
+                     (r"/kidney-disease", "Kidney disease"), (r"/weight-management", "Weight management"),
+                     (r"/liver-disease", "Liver disease"), (r"/urologic-diseases", "Urologic diseases"),
+                     (r"/endocrine-diseases", "Endocrine diseases"), (r"/diet-nutrition", "Diet and nutrition"),
+                     (r".", "Other topics")],
+         content=(r"<main\b[^>]*>", r"</main>"), drop=[r"<nav\b.*?</nav>", r"<aside\b.*?</aside>"], limit=600),
+    dict(name="fda_consumer_updates", title="FDA Consumer Updates", subject="Health and safety", group="health",
+         publisher="US Food and Drug Administration (FDA)", country="United States", licence=US_GOV,
+         licence_url=US_GOV_URL, source="https://www.fda.gov/consumers/consumer-updates",
+         description="The FDA's plain-language articles on using medicines, food safety, dietary supplements, "
+                     "medical devices, cosmetics and other products safely.",
+         licence_page="https://www.fda.gov/about-fda/about-website/website-policies",
+         licence_text=r"They are in the public domain and may be republished", page_mark="",
+         start=["https://www.fda.gov/consumers/consumer-updates"], units="",
+         pages=r"^https://www\.fda\.gov/consumers/consumer-updates/[a-z0-9-]+$",
+         sitemap="", unit_rules=[], content=(r"<main\b[^>]*>", r"</main>"), drop=[r"<nav\b.*?</nav>"], limit=120),
+    dict(name="nci_about_cancer", title="National Cancer Institute: about cancer", subject="Cancer",
+         group="health", publisher="National Cancer Institute (NCI), National Institutes of Health",
+         country="United States", licence=US_GOV, licence_url=US_GOV_URL,
+         source="https://www.cancer.gov/about-cancer",
+         description="The National Cancer Institute's information for patients and families: understanding "
+                     "cancer, causes and prevention, screening, diagnosis, treatment, side effects, coping, and "
+                     "advanced cancer. Adapted from the National Cancer Institute (text only).",
+         licence_page="https://www.cancer.gov/policies/copyright-reuse",
+         licence_text=r"all text within National Cancer Institute \(NCI\) products is free of copyright",
+         page_mark="", start=[], units="", pages=r"^https://www\.cancer\.gov/about-cancer/[a-z0-9/-]+$",
+         sitemap="https://www.cancer.gov/sitemap.xml",
+         unit_rules=[(r"/understanding", "Understanding cancer"), (r"/causes-prevention", "Causes and prevention"),
+                     (r"/screening", "Screening"), (r"/diagnosis-staging", "Diagnosis and staging"),
+                     (r"/treatment", "Treatment"), (r"/coping", "Coping with cancer"),
+                     (r"/advanced-cancer", "Advanced cancer"), (r".", "More")],
+         content=(r"<main\b[^>]*>", r"</main>"), drop=[r"<nav\b.*?</nav>"],
+         changes="adapted from the National Cancer Institute: made into web pages with the site's menus and "
+                 "pictures left out (their descriptions kept)", limit=500),
+    dict(name="nhs_health_a_to_z", title="NHS Health A to Z (conditions)", subject="Health", group="health",
+         publisher="NHS England (nhs.uk)", country="United Kingdom", licence="OGL-UK-3.0",
+         licence_url="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/",
+         source="https://www.nhs.uk/conditions/",
+         description="The NHS website's guides to health conditions from A to Z: symptoms, causes, diagnosis, "
+                     "treatment and when to get help (UK services and phone numbers).",
+         licence_page="https://www.nhs.uk/our-policies/terms-and-conditions/",
+         licence_text=r"released free-of-charge under the current version of the Open Government Licence",
+         page_mark="", start=["https://www.nhs.uk/conditions/"], units="",
+         pages=r"^https://www\.nhs\.uk/conditions/[a-z0-9-]+/$", sitemap="", unit_rules=[],
+         content=(r"<main\b[^>]*>", r"</main>"), drop=[r"<nav\b.*?</nav>", r"<aside\b.*?</aside>"], limit=1200),
+    dict(name="govuk_disabled_people", title="GOV.UK: disabled people (benefits, rights, equipment and care)",
+         subject="Disability", group="disability", publisher="UK Government (GOV.UK)", country="United Kingdom",
+         licence="OGL-UK-3.0", licence_url="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/",
+         source="https://www.gov.uk/browse/disabilities",
+         description="GOV.UK's guides for disabled people and carers: benefits (PIP, Attendance Allowance, Access "
+                     "to Work), rights under the Equality Act, the Blue Badge and transport, and help at home.",
+         licence_page="https://www.gov.uk/help/terms-conditions",
+         licence_text=r"published under the Open Government Licence", page_mark=r"Open Government Licence v3\.0",
+         start=["https://www.gov.uk/browse/disabilities"], units=r"^https://www\.gov\.uk/browse/disabilities/[a-z-]+$",
+         pages=r"^https://www\.gov\.uk/(?!search|help|contact|cymraeg|government|browse|world|cookies|privacy|"
+               r"accessibility|sign-in|account)[a-z0-9-]+$",
+         fetch_as=(r"$", "/print"), sitemap="", unit_rules=[], content=(r"<main\b[^>]*>", r"</main>"),
+         drop=[r'<div class="gem-c-contextual-sidebar.*?</div>', r"<nav\b.*?</nav>"], limit=300),
+    dict(name="govuk_benefits", title="GOV.UK: benefits", subject="Benefits", group="consumer",
+         publisher="UK Government (GOV.UK)", country="United Kingdom", licence="OGL-UK-3.0",
+         licence_url="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/",
+         source="https://www.gov.uk/browse/benefits",
+         description="GOV.UK's guides to UK benefits: Universal Credit, benefits for families, carers, disability, "
+                     "unemployment, low income, heating and housing, and how to apply or complain.",
+         licence_page="https://www.gov.uk/help/terms-conditions",
+         licence_text=r"published under the Open Government Licence", page_mark=r"Open Government Licence v3\.0",
+         start=["https://www.gov.uk/browse/benefits"], units=r"^https://www\.gov\.uk/browse/benefits/[a-z-]+$",
+         pages=r"^https://www\.gov\.uk/(?!search|help|contact|cymraeg|government|browse|world|cookies|privacy|"
+               r"accessibility|sign-in|account)[a-z0-9-]+$",
+         fetch_as=(r"$", "/print"), sitemap="", unit_rules=[], content=(r"<main\b[^>]*>", r"</main>"),
+         drop=[r'<div class="gem-c-contextual-sidebar.*?</div>', r"<nav\b.*?</nav>"], limit=300),
+    dict(name="uk_highway_code", title="The Highway Code (Great Britain)", subject="Driving and road safety",
+         group="government", publisher="Department for Transport and Driver and Vehicle Standards Agency (GOV.UK)",
+         country="United Kingdom", licence="OGL-UK-3.0",
+         licence_url="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/",
+         source="https://www.gov.uk/guidance/the-highway-code",
+         description="The official Highway Code for Great Britain: rules for pedestrians, cyclists, horse riders, "
+                     "motorcyclists and drivers, road signs and markings, and the hierarchy of road users.",
+         licence_page="https://www.gov.uk/guidance/the-highway-code",
+         licence_text=r"Open Government Licence v3\.0", page_mark=r"Open Government Licence v3\.0",
+         start=["https://www.gov.uk/guidance/the-highway-code"], units="",
+         pages=r"^https://www\.gov\.uk/guidance/the-highway-code/[a-z0-9-]+$", sitemap="", unit_rules=[],
+         content=(r"<main\b[^>]*>", r"</main>"), drop=[r"<nav\b.*?</nav>"], limit=60),
+    dict(name="usgs_this_dynamic_earth", title="This Dynamic Earth: the story of plate tectonics (USGS)",
+         subject="Earth science", group="science", publisher="US Geological Survey (USGS)",
+         country="United States", licence=US_GOV, licence_url=US_GOV_URL,
+         source="https://pubs.usgs.gov/gip/dynamic/dynamic.html",
+         description="The USGS general-interest book on plate tectonics (published in print in 1996, online "
+                     "edition): its history, how the theory developed, plate motions, hotspots, and plate "
+                     "tectonics and people.",
+         licence_page="https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits",
+         licence_text=r"the content of most USGS websites is in the U\.S\. Public Domain", page_mark="",
+         start=["https://pubs.usgs.gov/gip/dynamic/dynamic.html"], units="",
+         pages=r"^https://pubs\.usgs\.gov/gip/dynamic/[A-Za-z_]+\.html$", sitemap="", unit_rules=[],
+         content=(r"(?i)<body[^>]*>", r"(?i)</body>"), drop=[r"(?i)<img\b[^>]*>"], published="1996-02", limit=60),
+]
+
+# ---------------------------------------------------------------------- official PDFs of these groups (pdfdoc_book)
+US_PDF = dict(country="United States", licence=US_GOV, licence_url=US_GOV_URL, licence_page=GOVINFO_POLICY,
+              licence_text=GOVINFO_TEXT)
+PDF_DOCS += [
+    dict(US_PDF, name="irs_pub_17_your_federal_income_tax", group="consumer",
+         title="Your Federal Income Tax (IRS Publication 17)", subject="Taxes",
+         publisher="Internal Revenue Service (IRS)", pdf="https://www.irs.gov/pub/irs-pdf/p17.pdf",
+         page="https://www.irs.gov/forms-pubs/about-publication-17",
+         description="The IRS's complete plain-language guide to filing a US individual income tax return: filing "
+                     "status, dependents, income, adjustments, deductions and credits."),
+    dict(US_PDF, name="irs_pub_907_tax_highlights_disabilities", group="disability",
+         title="Tax Highlights for Persons With Disabilities (IRS Publication 907)", subject="Taxes and disability",
+         publisher="Internal Revenue Service (IRS)", pdf="https://www.irs.gov/pub/irs-pdf/p907.pdf",
+         page="https://www.irs.gov/forms-pubs/about-publication-907",
+         description="Tax rules that matter to people with disabilities: disability income, the credit for the "
+                     "elderly or disabled, impairment-related work expenses, medical expenses and ABLE accounts."),
+    dict(US_PDF, name="irs_pub_554_tax_guide_seniors", group="consumer",
+         title="Tax Guide for Seniors (IRS Publication 554)", subject="Taxes",
+         publisher="Internal Revenue Service (IRS)", pdf="https://www.irs.gov/pub/irs-pdf/p554.pdf",
+         page="https://www.irs.gov/forms-pubs/about-publication-554",
+         description="The IRS's guide for people 65 and older: filing requirements, retirement and Social "
+                     "Security income, the higher standard deduction, and credits."),
+    dict(US_PDF, name="medicare_and_you", group="health", title="Medicare & You (the official Medicare handbook)",
+         subject="Health insurance", publisher="Centers for Medicare & Medicaid Services (CMS)",
+         pdf="https://www.medicare.gov/publications/10050-medicare-and-you.pdf",
+         page="https://www.medicare.gov/publications",
+         description="The official US government Medicare handbook: what Parts A, B, C and D cover, costs, "
+                     "enrolment periods, Medicare Advantage and Medigap, drug coverage, help paying costs, and your "
+                     "rights."),
+    dict(US_PDF, name="ada_2010_standards_accessible_design", group="disability",
+         title="2010 ADA Standards for Accessible Design", subject="Accessible buildings",
+         publisher="US Department of Justice", pdf="https://www.ada.gov/assets/pdfs/2010-design-standards.pdf",
+         page="https://www.ada.gov/law-and-regs/design-standards/2010-stds/", licence_page=DOJ_POLICY,
+         licence_text=DOJ_TEXT, published="2010-09-15",
+         description="The Department of Justice's 2010 ADA Standards for Accessible Design with its guidance: "
+                     "accessible routes, entrances, doors, ramps, elevators, toilet rooms, signs (including braille "
+                     "and raised characters), parking and other elements."),
+]
+
+# Keys of the workflow and the builder (see expand_keys).
+def expand_keys(words):
+    """The build keys a request asks for: "all" (every book except "laws-more"), osbooks, nonprofit, fieldmanuals,
+    government (Alberta's PDFs), courses, laws (sources.LAWS), laws-more (sources.LAWS_MORE), guides
+    (sources.GOV_GUIDES), group:<group> (every web guide, PDF and law of that group, such as group:health), or one
+    key: osbooks:<repository>, siyavula, dspace, nonprofit:<name>, pdf:<name>, guide:<name>, law:<name>."""
+    pdfs = lambda g: [f"pdf:{e['name']}" for e in PDF_DOCS if e["group"] == g]   # noqa: E731
+    every = [f"osbooks:{r}" for r in OSBOOKS] + ["siyavula", "dspace"] + \
+        [f"nonprofit:{e['name']}" for e in NONPROFIT] + [f"pdf:{e['name']}" for e in PDF_DOCS] + \
+        [f"guide:{e['name']}" for e in GOV_GUIDES] + [f"law:{e['name']}" for e in LAWS]
+    keys = []
+    for w in words or ["all"]:
+        if w == "all":
+            keys += every
+        elif w == "osbooks":
+            keys += [f"osbooks:{r}" for r in OSBOOKS]
+        elif w == "nonprofit":
+            keys += [f"nonprofit:{e['name']}" for e in NONPROFIT]
+        elif w in ("fieldmanuals", "government", "courses"):
+            keys += pdfs({"fieldmanuals": "fieldmanual", "courses": "course"}.get(w, w))
+        elif w == "laws":
+            keys += [f"law:{e['name']}" for e in LAWS]
+        elif w == "laws-more":
+            keys += [f"law:{e['name']}" for e in LAWS_MORE]
+        elif w == "guides":
+            keys += [f"guide:{e['name']}" for e in GOV_GUIDES]
+        elif w.startswith("group:"):
+            g = w[6:]
+            keys += pdfs(g) + [f"guide:{e['name']}" for e in GOV_GUIDES if e["group"] == g] + \
+                [f"law:{e['name']}" for e in LAWS + LAWS_MORE if e.get("group", "law") == g]
+        else:
+            keys.append(w)
+    return list(dict.fromkeys(keys))
+
+# Looked at on 2026-11-18 for the groups law, consumer, health, disability, science and books, and not built (yet),
+# with the reason.
+REFERENCE_NOT_INCLUDED = [
+    ("FTC consumer advice (consumer.ftc.gov)", "Public domain (US government), but the site refuses automated "
+     "requests (403)."),
+    ("Social Security Administration publications (ssa.gov/pubs)", "Public domain, but ssa.gov refuses automated "
+     "requests (403); the Social Security Act and its regulations are built instead (law group)."),
+    ("FoodSafety.gov, USDA FSIS, CPSC, OSHA, NHTSA, CDC (with NIOSH) and the National Institute on Aging",
+     "Public domain, but their sites refuse automated requests (403, or a bot check at nia.nih.gov)."),
+    ("NOAA National Weather Service JetStream", "Public domain (weather.gov: \"The information on National Weather "
+     "Service (NWS) Web pages are in the public domain\"), but the JetStream pages refuse automated requests (403)."),
+    ("USDA MyPlate recipes (myplate.gov)", "The site could not be reached from the build (502)."),
+    ("USDA Complete Guide to Home Canning, Ready.gov, CDC Travelers' Health, MedlinePlus, NHS Medicines A to Z, "
+     "Citizens Information (Ireland), Wikibooks (with its Cookbook), Wikisource, iFixit, Project Gutenberg",
+     "Already in the Kiwix library."),
+    ("1911 Encyclopaedia Britannica", "Public domain; its clean transcription is on Wikisource, which is in the Kiwix "
+     "library (wikisource_en_all). A separate book would need about 40,000 page requests; not built."),
+    ("Standard Ebooks", "CC0 and not in the Kiwix library, but its robots.txt shuts AI agents out of the book texts; "
+     "the same public-domain works are in Kiwix's Project Gutenberg."),
+    ("WordNet and Webster's 1913 dictionary", "WordNet's licence is permissive and it is not in the Kiwix library, "
+     "but it needs a dictionary builder (one page per word); not built yet. No clean Webster's 1913 source was "
+     "checked."),
+    ("Directory of Open Access Books and OAPEN", "Answer this build's requests with 429 (too many requests) after an "
+     "earlier lock-out; their CC BY books can be added through DSPACE later, one checked record at a time."),
+    ("Pressbooks Directory, Global Text Project, Saylor Academy books, Unglue.it, FLOSS Manuals", "Not built in this "
+     "pass (licences differ per book; flossmanuals.net's certificate is not valid)."),
+    ("FDIC Money Smart", "US government work, but fdic.gov states no copyright policy for its own pages and the "
+     "curriculum is PDFs per module; not built yet."),
+    ("USA.gov benefit guides", "US government work (usa.gov/government-copyright explains federal works); asks a "
+     "10-second crawl delay; not built yet."),
+    ("US Access Board guides", "The Guide to the ADA Standards is no longer at its address (404) and the site states "
+     "no copyright policy; the Board's standards are built from the CFR (36 CFR parts 1191 and 1194)."),
+    ("Job Accommodation Network (askjan.org)", "Its robots.txt shuts out AI crawlers (ClaudeBot, anthropic-ai, GPTBot "
+     "and others) and no reuse terms were found (it is run by West Virginia University); not built."),
+    ("NLS (Library of Congress) braille transcribing instruction materials", "loc.gov: \"we generally do not own the "
+     "rights to materials in our collections\"; the copyright of each NLS manual was not established; not built."),
+    ("NASA education guides", "NASA: content \"generally [is] not subject to copyright\", but pages mix third-party "
+     "material; not built in this pass."),
+    ("eCFR (ecfr.gov) and uscode.house.gov", "The eCFR's robots.txt disallows its full-text services and its reader "
+     "needs JavaScript; uscode.house.gov's pages were not found (404). The CFR and US Code are read from govinfo.gov's "
+     "annual editions instead (public domain)."),
+    ("US Code titles 26 (tax) and 47 (communications), 49 U.S.C. 41705", "Whole titles are very large; IRS "
+     "Publication 17 and the FCC's and DOT's accessibility rules (47 CFR, 14 CFR part 382) are built instead."),
+    ("California statutes and state guides", "leginfo.legislature.ca.gov refuses automated requests (403); the DMV "
+     "handbook and other agency pages say \"Copyright © State of California\" with no reuse licence, so they are not "
+     "built (California public records are often public domain, but no agency licence line was found)."),
+    ("Florida Statutes and Florida agency guides", "The Legislature's site says \"Copyright © 1995-2026 The Florida "
+     "Legislature\" (Florida claims copyright in its statutes compilation); agency sites state no reuse licence."),
+    ("Washington, New York and Texas statutes", "app.leg.wa.gov's robots.txt disallows everything; New York's Open "
+     "Legislation needs an API key; Texas's terms were not checked. State statutes themselves are not copyrightable "
+     "(Georgia v. Public.Resource.Org, 2020), but each site's terms and robots.txt decide."),
+    ("State attorneys general, health, driver-handbook and blind-services agency guides", "Copyright of each state "
+     "(\"Copyright © State of ...\" footers); not checked one by one."),
+    ("Ontario e-Laws", "The King's Printer \"permits any person to reproduce the text and images contained in the "
+     "statutes, regulations and judicial decisions without seeking permission and without charge\", but e-Laws pages "
+     "need JavaScript; not built yet."),
+    ("BC Laws (British Columbia)", "The King's Printer Licence – British Columbia allows commercial and "
+     "non-commercial use with its statement, but bclaws.gov.bc.ca's robots.txt allows only Googlebot and Bingbot."),
+    ("Alberta King's Printer laws", "qp.alberta.ca's robots.txt disallows everything; kings-printer.alberta.ca says "
+     "its materials are \"owned by the Government of Alberta and protected by law\". (open.alberta.ca's OGL "
+     "publications are built.)"),
+    ("Nova Scotia legislation", "nslegislature.ca closed the connection to automated requests."),
+    ("canada.ca guidance on the Accessible Canada Act", "canada.ca terms allow non-commercial reproduction only, "
+     "not an open licence; the Act and its regulations are built from Justice Laws instead."),
+    ("New Zealand legislation (legislation.govt.nz) and govt.nz", "Answer automated requests with a bot challenge "
+     "(202, empty page)."),
+    ("Australia: legislation.gov.au, Services Australia, ACCC, healthdirect", "legislation.gov.au's PDFs can be "
+     "downloaded, but its CC BY 4.0 statement is shown only by JavaScript and not in the PDFs, so it cannot be checked "
+     "at build time; Services Australia and the ACCC copyright pages could not be read; healthdirect: all rights "
+     "reserved."),
+    ("Irish Statute Book (Ireland)", "Re-use under the Oireachtas (Open Data) PSI Licence, which \"incorporates the "
+     "Creative Commons Attribution 4.0 International License\": allowed, but only as-enacted texts in an old table "
+     "layout without headings; not built yet."),
+    ("South Africa (gov.za) and India Code (indiacode.nic.in)", "No copyright page was found on gov.za (404); "
+     "indiacode.nic.in did not answer in time."),
+]
+NOT_INCLUDED = NOT_INCLUDED + REFERENCE_NOT_INCLUDED

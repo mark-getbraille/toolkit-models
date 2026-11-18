@@ -18,6 +18,16 @@ What is built (sources.py lists every book, the licence lines checked by hand, a
   nonprofit  reference works of non-profit organisations published as openly licensed web guides (sources.NONPROFIT:
              the EFF's Surveillance Self-Defense, People's Law School, the W3C WAI Curricula); key nonprofit:<name>
              builds one
+  guide      government web guides in the public domain or under the Open Government Licence (sources.GOV_GUIDES:
+             Section508.gov, ADA.gov, Ask CFPB, NIDDK, FDA, NCI, the NHS Health A to Z, GOV.UK, the Highway Code);
+             key guides, or guide:<name>
+  law        laws and regulations (sources.LAWS): US Code chapters and CFR parts from govinfo.gov (public domain),
+             Canada's federal laws from Justice Laws (Reproduction of Federal Law Order), British Columbia's from BC
+             Laws (King's Printer Licence) and UK acts from legislation.gov.uk (Open Government Licence); one book
+             per law; key laws, laws-more (sources.LAWS_MORE: larger regulations), or law:<name>
+  group:<g>  every guide, PDF and law of one group (group:health, group:disability, group:consumer, group:law)
+Every book records "published": when the publisher published or last revised it (the toolkit ranks newer ones
+higher).
 Each book's licence is read again from its source while building; a book whose licence is not allowed
 (sources.ALLOWED: never NoDerivatives) is left out and listed in the manifest's "left_out".
 
@@ -42,8 +52,8 @@ Usage:
   python textbooks/build_textbooks.py nonprofit:eff_surveillance_self_defense --out build/textbooks
   python textbooks/build_textbooks.py --local-osbooks path/to/osbooks-repo --out build/textbooks   (no network)
 Each run writes <id>.zim for each book and manifest-<key>.json (the books' catalogue entries and the left-out
-ones). Keys: osbooks (every repository), osbooks:<repository>, siyavula, dspace, nonprofit (every non-profit
-guide), nonprofit:<name>, fieldmanuals, government, courses, pdf:<name>, or all.
+ones). Keys: see sources.expand_keys (osbooks, osbooks:<repository>, siyavula, dspace, nonprofit, nonprofit:<name>,
+fieldmanuals, government, courses, pdf:<name>, guides, guide:<name>, laws, laws-more, law:<name>, group:<g>, all).
 """
 
 import argparse
@@ -102,8 +112,9 @@ class Book:
     title: str
     subject: str
     level: str                   # "school", "college" or "reference"
-    group: str                   # "textbooks", "reference", "nonprofit", "government", "university", "fieldmanual"
-                                 # or "course"
+    group: str                   # "textbooks", "reference", "nonprofit", "government", "university", "fieldmanual",
+                                 # "course", or a reference group of sources.GROUPS ("law", "consumer", "health",
+                                 # "disability", "science", "books", "historical")
     publisher: str               # "OpenStax, Rice University"
     country: str                 # "United States", "South Africa", "International"
     licence: str                 # "CC BY 4.0"
@@ -118,6 +129,11 @@ class Book:
     original_epub: dict = field(default_factory=dict)
     flavour: str = "nopic"
     changes: str = ""            # what was changed, for the credit line ("" for the textbooks' usual words)
+    published: str = ""          # when the publisher published (or last revised) this edition: "2025-04-10",
+                                 # "2025-04" or "2025" ("" when the source does not say); newer ranks higher
+    region: str = ""             # the state or province a law or guide applies to ("California", "Ontario"; "" for
+                                 # a whole country)
+    notice: str = ""             # a statement the licence asks to show with the work (on the welcome page)
 
 
 def licence_short(text, url=""):
@@ -173,6 +189,79 @@ def esc(text):
     return html.escape(text or "", quote=True)
 
 
+# ====================================================================== publication dates ("published")
+
+MONTHS = {m: i for i, m in enumerate(["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov",
+                                      "dec"], 1)}
+
+
+def iso_date(text):
+    """A date written in any of the usual ways as "YYYY-MM-DD" ("YYYY-MM" or "YYYY" when that is all it says), ""
+    when no date is found: "2025-04-10T16:00:15+00:00", "D:20250410...", "20240103", "07 April 2025", "April 7, 2025",
+    "OCT 29, 2026", "November 2024", "2018"."""
+    t = " ".join((text or "").split())
+    m = re.search(r"(?<!\d)(19\d\d|20\d\d)-(0[1-9]|1[0-2])(?:-(0[1-9]|[12]\d|3[01]))?(?!\d)", t)
+    if m:
+        return "-".join(x for x in m.groups() if x)
+    m = re.search(r"D:(19\d\d|20\d\d)(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])", t) or \
+        re.search(r"(?<!\d)(19\d\d|20\d\d)(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])(?!\d)", t)
+    if m:
+        return "-".join(m.groups())
+    m = re.search(r"\b(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]{3,9})\.?,?\s+(19\d\d|20\d\d)\b", t)
+    if m and m.group(2)[:3].lower() in MONTHS:
+        return f"{m.group(3)}-{MONTHS[m.group(2)[:3].lower()]:02d}-{int(m.group(1)):02d}"
+    m = re.search(r"\b([A-Za-z]{3,9})\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(19\d\d|20\d\d)\b", t)
+    if m and m.group(1)[:3].lower() in MONTHS:
+        return f"{m.group(3)}-{MONTHS[m.group(1)[:3].lower()]:02d}-{int(m.group(2)):02d}"
+    m = re.search(r"\b([A-Za-z]{3,9})\.?,?\s+(19\d\d|20\d\d)\b", t)
+    if m and m.group(1)[:3].lower() in MONTHS:
+        return f"{m.group(2)}-{MONTHS[m.group(1)[:3].lower()]:02d}"
+    m = re.search(r"(?<!\d)(19\d\d|20\d\d)(?!\d)", t)
+    return m.group(1) if m else ""
+
+
+# Where web pages say when they were written or last reviewed, most trusted first.
+PAGE_DATES = [
+    r'"dateModified"\s*:\s*"([^"]+)"',
+    r'<meta name="govuk:public-updated-at" content="([^"]+)"',
+    r'<meta[^>]+(?:property|name)="(?:article:modified_time|dcterms\.modified|DC\.date\.modified|last-modified)"'
+    r'[^>]*content="([^"]+)"',
+    r'<meta[^>]+content="([^"]+)"[^>]*(?:property|name)="(?:article:modified_time|dcterms\.modified)"',
+    r'(?:Page last reviewed|Last reviewed|Page last updated|Last updated|Last modified|Updated|Reviewed)\s*(?:on)?'
+    r'\s*:?\s*(?:<[^>]+>\s*)*([A-Za-z0-9 ,.-]{6,30})',
+    r'"datePublished"\s*:\s*"([^"]+)"',
+    r'<meta[^>]+(?:property|name)="(?:article:published_time|dcterms\.created|DC\.date)"[^>]*content="([^"]+)"',
+    r'<time\b[^>]*datetime="([^"]+)"',
+]
+
+
+def page_date(page_html_text):
+    """When a web page says it was last reviewed or written ("YYYY-MM-DD", or "" when it does not say)."""
+    for pattern in PAGE_DATES:
+        m = re.search(pattern, page_html_text or "", re.I)
+        if m:
+            found = iso_date(m.group(1))
+            if found:
+                return found
+    return ""
+
+
+def newest_date(dates):
+    """The newest of a list of iso_date values ("" when there is none)."""
+    dates = [d for d in dates if d]
+    return max(dates) if dates else ""
+
+
+def pdf_date(pdf_path):
+    """When a PDF was made, from its own information (its modification or creation date), "" when not said."""
+    try:
+        from pypdf import PdfReader
+        info = PdfReader(pdf_path).metadata or {}
+        return iso_date(str(info.get("/ModDate") or info.get("/CreationDate") or ""))
+    except Exception:  # noqa: BLE001 - a PDF without readable information
+        return ""
+
+
 def page_html(book, page, previous=None, following=None):
     """The whole web page of an article: its title, the book's style sheet, the <h1>, the body, then the links to
     the previous and next pages and the contents, and the credit line."""
@@ -207,6 +296,10 @@ def index_page(book):
                f"Licence: {esc(licence_words(book.licence))} "
                f'(<a href="{esc(book.licence_url)}">{esc(book.licence_url)}</a>). '
                f'Original: <a href="{esc(book.source)}">{esc(book.source)}</a>.</p>')
+    if book.published:
+        out.append(f"<p>Published (or last revised): {esc(book.published)}.</p>")
+    if book.notice:
+        out.append(f"<p>{esc(book.notice)}</p>")
     if book.original_pdf.get("url"):
         out.append(f'<p>The publisher\'s original PDF: <a href="{esc(book.original_pdf["url"])}">'
                    f'{esc(book.original_pdf["url"])}</a>.</p>')
@@ -281,14 +374,17 @@ def file_sha256(path):
 def manifest_entry(book, file_id, path, count, date):
     """The catalogue entry of a written book (textbooks.json "books"): id (file name without .zim), name (the same
     in every release), title, subject, level, group, publisher, credit, country, licence (short), licence_url,
-    licence_kind, licence_text (as shown), language, flavour, date, size, sha256, article_count, file, url,
-    description, source, original_pdf and original_epub ({url, size, sha256} or {})."""
+    licence_kind, licence_text (as shown), language, flavour, date (when the ZIM file was made), published (when the
+    publisher published or last revised the work: "YYYY-MM-DD", "YYYY-MM" or "YYYY", "" when unknown), region (state
+    or province, "" for a whole country), size, sha256, article_count, file, url, description, source, original_pdf and
+    original_epub ({url, size, sha256} or {})."""
     return {
         "id": file_id, "name": book.name, "title": book.title, "subject": book.subject, "level": book.level,
         "group": book.group, "publisher": book.publisher, "credit": book.publisher, "country": book.country,
         "licence": book.licence, "licence_url": book.licence_url, "licence_kind": licence_kind(book.licence),
         "licence_text": licence_words(book.licence), "language": book.language, "flavour": book.flavour,
-        "date": date.isoformat(), "size": os.path.getsize(path), "sha256": file_sha256(path),
+        "date": date.isoformat(), "published": book.published, "region": book.region,
+        "size": os.path.getsize(path), "sha256": file_sha256(path),
         "article_count": count, "file": os.path.basename(path), "url": f"{RELEASE}/{os.path.basename(path)}",
         "description": book.description, "source": book.source, "authors": book.authors,
         "original_pdf": book.original_pdf, "original_epub": book.original_epub,
@@ -303,7 +399,8 @@ CRAWL_DELAY = {}                 # {host: seconds} a site's robots.txt asks for 
 
 def fetch(url, cache=None, binary=False, tries=4):
     """The body of url (text, or bytes with binary=True): one request at a time, PAUSE seconds between two
-    requests to the same site, a few tries on errors, kept in the cache folder when one is given."""
+    requests to the same site (or the Crawl-delay its robots.txt asks for), a few tries on errors, compressed answers
+    unpacked, kept in the cache folder when one is given."""
     key = hashlib.sha256(url.encode()).hexdigest()[:40]
     cached = os.path.join(cache, key) if cache else None
     if cached and os.path.exists(cached):
@@ -316,9 +413,14 @@ def fetch(url, cache=None, binary=False, tries=4):
         if wait > 0:
             time.sleep(wait)
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "*/*"})
+            req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "*/*",
+                                                       "Accept-Encoding": "gzip"})
             with urllib.request.urlopen(req, timeout=120) as r:
                 data = r.read()
+                if (r.headers.get("Content-Encoding") or "").lower() == "gzip":
+                    # Asked for: some services (the eCFR's) answer only compressed.
+                    import gzip
+                    data = gzip.decompress(data)
             break
         except urllib.error.HTTPError as e:
             if e.code in (403, 404, 410) or attempt == tries - 1:
@@ -807,7 +909,7 @@ def osbooks_books(repo, pictures=False, catalogue=None, left_out=None):
             source=f"https://openstax.org/details/books/{ob.slug}", language="eng",
             description=plain(cms.get("description", ""))[:600] if cms else "", authors=authors or ob.authors,
             original_pdf={"url": pdf, "size": head_size(pdf), "sha256": ""} if pdf else {},
-            flavour="maxi" if pictures else "nopic")
+            flavour="maxi" if pictures else "nopic", published=iso_date(cms.get("publish_date") or ""))
         book.pages = ob.pages()
         book.resources = ob.resources
         out.append(book)
@@ -1103,6 +1205,7 @@ def dspace_book(entry, work, cache=None, left_out=None):
                 language[:3], description=f"{dspace_meta(item, 'dc.title')} ({body}, "
                 f"{dspace_meta(item, 'dc.date.issued')[:4]}).",
                 authors=dspace_meta(item, "dc.contributor.author"),
+                published=iso_date(dspace_meta(item, "dc.date.issued")),
                 original_pdf={"url": page_url, "size": os.path.getsize(local), "sha256": file_sha256(local)})
     for i, (chapter_title, body_html, first, last) in enumerate(pdf_pages_html(local), 1):
         if chapter_title.startswith("Pages "):
@@ -1153,7 +1256,7 @@ def allowed_by_robots(url, cache=None):
 def page_links(page_html_text, base):
     """The absolute addresses linked from a web page, in order, without "#..." parts and repeats."""
     out = []
-    for href in re.findall(r'<a\b[^>]*?\bhref="([^"]+)"', page_html_text):
+    for href in re.findall(r'<a\b[^>]*?\bhref="([^"]+)"', page_html_text, re.I):     # old pages write <A HREF=
         url = urllib.parse.urljoin(base, html.unescape(href)).split("#")[0]
         if url not in out:
             out.append(url)
@@ -1226,6 +1329,12 @@ def webguide_plan(entry, cache=None):
             add(url, "")
     if entry.get("sitemap"):
         found = [html.unescape(u) for u in re.findall(r"<loc>\s*([^<\s]+)\s*</loc>", fetch(entry["sitemap"], cache))]
+        for sub in [u for u in found if re.search(r"sitemap[^/]*$|\.xml(\.gz)?$", u)][:50]:
+            # A sitemap index: the sitemaps it lists hold the pages.
+            try:
+                found += [html.unescape(u) for u in re.findall(r"<loc>\s*([^<\s]+)\s*</loc>", fetch(sub, cache))]
+            except (urllib.error.URLError, OSError):
+                continue
         rules = entry.get("unit_rules") or [(r".", "")]
         for _pattern, unit in rules:              # the parts in the order of the rules
             for url in found:
@@ -1235,15 +1344,20 @@ def webguide_plan(entry, cache=None):
 
 
 def webguide_book(entry, cache=None, left_out=None):
-    """The Book of one non-profit guide (a sources.NONPROFIT entry), or None when its licence page no longer says
-    what was checked (then it is added to left_out). Pages robots.txt does not allow, and pages without the
-    guide's licence line (entry["page_mark"]), are left out and said in left_out. Each article keeps its headings,
-    lists, tables and links; a picture is kept as "Picture: " and its description (alt text), pictures without one
-    are left out; every page ends with the credit and licence line."""
+    """The Book of one web guide (a sources.NONPROFIT or sources.GUIDES entry), or None when its licence page no
+    longer says what was checked (then it is added to left_out). Pages robots.txt does not allow, and pages without
+    the guide's licence line (entry["page_mark"]), are left out and said in left_out. Each article keeps its
+    headings, lists, tables and links; a picture is kept as "Picture: " and its description (alt text), pictures
+    without one are left out; every page ends with the credit and licence line.
+    Optional entry fields: group (default "nonprofit"), region, notice (a statement the licence asks to show),
+    changes (for the credit line), published (else the newest "last reviewed" date of its pages), fetch_as
+    ((regular expression, replacement): the address actually read for an article, such as a guide's one-page
+    "/print" version)."""
     left_out = left_out if left_out is not None else []
     title = entry["title"]
-    if not allowed_by_robots(entry["licence_page"], cache) or \
-            not re.search(entry["licence_text"], fetch(entry["licence_page"], cache)):
+    licence_html = fetch(entry["licence_page"], cache) if allowed_by_robots(entry["licence_page"], cache) else ""
+    if not (re.search(entry["licence_text"], licence_html) or re.search(
+            entry["licence_text"], " ".join(html.unescape(re.sub(r"<[^>]+>", " ", licence_html)).split()))):
         left_out.append({"title": title, "reason": f"Its licence page ({entry['licence_page']}) no longer states "
                          "the licence that was checked."})
         return None
@@ -1251,10 +1365,13 @@ def webguide_book(entry, cache=None, left_out=None):
     if not licence_kind(licence):
         left_out.append({"title": title, "reason": f"Its licence ({licence}) is not one the toolkit may repackage."})
         return None
-    book = Book(name=entry["name"], title=title, subject=entry["subject"], level="reference", group="nonprofit",
-                publisher=entry["publisher"], country=entry["country"], licence=licence,
-                licence_url=entry["licence_url"], source=entry["source"], description=entry["description"],
-                changes="made into web pages with the site's menus and pictures left out (their descriptions kept)")
+    book = Book(name=entry["name"], title=title, subject=entry["subject"], level="reference",
+                group=entry.get("group", "nonprofit"), publisher=entry["publisher"], country=entry["country"],
+                licence=licence, licence_url=entry["licence_url"], source=entry["source"],
+                description=entry["description"], region=entry.get("region", ""), notice=entry.get("notice", ""),
+                changes=entry.get("changes") or "made into web pages with the site's menus and pictures left out "
+                                                 "(their descriptions kept)")
+    dates = []
     plan = webguide_plan(entry, cache)
     paths, skipped = {}, 0
     for url, _unit in plan:
@@ -1263,11 +1380,17 @@ def webguide_book(entry, cache=None, left_out=None):
             path += "-2"
         paths[url] = path
     for number, (url, unit) in enumerate(plan, 1):
-        if not allowed_by_robots(url, cache):
+        read = re.sub(entry["fetch_as"][0], entry["fetch_as"][1], url) if entry.get("fetch_as") else url
+        if not allowed_by_robots(read, cache) or not allowed_by_robots(url, cache):
             skipped += 1
             continue
         try:
-            text = fetch(url, cache)
+            try:
+                text = fetch(read, cache)
+            except urllib.error.HTTPError:
+                if read == url:
+                    raise
+                text = fetch(url, cache)              # a page without a one-page version
         except (urllib.error.URLError, OSError):
             skipped += 1
             continue
@@ -1275,6 +1398,7 @@ def webguide_book(entry, cache=None, left_out=None):
             left_out.append({"title": f"{title}: {url}", "reason": "This page does not carry the guide's licence "
                              "line."})
             continue
+        dates.append(page_date(text))
         body = _Cleaner(paths, url).clean(article_content(text, entry))
         body = re.sub(r'<a href="[^"]*#top">.*?</a>', "", body, flags=re.S)        # "Back to Top" links
         body = re.sub(r'<a href="[^"]*">\s*</a>', "", body)                        # links without words
@@ -1282,6 +1406,7 @@ def webguide_book(entry, cache=None, left_out=None):
     if skipped:
         left_out.append({"title": title, "reason": f"{skipped} pages could not be read or are not allowed by the "
                          "site's robots.txt."})
+    book.published = entry.get("published") or newest_date(dates)
     return book
 
 
@@ -1508,26 +1633,35 @@ def part_html(text, start, end):
 
 
 def pdfdoc_book(entry, work, cache=None, left_out=None):
-    """The Book of one official PDF (a sources.PDF_DOCS entry): the PDF is found (an Internet Archive item, or the
-    newest PDF on an official publication page), its licence checked (the page's licence line, or for a US military
+    """The Book of one official PDF (a sources.PDF_DOCS entry): the PDF is found (an Internet Archive item, the
+    official address in entry["pdf"], or the newest PDF on an official publication page), its licence checked (the
+    licence line of its page or of entry["licence_page"], such as an agency's copyright policy, or for a US military
     manual Distribution Statement A in its own front matter and no restricted marking), then made into one page per
     chapter; for a field manual, parts about weapons, tactics or harm (NOT_FIELD_SAFE) are left out. None when it is
-    not allowed (said in left_out)."""
+    not allowed (said in left_out). Its "published" is entry["published"], else the date in the PDF's own
+    information."""
     left_out = left_out if left_out is not None else []
     title = entry["title"]
+    licence_page = entry.get("licence_page") or (entry.get("page") if not entry.get("archive") else "")
+    if licence_page and entry.get("licence_text"):
+        if not allowed_by_robots(licence_page, cache):
+            left_out.append({"title": title, "reason": "The site's robots.txt does not allow reading its page."})
+            return None
+        words = " ".join(html.unescape(re.sub(r"<[^>]+>", " ", fetch(licence_page, cache))).split())
+        if not re.search(entry["licence_text"], words):
+            left_out.append({"title": title, "reason": f"Its page ({licence_page}) no longer states the licence that "
+                             "was checked."})
+            return None
     if entry.get("archive"):
         pdf_url, page = archive_pdf(entry["archive"], cache)
+    elif entry.get("pdf"):
+        pdf_url, page = entry["pdf"], entry.get("page") or entry["pdf"]
     else:
         page = entry["page"]
         if not allowed_by_robots(page, cache):
             left_out.append({"title": title, "reason": "The site's robots.txt does not allow reading its page."})
             return None
-        text = fetch(page, cache)
-        if not re.search(entry["licence_text"], " ".join(html.unescape(re.sub(r"<[^>]+>", " ", text)).split())):
-            left_out.append({"title": title, "reason": f"Its page ({page}) no longer states the licence that was "
-                             "checked."})
-            return None
-        pdf_url = newest_pdf(text, page, entry.get("pdf_pattern", r"\.pdf$"))
+        pdf_url = newest_pdf(fetch(page, cache), page, entry.get("pdf_pattern", r"\.pdf$"))
         if not pdf_url:
             left_out.append({"title": title, "reason": "Its page links no PDF."})
             return None
@@ -1561,6 +1695,8 @@ def pdfdoc_book(entry, work, cache=None, left_out=None):
                 publisher=entry["publisher"], country=entry["country"], licence=licence,
                 licence_url=entry["licence_url"], source=page, description=entry["description"],
                 original_pdf={"url": pdf_url, "size": os.path.getsize(local), "sha256": file_sha256(local)},
+                published=entry.get("published") or pdf_date(local), region=entry.get("region", ""),
+                notice=entry.get("notice", ""),
                 changes="its text made into web pages, one per chapter, with each drawing's caption kept as text"
                         + ("; parts about weapons and tactics left out" if entry.get("distribution_a") else ""))
     skipped = []
@@ -1576,6 +1712,253 @@ def pdfdoc_book(entry, work, cache=None, left_out=None):
     return book
 
 
+# ====================================================================== laws and regulations (sources.LAWS)
+
+def cfr_xml_html(xml_text, subpart=""):
+    """The HTML of one part of the US Code of Federal Regulations from govinfo's annual edition (its "CFRGRANULE"
+    XML): every subpart as <h2 class="cfr-subpart">, every section and appendix as <h3 class="cfr-section"> ("§
+    382.1 What is the purpose of this part?"), its own headings as <h4>, paragraphs, tables with their title, and
+    the authority and source notes. The part's table of contents and printed page numbers are left out. subpart:
+    only that subpart ("F"), for a part of which only one subpart is wanted."""
+    root = ET.fromstring(xml_text.encode("utf-8") if isinstance(xml_text, str) else xml_text)
+    out = []
+
+    def inline(el):
+        """The text of el with italics kept, escaped."""
+        parts = [esc(el.text or "")]
+        for child in el:
+            if child.tag in ("PRTPAGE", "FTREF"):
+                pass
+            elif child.tag in ("E", "I"):
+                parts.append(f"<em>{inline(child)}</em>")
+            elif child.tag == "SU":
+                parts.append(esc(small_text(_text(child), True)))
+            else:
+                parts.append(inline(child))
+            parts.append(esc(child.tail or ""))
+        return " ".join("".join(parts).split())
+
+    def block(el):
+        """Write el and what it holds."""
+        tag = el.tag
+        if tag in ("FDSYS", "CONTENTS", "PRTPAGE", "EAR", "STARS", "RESERVED"):
+            return
+        if tag == "SUBPART":
+            hd = el.find("HD")
+            if subpart and not (hd is not None and re.match(rf"Subpart {re.escape(subpart)}\b", _text(hd))):
+                return
+            if hd is not None:
+                out.append(f'<h2 class="cfr-subpart">{inline(hd)}</h2>')
+            for child in el:
+                if child is not hd:
+                    block(child)
+            return
+        if tag == "SECTION":
+            number, subject = _text(el.find("SECTNO")), _text(el.find("SUBJECT"))
+            out.append(f'<h3 class="cfr-section">{esc(number)} {esc(subject)}</h3>')
+            for child in el:
+                if child.tag not in ("SECTNO", "SUBJECT"):
+                    block(child)
+            return
+        if tag == "APPENDIX":
+            hd = el.find("HD")
+            out.append(f'<h3 class="cfr-section">{inline(hd) if hd is not None else "Appendix"}</h3>')
+            for child in el:
+                if child is not hd:
+                    block(child)
+            return
+        if tag == "HD":
+            if el.get("SOURCE") != "HED" or out:
+                out.append(f"<h4>{inline(el)}</h4>")
+            return
+        if tag in ("P", "FP", "PSPACE", "NOTE", "CITA", "EFFDNOTP", "EDNOTE", "SECAUTH", "FTNT", "EXAMPLE"):
+            if len(el) and all(c.tag in ("P", "FP", "HD", "PSPACE") for c in el) and not (el.text or "").strip():
+                for child in el:
+                    block(child)
+            else:
+                text = inline(el)
+                if text:
+                    out.append(f"<p>{text}</p>")
+            return
+        if tag in ("AUTH", "SOURCE"):
+            out.append("<p>" + " ".join(inline(c) for c in el) + "</p>")
+            return
+        if tag == "GPOTABLE":
+            caption = el.find("TTITLE")
+            rows = ["<table>" + (f"<caption>{inline(caption)}</caption>" if caption is not None else "")]
+            heads = [inline(c) for c in el.iter("CHED")]
+            if heads:
+                rows.append("<tr>" + "".join(f"<th>{h}</th>" for h in heads) + "</tr>")
+            for row in el.iter("ROW"):
+                rows.append("<tr>" + "".join(f"<td>{inline(c)}</td>" for c in row.findall("ENT")) + "</tr>")
+            out.append("".join(rows) + "</table>")
+            return
+        if tag in ("GPH", "MATH"):
+            out.append("<p>(A drawing or formula in the printed edition.)</p>")
+            return
+        for child in el:
+            block(child)
+        if not len(el) and (el.text or "").strip() and tag not in ("DATE", "VOL", "TITLE", "CFRTITLE"):
+            out.append(f"<p>{inline(el)}</p>")
+
+    for el in root:
+        block(el)
+    return "\n".join(out)
+
+
+def govinfo_edition(kind, spec, cache=None):
+    """(address, text) of the newest annual edition on govinfo.gov of a part of the CFR (kind "cfr", spec {title,
+    volume, part}) or a chapter of the US Code (kind "usc", spec {title, file}); the editions of this year and the
+    four before are tried, newest first (a volume number may move by one between editions). Raises LookupError
+    when none is found."""
+    year = datetime.date.today().year
+    tried = []
+    for y in range(year, year - 5, -1):
+        if kind == "cfr":
+            t, v, p = spec["title"], spec["volume"], spec["part"]
+            urls = [f"https://www.govinfo.gov/content/pkg/CFR-{y}-title{t}-vol{vol}/xml/CFR-{y}-title{t}-vol{vol}-"
+                    f"part{p}.xml" for vol in (v, v + 1, v - 1) if vol > 0]
+        else:
+            t, f = spec["title"], spec["file"]
+            urls = [f"https://www.govinfo.gov/content/pkg/USCODE-{y}-title{t}/html/USCODE-{y}-title{t}-{f}.htm"]
+        for url in urls:
+            tried.append(url)
+            try:
+                text = fetch(url, cache)
+            except urllib.error.HTTPError as e:
+                if e.code not in (403, 404, 410):
+                    raise
+                continue
+            # govinfo answers a missing package with its "not found" web page (status 200): only the real text counts.
+            if ("<CFRGRANULE" in text) if kind == "cfr" else ("currentthrough:" in text or "section-head" in text):
+                return url, text
+    raise LookupError(f"no edition found (tried {len(tried)} addresses, the last {tried[-1]})")
+
+
+def law_pages(page_html_text, entry, base=""):
+    """[(unit, title, body HTML)] of a law's full text: it is cut where entry["split"] matches (a section or part
+    heading: one page each, titled with that heading's words) and where entry["unit"] matches (a subpart or chapter
+    heading: the pages after it are listed under it in the contents; its own words, if any, become a page). The
+    text before the first cut is the "Introduction" page when it says anything. entry["content"] (start, end) marks
+    the law's text on the page, entry["drop"] parts left out (editorial notes, menus) and entry["rewrite"]
+    [(regular expression, replacement)] tidies the publisher's HTML (number-only headings made plain text)."""
+    text = page_html_text
+    start, end = entry.get("content") or ("", "")
+    m = re.search(start, text) if start else None
+    text = text[m.end():] if m else text
+    m = re.search(end, text) if end else None
+    text = text[:m.start()] if m else text
+    for pattern in entry.get("drop", []):
+        text = re.sub(pattern, "", text, flags=re.S)
+    for pattern, replacement in entry.get("rewrite", []):
+        text = re.sub(pattern, replacement, text, flags=re.S)
+    text = drop_hidden(text)
+    cuts = [(m.start(), "page") for m in re.finditer(entry["split"], text)]
+    if entry.get("unit"):
+        cuts += [(m.start(), "unit") for m in re.finditer(entry["unit"], text)]
+    cuts.sort()
+    pieces = [(0, "intro")] + cuts + [(len(text), "end")]
+    out, unit = [], ""
+
+    def words(fragment):
+        """The plain words of some HTML."""
+        return " ".join(html.unescape(re.sub(r"<[^>]+>", " ", fragment)).split())
+
+    def clean(fragment):
+        """The fragment's HTML with only plain structure (its loose <div>, <span> and <section> tags dropped, as a
+        cut can leave them unbalanced; links kept as their words)."""
+        body = _Cleaner({}, base).clean(fragment)
+        body = re.sub(r"</?(div|span|section|a)\b[^>]*>", "", body)      # links to other laws are not in the book
+        body = re.sub(r"<(p|h[2-6]|li)>\s*</\1>", "", body)
+        return body.strip()
+
+    for (pos, kind), (nxt, _k) in zip(pieces, pieces[1:]):
+        chunk = text[pos:nxt]
+        heading = re.match(r"\s*(?:<[^>]+>\s*)*?<(h[1-6])\b[^>]*>(.*?)</\1>", chunk, re.S)
+        title = words(heading.group(2)) if heading and kind != "intro" else ""
+        if not title and kind != "intro":
+            title = words(chunk)[:80]
+        rest = chunk[heading.end():] if heading and kind != "intro" else chunk
+        if kind == "unit":
+            unit = title
+            if len(words(rest)) > 40:
+                out.append((unit, title, clean(rest)))
+            continue
+        if kind == "intro":
+            if len(words(rest)) > 80:
+                out.append(("", "Introduction", clean(rest)))
+            continue
+        out.append((unit, title or "Section", clean(rest)))
+    return out
+
+
+def lawdoc_book(entry, cache=None, left_out=None):
+    """The Book of one law or regulation (a sources.LAWS entry), or None when its licence page no longer says what
+    was checked or its text cannot be found (said in left_out). Where the text comes from:
+      cfr   {title, volume, part, subpart?} (or a list of them): parts of the US Code of Federal Regulations,
+            govinfo's newest annual edition (the eCFR's own robots.txt shuts out automated readers of its full-text
+            services)
+      usc   [{title, file}]: chapters of the US Code, govinfo's newest annual edition (HTML)
+      urls  the official full-text pages of the law (Justice Laws Canada, legislation.gov.uk, BC Laws)
+    The pages are cut by law_pages (entry["split"], entry["unit"]). Its "published" is entry["published"], else
+    the edition's own date (the CFR's revision date, the US Code's "current through" date) or the first match of
+    entry["date_pattern"] in the text ("last amended on 2023-04-27")."""
+    left_out = left_out if left_out is not None else []
+    title = entry["title"]
+    page = entry["licence_page"]
+    if not allowed_by_robots(page, cache):
+        left_out.append({"title": title, "reason": f"The site's robots.txt does not allow reading {page}."})
+        return None
+    words = " ".join(html.unescape(re.sub(r"<[^>]+>", " ", fetch(page, cache))).split())
+    if not re.search(entry["licence_text"], words):
+        left_out.append({"title": title, "reason": f"Its licence page ({page}) no longer states the licence that was "
+                         "checked."})
+        return None
+    licence = entry["licence"]
+    if not licence_kind(licence) and not licence_kind(licence_short(licence)):
+        left_out.append({"title": title, "reason": f"Its licence ({licence}) is not one the toolkit may repackage."})
+        return None
+    texts, published = [], ""
+    cfr = entry.get("cfr") or []
+    for spec in (cfr if isinstance(cfr, list) else [cfr]):
+        url, xml_text = govinfo_edition("cfr", spec, cache)
+        m = re.search(r"<DATE>([0-9-]+)</DATE>", xml_text)
+        published = newest_date([published, m.group(1) if m else ""])
+        texts.append((url, cfr_xml_html(xml_text, spec.get("subpart", ""))))
+    for spec in entry.get("usc", []):
+        url, text = govinfo_edition("usc", spec, cache)
+        m = re.search(r"currentthrough:(\d{8})", text)
+        published = newest_date([published, iso_date(m.group(1)) if m else ""])
+        texts.append((url, text))
+    for url in entry.get("urls", []):
+        if not allowed_by_robots(url, cache):
+            left_out.append({"title": title, "reason": f"The site's robots.txt does not allow reading {url}."})
+            return None
+        texts.append((url, fetch(url, cache)))
+    if not texts:
+        left_out.append({"title": title, "reason": "No text address is given."})
+        return None
+    if entry.get("date_pattern"):
+        m = re.search(entry["date_pattern"], texts[0][1], re.I)
+        published = newest_date([published, iso_date(m.group(1)) if m else ""])
+    book = Book(name=entry["name"], title=title, subject=entry["subject"], level="reference",
+                group=entry.get("group", "law"), publisher=entry["publisher"], country=entry["country"],
+                region=entry.get("region", ""), licence=licence, licence_url=entry["licence_url"],
+                source=entry["source"], description=entry["description"], notice=entry.get("notice", ""),
+                published=entry.get("published") or published,
+                changes=entry.get("changes") or "made into web pages, one per section or part, with editorial notes "
+                                                 "and the site's menus left out; not an official version")
+    paths = set()
+    for url, text in texts:
+        for unit, page_title, body in law_pages(text, entry, url):
+            path = slug(page_title, 50)
+            while path in paths or path in ("index", "style-css"):
+                path += "-2"
+            paths.add(path)
+            book.pages.append(Page(path, page_title, body, 0, unit))
+    return book
+
+
 # ====================================================================== the run
 
 def build(keys, out_dir, cache=None, pictures=False, local_osbooks=None, date=None):
@@ -1584,20 +1967,7 @@ def build(keys, out_dir, cache=None, pictures=False, local_osbooks=None, date=No
     work = os.path.join(cache or out_dir, "work")
     manifests = {}
     catalogue = None
-    plan = []
-    for key in keys:
-        if key == "all":
-            plan += [f"osbooks:{r}" for r in sources.OSBOOKS] + ["siyavula", "dspace"] + \
-                [f"nonprofit:{e['name']}" for e in sources.NONPROFIT] + [f"pdf:{e['name']}" for e in sources.PDF_DOCS]
-        elif key == "osbooks":
-            plan += [f"osbooks:{r}" for r in sources.OSBOOKS]
-        elif key == "nonprofit":
-            plan += [f"nonprofit:{e['name']}" for e in sources.NONPROFIT]
-        elif key in ("fieldmanuals", "government", "courses"):
-            group = {"fieldmanuals": "fieldmanual", "government": "government", "courses": "course"}[key]
-            plan += [f"pdf:{e['name']}" for e in sources.PDF_DOCS if e["group"] == group]
-        else:
-            plan.append(key)
+    plan = sources.expand_keys(keys) if keys else []
     if local_osbooks:
         plan = [f"local:{local_osbooks}"]
     for key in plan:
@@ -1638,8 +2008,21 @@ def build(keys, out_dir, cache=None, pictures=False, local_osbooks=None, date=No
                     b = None
                 if b is not None:
                     books.append(b)
-            elif key.startswith("nonprofit:"):
-                entry = next((e for e in sources.NONPROFIT if e["name"] == key[10:]), None)
+            elif key.startswith("law:"):
+                entry = next((e for e in sources.LAWS + sources.LAWS_MORE if e["name"] == key[4:]), None)
+                if entry is None:
+                    print(f"Unknown key {key}; skipped.")
+                    continue
+                try:
+                    b = lawdoc_book(entry, cache, left_out)
+                except Exception as e:  # noqa: BLE001 - said in the manifest
+                    left_out.append({"title": entry["title"], "reason": f"It could not be read ({e})."})
+                    b = None
+                if b is not None:
+                    books.append(b)
+            elif key.startswith("nonprofit:") or key.startswith("guide:"):
+                entry = next((e for e in sources.NONPROFIT + sources.GOV_GUIDES
+                              if e["name"] == key.split(":", 1)[1]), None)
                 if entry is None:
                     print(f"Unknown key {key}; skipped.")
                     continue
@@ -1672,9 +2055,9 @@ def build(keys, out_dir, cache=None, pictures=False, local_osbooks=None, date=No
 
 
 def merge(manifest_paths, existing=None):
-    """The catalogue textbooks.json from the manifests: the newest release of each book, the left-out books and
-    sources.NOT_INCLUDED. existing: the textbooks.json published before (books it has that no manifest built
-    again are kept)."""
+    """The catalogue textbooks.json from the manifests: the newest release of each book, the left-out books,
+    sources.NOT_INCLUDED and the names of the groups (sources.GROUPS: group key -> collection name). existing:
+    the textbooks.json published before (books it has that no manifest built again are kept)."""
     books = {}
     for old in (existing or {}).get("books", []):
         books[old["name"]] = old
@@ -1693,7 +2076,7 @@ def merge(manifest_paths, existing=None):
     return {"built": datetime.date.today().isoformat(), "release": RELEASE,
             "books": sorted(books.values(), key=lambda b: (b["group"], b["title"].casefold())),
             "left_out": left, "not_included": [{"title": t, "reason": r} for t, r in sources.NOT_INCLUDED],
-            "licence_lines": sources.LICENCE_LINES}
+            "licence_lines": sources.LICENCE_LINES, "groups": sources.GROUPS}
 
 
 def main(argv=None):
