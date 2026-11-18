@@ -1517,6 +1517,14 @@ PACKS.update(UNIVERSITY_PACKS)
 from bigtech_packs import BIGTECH_PACKS
 PACKS.update(BIGTECH_PACKS)
 
+# Pictures published openly by non-profit organisations (packs/ngo_packs.py): Our World in Data charts.
+from ngo_packs import NGO_PACKS
+PACKS.update(NGO_PACKS)
+
+# Drawings from US Army field manuals and Navy courses with Distribution Statement A (packs/field_manual_packs.py).
+from field_manual_packs import FIELD_MANUAL_PACKS
+PACKS.update(FIELD_MANUAL_PACKS)
+
 # US state, county and city government photo streams on Commons (packs/state_packs.py).
 from state_packs import STATE_PACKS
 PACKS.update(STATE_PACKS)

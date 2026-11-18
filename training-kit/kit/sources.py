@@ -2029,6 +2029,11 @@ SOURCES = [
            "Public domain or CC BY, each Commons file's own licence checked", "US state agencies via Wikimedia Commons (credited in CREDITS.txt)", "permissive", 800, 10, prepare_pack, "about 200 MB"),
     Source("commons_state_community", "US cities, counties and state agencies at work in their communities (public works, events, redevelopment, archives; Wikimedia Commons, ready-made pack)",
            "Public domain or CC BY, each Commons file's own licence checked", "US state agencies via Wikimedia Commons (credited in CREDITS.txt)", "permissive", 2500, 20, prepare_pack, "about 600 MB"),
+    # Non-profits and field manuals (packs/ngo_packs.py, packs/field_manual_packs.py).
+    Source("owid_charts", "Charts from Our World in Data: what each chart shows and where its data come from (ready-made pack)",
+           "CC BY 4.0 (https://ourworldindata.org/faqs)", "Our World in Data (Global Change Data Lab), CC BY 4.0 (each chart's page in CREDITS.txt)", "permissive", 3000, 20, prepare_pack, "about 250 MB"),
+    Source("field_manual_figures", "Drawings from US Army field manuals and Navy training courses: knots, shelters, compasses, maps, machines, circuits, first aid (ready-made pack)",
+           "Public domain (US government works, Distribution Statement A)", "US Army and US Navy; copies from the Internet Archive (credited in CREDITS.txt)", "permissive", 2500, 20, prepare_pack, "about 200 MB"),
     # Open sets from big technology companies (packs/bigtech_packs.py); none shows people. The research entries
     # (ScreenQA, PixMo, FinTabNet) are in bigtech_sources.py.
     Source("gso_objects", "What is this? Real products scanned in 3D by Google, computer-made views (Google Scanned Objects, ready-made pack)",
@@ -2270,6 +2275,8 @@ PEOPLE_AND_BODILY_PACK_KEYS = (
     "dpla_campus", "commons_college_streams", "commons_university_archives",
     # state_web_packs.py: traffic camera views (people and cars far away)
     "caltrans_cctv",
+    # field_manual_packs.py: many drawings show soldiers
+    "field_manual_figures",
 )
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + PEOPLE_AND_BODILY_PACK_KEYS
 
