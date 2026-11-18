@@ -77,8 +77,10 @@ The release **textbooks** holds open textbooks and reference works as ZIM files 
 Kiwix), one file per book, and `textbooks.json`, the list the Digital Accessibility Toolkit reads (Offline libraries,
 Get more, collection "Textbooks"). Each entry has the book's id, title, subject, level (school, college or
 reference), publisher and credit, country, licence (non-commercial ones are marked "not for commercial use"),
-language, size, SHA-256, number of pages, date, and the official address of the publisher's original PDF (and EPUB)
-when there is one. The original PDFs are never copied here; the toolkit downloads them from the publisher.
+language, size, SHA-256, number of pages, date (when the file was made), `published` (when the publisher published or
+last revised the work: `YYYY-MM-DD`, `YYYY-MM` or `YYYY`, empty when the source does not say; the toolkit ranks newer
+works higher), `region` (the state or province a law or guide applies to), and the official address of the
+publisher's original PDF (and EPUB) when there is one. `groups` maps each group key to the collection name. The original PDFs are never copied here; the toolkit downloads them from the publisher.
 
 The files are ordinary ZIM files, so the free Kiwix apps (Windows, Android, iOS, kiwix-serve) open them too.
 
@@ -111,6 +113,23 @@ and why):
   Corpsman (US government works). PDFs that are scans without words are refused.
 - **Reference, governments** (group `government`): Government of Alberta publications under the Open Government
   Licence - Alberta (the Driver's Guide, seniors' safety guides, power-outage preparedness), the newest official PDF.
+- **Reference, laws and rights** (group `law`), one book per law so only the wanted ones are downloaded: US Code
+  chapters (ADA, Rehabilitation Act, IDEA, Fair Housing Act, Consumer Credit Protection Act, Social Security Titles II
+  and XVI) and Code of Federal Regulations parts (air travel 14 CFR 382, ADA rules 28 CFR 35 and 36 and 29 CFR 1630,
+  fair housing 24 CFR 100, transportation 49 CFR 37, telecommunications accessibility 47 CFR 6, 7, 14 and 64 subpart
+  F, Section 508 standards 36 CFR 1194, IDEA rules 34 CFR 300, food labeling 21 CFR 101) from govinfo.gov's newest
+  annual editions (public domain; key `laws-more` adds larger ones such as Regulation Z and the SSA rules); Canada's
+  Accessible Canada Act and Regulations, Canadian Human Rights Act, Employment Equity Act and accessible
+  transportation regulations from Justice Laws (Reproduction of Federal Law Order; marked "not the official
+  version"); and the UK's Equality Act 2010, Consumer Rights Act 2015, Care Act 2014 and Landlord and Tenant Act 1985
+  from legislation.gov.uk (Open Government Licence v3.0). One page per section (or part), listed under its subpart,
+  part or chapter; editorial notes left out.
+- **Reference, consumer and money** (`consumer`), **health and safety** (`health`), **disability and
+  accessibility** (`disability`) and **science and nature** (`science`): US government guides in the public domain
+  (Ask CFPB, Section508.gov, ADA.gov, NIDDK health information, FDA Consumer Updates, the National Cancer Institute's
+  "About cancer", USGS This Dynamic Earth) and PDFs (IRS Publications 17, 554 and 907, Medicare & You, the 2010 ADA
+  Standards), and UK guides under the Open Government Licence (the NHS Health A to Z, GOV.UK's guides for disabled
+  people and on benefits, the Highway Code). Each site's copyright policy is checked at every build.
 - Never a "NoDerivatives" work: a ZIM file is an adaptation (pages rewritten as web pages, formulas as text).
 
 How the books are made accessible: one page per chapter and section with headings; an index page listing every unit,
@@ -123,6 +142,7 @@ library (libzim) is used, not even in the build.
 
 The workflow `.github/workflows/textbooks.yml` builds the books when someone starts it from the Actions page, or when
 `textbooks/request.txt` changes on main (keys separated by commas, or `all`; also `nonprofit`, `fieldmanuals`,
-`government`, `courses`). `python -m pytest textbooks` tests the builder with a made-up book and a made-up website.
+`government`, `courses`, `guides`, `laws`, `laws-more`, `group:<group>` such as `group:health`, or one book such as
+`law:us_code_ada`; `sources.expand_keys` lists them). `python -m pytest textbooks` tests the builder with a made-up book and a made-up website.
 
 Each book keeps its own licence; the credit and licence are on its welcome page and in `textbooks.json`.

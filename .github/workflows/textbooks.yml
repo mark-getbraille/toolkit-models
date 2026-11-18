@@ -2,10 +2,12 @@
 # from the openstax/osbooks-* repositories, Siyavula from its online reader, the WHO, World Bank and FAO reference
 # works from their open repositories, non-profit guides (EFF, People's Law School, W3C WAI Curricula), US military
 # field manuals and Navy courses with Distribution Statement A, UK MCA and MOD guidance under the OGL, and Alberta's
-# open-licence publications) and publish them in the release "textbooks", with textbooks.json listing each
-# book's id, title, subject, level, licence, credit, language, size, SHA-256, article count, date and the official
-# address of the publisher's original PDF (never a copy of it). The toolkit's Offline libraries window reads it
-# (collection "Textbooks").
+# open-licence publications; government guides, laws and regulations in the public domain or under open
+# government licences, in the groups law, consumer, health, disability and science) and publish them in the
+# release "textbooks", with textbooks.json listing each book's id, title, subject, level, licence, credit, language,
+# size, SHA-256, article count, date, "published" (when the publisher published or last revised it), region (state
+# or province) and the official address of the publisher's original PDF (never a copy of it). The toolkit's Offline
+# libraries window reads it (collection "Textbooks").
 # The ZIM files are written by our own writer (textbooks/zimwrite.py, from the openZIM format description); no GPL
 # library (libzim) is used. Every book's licence is checked again from its source while it is built
 # (textbooks/sources.py lists what was checked by hand and what was left out, and why).
@@ -19,7 +21,7 @@ on:
   workflow_dispatch:
     inputs:
       keys:
-        description: "Keys separated by commas (osbooks, osbooks:<repository>, siyavula, dspace, nonprofit, fieldmanuals, government, courses, pictures), or all"
+        description: "Keys separated by commas (osbooks, osbooks:<repository>, siyavula, dspace, nonprofit, fieldmanuals, government, courses, guides, laws, laws-more, group:<group>, guide:<name>, law:<name>, pdf:<name>, pictures), or all"
         required: true
         default: "all"
 
@@ -49,26 +51,7 @@ jobs:
           words = [w for w in sys.argv[1].split(",") if w]
           pictures = "pictures" in words
           words = [w for w in words if w != "pictures"]
-          nonprofit = [f"nonprofit:{e['name']}" for e in sources.NONPROFIT]
-          pdfs = {g: [f"pdf:{e['name']}" for e in sources.PDF_DOCS if e["group"] == g] for g in ("fieldmanual", "government", "course")}
-          every = [f"osbooks:{r}" for r in sources.OSBOOKS] + ["siyavula", "dspace"] + nonprofit + pdfs["fieldmanual"] + \
-              pdfs["government"] + pdfs["course"]
-          keys = []
-          for w in words or ["all"]:
-              if w == "all":
-                  keys += every
-              elif w == "osbooks":
-                  keys += [f"osbooks:{r}" for r in sources.OSBOOKS]
-              elif w == "nonprofit":
-                  keys += nonprofit
-              elif w == "fieldmanuals":
-                  keys += pdfs["fieldmanual"]
-              elif w == "government":
-                  keys += pdfs["government"]
-              elif w == "courses":
-                  keys += pdfs["course"]
-              elif w in every:
-                  keys.append(w)
+          keys = sources.expand_keys(words or ["all"])
           print("keys=" + json.dumps(list(dict.fromkeys(keys))))
           print("pictures=" + ("--pictures" if pictures else ""))
           PY
