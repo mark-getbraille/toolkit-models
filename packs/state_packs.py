@@ -230,7 +230,8 @@ TRAINING = re.compile(r"\b(training|trains?|exercises?|drills?|competitions?|bes
 # Parts of a state or city caption that are not about the picture (added to us_modern_packs.agency_caption's).
 STATE_NOISE = re.compile(r"(\([^()]*\b(photo(graph)?s?|courtesy)\b[^()]*\)?|"
                          r"\bphoto(graph)?( credit)?\s*[:/]\s*[^.]*\.?|"
-                         r"\b[A-Z][\w&.-]{1,20} photos? (by|courtesy)\b[^.]*\.?|\([^)]*/\s*(MTA|NYCT|MTA New York City Transit)[^)]*\)|"
+                         r"\b[A-Z][\w&.-]{1,20} photos? (by|courtesy)\b[^.]*\.?|"
+                         r"\([^)]*/\s*(MTA|NYCT|MTA New York City Transit)[^)]*\)|"
                          r"\((low|high|full) resolution[^)]*\)|\bscientific name\s*:\s*|"
                          r"\b\d{6}-[A-Z]-[A-Z0-9]{5}-\d{2,4}\b)", re.I)
 # An archive record's fields after its title ("Title: ... Creator: ... Date: ... Source: ... Copyright: ..."): cut off.
