@@ -90,6 +90,7 @@ jobs:
             --paths training-kit/kit --paths training-kit/wizard --paths training-kit/prepare `
             --hidden-import training_wizard --hidden-import describe_window --hidden-import describe_package `
             --hidden-import own_data --hidden-import PIL.Image --hidden-import PIL.ImageOps `
+            --hidden-import review_pack --hidden-import needs_workspace `
             --hidden-import sources --hidden-import more_sources --hidden-import big_sources `
             --hidden-import personal_sources --hidden-import extra_sources --hidden-import documentary_sources `
             --hidden-import graphic_sources --hidden-import archive_sources --hidden-import disability_sources `

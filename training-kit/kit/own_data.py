@@ -34,6 +34,8 @@ collection is used only when the caller allows that category (categories=: the p
 Picture-making training calls check_folder with review=False: then every picture in a review workspace is left out.
 Rows from a review workspace have "source": "review" (not "own"), "review" (the collection's key or name),
 "review_category" and "contents" (the tags it needed).
+A picture whose workspace entry says "child": "yes" (pictures that needed a description, needs_workspace.py) gives
+rows marked "child": True, so a picture-making training leaves it out like the packs' pictures of children.
 Its other versions of a description (photo.other-Anna.txt) are never read as descriptions (only photo.txt and
 photo.caption are), and a question written in the window is used instead of the usual one.
 
@@ -308,7 +310,7 @@ def walk(folder):
 
 def workspace_info(folder, cache):
     """What a describing workspace's work file in folder says, as a dict: "pictures" {picture file name in lower
-    case: (status, question, content tag)}, "review" (True when "review_only" is true), "content" (the collection's
+    case: (status, question, content tag, True when its entry marks a child)}, "review" (True when "review_only" is true), "content" (the collection's
     content tag, "" for none), "category" (its review_category) and "name" (its review_source key, or its name).
     A folder that is not a workspace, or whose work file cannot be read, gives empty values. cache keeps each
     folder's answer."""
@@ -327,7 +329,8 @@ def workspace_info(folder, cache):
                 if isinstance(entry, dict):
                     info["pictures"][name.lower()] = (str(entry.get("status", "new")),
                                                       clean(entry.get("question", "")),
-                                                      clean(entry.get("content", "")).lower())
+                                                      clean(entry.get("content", "")).lower(),
+                                                      str(entry.get("child", "")).lower() in ("yes", "true"))
         except (OSError, ValueError, AttributeError):
             pass
         cache[folder] = info
@@ -437,6 +440,7 @@ def check_folder(folder, copies=None, report=None, contents=(), review=True, cat
     for path in lists:
         read_jsonl(path, found, problems, places)
     described, waiting, has_text, workspaces, questions = {}, [], set(), {}, {}
+    children = set()                             # pictures whose workspace entry marks a child
     homes, tags = {}, {}                         # review workspace of each folder; each picture's review details
     for picture in pictures:
         key = same_path(picture)
@@ -444,6 +448,8 @@ def check_folder(folder, copies=None, report=None, contents=(), review=True, cat
         relative = os.path.relpath(picture, folder)
         info = workspace_info(base, workspaces)
         status = info["pictures"].get(os.path.basename(picture).lower())
+        if status and status[3]:
+            children.add(picture)
         home = review_home(base, homes, workspaces)
         if home is not None:                      # a review collection's picture: the strict rules
             has_text.add(os.path.dirname(key))
@@ -544,6 +550,8 @@ def check_folder(folder, copies=None, report=None, contents=(), review=True, cat
         where = ({"place": place} if kind == "photo" else {"place": place, "place_kind": kind}) if place else {}
         review_name, review_category, need = tags.get(picture, ("", "", []))
         extra = {"contents": need} if need else {}
+        if picture in children:
+            extra["child"] = True
         if review_name:                           # a checked picture of a review collection
             extra.update(review=review_name, review_category=review_category)
         for question, answer, layout in dict.fromkeys(entry[:3] for entry in described[picture]):

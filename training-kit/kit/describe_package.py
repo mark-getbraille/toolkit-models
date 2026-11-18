@@ -61,7 +61,7 @@ PACKAGE_PICTURES = "pictures/"           # the pictures and descriptions are in 
 # The computer's drafts of a picture (kit\prepare_data.py), kept in its entry as text and carried in packages;
 # never used for training (own_data.py reads only descriptions people saved).
 DRAFT_KEYS = ("draft", "draft_agreement", "draft_engines", "draft_qwen", "draft_internvl", "draft_florence",
-              "draft_yours", "started_from_draft")
+              "draft_yours", "started_from_draft", "draft_suggested")
 # What a picture's collection said about it, for pictures that came without a good description (the "needs
 # description" zips of the training packs, kit\needs_workspace.py, and review packs, kit\review_pack.py): hints, its
 # web page and the text gathered from it ("page_text": {"alt": ..., "caption": ...}, kept on this computer only), its

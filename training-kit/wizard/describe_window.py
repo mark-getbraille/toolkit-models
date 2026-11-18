@@ -61,7 +61,14 @@ FILTERS = [("all", "All"), ("not described", "Not described"), ("needs another l
            ("drafts disagree", "Not described: drafts that disagree first"), ("skipped", "Set aside or skipped")]
 # The draft models of Dataset Preparation (kit\prepare_data.py ENGINES), as said in "Drafts by each picture model".
 DRAFT_NAMES = (("qwen", "Qwen3-VL 8B"), ("internvl", "InternVL 3.5 8B"), ("florence", "Florence-2 large"),
-               ("yours", "Your own trained describer"))
+               ("yours", "Your own trained describer"),
+               ("suggested", "Suggested from the page text (written with the page's words: check it carefully)"))
+# What a picture's collection and web page said about it (pictures that needed a description: kit\needs_workspace.py
+# and kit\review_pack.py), shown read only beside the drafts: (entry's page_text field, label).
+PAGE_TEXT_NAMES = (("alt", "Alt text on its web page"), ("title", "Picture title on its web page"),
+                   ("caption", "Caption on its web page"), ("heading", "Heading above it"),
+                   ("nearby", "Text near it on the page"), ("summary", "The page's summary"),
+                   ("api", "The collection's record"), ("categories", "Categories"))
 VIDEO_ENDINGS = "*.mp4;*.mov;*.m4v;*.mkv;*.avi;*.webm;*.3gp;*.mts;*.m2ts;*.wmv;*.ogv"
 PICTURE_FILES = "*.jpg;*.jpeg;*.png;*.webp;*.bmp;*.gif;*.tif;*.tiff"
 # What "Take stills from videos" does about burned-in date stamps and logos: (video_frames.py --overlays, shown).
@@ -722,6 +729,11 @@ class DescribeWindow(AccessibleDialog):
         # The drafts of Dataset Preparation (kit\prepare_data.py): read only; the starting one is in Description.
         self.drafts = self.labelled(right, "Drafts by each picture model (&J):", lambda: wx.TextCtrl(
             self.panel, value="No drafts.", style=wx.TE_MULTILINE | wx.TE_READONLY, size=(-1, 110)))
+        # What the collection and the picture's web page said (pictures that needed a description): read only, never
+        # used as the description. No Alt letter (every letter of this window is taken); Tab from the drafts reaches it.
+        self.collection = self.labelled(right, "What its collection and web page say (not checked, may be wrong):",
+                                        lambda: wx.TextCtrl(self.panel, value="Nothing.", size=(-1, 90),
+                                                            style=wx.TE_MULTILINE | wx.TE_READONLY))
         self.from_draft = False         # the Description box holds the computer's draft, not yet saved by a person
         top.Add(right, 1, wx.EXPAND)
         s.Add(top, 1, wx.EXPAND)
@@ -977,13 +989,14 @@ class DescribeWindow(AccessibleDialog):
         self.current = name
         bitmap = wx.Bitmap(*PICTURE_BOX)
         if name is None or self.workspace is None:
-            text, question, notes, alt, drafts = "", "", "", "No picture.", "No drafts."
+            text, question, notes, alt, drafts, said = "", "", "", "No picture.", "No drafts.", "Nothing."
         else:
             entry = self.workspace.entry(name)
             text = self.package.description(self.workspace, name)
             question, notes = self.package.question_of(self.workspace, name), entry["notes"]
             alt = text or "No description yet"
             drafts = self.drafts_text(entry)
+            said = self.collection_text(entry)
             bitmap = self.scaled(self.workspace.path(name)) or bitmap
         self.picture.SetBitmap(bitmap)
         for setter in (self.picture.SetLabel, self.picture.SetName, self.picture.SetToolTip):
@@ -995,6 +1008,7 @@ class DescribeWindow(AccessibleDialog):
         self.from_draft = bool(draft.strip())
         self.description.SetValue(text or draft)
         self.drafts.SetValue(drafts)
+        self.collection.SetValue(said)
         self.notes.SetValue(notes)
         self.loaded = (text or draft, self.question.GetValue(), notes)
         has_other = bool(name and self.workspace and self.package.other_versions(self.workspace, name))
@@ -1016,6 +1030,20 @@ class DescribeWindow(AccessibleDialog):
             lines.insert(0, "The drafts " + ("agree well." if agree >= 0.45 else "partly agree." if agree >= 0.25 else
                                              "disagree a lot: check this picture carefully."))
         return "\n\n".join(lines)
+
+    @staticmethod
+    def collection_text(entry):
+        """The "What its collection and web page say" field: the collection's hints, each gathered page-text field
+        with its label, where the page is, the credit and licence; "Nothing." for an ordinary picture."""
+        lines = [f"The collection's notes: {entry['hint']}"] if entry.get("hint") else []
+        page_text = entry.get("page_text") if isinstance(entry.get("page_text"), dict) else {}
+        lines += [f"{label}: {page_text[key]}" for key, label in PAGE_TEXT_NAMES if page_text.get(key)]
+        if entry.get("needs_reason"):
+            lines.append(f"Why it needs a description: {entry['needs_reason']}")
+        for key, label in (("page_url", "Its web page"), ("credit", "Credit"), ("licence", "Licence")):
+            if entry.get(key):
+                lines.append(f"{label}: {entry[key]}")
+        return "\n\n".join(lines) if lines else "Nothing."
 
     def scaled(self, path):
         """The picture at path as a bitmap fitting in PICTURE_BOX, or None when it cannot be shown."""

@@ -17,6 +17,12 @@ The window goes through four steps, each with its own buttons, all said through 
   4. Review: Describe pictures opens on the workspace; each picture without a description shows the computer's draft
      in Description (said as a draft), every model's draft is in "Drafts by each picture model", and the Filter can
      list first the pictures whose drafts disagree. Nothing is trained on until a person saves a description.
+  5. Build a review pack (its own window, ReviewPackDialog; also "Build a Review Pack.cmd" in the kit folder): the
+     pictures the training packs set aside because their description was missing or poor (the release
+     "needs-description") are downloaded, collection by collection; the text of each picture's web page is gathered
+     (kept on this computer only); two models write independent drafts from the picture alone; and a review pack
+     folder, its zip and a JSONL file for the reviewers' database are made (kit\review_pack.py, run through
+     kit\run_prepare.cmd). It stops and carries on safely.
 
 Accessibility (the same rules as the wizard; training-kit/tests/test_accessibility.py checks them before every
 publish): standard wx controls only; a label ending ":" right before each field; every button and check box has an
@@ -28,7 +34,11 @@ Letters: K (Workspace folder), B (Browse for the workspace), F (Kit folder), D (
 pictures), O (Add a folder of pictures), V (Take stills from videos), E (Set aside dark, blurry and repeated
 pictures), U (Blur faces), G (Date stamps and logos), C (Clean up), Q (Qwen3-VL), I (InternVL), R (Florence-2),
 Y (Your own trained describer), M (Combine the drafts), A (Write the drafts), N (Clean up, then write the drafts),
-W (Review and correct in Describe pictures), S (Stop), H (Help), L (Close).
+W (Review and correct in Describe pictures), S (Stop), T (Build a review pack), H (Help), L (Close).
+The review pack window has its own letters: F (Review pack folder), B (Browse), C (Collections), G (Get the list),
+Z (Use downloaded zips), T (Gather page text), Q, I, R, Y (the draft models), S (Suggest a combined description),
+K (Build the review pack), P (Stop), D (Open it in Describe pictures), X (Export the reviewers' file), H (Help),
+O (Close).
 
 Command line: "Dataset Preparation.exe --self-test" checks that the window can be made and the kit's parts are
 inside (the build's check).
@@ -55,6 +65,7 @@ import training_wizard as wizard  # noqa: E402
 
 TITLE = "Dataset Preparation"
 GUIDE = "HOW TO PREPARE PICTURES FOR TRAINING.txt"
+NEEDS_GUIDE = "HOW TO DESCRIBE PICTURES THAT NEED A DESCRIPTION.txt"
 # The draft models (kit\prepare_data.py ENGINES): (key, check box label, tooltip, ticked at first).
 ENGINES = [
     ("qwen", "&Qwen3-VL 8B: long, plain descriptions", "The kit's own 8B model (Apache-2.0, about 17 GB). It also "
@@ -167,6 +178,9 @@ class PrepareWindow(wx.Frame):
                               self.on_stop)):
             row.Add(b, 0, wx.ALL, 4)
         s.Add(row, 0, wx.LEFT, 4)
+        s.Add(self.button("Build a review pack (pic&tures that need a description)...", "Download the pictures the "
+                          "training packs set aside for a description, gather their web pages' text and write two "
+                          "drafts of each, for the reviewers", self.on_review_pack), 0, wx.LEFT, 8)
 
         # what is happening
         self.summary = self.labelled(s, "Workspace summary:", lambda: wx.TextCtrl(panel, style=wx.TE_READONLY))
@@ -399,6 +413,15 @@ class PrepareWindow(wx.Frame):
         self.update_summary()
         self.say(f"Back in {TITLE}. {self.summary.GetValue()}")
 
+    def on_review_pack(self, _event):
+        """Open the Build a review pack window."""
+        if self.busy:
+            self.say(f"Please wait: {self.busy} is still working. Stop it with Alt+S.")
+            return
+        with ReviewPackDialog(self) as d:
+            d.ShowModal()
+        self.say(f"Back in {TITLE}.")
+
     def on_stop(self, _event):
         """Stop the work that runs (the drafts carry on from there next time)."""
         if self.process is None or self.process.poll() is not None:
@@ -522,14 +545,366 @@ class PrepareWindow(wx.Frame):
         self.Destroy()
 
 
+class ReviewPackDialog(wx.Dialog):
+    """Build a review pack (see the module docstring, step 5, and kit\\review_pack.py): choose the collections of
+    pictures that need a description (from the release's needs-manifest.json, with their sizes, or from a folder of
+    zips already downloaded), what to gather and which two models write the drafts, then build. The work runs in the
+    training kit (kit\\run_prepare.cmd ... review-pack), stops and carries on safely, and says its progress."""
+
+    def __init__(self, parent):
+        """Make the window from the remembered choices; parent is the Dataset Preparation window (its kit folder)."""
+        super().__init__(parent, title="Build a review pack", size=(820, 900),
+                         style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+        self.parent, self.mnemonics, self.keys = parent, {}, []
+        self.process, self.busy, self.lines = None, "", queue.Queue()
+        chosen = wizard.load_choices()
+        panel = self.panel = wx.Panel(self)
+        s = wx.BoxSizer(wx.VERTICAL)
+        self.about = self.labelled(s, "About review packs:", lambda: wx.TextCtrl(
+            panel, value=("The training packs set aside pictures that passed every rule but had no good description. "
+                          "This window downloads the collections you tick, reads each picture's web page (its alt "
+                          "text, caption and nearby text, kept on this computer only), has two picture models write "
+                          "drafts from the picture alone, and makes a review pack for the people who describe them. "
+                          "Nothing is trained on until a person describes a picture and marks it checked. Press F1 "
+                          "for the guide."), style=wx.TE_MULTILINE | wx.TE_READONLY, size=(-1, 80)))
+        default = os.path.join(chosen.get("folder") or wizard.DEFAULT_FOLDER, "Review pack")
+        self.folder = self.labelled(s, "Review pack &folder:", lambda: wx.TextCtrl(
+            panel, value=chosen.get("review_folder") or default))
+        s.Add(self.button("&Browse for the review pack folder...", "Choose the folder for the review pack (an empty "
+                          "folder, or the one of a review pack to carry on with)", self.on_browse), 0, wx.LEFT, 8)
+        self.collections = self.labelled(s, "&Collections that need a description (Space ticks one):",
+                                         lambda: wx.CheckListBox(panel, size=(-1, 160)), 1)
+        row = wx.WrapSizer(wx.HORIZONTAL)
+        for b in (self.button("&Get the list of collections", "Read which collections are published, with how many "
+                              "pictures and how big each download is", self.on_list),
+                  self.button("Use downloaded &zips from a folder...", "List the needs zips you downloaded before, "
+                              "instead of downloading them", self.on_zips)):
+            row.Add(b, 0, wx.ALL, 4)
+        s.Add(row, 0, wx.LEFT, 4)
+        self.zips = self.labelled(s, "Folder of downloaded zips (empty: they are downloaded):", lambda: wx.TextCtrl(
+            panel, value=chosen.get("review_zips", "")))
+        self.page_text = self.check("Gather the &text of each picture's web page (kept on this computer only)",
+                                    "Its alt text, caption, heading and nearby paragraphs, one request every few "
+                                    "seconds per website, and never where robots.txt says no",
+                                    chosen.get("review_page_text", True))
+        s.Add(self.page_text, 0, wx.ALL, 6)
+        remembered = chosen.get("review_engines")
+        self.engines = {}
+        for key, label, tip, _ticked in ENGINES:      # two drafts by default: Qwen3-VL and InternVL
+            box = self.check(label, f"{tip}. It writes its draft from the picture alone",
+                             key in remembered if isinstance(remembered, list) else key in ("qwen", "internvl"))
+            self.engines[key] = box
+            s.Add(box, 0, wx.LEFT | wx.RIGHT | wx.TOP, 6)
+        if not finished_training(parent.kit.GetValue().strip()):
+            self.engines["yours"].SetValue(False)
+            self.engines["yours"].Enable(False)
+            self.engines["yours"].SetToolTip("No training has finished in this kit yet (Alt+Y)")
+        self.suggest = self.check("&Suggest a combined description from the page text (a person must check it)",
+                                  "The first model writes one more description with the page text and the "
+                                  "collection's notes as help; it is kept apart and never used as it is",
+                                  chosen.get("review_suggest", False))
+        s.Add(self.suggest, 0, wx.ALL, 6)
+        row = wx.WrapSizer(wx.HORIZONTAL)
+        for b in (self.button("Build the review pac&k", "Download, gather, write the drafts and make the pack; it "
+                              "carries on where it stopped", self.on_build),
+                  self.button("Sto&p", "Stop the work (what was done is kept; build again to carry on)", self.on_stop),
+                  self.button("Open the pack in &Describe pictures...", "Describe and check the pictures of the "
+                              "review pack", self.on_open),
+                  self.button("E&xport the reviewers' file again", "Write review-pack.jsonl again from the pack, with "
+                              "the descriptions written so far", self.on_export)):
+            row.Add(b, 0, wx.ALL, 4)
+        s.Add(row, 0, wx.LEFT, 4)
+        self.status = self.labelled(s, "Status:", lambda: wx.TextCtrl(panel, style=wx.TE_READONLY))
+        self.gauge = self.labelled(s, "Progress:", lambda: wx.Gauge(panel, range=100))
+        self.log_box = self.labelled(s, "What was done:", lambda: wx.TextCtrl(
+            panel, style=wx.TE_MULTILINE | wx.TE_READONLY), 1)
+        row = wx.BoxSizer(wx.HORIZONTAL)
+        row.Add(self.button("&Help (F1)", "Open the guide to pictures that need a description", self.on_help), 0,
+                wx.ALL, 4)
+        row.Add(self.button("Cl&ose", "Close this window (Escape)", lambda e: self.Close()), 0, wx.ALL, 4)
+        s.Add(row, 0, wx.ALL, 4)
+        panel.SetSizer(s)
+        self.Bind(wx.EVT_CHAR_HOOK, self.on_key)
+        self.Bind(wx.EVT_CLOSE, self.on_close)
+        self.timer = wx.Timer(self)
+        self.Bind(wx.EVT_TIMER, self.on_timer, self.timer)
+        self.timer.Start(250)
+        if self.zips.GetValue().strip() and os.path.isdir(self.zips.GetValue().strip()):
+            self.fill_from_folder(self.zips.GetValue().strip())
+        self.CentreOnParent()
+
+    # the same accessible helpers as the main window
+    labelled = PrepareWindow.labelled
+    button = PrepareWindow.button
+    check = PrepareWindow.check
+
+    def say(self, text, interrupt=True, spoken=True):
+        """Show text in Status and What was done, write it into the desktop log and (spoken) say it."""
+        if not self:
+            return
+        text = " ".join(str(text).split())
+        self.status.SetValue(text)
+        self.log_box.AppendText(text + "\n")
+        wizard.log(f"{TITLE}, review pack: {text}")
+        if spoken:
+            wizard.speak(text, interrupt)
+
+    def keep_choices(self):
+        """Remember this window's choices in the wizard's settings.json."""
+        choices = wizard.load_choices()
+        choices.update(review_folder=self.folder.GetValue().strip(), review_zips=self.zips.GetValue().strip(),
+                       review_page_text=self.page_text.GetValue(), review_suggest=self.suggest.GetValue(),
+                       review_engines=[k for k, box in self.engines.items() if box.GetValue()])
+        wizard.save_choices(choices)
+
+    def review_pack(self):
+        """kit\\review_pack.py (the list of collections and the reading of zips), or None when it is missing."""
+        try:
+            import review_pack
+            return review_pack
+        except ImportError:
+            self.say("This program is missing kit\\review_pack.py. Get the newest program.")
+            return None
+
+    def show_list(self, entries, source):
+        """Fill the Collections list with entries [(key, line)] and say how many there are."""
+        self.keys = [k for k, _line in entries]
+        self.collections.Set([line for _k, line in entries])
+        self.say(f"{len(entries)} collections {source}. Tick the ones to put in the review pack (Space), then "
+                 "build it (Alt+K)." if entries else f"No collections were found {source}.")
+
+    def on_browse(self, _event):
+        """Choose the review pack folder."""
+        with wx.DirDialog(self, "Choose the review pack folder (an empty folder, or a review pack to carry on)") as d:
+            if d.ShowModal() == wx.ID_OK:
+                self.folder.SetValue(d.GetPath())
+                self.keep_choices()
+                self.say(f"Review pack folder: {d.GetPath()}.")
+
+    def on_list(self, _event):
+        """Read needs-manifest.json from the release (in the background) and list its collections with sizes."""
+        module = self.review_pack()
+        if module is None or self.busy:
+            return
+        self.zips.SetValue("")
+        self.busy = "reading the list of collections"
+        self.say("Reading the list of collections. Please wait.")
+
+        def work():
+            """The list, read from the internet."""
+            try:
+                manifest = module.read_manifest()
+                lines = module.list_lines(manifest)
+                self.lines.put(("list", [(k, line) for k, line in zip(sorted(manifest), lines)]))
+            except Exception as e:  # noqa: BLE001 - said in plain words
+                self.lines.put(("done", f"STOPPED: the list could not be read ({e}). Check the internet connection."))
+        threading.Thread(target=work, daemon=True).start()
+
+    def fill_from_folder(self, folder):
+        """List the needs zips in folder (each collection's newest version)."""
+        module = self.review_pack()
+        if module is None:
+            return
+        found = module.zips_in(folder)
+        self.show_list([(k, f"{k}: {module.size_words(os.path.getsize(p))} (downloaded: {os.path.basename(p)})")
+                        for k, p in sorted(found.items())], f"in {folder}")
+
+    def on_zips(self, _event):
+        """Choose a folder of needs zips downloaded before."""
+        with wx.DirDialog(self, "Choose the folder that holds the needs zips you downloaded") as d:
+            if d.ShowModal() == wx.ID_OK:
+                self.zips.SetValue(d.GetPath())
+                self.keep_choices()
+                self.fill_from_folder(d.GetPath())
+
+    def arguments(self):
+        """The command line for kit\\prepare_data.py's review-pack job, or None (said why) when not ready."""
+        folder = self.folder.GetValue().strip()
+        ticked = [self.keys[i] for i in self.collections.GetCheckedItems() if i < len(self.keys)]
+        engines = [k for k, box in self.engines.items() if box.GetValue() and box.IsEnabled()]
+        if not folder:
+            self.say("Choose the review pack folder first (Alt+B).")
+            return None
+        if not ticked:
+            self.say("Tick at least one collection first: get the list (Alt+G) or use downloaded zips (Alt+Z), "
+                     "then press Space on each one you want.")
+            return None
+        if not engines:
+            self.say("Tick the picture models that write the drafts (two are best: Alt+Q and Alt+I).")
+            return None
+        args = [folder, "review-pack", "--keys", ",".join(ticked), "--engines", ",".join(engines)]
+        if self.zips.GetValue().strip():
+            args += ["--zips", self.zips.GetValue().strip()]
+        if not self.page_text.GetValue():
+            args.append("--no-page-text")
+        if self.suggest.GetValue():
+            args.append("--suggest")
+        library = wizard.load_choices().get("library")
+        if library:
+            args += ["--library", library]
+        return args
+
+    def on_build(self, _event):
+        """Build (or carry on building) the review pack in the training kit."""
+        if self.busy:
+            self.say(f"Please wait: {self.busy} is still working. Stop it with Alt+P.")
+            return
+        args = self.arguments()
+        if args is None:
+            return
+        if os.name != "nt":
+            self.say("The review pack is built in the training kit, which works on Windows only.")
+            return
+        kit = self.parent.kit.GetValue().strip()
+        if not kit:
+            self.say("Choose the training kit folder in the Dataset Preparation window first (Alt+D there).")
+            return
+        self.keep_choices()
+        self.busy = "building the review pack"
+        self.gauge.Pulse()
+        self.say("Building the review pack. It carries on where it stopped, so it can be stopped at any time.")
+
+        def work():
+            """Copy the kit's files, run kit\\run_prepare.cmd with the review-pack job, pass its lines on."""
+            self.lines.put(("line", f"Copying the kit's files into {kit}."))
+            wizard.copy_kit(kit)
+            path = os.path.join(kit, "kit", "run_prepare.cmd")
+            command = f'"{os.environ.get("ComSpec", "cmd.exe")}" /d /s /c ""{path}" {subprocess.list2cmdline(args)}"'
+            wizard.log(f"{TITLE}, review pack: {command}")
+            self.process = subprocess.Popen(command, cwd=kit, env=dict(wizard.kit_environment(kit), KIT_NO_PAUSE="1"),
+                                            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                            text=True, encoding="utf-8", errors="replace",
+                                            creationflags=wizard.NO_WINDOW)
+            last = ""
+            for line in self.process.stdout:
+                if line.strip():
+                    last = line.strip()
+                    self.lines.put(("line", line.rstrip()))
+            code = self.process.wait()
+            self.process = None
+            self.lines.put(("done", last if last.startswith(("Finished", "STOPPED")) else
+                            ("Finished." if not code else "STOPPED: the work ended early.")))
+        threading.Thread(target=work, daemon=True).start()
+
+    def on_stop(self, _event):
+        """Stop the work (what was done is kept)."""
+        if self.process is None or self.process.poll() is not None:
+            self.say("Nothing is running.")
+            return
+        if os.name == "nt":
+            subprocess.run(["taskkill", "/T", "/F", "/PID", str(self.process.pid)], capture_output=True,
+                           creationflags=wizard.NO_WINDOW)
+        else:
+            self.process.kill()
+        self.say("Stopping. What was done so far is kept; build again to carry on.")
+
+    def on_open(self, _event):
+        """Open the review pack in Describe pictures."""
+        folder = self.folder.GetValue().strip()
+        package = self.parent.package
+        if not folder or package is None or not package.is_workspace(folder):
+            self.say("There is no review pack in that folder yet: build it first (Alt+K).")
+            return
+        choices = wizard.load_choices()
+        choices["describe_workspace"] = folder
+        wizard.save_choices(choices)
+        with describe_window.DescribeWindow(self, wizard, self.parent.kit.GetValue().strip() or None,
+                                            choices.get("library") or None) as window:
+            window.ShowModal()
+        self.say("Back in Build a review pack.")
+
+    def on_export(self, _event):
+        """Write review-pack.jsonl again (with the descriptions written so far)."""
+        folder = self.folder.GetValue().strip()
+        try:
+            import needs_workspace
+            self.say(needs_workspace.export_jsonl(folder, os.path.join(folder, "review-pack.jsonl")))
+        except Exception as e:  # noqa: BLE001 - said in plain words
+            self.say(f"The reviewers' file could not be written: {e}")
+
+    def on_help(self, _event):
+        """Open the guide to pictures that need a description."""
+        path = wizard.resource(NEEDS_GUIDE)
+        if os.path.exists(path):
+            open_file(path)
+        else:
+            self.say("The guide is missing from the program.")
+
+    def on_timer(self, _event):
+        """Show and say what the background work said."""
+        while True:
+            try:
+                kind, value = self.lines.get_nowait()
+            except queue.Empty:
+                break
+            if kind == "list":
+                self.busy = ""
+                self.gauge.SetValue(0)
+                self.show_list(value, "are published")
+                continue
+            if kind == "done":
+                self.busy = ""
+                self.gauge.SetValue(0 if value.startswith("STOPPED") else 100)
+                self.say(value)
+                continue
+            if wizard.is_computer_line(value):
+                self.log_box.AppendText(value + "\n")
+                wizard.log(f"{TITLE}, review pack: {value}")
+                continue
+            count = COUNT_LINE.search(value)
+            if count and int(count.group(2)):
+                self.gauge.SetValue(min(100, int(count.group(1)) * 100 // int(count.group(2))))
+            elif self.busy:
+                self.gauge.Pulse()
+            self.say(value, interrupt=False, spoken=bool(REVIEW_SPOKEN.match(value)))
+
+    def on_key(self, event):
+        """Escape closes; F1 opens the guide; Alt and a label's letter moves focus to its field."""
+        key = event.GetKeyCode()
+        if key == wx.WXK_ESCAPE:
+            self.Close()
+        elif key == wx.WXK_F1:
+            self.on_help(None)
+        elif event.AltDown() and not event.ControlDown() and 0 < key < 256 and chr(key).lower() in self.mnemonics:
+            self.mnemonics[chr(key).lower()].SetFocus()
+        else:
+            event.Skip()
+
+    def on_close(self, event):
+        """Close; while work runs, ask first (it carries on from where it stopped next time)."""
+        if self.process is not None and self.process.poll() is None and event.CanVeto():
+            answer = wx.MessageBox("The review pack is still being built. Stop it and close? What was done so far is "
+                                   "kept.", TITLE, wx.YES_NO | wx.NO_DEFAULT, self)
+            if answer != wx.YES:
+                event.Veto()
+                return
+            self.on_stop(None)
+        self.timer.Stop()
+        self.keep_choices()
+        if self.IsModal():
+            self.EndModal(wx.ID_CLOSE)
+        else:
+            self.Destroy()
+
+
+# The review pack's lines that are said aloud (the others are shown and logged).
+REVIEW_SPOKEN = re.compile(r"^\s*(Downloading collection|Adding collection|Reading the web pages|Page text gathered|"
+                           r"Writing drafts|Drafts are ready|Model \d+ of \d+|Writing suggested|The review pack is|"
+                           r"STOPPED|Finished|.*could not be)")
+
+
 def self_test():
     """The build's check: the window can be made and the kit's parts are inside the program."""
-    for part in (("kit", "prepare_data.py"), ("kit", "run_prepare.cmd"), ("kit", "describe_package.py"), (GUIDE,)):
+    for part in (("kit", "prepare_data.py"), ("kit", "run_prepare.cmd"), ("kit", "describe_package.py"),
+                 ("kit", "review_pack.py"), ("kit", "needs_workspace.py"), (GUIDE,), (NEEDS_GUIDE,)):
         if not os.path.exists(wizard.resource(*part)):
             raise SystemExit(f"Missing from the program: {os.path.join(*part)}")
     app = wx.App(False)
     window = PrepareWindow()
     window.timer.Stop()
+    dialog = ReviewPackDialog(window)
+    dialog.timer.Stop()
+    dialog.Destroy()
     window.Destroy()
     app.Destroy()
     print("Self-test passed.")

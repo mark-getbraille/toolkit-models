@@ -68,18 +68,24 @@ WHAT IT DOES, STEP BY STEP
    In the training program, in Describe pictures, press "Use this workspace for training". Then start a training,
    or a follow-up training. Only described and checked pictures are used.
 
+7. Pictures that need a description (Alt+T).
+   "Build a review pack" opens its own window: it downloads the pictures the training packs set aside because their
+   description was missing or poor, reads each picture's web page and has two models write drafts. See "HOW TO
+   DESCRIBE PICTURES THAT NEED A DESCRIPTION.txt" (F1 in that window).
+
 KEYS
    Escape closes the program (it asks first while work is running). F1 opens this guide. Every button and check box
    has an Alt letter, and its tooltip names it. Enter presses only the button you are on.
    Letters: K workspace folder, B browse for the workspace, F kit folder, D browse for the kit, P add pictures,
    O add a picture folder, V stills from videos, E set aside, U blur faces, G date stamps and logos, C clean up,
    Q Qwen3-VL, I InternVL, R Florence-2, Y your own describer, M combine, A write the drafts, N clean up then drafts,
-   W review, S stop, H help, L close.
+   W review, S stop, T build a review pack, H help, L close.
    The Status field, the Progress bar and "What was done" show what is happening. The important lines are spoken.
    Everything is also written into the "Picture Model Training logs" folder on the desktop.
 
 GOOD TO KNOW
-   - Everything runs on this computer. Pictures are never sent anywhere. Only the models are downloaded, once.
+   - Everything runs on this computer. Pictures are never sent anywhere. Only the models are downloaded, once (and,
+     for a review pack, the pictures that need a description and their web pages).
    - The licences: Qwen3-VL and InternVL are Apache-2.0, and Florence-2 is MIT. A draft is a starting point, not a
      description: the descriptions the training learns from are the ones people saved.
    - Pictures of children: the same rules as everywhere in the kit. Never describe anyone who may be under 18 in a

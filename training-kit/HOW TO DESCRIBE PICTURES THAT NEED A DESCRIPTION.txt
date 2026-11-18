@@ -1,0 +1,118 @@
+HOW TO DESCRIBE PICTURES THAT NEED A DESCRIPTION (review packs)
+
+The training packs are built from museum, archive and photo collections. Some pictures pass every rule of their
+pack: a free licence, nothing sexual, a real photo, big enough, not a repeat. But the collection gave them no good
+description: none at all, only a few words, only a title or a file name, a catalogue number, a sentence written by a
+template ("This is a photo of a monument ..."), or words that are not English. Those pictures are not thrown away.
+They are kept apart, collection by collection, in the release "needs-description" on the project's GitHub page,
+each as a zip called needs-<collection>.vN.zip, with needs-manifest.json listing them all.
+
+Nothing from these zips is ever used for training as it is. A person must write each description, and a person
+must mark it checked. Pictures of children, and pictures from collections of people, war, medical or bodily
+subjects, are never used for picture-making.
+
+THREE WAYS TO USE THEM
+
+1. The quickest: open one zip in Describe pictures.
+   In the training program, press Describe pictures (Alt+J), choose an empty Workspace folder, press Import a
+   package (Alt+I) and choose the zip. Do not unpack it first. Every picture is "new", and what the collection said
+   about it is in "What its collection and web page say", below the drafts. It is a review collection: only
+   pictures you mark checked are ever trained on.
+
+2. A review pack, in Dataset Preparation.
+   In Dataset Preparation, press "Build a review pack (pictures that need a description)" (Alt+T). In its window:
+   - Review pack folder (Alt+F): an empty folder for a new pack, or the folder of a pack you started before, to
+     carry on with it.
+   - Get the list of collections (Alt+G): reads which collections are published, with how many pictures each has
+     and how big its download is. Or, Use downloaded zips from a folder (Alt+Z) when you downloaded zips before.
+   - Collections that need a description (Alt+C): move with the arrow keys and press Space to tick each one you
+     want.
+   - Gather the text of each picture's web page (Alt+T, ticked at first): see "The page text" below.
+   - The picture models (Alt+Q, Alt+I, Alt+R, Alt+Y): two are ticked at first, Qwen3-VL 8B and InternVL 3.5 8B.
+     Each writes its own draft from the picture alone, so the drafts say only what can be seen.
+   - Suggest a combined description from the page text (Alt+S, not ticked at first): the first model writes one
+     more description using the page text and the collection's notes as help. It is kept apart, labelled as a
+     suggestion, and a person must check it.
+   - Build the review pack (Alt+K). The progress is shown and said. Stop (Alt+P) stops it; Build again carries on
+     where it stopped, so a long pack can take several evenings. Open the pack in Describe pictures (Alt+D) to
+     describe the pictures. Export the reviewers' file again (Alt+X) writes review-pack.jsonl again with the
+     descriptions written so far.
+   The drafts need the NVIDIA graphics card, and no training may run at the same time. Without the graphics card
+   the pack is still made, without drafts.
+
+3. Build a Review Pack.cmd, in the training kit's folder.
+   It does the same as 2 in a plain text window: it shows the list of collections with their sizes, asks which ones
+   you want (type their names separated by commas, or all) and where the pack should go, and builds it with two
+   drafts per picture and the page text.
+
+THE PAGE TEXT
+
+For each picture whose collection gave a web page, the program reads that page and keeps, as plain text, each with
+where it came from:
+- alt: the picture's alt text on the page;
+- title: the picture's title (shown when the mouse is over it);
+- caption: its caption on the page;
+- heading: the nearest heading above the picture;
+- nearby: the paragraph or two right around the picture, and any paragraph that mentions it by its figure number;
+- summary: the page's own short description;
+- api: the collection's own record, where it has an open interface (for Wikimedia Commons, the file's description
+  from its interface, not from the web page);
+- categories: the Commons categories of the file.
+The page text can help with names, places and dates, but it can be wrong or about another picture. Always check it
+against the picture.
+The program is polite to the websites: it names itself (never you), reads each site's robots.txt and keeps to it
+(a page that robots.txt forbids is not read, and the reason is noted), asks each site at most once every three
+seconds, waits when a site is busy, and keeps every page it read so it never asks twice.
+PLEASE NOTE: the page text may be under copyright. It stays on your own computers, in the review pack. Do not upload,
+publish or share it beyond your reviewers.
+
+WHAT IS IN A REVIEW PACK
+
+The review pack is a folder (and a zip of it beside the folder):
+- the pictures, with describing.json: the folder is a Describe pictures workspace;
+- READ ME - REVIEW PACK.txt;
+- review-pack.jsonl: one line per picture, for the reviewers' own database (the fields are below);
+- review-pack-problems.txt: pictures and pages that could not be fetched, and why.
+The hidden folders .downloads and .page-cache keep the downloads and the pages read; they are not put in the zip.
+
+THE FIELDS OF review-pack.jsonl (one line per picture)
+
+The reviewers' database reads this file. Its job is to put together the alt text, the AI drafts and the page text
+into one good description for training; a person then checks it. Each line has:
+- file: the picture's file name in the pack folder.
+- workspace: the pack's name.
+- source: the collection (the training pack) the picture comes from, such as loc_fsa.
+- status: new, described, checked, needs another look, or skip.
+- description: the description a person wrote ("" when there is none yet).
+- question: the question the description answers, normally "Describe this picture."
+- described_by, described_at, checked_by, checked_at: who wrote and checked it, and when.
+- url: where the picture was downloaded from.
+- page_url: the picture's web page (the museum's object page, the Commons file page ...).
+- credit: the credit line the licence asks for. Keep it with the picture.
+- licence: the picture's licence in words.
+- category: open, share-alike, noncommercial, research or permission (which trainings may use it).
+- reason: why the pack left it out (for example "its caption is under six words").
+- hints: what the collection said: its title, the poor description, tags, a date, the place ...
+- page_text: the text gathered from the web page (alt, title, caption, heading, nearby, summary, api,
+  categories; see above). Local only.
+- page_text_sources: where each page_text field came from.
+- drafts: each model's draft, by model (qwen, internvl, florence, yours), written from the picture alone.
+- draft: the draft that agrees most with the others (the starting description in Describe pictures).
+- draft_suggested: the suggested combined description from the page text, when one was asked for.
+- draft_agreement: how much the drafts agree, from 0 (not at all) to 1 (fully). Check low ones most carefully.
+- content: graphic or medical when the picture shows that (used only with that content choice).
+- child: true when the picture's words mention a child (never used for picture-making).
+- not_for_picture_making: true when the picture must never train a picture-making model.
+- place, place_kind: where the picture is from, when the collection said so.
+- notes: what the people describing it told each other.
+
+needs_workspace.py, in the kit folder, also writes this file for any workspace:
+    env\Scripts\python.exe kit\needs_workspace.py export "D:\Review pack" "D:\review.jsonl"
+
+THE NEEDS ZIPS THEMSELVES
+
+Each needs-<collection>.vN.zip holds the pictures (at most 2048 pixels on the long side), needs.jsonl (one line per
+picture: file or url, url, page_url, credit, licence, category, source, hints, reason, place, place_kind, content,
+child, not_for_picture_making, added), describing.json (the same pictures as a Describe pictures package),
+README.txt and CREDITS.txt. A picture whose collection does not allow copying its pictures comes with its address
+only; the review pack downloads it from there, politely, and keeps a copy in your Picture Library.

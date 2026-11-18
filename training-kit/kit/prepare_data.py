@@ -38,11 +38,19 @@ the other:
    the computer's draft, to be checked and corrected.
    Stopped part-way, it carries on where it stopped: a picture that already has a model's draft is not done again.
 
+3. REVIEW PACKS (the "review-pack" job, kit\\review_pack.py; "Build a Review Pack.cmd" and the program's "Build a
+   review pack" window): the pictures the training packs set aside because their description was missing or poor
+   are downloaded (needs-<key> zips), the text of each picture's web page is gathered (kept on this computer only),
+   and two models write independent drafts from the picture alone; see review_pack.py.
+
 Command line (kit\\run_prepare.cmd runs it in the kit's own Python):
     python prepare_data.py WORKSPACE clean [--no-set-aside] [--blur-faces] [--overlays keep|crop|fill]
         [--overlay-box X,Y,W,H ...]
     python prepare_data.py WORKSPACE drafts [--engines qwen,internvl,florence,yours] [--no-combine] [--redo]
     python prepare_data.py WORKSPACE all [the options of both]
+    python prepare_data.py PACK_FOLDER review-pack --keys loc_fsa,commons_valued|all [--zips FOLDER]
+        [--engines qwen,internvl] [--no-page-text] [--no-drafts] [--suggest] [--library FOLDER]
+    python prepare_data.py --list-needs        (the collections of pictures that need a description, with sizes)
     python prepare_data.py --self-test          (no graphics card needed: checks the parts that do not need one)
 Every line it prints is plain words; lines starting "Finished" or "STOPPED" end a job, and "N of M" lines move the
 program's progress bar.
@@ -75,7 +83,7 @@ ENGINES = {
 }
 ENGINE_ORDER = ("florence", "internvl", "yours", "qwen")     # the combining model (qwen) last: it stays loaded
 DEFAULT_ENGINES = ("qwen", "internvl", "florence")
-DRAFT_KEYS = ("draft", "draft_agreement", "draft_engines") + tuple(f"draft_{k}" for k in ENGINES)
+DRAFT_KEYS = ("draft", "draft_agreement", "draft_engines", "draft_suggested") + tuple(f"draft_{k}" for k in ENGINES)
 
 # What the large models are told (besides the kit's SYSTEM text and the picture's question).
 DRAFT_GUIDE = ("Describe what can be seen, plainly and accurately, for someone who cannot see the picture: what it "
@@ -588,9 +596,12 @@ def main(argv=None):
     if argv[:1] == ["--self-test"]:
         self_test()
         return 0
+    if argv[:1] == ["--list-needs"]:
+        import review_pack
+        return review_pack.main(["--list"])
     parser = argparse.ArgumentParser(description="Get a describing workspace ready for review.")
     parser.add_argument("workspace", help="the describing workspace folder")
-    parser.add_argument("job", choices=("clean", "drafts", "all"))
+    parser.add_argument("job", choices=("clean", "drafts", "all", "review-pack"))
     parser.add_argument("--no-set-aside", action="store_true", help="keep dark, blurry and repeated pictures")
     parser.add_argument("--blur-faces", action="store_true")
     parser.add_argument("--overlays", choices=("keep", "crop", "fill"), default="keep")
@@ -598,9 +609,24 @@ def main(argv=None):
     parser.add_argument("--engines", default=",".join(DEFAULT_ENGINES))
     parser.add_argument("--no-combine", action="store_true")
     parser.add_argument("--redo", action="store_true", help="write the drafts again, also those written before")
+    parser.add_argument("--keys", default="all", help="review-pack: collection keys, separated by commas, or all")
+    parser.add_argument("--zips", default="", help="review-pack: a folder of needs zips already downloaded")
+    parser.add_argument("--no-page-text", action="store_true", help="review-pack: do not read the web pages")
+    parser.add_argument("--no-drafts", action="store_true", help="review-pack: write no drafts")
+    parser.add_argument("--suggest", action="store_true", help="review-pack: also a suggested combined description")
+    parser.add_argument("--library", default="", help="review-pack: the Picture Library folder")
     args = parser.parse_args(argv)
     import system_monitor
     system_monitor.start(say)                 # computer use into the logs every 5 minutes (system_monitor.py)
+    if args.job == "review-pack":
+        import review_pack
+        engines = [e.strip() for e in args.engines.split(",") if e.strip() in ENGINES]
+        if args.engines == ",".join(DEFAULT_ENGINES):
+            engines = list(review_pack.DEFAULT_ENGINES)       # two drafts by default: Qwen3-VL and InternVL
+        options = ["--keys", args.keys, "--engines", ",".join(engines)] + (["--zips", args.zips] if args.zips else []) \
+            + (["--no-page-text"] if args.no_page_text else []) + (["--no-drafts"] if args.no_drafts else []) \
+            + (["--suggest"] if args.suggest else []) + (["--library", args.library] if args.library else [])
+        return review_pack.main([args.workspace] + options)       # its own "Finished" or "STOPPED" line
     try:
         if not package.is_workspace(args.workspace):
             package.make_workspace(args.workspace)
