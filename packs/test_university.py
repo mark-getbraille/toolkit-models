@@ -178,3 +178,24 @@ def test_kit_entries(monkeypatch):
     monkeypatch.delenv("DPLA_API_KEY", raising=False)
     assert k.prepare_dpla(k.UNIVERSITY_SOURCES[0], "/nonexistent", k.SA_RIGHTS, "x", 1) == []
     assert not k.UNIVERSITY_PICTURE_MAKING_OK
+
+
+def test_archive_streams_leave_out_printed_matter():
+    """Book pages, documents and printed matter in the library collections are not scenes."""
+    import re
+    skip = re.compile(u.NOT_A_SCENE, re.I)
+    assert skip.search("File:First Folio- As You Like It, p. 22 (22795586632).jpg")
+    assert skip.search("File:Commencement program 1925.jpg")
+    assert not skip.search('File:"Hoar Frost" Edmonton, Alberta.jpg')
+    assert all(s["skip"] is not None for s in u.ARCHIVE_STREAMS)
+
+
+def test_postcard_notes_and_library_titles():
+    """Peel's postcard notes are cut off; a library title that is also the file's name is accepted."""
+    raw = ("Image of 7th Avenue in Virden with overlaid maple leaves and a flag in the corner. Notes Other: Glossy "
+           "print post card.")
+    assert u.archive_caption(raw, "File:7th Avenue, Virden, Man..jpg") == (
+        "Image of 7th Avenue in Virden with overlaid maple leaves and a flag in the corner.")
+    title = "File:Action at the Miami-Ohio Wesleyan football game 1921 (3191452100).jpg"
+    cap = "Action at the Miami-Ohio Wesleyan football game."
+    assert not u.long_enough(cap, title) and u.long_enough(cap, title, name_ok=True)

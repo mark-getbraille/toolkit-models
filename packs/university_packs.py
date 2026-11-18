@@ -159,13 +159,14 @@ def marked(rows, words):
     return rows
 
 
-def long_enough(text, title=""):
+def long_enough(text, title="", name_ok=False):
     """True when an answer is real English of at least WORDS words, says more than the file's name, and says what is
     in the picture rather than only names and dates: at least three ordinary lower-case words ("Wade Henderson and
-    Stephen B. Bright." and "Community College of Vermont Commencement 2024." are not descriptions)."""
+    Stephen B. Bright." and "Community College of Vermont Commencement 2024." are not descriptions). name_ok: a
+    caption that only repeats the file's name is accepted (a library collection's files are named by its titles)."""
     ordinary = [w for w in re.findall(r"[A-Za-z]+", text or "") if w.islower() and len(w) > 2]
     return bool(text) and len(text.split()) >= WORDS and len(ordinary) >= 3 and in_english(text) and \
-        not only_the_name(text, title)
+        (name_ok or not only_the_name(text, title))
 
 
 # ----------------------------------------------------------------- DPLA (college and university data providers)
@@ -552,7 +553,7 @@ def commons_stream_pack(specs, limit, key, prefix, caption_of, modern, no_known_
                     considered(title, url, reason)
                     continue
                 caption = caption_of(raw, title)
-                if not long_enough(caption, title):
+                if not long_enough(caption, title, name_ok=not who_row):
                     needs_description(file_name(prefix, title), url, credit, licence_of(credit), text=caption,
                                       title=title, reason="its caption is under six English words or only the "
                                                           "file name", place=spec["place"], place_kind="origin",
@@ -619,16 +620,21 @@ def build_commons_college_streams(limit):
 # A library collection's files carry the original photographer (or "Unknown") as their author, not the library,
 # so any author line is accepted: the category itself is the library's upload (Flickr Commons or its own).
 ANY_AUTHOR = r"."
+# File names in the library collections that are not photographs of a scene: book pages, documents and printed matter.
+NOT_A_SCENE = (r"\b(folios?|p\. ?\d+|pages?|books?|manuscripts?|maps?|letters?|sheet music|scores?|covers?|"
+               r"broadsides?|newspapers?|clippings?|documents?|certificates?|diplomas?|menus?|tickets?|programs?|"
+               r"catalogs?|catalogues?|bookplates?|engravings?|lithographs?|fashion plates?|advertisements?)\b")
 ARCHIVE_STREAMS = [
     stream("Photographs by University of Washington Libraries Digital Collections",
            "the University of Washington Libraries", "Washington, USA", 1,
-           ANY_AUTHOR, skip=r"bathing|fashion plate"),
+           ANY_AUTHOR, skip=NOT_A_SCENE + r"|bathing"),
     stream("Files from Miami University Libraries - Digital Collections", "Miami University Libraries",
-           "Oxford, Ohio, USA", 3, ANY_AUTHOR, skip=r"group portraits?|fraternit|sororit|amusement of youth"),
+           "Oxford, Ohio, USA", 3, ANY_AUTHOR,
+           skip=NOT_A_SCENE + r"|group portraits?|fraternit|sororit|amusement of youth"),
     stream("Images from University of Alberta Library", "the University of Alberta Library (Peel's Prairie "
-           "Provinces)", "Canada", 1, ANY_AUTHOR),
+           "Provinces)", "Canada", 1, ANY_AUTHOR, skip=NOT_A_SCENE),
     stream("Photographs by SMU Central University Libraries", "Southern Methodist University's Central University "
-           "Libraries", "", 2, ANY_AUTHOR),
+           "Libraries", "", 2, ANY_AUTHOR, skip=NOT_A_SCENE),
 ]
 # The labels of a library record in a Commons description ("Title: ... Creator: ... Date: ... Description: ...").
 RECORD_LABELS = re.compile(r"\b(Title|Alternative Title|Creator|Contributors?|Date|Place|Part Of|Photographer|"
@@ -653,7 +659,10 @@ def archive_caption(raw, title):
     f = record_fields(raw)
     head = f.get("title") or f.get("") or re.sub(r"\s*\(\d{6,}\)$", "", title.split(":", 1)[-1].rsplit(".", 1)[0])
     head = re.sub(r",?\s*(n\.d\.|ca\. ?\d{4}|\d{4})\s*$", "", head.strip()).strip(" .,;")
-    return record_text(head, [f.get("description", "")])
+    # Peel's postcards end their description with "Notes Description: ..." or "Notes Other: ..." (no colon after
+    # "Notes"): the notes are the back of the card, not the picture.
+    head, description = (re.sub(r"\s*\bNotes\b.*$", "", x).strip() for x in (head, f.get("description", "")))
+    return record_text(head, [description])
 
 
 def build_commons_university_archives(limit):
