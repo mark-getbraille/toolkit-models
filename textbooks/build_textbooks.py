@@ -1091,8 +1091,11 @@ def dspace_book(entry, work, cache=None, left_out=None):
                 authors=dspace_meta(item, "dc.contributor.author"),
                 original_pdf={"url": page_url, "size": os.path.getsize(local), "sha256": file_sha256(local)})
     for i, (chapter_title, body_html, first, last) in enumerate(pdf_pages_html(local), 1):
-        book.pages.append(Page(f"part-{i}-{slug(chapter_title, 40)}", f"{chapter_title} (pages {first} to {last})"
-                               if last > first else f"{chapter_title} (page {first})", body_html, i))
+        if chapter_title.startswith("Pages "):
+            page_title = chapter_title if last > first else f"Page {first}"
+        else:
+            page_title = f"{chapter_title} (pages {first} to {last})" if last > first else f"{chapter_title} (page {first})"
+        book.pages.append(Page(f"part-{i}-{slug(chapter_title, 40)}", page_title, body_html, i))
     return book
 
 
