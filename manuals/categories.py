@@ -23,6 +23,8 @@ Each category: name, description, kind, licence (of the index), and its sources:
   udi         openFDA device identifier searches (GMDN term names)
   energystar  ENERGY STAR certified-product datasets (data.energystar.gov ids): brand, model and, for some, the UPC
               barcode (US EPA data, a US government work)
+  energuide   words of the file names of Natural Resources Canada's EnerGuide appliance lists ("dishwashers",
+              "ranges"): brand and model of appliances sold in Canada (Open Government Licence - Canada)
   volunteers  the kinds of the Picture Describers export taken ("cooking", "directions", "warnings", "storage")
 """
 
@@ -147,14 +149,17 @@ CATEGORIES = {
     "home_appliances": dict(
         name="Home appliances (manuals)",
         description="Washers, dryers, dishwashers, microwave ovens, ranges, refrigerators, air conditioners, "
-                    "thermostats, dehumidifiers and vacuum cleaners.",
-        kind="manuals", licence="CC0 (facts and links); each manual belongs to its maker",
+                    "thermostats, dehumidifiers and vacuum cleaners, with the models sold in Canada (EnerGuide).",
+        kind="manuals", licence="CC0 (facts and links); EnerGuide models: Open Government Licence - Canada; each "
+                                "manual belongs to its maker",
         ia=["washer", "washing machine", "dryer", "dishwasher", "microwave", "range", "oven", "refrigerator",
             "freezer", "air conditioner", "thermostat", "dehumidifier", "humidifier", "vacuum", "water heater",
             "heat pump", "furnace", "cooktop"],
         wikidata=True,
         energystar=["p5st-her9", "bghd-e2wd", "t9u7-4d2j", "5xn2-dv4h", "q8py-6w3f", "8t9c-g3tn", "mgiu-hu4z",
-                    "7p2p-wkbf"]),
+                    "7p2p-wkbf"],
+        energuide=["clothes dryers", "clothes washers", "cooktops", "dishwashers", "freezers", "ovens", "ranges",
+                   "refrigerators", "room air conditioners"]),
     "personal_electronics": dict(
         name="Personal electronics and phones (manuals)",
         description="Mobile phones, radios, headphones, speakers, digital cameras, music players, tablets, "

@@ -26,6 +26,12 @@ Sources, and why each may be used by a program:
   openFDA (api.fda.gov)   the FDA's device identifiers (GUDID): public domain US government data.
   ENERGY STAR (data.energystar.gov)   the EPA's certified-product lists (brand, model, some UPC barcodes), read with
       its documented Socrata interface; a US government work; robots.txt asks for a crawl delay of 1 second.
+  EnerGuide (Natural Resources Canada)   the Canadian lists of home appliances sold in Canada (brand and model),
+      the open.canada.ca dataset "Energy consumption of home appliances - EnerGuide label"
+      (fbfdf946-8dd1-4830-a5c9-f8a72d8fabda), read through open.canada.ca's documented CKAN interface
+      (package_show) and the ZIP files it lists; under the Open Government Licence - Canada 2.0, which allows any
+      use with the attribution "Contains information licensed under the Open Government Licence - Canada"
+      (https://open.canada.ca/en/open-government-licence-canada). No barcodes; its files were last changed in 2017.
   The Picture Describers website (describe.getbraille.com)   its export of volunteer-checked instructions, read with
       the API key in the repository secret DESCRIBE_SITE_KEY ("Authorization: Bearer", never in this repository; a
       key that may fetch, 2,000 uses a day), paged with next_since; skipped without it.
@@ -69,7 +75,8 @@ GAPS = {"search.openfoodfacts.org": 6.5, "world.openfoodfacts.org": 0.7, "world.
         "world.openproductsfacts.org": 6.5, "images.openfoodfacts.org": 0.2, "images.openbeautyfacts.org": 0.2,
         "images.openproductsfacts.org": 0.2, "static.openfoodfacts.org": 0.2, "archive.org": 1.0,
         "query.wikidata.org": 2.0, "commons.wikimedia.org": 0.5, "upload.wikimedia.org": 0.2,
-        "api.fda.gov": 0.5, "describe.getbraille.com": 1.0, "data.energystar.gov": 1.0}
+        "api.fda.gov": 0.5, "describe.getbraille.com": 1.0, "data.energystar.gov": 1.0,
+        "open.canada.ca": 1.0, "natural-resources.canada.ca": 1.0, "www.nrcan.gc.ca": 1.0}
 DEFAULT_GAP = 1.0
 TIMEOUT = 40
 STARTED = time.time()
@@ -785,6 +792,63 @@ def energystar_entries(fetch, dataset, limit):
     return out
 
 
+# ------------------------------------------------------------------------------------------------ EnerGuide (Canada)
+
+ENERGUIDE_DATASET = ("https://open.canada.ca/data/api/3/action/package_show?id="
+                     "fbfdf946-8dd1-4830-a5c9-f8a72d8fabda")
+ENERGUIDE_SOURCE = ("EnerGuide (Natural Resources Canada). Contains information licensed under the Open Government "
+                    "Licence - Canada")
+
+
+def energuide_files(package):
+    """[(the file's English name in lower case, its address)] of the ZIP files an open.canada.ca package_show answer
+    lists ("clothes dryers", ".../001_clothes-dryers_secheuses.zip")."""
+    out = []
+    for r in (package.get("result") or {}).get("resources") or []:
+        names = r.get("name_translated") if isinstance(r.get("name_translated"), dict) else {}
+        name = str(names.get("en") or r.get("name") or "").strip().lower()
+        if str(r.get("format") or "").upper() == "ZIP" and r.get("url"):
+            out.append((name, r["url"]))
+    return out
+
+
+def energuide_models(data, kind, limit):
+    """Entries for the models of one EnerGuide ZIP (its "*Data*.csv": BRAND_NAME, MODEL_NUM_1 and, for some kinds,
+    TYPE_LABEL_EN), each brand and model once, at most limit. kind: the file's English name ("dishwashers")."""
+    import csv
+    import zipfile
+    out, seen = [], set()
+    with zipfile.ZipFile(io.BytesIO(data)) as z:
+        names = [n for n in z.namelist() if n.lower().endswith(".csv") and "data" in n.lower()]
+        if not names:
+            return out
+        text = z.read(names[0]).decode("cp1252", "replace")
+    for r in csv.DictReader(io.StringIO(text)):
+        brand, model = str(r.get("BRAND_NAME") or "").strip(), str(r.get("MODEL_NUM_1") or "").strip()
+        if not brand or not model or (brand.lower(), model.lower()) in seen:
+            continue
+        seen.add((brand.lower(), model.lower()))
+        what = " ".join(w for w in (str(r.get("TYPE_LABEL_EN") or "").strip(), kind) if w)
+        out.append({"id": f"eg-{r.get('REC_REF_KEY') or model}", "brand": brand, "model": model,
+                    "name": f"{brand} {model} ({what})", "category": kind, "barcodes": [], "fcc_ids": [],
+                    "manuals": [], "source": ENERGUIDE_SOURCE, "market": "Canada"})
+        if len(out) >= limit:
+            break
+    return out
+
+
+def energuide_entries(fetch, kinds, limit):
+    """The EnerGuide models of the kinds named (words of the files' English names: "dishwashers", "ranges"), an
+    even share of limit for each file."""
+    files = [(n, u) for n, u in energuide_files(fetch.json(ENERGUIDE_DATASET)) if any(k in n for k in kinds)]
+    out = []
+    for name, url in files:
+        if listing_out_of_time():
+            break
+        out += energuide_models(fetch.raw(url), name, max(1, limit // max(1, len(files))))
+    return out
+
+
 def attach_manuals(entries, manual_entries):
     """Give device records (openFDA) the manuals of Internet Archive items of the same brand and model."""
     by_model = {}
@@ -890,6 +954,15 @@ def build(key, out_dir, limit, fetch):
         attach_manuals(models, manual_entries)
         manual_entries += models
         say(f"{key}: {len(models)} ENERGY STAR certified models")
+    if cat.get("energuide"):
+        try:
+            models = energuide_entries(fetch, cat["energuide"], limit)
+        except (RuntimeError, OutOfTime, ValueError) as e:
+            notes.append(f"EnerGuide failed: {e}")
+            models = []
+        attach_manuals(models, manual_entries)
+        manual_entries += models
+        say(f"{key}: {len(models)} EnerGuide models sold in Canada")
     filled = ia_fill(fetch, manual_entries)
     if manual_entries:
         say(f"{key}: the files of {filled} Internet Archive manuals found")
@@ -905,7 +978,9 @@ def write(key, entries, out_dir, notes=(), requests_made=0):
     index = {"key": key, "name": cat["name"], "description": cat["description"], "kind": cat["kind"],
              "licence": cat["licence"], "built": built,
              "credit": "Open Food Facts, Open Beauty Facts and Open Products Facts contributors; the Internet "
-                       "Archive; Wikidata; Wikimedia Commons authors; the US FDA; Picture Describers volunteers",
+                       "Archive; Wikidata; Wikimedia Commons authors; the US FDA; Picture Describers volunteers"
+                       + ("; Natural Resources Canada (EnerGuide): contains information licensed under the Open "
+                          "Government Licence - Canada" if cat.get("energuide") else ""),
              "copyright": "Facts and links only: the manuals belong to their makers and are not published here.",
              "notes": list(notes)[:50], "entries": entries}
     raw = gzip.compress(json.dumps(index, ensure_ascii=False, separators=(",", ":")).encode("utf-8"), mtime=0)
