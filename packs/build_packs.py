@@ -26,6 +26,15 @@ The packs (PACKS):
                  known copyright (credit kept), the first sentences of the description.
 
     python packs/build_packs.py smithsonian --out build/packs --limit 6000
+
+Top-up passes: a pack that stopped at the time limit has fewer pictures than its limit. Built again with --top-up
+(in packs/request.txt: the key with a plus, "loc_fsa+"), the published pack is downloaded and kept, and only new
+pictures are added to it, up to the limit, in one merged pack published in place of the old one; the builders shuffle
+differently on each pass (pass_random), so they look at other candidates first. The old pack is never lost: if the
+pass fails or adds nothing, nothing is published. See "top-up passes" below.
+
+    python packs/build_packs.py loc_fsa --out build/packs --limit 6000 --top-up
+    python packs/test_top_up.py                    (the top-up self-test: a made-up pack, nothing downloaded)
 """
 
 import argparse
@@ -96,6 +105,261 @@ def considered_lines(rows, names):
                                                      "or left out by a later check)")
         lines.append(json.dumps({"name": name, "url": one["url"], "used": used, "reason": reason}) + "\n")
     return lines
+
+
+# ----------------------------------------------------------------- top-up passes
+#
+# A pack that stopped at the time limit has fewer pictures than its limit. A top-up pass (main --top-up; in
+# packs/request.txt the key written with a plus, "loc_fsa+") ADDS pictures to it instead of starting again:
+#   1. The published pack is downloaded (every part, checked against packs.json's SHA-256, as the kit does), and what
+#      is already in it is noted (OldPack): its pictures' file names, their web addresses (the rows' "source", or
+#      considered-<key>.jsonl for packs made before rows carried one), the rows' "url"s and each picture's content
+#      fingerprint (SHA-256).
+#   2. The builder runs again for the pictures still missing (the limit less what the pack has), with PASS set to
+#      the pass number, so pass_random() shuffles differently and the builder looks at other candidates first; the
+#      shared helpers (new_only, fetch_all) also skip candidates already in the pack before they are downloaded.
+#   3. Anything the builder brings that is already in the pack (the same address, or the same picture content) is
+#      dropped; a new picture that only happens to have an old picture's file name is renamed (OldPack.keep_new).
+#   4. One pack is written: the old rows and pictures as they were, then the new ones, CREDITS.txt and
+#      considered-<key>.jsonl merged without repeats (write_pack). Its files are named <key>.pass<N>.zip, so the old
+#      pack's files are not overwritten while the new ones upload; the workflow's last job removes the old files once
+#      packs.json names the new ones.
+# The old pack is never lost: when the top-up fails nothing is published, and when it adds nothing (or the pack
+# already has its limit) no manifest is written and the workflow keeps the published pack, saying so.
+
+PACKS_URL = "https://github.com/mark-getbraille/toolkit-models/releases/download/training-data/"
+# Which pass this build is: 1 for a normal build, 2 for the first top-up and so on (from packs.json's "passes"). The
+# environment variable PACK_PASS sets it by hand, for trying a builder with a different shuffle.
+PASS = int(os.environ.get("PACK_PASS", "1") or 1)
+TOP_UP = None          # the published pack (an OldPack) during a top-up pass; None in a normal build
+SOURCES = {}           # {picture file name: the address it was downloaded from}, filled by the downloads (note_source)
+
+
+def pass_random(seed):
+    """A random-number maker for shuffling candidates. In a normal build (pass 1) it is exactly random.Random(seed),
+    so normal builds choose the same pictures as before; in a top-up pass the pass number is mixed into the seed, so
+    the builder looks at other pages, categories and pictures first."""
+    return random.Random(seed if PASS <= 1 else f"{seed!r}/pass{PASS}")
+
+
+def note_source(name, url):
+    """Remember the web address a picture was downloaded from; write_pack keeps it in the picture's row as
+    "source", so a later top-up pass knows which pictures the pack already has."""
+    if name and url:
+        SOURCES[name] = url
+
+
+def already_in_pack(name="", url=""):
+    """True during a top-up pass when a candidate picture (its pack file name and/or web address) is already in the
+    published pack. Always False in a normal build."""
+    return bool(TOP_UP) and TOP_UP.has(name, url)
+
+
+def new_only(items):
+    """The (name, address, ...) candidates that are not in the published pack yet (all of them in a normal build).
+    The shared helpers call this before they cut their list down to the limit, so the places go to new pictures."""
+    if not TOP_UP:
+        return items
+    kept = [item for item in items if not TOP_UP.has(item[0], item[1])]
+    if len(kept) < len(items):
+        say(f"  {len(items) - len(kept)} candidates are already in the published pack and are skipped")
+    return kept
+
+
+def fingerprint(data):
+    """The SHA-256 of a picture's bytes: the same picture made the same way has the same fingerprint."""
+    return hashlib.sha256(data).hexdigest()
+
+
+def download_to(source, path):
+    """Copy one published file to path. source is a web address, or a file on this computer (for the self-test)."""
+    if not source.startswith(("http://", "https://")):
+        import shutil
+        shutil.copyfile(source, path)
+        return
+    import requests
+    for attempt in range(4):
+        try:
+            with requests.get(source, stream=True, timeout=120, headers={"User-Agent": USER_AGENT}) as r:
+                r.raise_for_status()
+                with open(path, "wb") as f:
+                    for block in r.iter_content(1 << 20):
+                        f.write(block)
+            return
+        except Exception:  # noqa: BLE001 - tried again, then the top-up stops (nothing is published)
+            if attempt == 3:
+                raise
+            time.sleep(30)
+
+
+def published_file(base, name):
+    """Where one published file is: base is the release's download address (or a folder on this computer, for the
+    self-test), name the file's name."""
+    if base.startswith(("http://", "https://")):
+        return base.rstrip("/") + "/" + name
+    return os.path.join(base, name)
+
+
+def published_manifest(base=PACKS_URL):
+    """The published packs.json ({key: manifest}), or {} when there is none yet."""
+    source = published_file(base, "packs.json")
+    if not source.startswith("http") and not os.path.exists(source):
+        return {}
+    import tempfile
+    with tempfile.TemporaryDirectory() as scratch:
+        path = os.path.join(scratch, "packs.json")
+        try:
+            download_to(source, path)
+        except Exception as e:  # noqa: BLE001 - no packs.json yet: nothing is published
+            if "404" in str(e):
+                return {}
+            raise
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+
+
+class OldPack:
+    """A published pack downloaded for a top-up pass: where its zip is, its rows, and what it already holds (file
+    names with their addresses, addresses, picture fingerprints, and the questions of rows that only give an
+    address), so new candidates can be checked against it."""
+
+    def __init__(self, key, archive, manifest):
+        """Read the downloaded zip at archive (the pack key's published pack, described by manifest)."""
+        self.key, self.archive, self.manifest = key, archive, manifest
+        self.passes = int(manifest.get("passes") or 1)
+        self.names, self.urls, self.hashes, self.url_rows = {}, set(), set(), set()
+        self.considered = []
+        with zipfile.ZipFile(archive) as z:
+            self.rows = [json.loads(line) for line in z.read("rows.jsonl").decode("utf-8").splitlines()
+                         if line.strip()]
+            listing = set(z.namelist())
+            self.credits = z.read("CREDITS.txt").decode("utf-8") if "CREDITS.txt" in listing else ""
+            if f"considered-{key}.jsonl" in listing:
+                self.considered = [json.loads(line) for line in z.read(f"considered-{key}.jsonl").decode(
+                    "utf-8").splitlines() if line.strip()]
+            for member in sorted(listing):
+                if member.startswith("pictures/") and not member.endswith("/"):
+                    self.names.setdefault(member[len("pictures/"):], "")
+                    digest = hashlib.sha256()
+                    with z.open(member) as f:
+                        for block in iter(lambda: f.read(1 << 20), b""):
+                            digest.update(block)
+                    self.hashes.add(digest.hexdigest())
+        for row in self.rows:
+            if row.get("file") and row.get("source"):
+                self.names[os.path.basename(row["file"])] = row["source"]
+                self.urls.add(row["source"])
+            if row.get("url"):
+                self.urls.add(row["url"])
+                if not row.get("file"):
+                    self.url_rows.add((row["url"], row.get("question", ""), row.get("answer", "")))
+        for note in self.considered:          # packs made before rows had "source": the used candidates' addresses
+            if note.get("used") and note.get("url"):
+                self.urls.add(note["url"])
+                if note.get("name") in self.names and not self.names[note["name"]]:
+                    self.names[note["name"]] = note["url"]
+
+    @classmethod
+    def download(cls, key, folder, base=PACKS_URL):
+        """Download the published pack key into folder (every part, joined, its size and SHA-256 checked against
+        packs.json, as the kit's sources.prepare_pack does) and read it; None when the pack is not published yet.
+        A damaged download stops the top-up with an error (so nothing is published and the old pack stays)."""
+        manifest = published_manifest(base).get(key)
+        if not manifest:
+            return None
+        os.makedirs(folder, exist_ok=True)
+        archive = os.path.join(folder, f"{key}-published.zip")
+        with open(archive, "wb") as joined:
+            for number, name in enumerate(manifest["files"], 1):
+                say(f"Downloading the published {key} pack, part {number} of {len(manifest['files'])}")
+                piece = os.path.join(folder, name + ".download")
+                download_to(published_file(base, name), piece)
+                with open(piece, "rb") as f:
+                    for block in iter(lambda: f.read(1 << 20), b""):
+                        joined.write(block)
+                os.remove(piece)
+        if os.path.getsize(archive) != manifest["size"] or sha256_of(archive) != manifest["sha256"]:
+            os.remove(archive)
+            raise SystemExit(f"The published {key} pack did not download whole (its size or SHA-256 differs from "
+                             "packs.json); the top-up stops and the published pack is kept.")
+        return cls(key, archive, manifest)
+
+    def size(self):
+        """How many pictures the pack holds, as its limit counts them: each picture once (however many rows it
+        has), plus each row that gives only an address (the COCO question packs)."""
+        return len(self.names) + sum(1 for r in self.rows if r.get("url") and not r.get("file"))
+
+    def has(self, name="", url=""):
+        """True when a candidate is already in the pack: its address is one the pack's pictures came from, or its
+        file name is a picture in the pack and nothing tells them apart (no address on one side, or the same
+        address). The same name with a different address is a different picture (it is renamed, see keep_new)."""
+        if url and url in self.urls:
+            return True
+        if name and name in self.names:
+            old = self.names[name]
+            return not old or not url or old == url
+        return False
+
+    def free_name(self, name, taken):
+        """A file name for a new picture that is not used in the pack yet: name itself, or name with "-p<pass>"
+        (and a number when needed) before its ending."""
+        if name not in self.names and name not in taken:
+            return name
+        stem, dot, ending = name.rpartition(".")
+        stem, ending = (stem, "." + ending) if dot else (name, "")
+        number = 0
+        while True:
+            candidate = f"{stem}-p{PASS}{'-' + str(number) if number else ''}{ending}"
+            if candidate not in self.names and candidate not in taken:
+                return candidate
+            number += 1
+
+    def keep_new(self, entries, room):
+        """The builder's entries without what the pack already has: a picture whose address is in the pack, whose
+        content (fingerprint) is in the pack or came twice, or whose file name is in the pack with nothing to tell
+        them apart is dropped with the rows that point at it; a new picture with an old picture's file name is
+        renamed; a row that only gives an address is dropped when the pack has the same row. At most room new
+        pictures (and address-only rows) are kept. Returns (entries, number of new pictures)."""
+        out, dropped, renamed, taken, seen_rows = [], set(), {}, set(), set()
+        hashes, added, repeats = set(self.hashes), 0, 0
+        for name, data, row in entries:
+            if data is not None:
+                url = SOURCES.get(name, "")
+                digest = fingerprint(data)
+                if self.has(name, url) or digest in hashes:
+                    dropped.add(name)                     # already in the pack (or brought twice)
+                    repeats += 1
+                    continue
+                if added >= room:
+                    dropped.add(name)                     # over the pack's limit
+                    continue
+                hashes.add(digest)
+                new_name = self.free_name(name, taken)
+                taken.add(new_name)
+                if new_name != name:
+                    renamed[name] = new_name
+                    if url:
+                        SOURCES[new_name] = url
+                out.append((new_name, data, row))
+                added += 1
+                continue
+            target = os.path.basename(row.get("file") or "")
+            if target in dropped:
+                continue                                  # a second row of a picture that was left out
+            if target in renamed:
+                row = dict(row, file=f"pictures/{renamed[target]}")
+            elif row.get("url") and not row.get("file"):
+                same = (row["url"], row.get("question", ""), row.get("answer", ""))
+                if same in self.url_rows or same in seen_rows:
+                    repeats += 1
+                    continue
+                if added >= room:
+                    continue
+                seen_rows.add(same)
+                added += 1
+            out.append((name, data, row))
+        say(f"Top-up: {added} new pictures or address rows kept, {repeats} left out as already in the pack")
+        return out, added
 
 
 def clean(text):
@@ -177,7 +441,9 @@ def smaller(data):
 
 
 def fetch_all(items, workers=8, pause=0.0):
-    """Download pictures: items are (name, address, row); returns [(name, JPEG bytes, row)] for those that came."""
+    """Download pictures: items are (name, address, row); returns [(name, JPEG bytes, row)] for those that came.
+    During a top-up pass, pictures already in the published pack are not downloaded again (new_only)."""
+    items = new_only(items)
     s = session()
 
     def one(item):
@@ -195,6 +461,8 @@ def fetch_all(items, workers=8, pause=0.0):
                     data = smaller(r.content)
                     considered(name, url, "" if data else "the picture could not be read, or is smaller than 64 "
                                                           "pixels")
+                    if data:
+                        note_source(name, url)
                     return (name, data, row) if data else None
                 if r.status_code in (403, 404, 410):
                     considered(name, url, f"could not be downloaded (the server answered {r.status_code})")
@@ -311,7 +579,7 @@ def build_smithsonian(limit):
         found = 0
         keys = si_keys(unit)
         say(f"Smithsonian {unit}: {len(keys)} files")
-        random.Random(unit).shuffle(keys)
+        pass_random(unit).shuffle(keys)
         for key in keys:
             try:
                 text = s.get(f"{SI_BUCKET}/{key}", timeout=120).content.decode("utf-8", "replace")
@@ -330,7 +598,8 @@ def build_smithsonian(limit):
             if found >= per_unit * 1.3:
                 break
         say(f"  {found} usable records")
-    random.Random(1).shuffle(items)
+    items = new_only(items)                    # (a top-up pass: only pictures not in the pack yet)
+    pass_random(1).shuffle(items)
     return fetch_all(items[:int(limit * 1.2)], workers=6, pause=0.1)[:limit]
 
 
@@ -413,9 +682,9 @@ def build_coco_questions(limit):
                 vqa.append({"url": free[q["image_id"]], "question": clean(q["question"]), "answer": answer,
                             "credit": "VQAv2 (Goyal et al., 2017), CC BY 4.0; photo from COCO, CC BY 2.0"})
     say(f"VQAv2: {len(vqa)} questions")
-    random.Random(3).shuffle(vqa)
+    pass_random(3).shuffle(vqa)
     rows += vqa[:max(0, limit - len(rows))]
-    random.Random(4).shuffle(rows)
+    pass_random(4).shuffle(rows)
     return [(None, None, r) for r in rows[:limit]]
 
 
@@ -458,8 +727,8 @@ def build_commons(limit):
                 meta = info.get("extmetadata") or {}
                 licence = clean((meta.get("LicenseShortName") or {}).get("value"))
                 caption = clean(labels.get(f"M{p.get('pageid')}"))
-                if p["pageid"] in seen:
-                    continue
+                if p["pageid"] in seen or already_in_pack(f"commons-{p['pageid']}.jpg", info.get("thumburl")):
+                    continue                   # (already in the published pack, on a top-up pass)
                 why = ("no English caption of five words or more" if not caption or len(caption.split()) < 5 else
                        f"its licence ({licence or 'none given'}) is not CC0, public domain or CC BY"
                        if "SA" in licence.upper() or "NC" in licence.upper() or not COMMONS_FREE.match(licence) else
@@ -584,6 +853,8 @@ def build_inaturalist(limit):
                 photo = next((ph for ph in photos if (ph.get("license_code") or "") in ("cc0", "cc-by")), None)
                 if not photo or not taxon.get("name") or taxon["id"] in seen and found > per_group // 2:
                     continue
+                if already_in_pack(f"inat-{photo['id']}.jpg", photo["url"].replace("/square.", "/large.")):
+                    continue                   # already in the published pack (a top-up pass)
                 seen.add(taxon["id"])
                 latin, common = taxon["name"], clean(taxon.get("preferred_common_name"))
                 answer = (f"This is {article(common)} {common} ({latin})." if common else f"This is {latin}.")
@@ -597,7 +868,8 @@ def build_inaturalist(limit):
                 break
             time.sleep(1.1)                    # iNaturalist asks for at most about one request a second
         say(f"iNaturalist {group}: {found}")
-    random.Random(7).shuffle(items)
+    items = new_only(items)
+    pass_random(7).shuffle(items)
     return fetch_all(items[:int(limit * 1.1)], workers=4, pause=0.3)[:limit]
 
 
@@ -630,7 +902,7 @@ def build_nutrition5k(limit):
             items.append((f"{dish}.jpg", f"{N5K}imagery/realsense_overhead/{dish}/rgb.png",
                           {"question": "What food is on this plate, and roughly how much?", "answer": answer,
                            "credit": "Nutrition5k (Thames et al., 2021), Google, CC BY 4.0"}))
-    random.Random(8).shuffle(items)
+    pass_random(8).shuffle(items)
     return fetch_all(items[:int(limit * 1.3)], workers=8)[:limit]
 
 
@@ -651,7 +923,7 @@ def build_fresh_rotten(limit):
                       f"Yes: this {fruit} looks fresh.")
             out.append((f"fruit-{len(out)}.jpg", data, {"question": f"Is this {fruit} still good to eat?",
                         "answer": answer, "credit": "Fresh and rotten fruits (Sultana et al.), CC BY 4.0"}))
-    random.Random(9).shuffle(out)
+    pass_random(9).shuffle(out)
     return out[:limit]
 
 
@@ -684,7 +956,7 @@ def build_banknotes(limit):
                         "answer": f"This is {article(country)} {country} {int(m.group(2)):,} {unit} note{design}.",
                         "credit": "Indian and Thai banknotes dataset (Mendeley Data 2kfz5yc7pt), CC BY 4.0",
                         **where(issued, "origin")}))
-    random.Random(10).shuffle(out)
+    pass_random(10).shuffle(out)
     return out[:limit]
 
 
@@ -706,7 +978,7 @@ def build_cattle_health(limit):
                             "answer": CATTLE[folder], "credit": "FMD-LSD cattle dataset (Mendeley Data ggpwpscjvm), "
                                                               "CC BY 4.0",
                             "place": "Cumilla, Bangladesh"}))         # farms in Cumilla (the dataset's record)
-    random.Random(11).shuffle(out)
+    pass_random(11).shuffle(out)
     return out[:limit]
 
 
@@ -727,7 +999,7 @@ def build_clothing(limit):
             items.append((f"{cells[0]}.jpg", f"{CLOTHING_RAW}images/{cells[0]}.jpg",
                           {"question": "What item of clothing is this?", "answer": CLOTHING[cells[2]][0].upper()
                            + CLOTHING[cells[2]][1:] + ".", "credit": "Clothing dataset (Alexey Grigorev), CC0"}))
-    random.Random(12).shuffle(items)
+    pass_random(12).shuffle(items)
     return fetch_all(items[:int(limit * 1.1)], workers=6)[:limit]
 
 
@@ -755,7 +1027,7 @@ def build_eggs(limit):
                         "answer": f"This is {kind}. {EGG_STATES[m.group(1)]}",
                         "credit": "Egg variety and freshness dataset (Mendeley Data 49msr3ksxj), CC BY 4.0",
                         "place": "Dhaka, Bangladesh"}))           # bought at markets in Dhaka (the dataset's record)
-    random.Random(13).shuffle(out)
+    pass_random(13).shuffle(out)
     return out[:limit]
 
 
@@ -1090,49 +1362,132 @@ def sha256_of(path):
     return digest.hexdigest()
 
 
-def write_pack(key, entries, out):
+def merged_credits(key, old_text, lines):
+    """CREDITS.txt for a pack: the licence text (PACKS), then the old pack's credit lines (on a top-up pass) and the
+    new ones, each line once."""
+    old_lines = old_text.split("\n\n", 1)[1].splitlines() if "\n\n" in old_text else []
+    kept = list(dict.fromkeys(line for line in old_lines + lines if line.strip()))
+    return PACKS[key][1] + "\n\n" + "\n".join(kept) + "\n"
+
+
+def merged_considered(old_notes, new_lines):
+    """considered-<key>.jsonl's lines on a top-up pass: the old pack's notes and this pass's, one line per address
+    (or name); a candidate used in either pass counts as used."""
+    merged = {}
+    for note in list(old_notes) + [json.loads(line) for line in new_lines]:
+        one = note.get("url") or note.get("name")
+        if one not in merged or (note.get("used") and not merged[one].get("used")):
+            merged[one] = note
+    return [json.dumps(note) + "\n" for note in merged.values()]
+
+
+def write_pack(key, entries, out, old=None):
     """Write the pack zip (rows.jsonl, pictures, CREDITS.txt), cut it into parts when over PART_BYTES; returns its
-    manifest {"key", "rows", "pictures", "size", "sha256", "files"}."""
+    manifest {"key", "rows", "pictures", "size", "sha256", "files", "passes"}. Each picture's row keeps the address it
+    was downloaded from as "source" (the kit does not use it; a top-up pass does). old: on a top-up pass, the
+    published pack (OldPack): its rows and pictures come first, unchanged, and its credits and considered notes are
+    merged with the new ones; the zip is then named <key>.pass<N>.zip so the published files are not overwritten."""
+    import shutil
     sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
     os.makedirs(out, exist_ok=True)
-    path = os.path.join(out, f"{key}.zip")
+    path = os.path.join(out, f"{key}.zip" if old is None else f"{key}.pass{PASS}.zip")
     rows, credits, names = [], [], set()
     with zipfile.ZipFile(path, "w", zipfile.ZIP_STORED, allowZip64=True) as z:
+        if old is not None:                          # the published pack's pictures, copied as they are
+            with zipfile.ZipFile(old.archive) as published:
+                for info in published.infolist():
+                    if info.filename.startswith("pictures/") and not info.filename.endswith("/"):
+                        with published.open(info) as src, z.open(info.filename, "w", force_zip64=True) as dst:
+                            shutil.copyfileobj(src, dst, 1 << 20)
+                        names.add(info.filename[len("pictures/"):])
+            rows += old.rows
         for name, data, row in entries:
             if data is not None:
                 z.writestr(f"pictures/{name}", data)
                 names.add(name)
                 row = dict(row, file=f"pictures/{name}")       # (a translated twin already names its picture)
+                if SOURCES.get(name):
+                    row["source"] = SOURCES[name]
             rows.append(row)
             if row.get("credit"):
                 credits.append(f"{row.get('file') or row.get('url')}: {row['credit']}")
         z.writestr("rows.jsonl", "".join(json.dumps(r) + "\n" for r in rows))
-        z.writestr("CREDITS.txt", PACKS[key][1] + "\n\n" + "\n".join(credits) + "\n")
+        z.writestr("CREDITS.txt", merged_credits(key, old.credits if old else "", credits))
         # Every candidate the shared checks saw, used or not, with the reason it was dropped (see considered()).
-        if CONSIDERED:
-            z.writestr(f"considered-{key}.jsonl", "".join(considered_lines(rows, names)))
+        lines = considered_lines(rows, names) if CONSIDERED else []
+        if old is not None and old.considered:
+            lines = merged_considered(old.considered, lines)
+        if lines:
+            z.writestr(f"considered-{key}.jsonl", "".join(lines))
     size, digest = os.path.getsize(path), sha256_of(path)
     from convert_models import split_file          # the same splitting as the converted models
     parts = split_file(path, PART_BYTES)
     manifest = {"key": key, "rows": len(rows), "pictures": sum(1 for r in rows if r.get("file")), "size": size,
-                "sha256": digest, "files": [os.path.basename(p) for p in parts]}
+                "sha256": digest, "files": [os.path.basename(p) for p in parts], "passes": PASS}
     with open(os.path.join(out, f"manifest-{key}.json"), "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=1)
     return manifest
 
 
+def start_top_up(key, limit, out, base=PACKS_URL):
+    """Get ready for a top-up pass of pack key: download the published pack and set TOP_UP and PASS. Returns how
+    many pictures the builder should look for: the limit less what the pack has (0 when it is full), or the whole
+    limit when the pack is not published yet (then this is a normal first build)."""
+    global TOP_UP, PASS
+    old = OldPack.download(key, os.path.join(out, "published"), base)
+    if old is None:
+        say(f"The {key} pack is not published yet: it is built from the start.")
+        return limit
+    if "PACK_PASS" not in os.environ:
+        PASS = old.passes + 1
+    have = old.size()
+    say(f"Top-up pass {PASS} of the {key} pack: it has {have} pictures; the limit is {limit}.")
+    if have >= limit:
+        os.remove(old.archive)                     # nothing to add: the downloaded copy is not needed
+        return 0
+    TOP_UP = old
+    return limit - have
+
+
+def nothing_new(key, why):
+    """End a top-up pass that adds nothing: say why, write no manifest (so the workflow publishes nothing and the
+    published pack stays as it is), and remove the downloaded copy."""
+    say(f"The {key} pack is kept as it was: {why}.")
+    if TOP_UP is not None and os.path.exists(TOP_UP.archive):
+        os.remove(TOP_UP.archive)
+    return 0
+
+
 def main(argv=None):
-    """Build one pack (see the module docstring)."""
+    """Build one pack (see the module docstring), or with --top-up add pictures to the published one (see "top-up
+    passes" above)."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("key", choices=sorted(PACKS))
     parser.add_argument("--out", default="build/packs")
     parser.add_argument("--limit", type=int, default=6000)
+    parser.add_argument("--top-up", action="store_true",
+                        help="add pictures to the published pack (up to --limit) instead of building it again")
+    parser.add_argument("--published", default=os.environ.get("PACKS_PUBLISHED", PACKS_URL),
+                        help="where the published packs are (the release's address; a folder for testing)")
     args = parser.parse_args(argv)
-    entries = PACKS[args.key][0](args.limit)
-    if not entries:
+    limit = args.limit
+    if args.top_up:
+        limit = start_top_up(args.key, args.limit, args.out, args.published)
+        if limit <= 0:
+            return nothing_new(args.key, "it already has its limit of pictures")
+    entries = PACKS[args.key][0](limit)
+    if TOP_UP is not None:
+        entries, added = TOP_UP.keep_new(entries or [], limit)
+        if not added:
+            return nothing_new(args.key, "this pass found no picture that is not in it already")
+    elif not entries:
         raise SystemExit(f"The {args.key} pack came out empty.")
     entries = add_translations(args.key, entries)
-    manifest = write_pack(args.key, entries, args.out)
+    manifest = write_pack(args.key, entries, args.out, old=TOP_UP)
+    if TOP_UP is not None:
+        os.remove(TOP_UP.archive)
+        say(f"Top-up pass {PASS}: the {args.key} pack now has {manifest['pictures']} picture rows "
+            f"({len(TOP_UP.names)} pictures before this pass).")
     say(json.dumps(manifest))
     return 0
 
