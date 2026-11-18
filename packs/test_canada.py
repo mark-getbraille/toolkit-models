@@ -74,6 +74,9 @@ def test_sign_meaning():
                                                                                        'it reads "NO STOPPING"')
     assert c.ca_sign_meaning("File:Québec P-10.svg", "Panneau d'arrêt du Québec") == ("P-10", "")
     assert c.ca_sign_meaning("File:Sign.svg", "") == ("", "")
+    items = [("a", "u", [{"answer": "x", "facts": {"commons_category": "Speed limit railway signs in Canada"}}]),
+             ("b", "u", [{"answer": "x", "facts": {"commons_category": "Speed limit signs in Canada"}}])]
+    assert [i[0] for i in c.drop_items(items, c.NOT_ROAD, "not a road sign")] == ["b"]
 
 
 def test_inaturalist():

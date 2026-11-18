@@ -111,7 +111,7 @@ from expression_packs import mark_child, child_count, CHILD
 from mechanical_packs import mech_entries, in_english, MECH_FREE, NOT_A_PHOTO
 from us_packs import (us_spec, us_commons, commons_pack, wearing_rows, car_rows, NOT_SHOWN, DESCRIBE_Q, WHAT_Q,
                       HOUSE_Q, ROOM_Q, PLACE_Q, WEAR_Q, CAR_Q, MONEY_Q, SIGN_Q, QUOTED)
-from us_modern_packs import (commons_specs_pack, sample_members, photo_year, agency_caption, only_the_name,
+from us_modern_packs import (commons_specs_pack, drop_items, sample_members, photo_year, agency_caption, only_the_name,
                              everyday_holidays, no_patients, GRAPHIC, HAPPENING_Q)
 from places import where, place_name
 
@@ -390,6 +390,10 @@ FRENCH = re.compile(r"\b(du|de|des|la|le|les|au|aux|et|panneau|interdiction|arr[
                     r"virage|obligatoire|d'\w+|l'\w+)\b", re.I)
 
 
+# Sign photo subcategories that are not road signs ("Speed limit railway signs in Canada").
+NOT_ROAD = re.compile(r"\b(railway|railroad|rail|train|trains|marine|boat|ship|navigation|ski)\b", re.I)
+
+
 def ca_sign_meaning(title, text):
     """(sign number, what the sign means) of a Canadian sign drawing, from its file name and its own English
     description: "Ontario Rb-1.svg", "Stop sign" -> ("Rb-1", "Stop sign"); a quoted wording ('"NO STOPPING"') ->
@@ -455,7 +459,9 @@ def build_ca_road_signs(limit):
     out = with_twins(out[:drawings])
     photos = [us_spec(c, SIGN_Q, a, "Quebec, Canada" if "Quebec" in c else "Ontario, Canada" if "Ontario" in c
                       else CANADA, 1) for c, a in SIGN_PHOTOS]
-    out += commons_pack(photos, max(1, limit - count_pictures(out)), "casignphoto")
+    found = us_commons(photos, max(1, limit - count_pictures(out)), "casignphoto")
+    found = drop_items(found, NOT_ROAD, "a railway or boat sign, not a road sign")
+    out += with_twins(commons_fetch(found)[:max(1, limit - count_pictures(out))])
     return out
 
 
