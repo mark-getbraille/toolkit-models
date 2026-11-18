@@ -107,7 +107,10 @@ WHERE_Q = "Where was this photo taken?"
 STATES = [s for c, s in US_STATE_CODES.items() if c not in ("PR", "GU", "VI", "DC")]
 # Words that make a picture unusable here: nudity, underwear and swimwear (the safety rules).
 NOT_SHOWN = re.compile(r"\b(swim\w*|bikini\w*|bathing suits?|underwear|lingerie|bra|bras|briefs|nude|naked|topless|"
-                       r"shirtless|bare-chested|sexy|sexual\w*|erotic\w*)\b", re.I)
+                       r"shirtless|bare-chested|sexy|sexual\w*|erotic\w*)\b"
+                       # criminal-investigation evidence photos (Commons files many FBI photos of the Epstein
+                       # properties under "Home kitchens in the United States" and other room categories)
+                       r"|epstein|\bEFTA\d+|crime scenes?|evidence photo\w*|mug ?shots?|\bautops\w*", re.I)
 
 
 def capital(text):
@@ -619,7 +622,8 @@ CAR_MAKES = ("Acura|Alfa Romeo|AMC|American Motors|Aston Martin|Audi|Austin|Bent
 MODEL = re.compile(rf"^(?:(?P<year>(?:19|20)\d\d) )?(?P<make>{CAR_MAKES})\b(?P<rest>.*)$")
 NOT_A_MODEL = re.compile(r"\b(in|at|of|by|on|from|automobiles|vehicles|museum|logos?|emblems?|badges?|dealers?|"
                          r"dealerships?|license|licence|plates?|interiors?|dashboards?|engines?|wheels?|"
-                         r"advertisements?|photographs?|taken with|seats?|steering)\b", re.I)
+                         r"advertisements?|photographs?|taken with|seats?|steering|street|avenue|road|boulevard|"
+                         r"drive|highway|county|city|park|station|building|center|centre)\b", re.I)
 COLOURS = re.compile(r"^(?P<colour>black|white|silver|grey|gray|red|blue|green|yellow|orange|brown|beige|gold|"
                      r"purple|pink|maroon|turquoise|tan) (automobiles|cars|pickup trucks|SUVs)\b", re.I)
 CAR_PLURALS = re.compile(r"\b(convertibles|sedans|coupes|wagons|station wagons|pickups|pickup trucks|hatchbacks|"
@@ -635,6 +639,7 @@ def car_model(categories):
         if not m or NOT_A_MODEL.search(m.group("rest")) or len(c.split()) > 8 or not m.group("rest").strip():
             continue
         name = CAR_PLURALS.sub(lambda x: x.group(0)[:-1], c)       # "Ford Mustang convertibles" -> "convertible"
+        name = re.sub(r"(?<= [a-z]{3})([a-z]*[^s])s$", r"\1", name)   # "Jeep ambulances" -> "Jeep ambulance"
         found.append((0 if m.group("year") else 1, len(name), name))
     return min(found)[2] if found else ""
 
@@ -769,7 +774,10 @@ def build_commons_us_money(limit):
 
 # ----------------------------------------------------------------- us_road_signs
 
-MUTCD = re.compile(r"\bMUTCD[ _-]+([A-Z]{1,2}\d+[A-Za-z0-9()\-.]*)", re.I)
+MUTCD = re.compile(r"\b([A-Z]{1,2}\d{1,2}-\d{1,2}[A-Z]{0,2}(?:\([A-Z0-9]{1,3}\))?)(?=[\s_.)(-]|$)")
+QUOTED = re.compile(r"[\"“”']([^\"“”']{2,60})[\"“”']")
+SIGN_NOISE = re.compile(r"\b(custom|hand-coded|from the manual of uniform traffic control devices|in the united states|"
+                        r"of the united states|united states|u\.s\.|svg|png|drawn|made|version|file)\b", re.I)
 SIGN_PHOTOS = [("Stop signs in the United States", "It is a stop sign: stop completely, then go on when it is "
                                                    "safe."),
                ("Yield signs in the United States", "It is a yield sign: give way to traffic on the road you are "
@@ -781,14 +789,22 @@ SIGN_PHOTOS = [("Stop signs in the United States", "It is a stop sign: stop comp
 
 
 def sign_meaning(title, text):
-    """(MUTCD number, meaning) of a US sign drawing from its file name and its own description: "MUTCD R1-1.svg",
-    "Stop sign" -> ("R1-1", "Stop sign"); the meaning is "" when the description is not a short English name."""
-    m = MUTCD.search(title)
-    number = m.group(1).rstrip(".") if m else ""
-    meaning = clean(re.sub(r"\(?MUTCD[^)]*\)?|\bsign\b\s*$", "", text or "", flags=re.I)).strip(" .,:;-")
-    if not meaning or len(meaning.split()) > 14 or not in_english(meaning + " of the"):
-        meaning = ""
-    return number, meaning
+    """(MUTCD number, what the sign says) of a US sign drawing, from its file name and its own description:
+    "MUTCD R3-32P.svg", "Plaque R3-32P 'No Cash' from the Manual ..." -> ("R3-32P", 'it reads "No Cash"');
+    "FHWA bicycle lane sign.png", "Bicycle lane sign: diamond symbol with text ..." -> ("", "Bicycle lane sign").
+    The words are "" when the description gives neither a quoted wording nor a short English name."""
+    name = title.split(":", 1)[-1].rsplit(".", 1)[0]
+    m = MUTCD.search(name) or MUTCD.search(text or "")
+    number = m.group(1) if m else ""
+    text = clean(text or "")
+    quoted = QUOTED.search(text)
+    if quoted and in_english(quoted.group(1) + " of the"):
+        return number, f'it reads "{quoted.group(1).strip()}"'
+    first = re.split(r"[:.;(]|, (?:a|an|the|which|located)\b", text)[0]
+    first = clean(SIGN_NOISE.sub(" ", first)).strip(" ,-")
+    if not first or len(first.split()) > 10 or not in_english(first + " of the") or not re.search(r"[a-z]", first):
+        return number, ""
+    return number, first[:1].upper() + first[1:]
 
 
 def build_us_road_signs(limit):
@@ -814,7 +830,8 @@ def build_us_road_signs(limit):
         number, meaning = sign_meaning(title, text)
         if not meaning:
             continue
-        answer = f"It is a US road sign: {meaning}." + (f" (MUTCD sign {number}.)" if number else "")
+        answer = (f"It is a US road sign; {meaning}." if meaning.startswith("it reads") else
+                  f"It is a US road sign: {meaning}.") + (f" (MUTCD sign {number}.)" if number else "")
         items.append((file_name("ussign", title), url,
                       [{"question": SIGN_Q, "answer": answer, "credit": credit, "place": "USA",
                         "facts": {"mutcd": number} if number else {}}]))

@@ -91,7 +91,10 @@ PRODUCT_Q = "What product is this?"
 KIND_Q = "What kind of product is this?"
 # Words that leave a record out: nudity, underwear, swimwear and sexual products (the safety rules).
 NOT_SHOWN = re.compile(r"\b(swim\w*|bikini\w*|bathing suits?|underwear|lingerie|bras?|briefs|nude|naked|topless|"
-                       r"sexy|sexual\w*|erotic\w*|adult toys?|vibrators?|condoms?|lubricants?)\b", re.I)
+                       r"sexy|sexual\w*|erotic\w*|adult toys?|vibrators?|condoms?|lubricants?)\b"
+                       # criminal-investigation evidence photos (FBI photos of the Epstein properties are filed in
+                       # Commons room categories)
+                       r"|epstein|\bEFTA\d+|crime scenes?|evidence photo\w*|mug ?shots?|\bautops\w*", re.I)
 CHILD_CLOTHES = re.compile(r"\b(sleepwear|pajamas|pyjamas|nightgowns?|robes?|garments?|clothing|onesies?|"
                            r"bodysuits?|hoodies?|sweatshirts?|jackets?|dresses|costumes?)\b", re.I)
 STATES = ["Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", "Florida",
@@ -171,7 +174,8 @@ def prepare_commons_us_sa(source, data_dir, work, cap):
     share the cap; rows whose words name a child are marked "child"; files whose words name nudity are left out).
     Files whose words name swimwear or underwear are left out too."""
     items = commons_sa_items(US_SA, cap, source.test, "us-sa")
-    items = [i for i in items if not NOT_SHOWN.search(f"{i[0]} {i[2]['answer']}")]
+    left_out = {i[0] for i in items if NOT_SHOWN.search(f"{i[0]} {i[2]['answer']}")}    # every row of that file
+    items = [i for i in items if i[0] not in left_out]
     return fetch_shared(items, os.path.join(data_dir, source.key), workers=2)
 
 
