@@ -1275,7 +1275,7 @@ def europeana_records(terms, want):
     other records' titles, which are often wrong: "Breastfeeding boom" for a military object)."""
     import os
     s, out, seen = session(), [], set()
-    key = os.environ.get("EUROPEANA_KEY", EUROPEANA_KEY)
+    key = os.environ.get("EUROPEANA_KEY") or EUROPEANA_KEY      # empty when the build has no key saved
     for term in terms:
         try:
             data = s.get(EUROPEANA, timeout=60, params={"wskey": key, "query": term, "qf": "TYPE:IMAGE",

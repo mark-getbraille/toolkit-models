@@ -985,7 +985,7 @@ def build_europeana_child_rites(limit):
     """The europeana_child_rites pack (see the module docstring): photos only, open rights only, English titles
     naming the rite, every record through child_rite_ok."""
     s, items, seen = session(), [], set()
-    key = os.environ.get("EUROPEANA_KEY", EUROPEANA_KEY)
+    key = os.environ.get("EUROPEANA_KEY") or EUROPEANA_KEY      # empty when the build has no key saved
     per = max(3, int(limit * 1.3) // len(EUROPEANA_RITES) + 1)
     for query, must, rite, child_rite in EUROPEANA_RITES:
         taken = 0

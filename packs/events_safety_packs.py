@@ -795,7 +795,7 @@ def europeana_items(limit):
     import os
     from medical_packs import tidy_record_text
     s, rng, items, seen = session(), random.Random(523), [], set()
-    key = os.environ.get("EUROPEANA_KEY", EUROPEANA_KEY)
+    key = os.environ.get("EUROPEANA_KEY") or EUROPEANA_KEY      # empty when the build has no key saved
     terms = list(EUROPEANA_TERMS)
     rng.shuffle(terms)
     per_term = max(2, int(limit * 1.3) // len(terms) + 1)
