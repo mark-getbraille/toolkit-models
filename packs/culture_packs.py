@@ -117,6 +117,7 @@ import urllib.parse
 import build_packs  # noqa: F401 - loaded first: the other pack files and build_packs import each other
 from build_packs import session, clean, smaller, fetch_all, say, MUSEUM
 from build_packs import pass_random  # shuffles differently on a top-up pass (see build_packs)
+from build_packs import needs_description  # pictures set aside for a description (see build_packs)
 from food_packs import (sentence, listed, with_twins, count_pictures, oi_lines, oi_licence_name,  # noqa: F401
                         commons_get, commons_entries, commons_place, OI_LABELS, OI_CLASSES, OI_IMAGES, OI_PICTURE)
 from everyday_packs import a_or_an, number_word
@@ -734,10 +735,15 @@ def build_met_instruments(limit):
         if not obj.get("isPublicDomain") or not picture:
             continue
         rows = met_rows(obj)
-        if not rows:
-            continue
         credit = (f"{clean(obj.get('title'))}, The Metropolitan Museum of Art, {clean(obj.get('creditLine'))}, "
                   f"CC0 (Open Access), {obj.get('objectURL') or ''}").replace(", ,", ",")
+        if not rows:                       # CC0 with a picture, but its record names no object: set aside
+            needs_description(f"met-{object_id}.jpg", picture, credit, "CC0 (Open Access)",
+                              page_url=obj.get("objectURL") or "", reason="its record does not name the object",
+                              extra={"classification": clean(obj.get("classification")),
+                                     "culture": clean(obj.get("culture")), "date": clean(obj.get("objectDate")),
+                                     "medium": clean(obj.get("medium")), "department": "Musical Instruments"})
+            continue
         items.append((f"met-{object_id}.jpg", picture, [dict(r, credit=credit) for r in rows]))
     say(f"The Met: {len(items)} public-domain instruments")
     fetched = fetch_all(items, workers=4, pause=0.1)

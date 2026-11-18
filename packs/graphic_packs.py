@@ -90,7 +90,8 @@ import build_packs  # noqa: F401 - loaded first: the other pack files and build_
 from build_packs import session, clean, say, NARRATE
 from build_packs import pass_random  # shuffles differently on a top-up pass (see build_packs)
 from build_packs import listing_out_of_time
-from food_packs import count_pictures, commons_members, commons_entries, commons_place
+from build_packs import needs_description  # pictures set aside for a description (see build_packs)
+from food_packs import count_pictures, commons_members, commons_entries, commons_place, credit_licence
 from expression_packs import CHILD
 from world_packs import capped_words
 from places import country_named, place_name
@@ -171,6 +172,22 @@ def marked(rows, *texts):
     if is_graphic(*(r.get("answer", "") for r in rows), *texts):
         return [dict(r, content="graphic") for r in rows]
     return rows
+
+
+def graphic_aside(name, url, credit, licence, text="", title="", reason="", page_url="", place="", extra=None):
+    """Set aside a picture of a graphic-scenes pack that passed every other check but whose caption is too short or
+    not English (build_packs.needs_description), after not_shown on everything known of it. Every picture set aside
+    from these packs is marked "graphic" (its words are too few to tell; the kit then uses it only with the
+    graphic-scenes choice, never for picture-making) and "child" when child_in finds a child. True when set aside."""
+    extra = dict(extra or {})
+    known = [text, title, *(str(v) for v in extra.values())]
+    if not_shown(*known):
+        return False
+    extra["content"] = "graphic"
+    if child_in(*known):
+        extra["child"] = True
+    return needs_description(name, url, credit, licence, text=text, title=title, reason=reason, page_url=page_url,
+                             place=place, extra=extra)
 
 
 def finish_graphic(key, items, limit, workers=4, pause=0.2):
@@ -277,13 +294,23 @@ def loc_graphic_items(s, path, extra, total, name, added, least, want, rng, answ
             title = clean(record.get("title"))
             caption = caption_of(title)
             picture = loc_picture(record)
-            if not loc_free(record) or not picture or words(caption) < least or LOC_NOT_A_PHOTO.search(title) \
+            if not loc_free(record) or not picture or LOC_NOT_A_PHOTO.search(title) \
                     or caption.lower() in answers or taken >= per_page:
                 continue
             answer = f"{caption} {added}".strip()
             item = record.get("item") or {}
             summary = clean(item.get("summary"))
-            if words(answer) < 6 or not_shown(answer, summary):
+            if words(caption) < least or words(answer) < 6:     # free, a photo, too short a title: set aside
+                link = re.sub(r"^(https?:)?//", "https://", item.get("link") or record.get("id") or "")
+                control = re.sub(r"\W", "", str(item.get("control_number") or item.get("id") or len(items)))
+                graphic_aside(f"loc-{control}.jpg", picture, f"{title[:150]}, {name}, no known restrictions on "
+                              f"publication, {link}", "no known restrictions on publication", text=caption,
+                              title=title, page_url=link, place=loc_place(record),
+                              reason=f"its title is under {max(least, 6)} words",
+                              extra={"summary": summary, "collection": name.split(",")[0],
+                                     "search": extra.get("q", "")})
+                continue
+            if not_shown(answer, summary):
                 continue
             answers.add(caption.lower())
             taken += 1
@@ -418,8 +445,17 @@ def build_nara_war(limit):
                 text = note if words(note) > words(title) and words(note) < 120 else title
                 answer = caption_of(NARA_NOTES.sub("", NARA_HEADING.sub("", text)))
                 picture = nara_picture(record)
-                if not picture or words(answer) < 6 or answer.lower() in answers or LOC_NOT_A_PHOTO.search(title) \
-                        or not_shown(answer, title, note):
+                if not picture or answer.lower() in answers or LOC_NOT_A_PHOTO.search(title):
+                    continue
+                if words(answer) < 6:                    # free, a photo, a too short caption: set aside
+                    graphic_aside(f"nara-{record.get('naId')}.jpg", picture,
+                                  f"{title[:150]}, {NARA_SERIES_NAME}, U.S. National Archives and Records "
+                                  f"Administration, public domain (US government work), {NARA}id/{record.get('naId')}",
+                                  "public domain (US government work)", text=answer, title=title,
+                                  page_url=f"{NARA}id/{record.get('naId')}", place=nara_place(record),
+                                  reason="its caption is under six words", extra={"note": note, "search": word})
+                    continue
+                if not_shown(answer, title, note):
                     continue
                 answers.add(answer.lower())
                 found += 1
@@ -485,7 +521,20 @@ def build_ushmm(limit):
                     continue
                 caption = caption_of(doc.get("title_display") or " ".join(doc.get("title") or []), 90)
                 keywords = " ".join(doc.get("keyword") or []).lower()
-                if words(caption) < 6 or not_shown(caption, keywords):
+                if words(caption) < 6:                   # public domain with a too short caption: set aside
+                    if graphic_aside(f"ushmm-{doc.get('identifier') or doc.get('id')}.jpg",
+                                     USHMM_PICTURE.format(resource),
+                                     f"{caption[:150] or 'Photograph'}, United States Holocaust Memorial Museum photo "
+                                     f"archive, photograph {doc.get('identifier')}, Copyright: Public Domain, "
+                                     f"{USHMM}catalog/{doc.get('id')} ; terms: {USHMM_TERMS}", "Public Domain",
+                                     text=caption, page_url=f"{USHMM}catalog/{doc.get('id')}",
+                                     place=ushmm_place(" ".join(doc.get("geography") or [])),
+                                     reason="its caption is under six words",
+                                     extra={"keywords": keywords[:300],
+                                            "date": clean(" ".join(doc.get("display_date") or []))}):
+                        seen.add(doc.get("id"))
+                    continue
+                if not_shown(caption, keywords):
                     continue
                 seen.add(doc.get("id"))
                 found += 1
@@ -644,7 +693,17 @@ def build_commons(key, categories, limit, safety=False):
         for title, url, credit, text in commons_entries(s, titles[:per_category * 3]):
             described = commons_answer(text)
             name_words = re.sub(r"[_-]+", " ", title.split(":", 1)[-1].rsplit(".", 1)[0])
-            if not_shown(described, name_words) or (not described and not question):
+            if not_shown(described, name_words):
+                continue
+            if not described and not question:       # free, but no English caption of six words: set aside
+                stem = re.sub(r"[^\w.-]+", "_", title.split(":", 1)[-1].rsplit(".", 1)[0])[:80]
+                graphic_aside(f"{key.replace('_', '-')}-{stem}.jpg",
+                              re.sub(r"/\d+px-([^/]+)$", r"/1280px-\1", url), credit, credit_licence(credit),
+                              text=caption_of(text, 70), title=name_words,
+                              page_url="https://commons.wikimedia.org/wiki/" + title.replace(" ", "_"),
+                              place=commons_place(title).get("place", ""),
+                              reason="no English caption or description of six words or more",
+                              extra={"category": category})
                 continue
             rows = []
             if question:

@@ -65,6 +65,7 @@ import zipfile
 
 import build_packs  # noqa: F401 - loaded first: the other pack files and build_packs import each other
 from build_packs import session, clean, smaller, fetch_all, say
+from build_packs import needs_description  # pictures set aside for a description (see build_packs)
 from food_packs import with_twins, count_pictures
 from expression_packs import CHILD
 from world_packs import capped_words, full_stop, ASK_JA, ASK_SV, ASK_NL, ASK_ZH, ASK_EN
@@ -243,6 +244,37 @@ def eu_picture(address):
     return "https://api.europeana.eu/thumbnail/v3/400/" + hashlib.md5(address.encode("utf-8")).hexdigest()
 
 
+# Words about nudity in the Europeana packs' languages (Finnish, Czech, Hungarian, Greek, Norwegian, Polish and
+# English): a record with any of them is never set aside for a description.
+EU_NUDE = re.compile(r"naken|nakne|akt\b|aktkép|meztelen|γυμν|nag(i|a|ie|ich)\b|akt(y|u|em)?\b|nude|naked|"
+                     r"alasto\w*|nah(á|ý|é)\b|nahot\w*|erot\w*", re.I)
+
+
+def eu_set_aside(key, item, licence, picture, reason, place="", texts=(), child=False):
+    """Set aside a Europeana record with a free licence and a picture, but no usable description in its language
+    (build_packs.needs_description): its title, all its description parts and its subjects are kept as hints.
+    Nothing is set aside whose words mention nudity in any of the packs' languages (EU_NUDE). True when set
+    aside."""
+    title = clean((item.get("title") or [""])[0])
+    parts = [clean(p) for p in (item.get("dcDescription") or [])][:6]
+    subjects = [clean(x) for x in (item.get("edmConceptPrefLabelLangAware") or {}).get("en") or []][:10]
+    if EU_NUDE.search(" ".join([title, *parts, *subjects, *texts])):
+        return False
+    page = (item.get("guid") or f"https://www.europeana.eu/item{item.get('id', '')}").split("?")[0]
+    extra = {"descriptions": parts, "subjects": subjects, "museum": clean((item.get("dataProvider") or [""])[0]),
+             "language": (item.get("language") or [""])[0], "year": (item.get("year") or [""])[0]}
+    if child or mentions_child(title, *parts) or CHILD_FI_CS.search(" ".join([title, *parts])):
+        extra["child"] = True
+    return needs_description(f"{key}-{item.get('id', '').strip('/').replace('/', '-')[-60:]}.jpg", picture,
+                             eu_credit(item, licence), licence, title=title, reason=reason, page_url=page,
+                             place=place, extra=extra)
+
+
+# Finnish and Czech words for children that expression_packs.CHILD does not have.
+CHILD_FI_CS = re.compile(r"(lapsi|lapset|lapsia|lasten|poika|pojat|tyttö|tytöt|vauva\w*|koululai\w*|dítě|děti|"
+                         r"chlap(ec|ci)|dívk\w*|holčičk\w*|kojen\w*|školák\w*)\b", re.I)
+
+
 def eu_credit(item, licence):
     """The credit of a Europeana record: title, museum, licence and the record's Europeana page."""
     title = clean((item.get("title") or [""])[0])
@@ -335,7 +367,13 @@ def build_europeana(key, limit):
             licence = eu_licence(item)
             picture = eu_picture((item.get("edmIsShownBy") or [""])[0])
             answer, english = source["answer"](eu_descriptions(item, source["language"]))
-            if not licence or not picture.startswith("http") or not answer or answer in seen:
+            if not licence or not picture.startswith("http"):
+                continue
+            if not answer:                     # free, a picture, no description that says what it shows
+                eu_set_aside(key, item, licence, picture, "no description of what the picture shows (only "
+                             "catalogue notes, names or numbers)", texts=[english])
+                continue
+            if answer in seen:
                 continue
             seen.add(answer)
             credit = eu_credit(item, licence)

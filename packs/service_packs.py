@@ -105,6 +105,7 @@ import time
 
 import build_packs  # noqa: F401 - loaded first: the other pack files and build_packs import each other
 from build_packs import listing_out_of_time
+from build_packs import needs_description  # pictures set aside for a description (see build_packs)
 from build_packs import pass_random, new_only  # top-up passes (see build_packs)
 from build_packs import session, clean, fetch_all, say, COMMONS_FREE, MUSEUM, SI_BUCKET, si_keys, \
     first_sentences
@@ -113,7 +114,7 @@ from expression_packs import CHILD
 from everyday_packs import a_or_an as plain_a_or_an
 from world_packs import capped_words, full_stop
 from places import country_at, country_named, place_from_text, where
-from documentary_packs import tidy, usable, get_json, loc_picture, loc_place, loc_free, place_words, LOC
+from documentary_packs import tidy, usable, get_json, loc_picture, loc_place, loc_free, place_words, LOC, NOT_SHOWN
 from archive_packs import SLURS, sentence_case, lc_place, nara_picture, NARA_SEARCH, NARA, NARA_NOTES, WRA_FULL
 
 ASK_WHAT = "What is this?"
@@ -170,6 +171,20 @@ def safety(texts):
     if child:
         extra["child"] = True
     return True, extra
+
+
+def service_aside(name, url, credit, licence, text="", title="", reason="", page_url="", place="", extra=None):
+    """Set aside a picture of these packs that passed every other check but whose caption is too short
+    (build_packs.needs_description), after safety() on everything known of it; its marks ("graphic", "child") are
+    kept, and every such picture is marked never for picture-making (soldiers, weapons, the services). True when
+    set aside."""
+    extra = dict(extra or {})
+    keep, marks = safety([text, title, *(str(v) for v in extra.values())])
+    if not keep or NOT_SHOWN.search(f"{text} {title}"):
+        return False
+    extra.update(marks, not_for_picture_making=True)
+    return needs_description(name, url, credit, licence, text=text, title=title, reason=reason, page_url=page_url,
+                             place=place, extra=extra)
 
 
 def conflict_in(*texts):
@@ -854,8 +869,19 @@ def loc_service_items(s, path, extra, total, name, conflict, uniform, want, rng)
             summary = clean(item.get("summary"))
             subjects = " ".join(record.get("subject") or [])
             keep, safe = safety([title, summary])
-            if not keep or not loc_free(record) or not picture or not usable(answer) or LOC_NOT_A_PHOTO.search(title) \
-                    or answer in answers or taken >= per_page:
+            if not keep or not loc_free(record) or not picture or LOC_NOT_A_PHOTO.search(title) \
+                    or taken >= per_page:
+                continue
+            if not usable(answer):              # free, a photo, a too short title: set aside for a description
+                link = re.sub(r"^(https?:)?//", "https://", item.get("link") or record.get("id") or "")
+                control = re.sub(r"\W", "", str(item.get("control_number") or item.get("id") or len(items)))
+                service_aside(f"loc-{control}.jpg", picture, f"{title[:150]}, Library of Congress, no known "
+                              f"restrictions on publication, {link}", "no known restrictions on publication",
+                              text=answer, title=title, page_url=link, place=loc_place(record),
+                              reason="its title is under six words",
+                              extra={"summary": summary, "subjects": subjects[:300], "collection": name or ""})
+                continue
+            if answer in answers:
                 continue
             answers.add(answer)
             taken += 1
@@ -961,7 +987,18 @@ def nara_military_items(s, naid, total, name, most, want, rng):
             answer = tidy(capped_words(caption, 80))
             picture = nara_small_picture(record, most)
             keep, safe = safety([caption])
-            if not keep or not picture or not usable(answer) or answer in answers:
+            if not keep or not picture:
+                continue
+            if not usable(answer):              # free, a picture, a too short caption: set aside
+                service_aside(f"nara-mil-{record.get('naId')}.jpg", picture,
+                              f"{clean(record.get('title'))[:150]}, {name}, U.S. National Archives and Records "
+                              f"Administration, public domain (US government work), {NARA}id/{record.get('naId')}",
+                              "public domain (US government work)", text=answer, title=clean(record.get("title")),
+                              page_url=f"{NARA}id/{record.get('naId')}",
+                              place=next((p for p in map(lc_place, places) if p), ""),
+                              reason="its caption is under six words")
+                continue
+            if answer in answers:
                 continue
             answers.add(answer)
             taken += 1
@@ -1015,7 +1052,16 @@ def build_army_mil(limit):
         seen.add(url)
         answer = tidy(capped_words(attrs.get("data-full-desc", ""), 90))
         keep, safe = safety([answer])
-        if not keep or not usable(answer):
+        if not keep:
+            continue
+        if not usable(answer):                  # a public-domain Army photo with a too short caption
+            service_aside(f"army-mil-{url.split('/images/', 1)[-1].rsplit('/', 1)[0].replace('/', '-')}.jpg",
+                          url.rsplit("/", 1)[0] + "/original.jpg",
+                          f"{clean(attrs.get('data-title'))}, {clean(attrs.get('data-author')) or 'U.S. Army'}, "
+                          f"U.S. Army, public domain (US government work), {ARMY}",
+                          "public domain (US government work)",
+                          text=answer, title=clean(attrs.get("data-title")), page_url=ARMY,
+                          reason="its caption is under six words")
             continue
         who = clean(attrs.get("data-author")) or "U.S. Army"
         credit = (f"{clean(attrs.get('data-title'))}, {who}, U.S. Army, public domain (US government work), "
@@ -1165,10 +1211,15 @@ def nmah_rows(record):
                   "", text).strip()
     text = text.replace("â\x80\x99", "’").replace("â\x80\x9c", "“").replace("â\x80\x9d", "”")
     keep, safe = safety([title, text])
-    if not keep or len(text.split()) < 12:
+    if not keep:
         return None
     link = content.get("descriptiveNonRepeating", {}).get("record_link") or record.get("id", "")
     credit = f"{title}, National Museum of American History, Smithsonian Institution, CC0, {link}"
+    if len(text.split()) < 12:                  # CC0, about the services, but too short a description: set aside
+        service_aside(file_name("nmah", f"{record.get('id', '')}-0"), pictures[0], credit, "CC0", text=text,
+                      title=title, page_url=link, reason="its description is under twelve words",
+                      extra={"object_type": kind, "topics": topics[:300]})
+        return None
     answer = full_stop(text if title.lower() in text.lower() else f"{title}. {text}")
     places = {clean(p.get("label")).lower(): p.get("content") for p in free.get("place") or []}
     place = place_from_text(places.get("place made") or places.get("place used") or "")

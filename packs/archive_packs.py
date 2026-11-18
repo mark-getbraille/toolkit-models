@@ -107,6 +107,7 @@ from expression_packs import CHILD
 from world_packs import capped_words, full_stop
 from places import country_named, place_name, place_from_text
 from documentary_packs import tidy, usable, picture_rows, get_json, finish, commons_get, NOT_SHOWN
+from build_packs import needs_description  # pictures set aside for a description (see build_packs)
 
 # Words that mean a photo shows the dead, wounds, disaster casualties or other graphic scenes (war archives have
 # many). By the owner's rule such photos are kept, described plainly from the record, and their rows carry
@@ -249,6 +250,25 @@ def graphic_rows(rows):
     return rows
 
 
+def set_aside(name, url, credit, licence, text="", title="", reason="", page_url="", place="", extra=None,
+              place_kind=""):
+    """Set aside a picture whose record passed every other check but whose caption is too short or not a
+    description (build_packs.needs_description), after this file's own safety check on everything known of it
+    (not_shown: nothing sexual, no torture or execution, no slur, no dead or injured child). A caption naming the
+    dead or wounded marks it "graphic"; Danish and Dutch child words mark it "child". True when set aside."""
+    extra = dict(extra or {})
+    known = [text, title, *(str(v) for v in extra.values())]
+    if not_shown(*known):
+        return False
+    joined = " ".join(t for t in known if t)
+    if GRIM.search(joined):
+        extra["content"] = "graphic"
+    if CHILD_MORE.search(joined):
+        extra["child"] = True
+    return needs_description(name, url, credit, licence, text=text, title=title, reason=reason, page_url=page_url,
+                             place=place, place_kind=place_kind, extra=extra)
+
+
 def finish_marked(key, items, limit, workers=4, pause=0.2):
     """documentary_packs.finish, after marking the graphic pictures among items (name, address, rows) and leaving
     out any that not_shown refuses; says how many are graphic."""
@@ -340,10 +360,8 @@ def nara_items(s, naid, total, name, want, rng):
             caption, places = nara_caption(record)
             answer = tidy(capped_words(caption, 80))
             picture = nara_picture(record)
-            if not picture or not usable(answer) or answer in answers or not_shown(answer):
+            if not picture:
                 continue
-            answers.add(answer)
-            taken += 1
             place = next((p for p in map(lc_place, places) if p), "") or wra_place(caption)
             who = next((clean(c.get("heading")) for c in record.get("contributors") or []
                         if c.get("contributorType") == "Photographer"), "")
@@ -351,6 +369,16 @@ def nara_items(s, naid, total, name, want, rng):
             credit = (f"{clean(record.get('title'))[:150]}" + (f", photographer {who}" if who else "")
                       + f", {name}, U.S. National Archives and Records Administration, public domain (US government "
                         f"work), {NARA}id/{record.get('naId')}")
+            if not usable(answer) and not NOT_SHOWN.search(answer):       # a free photo with a too short caption
+                set_aside(f"nara-{record.get('naId')}.jpg", picture, credit, "public domain (US government work)",
+                          text=answer, title=clean(record.get("title")), place=place,
+                          page_url=f"{NARA}id/{record.get('naId')}", reason="its caption is under six words",
+                          extra={"series": name.split(":")[0].split(",")[0]})
+                continue
+            if not usable(answer) or answer in answers or not_shown(answer):
+                continue
+            answers.add(answer)
+            taken += 1
             items.append((f"nara-{record.get('naId')}.jpg", picture, picture_rows(answer, credit, place)))
         if len(items) >= want:
             break
@@ -444,9 +472,6 @@ def build_nypl(limit):
         answer = title
         if description and description.lower()[:30] not in title.lower():
             answer = tidy(capped_words(f"{full_stop(title)} {description}", 70)) if title else tidy(description)
-        if not usable(answer) or answer in answers or not_shown(answer, row.get("Subject Topical")):
-            continue
-        answers.add(answer)
         # "w" is the Library's large copy that every item has (its 1,600-pixel "q" copy is missing for many).
         picture = re.sub(r"&t=\w+$", "&t=w", row["First Image"].replace("http://", "https://"))
         link = (row.get("Digital Collections URL") or "").replace("http://", "https://")
@@ -454,6 +479,17 @@ def build_nypl(limit):
         credit = (f"{clean(row.get('Title'))[:150]}, The New York Public Library"
                   + (f", {collection}" if collection else "") + f", no known US copyright restrictions, {link}")
         place = nypl_place(row)
+        if not usable(answer) and not NOT_SHOWN.search(answer):         # a free picture with only a short title
+            set_aside(f"nypl-{row.get('UUID') or len(items)}.jpg", picture, credit,
+                      "no known US copyright restrictions", text=answer, title=clean(row.get("Title")),
+                      page_url=link, reason="its title is under six words", place=place,
+                      place_kind="" if NYPL_PHOTO.search(row.get("Genre") or "") else "depicted",
+                      extra={"subjects": clean(row.get("Subject Topical"))[:300], "genre": clean(row.get("Genre")),
+                             "collection": collection, "date": clean(row.get("Date"))})
+            continue
+        if not usable(answer) or answer in answers or not_shown(answer, row.get("Subject Topical")):
+            continue
+        answers.add(answer)
         if NYPL_PHOTO.search(row.get("Genre") or ""):          # a photograph: where it was taken
             rows = picture_rows(answer, credit, place, [row.get("Subject Topical")])
         else:                                                    # a print or drawing: the place it shows
@@ -496,7 +532,7 @@ def getty_object(s, uri):
     answer = tidy(capped_words(getty_text(record, "Description"), 80))
     title = re.sub(r"\s*\([^()]*\)$", "", clean(record.get("_label")))
     pictures = [r.get("id") for r in record.get("representation") or [] if "/iiif/image/" in (r.get("id") or "")]
-    if not pictures or not usable(answer) or not_shown(answer, title):
+    if not pictures:
         return None
     picture = re.sub(r"/full/full/0/default\.jpg$", f"/full/!{LONG_SIDE},{LONG_SIDE}/0/default.jpg", pictures[0])
     maker = clean(((record.get("produced_by") or {}).get("_label") or "").replace("Production of Artwork by", ""))
@@ -505,6 +541,15 @@ def getty_object(s, uri):
     credit = (f"{title}" + (f", {maker}" if maker and maker.lower() != "unknown" else "")
               + f", The J. Paul Getty Museum, Los Angeles, Open Content (no copyright; metadata CC0), {page}")
     place = place_from_text(getty_text(record, "Creation Place Description"))
+    if not usable(answer) and not NOT_SHOWN.search(answer):     # no copyright, a picture, a too short description
+        set_aside(f"getty-{uri.rsplit('/', 1)[-1]}.jpg", picture, credit, "no copyright (Getty Open Content)",
+                  text=answer, title=title, page_url=page, place=place, place_kind="origin" if place else "",
+                  reason="its description is under six words",
+                  extra={"maker": maker, "medium": getty_text(record, "Materials Description"),
+                         "date": getty_text(record, "Creation Date Description")})
+        return None
+    if not usable(answer) or not_shown(answer, title):
+        return None
     rows = picture_rows(answer, credit)
     if place:                         # where the object was made, not where a photo was taken: no "where" question
         rows = [dict(r, place=place, place_kind="origin") for r in rows]
@@ -589,8 +634,19 @@ def dc_items(s, reuse, want, rng, genre="Photographs"):
             if abstract and abstract.lower()[:30] not in title.lower():
                 text = f"{full_stop(title)} {abstract}"
             answer = tidy(capped_words(text, 70))
-            if not a.get("exemplary_image_ssi") or not usable(answer) or not described(answer) \
-                    or answer in answers or not_shown(answer) or taken >= per_page:
+            if not a.get("exemplary_image_ssi") or taken >= per_page:
+                continue
+            if (not usable(answer) or not described(answer)) and not NOT_SHOWN.search(answer):
+                # A free photograph whose title is short or only names and dates: set aside for a description.
+                set_aside(f"dc-{a['id'].split(':')[-1]}.jpg",
+                          DC_IIIF.format(a["exemplary_image_ssi"], LONG_SIDE, LONG_SIDE), dc_credit(a),
+                          clean(a.get("rights_ss")) or "No known copyright restrictions", text=answer,
+                          title=title, page_url=a.get("identifier_uri_ss") or DC + "search/" + a["id"],
+                          place=dc_place(a), reason="its title is short or only names and dates",
+                          extra={"subjects": [clean(x) for x in (a.get("subject_topic_tsim") or [])][:12],
+                                 "date": clean(a.get("date_tsim") or "")})
+                continue
+            if not usable(answer) or not described(answer) or answer in answers or not_shown(answer):
                 continue
             answers.add(answer)
             taken += 1
@@ -600,14 +656,19 @@ def dc_items(s, reuse, want, rng, genre="Photographs"):
     return found
 
 
+def dc_credit(a):
+    """The credit line of a Digital Commonwealth record."""
+    ark = a.get("identifier_uri_ss") or DC + "search/" + a["id"]
+    who = clean(a.get("institution_name_ssi")) or "Digital Commonwealth"
+    return (f"{clean(a.get('title_info_primary_tsi'))[:150]}, {who}, via Digital Commonwealth, "
+            f"{clean(a.get('rights_ss')) or 'No known copyright restrictions.'} {ark}")
+
+
 def build_digital_commonwealth(limit):
     """The Digital Commonwealth pack: photographs marked "No known copyright restrictions"."""
     s, rng, items = session(), pass_random(304), []
     for answer, a in dc_items(s, "no restrictions", int(limit * 1.3) + 4, rng):
-        ark = a.get("identifier_uri_ss") or DC + "search/" + a["id"]
-        who = clean(a.get("institution_name_ssi")) or "Digital Commonwealth"
-        credit = (f"{clean(a.get('title_info_primary_tsi'))[:150]}, {who}, via Digital Commonwealth, "
-                  f"{clean(a.get('rights_ss')) or 'No known copyright restrictions.'} {ark}")
+        credit = dc_credit(a)
         picture = DC_IIIF.format(a["exemplary_image_ssi"], LONG_SIDE, LONG_SIDE)
         items.append((f"dc-{a['id'].split(':')[-1]}.jpg", picture, picture_rows(answer, credit, dc_place(a))))
     say(f"Digital Commonwealth: {len(items)} usable photographs")
@@ -653,13 +714,27 @@ def build_smk(limit):
             answer = english or danish
             rights = item.get("rights") or ""
             picture = item.get("image_thumbnail") or ""
-            if not answer or not picture or not item.get("public_domain") or not_shown(answer) \
-                    or not described(answer) or not re.search(r"publicdomain/(zero|mark)", rights) \
+            if not picture or not item.get("public_domain") or not re.search(r"publicdomain/(zero|mark)", rights) \
                     or taken >= max(2, limit // 25):         # a page holds one artist: a few from each
                 continue
-            taken += 1
             artist = ", ".join(clean(p.get("creator")) for p in (item.get("production") or [])[:2]
                                if clean(p.get("creator")))
+            if not answer or not described(answer):
+                # Public domain with a picture, but no title of six words that says what is in it: set aside.
+                any_title = clean(((item.get("titles") or [{}])[0] or {}).get("title"))
+                name = f"smk-{re.sub(r'[^\w-]', '_', item.get('object_number') or item['id'])}.jpg"
+                set_aside(name, picture, f"{any_title[:150]}" + (f", {artist}" if artist else "")
+                          + f", Statens Museum for Kunst (SMK), public domain ({rights}), "
+                          f"{item.get('frontend_url', '')}",
+                          "public domain", text=answer, title=any_title, page_url=item.get("frontend_url", ""),
+                          reason="no title of six words or more that says what is in it",
+                          extra={"object_names": [clean(o.get("name")) for o in item.get("object_names") or []][:5],
+                                 "techniques": (item.get("techniques") or [])[:5],
+                                 "date": clean((item.get("production_date") or [{}])[0].get("period"))})
+                continue
+            if not_shown(answer):
+                continue
+            taken += 1
             credit = (f"{answer[:150].rstrip('.')}" + (f", {artist}" if artist else "")
                       + f", Statens Museum for Kunst (SMK), public domain ({rights}), {item.get('frontend_url', '')}")
             rows = child_rows(picture_rows(answer, credit), answer)
@@ -742,8 +817,19 @@ def build_anefo(limit):
             fields = anefo_fields(wikitext)
             answer = tidy(capped_words(fields.get("beschrijving", ""), 70))
             if p["pageid"] in seen or not re.match(r"^(cc0|cc-zero|public domain|pd)", licence, re.I) \
-                    or not usable(answer) or not_shown(answer) or info.get("mime") != "image/jpeg" \
-                    or not info.get("thumburl") or taken >= max(3, limit // 15):
+                    or info.get("mime") != "image/jpeg" or not info.get("thumburl") or taken >= max(3, limit // 15):
+                continue
+            if not usable(answer) and not NOT_SHOWN.search(answer) and not NUDE_MORE.search(answer):
+                page = "https://commons.wikimedia.org/wiki/" + p["title"].replace(" ", "_")
+                if set_aside(f"anefo-{p['pageid']}.jpg", info["thumburl"],
+                             f"{p['title']}, Nationaal Archief, {licence}, copy on Wikimedia Commons: {page}", licence,
+                             text=answer, title=p["title"], page_url=page, place=anefo_place(fields, wikitext),
+                             reason="its Dutch caption is under six words",
+                             extra={k: fields[k] for k in ("datum", "locatie", "fotograaf", "trefwoorden",
+                                                           "persoonsnaam") if fields.get(k)}):
+                    seen.add(p["pageid"])
+                continue
+            if not usable(answer) or not_shown(answer):
                 continue
             seen.add(p["pageid"])
             taken += 1
@@ -799,11 +885,15 @@ def kremlin_gallery(s, path):
     for big, text, where_text in re.findall(r'<a class="photo photoset_a" href="([^"]+)"[^>]*>\s*<img[^>]*?'
                                             r'data-text="([^"]*)"\s*data-place="([^"]*)"', page, re.S):
         answer = tidy(text)
-        if not usable(answer) or not_shown(answer):
-            continue
         credit = (f"{title[:120]}: {answer[:150]} Presidential Executive Office of Russia, kremlin.ru, CC BY 4.0 "
                   f"(http://creativecommons.org/licenses/by/4.0/), {KREMLIN}{path}")
         name = "kremlin-" + re.sub(r"\W", "", big.rsplit("/", 1)[-1].split(".")[0])[:40] + ".jpg"
+        if not usable(answer) and not NOT_SHOWN.search(answer):         # a photo with a too short caption
+            set_aside(name, big, credit, "CC BY 4.0", text=answer, title=title, page_url=KREMLIN + path,
+                      place=kremlin_place(where_text), reason="its caption is under six words")
+            continue
+        if not usable(answer) or not_shown(answer):
+            continue
         out.append((name, big, picture_rows(answer, credit, kremlin_place(where_text))))   # its picture server: http
     return out
 
@@ -855,18 +945,25 @@ def awm_record(s, path):
     copyright_ok = re.search(r"Copyright expired - public domain|This item is in the Public Domain", text)
     m = re.search(r"\|\s*Description\s*\|[|\s]*([^|]{20,})", text)
     place_m = re.search(r'<a href="/collection/PL\d+">([^<]+)</a>', page)     # "Europe: France, Somme, Pozieres"
-    if not copyright_ok or not m or not picture.startswith("http"):
+    if not copyright_ok or not picture.startswith("http"):
         return None
     words = clean(place_m.group(1)) if place_m else ""
-    caption = clean(m.group(1))
+    caption = clean(m.group(1)) if m else ""
     caption = re.sub(r"^([A-Z ,.'-]+\.\s*)?\d{4}-\d{2}-\d{2}\.\s*", lambda mm: mm.group(1) or "", caption)
     caption = re.sub(r"\bNo\.? ?(\d)", r"Number \1", caption)      # "No 7 Squadron" (tidy drops "No 7" as a code)
     answer = tidy(capped_words(sentence_case(caption, re.split(r"[:,]", words)), 80))
-    if not usable(answer) or not_shown(answer):
-        return None
     parts = [p.strip() for p in re.split(r"[:,]", words) if p.strip()]
     at = next((i for i, p in enumerate(parts) if country_named(p)), -1)        # the first part that is a country
     place = place_name(*list(reversed(parts[at + 1:]))[:2], country_named(parts[at])) if at >= 0 else ""
+    if not usable(answer) and not NOT_SHOWN.search(answer):    # public domain, a photo, no real caption: set aside
+        title = clean(meta.get("og:title"))
+        set_aside(f"awm-{path.rsplit('/', 1)[-1]}.jpg", picture,
+                  f"{(caption or title)[:150]}, Australian War Memorial, {path.rsplit('/', 1)[-1]}, copyright expired "
+                  f"- public domain, {AWM}{path}", "copyright expired - public domain", text=answer, title=title,
+                  page_url=AWM + path, place=place, reason="no caption of six words or more")
+        return None
+    if not usable(answer) or not_shown(answer):
+        return None
     credit = (f"{caption[:150]}, Australian War Memorial, {path.rsplit('/', 1)[-1]}, copyright expired - public "
               f"domain, {AWM}{path}")
     return (f"awm-{path.rsplit('/', 1)[-1]}.jpg", picture, picture_rows(answer, credit, place))

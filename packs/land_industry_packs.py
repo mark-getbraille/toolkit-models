@@ -102,6 +102,7 @@ import build_packs  # noqa: F401 - loaded first: the other pack files and build_
 from build_packs import session, clean, smaller, fetch_all, say, article, first_sentences, NARRATE, ALT_TEXT  # noqa: F401,E501
 from build_packs import pass_random  # shuffles differently on a top-up pass (see build_packs)
 from build_packs import listing_out_of_time  # noqa: E402
+from build_packs import needs_description  # pictures set aside for a description (see build_packs)
 from food_packs import sentence, listed, with_twins, count_pictures, commons_members, commons_entries, commons_place
 from expression_packs import CHILD
 from world_life_packs import remote_zip
@@ -1327,7 +1328,17 @@ def haer_items(s, term, want, rng):
         rng.shuffle(photos)
         for picture, cap in photos:
             answer = haer_caption(cap, record.get("title"))
-            if not usable(answer) or taken >= 2:
+            if taken >= 2:
+                continue
+            if not usable(answer):                  # free, a photo, too short a caption ("VIEW NORTH"): set aside
+                if not NUDE.search(f"{cap} {record.get('title')}"):
+                    stem = re.sub(r"\W", "", picture.rsplit("/", 1)[-1].rsplit(".", 1)[0])
+                    link = re.sub(r'^(https?:)?//', 'https://', url)
+                    needs_description(f"haer-{stem}.jpg", picture, f"{clean(cap)[:150]}, {HAER_CREDIT}, {link}",
+                                      "no known restrictions (U.S. Government work)", text=answer,
+                                      title=clean(record.get("title")), page_url=link, place=place,
+                                      reason="its caption is under six words",
+                                      extra=marked({}, cap, record.get("title")))
                 continue
             taken += 1
             credit = f"{clean(cap)[:150]}, {HAER_CREDIT}, {re.sub(r'^(https?:)?//', 'https://', url)}"
@@ -1408,10 +1419,16 @@ def build_usda_ars(limit):
         if not info:
             continue
         answer = tidy(first_sentences(info[0], 45))
-        if not usable(answer) or not ARS_DESCRIBES.search(answer):
-            continue
         credit = ("USDA Agricultural Research Service" + (f", photo by {info[1]}" if info[1] else "")
                   + f", public domain, {ARS}{path}")
+        if not usable(answer) or not ARS_DESCRIBES.search(answer):
+            # Public domain, a photo, but its caption is short or does not describe it: set aside.
+            if not NUDE.search(info[0]):
+                needs_description(f"ars-{path.rsplit('/', 1)[-1]}.jpg", info[2], credit, "public domain",
+                                  text=clean(info[0])[:600], page_url=ARS + path,
+                                  reason="its caption is short or does not say what the photo shows",
+                                  extra=marked({}, info[0]))
+            continue
         rows = [marked(r, answer) for r in picture_rows(answer, credit)]
         items.append((f"ars-{path.rsplit('/', 1)[-1]}.jpg", info[2], rows))
     say(f"USDA ARS: {len(items)} usable photos of {len(paths)} pages")

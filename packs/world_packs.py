@@ -32,6 +32,25 @@ import time
 from build_packs import session, clean, smaller, fetch_all, first_sentences, say, COCO_FREE, coco_licences  # noqa: F401
 from places import where, country_named, place_name
 
+# Words about nudity in the languages of these packs (Japanese, Swedish, Dutch, English): a record with any of them
+# is never set aside for a description (build_packs.needs_description).
+WORLD_NUDE = re.compile(r"裸|ヌード|春画|\b(naken|nakna|akt|aktstudie|naakt\w*|bloot|nude|naked|nudity)\b", re.I)
+
+
+def set_aside(row, name, url):
+    """Set aside a picture whose record passed every other check but whose description says nothing about what is
+    shown (row: the pack row without an answer, its "_hints" the record's own texts). True when set aside."""
+    import build_packs
+    hints = row.get("_hints") or {}
+    if WORLD_NUDE.search(" ".join(str(v) for v in hints.values())):
+        return False
+    licence = row.get("_licence", "")
+    return build_packs.needs_description(name, url, row.get("credit", ""), licence, title=hints.pop("title", ""),
+                                         text=hints.pop("text", ""), page_url=row.get("_page", ""),
+                                         reason=row.get("_reason", "no description of what is shown"),
+                                         place=row.get("place", ""), place_kind=row.get("place_kind", ""),
+                                         extra=hints)
+
 ASK_JA = "この写真を説明してください。"
 ASK_SV = "Beskriv bilden."
 ASK_NL = "Beschrijf deze afbeelding."
@@ -173,12 +192,17 @@ def jps_row(record, text_licence):
     pictures = (c.get("contentsUrl") if c.get("contentsType") == "image" else None) or c.get("thumbnailUrl") or []
     url = next((u for u in pictures if str(u).startswith("http")), None)
     answer = jps_answer(c.get("description"))
-    if not url or not answer:
-        return None
+    if not url or (not answer and JPS_DOCUMENT.search(clean(c.get("description")))):
+        return None                                   # no picture, or a page of writing
     page = f"https://jpsearch.go.jp/item/{c.get('id') or record.get('id')}"
     credit = (f"{clean(c.get('title'))}, {clean(c.get('provider'))}. Picture: {picture_licence}; description: "
               f"{text_licence}. Via Japan Search: {page}" + (f" ({c['linkUrl']})" if c.get("linkUrl") else ""))
-    return url, {"question": ASK_JA, "answer": answer, "credit": credit, **jps_place(record)}
+    row = {"question": ASK_JA, "answer": answer, "credit": credit, **jps_place(record)}
+    if not answer:                                    # its description does not say what is shown: set aside
+        row.update(_licence=picture_licence, _page=page, _reason="its description does not say what is shown",
+                   _hints={"title": clean(c.get("title")), "text": clean(c.get("description"))[:600],
+                           "types": (record.get("rdfindex") or {}).get("type") or []})
+    return url, row
 
 
 def build_japan_search(limit):
@@ -216,7 +240,9 @@ def build_japan_search(limit):
                         sizes[db] = picture_side(s, got[0])
                         if sizes[db] < 400:
                             say(f"  {db}: pictures too small ({sizes[db]} pixels), left out")
-                    if got and sizes.get(db, 0) >= 400 and got[1]["answer"] not in seen:
+                    if got and sizes.get(db, 0) >= 400 and not got[1]["answer"]:
+                        set_aside(got[1], f"jps-{safe_name(record.get('id'))}.jpg", got[0])
+                    elif got and sizes.get(db, 0) >= 400 and got[1]["answer"] not in seen:
                         seen.add(got[1]["answer"])
                         items.append((f"jps-{safe_name(record.get('id'))}.jpg", got[0], got[1]))
                         found += 1
@@ -303,8 +329,8 @@ def ks_row(entity):
             motiv = ks_text(d, "desc")
             break
     answer = ks_answer(motiv)
-    if not answer:
-        return None
+    if not answer and (not motiv or KS_NOT_A_PICTURE.search(clean(motiv))):
+        return None                                   # no description at all, or one of a whole album
     item_licence = next((ks_resource(e) for e in entity.iter() if ks_local(e.tag) == "itemLicense"), "")
     if item_licence and item_licence.split("#")[-1] not in KS_LICENCES:
         return None                                   # the record text itself is not free
@@ -322,7 +348,11 @@ def ks_row(entity):
         page = ks_text(entity, "url") or entity.get("{http://www.w3.org/1999/02/22-rdf-syntax-ns#}about", "")
         organisation = ks_text(entity, "serviceOrganizationFull") or ks_text(entity, "serviceOrganization")
         credit = f"{title}, {organisation}, {KS_LICENCES[licence]}, via K-samsök: {page}"
-        return url, {"question": ASK_SV, "answer": answer, "credit": credit, **ks_place(entity)}
+        row = {"question": ASK_SV, "answer": answer, "credit": credit, **ks_place(entity)}
+        if not answer:                                # its "Motiv" is only dates, names or notes: set aside
+            row.update(_licence=KS_LICENCES[licence], _page=page, _hints={"title": title, "text": clean(motiv)[:600]},
+                       _reason="its description is only dates, names or notes, or under six words")
+        return url, row
     return None
 
 
@@ -352,7 +382,10 @@ def build_ksamsok(limit):
                 entities = [e for e in root.iter() if ks_local(e.tag) == "Entity"]
                 for entity in entities:
                     got = ks_row(entity)
-                    if got and got[1]["answer"] not in seen:
+                    if got and not got[1]["answer"]:
+                        about = entity.get("{http://www.w3.org/1999/02/22-rdf-syntax-ns#}about", "")
+                        set_aside(got[1], f"ksamsok-{safe_name(about.rsplit('/', 1)[-1])}.jpg", got[0])
+                    elif got and got[1]["answer"] not in seen:
                         seen.add(got[1]["answer"])
                         items.append((f"ksamsok-{len(items)}.jpg", got[0], got[1]))
                         found += 1
@@ -411,8 +444,6 @@ def rm_row(record):
     question, answer = ASK_NL, rm_answer(descriptions.get(RM_DUTCH))
     if not answer:
         question, answer = ASK_EN, rm_answer(descriptions.get(RM_ENGLISH))
-    if not answer:
-        return None
     picture, licence, page = None, None, None
     for node in rm_walk(record):
         points = [p.get("id", "") for p in node.get("access_point") or [] if isinstance(p, dict)]
@@ -429,7 +460,13 @@ def rm_row(record):
     picture = re.sub(r"/full/[^/]+/0/default\.jpg$", "/full/!2048,2048/0/default.jpg", picture)
     title = next((clean(n.get("content")) for n in record.get("identified_by") or [] if n.get("type") == "Name"), "")
     credit = f"{title}, Rijksmuseum, Amsterdam, {licence}: {page or record.get('id')}"
-    return picture, {"question": question, "answer": answer, "credit": credit}
+    row = {"question": question, "answer": answer, "credit": credit}
+    if not answer:                                    # free, but its description is only series or inscriptions
+        row.update(_licence=licence, _page=page or record.get("id", ""),
+                   _reason="its description is only about the series or inscriptions, or under six words",
+                   _hints={"title": title,
+                           "text": clean(descriptions.get(RM_DUTCH) or descriptions.get(RM_ENGLISH))[:600]})
+    return picture, row
 
 
 def rm_place_name(s, place, cache, depth=0):
@@ -506,7 +543,10 @@ def build_rijksmuseum(limit):
                 ids = [o["id"] for o in page.get("orderedItems", [])][::3]
                 for record in pool.map(one, ids):
                     got = rm_row(record) if record else None
-                    if got and got[1]["answer"] not in seen and found < per_type:
+                    if got and not got[1]["answer"]:
+                        set_aside({**got[1], **rm_place(s, record, places)},
+                                  f"rijksmuseum-{safe_name(record['id'].rsplit('/', 1)[-1])}.jpg", got[0])
+                    elif got and got[1]["answer"] not in seen and found < per_type:
                         seen.add(got[1]["answer"])
                         got = (got[0], {**got[1], **rm_place(s, record, places)})
                         items.append((f"rijksmuseum-{safe_name(record['id'].rsplit('/', 1)[-1])}.jpg", *got))

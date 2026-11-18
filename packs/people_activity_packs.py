@@ -85,7 +85,9 @@ import zipfile
 import build_packs  # noqa: F401 - loaded first: food_packs and build_packs import each other
 from build_packs import session, fetch_all, say, considered, listing_out_of_time, ALT_TEXT, NARRATE, COCO_LICENCES
 from build_packs import pass_random  # shuffles differently on a top-up pass (see build_packs)
+from build_packs import needs_description  # pictures set aside for a description (see build_packs)
 from food_packs import listed, with_twins, count_pictures, oi_lines, OI_CLASSES, OI_LABELS, OI_IMAGES, OI_PICTURE
+from food_packs import credit_licence
 from expression_packs import mark_child, child_count, OI_CHILD
 from home_packs import commons_fetch, file_name, NUDE, FIRST_PERSON, NOT_RESPECTFUL
 from mechanical_packs import spot, mech_entries, category_files, in_english, PLACES, JUST_A_RECORD, NOT_A_CHILD
@@ -953,6 +955,7 @@ def build_commons_daily_life(limit):
             for title, url, credit, text, _ in mech_entries(s, batch):
                 if got >= share or title in seen:
                     continue
+                raw = text or ""
                 words = NOT_A_CHILD.sub(" ", f"{category} {title} {text}")
                 text = "" if JUST_A_RECORD.search(text or "") or NOT_A_DESCRIPTION.search(text or "") \
                     or not in_english(text) else text
@@ -963,6 +966,14 @@ def build_commons_daily_life(limit):
                 described = text and not NOT_RESPECTFUL.search(text) and not FIRST_PERSON.search(text)
                 if not rows and not described:
                     considered(title, url, "a work category's file without a real English description")
+                    # Free, a photo, nothing unsafe in its words: set aside (people at work: never for
+                    # picture-making; "child" when its words name one).
+                    needs_description(file_name("daily", title), url, credit, credit_licence(credit),
+                                      text=raw, title=title, page_url=credit.rsplit(", ", 1)[-1],
+                                      place=country_named(country) or country if country else PLACES.get(title, ""),
+                                      reason="no real English caption or description",
+                                      extra={"category": category, "not_for_picture_making": True,
+                                             "child": bool(mark_child({}, words).get("child"))})
                     continue
                 seen.add(title)
                 place = where(country_named(country) or country if country else PLACES.get(title, ""))

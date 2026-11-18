@@ -105,7 +105,7 @@ from build_packs import listing_out_of_time  # noqa: E402
 from food_packs import commons_get, commons_members, commons_description, with_twins, count_pictures, sentence
 from documentary_packs import tidy, usable, get_json, loc_picture, loc_free, loc_place, place_words, LOC
 from archive_packs import (GRIM, not_shown, graphic_rows, sentence_case, lc_place, US_STATES, NARA, NARA_SEARCH,
-                           nara_picture)
+                           nara_picture, set_aside)
 from expression_packs import CHILD
 from world_packs import capped_words
 from places import where, country_named, place_name, place_from_text
@@ -827,7 +827,16 @@ def europeana_items(limit):
             text = title if not description or description.lower() in title.lower() else \
                 f"{title.rstrip('.')}. {description}"
             answer = tidy(capped_words(text, 70))
-            if not kind or not usable(answer):
+            if not kind:
+                continue
+            if not usable(answer):              # free, an event named in its title, too short a caption
+                if set_aside(f"europeana-{safe_name(record['id'])}.jpg", picture,
+                             f"{clean((record.get('dataProvider') or ['Europeana'])[0])} via Europeana, "
+                             f"\"{title[:150]}\", {rights}, https://www.europeana.eu/item{record['id']}", rights,
+                             text=answer, title=title, page_url=f"https://www.europeana.eu/item{record['id']}",
+                             reason="its title and description are under six words",
+                             extra={"event": kind, "year": (record.get("year") or [""])[0]}):
+                    seen.add(record["id"])
                 continue
             seen.add(record["id"])
             taken += 1

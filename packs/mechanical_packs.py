@@ -96,7 +96,8 @@ import time
 import build_packs  # noqa: F401 - loaded first: food_packs and build_packs import each other
 from build_packs import session, clean, smaller, fetch_all, say, considered, ALT_TEXT
 from build_packs import pass_random  # shuffles differently on a top-up pass (see build_packs)
-from food_packs import with_twins, count_pictures, commons_get, commons_members, commons_description
+from build_packs import needs_description  # pictures set aside for a description (see build_packs)
+from food_packs import with_twins, count_pictures, commons_get, commons_members, commons_description, credit_licence
 from home_packs import commons_fetch, file_name, symbol_picture, NUDE, FIRST_PERSON, NOT_RESPECTFUL
 from expression_packs import mark_child, child_count
 from places import where, country_at
@@ -842,6 +843,15 @@ def build_iso_machine_symbols(limit):
         meaning = iso_meaning(title, description)
         if not meaning:
             considered(title, url, "its description does not give the symbol's title")
+            if not NUDE.search(f"{title} {description}"):
+                drawing = symbol_entry(s, url)          # made black on white, as the pack's symbols are
+                if drawing:
+                    needs_description(file_name("iso7000", title), url, credit, credit_licence(credit),
+                                      text=clean(description)[:400], title=title, data=drawing,
+                                      page_url=credit.rsplit(", ", 1)[-1],
+                                      reason="its description does not give the symbol's title and use",
+                                      extra={"iso_7000": (ISO_NUMBER.search(title) or [None, ""])[1],
+                                             "kind": "ISO 7000 symbol drawing"})
             continue
         number, name, use = meaning
         picture = symbol_entry(s, url)
@@ -862,9 +872,18 @@ def build_iso_machine_symbols(limit):
         dash += commons_members(s, category, "file")
     for title, url, credit, text, description in mech_entries(s, list(dict.fromkeys(dash)), drawings=True):
         words = f"{title} {description}"
-        if re.search(r"\b(paomedia|web fundamentals|icon set|material design)\b", words, re.I) \
-                or not in_english(text):
-            considered(title, url, "a software icon, or no description of what it means")
+        if re.search(r"\b(paomedia|web fundamentals|icon set|material design)\b", words, re.I):
+            considered(title, url, "a software icon")
+            continue
+        if not in_english(text):
+            considered(title, url, "no English description of what it means")
+            if not NUDE.search(words):              # a dashboard light or icon without an English description
+                drawing = symbol_entry(s, url) if title.lower().endswith(".svg") else None
+                needs_description(file_name("dashicon", title), url, credit, credit_licence(credit),
+                                  text=clean(description)[:400], title=title, data=drawing,
+                                  page_url=credit.rsplit(", ", 1)[-1],
+                                  reason="no English description of what it means",
+                                  extra={"kind": "dashboard icon or warning light"})
             continue
         picture = symbol_entry(s, url) if title.lower().endswith(".svg") else None
         rows = [{"question": ALT_TEXT, "answer": text, "credit": credit}]

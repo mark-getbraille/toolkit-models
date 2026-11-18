@@ -55,9 +55,10 @@ import sys
 import build_packs  # noqa: F401 - loaded first: food_packs and build_packs import each other
 from build_packs import session, clean, smaller, fetch_all, say, ALT_TEXT, NARRATE  # noqa: F401
 from build_packs import pass_random  # shuffles differently on a top-up pass (see build_packs)
+from build_packs import needs_description  # pictures set aside for a description (see build_packs)
 from food_packs import (sentence, listed, with_twins, count_pictures, oi_lines, oi_licence_name,  # noqa: F401
                         commons_members, commons_entries, commons_place, OI_LABELS, OI_CLASSES, OI_IMAGES,
-                        OI_PICTURE)
+                        OI_PICTURE, credit_licence)
 from expression_packs import mark_child, child_count, OI_CHILD, CHILD
 from world_life_packs import remote_zip
 from places import where, country_at
@@ -357,6 +358,16 @@ def build_commons_disability(limit):
         for title, url, credit, text in commons_entries(s, titles[:per_category * 3]):
             rows = commons_rows(category, question, answer, title, text, credit, child=title in young)
             if not rows:
+                # A "Disabled And Here" photo (only its own description is learnt) without a real, respectful
+                # description: set aside, never for picture-making (people with disabilities).
+                if question is None and not NUDE.search(f"{title} {text}") and not NOT_RESPECTFUL.search(text or ""):
+                    name = re.sub(r"[^\w.-]+", "_", title.split(":", 1)[-1].rsplit(".", 1)[0])[:80]
+                    needs_description(f"commons-dis-{name}.jpg", standard_thumb(url), credit, credit_licence(credit),
+                                      text=text, title=title, place=commons_place(title).get("place", ""),
+                                      page_url="https://commons.wikimedia.org/wiki/" + title.replace(" ", "_"),
+                                      reason="no real English description", extra={
+                                          "category": category, "not_for_picture_making": True,
+                                          "child": title in young or bool(YOUNG.search(f"{title} {text}"))})
                 continue
             seen.add(title)
             name = re.sub(r"[^\w.-]+", "_", title.split(":", 1)[-1].rsplit(".", 1)[0])[:80]

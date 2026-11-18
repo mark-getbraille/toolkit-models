@@ -76,6 +76,7 @@ import build_packs  # noqa: F401 - loaded first: the other pack files and build_
 from build_packs import session, clean, fetch_all, say, LONG_SIDE, COMMONS_API, COMMONS_FREE
 from build_packs import pass_random, new_only, already_in_pack  # top-up passes (see build_packs)
 from build_packs import listing_out_of_time, out_of_time
+from build_packs import needs_description  # pictures set aside for a description (see build_packs)
 from food_packs import with_twins, count_pictures
 from expression_packs import CHILD
 from world_packs import capped_words, full_stop
@@ -240,14 +241,27 @@ def loc_items(s, path, extra, total, name, want, rng):
             picture = loc_picture(record)
             if already_in_pack(url=picture):   # in the published pack already (a top-up pass): not counted
                 continue
-            if not loc_free(record) or not picture or not usable(answer) or BIBLE_VERSE.match(title) \
-                    or LOC_NOT_A_PHOTO.search(title) or answer in answers or taken >= per_page:
+            if not loc_free(record) or not picture or LOC_NOT_A_PHOTO.search(title) or taken >= per_page:
                 continue
-            answers.add(answer)
-            taken += 1
             item = record.get("item") or {}
             link = re.sub(r"^(https?:)?//", "https://", item.get("link") or record.get("id") or "")
             credit = f"{title[:150]}, {name}, no known restrictions on publication, {link}"
+            if (not usable(answer) and not NOT_SHOWN.search(answer)) or BIBLE_VERSE.match(title):
+                # Free, a photo, its caption too short or a Bible verse: set aside for a description.
+                control = re.sub(r"\W", "", str(item.get("control_number") or item.get("id") or ""))
+                needs_description(f"loc-{control or len(items)}.jpg", picture, credit,
+                                  "no known restrictions on publication", title=title, page_url=link,
+                                  place=loc_place(record),
+                                  reason="its title is a Bible verse" if BIBLE_VERSE.match(title) else
+                                  "its caption is under six words",
+                                  extra={"summary": clean(item.get("summary")), "collection": name.split(",")[0],
+                                         "date": clean(record.get("date")),
+                                         "subjects": [clean(x) for x in (record.get("subject") or [])][:12]})
+                continue
+            if not usable(answer) or answer in answers:
+                continue
+            answers.add(answer)
+            taken += 1
             control = re.sub(r"\W", "", str(item.get("control_number") or item.get("id") or len(items)))
             items.append((f"loc-{control}.jpg", picture, picture_rows(answer, credit, loc_place(record),
                                                                         [clean(item.get("summary"))])))
@@ -341,11 +355,20 @@ def build_npgallery(limit):
                         or NPG_NOT_A_PHOTO.search(clean(asset.get("Title"))):
                     continue
                 answer = npg_answer(asset)
-                if not answer:
-                    continue
-                seen.add(key)
                 units = [clean(u.get("Name")) for u in asset.get("NPSUnits") or [] if clean(u.get("Name"))]
                 place = place_name(units[0], "USA") if len(units) == 1 else ""
+                if not answer:              # public domain, a photo, but no alt text of six words: set aside
+                    if not NOT_SHOWN.search(clean(asset.get("AltText"))):
+                        seen.add(key)
+                        needs_description(f"npgallery-{key}.jpg", f"{NPG}GetAsset/{key}/proxyhires.jpg",
+                                          npg_credit(asset), "public domain", text=clean(asset.get("AltText")),
+                                          title=clean(asset.get("Title")), place=place,
+                                          page_url=f"{NPG}AssetDetail/{key}",
+                                          reason="no accessibility alt text of six words or more",
+                                          extra={"description": capped_words(clean(asset.get("Description")), 80),
+                                                 "keywords": clean(asset.get("Keywords"))[:300]})
+                    continue
+                seen.add(key)
                 items.append((f"npgallery-{key}.jpg", f"{NPG}GetAsset/{key}/proxyhires.jpg",
                               picture_rows(answer, npg_credit(asset), place, [clean(asset.get("Title"))])))
                 found += 1
@@ -392,20 +415,32 @@ def build_earth_observatory(limit):
         ids = [str(p["featured_media"]) for p in posts if p.get("featured_media")]
         media = {m["id"]: m for m in get_json(s, SCIENCE + "media", {"include": ",".join(ids), "per_page": 50,
                                                                      "_fields": "id,alt_text,source_url"}) or []}
-        good = []
+        good, poor = [], []
         for post in posts:
             m = media.get(post.get("featured_media")) or {}
             alt = tidy(m.get("alt_text"))
             title = clean((post.get("title") or {}).get("rendered")).lower().rstrip(".")
-            if m.get("source_url") and usable(alt, 10) and not EO_DATE_ONLY.match(alt) \
-                    and not EO_NOT_A_PHOTO.search(alt) \
+            if not m.get("source_url") or EO_NOT_A_PHOTO.search(alt) or EO_NOT_A_PHOTO.search(title):
+                continue
+            if usable(alt, 10) and not EO_DATE_ONLY.match(alt) \
                     and title[:30] not in alt.lower():          # migrated posts often repeat the title as alt text
                 good.append((post, m, alt))
-        if not good:
+            elif not NOT_SHOWN.search(alt):
+                poor.append((post, m, alt))     # only a date or the title as alt text: set aside (checked below)
+        if not good and not poor:
             continue
-        articles = get_json(s, SCIENCE + "posts", {"include": ",".join(str(p["id"]) for p, _, _ in good),
+        articles = get_json(s, SCIENCE + "posts", {"include": ",".join(str(p["id"]) for p, _, _ in good + poor),
                                                    "per_page": 50, "_fields": "id,content"}) or []
         text = {a["id"]: clean((a.get("content") or {}).get("rendered")) for a in articles}
+        for post, m, alt in poor:               # the same copyright check as the pack's pictures, first
+            if post["id"] not in text or EO_NOT_NASA.search(text[post["id"]]):
+                continue
+            title = clean((post.get("title") or {}).get("rendered"))
+            needs_description(f"earth-observatory-{post['id']}.jpg", eo_picture(m["source_url"]),
+                              f"{title}, NASA Earth Observatory, {post.get('link')} (NASA images are not under "
+                              "copyright)", "NASA, not under copyright", text=alt, title=title,
+                              page_url=post.get("link") or "", reason="its alt text is only a date or the title",
+                              extra={"article": capped_words(text[post["id"]], 120)})
         for post, m, alt in good:
             if post["id"] not in text or EO_NOT_NASA.search(text[post["id"]]):
                 continue
@@ -476,10 +511,15 @@ def build_eso(limit):
             if not info or not ESO_DOCUMENTARY.search(info[2]) or ESO_NOT_A_PHOTO.search(info[0]):
                 continue
             answer = tidy(capped_words(info[0], 70))
+            credit = f"{info[1] or 'ESO'}, CC BY 4.0, {ESO}{image_id}/"
             if not usable(answer):
+                if not NOT_SHOWN.search(answer) and needs_description(
+                        f"eso-{image_id}.jpg", f"https://cdn.eso.org/images/large/{image_id}.jpg", credit, "CC BY 4.0",
+                        text=answer, place=place, page_url=f"{ESO}{image_id}/",
+                        reason="its caption is under six words", extra={"type": info[2]}):
+                    seen.add(image_id)
                 continue
             seen.add(image_id)
-            credit = f"{info[1] or 'ESO'}, CC BY 4.0, {ESO}{image_id}/"
             items.append((f"eso-{image_id}.jpg", f"https://cdn.eso.org/images/large/{image_id}.jpg",
                           picture_rows(answer, credit, place)))
             found += 1
@@ -541,9 +581,13 @@ def build_usgs(limit):
             if not info or USGS_NOT_A_PHOTO.search(info[0]) or USGS_NOT_A_PHOTO.search(info[1]):
                 continue
             answer = tidy(capped_words(info[1], 60))
-            if not usable(answer):
-                continue
             credit = f"{info[0]}, U.S. Geological Survey, public domain, {USGS}{path}"
+            if not usable(answer):
+                if not NOT_SHOWN.search(answer):
+                    needs_description(f"usgs-{path.rsplit('/', 1)[-1][:80]}.jpg", info[2], credit, "public domain",
+                                      text=answer, title=info[0], page_url=USGS + path,
+                                      reason="its caption is under six words")
+                continue
             items.append((f"usgs-{path.rsplit('/', 1)[-1][:80]}.jpg", info[2], picture_rows(answer, credit)))
     say(f"USGS: {len(items)} usable photos")
     return finish("usgs", items, limit, workers=4, pause=0.3)
@@ -593,16 +637,22 @@ def build_commons_valued(limit):
             licence = clean((meta.get("LicenseShortName") or {}).get("value"))
             caption = tidy((((entities.get(f"M{p['pageid']}") or {}).get("labels") or {}).get("en") or {})
                            .get("value"))
-            if p["pageid"] in seen or not usable(caption) or re.search(r"\b(SA|NC|ND)\b", licence.upper()) \
+            if p["pageid"] in seen or re.search(r"\b(SA|NC|ND)\b", licence.upper()) \
                     or not COMMONS_FREE.match(licence) or info.get("mime") not in ("image/jpeg", "image/png") \
                     or not info.get("thumburl"):
                 continue
             seen.add(p["pageid"])
             artist = clean((meta.get("Artist") or {}).get("value")) or "unknown"
-            credit = (f"{p['title']} by {artist}, {licence}, https://commons.wikimedia.org/wiki/"
-                      + p["title"].replace(" ", "_"))
+            page = "https://commons.wikimedia.org/wiki/" + p["title"].replace(" ", "_")
+            credit = f"{p['title']} by {artist}, {licence}, {page}"
             place = country_at(clean((meta.get("GPSLatitude") or {}).get("value")),
                                clean((meta.get("GPSLongitude") or {}).get("value")))
+            if not usable(caption):             # free, a photo, no English caption of six words: set aside
+                if not NOT_SHOWN.search(caption):
+                    needs_description(f"commons-valued-{p['pageid']}.jpg", info["thumburl"], credit, licence,
+                                      text=caption, title=p["title"], place=place, page_url=page,
+                                      reason="no English caption of six words or more")
+                continue
             items.append((f"commons-valued-{p['pageid']}.jpg", info["thumburl"], picture_rows(caption, credit, place)))
         if "continue" not in data:
             break

@@ -91,7 +91,7 @@ from build_packs import session, clean, fetch_all, say, smaller
 from food_packs import with_twins, count_pictures
 from world_packs import capped_words, full_stop, ASK_EN
 from world_more_packs import (ASK, mentions_child, marked, eu_providers, eu_records, eu_licence, eu_picture,
-                              eu_credit)
+                              eu_credit, eu_set_aside)
 from places import country_named, place_name, where, with_place
 from world_life_packs import remote_zip
 
@@ -291,7 +291,13 @@ def build_portal_europeana(key, limit):
             picture = eu_picture((item.get("edmIsShownBy") or [""])[0])
             answer, english = source["answer"](item)
             text = " ".join([answer, english] + list(item.get("title") or []))
-            if not licence or not picture.startswith("http") or not (answer or english) or NUDE.search(text):
+            if not licence or not picture.startswith("http") or NUDE.search(text):
+                continue
+            if not (answer or english):        # free, a picture, no description that says what it shows
+                eu_set_aside(key, item, licence, picture, "no description of what the picture shows (only a "
+                             "short title, catalogue notes or names)",
+                             place=eu_place(item), texts=[" ".join(lang_parts(item, language))],
+                             child=mentions_child(text) or bool(CHILD_EXTRA.search(text)))
                 continue
             if (answer or english) in seen:
                 continue
