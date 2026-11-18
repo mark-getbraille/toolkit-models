@@ -238,3 +238,10 @@ def test_child_mark():
     """A transcript that names a child marks its row."""
     assert k.with_child({"answer": "x"}, "A boy rides a bike.")["child"] is True
     assert "child" not in k.with_child({"answer": "x"}, "A red bike.")
+
+
+def test_every_pack_has_a_limit():
+    """Every open pack has a full-build limit, and every kit entry is research with terms."""
+    assert set(b.BIGTECH_PACKS) == set(b.BIGTECH_LIMITS)
+    assert all(s.group == "research" and s.terms and s.terms_summary for s in k.BIGTECH_SOURCES)
+    assert k.BIGTECH_PICTURE_MAKING_OK <= {s.key for s in k.BIGTECH_SOURCES}

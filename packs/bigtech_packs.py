@@ -535,7 +535,7 @@ BIGTECH_PACKS = {
 # How many pictures a full build takes from each (each finishes well within the time limit on GitHub's machines).
 BIGTECH_LIMITS = {
     "gso_objects": 2000,        # about 1,030 models, two views of each
-    "oi_crowdsourced": 6000,    # one 6.5 GB archive holds about 38,000 photos, most of them of things
+    "oi_crowdsourced": 4000,    # one 6.5 GB archive holds about 38,000 photos; about 1.5 GB of large JPEGs
     "pubtabnet_tables": 3000,   # about 570,000 tables; at most three per article
 }
 
