@@ -1490,6 +1490,11 @@ PACKS.update(PEOPLE_ACTIVITY_PACKS)
 from us_packs import US_PACKS
 PACKS.update(US_PACKS)
 
+# Modern America (packs/us_modern_packs.py): agency photos, controls, holidays, eating out, getting around, public
+# places, blank federal forms, ImageInWords.
+from us_modern_packs import US_MODERN_PACKS
+PACKS.update(US_MODERN_PACKS)
+
 
 def sha256_of(path):
     """The SHA-256 of a file."""

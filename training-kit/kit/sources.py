@@ -1975,6 +1975,27 @@ SOURCES = [
     Source("commons_packaging", "Packaged goods, packaging and US supermarkets (Wikimedia Commons, ready-made pack)",
            "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0",
            "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 2500, 20, prepare_pack, "about 400 MB"),
+    # Modern America (packs/us_modern_packs.py). Agency photos, holidays, eating out, getting around and public places
+    # show people (PEOPLE_AND_BODILY_PACK_KEYS); the share-alike entry and the C3PI pill photos are in us_modern_sources.py.
+    Source("commons_us_agencies", "Modern American life in US government photos (USDA, FEMA, HUD, Forest Service; Wikimedia Commons, ready-made pack)",
+           "Public domain (US government works); each Commons file checked: PD, CC0 or CC BY",
+           "US federal agencies via Wikimedia Commons (credited in CREDITS.txt)", "permissive", 4000, 20, prepare_pack, "about 800 MB"),
+    Source("commons_us_controls", "Appliances, machines and controls: dishwashers, dryers, remotes, self-checkouts, card readers, pedestrian push buttons (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 2000, 20, prepare_pack, "about 400 MB"),
+    Source("commons_us_holidays", "American holidays and events (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 2500, 20, prepare_pack, "about 500 MB"),
+    Source("commons_us_eating_out", "Diners, fast food, food trucks and food shops in the USA (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 2500, 20, prepare_pack, "about 500 MB"),
+    Source("commons_us_getting_around", "US subway, train and bus stations, airports, parking, gas and charging stations (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 3000, 20, prepare_pack, "about 600 MB"),
+    Source("commons_us_public_places", "US post offices, banks, pharmacies, laundromats, hospitals, libraries and other public places (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 3000, 20, prepare_pack, "about 600 MB"),
+    Source("us_federal_forms", "Blank US government forms: IRS, Medicare, OPM, VA, EEOC (ready-made pack)",
+           "US government works, not subject to copyright (17 U.S.C. 105; irs.gov use-of-content page)",
+           "IRS, CMS, OPM, VA and EEOC", "permissive", 200, 10, prepare_pack, "about 60 MB"),
+    Source("imageinwords", "Photos with very detailed human descriptions (ImageInWords on DOCCI photos, ready-made pack)",
+           "CC BY 4.0 (descriptions and photos, Google)",
+           "ImageInWords (Garg et al., 2024) and DOCCI (Google), CC BY 4.0", "permissive", 500, 10, prepare_pack, "about 120 MB"),
     Source('skin_lesion_photos', 'Skin spots photographed with a phone, adults (PAD-UFES-20, ready-made pack)',
            'CC BY 4.0 (Mendeley Data zr7vgbcyr2)',
            'PAD-UFES-20 (Pacheco et al., 2020), CC BY 4.0', "permissive", 2000, 20, prepare_pack, 'about 400 MB', content="medical"),
@@ -2121,6 +2142,10 @@ PEOPLE_AND_BODILY_PACK_KEYS = (
     "vcoco_actions", "vg_people_actions", "open_images_activities", "commons_daily_life", "dollar_street_routines",
     # us_packs.py: street people, people by cars, shop photos
     "commons_us_streets", "commons_us_cars", "commons_packaging",
+    # us_modern_packs.py: agency photos, holidays, eating out, getting around, public places (controls, forms and
+    # ImageInWords are used)
+    "commons_us_agencies", "commons_us_holidays", "commons_us_eating_out", "commons_us_getting_around",
+    "commons_us_public_places",
 )
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + PEOPLE_AND_BODILY_PACK_KEYS
 
@@ -2468,3 +2493,17 @@ _us_ok = set(getattr(_us, "US_PICTURE_MAKING_OK", ()) or ())
 PERSONAL_PICTURE_MAKING_OK |= _us_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in US_SOURCES if s.key not in _us_ok)
 _add_collections(US_SOURCES)
+
+# Modern-America collections that are not open (Commons BY-SA files of the same categories; NLM's C3PI pill photos,
+# research use only); the file may be missing.
+try:
+    import us_modern_sources as _us_modern  # noqa: E402
+except ImportError as _e:
+    _us_modern = None
+    if getattr(_e, "name", None) != "us_modern_sources":
+        say(f"(The modern-America collections could not be loaded: {_e}. They are left out.)")
+US_MODERN_SOURCES = list(getattr(_us_modern, "US_MODERN_SOURCES", []) or [])
+_us_modern_ok = set(getattr(_us_modern, "US_MODERN_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _us_modern_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in US_MODERN_SOURCES if s.key not in _us_modern_ok)
+_add_collections(US_MODERN_SOURCES)

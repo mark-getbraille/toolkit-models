@@ -88,7 +88,9 @@ jobs:
                    "vcoco_actions", "vg_people_actions", "open_images_activities", "commons_daily_life",
                    "dollar_street_routines", "coco_actions_nc", "coco_actions_sa",
                    "loc_habs_houses", "commons_us_homes", "commons_us_streets", "commons_us_cars", "inaturalist_us",
-                   "commons_us_money", "us_road_signs", "commons_packaging"]
+                   "commons_us_money", "us_road_signs", "commons_packaging",
+                   "commons_us_agencies", "commons_us_controls", "commons_us_holidays", "commons_us_eating_out",
+                   "commons_us_getting_around", "commons_us_public_places", "us_federal_forms", "imageinwords"]
           words = [w for w in sys.argv[1].split(",") if w]
           # "key+" is a top-up pass of key and "key?" a needs-only run (kept with the mark, which the build job reads);
           # "all?" asks for a needs-only run of every pack.
@@ -130,6 +132,8 @@ jobs:
             ksamsok|rijksmuseum|coco_cn|europeana_fi|europeana_cs|europeana_hu|europeana_el|europeana_no|europeana_pl|smk|anefo)
               python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
               python -m pip install "transformers==4.57.6" "sentencepiece==0.2.1" "sacremoses==0.1.1" ;;
+            us_federal_forms)
+              python -m pip install "pypdfium2==5.15.2" ;;
             seoul_sidewalks|urine_samples)
               python -m pip install "pillow-heif==1.1.1" ;;
             # PLP2019's drone photos and TyreNet's tyres come in RAR archives and AMLID's in a 7-Zip archive, which Python cannot open:
@@ -345,6 +349,14 @@ jobs:
             commons_us_money) limit=1200 ;;
             us_road_signs) limit=2000 ;;
             commons_packaging) limit=2500 ;;
+            commons_us_agencies) limit=4000 ;;
+            commons_us_controls) limit=2000 ;;
+            commons_us_holidays) limit=2500 ;;
+            commons_us_eating_out) limit=2500 ;;
+            commons_us_getting_around) limit=3000 ;;
+            commons_us_public_places) limit=3000 ;;
+            us_federal_forms) limit=200 ;;
+            imageinwords) limit=500 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in
