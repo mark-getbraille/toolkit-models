@@ -373,3 +373,15 @@ def test_chronicling_america(monkeypatch):
     later = P.chronam_items(P.SOURCES["chronicling_america"], "vermont-1930s", None, [], TODAY)
     assert [i["date"][:4] for i in later] == ["1930"]               # 1931 and after are not yet public domain
     assert P.piece_label("chronicling_america", "new-york-1890s") == "New York, the 1890s"
+
+
+def test_chronicling_america_slow_down(monkeypatch):
+    """When loc.gov answers 429 (too many requests), the piece stops politely and says so."""
+    def busy(url):
+        """Always too busy."""
+        raise urllib.error.HTTPError(url, 429, "Too Many Requests", {}, None)
+    use(monkeypatch, [("chronicling-america/?", busy)])
+    left = []
+    assert P.chronam_items(P.SOURCES["chronicling_america"], "vermont-1920s", None, left, TODAY) == []
+    assert left and "slow down" in left[0]["reason"] and len(left) == 1
+    assert B.CRAWL_DELAY["www.loc.gov"] >= P.LOC_PAUSE

@@ -1247,6 +1247,9 @@ def frus_items(spec, piece, cache, left_out, today):
 # ====================================================================== history: Chronicling America (loc.gov)
 
 LOC = "https://www.loc.gov"
+# loc.gov limits automated use (its API documentation: about 20 searches a minute; too many and it answers 429 and
+# blocks for a while), so its searches and pages are read at most one every LOC_PAUSE seconds.
+LOC_PAUSE = 4.0
 
 
 def ocr_html(text):
@@ -1263,10 +1266,16 @@ def chronam_items(spec, piece, cache, left_out, today):
     public domain are kept."""
     m = re.match(r"^(.*)-(\d{4})s$", piece)
     state, decade = m.group(1).replace("-", " "), int(m.group(2))
+    for host in ("www.loc.gov", "tile.loc.gov"):
+        B.CRAWL_DELAY[host] = max(B.CRAWL_DELAY.get(host, 0), LOC_PAUSE)
     last = (today or datetime.date.today()).year - 96            # published more than 95 years ago
     out, refused = [], 0
     found = []                                                   # (year, search result) of one issue a month
+    slow_down = {"title": f"{spec['series_title']}, {piece}", "reason": "The Library of Congress asked us to slow "
+                 "down (429); the rest of the decade was not read."}
     for year in range(decade, min(decade + 9, last) + 1):
+        if slow_down in left_out:
+            break
         for month in range(1, 13):
             end = (datetime.date(year + month // 12, month % 12 + 1, 1) - datetime.timedelta(days=1)).day
             query = urllib.parse.urlencode({"fa": f"location_state:{state}|language:english",
@@ -1276,7 +1285,14 @@ def chronam_items(spec, piece, cache, left_out, today):
             if not robots_ok(spec, url, cache):
                 break
             # The answers also list the newspapers themselves (no day in their date): only issues are kept.
-            issues = [r for r in json.loads(B.fetch(url, cache)).get("results", [])
+            try:
+                answer = json.loads(B.fetch(url, cache))
+            except urllib.error.HTTPError as e:
+                if e.code == 429:                                # asked to slow down: stop, keep what we have
+                    left_out.append(slow_down)
+                    break
+                raise
+            issues = [r for r in answer.get("results", [])
                       if re.fullmatch(r"\d{4}-\d\d-\d\d", r.get("date", "")) and r.get("resources")]
             found += [(year, r) for r in issues[:spec.get("per_month", 1)]]
     seen = set()
@@ -1288,7 +1304,14 @@ def chronam_items(spec, piece, cache, left_out, today):
         seen.add(issue)
         pages, number, total, rights = [], 1, 1, ""
         while number <= min(total, 60):
-            res = json.loads(B.fetch(f"{issue}?sp={number}&fo=json", cache))
+            try:
+                res = json.loads(B.fetch(f"{issue}?sp={number}&fo=json", cache))
+            except urllib.error.HTTPError as e:
+                if e.code != 429:
+                    raise
+                if slow_down not in left_out:
+                    left_out.append(slow_down)
+                break
             total = int((res.get("pagination") or {}).get("total") or 1)
             rights = rights or " ".join((res.get("item") or {}).get("rights") or [])
             full = (res.get("resource") or {}).get("fulltext_file")
@@ -1298,6 +1321,8 @@ def chronam_items(spec, piece, cache, left_out, today):
                 text = next(iter(ocr.values()), {}).get("full_text", "") if isinstance(ocr, dict) else ""
             pages.append(f'<p class="pagenum">[Page {number}]</p>' + ocr_html(text))
             number += 1
+        if slow_down in left_out:
+            break                                                # an issue cut short is not kept
         if not re.search(r"public domain", rights, re.I):
             refused += 1
             continue
