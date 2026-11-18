@@ -100,14 +100,27 @@ def left_out(words):
                 or OFFICIAL.search(words))
 
 
+# A caption that is only a credit line ("Photo: Andrea Schneibel/Knoxville Area Transit", "Photo Credit: MTA").
+CREDIT_ONLY = re.compile(r"^\s*(photo(graph)?( credit)?|credit|courtesy)\s*[:/]", re.I)
+
+
+def real_caption(row):
+    """False for a caption row that is only a credit line or under six words (the "Who took this photo?" row is
+    always kept)."""
+    if row["question"] == WHO_Q:
+        return True
+    return not CREDIT_ONLY.search(row["answer"]) and len(row["answer"].split()) >= 6
+
+
 def prepare_commons_state_sa(source, data_dir, work, cap):
     """Commons state and city government streams, files under CC BY-SA or GFDL (home_sources.commons_sa_items: the
-    categories share the cap; rows whose words name a child are marked "child"), without the files left_out."""
+    categories share the cap; rows whose words name a child are marked "child"), without the files left_out and
+    without caption rows that are only a credit line (real_caption)."""
     items = commons_sa_items(STATE_SA, cap, source.test, "state-sa")
     bad = {name for name, _, row in items if left_out(f"{name} {row['answer']}")}
     if bad:
         say(f"  {len(bad)} files left out by their words (older than 1990, official events, crime, nudity)")
-    items = [i for i in items if i[0] not in bad]
+    items = [i for i in items if i[0] not in bad and real_caption(i[2])]
     return fetch_shared(items, os.path.join(data_dir, source.key), workers=2)
 
 

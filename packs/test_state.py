@@ -37,6 +37,10 @@ def test_state_caption():
     assert m.state_caption("Workers repair a pothole on Interstate 5 (Marc A. Hermann / MTA New York City "
                            "Transit).") == "Workers repair a pothole on Interstate 5."
     assert m.state_caption("170724-Z-WE055-010") == ""
+    # Seen in the Oregon Guard's stream: the credit in brackets is taken out, and its bracket with it.
+    assert m.state_caption("An Oregon Army National Guard Soldier receives the COVID-19 vaccine Jan. 5, 2021, Salem, "
+                           "Ore. (Oregon National Guard photo by Sgt. 1st Class Jane Doe)") == \
+        "An Oregon Army National Guard Soldier receives the COVID-19 vaccine Jan. 5, 2021, Salem, Ore."
     assert m.state_caption("Photo: Meadow Bailey") == ""
     assert m.english("Snowplow clears Highway 26 near Government Camp")
     assert not m.english("Le chasse-neige dégage la route et les voitures")
@@ -143,3 +147,13 @@ def test_kit_left_out():
     assert k.left_out("Mayor Raymond L. Flynn at City Hall")
     assert k.left_out("Gov. Smith rides the new bus")
     assert not k.left_out("Hybrid buses at the Knoxville Station transit center")
+
+
+def test_kit_credit_only_captions():
+    """A caption row that is only a credit line is dropped; the agency row stays."""
+    import state_sources as k
+    assert not k.real_caption({"question": "Write a short description", "answer": "Photo: Andrea Schneibel/Knoxville "
+                                                                                 "Area Transit."})
+    assert k.real_caption({"question": k.WHO_Q, "answer": "It is a photo by Knoxville Area Transit."})
+    assert k.real_caption({"question": "Write a short description", "answer": "Two hybrid buses wait at the "
+                                                                             "Knoxville Station transit center."})

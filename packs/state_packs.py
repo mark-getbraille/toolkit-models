@@ -69,7 +69,7 @@ import sys
 
 import build_packs  # noqa: F401 - loaded first: food_packs and build_packs import each other
 from build_packs import session, clean, say, considered, listing_out_of_time, needs_description, pass_random
-from food_packs import with_twins, count_pictures
+from food_packs import with_twins, count_pictures, sentence
 from home_packs import commons_fetch, file_name, NUDE
 from expression_packs import mark_child, child_count, CHILD
 from mechanical_packs import NOT_A_PHOTO, OTHER_WORDS, in_english
@@ -228,8 +228,9 @@ TRAINING = re.compile(r"\b(training|trains?|exercises?|drills?|competitions?|bes
                       r"annual training|field training|ceremon\w*|memorials?|tributes?|anniversary|"
                       r"remembrance|stair climb|9/11|honou?r(s|ed|ing)?)\b", re.I)
 # Parts of a state or city caption that are not about the picture (added to us_modern_packs.agency_caption's).
-STATE_NOISE = re.compile(r"(\bphoto(graph)?( credit)?\s*[:/]\s*[^.]*\.?|\b[A-Z][\w&.-]{1,20} photos? (by|courtesy)"
-                         r"\b[^.]*\.?|\([^)]*/\s*(MTA|NYCT|MTA New York City Transit)[^)]*\)|"
+STATE_NOISE = re.compile(r"(\([^()]*\b(photo(graph)?s?|courtesy)\b[^()]*\)?|"
+                         r"\bphoto(graph)?( credit)?\s*[:/]\s*[^.]*\.?|"
+                         r"\b[A-Z][\w&.-]{1,20} photos? (by|courtesy)\b[^.]*\.?|\([^)]*/\s*(MTA|NYCT|MTA New York City Transit)[^)]*\)|"
                          r"\((low|high|full) resolution[^)]*\)|\bscientific name\s*:\s*|"
                          r"\b\d{6}-[A-Z]-[A-Z0-9]{5}-\d{2,4}\b)", re.I)
 # An archive record's fields after its title ("Title: ... Creator: ... Date: ... Source: ... Copyright: ..."): cut off.
@@ -246,7 +247,8 @@ def state_caption(text):
     text = re.sub(r"^\s*English\s*:\s*", "", clean(text))
     text = RECORD_FIELDS.split(re.sub(r"^\s*Title\s*:\s*", "", text))[0]
     text = agency_caption(STATE_NOISE.sub(" ", text))
-    return re.sub(r"\s+([.,;:!?])", r"\1", text)
+    text = re.sub(r"\s*\(\s*[.,;:]?\s*\)?\s*\.?$", "", text)        # a bracket left open by a credit taken out
+    return sentence(re.sub(r"\s+([.,;:!?])", r"\1", text)) if text else ""
 
 
 def picture_name(prefix, title):
