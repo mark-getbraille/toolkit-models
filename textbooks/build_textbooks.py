@@ -1997,6 +1997,10 @@ def build(keys, out_dir, cache=None, pictures=False, local_osbooks=None, date=No
     if local_osbooks:
         plan = [f"local:{local_osbooks}"]
     for key in plan:
+        if key.startswith("pub:"):               # periodicals, journals, reports, news, history (periodicals.py)
+            import periodicals                   # here, not at the top: periodicals imports this module
+            manifests.update(periodicals.build_periodicals([key], out_dir, cache, date))
+            continue
         books, left_out = [], []
         try:
             if key.startswith("osbooks:") or key.startswith("local:"):
@@ -2099,10 +2103,13 @@ def merge(manifest_paths, existing=None):
         left += data.get("left_out", [])
     seen = set()
     left = [x for x in left if not (x["title"] in seen or seen.add(x["title"]))]
+    import periodicals                           # here, not at the top: periodicals imports this module
     return {"built": datetime.date.today().isoformat(), "release": RELEASE,
             "books": sorted(books.values(), key=lambda b: (b["group"], b["title"].casefold())),
-            "left_out": left, "not_included": [{"title": t, "reason": r} for t, r in sources.NOT_INCLUDED],
-            "licence_lines": sources.LICENCE_LINES, "groups": sources.GROUPS}
+            "left_out": left, "not_included": [{"title": t, "reason": r} for t, r in sources.NOT_INCLUDED +
+                                               periodicals.NOT_INCLUDED],
+            "licence_lines": {**sources.LICENCE_LINES, **periodicals.LICENCE_LINES}, "groups": sources.GROUPS,
+            "group_notes": periodicals.GROUP_NOTES}
 
 
 def main(argv=None):

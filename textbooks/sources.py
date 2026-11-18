@@ -1017,6 +1017,9 @@ def expand_keys(words):
             g = w[6:]
             keys += pdfs(g) + [f"guide:{e['name']}" for e in GOV_GUIDES if e["group"] == g] + \
                 [f"law:{e['name']}" for e in LAWS + LAWS_MORE if e.get("group", "law") == g]
+        elif w == "publications" or w.startswith("pub:"):
+            import periodicals                    # here, not at the top: periodicals imports the builder
+            keys += periodicals.expand_keys(["pub:all" if w == "publications" else w])
         else:
             keys.append(w)
     return list(dict.fromkeys(keys))
