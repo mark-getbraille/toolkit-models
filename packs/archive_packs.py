@@ -94,13 +94,13 @@ that is not open are kit entries in training-kit/kit/archive_sources.py:
 import csv
 import io
 import json
-import random
 import re
 import sys
 import time
 
 import build_packs  # noqa: F401 - loaded first: the other pack files and build_packs import each other
 from build_packs import session, clean, say, LONG_SIDE
+from build_packs import pass_random  # shuffles differently on a top-up pass (see build_packs)
 from build_packs import listing_out_of_time  # noqa: E402
 from food_packs import count_pictures
 from expression_packs import CHILD
@@ -361,7 +361,7 @@ def nara_items(s, naid, total, name, want, rng):
 def build_nara(limit):
     """The NARA pack: records from each series in NARA_SERIES, in proportion to their size (at least a sixth of the
     pack each, or the whole series when it is smaller)."""
-    s, rng, items = session(), random.Random(301), []
+    s, rng, items = session(), pass_random(301), []
     total = sum(n for _, n, _ in NARA_SERIES)
     for naid, n, name in NARA_SERIES:
         share = max(1 / 6, n / total)
@@ -392,7 +392,7 @@ def nypl_rows(want, small):
     stops early, otherwise both tables (about 150 MB) are read and a random sample kept."""
     import requests
     csv.field_size_limit(10 ** 8)
-    rng, kept, seen = random.Random(302), [], 0
+    rng, kept, seen = pass_random(302), [], 0
     for url in NYPL_ITEMS:
         with requests.get(url, stream=True, timeout=300, headers={"User-Agent": build_packs.USER_AGENT}) as r:
             r.raw.decode_content = True
@@ -514,7 +514,7 @@ def getty_object(s, uri):
 def build_getty_museum(limit):
     """The Getty pack: objects found with the museum's SPARQL service (random pages of the about 62,000 with a
     picture and a description), each record read to keep only "No Copyright" ones."""
-    s, rng, items = session(), random.Random(303), []
+    s, rng, items = session(), pass_random(303), []
     offsets = list(range(0, GETTY_TOTAL, 200))
     rng.shuffle(offsets)
     for offset in offsets:
@@ -602,7 +602,7 @@ def dc_items(s, reuse, want, rng, genre="Photographs"):
 
 def build_digital_commonwealth(limit):
     """The Digital Commonwealth pack: photographs marked "No known copyright restrictions"."""
-    s, rng, items = session(), random.Random(304), []
+    s, rng, items = session(), pass_random(304), []
     for answer, a in dc_items(s, "no restrictions", int(limit * 1.3) + 4, rng):
         ark = a.get("identifier_uri_ss") or DC + "search/" + a["id"]
         who = clean(a.get("institution_name_ssi")) or "Digital Commonwealth"
@@ -638,7 +638,7 @@ def smk_titles(item):
 def build_smk(limit):
     """The SMK pack: public-domain works with a descriptive title (random pages of the about 39,500), SMK's
     1,024-pixel copy. English titles are marked "twinned" (not translated again)."""
-    s, rng, items = session(), random.Random(305), []
+    s, rng, items = session(), pass_random(305), []
     offsets = list(range(0, SMK_TOTAL, 100))
     rng.shuffle(offsets)
     for offset in offsets[:200]:
@@ -722,7 +722,7 @@ def anefo_place(fields, wikitext):
 def build_anefo(limit):
     """The Nationaal Archief pack: files of the Commons category (about 430,000), read 50 at a time from random
     starting letters, whose licence is CC0 or public domain and whose Dutch caption is 6 words or more."""
-    s, rng, items, seen = session(), random.Random(306), [], set()
+    s, rng, items, seen = session(), pass_random(306), [], set()
     starts = [a + b for a in "ABCDEFGHIJKLMNOPRSTVWZ" for b in "aeiou"]
     rng.shuffle(starts)
     for start in starts:
@@ -810,7 +810,7 @@ def kremlin_gallery(s, path):
 
 def build_kremlin(limit):
     """The Kremlin pack: galleries from random pages of the photo index, at most a few photos from each gallery."""
-    s, rng, items, answers = session(), random.Random(307), [], set()
+    s, rng, items, answers = session(), pass_random(307), [], set()
     s.headers["User-Agent"] = "Mozilla/5.0 (compatible; " + build_packs.USER_AGENT + ")"
     pages = list(range(1, KREMLIN_PAGES + 1))
     rng.shuffle(pages)
@@ -875,7 +875,7 @@ def awm_record(s, path):
 def build_awm(limit):
     """The AWM pack: photographs from random pages of the Memorial's collection search (photographs only), each
     record's page read for its copyright, caption, place and picture."""
-    s, rng, items = session(), random.Random(308), []
+    s, rng, items = session(), pass_random(308), []
     s.headers["User-Agent"] = "Mozilla/5.0 (compatible; " + build_packs.USER_AGENT + ")"
     pages = list(range(1, 2000))
     rng.shuffle(pages)

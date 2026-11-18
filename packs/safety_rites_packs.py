@@ -106,7 +106,6 @@ mine-action organisations whose pictures need a permission letter are in trainin
 """
 
 import os
-import random
 import re
 import shutil
 import subprocess
@@ -117,6 +116,7 @@ import xml.etree.ElementTree as ET
 
 import build_packs  # noqa: F401 - loaded first: the other pack files and build_packs import each other
 from build_packs import session, clean, say, smaller
+from build_packs import pass_random  # shuffles differently on a top-up pass (see build_packs)
 from food_packs import commons_members, count_pictures, with_twins
 from expression_packs import CHILD
 from everyday_packs import number_word
@@ -184,7 +184,7 @@ QUICK_CATEGORIES = 0        # main()'s --categories N: a quick check reads only 
 def chosen(table, key):
     """The table's (category, value) pairs, all of them, or QUICK_CATEGORIES random ones for a quick check."""
     pairs = list(table.items())
-    return random.Random(key).sample(pairs, min(QUICK_CATEGORIES, len(pairs))) if QUICK_CATEGORIES else pairs
+    return pass_random(key).sample(pairs, min(QUICK_CATEGORIES, len(pairs))) if QUICK_CATEGORIES else pairs
 
 
 # Pictures of munitions in use, not lying around: dropped from or loaded on aircraft, stored aboard ships, being
@@ -397,7 +397,7 @@ def munition_answer(facts, phrase, adjectives):
 
 def build_commons_munition_models(limit, per_item=5):
     """The commons_munition_models pack (see the module docstring)."""
-    s, rng = session(), random.Random(4401)
+    s, rng = session(), pass_random(4401)
     models, _ = models_of(s, MUNITION_KINDS, MUNITION_AVOID)
     facts = wd_model_facts(s, [m[0] for m in models])
     adjectives = demonyms(s, {o for f in facts.values() for o in f["origins"]})
@@ -478,7 +478,7 @@ UXO_AVOID = re.compile(NOT_THE_DANGER.pattern + r"|\b(warning signs|no landmines
 
 def build_commons_uxo(limit):
     """The commons_uxo pack (see the module docstring): the categories take turns, a file used once."""
-    s, rng = session(), random.Random(4409)
+    s, rng = session(), pass_random(4409)
     skip = set(covered_titles(s))
     per = max(4, int(limit * 1.3) // len(UXO_CATEGORIES) + 1)
     items = []
@@ -562,7 +562,7 @@ def amlid_photos(folder):
 
 def build_amlid_landmines(limit):
     """The amlid_landmines pack (see the module docstring): plain colour drone photos with at least one mine."""
-    rng, out = random.Random(4421), []
+    rng, out = pass_random(4421), []
     with tempfile.TemporaryDirectory() as folder:
         photos = amlid_photos(folder)
         rng.shuffle(photos)
@@ -672,7 +672,7 @@ def firearm_answer(item, facts, all_facts, phrase, adjectives):
 
 def build_commons_firearms(limit, per_item=4):
     """The commons_firearms pack (see the module docstring)."""
-    s, rng = session(), random.Random(4431)
+    s, rng = session(), pass_random(4431)
     models, _ = models_of(s, FIREARM_KINDS, FIREARM_AVOID)
     facts = wd_model_facts(s, [m[0] for m in models])
     adjectives = demonyms(s, {o for f in facts.values() for o in f["origins"]})
@@ -756,7 +756,7 @@ def cartridge_answer(name, phrase, rimfire, f):
 
 def build_commons_cartridges(limit, per_item=5):
     """The commons_cartridges pack (see the module docstring)."""
-    s, rng = session(), random.Random(4441)
+    s, rng = session(), pass_random(4441)
     models, member = models_of(s, CARTRIDGE_KINDS, ("Q12802",))
     rimfire = set(kind_items(s, RIMFIRE))
     facts = wd_model_facts(s, [m[0] for m in models])
@@ -935,7 +935,7 @@ def rite_rows(rite, child_rite, details_text, credit, caption, place, bris=False
 def build_commons_child_rites(limit):
     """The commons_child_rites pack (see the module docstring): the categories take turns, each file once, every
     file through child_rite_ok."""
-    s, rng = session(), random.Random(4451)
+    s, rng = session(), pass_random(4451)
     per = max(4, int(limit * 1.3) // len(RITE_CATEGORIES) + 1)
     items, seen = [], set()
     for category, (rite, _, child_rite, depth, bris) in chosen(RITE_CATEGORIES, "rites"):

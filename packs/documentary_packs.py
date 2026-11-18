@@ -68,13 +68,13 @@ Looked at and not used here (checked at the source in November 2026), with the r
 """
 
 import json
-import random
 import re
 import sys
 import time
 
 import build_packs  # noqa: F401 - loaded first: the other pack files and build_packs import each other
 from build_packs import session, clean, fetch_all, say, LONG_SIDE, COMMONS_API, COMMONS_FREE
+from build_packs import pass_random, new_only, already_in_pack  # top-up passes (see build_packs)
 from build_packs import listing_out_of_time, out_of_time
 from food_packs import with_twins, count_pictures
 from expression_packs import CHILD
@@ -149,8 +149,10 @@ def get_json(s, url, params=None, tries=4, pause=5):
 
 def finish(key, items, limit, workers=4, pause=0.2):
     """Shuffle (name, address, rows) items, download the pictures and return the pack entries (at most limit
-    pictures), saying how many came and how many are marked child."""
-    random.Random(len(key) * 7919).shuffle(items)
+    pictures), saying how many came and how many are marked child. On a top-up pass the pictures already in the
+    published pack are left out first (new_only), so the places go to new ones."""
+    items = new_only(items)
+    pass_random(len(key) * 7919).shuffle(items)
     fetched = fetch_all(items[:int(limit * 1.2) + 2], workers=workers, pause=pause)[:limit]
     say(f"{key}: {len(fetched)} pictures, {sum(1 for _, _, r in fetched if len(r) > 1)} with a place, "
         f"{sum(1 for _, _, r in fetched if r[0].get('child'))} marked child")
@@ -236,6 +238,8 @@ def loc_items(s, path, extra, total, name, want, rng):
             title = clean(record.get("title"))
             answer = tidy(title)
             picture = loc_picture(record)
+            if already_in_pack(url=picture):   # in the published pack already (a top-up pass): not counted
+                continue
             if not loc_free(record) or not picture or not usable(answer) or BIBLE_VERSE.match(title) \
                     or LOC_NOT_A_PHOTO.search(title) or answer in answers or taken >= per_page:
                 continue
@@ -256,7 +260,7 @@ def loc_items(s, path, extra, total, name, want, rng):
 def build_loc(key, limit):
     """A Library of Congress pack: records from each of its collections (in proportion to their size, at least a
     quarter each), their titles as answers."""
-    s, rng, items = session(), random.Random(sum(map(ord, key))), []
+    s, rng, items = session(), pass_random(sum(map(ord, key))), []
     sets = LOC_SETS[key]
     total = sum(n for _, _, n, _ in sets)
     for path, extra, n, name in sets:
@@ -321,7 +325,7 @@ def build_npgallery(limit):
     the park as the place. NPGallery's own 2,600-pixel copy ("proxyhires") is fetched, not the original (up to
     15 MB)."""
     s, items, seen = session(), [], set()
-    rng = random.Random(71)
+    rng = pass_random(71)
     per_word = int(limit * 1.3 / len(NPG_WORDS)) + 2
     for word in NPG_WORDS:
         found = 0
@@ -462,7 +466,7 @@ def build_eso(limit):
             if not found or len(listed) >= per_category * 6:
                 break
             time.sleep(0.5)
-        random.Random(74).shuffle(listed)
+        pass_random(74).shuffle(listed)
         found = 0
         for image_id in listed:
             if found >= per_category:
@@ -520,7 +524,7 @@ def build_usgs(limit):
     except Exception:  # noqa: BLE001 - nothing to read
         return []
     pages = list(range(0, last + 1))
-    random.Random(75).shuffle(pages)
+    pass_random(75).shuffle(pages)
     for page in pages:
         if len(items) >= limit * 1.3 or listing_out_of_time():
             break

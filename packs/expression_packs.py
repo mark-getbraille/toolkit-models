@@ -45,13 +45,13 @@ Sources looked at and left out are listed in REJECTED (with the reason), for the
 import csv
 import io
 import json
-import random
 import re
 import sys
 import zipfile
 
 import build_packs  # noqa: F401 - loaded first: food_packs and build_packs import each other
 from build_packs import session, clean, fetch_all, say, ALT_TEXT, COCO_FREE
+from build_packs import pass_random  # shuffles differently on a top-up pass (see build_packs)
 from food_packs import (sentence, listed, with_twins, count_pictures, oi_lines, oi_licence_name,  # noqa: F401
                         commons_get, commons_members, commons_entries, OI_CLASSES, OI_LABELS, OI_IMAGES,
                         OI_PICTURE, commons_place)
@@ -348,7 +348,7 @@ def build_oi_expressions(limit, train=None, train_bytes=None):
     set (train=True forces it, False never; train_bytes reads only the first bytes of each training file, for a
     test). Keeps photos of real people whose own licence is free and that need no turning, spreads them over the
     labels and fetches them."""
-    s, rng = session(), random.Random(61)
+    s, rng = session(), pass_random(61)
     mids = {}
     for line in csv.reader(oi_lines(s, OI_CLASSES)):
         if len(line) == 2:
@@ -490,14 +490,14 @@ def build_commons_expressions(limit):
     per_category = max(6, limit * 2 // len(COMMONS_EXPRESSIONS))
     categories = list(COMMONS_EXPRESSIONS.items())
     if limit < 50:
-        random.Random(65).shuffle(categories)                    # a quick test: a few categories of every kind
+        pass_random(65).shuffle(categories)                    # a quick test: a few categories of every kind
     for category, (question, answer) in categories:
         try:
             titles = [t for t in commons_members(s, category, "file") if t not in seen]
         except RuntimeError as e:                                # Commons kept refusing: the next category
             say(f"Commons {category}: left out ({e})")
             continue
-        random.Random(category).shuffle(titles)
+        pass_random(category).shuffle(titles)
         found = 0
         for title, url, credit, text in commons_entries(s, [t for t in titles if commons_safe(t)][:per_category * 3]):
             if title in seen or not commons_safe(title, text):
@@ -519,7 +519,7 @@ def build_commons_expressions(limit):
         say(f"Commons {category}: {found} free pictures ({len(titles)} files)")
         if limit < 50 and len(items) >= limit * 2:
             break                                                # a quick test: enough categories visited
-    random.Random(62).shuffle(items)
+    pass_random(62).shuffle(items)
     fetched = fetch_all(items[:int(limit * 1.1) + 2], workers=2, pause=0.5)
     return with_twins(fetched[:limit])
 
@@ -568,7 +568,7 @@ def build_bice_gestures(limit):
         items.append((f"bice-{person}-{light}-{scene}-{gesture}.jpg", (offset, csize, method),
                       {"question": BICE_ASK, "answer": answer, "credit": BICE_CREDIT}))
     say(f"BiCE-HG: {len(items)} stills of {len(BICE_GESTURES)} gestures")
-    random.Random(63).shuffle(items)
+    pass_random(63).shuffle(items)
     return fetch_from_zip(zipped, items[:int(limit * 1.02) + 2])[:limit]
 
 
@@ -773,7 +773,7 @@ def build_vqa_expressions(limit, most_each=3):
     say(f"Expression questions: {found['VQA v2']} from VQA v2 val, {found['Visual Dialog']} from Visual Dialog, on "
         f"{len(per_photo)} photos")
     photos = sorted(per_photo)
-    rng = random.Random(64)
+    rng = pass_random(64)
     rng.shuffle(photos)
     rows = []
     for photo in photos:

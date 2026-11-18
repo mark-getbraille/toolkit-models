@@ -109,7 +109,6 @@ download entries in training-kit/kit/culture_sources.py.
 
 import csv
 import json
-import random
 import re
 import sys
 import time
@@ -117,6 +116,7 @@ import urllib.parse
 
 import build_packs  # noqa: F401 - loaded first: the other pack files and build_packs import each other
 from build_packs import session, clean, smaller, fetch_all, say, MUSEUM
+from build_packs import pass_random  # shuffles differently on a top-up pass (see build_packs)
 from food_packs import (sentence, listed, with_twins, count_pictures, oi_lines, oi_licence_name,  # noqa: F401
                         commons_get, commons_entries, commons_place, OI_LABELS, OI_CLASSES, OI_IMAGES, OI_PICTURE)
 from everyday_packs import a_or_an, number_word
@@ -292,7 +292,7 @@ def category_titles(s, category, most=200, deeper=0, rng=None, models_ok=False):
     if deeper and len(titles) < most:
         subs = [c for c in members(category, "subcat", 100) if not NOT_A_PHOTO.search(c)
                 and (models_ok or not NOT_A_MODEL.search(c))]
-        (rng or random.Random(category)).shuffle(subs)
+        (rng or pass_random(category)).shuffle(subs)
         for sub in subs[:deeper]:
             titles += members(sub.split(":", 1)[-1], "file", max(20, most // deeper))
     return [t for t in dict.fromkeys(titles) if not NOT_A_PHOTO.search(t) and (models_ok or not NOT_A_MODEL.search(t))]
@@ -305,7 +305,7 @@ def from_subjects(key, s, chosen, limit, rows_of, per_subject=3, rng=None, deepe
     domain or CC BY), at most per_subject pictures. rows_of(subject, title, text) gives the rows of one picture
     ([] to leave it out); the file's caption is added as "Describe this picture." and the camera's country as the
     place where the rows give none; rows naming a child are marked. Titles are checked 50 at a time."""
-    rng = rng or random.Random(sum(map(ord, key)))
+    rng = rng or pass_random(sum(map(ord, key)))
     items, seen, queue = [], set(), []
 
     def flush():
@@ -490,7 +490,7 @@ def build_open_images_culture(limit):
     whose own licence is free, that need no turning and that have a verified label of OI_CULTURE (not only a
     common one), takes the labels in turn (rarest first, so every sport, instrument and vehicle gets in) and
     fetches the photos."""
-    s, rng = session(), random.Random(81)
+    s, rng = session(), pass_random(81)
     mids = {}
     for line in csv.reader(oi_lines(s, OI_CLASSES)):
         if len(line) == 2:
@@ -595,7 +595,7 @@ def build_wikidata_sports(limit):
     """The sports pack: sports (instances of sport, type of sport or team sport, and sports that are subclasses of
     those), sports equipment and kinds of sports ground (subclasses of sports venue) with their Commons categories,
     and the Commons scoreboard category, taken in turn."""
-    s, rng = session(), random.Random(82)
+    s, rng = session(), pass_random(82)
     sports = subjects(sparql(s, SPORT_QUERY % ("VALUES ?t { wd:Q349 wd:Q31629 wd:Q216048 } "
                                                "{ ?item wdt:P31 ?t } UNION { ?item wdt:P279 ?t }", 2)))
     sports = [d for d in sports if d["label"].lower() not in DISABILITY_PACK_SPORTS]
@@ -641,7 +641,7 @@ NOT_INSTRUMENT = re.compile(r"\b(microphones?|loudspeakers?|amplifiers?|headphon
 def build_wikidata_instruments(limit):
     """The instruments pack: every kind of musical instrument on Wikidata with a Commons category (about 1,700),
     shuffled, a few free pictures of each: "This is a saron, a metallophone from Indonesia." """
-    s, rng = session(), random.Random(83)
+    s, rng = session(), pass_random(83)
     found = [d for d in subjects(sparql(s, INSTRUMENT_QUERY))
              if not NOT_INSTRUMENT.search(" ".join([d["label"]] + (d.get("parentLabel") or [])))]
     say(f"Wikidata: {len(found)} kinds of musical instrument with a Commons category")
@@ -708,7 +708,7 @@ def met_rows(obj):
 def build_met_instruments(limit):
     """The Met instruments pack: the department's objects with pictures (the paged v1.1 search), each object's
     record read (public domain ones only, CC0), its large web picture fetched."""
-    s, rng = session(), random.Random(84)
+    s, rng = session(), pass_random(84)
     ids, offset = [], 0
     while True:
         page = s.get(MET + "v1.1/search", timeout=60, params={"departmentId": MET_INSTRUMENTS, "hasImages": "true",
@@ -804,7 +804,7 @@ def worship_rows(d, title, text):
 def build_wikidata_worship(limit):
     """The places of worship pack: for each kind (WORSHIP_KINDS), the best-known places with a picture on Wikidata
     (most Wikipedia articles first), the kinds taken in turn so every faith gets in."""
-    s, rng = session(), random.Random(85)
+    s, rng = session(), pass_random(85)
     per_kind = max(20, int(limit * 1.2 / len(WORSHIP_KINDS)))
     groups = []
     for qid, kind, faith in WORSHIP_KINDS:
@@ -896,7 +896,7 @@ RELIGIOUS_LIFE = {
 def build_commons_religious_life(limit):
     """The religious life pack: the categories of RELIGIOUS_LIFE taken in turn, a few free pictures from each (and
     from two of its subcategories), with the category's fixed sentence and the file's caption."""
-    s, rng = session(), random.Random(86)
+    s, rng = session(), pass_random(86)
     chosen = []
     for names, (question, answer) in RELIGIOUS_LIFE.items():
         chosen.append({"label": names[0], "cat": list(names), "ask": question, "say": answer})
@@ -957,7 +957,7 @@ def build_wikidata_landmarks(limit):
     """The landmarks pack: World Heritage Sites with a picture (most Wikipedia articles first) and, for each kind of
     LANDMARK_KINDS, the best-known ones (20 or more Wikipedia articles), places of worship left out (they are in
     wikidata_worship); the groups taken in turn."""
-    s, rng = session(), random.Random(87)
+    s, rng = session(), pass_random(87)
     per = max(30, int(limit * 1.0 / (len(LANDMARK_KINDS) + 4)))
     groups = [subjects(sparql(s, LANDMARK_QUERY % ("?item wdt:P1435 wd:Q9259 .", 5, NOT_WORSHIP, per * 4)))]
     say(f"Wikidata: {len(groups[0])} World Heritage Sites with a picture")
@@ -986,7 +986,7 @@ def build_wikidata_architecture(limit):
     """The architecture pack: architectural styles (instances of architectural style) and building parts (instances
     and subclasses of architectural element), each with free pictures from its Commons category and two of its
     subcategories."""
-    s, rng = session(), random.Random(88)
+    s, rng = session(), pass_random(88)
     styles = subjects(sparql(s, ARCH_QUERY % "?item wdt:P31 wd:Q32880 ."))
     parts = subjects(sparql(s, ARCH_QUERY % "VALUES ?t { wd:Q391414 } { ?item wdt:P31 ?t } UNION "
                                             "{ ?item wdt:P279 ?t }"))
@@ -1055,7 +1055,7 @@ def build_gldv2_landmarks(limit, per_landmark=2):
     """The Google Landmarks pack: the "clean" training images (train_clean.csv, 27 MB), read with their addresses
     (train.csv) and licences (train_attribution.csv) row by row as they download (the two files are in the same
     order), the free ones only, at most per_landmark a landmark; pictures from Commons at 1,280 pixels."""
-    s, rng = session(), random.Random(89)
+    s, rng = session(), pass_random(89)
     clean_ids = {}
     for row in gld_rows(s, GLD + "train_clean.csv"):
         if len(row) == 2 and row[0].isdigit():
@@ -1142,7 +1142,7 @@ def build_wikidata_vehicle_models(limit):
     """The vehicle models pack: for each kind of VEHICLE_KINDS, the models with most Wikipedia articles (car models
     take half the pack), a few free pictures from each model's Commons category (details, interiors and scale
     models left out)."""
-    s, rng = session(), random.Random(90)
+    s, rng = session(), pass_random(90)
     groups = []
     for qid, finder, question, words in VEHICLE_KINDS:
         share = 0.5 if qid == "Q3231690" else 0.5 / (len(VEHICLE_KINDS) - 1)
@@ -1204,7 +1204,7 @@ VEHICLE_CATEGORIES = {
 def build_commons_vehicle_kinds(limit):
     """The kinds of vehicle pack: the categories of VEHICLE_CATEGORIES taken in turn, a few free pictures from each
     (and from two subcategories), with the category's fixed sentence and the file's caption."""
-    s, rng = session(), random.Random(91)
+    s, rng = session(), pass_random(91)
     chosen = [{"label": names[0], "cat": list(names), "ask": q, "say": a} for names, (q, a) in VEHICLE_CATEGORIES.items()]
     rng.shuffle(chosen)
     per = max(3, -(-int(limit * 1.2) // len(chosen)))
@@ -1243,7 +1243,7 @@ def card_answer(label):
 def build_wikidata_toys_games(limit):
     """The toys and games pack: playing cards (instances of playing card), board games and card games (with their
     country of origin), toys (subclasses of toy) and the Commons categories of TOY_CATEGORIES, taken in turn."""
-    s, rng = session(), random.Random(92)
+    s, rng = session(), pass_random(92)
     cards = subjects(sparql(s, TOY_QUERY % "?item wdt:P31 wd:Q47883 ."))
     boards = subjects(sparql(s, TOY_QUERY % "?item wdt:P31 wd:Q131436 ; wikibase:sitelinks ?sl . FILTER(?sl >= 2)"))
     card_games = subjects(sparql(s, TOY_QUERY % "?item wdt:P31 wd:Q142714 ; wikibase:sitelinks ?sl . "
@@ -1304,7 +1304,7 @@ def card_from_folder(folder):
 def build_playing_cards(limit):
     """The playing cards pack: every photo in the dataset's card folders ("data/Coeur Dame/..."), the card named in
     English: "This is the queen of hearts." """
-    rng = random.Random(93)
+    rng = pass_random(93)
     items = []
     for path in hf_files(CARDS_REPO):
         parts = path.split("/")
@@ -1358,7 +1358,7 @@ def chess_answer(classes):
 def build_chess_pieces(limit):
     """The chess pieces pack: the 289 photos (train, valid, test), each with its YOLO label file, the pieces counted
     by colour and kind."""
-    s, rng = session(), random.Random(94)
+    s, rng = session(), pass_random(94)
     files = hf_files(CHESS_REPO)
     labels = {p for p in files if p.endswith(".txt") and "/labels/" in p}
     items = []
@@ -1435,7 +1435,7 @@ def build_chess_positions(limit):
     row group from Hugging Face, never whole), the position said square by square."""
     import pyarrow.parquet as pq
     from huggingface_hub import HfFileSystem
-    fs, rng = HfFileSystem(), random.Random(95)
+    fs, rng = HfFileSystem(), pass_random(95)
     paths = sorted(p for p in hf_files(RENDERS_REPO) if p.endswith(".parquet") and
                    (p.startswith("data/validation/") or p.startswith("data/train/")))
     rng.shuffle(paths)
@@ -1498,7 +1498,7 @@ def build_chess_drawings(limit):
     directories, never whole; an image and its label may be in different zips), a random pick of positions, each
     label read and its position said square by square."""
     from everyday_packs import RemoteZip, fetch_from_zip
-    rng = random.Random(97)
+    rng = pass_random(97)
     zips = {part: RemoteZip(DRAWN_BOARDS.format(part)) for part in ("001", "002")}
     images, labels = {}, {}
     for part, z in zips.items():
@@ -1549,7 +1549,7 @@ def card_code_words(code):
 def build_drawn_cards(limit):
     """The drawn playing cards pack: the dataset's "single" set (one card on a drawn background) and "three" set
     (three cards), half each, the cards named from their labels (card_points)."""
-    s, rng = session(), random.Random(98)
+    s, rng = session(), pass_random(98)
     base = f"https://huggingface.co/datasets/{DRAWN_CARDS}/resolve/main/splits/"
     codes = [line.split()[0] for line in s.get(base + "single/classes.txt", timeout=60).text.splitlines()
              if line.split()]
@@ -1632,7 +1632,7 @@ def build_deepscores_sheet_music(limit):
     readable."""
     import pyarrow.parquet as pq
     from huggingface_hub import HfFileSystem
-    fs, rng = HfFileSystem(), random.Random(96)
+    fs, rng = HfFileSystem(), pass_random(96)
     paths = sorted(p for p in hf_files(SCORES_REPO) if p.endswith(".parquet"))
     rng.shuffle(paths)
     out = []

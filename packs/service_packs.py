@@ -99,13 +99,13 @@ Looked at and not used here (November 2026), with the reason:
 """
 
 import json
-import random
 import re
 import sys
 import time
 
 import build_packs  # noqa: F401 - loaded first: the other pack files and build_packs import each other
 from build_packs import listing_out_of_time
+from build_packs import pass_random, new_only  # top-up passes (see build_packs)
 from build_packs import session, clean, fetch_all, say, COMMONS_FREE, MUSEUM, SI_BUCKET, si_keys, \
     first_sentences
 from food_packs import with_twins, count_pictures, commons_get, commons_members
@@ -212,7 +212,8 @@ def file_name(prefix, text):
 def finish(key, items, limit, workers=3, pause=0.3):
     """Shuffle (name, address, rows) items, download the pictures and return the pack entries (at most limit
     pictures), saying how many came and how many rows are graphic or marked child."""
-    random.Random(len(key) * 7907).shuffle(items)
+    items = new_only(items)                    # (a top-up pass: only pictures not in the pack yet)
+    pass_random(len(key) * 7907).shuffle(items)
     fetched = fetch_all(items[:int(limit * 1.2) + 2], workers=workers, pause=pause)[:limit]
     entries = with_twins(fetched)
     say(f"{key}: {len(fetched)} pictures, {len(entries)} rows, "
@@ -635,7 +636,7 @@ def build_commons_models(key, kinds, avoid, limit):
     than per_item pictures)."""
     s = session()
     models = wd_models(s, kinds, avoid)
-    rng = random.Random(sum(map(ord, key)))
+    rng = pass_random(sum(map(ord, key)))
     rng.shuffle(models)
     items = []
     for group in dict.fromkeys(g for _, _, g in kinds):
@@ -776,7 +777,7 @@ def build_commons_uniformed(limit):
     s = session()
     categories = service_categories(s)
     say(f"  Commons uniformed services: {len(categories)} categories")
-    rng = random.Random(83)
+    rng = pass_random(83)
     rng.shuffle(categories)
     per_category = max(3, int(limit * 1.3 / max(1, len(categories))) + 1)
     items, seen = [], set()
@@ -888,7 +889,7 @@ def loc_service_items(s, path, extra, total, name, conflict, uniform, want, rng)
 def build_loc_service(limit):
     """The loc_service pack (see the module docstring): each set in proportion to its size, at least a twentieth
     of the pack each (or all of a smaller set)."""
-    s, rng, items = session(), random.Random(81), []
+    s, rng, items = session(), pass_random(81), []
     total = sum(n for _, _, n, _, _, _ in LOC_SERVICE_SETS)
     for path, extra, n, name, conflict, uniform in LOC_SERVICE_SETS:
         if listing_out_of_time():
@@ -983,7 +984,7 @@ def nara_military_items(s, naid, total, name, most, want, rng):
 def build_nara_military(limit):
     """The nara_military pack (see the module docstring): a quarter of the pack from each series (or all of a
     smaller one)."""
-    s, rng, items = session(), random.Random(82), []
+    s, rng, items = session(), pass_random(82), []
     for naid, n, name, most in NARA_MILITARY_SERIES:
         items += nara_military_items(s, naid, n, name, most, int(limit * 0.25 * 1.3) + 3, rng)
     return finish("nara_military", items, limit, workers=3, pause=0.5)
@@ -1186,7 +1187,7 @@ def build_nmah_service(limit):
     enough records about the forces and the uniformed services with CC0 pictures are found."""
     s, items = session(), []
     keys = si_keys("nmah")
-    random.Random(84).shuffle(keys)
+    pass_random(84).shuffle(keys)
     for key in keys:
         if len(items) >= limit * 1.3:
             break

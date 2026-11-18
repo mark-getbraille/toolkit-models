@@ -52,7 +52,6 @@ import shutil
 import io
 import json
 import math
-import random
 import re
 import struct
 import sys
@@ -61,6 +60,7 @@ import zipfile
 import zlib
 
 from build_packs import session, clean, smaller, fetch_all, say, article  # noqa: F401
+from build_packs import pass_random, already_in_pack  # top-up passes (see build_packs)
 from food_packs import with_twins, listed, oi_lines, oi_licence_name, OI, OI_PICTURE
 from places import with_place, country_named, place_name
 
@@ -312,7 +312,7 @@ def build_ptl_crossings(limit):
     z = remote_zip(PTL_ZIP, s)
     names = {n.rsplit("/", 1)[-1].lower(): n for n in z.namelist() if n.lower().endswith((".jpg", ".jpeg"))}
     keys = sorted(k for k in labels if k in names)
-    random.Random(51).shuffle(keys)
+    pass_random(51).shuffle(keys)
     out = []
     for key in keys:
         if len(out) >= limit:
@@ -406,7 +406,8 @@ def build_uroac_crossings(limit):
     out = []
     for name, data in ((n, inner_zip.read(n)) for n in inner_zip.namelist() if not n.endswith("/")):
         key = name.rsplit("/", 1)[-1].rsplit(".", 1)[0]
-        if key not in labels or not name.lower().endswith((".jpg", ".jpeg", ".png")):
+        if key not in labels or not name.lower().endswith((".jpg", ".jpeg", ".png")) \
+                or already_in_pack(f"uroac-{key}.jpg"):        # (a top-up pass: photos not in the pack yet)
             continue
         picture = smaller(data)
         rows = uroac_rows(labels[key])
@@ -414,7 +415,7 @@ def build_uroac_crossings(limit):
             out.append((f"uroac-{key}.jpg", picture, rows))
         if len(out) >= limit:
             break
-    random.Random(52).shuffle(out)
+    pass_random(52).shuffle(out)
     return with_place(with_twins(out), "Alicante, Spain")            # photographed in Alicante by the authors
 
 
@@ -543,7 +544,7 @@ def build_open_images_street(limit):
                                         r.get("OriginalLandingURL") or "")
     items, yes_count, no_count = [], 0, 0
     order = sorted(photos)
-    random.Random(53).shuffle(order)
+    pass_random(53).shuffle(order)
     for image_id in order:
         checked = labels[image_id]
         present = {n for n, v in checked.items() if v == 1}
@@ -647,7 +648,7 @@ def build_walkway_dhaka(limit):
             labels[key] = url
     keys = sorted(k for k in pictures if k in labels)
     say(f"Dhaka footpaths: {len(keys)} frames")
-    random.Random(54).shuffle(keys)
+    pass_random(54).shuffle(keys)
     s, items = session(), []
     for key in keys:
         if len(items) >= limit * 1.1 + 2:
@@ -716,7 +717,7 @@ def build_outdoor_navigation(limit):
             labels.setdefault(base_frame(name), name)
     keys = sorted(k for k in pictures if k in labels)
     say(f"Outdoor Navigation: {len(keys)} frames")
-    random.Random(55).shuffle(keys)
+    pass_random(55).shuffle(keys)
     out = []
     for key in keys:
         rows = onav_rows(yolo_boxes(z.read(labels[key]).decode("utf-8", "replace")))
@@ -795,7 +796,7 @@ def build_seoul_sidewalks(limit):
         z = remote_zip(f"{SEOUL}{zip_name}?download=1", s)
         names = [n for n in z.namelist() if n.rsplit("/", 1)[-1].lower() in records and "__MACOSX" not in n]
         names = [n for n in names if heic or not n.lower().endswith((".heic", ".heif"))]
-        random.Random(56).shuffle(names)
+        pass_random(56).shuffle(names)
         for name in names[:max(1, limit - len(out))]:
             record = records[name.rsplit("/", 1)[-1].lower()]
             data = smaller(z.read(name))
@@ -804,7 +805,7 @@ def build_seoul_sidewalks(limit):
                 out.append((f"seoul-{name.rsplit('/', 1)[-1].rsplit('.', 1)[0]}.jpg", data, rows))
         if len(out) >= limit:
             break
-    random.Random(57).shuffle(out)
+    pass_random(57).shuffle(out)
     return with_place(with_twins(out[:limit]), "Seoul, South Korea")
 
 
@@ -922,14 +923,14 @@ def build_dollar_street(limit):
     each topic, each with its country and photographers, and asks what the thing or the place is."""
     s, items, photographers = session(), [], {}
     topics = sorted(DS_TOPICS)
-    random.Random(58).shuffle(topics)
+    pass_random(58).shuffle(topics)
     per_topic = max(1, round(limit * 1.15 / len(topics)) + (1 if limit < len(topics) else 0))
     for topic in topics:
         if len(items) >= limit * 1.15:
             break
         hits = [h for h in ds_hits(s, topic) if (h.get("images") or {}).get("full1024")
                 and not ({t["id"] for t in h.get("topics") or []} - DS_IGNORED - {topic}) & set(DS_TOPICS)]
-        random.Random(topic).shuffle(hits)
+        pass_random(topic).shuffle(hits)
         for h in hits[:per_topic]:
             place = h.get("place") or {}
             country = (h.get("country") or place.get("country") or {}).get("name", "")
@@ -951,7 +952,7 @@ def build_dollar_street(limit):
                 rows = [dict(r, place=country_named(country) or country) for r in rows]
             items.append((f"ds-{h['id']}.jpg", h["images"]["full1024"], rows))
         say(f"Dollar Street {topic}: {len(hits)} photos")
-    random.Random(59).shuffle(items)
+    pass_random(59).shuffle(items)
     return with_twins(fetch_all(items[:int(limit * 1.15) + 2], workers=4, pause=0.2)[:limit])
 
 
@@ -1005,7 +1006,7 @@ def build_geode(limit):
     fs, out = HfFileSystem(), []
     groups = max(2, math.ceil(limit / 25))                   # 25 pictures from each group of 100
     per_group = math.ceil(limit / groups)
-    rng = random.Random(60)
+    rng = pass_random(60)
     picks = sorted(rng.sample(range(len(files) * 10), min(groups, len(files) * 10)))
     for pick in picks:
         name = files[pick // 10]

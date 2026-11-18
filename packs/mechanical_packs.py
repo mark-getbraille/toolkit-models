@@ -89,13 +89,13 @@ import io
 import json
 import math
 import os
-import random
 import re
 import sys
 import time
 
 import build_packs  # noqa: F401 - loaded first: food_packs and build_packs import each other
 from build_packs import session, clean, smaller, fetch_all, say, considered, ALT_TEXT
+from build_packs import pass_random  # shuffles differently on a top-up pass (see build_packs)
 from food_packs import with_twins, count_pictures, commons_get, commons_members, commons_description
 from home_packs import commons_fetch, file_name, symbol_picture, NUDE, FIRST_PERSON, NOT_RESPECTFUL
 from expression_packs import mark_child, child_count
@@ -260,7 +260,7 @@ def build_commons_parts(specs, limit, prefix):
     came from (which often names the maker or the vehicle: "Bosch spark plugs") and the file's own title."""
     s, items, seen = session(), [], set()
     order = list(specs)
-    random.Random(prefix).shuffle(order)
+    pass_random(prefix).shuffle(order)
     share = max(3, math.ceil(limit * 1.15 / max(1, len(order))))
     want = int(limit * 1.15) + 2
     queues = [[spec, None] for spec in order]
@@ -274,7 +274,7 @@ def build_commons_parts(specs, limit, prefix):
             if files is None:
                 found = category_files(s, category, deeper)
                 files = [(t, sub) for t, sub in found.items() if t not in seen]
-                random.Random(category).shuffle(files)
+                pass_random(category).shuffle(files)
                 say(f"Commons {category}: {len(files)} files")
             batch, q[1] = files[:share * 2], files[share * 2:]
             if not batch:
@@ -302,7 +302,7 @@ def build_commons_parts(specs, limit, prefix):
                 got += 1
             if not q[1]:
                 queues.remove(q)
-    random.Random(prefix + "-order").shuffle(items)
+    pass_random(prefix + "-order").shuffle(items)
     return with_twins(commons_fetch(items[:want])[:limit])
 
 
@@ -715,7 +715,7 @@ def build_commons_engine_bays(limit):
         titles += search_files(s, query)
     titles = [t for t in dict.fromkeys(titles) if not NOT_A_PHOTO.search(t) and not NOT_A_ROAD_VEHICLE.search(t)]
     rest = [t for t in titles if t not in set(noted)]
-    random.Random(51).shuffle(rest)
+    pass_random(51).shuffle(rest)
     titles = [t for t in titles if t in set(noted)] + rest
     say(f"Commons engine bays: {len(titles)} files ({len(noted)} with image notes)")
     items = []
@@ -834,7 +834,7 @@ def build_iso_machine_symbols(limit):
     mean?" with its standard meaning too."""
     s, out = session(), []
     titles = [t for t in commons_members(s, "ISO 7000 symbols", "file") if t.lower().endswith((".svg", ".png"))]
-    random.Random(70).shuffle(titles)
+    pass_random(70).shuffle(titles)
     say(f"ISO 7000: {len(titles)} symbol files")
     for title, url, credit, _, description in mech_entries(s, titles[:int(limit * 1.2) + 20], drawings=True):
         if count_pictures(out) >= limit * 0.85:
@@ -907,7 +907,7 @@ def hf_url(repo, path, revision="main"):
 
 def even_share(groups, limit, seed):
     """An even share of each group's items (lists), taking from the larger groups when a small one runs out."""
-    rng, picked = random.Random(seed), []
+    rng, picked = pass_random(seed), []
     pools = {k: rng.sample(v, len(v)) for k, v in groups.items()}
     while len(picked) < limit and any(pools.values()):
         for k in sorted(pools):
@@ -1053,7 +1053,7 @@ def build_tyre_condition(limit):
             m = re.search(r"/(\d+)\s*km/[^/]+\.(jpe?g|png)$", name, re.I)
             if m:
                 items.append((name, (offset, size, method), int(m.group(1))))
-        random.Random(91).shuffle(items)
+        pass_random(91).shuffle(items)
         from everyday_packs import fetch_from_zip
         wanted = []
         for name, where_in, km in items[:third]:
@@ -1082,7 +1082,7 @@ def build_tyre_condition(limit):
                 "credit": VELAMMAL_CREDIT, "facts": {"label": name.split(" ")[0].lower()}}])
              for name, url in even_share(groups, rest, 92)]
     out += with_twins(fetch_all(items, workers=6))
-    random.Random(94).shuffle(out)
+    pass_random(94).shuffle(out)
     return trim(out, limit)
 
 
@@ -1175,7 +1175,7 @@ def build_planetary_gearbox(limit):
                         "answer": capital("; ".join(said)) + ".", "credit": PLANETARY_CREDIT},
                        {"question": THING_Q, "answer": "These are parts of a small planetary gearbox, in which planet "
                         "gears turn around a central sun gear.", "credit": PLANETARY_CREDIT}]))
-    random.Random(41).shuffle(items)
+    pass_random(41).shuffle(items)
     return with_twins(fetch_from_zip(z, items[:limit], workers=4))
 
 

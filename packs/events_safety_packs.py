@@ -94,13 +94,13 @@ Looked at and not used here (checked at the source in November 2026), with the r
 
 import io
 import json
-import random
 import re
 import sys
 import time
 
 import build_packs  # noqa: F401 - loaded first: the other pack files and build_packs import each other
 from build_packs import session, clean, say, first_sentences, LONG_SIDE, COMMONS_FREE
+from build_packs import pass_random, new_only, note_source  # top-up passes (see build_packs)
 from build_packs import listing_out_of_time  # noqa: E402
 from food_packs import commons_get, commons_members, commons_description, with_twins, count_pictures, sentence
 from documentary_packs import tidy, usable, get_json, loc_picture, loc_free, loc_place, place_words, LOC
@@ -164,7 +164,8 @@ def finish(key, items, limit, workers=3, pause=0.3, flatten=False):
     """Shuffle (file name, address, rows) items, download the pictures (flattened onto white for drawings with
     transparent parts) and return the pack entries, at most limit pictures; says how many came and how many are
     marked child or graphic."""
-    random.Random(len(key) * 7919).shuffle(items)
+    items = new_only(items)                    # (a top-up pass: only pictures not in the pack yet)
+    pass_random(len(key) * 7919).shuffle(items)
     fetched = fetch_pictures(items[:int(limit * 1.2) + 2], workers=workers, pause=pause, flatten=flatten)[:limit]
     say(f"{key}: {len(fetched)} pictures, {sum(1 for _, _, r in fetched if r[0].get('child'))} marked child, "
         f"{sum(1 for _, _, r in fetched if r[0].get('content') == 'graphic')} marked graphic")
@@ -197,9 +198,11 @@ def flat_jpeg(data):
 
 def fetch_pictures(items, workers=3, pause=0.3, flatten=False):
     """Download pictures: items are (name, address, rows); returns [(name, JPEG bytes, rows)] for those that came.
-    Waits and tries again when the server asks to slow down (429 or 503)."""
+    Waits and tries again when the server asks to slow down (429 or 503). On a top-up pass, pictures already in the
+    published pack are not downloaded again."""
     import concurrent.futures
     from build_packs import smaller
+    items = new_only(items)
     s = session()
 
     def one(item):
@@ -212,6 +215,8 @@ def fetch_pictures(items, workers=3, pause=0.3, flatten=False):
                 r = s.get(url, timeout=90)
                 if r.status_code == 200:
                     data = flat_jpeg(r.content) if flatten else smaller(r.content)
+                    if data:
+                        note_source(name, url)          # kept in the row, for a later top-up pass
                     return (name, data, rows) if data else None
                 if r.status_code in (429, 503):
                     after = r.headers.get("Retry-After", "")
@@ -524,7 +529,7 @@ def event_rows(event, f):
 def event_items(s, ok=licence_open, limit=100, per_event=3, prefix="event", seed=503):
     """[(file name, picture address, rows)] for Commons files showing Wikidata events: the classes taken in turn (in
     a shuffled order), a few files from each event (its "depicts" files first, then its category's files)."""
-    rng = random.Random(seed)
+    rng = pass_random(seed)
     queues = []
     for qclass, kind in EVENT_CLASSES.items():
         events = wikidata_events(s, qclass, max(20, limit // len(EVENT_CLASSES) * 2))
@@ -667,7 +672,7 @@ def loc_event_record(record, name):
 def build_loc_events(limit):
     """The Library of Congress events pack: each event word searched in each collection (a random result page or
     two), a few records from each page, each caption once."""
-    s, rng, items, answers = session(), random.Random(509), [], set()
+    s, rng, items, answers = session(), pass_random(509), [], set()
     searches = [(path, name, term) for path, name in LOC_EVENT_SETS for term in LOC_EVENT_TERMS]
     rng.shuffle(searches)
     per_search = max(2, int(limit * 1.3) // len(searches) + 1)
@@ -751,7 +756,7 @@ def build_nara_events(limit):
     """The NARA events pack: each event word searched among online photographs (a random result page of the first
     50), a few records from each page, each caption once. (The search answers with an error page for some page
     sizes, so 100 records a page are asked for, as archive_packs.py does.)"""
-    s, rng, items, answers = session(), random.Random(521), [], set()
+    s, rng, items, answers = session(), pass_random(521), [], set()
     terms = list(NARA_EVENT_TERMS)
     rng.shuffle(terms)
     per_term = max(2, int(limit * 1.3) // len(terms) + 1)
@@ -797,7 +802,7 @@ def europeana_items(limit):
     rights statement is CC0, the Public Domain Mark or CC BY (never BY-SA, NC or ND)."""
     import os
     from medical_packs import tidy_record_text
-    s, rng, items, seen = session(), random.Random(523), [], set()
+    s, rng, items, seen = session(), pass_random(523), [], set()
     key = os.environ.get("EUROPEANA_KEY") or EUROPEANA_KEY      # empty when the build has no key saved
     terms = list(EUROPEANA_TERMS)
     rng.shuffle(terms)
@@ -1016,7 +1021,7 @@ def road_items(s, want, rng):
 def build_safety_signs(limit):
     """The safety signs pack: every ISO 7010 sign with a meaning and the nine GHS pictograms (a few hundred in all),
     then road signs of many countries to fill the limit."""
-    s, rng = session(), random.Random(541)
+    s, rng = session(), pass_random(541)
     items = iso_items(s) + ghs_items(s)
     rng.shuffle(items)
     items = items[:max(limit // 2, limit - limit // 2)] if len(items) > limit // 2 else items
@@ -1121,7 +1126,7 @@ def safety_items(s, want, rng, ok=licence_open):
 
 def build_commons_safety_photos(limit):
     """The Commons safety equipment and hazards pack (see the module docstring)."""
-    s, rng = session(), random.Random(547)
+    s, rng = session(), pass_random(547)
     items = [(f"safety-{n}.jpg", u, r) for n, u, r in safety_items(s, int(limit * 1.2) + 2, rng)]
     return finish("commons_safety_photos", items, limit, workers=2, pause=0.5)
 
@@ -1250,7 +1255,7 @@ def phil_items(s, want, rng):
 def build_safety_training(limit):
     """The safety training pack: Library of Congress posters, Commons posters and workplace photos, and CDC PHIL
     protective-equipment photos, about a third each (one source down does not stop the others)."""
-    s, rng, items = session(), random.Random(557), []
+    s, rng, items = session(), pass_random(557), []
     third = int(limit * 0.45) + 2
     for part in (loc_poster_items, commons_training_items, phil_items):
         try:
@@ -1288,7 +1293,7 @@ def build_dfire_cameras(limit):
     group from the parquet copy, balanced between fire, smoke and no fire (about a third each)."""
     import pyarrow.parquet as pq
     from world_life_packs import RemoteFile
-    rng = random.Random(563)
+    rng = pass_random(563)
     quota = {k: limit // 3 + 1 for k in ("fire", "smoke", "none")}
     out = []
     for shard in DFIRE_SHARDS:

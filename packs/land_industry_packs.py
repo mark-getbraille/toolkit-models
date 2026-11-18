@@ -94,13 +94,13 @@ import csv
 import io
 import json
 import os
-import random
 import re
 import sys
 import time
 
 import build_packs  # noqa: F401 - loaded first: the other pack files and build_packs import each other
 from build_packs import session, clean, smaller, fetch_all, say, article, first_sentences, NARRATE, ALT_TEXT  # noqa: F401,E501
+from build_packs import pass_random  # shuffles differently on a top-up pass (see build_packs)
 from build_packs import listing_out_of_time  # noqa: E402
 from food_packs import sentence, listed, with_twins, count_pictures, commons_members, commons_entries, commons_place
 from expression_packs import CHILD
@@ -163,7 +163,7 @@ def agml_read(repo, config, quota, wanted, seed, label_column="label", most_grou
     config: the folder of the "raw" photos ("raw/" or "data/")."""
     import pyarrow.parquet as pq
     from huggingface_hub import HfApi, HfFileSystem
-    fs, rng = HfFileSystem(), random.Random(seed)
+    fs, rng = HfFileSystem(), pass_random(seed)
     files = [f for f in HfApi().list_repo_files(AGML + repo, repo_type="dataset")
              if f.startswith(config) and f.endswith(".parquet")]
     groups = []
@@ -309,7 +309,7 @@ def build_agml_plant_health(limit):
         for cls, disease in POTATO_CLASSES.items():
             z = remote_zip(POTATO.format(cls))
             names = [n for n in z.namelist() if n.lower().endswith((".jpg", ".jpeg", ".png"))]
-            random.Random(cls).shuffle(names)
+            pass_random(cls).shuffle(names)
             for n in names[:quota]:
                 data = smaller(z.read(n))
                 if data:
@@ -318,7 +318,7 @@ def build_agml_plant_health(limit):
         say("  Tanzanian potato leaves read")
     except Exception as e:  # noqa: BLE001 - the rest of the pack is kept
         say(f"  potato leaves: not read ({str(e)[:100]})")
-    random.Random(501).shuffle(out)
+    pass_random(501).shuffle(out)
     return with_twins(out[:limit])
 
 
@@ -391,7 +391,7 @@ def build_agml_weeds(limit):
                             {"question": ASK_WEED, "answer": answer, "credit": credit + f" (Project-AgML copy, "
                              f"https://huggingface.co/datasets/{AGML}{repo})", **where(place)}))
         say(f"  {repo}: {sum(len(p) for p in got.values())} pictures")
-    random.Random(502).shuffle(out)
+    pass_random(502).shuffle(out)
     return out[:limit]
 
 
@@ -420,7 +420,7 @@ def build_agml_harvest(limit):
                       f"https://huggingface.co/datasets/{AGML}{repo})", **where(place)})
                     for i, data in enumerate(pictures)]
         say(f"  {repo}: {sum(len(p) for p in got.values())} pictures")
-    random.Random(503).shuffle(out)
+    pass_random(503).shuffle(out)
     return out[:limit]
 
 
@@ -461,7 +461,7 @@ def build_gwhd_wheat(limit):
             boxes = r["BoxesString"].strip()
             count = 0 if boxes in ("", "no_box") else len(boxes.split(";"))
             sessions.setdefault(r["domain"], []).append((r["image_name"], count))
-    rng, items = random.Random(504), []
+    rng, items = pass_random(504), []
     per = limit // max(1, len(sessions)) + 1
     for domain, images in sorted(sessions.items()):
         rng.shuffle(images)
@@ -508,14 +508,14 @@ def build_poultry_droppings(limit):
             say(f"  poultry {cls}: not read ({str(e)[:100]})")
             continue
         names = [n for n in z.namelist() if n.lower().endswith((".jpg", ".jpeg", ".png"))]
-        random.Random(cls).shuffle(names)
+        pass_random(cls).shuffle(names)
         for n in names[:quota]:
             data = smaller(z.read(n))
             if data:
                 out.append((f"poultry-{cls}-{len(out)}.jpg", data,
                             {"question": "Do these chicken droppings show signs of disease?", "answer": answer,
                              "credit": POULTRY_CREDIT, **where("Tanzania")}))
-    random.Random(505).shuffle(out)
+    pass_random(505).shuffle(out)
     return out[:limit]
 
 
@@ -583,7 +583,7 @@ def build_inat_crops(limit):
                     items.append((f"inat-crop-{o['id']}.jpg", got[0], rows))
                     found += 1
         say(f"  iNaturalist {crop}: {found}")
-    random.Random(506).shuffle(items)
+    pass_random(506).shuffle(items)
     return with_twins(fetch_all(items[:int(limit * 1.1) + 2], workers=4, pause=0.3)[:limit])
 
 
@@ -611,7 +611,7 @@ def build_trashnet(limit):
             groups.setdefault(parts[-2], []).append(n)
     out, quota = [], limit // len(TRASHNET_ANSWERS) + 1
     for cls, names in sorted(groups.items()):
-        random.Random(cls).shuffle(names)
+        pass_random(cls).shuffle(names)
         for n in names[:quota]:
             data = smaller(z.read(n))
             if data:
@@ -619,7 +619,7 @@ def build_trashnet(limit):
                             {"question": ASK_BIN, "answer": TRASHNET_ANSWERS[cls],
                              "credit": "TrashNet (Gary Thung and Mindy Yang, 2017), MIT licence, "
                                        "https://github.com/garythung/trashnet"}))
-    random.Random(507).shuffle(out)
+    pass_random(507).shuffle(out)
     return out[:limit]
 
 
@@ -721,7 +721,7 @@ def build_taco_litter(limit):
                                                                                  f"{LOCAL_RULES}",
                          "credit": TACO_CREDIT})
         items.append((f"taco-{im['id']}.jpg", im["flickr_url"], rows))
-    random.Random(508).shuffle(items)
+    pass_random(508).shuffle(items)
     fetched = fetch_all(items[:int(limit * 1.1) + 2], workers=4, pause=0.2)[:limit]
     say(f"TACO: {len(fetched)} photos, {sum(1 for _, _, r in fetched if len(r) > 1)} with the bin question")
     return with_twins(fetched)
@@ -780,7 +780,7 @@ def build_plitter_street(limit):
         folder = (im.get("path") or "").split("/")[2] if (im.get("path") or "").count("/") >= 3 else ""
         if im["id"] in counts and im["file_name"] in inside and folder in PLITTER_PLACES:
             groups.setdefault(folder, []).append(im)
-    out, rng = [], random.Random(515)
+    out, rng = [], pass_random(515)
     quota = limit // max(1, len(groups)) + 1
     for folder, images in sorted(groups.items()):
         rng.shuffle(images)
@@ -905,13 +905,13 @@ def build_ccsn_clouds(limit):
             groups.setdefault(parts[1], []).append(n)
     out, quota = [], limit // len(CCSN_ANSWERS) + 1
     for cls, names in sorted(groups.items()):
-        random.Random(cls).shuffle(names)
+        pass_random(cls).shuffle(names)
         for n in names[:quota]:
             data = smaller(z.read(n))
             if data:
                 out.append((f"ccsn-{cls}-{len(out)}.jpg", data, {"question": "What kind of cloud is this?",
                                                                   "answer": CCSN_ANSWERS[cls], "credit": CCSN_CREDIT}))
-    random.Random(509).shuffle(out)
+    pass_random(509).shuffle(out)
     return out[:limit]
 
 
@@ -934,14 +934,14 @@ def build_weather_images(limit):
             groups.setdefault(m.group(1).lower(), []).append(n)
     out, quota = [], limit // len(MWD_ANSWERS) + 1
     for cls, names in sorted(groups.items()):
-        random.Random(cls).shuffle(names)
+        pass_random(cls).shuffle(names)
         for n in names[:quota]:
             data = smaller(z.read(n))
             if data:
                 out.append((f"weather-{cls}-{len(out)}.jpg", data,
                             {"question": "What is the weather like in this picture?", "answer": MWD_ANSWERS[cls],
                              "credit": MWD_CREDIT}))
-    random.Random(510).shuffle(out)
+    pass_random(510).shuffle(out)
     return out[:limit]
 
 
@@ -971,7 +971,7 @@ def build_eurosat(limit):
             groups.setdefault(parts[-2], []).append(n)
     out, quota = [], limit // len(EUROSAT_ANSWERS) + 1
     for cls, names in sorted(groups.items()):
-        random.Random(cls).shuffle(names)
+        pass_random(cls).shuffle(names)
         for n in names[:quota]:
             data = smaller(z.read(n))
             if data:
@@ -980,7 +980,7 @@ def build_eurosat(limit):
                              "answer": f"A satellite view, from straight above, of {EUROSAT_ANSWERS[cls]}. It is "
                                        "small and blurry: about 640 metres across, somewhere in Europe.",
                              "credit": EUROSAT_CREDIT}))
-    random.Random(511).shuffle(out)
+    pass_random(511).shuffle(out)
     return out[:limit]
 
 
@@ -1209,7 +1209,7 @@ def build_commons_land_industry(limit):
             say(f"  Commons {category}: stopped ({e})")
             break
         titles = [t for t in dict.fromkeys(titles) if t not in seen and not COMMONS_NOT_IT.search(t)]
-        random.Random(category).shuffle(titles)
+        pass_random(category).shuffle(titles)
         found = 0
         for title, url, credit, text in commons_entries(s, titles[:per_category * 3]):
             rows = commons_land_rows(category, question, answer, content, title, text, credit)
@@ -1220,7 +1220,7 @@ def build_commons_land_industry(limit):
             items.append((f"commons-land-{name}.jpg", standard_thumb(url), rows))
             found += 1
         say(f"Commons {category}: {found} free pictures ({len(titles)} files)")
-    random.Random(512).shuffle(items)
+    pass_random(512).shuffle(items)
     fetched = fetch_all(items[:int(limit * 1.1) + 2], workers=2, pause=0.5)
     return with_twins(fetched[:limit])
 
@@ -1339,7 +1339,7 @@ def haer_items(s, term, want, rng):
 def build_loc_haer(limit):
     """The HAER pack: for each search word in HAER_TERMS, items of the HABS/HAER/HALS collection, two photos each
     at most, the survey's caption and the place."""
-    s, rng, items = session(), random.Random(513), []
+    s, rng, items = session(), pass_random(513), []
     per_term = limit // len(HAER_TERMS) + 2
     for term in HAER_TERMS:
         if listing_out_of_time():          # leave the rest of the time for fetching what was found
@@ -1399,7 +1399,7 @@ def build_usda_ars(limit):
         paths += re.findall(r'href="(/oc/images/photos/(?:[a-z]{3}\d{2}/)?[a-z]?\d[\w-]*)"', page, re.I)
         time.sleep(1)
     paths = list(dict.fromkeys(paths))
-    random.Random(514).shuffle(paths)
+    pass_random(514).shuffle(paths)
     for path in paths:
         if len(items) >= limit * 1.2:
             break

@@ -86,13 +86,13 @@ import csv
 import io
 import json
 import math
-import random
 import re
 import sys
 import time
 
 import build_packs  # noqa: F401 - loaded first: food_packs and build_packs import each other
 from build_packs import session, clean, smaller, fetch_all, say, ALT_TEXT
+from build_packs import pass_random, new_only, note_source  # top-up passes (see build_packs)
 from food_packs import (listed, with_twins, count_pictures, oi_lines, oi_licence_name, commons_get, commons_members,
                         OI_LABELS, OI_CLASSES, OI_IMAGES, OI_PICTURE)
 from everyday_packs import OI_HOME
@@ -196,9 +196,9 @@ def build_clock_times(limit):
                           "credit": CLOCK_CREDIT + "photo from COCO (cocodataset.org), CC BY 2.0 or no known "
                                                    f"copyright restrictions, {url}"}))
     say(f"Clocks: {len(coco)} free COCO photos")
-    random.Random(62).shuffle(coco)
+    pass_random(62).shuffle(coco)
     items = items[:want // 2] + coco[:want - min(len(items), want // 2)]
-    random.Random(63).shuffle(items)
+    pass_random(63).shuffle(items)
     return fetch_all(items, workers=8)[:limit]
 
 
@@ -224,7 +224,7 @@ def build_seven_segment(limit):
     from huggingface_hub import hf_hub_download
     path = hf_hub_download(SEVEN_SEG_REPO, SEVEN_SEG_FILE, repo_type="dataset", revision=SEVEN_SEG_REVISION)
     table = pq.ParquetFile(path)
-    out, rng = [], random.Random(71)
+    out, rng = [], pass_random(71)
     for batch in table.iter_batches(batch_size=200, columns=["image", "text"]):
         for r in batch.to_pylist():
             text = clean(r.get("text"))
@@ -319,7 +319,7 @@ def build_open_images_home(limit):
     a pest, tool, device, personal, hairstyle or kitchen label (those open_images_objects does not ask about) whose
     own licence is free and that need no turning, and fetches them; the rarest kinds first, so bed bugs and
     glucose meters are not crowded out by hats."""
-    s, rng = session(), random.Random(81)
+    s, rng = session(), pass_random(81)
     wanted = set(OI_PESTS) | set(OI_HAIR) | set(OI_HELPERS) | set(OI_POTS)
     for group, _ in OI_GROUP_QUESTIONS:
         wanted |= set(group)
@@ -369,7 +369,7 @@ def build_open_images_home(limit):
     say(f"Open Images: {len(items)} free home photos")
     items.sort(key=lambda x: x[0])
     chosen = [x[1:] for x in items[:int(limit * 1.1) + 2]]
-    random.Random(82).shuffle(chosen)
+    pass_random(82).shuffle(chosen)
     return with_twins(fetch_all(chosen, workers=8)[:limit])
 
 
@@ -434,6 +434,7 @@ def commons_fetch(items, workers=2, raw=False):
     minute) and tries again, up to five times, instead of leaving the picture out. raw: the bytes as sent (a
     drawing's see-through PNG), not made into a JPEG."""
     import concurrent.futures
+    items = new_only(items)                    # (a top-up pass: only pictures not in the pack yet)
     s = session()
 
     def one(item):
@@ -449,6 +450,8 @@ def commons_fetch(items, workers=2, raw=False):
                 continue
             if r.status_code == 200:
                 data = r.content if raw else smaller(r.content)
+                if data:
+                    note_source(name, url)              # kept in the row, for a later top-up pass
                 return (name, data, row) if data else None
             if r.status_code not in (429, 500, 502, 503, 504):
                 return None
@@ -486,7 +489,7 @@ def build_commons_topic(specs, limit, prefix, adults_only=False):
     marked "child")."""
     s, items, seen = session(), [], set()
     order = list(specs)
-    random.Random(prefix).shuffle(order)
+    pass_random(prefix).shuffle(order)
     share = max(3, math.ceil(limit * 1.15 / max(1, len(order))))
     queues = []
     for spec in order:
@@ -501,7 +504,7 @@ def build_commons_topic(specs, limit, prefix, adults_only=False):
             category, deeper, rows, titles, must = q
             if titles is None:
                 titles = [t for t in category_files(s, category, deeper) if t not in seen]
-                random.Random(category).shuffle(titles)
+                pass_random(category).shuffle(titles)
                 say(f"Commons {category}: {len(titles)} files")
             batch, q[3] = titles[:max(3, share) * 2], titles[max(3, share) * 2:]
             if not batch:
@@ -527,7 +530,7 @@ def build_commons_topic(specs, limit, prefix, adults_only=False):
                 got += 1
             if not q[3]:
                 queues.remove(q)
-    random.Random(prefix + "-order").shuffle(items)
+    pass_random(prefix + "-order").shuffle(items)
     return with_twins(commons_fetch(items[:want])[:limit])
 
 
@@ -848,7 +851,7 @@ def build_laundry_symbols(limit):
         kind, meaning = LAUNDRY_SYMBOLS[title.split(":", 1)[-1]]
         symbols.append((kind, meaning, credit, picture, title))
         time.sleep(0.3)
-    out, rng = [], random.Random(91)
+    out, rng = [], pass_random(91)
     for kind, meaning, credit, picture, title in symbols:
         buffer = io.BytesIO()
         picture.save(buffer, "JPEG", quality=92)

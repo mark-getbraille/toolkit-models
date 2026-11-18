@@ -23,7 +23,6 @@ import csv
 import io
 import json
 import os
-import random
 import re
 import sys
 import tarfile
@@ -32,6 +31,7 @@ import time
 import zipfile
 
 from build_packs import session, clean, smaller, fetch_all, say  # noqa: F401
+from build_packs import pass_random, new_only  # top-up passes (see build_packs)
 from places import with_place
 
 SAFETY = "Check the packaging or ask a pharmacist to be sure."
@@ -181,7 +181,8 @@ def build_taiwan_pills(limit):
             seen.add(got[0])
             items.append((f"tw-{re.sub(r'[^0-9a-f-]', '', got[0].rsplit('/', 1)[-1].split('?')[0])[:40]}.jpg", *got))
     say(f"Taiwan FDA: {len(items)} usable pills of {len(records)} records")
-    random.Random(41).shuffle(items)
+    items = new_only(items)                    # (a top-up pass: only pills not in the pack yet)
+    pass_random(41).shuffle(items)
     return with_place(fetch_all(items[:int(limit * 1.05) + 2], workers=10, pause=0.0)[:limit],
                       "Taiwan")                                # photographed for Taiwan's FDA register
 
@@ -222,7 +223,7 @@ def build_pharmassist(limit):
                       {"question": "What medicine is in this blister pack?", "answer": pa_answer(r["Class_Label"]),
                        "credit": PA_CREDIT}))
     say(f"Pharmassist: {len(items)} original photos")
-    random.Random(42).shuffle(items)
+    pass_random(42).shuffle(items)
     return with_place(fetch_all(items[:int(limit * 1.05) + 2], workers=3, pause=0.3)[:limit],
                       "Chennai, India")                        # taken in Chennai (the dataset's record)
 
@@ -305,7 +306,7 @@ def ms_varied(pictures, limit):
             continue
         sources.add(source)
         groups.setdefault(tuple(sorted(p["counts"])), []).append(p)
-    rng = random.Random(43)
+    rng = pass_random(43)
     queues = [rng.sample(g, len(g)) for _, g in sorted(groups.items())]
     rng.shuffle(queues)
     out = []
@@ -357,7 +358,7 @@ def build_mediseg(limit):
     finally:
         if temporary:
             os.remove(path)
-    random.Random(44).shuffle(out)
+    pass_random(44).shuffle(out)
     return out[:limit]
 
 

@@ -40,13 +40,13 @@ import collections
 import concurrent.futures
 import html
 import json
-import random
 import re
 import sys
 import time
 
 import build_packs  # noqa: F401 - loaded first: the other pack files and build_packs import each other
 from build_packs import session, clean, say
+from build_packs import pass_random, already_in_pack  # top-up passes (see build_packs)
 from build_packs import listing_out_of_time  # noqa: E402
 from food_packs import listed, count_pictures
 from everyday_packs import RemoteZip, fetch_from_zip, a_or_an, number_word, plural
@@ -340,7 +340,8 @@ def build_fashionpedia(limit):
         candidates += fp_candidates(s, annotations, zip_url)
         if len(candidates) >= limit * 1.4 + 10:
             break
-    random.Random(61).shuffle(candidates)
+    candidates = [c for c in candidates if not already_in_pack(f"fashionpedia-{c[0]['file_name']}")]
+    pass_random(61).shuffle(candidates)
     candidates = candidates[:int(limit * 1.3) + 4]
 
     def credited(candidate):
@@ -374,7 +375,7 @@ def build_fashionpedia(limit):
         items = [(f"fashionpedia-{image['file_name']}", where[image["file_name"]], row) for image, row in wanted
                  if image["file_name"] in where]
         out += fetch_from_zip(zipped, items, workers=6)
-    random.Random(62).shuffle(out)
+    pass_random(62).shuffle(out)
     return out[:limit]
 
 

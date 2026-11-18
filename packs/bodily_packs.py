@@ -65,7 +65,6 @@ import concurrent.futures
 import csv
 import io
 import json
-import random
 import re
 import sys
 import time
@@ -73,6 +72,7 @@ import zipfile
 
 import build_packs  # noqa: F401 - loaded first: food_packs and build_packs import each other
 from build_packs import session, clean, smaller, fetch_all, say, article, inat_place, ALT_TEXT  # noqa: F401
+from build_packs import pass_random  # shuffles differently on a top-up pass (see build_packs)
 from food_packs import (with_twins, listed, count_pictures, oi_lines, oi_licence_name, commons_members, commons_entries,
                         commons_place, OI_CLASSES, OI_PICTURE)
 from everyday_packs import RemoteZip, fetch_from_zip, number_word
@@ -215,7 +215,7 @@ def build_scatspotter(limit):
                     and _minutes(last_with, stamp) <= 5:
                 negatives.append(f)
     say(f"ScatSpotter: {len(positives)} pictures with dog poop outlined, {len(negatives)} 'after' pictures without")
-    rng = random.Random(61)
+    rng = pass_random(61)
     rng.shuffle(positives)
     rng.shuffle(negatives)
     want_neg = max(1, limit // 3)
@@ -362,7 +362,7 @@ def build_inat_droppings(limit):
                           inat_rows(o, words, animal)))
         say(f"iNaturalist droppings of {latin}: {len(found)}")
         time.sleep(1.1)
-    random.Random(62).shuffle(items)
+    pass_random(62).shuffle(items)
     return with_twins(fetch_all(items[:int(limit * 1.1) + 2], workers=4, pause=0.3)[:limit])
 
 
@@ -466,8 +466,8 @@ def build_open_images_bodily(limit):
         item = (f"oibody-{image_id}.jpg", address, rows)
         (yes if any(v == 1 for v in found.values()) else no).append(item)
     say(f"Open Images: {len(yes)} usable photos with a bodily label confirmed, {len(no)} with only 'not there'")
-    random.Random(63).shuffle(yes)
-    random.Random(64).shuffle(no)
+    pass_random(63).shuffle(yes)
+    pass_random(64).shuffle(no)
     # Photos in Google's own store first (Flickr may refuse many requests in a row).
     yes.sort(key=lambda item: "flickr" in item[1])
     no.sort(key=lambda item: "flickr" in item[1])
@@ -563,7 +563,7 @@ def commons_category_items(s, category, deeper, per_category, seen):
             if not COMMONS_NOT_THIS.search(sub):
                 titles += commons_members(s, sub.split(":", 1)[-1], "file")
     titles = [t for t in dict.fromkeys(titles) if t not in seen and not COMMONS_NOT_THIS.search(t)]
-    random.Random(category).shuffle(titles)
+    pass_random(category).shuffle(titles)
     return commons_entries(s, titles[:per_category * 3]), len(titles)
 
 
@@ -609,7 +609,7 @@ def build_commons_bodily(limit):
         question, answer = COMMONS_FILES[title]
         items.append((f"commons-body-{safe_name(title.split(':', 1)[-1].rsplit('.', 1)[0])}.jpg", url,
                       [{"question": question, "answer": answer, "credit": credit, **MEDICAL}]))
-    random.Random(65).shuffle(items)
+    pass_random(65).shuffle(items)
     return with_twins(fetch_all(items[:int(limit * 1.1) + 2], workers=2, pause=0.5)[:limit])
 
 
@@ -687,7 +687,7 @@ def bodily_figures(query, want, prefix):
     s = session()
     records = europe_pmc(s, query, want * 4)
     say(f"Europe PMC: {len(records)} case reports with a matching figure caption")
-    random.Random(prefix).shuffle(records)
+    pass_random(prefix).shuffle(records)
 
     def one(record):
         """The usable figures of one article ([] when none)."""
@@ -879,7 +879,7 @@ def build_urine_samples(limit):
         m = re.match(r"(\d{3})_(.+)_F\d\.jpe?g$", name, re.I)
         if m:
             by_sample.setdefault(m.group(1), []).append(name)
-    rng, items = random.Random(66), []
+    rng, items = pass_random(66), []
     for sample, names in sorted(by_sample.items()):
         rng.shuffle(names)
         for name in names[:2]:

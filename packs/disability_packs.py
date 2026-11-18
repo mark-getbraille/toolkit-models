@@ -49,12 +49,12 @@ photos and scans, and others), with the sign-up and left-out collections listed 
 
 import csv
 import json
-import random
 import re
 import sys
 
 import build_packs  # noqa: F401 - loaded first: food_packs and build_packs import each other
 from build_packs import session, clean, smaller, fetch_all, say, ALT_TEXT, NARRATE  # noqa: F401
+from build_packs import pass_random  # shuffles differently on a top-up pass (see build_packs)
 from food_packs import (sentence, listed, with_twins, count_pictures, oi_lines, oi_licence_name,  # noqa: F401
                         commons_members, commons_entries, commons_place, OI_LABELS, OI_CLASSES, OI_IMAGES,
                         OI_PICTURE)
@@ -180,14 +180,14 @@ def build_open_images_disability(limit):
     # Take the labels in turn (the rarest first), so every kind of device and sport is there.
     queues = [items for _, items in sorted(by_label.items(), key=lambda kv: len(kv[1]))]
     for i, q in enumerate(queues):
-        random.Random(70 + i).shuffle(q)
+        pass_random(70 + i).shuffle(q)
     chosen, want = [], int(limit * 1.1) + 2
     while len(chosen) < want and any(queues):
         for q in queues:
             if q and len(chosen) < want:
                 chosen.append(q.pop())
     fetched = fetch_all(chosen, workers=8)
-    random.Random(71).shuffle(fetched)
+    pass_random(71).shuffle(fetched)
     return with_twins(fetched[:limit])
 
 
@@ -352,7 +352,7 @@ def build_commons_disability(limit):
                     if CHILD.search(sub):
                         young.update(files)
         titles = [t for t in dict.fromkeys(titles) if t not in seen and not COMMONS_NOT_IT.search(t)]
-        random.Random(category).shuffle(titles)
+        pass_random(category).shuffle(titles)
         found = 0
         for title, url, credit, text in commons_entries(s, titles[:per_category * 3]):
             rows = commons_rows(category, question, answer, title, text, credit, child=title in young)
@@ -365,7 +365,7 @@ def build_commons_disability(limit):
             if found >= per_category:
                 break
         say(f"Commons {category}: {found} free pictures ({len(titles)} files)")
-    random.Random(72).shuffle(items)
+    pass_random(72).shuffle(items)
     fetched = fetch_all(items[:int(limit * 1.1) + 2], workers=2, pause=0.5)
     return with_twins(fetched[:limit])
 
@@ -441,7 +441,7 @@ def build_tapad_tactile_paving(limit):
         z = remote_zip(TAPAD.format(zip_name), s)
         names = set(z.namelist())
         notes = sorted(n for n in names if n.startswith(f"{part}/annotations/") and n.endswith(".json"))
-        random.Random(f"tapad-{part}").shuffle(notes)
+        pass_random(f"tapad-{part}").shuffle(notes)
         want = (limit + 1) // 2 if part == "bicycle" else limit - len(out)
         taken = 0
         for note in notes:
@@ -463,7 +463,7 @@ def build_tapad_tactile_paving(limit):
                         [dict(r, credit=credit, **place) for r in rows]))
             taken += 1
         say(f"TaPaD {part}: {taken} pictures ({len(notes)} annotated)")
-    random.Random(73).shuffle(out)
+    pass_random(73).shuffle(out)
     return with_twins(out[:limit])
 
 

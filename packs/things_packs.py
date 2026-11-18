@@ -81,7 +81,6 @@ import gzip
 import io
 import json
 import math
-import random
 import re
 import sys
 import time
@@ -90,6 +89,7 @@ import zipfile
 
 import build_packs  # noqa: F401 - loaded first: food_packs and build_packs import each other
 from build_packs import session, clean, smaller, fetch_all, say, considered, ALT_TEXT
+from build_packs import pass_random  # shuffles differently on a top-up pass (see build_packs)
 from food_packs import (listed, with_twins, count_pictures, oi_lines, oi_licence_name, OI_LABELS, OI_CLASSES,
                         OI_IMAGES, OI_PICTURE)
 from everyday_packs import OI_HOME
@@ -288,7 +288,7 @@ def build_abo_products(limit):
     that have an English name and a main photo, and takes the shops' countries in turn (and, within a country, the
     product types in turn), so that India's many listings do not fill the pack; phone cases are held to a small
     share. Then fetches the catalogue photos (the originals, made smaller)."""
-    s, rng = session(), random.Random(91)
+    s, rng = session(), pass_random(91)
     by_country = collections.defaultdict(lambda: collections.defaultdict(list))
     seen_images = set()
     for part in "0123456789abcdef":
@@ -524,13 +524,13 @@ def build_open_images_in_use(limit):
         (rest if sport.search(things) or only_worn else first).append(item)
     say(f"Open Images relationships: {len(first)} pictures of tools, devices and household things in use, "
         f"{len(rest)} of sport, music or only things worn")
-    random.Random(93).shuffle(first)
-    random.Random(94).shuffle(rest)
+    pass_random(93).shuffle(first)
+    pass_random(94).shuffle(rest)
     # Household things first, but never more than two thirds sport and music.
     chosen = first[:int(limit * 1.1) + 2]
     chosen += rest[:max(0, int(limit * 1.1) + 2 - len(chosen))]
     fetched = fetch_all(chosen, workers=8)
-    random.Random(95).shuffle(fetched)
+    pass_random(95).shuffle(fetched)
     return with_twins(fetched[:limit])
 
 
@@ -618,7 +618,7 @@ def build_open_images_tech(limit):
     """The Open Images technology, electronics, building materials, workshop and kitchen gadget pack: reads the labels
     people checked on the validation and test sets (about 120 MB of lists, read as they download), keeps photos with
     a confirmed label of this pack whose own licence is free, rarest labels first."""
-    s, rng = session(), random.Random(97)
+    s, rng = session(), pass_random(97)
     mids = {}
     for line in csv.reader(oi_lines(s, OI_CLASSES)):
         if len(line) == 2:
@@ -655,7 +655,7 @@ def build_open_images_tech(limit):
     items.sort(key=lambda x: (x[0], x[1]))
     say(f"Open Images: {len(items)} free photos for this pack")
     fetched = fetch_all([x[2] for x in items[:int(limit * 1.1) + 2]], workers=8)
-    random.Random(98).shuffle(fetched)
+    pass_random(98).shuffle(fetched)
     return with_twins(fetched[:limit])
 
 
@@ -808,7 +808,7 @@ def build_commons_list(specs, limit, prefix):
     marked "child"."""
     s, items, seen = session(), [], set()
     order = list(specs)
-    random.Random(prefix).shuffle(order)
+    pass_random(prefix).shuffle(order)
     share = max(3, math.ceil(limit * 1.15 / max(1, len(order))))
     queues = [[spec[0], spec[1], spec[2], None, spec[3] if len(spec) > 3 else ""] for spec in order]
     want, rounds = int(limit * 1.15) + 2, 0
@@ -820,7 +820,7 @@ def build_commons_list(specs, limit, prefix):
             category, deeper, rows, titles, country = q
             if titles is None:
                 titles = [t for t in category_files(s, category, deeper) if t not in seen]
-                random.Random(category).shuffle(titles)
+                pass_random(category).shuffle(titles)
                 say(f"Commons {category}: {len(titles)} files")
             batch, q[3] = titles[:share * 2], titles[share * 2:]
             if not batch:
@@ -845,7 +845,7 @@ def build_commons_list(specs, limit, prefix):
                 got += 1
             if not q[3]:
                 queues.remove(q)
-    random.Random(prefix + "-order").shuffle(items)
+    pass_random(prefix + "-order").shuffle(items)
     return with_twins(commons_fetch(items[:want])[:limit])
 
 
@@ -967,7 +967,7 @@ def build_brick_quality(limit):
     queues = []
     for key in sorted(groups):
         names = groups[key]
-        random.Random(str(key)).shuffle(names)
+        pass_random(str(key)).shuffle(names)
         queues.append((key, names))
     out = []
     while len(out) < limit and any(names for _, names in queues):
@@ -1024,7 +1024,7 @@ def build_codd_materials(limit):
             stem = name.rsplit(".", 1)[0]
             if name.lower().endswith(".jpg") and f"{stem}.xml" in files:
                 pairs.append((f"{folder}-{stem}", url, files[f"{stem}.xml"]))
-    random.Random(99).shuffle(pairs)
+    pass_random(99).shuffle(pairs)
     say(f"CODD: {len(pairs)} photos with labels listed")
     items = []
     for key, picture, labels in pairs[:int(limit * 1.1) + 2]:
@@ -1072,7 +1072,7 @@ def build_nyuad_materials(limit):
         if folder in folders:
             files = [(n, u) for n, u, _ in mendeley_files(s, NYUAD_DATASET, 1, folders[folder])
                      if n.lower().endswith((".jpg", ".jpeg", ".png"))]
-            random.Random(folder).shuffle(files)
+            pass_random(folder).shuffle(files)
             queues.append((answer, files))
     items = []
     while len(items) < limit and any(f for _, f in queues):

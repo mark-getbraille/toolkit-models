@@ -24,13 +24,13 @@ limit counts pictures.
 
 import csv
 import json
-import random
 import re
 import sys
 import time
 
 from build_packs import (session, clean, smaller, fetch_all, first_sentences, say, article,  # noqa: F401
                          ALT_TEXT, COMMONS_API, COMMONS_FREE, LONG_SIDE, considered)
+from build_packs import pass_random, already_in_pack  # top-up passes (see build_packs)
 from places import where, with_place, country_at
 
 
@@ -254,8 +254,8 @@ def build_open_images_food(limit):
             say(f"  {question} {answer}: {n}")
     say(f"Open Images: {len(special)} pictures with an egg, frozen or mould question, {len(items)} more with "
         f"'{OI_ASK_FOOD}' only")
-    random.Random(41).shuffle(special)
-    random.Random(42).shuffle(items)
+    pass_random(41).shuffle(special)
+    pass_random(42).shuffle(items)
     chosen = (special + items)[:int(limit * 1.1) + 2]
     fetched = fetch_all(chosen, workers=8)
     return with_twins(fetched[:limit])
@@ -351,7 +351,7 @@ def build_grocery_store(limit):
                            "credit": "Grocery Store Dataset (Klasson, Zhang and Kjellstrom, 2019), MIT licence, "
                                      "https://github.com/marcusklasson/GroceryStoreDataset"}))
     say(f"Grocery Store Dataset: {len(items)} natural photos in {len(classes)} classes")
-    random.Random(43).shuffle(items)
+    pass_random(43).shuffle(items)
     # Taken in 18 grocery stores in Sweden (the paper names no city; the products are from Swedish shops).
     return with_place(fetch_all(items[:int(limit * 1.05) + 2], workers=8)[:limit], "Sweden")
 
@@ -412,7 +412,7 @@ def build_fish_eyes(limit):
                        "credit": "The Freshness of the Fish Eyes Dataset (Prasetyo, Purbaningtyas, Adityo, Suciati "
                                  "and Fatichah), Mendeley Data xzyx7pbr3w, CC BY 4.0"}))
     say(f"Fish eyes: {len(items)} photos in {len(folders)} folders")
-    random.Random(44).shuffle(items)
+    pass_random(44).shuffle(items)
     return fetch_all(items[:int(limit * 1.05) + 2], workers=4, pause=0.1)[:limit]
 
 
@@ -530,6 +530,8 @@ def commons_entries(s, titles):
             meta = info.get("extmetadata") or {}
             licence = clean((meta.get("LicenseShortName") or {}).get("value"))
             upper = licence.upper()
+            if already_in_pack(url=info.get("thumburl")):
+                continue                               # in the published pack already (a top-up pass)
             if not COMMONS_FREE.match(licence) or "SA" in upper or "NC" in upper or "ND" in upper \
                     or info.get("mime") not in ("image/jpeg", "image/png") or not info.get("thumburl"):
                 considered(p["title"], info.get("thumburl") or info.get("descriptionurl"),
@@ -564,7 +566,7 @@ def build_commons_food(limit):
                 if not COMMONS_NOT_FOOD.search(sub):
                     titles += commons_members(s, sub.split(":", 1)[-1], "file")
         titles = [t for t in dict.fromkeys(titles) if t not in seen]
-        random.Random(category).shuffle(titles)
+        pass_random(category).shuffle(titles)
         found = 0
         for title, url, credit, text in commons_entries(s, titles[:per_category * 3]):
             if category == "Rhizopus stolonifer" and not COMMONS_ON_FOOD.search(f"{title} {text}"):
@@ -579,7 +581,7 @@ def build_commons_food(limit):
             if found >= per_category:
                 break
         say(f"Commons {category}: {found} free pictures ({len(titles)} files)")
-    random.Random(45).shuffle(items)
+    pass_random(45).shuffle(items)
     fetched = fetch_all(items[:int(limit * 1.1) + 2], workers=2, pause=0.5)
     return with_twins(fetched[:limit])
 

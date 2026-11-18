@@ -82,13 +82,13 @@ are kit entries in training-kit/kit/graphic_sources.py:
 """
 
 import json
-import random
 import re
 import sys
 import time
 
 import build_packs  # noqa: F401 - loaded first: the other pack files and build_packs import each other
 from build_packs import session, clean, say, NARRATE
+from build_packs import pass_random  # shuffles differently on a top-up pass (see build_packs)
 from build_packs import listing_out_of_time
 from food_packs import count_pictures, commons_members, commons_entries, commons_place
 from expression_packs import CHILD
@@ -301,7 +301,7 @@ def loc_graphic_items(s, path, extra, total, name, added, least, want, rng, answ
 def build_loc_graphic(key, limit):
     """A Library of Congress pack of LOC_GRAPHIC_SETS: records from each set (the first set of loc_civil_war, the
     big one, gets most), their titles as answers."""
-    s, rng, items, answers = session(), random.Random(sum(map(ord, key))), [], set()
+    s, rng, items, answers = session(), pass_random(sum(map(ord, key))), [], set()
     sets = LOC_GRAPHIC_SETS[key]
     total = sum(n for _, _, n, _, _, _ in sets)
     for path, extra, n, name, added, least in sets:
@@ -394,7 +394,7 @@ def nara_place(record):
 def build_nara_war(limit):
     """The NARA Signal Corps pack: for each of NARA_WORDS, a few random pages of the series' search, the records
     marked "Unrestricted" with a picture, their title (or scope note when it is longer) as the answer."""
-    s, rng, items, answers = session(), random.Random(83), [], set()
+    s, rng, items, answers = session(), pass_random(83), [], set()
     want = int(limit * 1.4 / len(NARA_WORDS)) + 3
     for word in NARA_WORDS:
         found = 0
@@ -462,7 +462,7 @@ def build_ushmm(limit):
     """The USHMM pack: photographs whose only rights statement is "Public Domain", found with USHMM_WORDS (the
     empty word: random pages of all of them), the museum's caption as the answer and the place from the record.
     The museum's keywords (CORPSES, HUMAN REMAINS ...) count when the pictures are marked graphic."""
-    s, rng, items, seen = session(), random.Random(89), [], set()
+    s, rng, items, seen = session(), pass_random(89), [], set()
     want = int(limit * 1.4 / len(USHMM_WORDS)) + 3
     for word in USHMM_WORDS:
         found = 0
@@ -632,14 +632,14 @@ def build_commons(key, categories, limit, safety=False):
     categories share the limit; a file is used once, under the first category it is met in."""
     s, items, seen = session(), [], set()
     if QUICK_CATEGORIES:                              # a quick check (main --categories): only a few categories
-        categories = dict(random.Random(key).sample(sorted(categories.items()), min(QUICK_CATEGORIES,
+        categories = dict(pass_random(key).sample(sorted(categories.items()), min(QUICK_CATEGORIES,
                                                                                      len(categories))))
     per_category = max(6, limit // len(categories) * 2)
     for category, value in categories.items():
         question, answer, deeper = value if safety else (None, None, value)
         titles = commons_titles(s, category, deeper)
         titles = [t for t in titles if t not in seen]
-        random.Random(category).shuffle(titles)
+        pass_random(category).shuffle(titles)
         found = 0
         for title, url, credit, text in commons_entries(s, titles[:per_category * 3]):
             described = commons_answer(text)

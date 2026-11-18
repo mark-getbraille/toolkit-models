@@ -38,7 +38,6 @@ Animals:
 import csv
 import io
 import json
-import random
 import re
 import struct
 import sys
@@ -48,6 +47,7 @@ import zlib
 
 import build_packs  # noqa: F401 - loaded first: food_packs and build_packs import each other
 from build_packs import out_of_time, session, clean, smaller, fetch_all, say, article  # noqa: F401
+from build_packs import pass_random  # shuffles differently on a top-up pass (see build_packs)
 from food_packs import (sentence, listed, with_twins, count_pictures, oi_lines, oi_licence_name,  # noqa: F401
                         commons_members, commons_entries, OI_LABELS, OI_CLASSES, OI_IMAGES, OI_PICTURE,
                         COMMONS_NOT_FOOD, commons_place)
@@ -364,7 +364,7 @@ def build_open_images_objects(limit):
     """The Open Images household pack's pictures: reads the labels people checked on the validation and test sets
     (about 120 MB of lists, read as they download), keeps photos with a confirmed household label whose own licence
     is free and that need no turning, and fetches them."""
-    s, rng = session(), random.Random(51)
+    s, rng = session(), pass_random(51)
     mids = {}
     for line in csv.reader(oi_lines(s, OI_CLASSES)):
         if len(line) == 2:
@@ -403,7 +403,7 @@ def build_open_images_objects(limit):
         items.append((f"oi-home-{image_id}.jpg", OI_PICTURE.format(subset=subset, image_id=image_id),
                       [dict(r, credit=credit) for r in rows]))
     say(f"Open Images: {len(items)} free household photos")
-    random.Random(52).shuffle(items)
+    pass_random(52).shuffle(items)
     fetched = fetch_all(items[:int(limit * 1.1) + 2], workers=8)
     return with_twins(fetched[:limit])
 
@@ -549,7 +549,7 @@ def build_orbit(limit):
     """The ORBIT pack's pictures. Reads the dataset's frame annotations (a 14 MB zip from its GitHub repository), picks
     two frames of each video, finds them in the central directory of the figshare zips (validation, then test, then
     train; the zips are never downloaded whole) and reads just those frames."""
-    s, rng = session(), random.Random(53)
+    s, rng = session(), pass_random(53)
     notes = zipfile.ZipFile(io.BytesIO(s.get(ORBIT_ANNOTATIONS, timeout=600).content))
     out = []
     for split, url in ORBIT_ZIPS.items():
@@ -615,7 +615,7 @@ def build_core50(limit, every=40):
             items.append((f"core50-s{m.group(1)}-o{m.group(2)}-{m.group(3)}.jpg", (offset, csize, method),
                           {"question": "What is this?", "answer": answer, "credit": CORE50_CREDIT}))
     say(f"CORe50: {len(items)} frames chosen")
-    random.Random(54).shuffle(items)
+    pass_random(54).shuffle(items)
     return fetch_from_zip(zipped, items[:int(limit * 1.02) + 2])[:limit]
 
 
@@ -778,7 +778,7 @@ def lila_collection(s, row, taxa, quota, rng):
 def build_lila_camera_traps(limit):
     """The LILA camera-trap pack's pictures: the collections share the limit; night pictures (black and white,
     taken with an infrared flash) are said to be so."""
-    s, rng = session(), random.Random(55)
+    s, rng = session(), pass_random(55)
     rows = {r["name"]: r for r in csv.DictReader(io.StringIO(s.get(LILA_LIST, timeout=120).text))}
     taxa = lila_taxa(s)
     chosen = [rows[name] for name in LILA_SETS if name in rows]
@@ -857,7 +857,7 @@ def build_gbif_species(limit, per_species=2):
     from the group's 60 biggest datasets (not iNaturalist; datasets weighted by the square root of their size, so
     small ones count too), at random places in each dataset's first 3,000 records, keeping photos whose own licence
     is free, at most per_species photos of a species."""
-    s, rng = session(), random.Random(56)
+    s, rng = session(), pass_random(56)
     names, titles, items = {}, {}, []
     per_group = -(-int(limit * 1.15) // len(GBIF_GROUPS))
     for taxon, question in GBIF_GROUPS:
@@ -953,7 +953,7 @@ def breed_name(category, animal):
 def build_commons_breeds(limit, per_breed=4):
     """The Commons breeds pack's pictures: the breeds of every animal taken in turn (in a shuffled order), a few free
     pictures from each breed's category; drawings, art and signs left out."""
-    s, rng = session(), random.Random(57)
+    s, rng = session(), pass_random(57)
     queues = []
     for animal, parent, question in COMMONS_BREEDS:
         breeds = [c for c in commons_members(s, parent, "subcat") if not BREED_NOT_ONE.search(c.split(":", 1)[-1])]

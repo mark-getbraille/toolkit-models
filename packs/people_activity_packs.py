@@ -76,7 +76,6 @@ import csv
 import json
 import math
 import os
-import random
 import re
 import sys
 import tempfile
@@ -85,6 +84,7 @@ import zipfile
 
 import build_packs  # noqa: F401 - loaded first: food_packs and build_packs import each other
 from build_packs import session, fetch_all, say, considered, listing_out_of_time, ALT_TEXT, NARRATE, COCO_LICENCES
+from build_packs import pass_random  # shuffles differently on a top-up pass (see build_packs)
 from food_packs import listed, with_twins, count_pictures, oi_lines, OI_CLASSES, OI_LABELS, OI_IMAGES, OI_PICTURE
 from expression_packs import mark_child, child_count, OI_CHILD
 from home_packs import commons_fetch, file_name, NUDE, FIRST_PERSON, NOT_RESPECTFUL
@@ -395,7 +395,7 @@ def vcoco_items(photos, credit_format=VCOCO_CREDIT):
 def build_vcoco_actions(limit):
     """The vcoco_actions pack's rows (no pictures: the kit fetches them from COCO): [(None, None, row)]."""
     items = vcoco_items(coco_photos(COCO_FREE))
-    random.Random(141).shuffle(items)
+    pass_random(141).shuffle(items)
     say(f"V-COCO: {len(items)} rows")
     return [(None, None, row) for _, row in items[:limit]]
 
@@ -576,7 +576,7 @@ def vg_items(photos, credit_format=VG_CREDIT):
 def build_vg_people_actions(limit):
     """The vg_people_actions pack's rows (no pictures: the kit fetches them from COCO): [(None, None, row)]."""
     items = vg_items(coco_photos(COCO_FREE))
-    random.Random(142).shuffle(items)
+    pass_random(142).shuffle(items)
     say(f"Visual Genome: {len(items)} rows")
     return [(None, None, row) for _, row in items[:limit]]
 
@@ -586,11 +586,11 @@ def build_coco_actions(limit, licences):
     from each source where both have enough."""
     photos = coco_photos(licences, note=False)
     first, second = vcoco_items(photos), vg_items(photos)
-    random.Random(143).shuffle(first)
-    random.Random(144).shuffle(second)
+    pass_random(143).shuffle(first)
+    pass_random(144).shuffle(second)
     take = max(limit // 2, limit - len(second))
     rows = [r for _, r in first[:take]] + [r for _, r in second[:limit - min(take, len(first))]]
-    random.Random(145).shuffle(rows)
+    pass_random(145).shuffle(rows)
     say(f"COCO rows under {', '.join(COCO_LICENCES[n] for n in licences)}: {len(first)} V-COCO, {len(second)} Visual "
         f"Genome; {len(rows)} kept")
     return [(None, None, r) for r in rows[:limit]]
@@ -745,7 +745,7 @@ def build_open_images_activities(limit, train=None, train_bytes=None):
     people whose own licence is free and that need no turning, takes the activities in turn (rarest first, so every
     activity gets in) and fetches the photos."""
     from expression_packs import oi_read_photos, OI_TRAIN_LABELS, OI_TRAIN_IMAGES
-    s, rng = session(), random.Random(146)
+    s, rng = session(), pass_random(146)
     mids = {}
     for line in csv.reader(oi_lines(s, OI_CLASSES)):
         if len(line) == 2:
@@ -929,7 +929,7 @@ def build_commons_daily_life(limit):
     at half the time limit (listing_out_of_time) and fetches what it found."""
     s, items, seen = session(), [], set()
     specs = commons_daily_specs()
-    random.Random("daily").shuffle(specs)
+    pass_random("daily").shuffle(specs)
     share = max(3, math.ceil(limit * 1.15 / max(1, len(specs))))
     want = int(limit * 1.15) + 2
     queues = [[spec, None] for spec in specs]
@@ -943,7 +943,7 @@ def build_commons_daily_life(limit):
             if files is None:
                 found = category_files(s, category, deeper)
                 files = [t for t in found if t not in seen and not DAILY_NOT_A_PHOTO.search(t)]
-                random.Random(category).shuffle(files)
+                pass_random(category).shuffle(files)
                 say(f"Commons {category}: {len(files)} files")
             batch, q[1] = files[:share * 2], files[share * 2:]
             if not batch:
@@ -974,7 +974,7 @@ def build_commons_daily_life(limit):
                 got += 1
             if not q[1]:
                 queues.remove(q)
-    random.Random("daily-order").shuffle(items)
+    pass_random("daily-order").shuffle(items)
     return with_twins(commons_fetch(items[:want])[:limit])
 
 
@@ -1008,13 +1008,13 @@ def build_dollar_street_routines(limit):
     from world_life_packs import ds_hits, ds_photographers, DS_PAGE
     s, items, photographers, seen = session(), [], {}, set()
     topics = sorted(DS_ROUTINES)
-    random.Random(147).shuffle(topics)
+    pass_random(147).shuffle(topics)
     per_topic = max(1, math.ceil(limit * 1.15 / len(topics)))
     for topic in topics:
         if len(items) >= limit * 1.15 or listing_out_of_time():
             break
         hits = [h for h in ds_hits(s, topic) if (h.get("images") or {}).get("full1024") and h["id"] not in seen]
-        random.Random(topic).shuffle(hits)
+        pass_random(topic).shuffle(hits)
         for h in hits[:per_topic]:
             seen.add(h["id"])
             place = h.get("place") or {}
@@ -1032,7 +1032,7 @@ def build_dollar_street_routines(limit):
                 row.update(where(country_named(country) or country))
             items.append((f"ds-routine-{h['id']}.jpg", h["images"]["full1024"], [row]))
         say(f"Dollar Street {topic}: {len(hits)} photos")
-    random.Random(148).shuffle(items)
+    pass_random(148).shuffle(items)
     return with_twins(fetch_all(items[:int(limit * 1.15) + 2], workers=4, pause=0.2)[:limit])
 
 
