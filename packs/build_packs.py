@@ -1533,6 +1533,11 @@ PACKS.update(STATE_PACKS)
 from state_web_packs import STATE_WEB_PACKS
 PACKS.update(STATE_WEB_PACKS)
 
+# Old US civil defense booklets and films (packs/civil_defense_packs.py): booklet drawings with their captions and
+# public-domain film stills; graphic and child rows marked.
+from civil_defense_packs import CIVIL_DEFENSE_PACKS
+PACKS.update(CIVIL_DEFENSE_PACKS)
+
 # Current medicines, medical supplies and instruments, and veterinary medicines (packs/med_vet_packs.py). Its Voice of
 # America pack (voa_commons_photos) is not used: its news photos are mostly named politicians at official events.
 from med_vet_packs import MED_VET_PACKS

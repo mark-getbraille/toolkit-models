@@ -2029,6 +2029,14 @@ SOURCES = [
            "Public domain or CC BY, each Commons file's own licence checked", "US state agencies via Wikimedia Commons (credited in CREDITS.txt)", "permissive", 800, 10, prepare_pack, "about 200 MB"),
     Source("commons_state_community", "US cities, counties and state agencies at work in their communities (public works, events, redevelopment, archives; Wikimedia Commons, ready-made pack)",
            "Public domain or CC BY, each Commons file's own licence checked", "US state agencies via Wikimedia Commons (credited in CREDITS.txt)", "permissive", 2500, 20, prepare_pack, "about 600 MB"),
+    # Old US civil defense booklets and films (packs/civil_defense_packs.py); the UK, Canadian, Australian and NZ
+    # material is in civil_defense_sources.py (research and non-commercial).
+    Source("cd_booklets", "Drawings from US civil defense booklets, 1950 to 1985, with their captions (ready-made pack)",
+           "Public domain (US government works, 17 U.S.C. 105)", "US civil defense agencies, via the Internet Archive, https://archive.org",
+           "permissive", 1200, 20, prepare_pack, "about 150 MB"),
+    Source("cd_films", "Stills from US civil defense films, 1950s to 1970s (ready-made pack)",
+           "Public domain (public-domain mark or US government work)", "Prelinger Archives and US government films, via the Internet Archive, https://archive.org",
+           "permissive", 1200, 20, prepare_pack, "about 120 MB"),
     # Non-profits and field manuals (packs/ngo_packs.py, packs/field_manual_packs.py).
     Source("owid_charts", "Charts from Our World in Data: what each chart shows and where its data come from (ready-made pack)",
            "CC BY 4.0 (https://ourworldindata.org/faqs)", "Our World in Data (Global Change Data Lab), CC BY 4.0 (each chart's page in CREDITS.txt)", "permissive", 3000, 20, prepare_pack, "about 250 MB"),
@@ -2277,6 +2285,8 @@ PEOPLE_AND_BODILY_PACK_KEYS = (
     "caltrans_cctv",
     # field_manual_packs.py: many drawings show soldiers
     "field_manual_figures",
+    # civil_defense_packs.py: civil defense booklets and film stills (people, attack, schoolchildren)
+    "cd_booklets", "cd_films",
 )
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + PEOPLE_AND_BODILY_PACK_KEYS
 
@@ -2769,3 +2779,17 @@ _state_web_ok = set(getattr(_state_web, "STATE_WEB_PICTURE_MAKING_OK", ()) or ()
 PERSONAL_PICTURE_MAKING_OK |= _state_web_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in STATE_WEB_SOURCES if s.key not in _state_web_ok)
 _add_collections(STATE_WEB_SOURCES)
+
+# Civil defence material that is not open (UK Home Office and "Protect and Survive" booklets and films, Australian
+# and NZ handbooks: research; Canadian EMO pamphlets: non-commercial); the file may be missing.
+try:
+    import civil_defense_sources as _cd  # noqa: E402
+except ImportError as _e:
+    _cd = None
+    if getattr(_e, "name", None) != "civil_defense_sources":
+        say(f"(The civil defence collections could not be loaded: {_e}. They are left out.)")
+CIVIL_DEFENSE_SOURCES = list(getattr(_cd, "CIVIL_DEFENSE_SOURCES", []) or [])
+_cd_ok = set(getattr(_cd, "CIVIL_DEFENSE_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _cd_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in CIVIL_DEFENSE_SOURCES if s.key not in _cd_ok)
+_add_collections(CIVIL_DEFENSE_SOURCES)

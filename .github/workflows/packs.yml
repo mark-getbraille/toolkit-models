@@ -100,7 +100,7 @@ jobs:
                    "ca_road_signs", "commons_ca_shops", "commons_ca_holidays", "commons_ca_eating_out", "commons_ca_getting_around",
                    "commons_ca_public_places", "commons_ca_archives", "commons_ca_provincial", "commons_ca_daily_life",
                    "dpla_campus", "commons_college_streams", "commons_university_archives",
-                   "gso_objects", "oi_crowdsourced", "pubtabnet_tables", "caltrans_cctv", "owid_charts", "field_manual_figures"]
+                   "gso_objects", "oi_crowdsourced", "pubtabnet_tables", "caltrans_cctv", "owid_charts", "field_manual_figures", "cd_booklets", "cd_films"]
           words = [w for w in sys.argv[1].split(",") if w]
           # "key+" is a top-up pass of key and "key?" a needs-only run (kept with the mark, which the build job reads);
           # "all?" asks for a needs-only run of every pack.
@@ -144,6 +144,10 @@ jobs:
             ksamsok|rijksmuseum|coco_cn|europeana_fi|europeana_cs|europeana_hu|europeana_el|europeana_no|europeana_pl|smk|anefo)
               python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
               python -m pip install "transformers==4.57.6" "sentencepiece==0.2.1" "sacremoses==0.1.1" ;;
+            cd_booklets)
+              python -m pip install numpy "pypdfium2==5.15.2" ;;
+            cd_films)
+              python -m pip install numpy && sudo apt-get update && sudo apt-get install -y ffmpeg ;;
             us_federal_forms|field_manual_figures)
               python -m pip install "pypdfium2==5.15.2" ;;
             seoul_sidewalks|urine_samples)
@@ -410,6 +414,8 @@ jobs:
             caltrans_cctv) limit=2000 ;;
             owid_charts) limit=3000 ;;
             field_manual_figures) limit=2500 ;;
+            cd_booklets) limit=1200 ;;
+            cd_films) limit=1200 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in
