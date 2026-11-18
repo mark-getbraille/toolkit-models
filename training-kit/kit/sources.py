@@ -1996,6 +1996,19 @@ SOURCES = [
     Source("imageinwords", "Photos with very detailed human descriptions (ImageInWords on DOCCI photos, ready-made pack)",
            "CC BY 4.0 (descriptions and photos, Google)",
            "ImageInWords (Garg et al., 2024) and DOCCI (Google), CC BY 4.0", "permissive", 500, 10, prepare_pack, "about 120 MB"),
+    # Household devices (packs/device_packs.py): make, model and year from Wikidata product models, Commons device
+    # categories and the Smithsonian's household devices. Files naming a person are left out. The share-alike and CO3D
+    # entries are in device_sources.py.
+    Source('wikidata_devices', 'What make and model is this? Household devices from Wikidata product models (ready-made pack)',
+           'Data CC0 (Wikidata); captions CC0; pictures CC0, public domain or CC BY, each author credited',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt; model facts from Wikidata (CC0)', "permissive",
+           2700, 20, prepare_pack, 'about 1.3 GB'),
+    Source('commons_devices', 'VCRs, camcorders, Walkmans, answering machines, lawn tractors, fans and more (Wikimedia Commons, ready-made pack)',
+           'Captions CC0; pictures CC0, public domain or CC BY, each author credited',
+           'Wikimedia Commons authors, credited in ATTRIBUTION.txt', "permissive", 2200, 20, prepare_pack, 'about 600 MB'),
+    Source('nmah_devices', 'Household devices in the National Museum of American History (Smithsonian, ready-made pack)',
+           'CC0 (Smithsonian Open Access)', 'National Museum of American History, Smithsonian Institution, CC0',
+           "permissive", 140, 10, prepare_pack, 'about 90 MB'),
     Source('skin_lesion_photos', 'Skin spots photographed with a phone, adults (PAD-UFES-20, ready-made pack)',
            'CC BY 4.0 (Mendeley Data zr7vgbcyr2)',
            'PAD-UFES-20 (Pacheco et al., 2020), CC BY 4.0', "permissive", 2000, 20, prepare_pack, 'about 400 MB', content="medical"),
@@ -2507,3 +2520,17 @@ _us_modern_ok = set(getattr(_us_modern, "US_MODERN_PICTURE_MAKING_OK", ()) or ()
 PERSONAL_PICTURE_MAKING_OK |= _us_modern_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in US_MODERN_SOURCES if s.key not in _us_modern_ok)
 _add_collections(US_MODERN_SOURCES)
+
+# Household device collections that are not open (Commons BY-SA device and model photos; CO3D stills, research use);
+# the file may be missing.
+try:
+    import device_sources as _device  # noqa: E402
+except ImportError as _e:
+    _device = None
+    if getattr(_e, "name", None) != "device_sources":
+        say(f"(The household device collections could not be loaded: {_e}. They are left out.)")
+DEVICE_SOURCES = list(getattr(_device, "DEVICE_SOURCES", []) or [])
+_device_ok = set(getattr(_device, "DEVICE_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _device_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in DEVICE_SOURCES if s.key not in _device_ok)
+_add_collections(DEVICE_SOURCES)

@@ -1495,6 +1495,10 @@ PACKS.update(US_PACKS)
 from us_modern_packs import US_MODERN_PACKS
 PACKS.update(US_MODERN_PACKS)
 
+# Household devices: Wikidata product models (make, model, year), Commons device categories, Smithsonian devices.
+from device_packs import DEVICE_PACKS
+PACKS.update(DEVICE_PACKS)
+
 
 def sha256_of(path):
     """The SHA-256 of a file."""

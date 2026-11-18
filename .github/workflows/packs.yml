@@ -90,7 +90,8 @@ jobs:
                    "loc_habs_houses", "commons_us_homes", "commons_us_streets", "commons_us_cars", "inaturalist_us",
                    "commons_us_money", "us_road_signs", "commons_packaging",
                    "commons_us_agencies", "commons_us_controls", "commons_us_holidays", "commons_us_eating_out",
-                   "commons_us_getting_around", "commons_us_public_places", "us_federal_forms", "imageinwords"]
+                   "commons_us_getting_around", "commons_us_public_places", "us_federal_forms", "imageinwords",
+                   "wikidata_devices", "commons_devices", "nmah_devices"]
           words = [w for w in sys.argv[1].split(",") if w]
           # "key+" is a top-up pass of key and "key?" a needs-only run (kept with the mark, which the build job reads);
           # "all?" asks for a needs-only run of every pack.
@@ -357,6 +358,9 @@ jobs:
             commons_us_public_places) limit=3000 ;;
             us_federal_forms) limit=200 ;;
             imageinwords) limit=500 ;;
+            wikidata_devices) limit=3000 ;;
+            commons_devices) limit=2500 ;;
+            nmah_devices) limit=150 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in

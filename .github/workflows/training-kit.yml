@@ -75,7 +75,7 @@ jobs:
             --hidden-import disability_sources --hidden-import review_sources --hidden-import adult_review_sources --hidden-import vintage_review_sources --hidden-import permission_sources `
             --hidden-import service_sources --hidden-import bodily_sources --hidden-import culture_sources --hidden-import land_industry_sources `
             --hidden-import home_sources --hidden-import events_safety_sources --hidden-import safety_rites_sources `
-            --hidden-import things_sources --hidden-import mechanical_sources --hidden-import people_activity_sources --hidden-import us_sources --hidden-import us_modern_sources `
+            --hidden-import things_sources --hidden-import mechanical_sources --hidden-import people_activity_sources --hidden-import us_sources --hidden-import us_modern_sources --hidden-import device_sources `
             training-kit/wizard/training_wizard.py
           $p = Start-Process -FilePath "dist\Picture Model Training.exe" -ArgumentList "--self-test" -Wait -PassThru `
             -RedirectStandardOutput selftest.txt
@@ -97,7 +97,7 @@ jobs:
             --hidden-import review_sources --hidden-import adult_review_sources --hidden-import vintage_review_sources `
             --hidden-import permission_sources --hidden-import service_sources --hidden-import bodily_sources `
             --hidden-import culture_sources --hidden-import land_industry_sources --hidden-import home_sources `
-            --hidden-import events_safety_sources --hidden-import safety_rites_sources --hidden-import things_sources --hidden-import mechanical_sources --hidden-import people_activity_sources --hidden-import us_sources --hidden-import us_modern_sources `
+            --hidden-import events_safety_sources --hidden-import safety_rites_sources --hidden-import things_sources --hidden-import mechanical_sources --hidden-import people_activity_sources --hidden-import us_sources --hidden-import us_modern_sources --hidden-import device_sources `
             training-kit/prepare/dataset_preparation.py
           $p = Start-Process -FilePath "dist\Dataset Preparation.exe" -ArgumentList "--self-test" -Wait -PassThru `
             -RedirectStandardOutput prepare-selftest.txt
