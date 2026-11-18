@@ -81,7 +81,7 @@ import sys
 import time
 
 import build_packs  # noqa: F401 - loaded first: food_packs and build_packs import each other
-from build_packs import session, clean, say, considered, listing_out_of_time, fetch_all, article
+from build_packs import session, clean, say, considered, listing_out_of_time, fetch_all, article, needs_description
 from build_packs import INAT_GROUPS
 from food_packs import with_twins, count_pictures, commons_get, commons_members
 from home_packs import commons_fetch, file_name, symbol_picture, NUDE, FIRST_PERSON, NOT_RESPECTFUL
@@ -284,7 +284,14 @@ def habs_items(s, term, want, rng, seen):
         for picture, cap in photos:
             what, site = habs_caption(cap, record.get("title"))
             answer = tidy(f"{what}. {site}") if what else ""
-            if not usable(answer, 4) or taken >= 3 or NOT_SHOWN.search(answer):
+            if taken >= 3 or NOT_SHOWN.search(f"{answer} {cap}"):
+                continue
+            if not usable(answer, 4):          # free HABS photo, caption too short: set aside for a description
+                stem = re.sub(r"\W", "", picture.rsplit("/", 1)[-1].rsplit(".", 1)[0])
+                needs_description(f"habs-{stem}.jpg", picture, f"{clean(cap)[:150]}, {HABS_CREDIT}, {url}",
+                                  "no known restrictions (U.S. Government work)", text=answer, title=clean(cap),
+                                  page_url=url, place=place, reason="its caption is under four words",
+                                  extra={"subjects": [clean(x) for x in subjects][:12], "kind": kind})
                 continue
             taken += 1
             credit = f"{clean(cap)[:150]}, {HABS_CREDIT}, {url}"

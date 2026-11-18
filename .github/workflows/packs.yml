@@ -86,7 +86,9 @@ jobs:
                    "iso_machine_symbols", "corolla_engine_bay", "tyre_condition", "spark_plug_condition",
                    "planetary_gearbox",
                    "vcoco_actions", "vg_people_actions", "open_images_activities", "commons_daily_life",
-                   "dollar_street_routines", "coco_actions_nc", "coco_actions_sa"]
+                   "dollar_street_routines", "coco_actions_nc", "coco_actions_sa",
+                   "loc_habs_houses", "commons_us_homes", "commons_us_streets", "commons_us_cars", "inaturalist_us",
+                   "commons_us_money", "us_road_signs", "commons_packaging"]
           words = [w for w in sys.argv[1].split(",") if w]
           # "key+" is a top-up pass of key and "key?" a needs-only run (kept with the mark, which the build job reads);
           # "all?" asks for a needs-only run of every pack.
@@ -335,6 +337,14 @@ jobs:
             dollar_street_routines) limit=1250 ;;
             coco_actions_nc) limit=16200 ;;
             coco_actions_sa) limit=2400 ;;
+            loc_habs_houses) limit=3000 ;;
+            commons_us_homes) limit=4000 ;;
+            commons_us_streets) limit=3000 ;;
+            commons_us_cars) limit=2500 ;;
+            inaturalist_us) limit=5000 ;;
+            commons_us_money) limit=1200 ;;
+            us_road_signs) limit=2000 ;;
+            commons_packaging) limit=2500 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in

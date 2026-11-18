@@ -1949,6 +1949,32 @@ SOURCES = [
            'CC BY 4.0 (Gapminder Dollar Street), photographers credited',
            'Dollar Street by Gapminder, CC BY 4.0, https://www.gapminder.org/dollar-street', "permissive", 1100, 15,
            prepare_pack, 'about 250 MB'),
+    # United States (packs/us_packs.py). The streets, cars and packaging packs show people (PEOPLE_AND_BODILY_PACK_KEYS).
+    # The share-alike, non-commercial and research US collections are in us_sources.py.
+    Source("loc_habs_houses", "American houses and rooms, outside and inside (Historic American Buildings Survey, ready-made pack)",
+           "Public domain: no known restrictions on images made by the U.S. Government (https://www.loc.gov/rr/print/res/114_habs.html)",
+           "Historic American Buildings Survey, Library of Congress, Prints and Photographs Division", "permissive", 3000, 20, prepare_pack, "about 600 MB"),
+    Source("commons_us_homes", "US houses, house styles and rooms (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0",
+           "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 4000, 20, prepare_pack, "about 700 MB"),
+    Source("commons_us_streets", "US city streets and what people on them wear (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0",
+           "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 3000, 20, prepare_pack, "about 500 MB"),
+    Source("commons_us_cars", "Cars in the USA: which model, and its colour (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt)",
+           "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 2500, 20, prepare_pack, "about 450 MB"),
+    Source("inaturalist_us", "Wild plants and animals in each US state, named (iNaturalist, ready-made pack)",
+           "Photos CC0 or CC BY (each photographer credited in CREDITS.txt)",
+           "iNaturalist contributors (photos CC0 or CC BY, credited in CREDITS.txt), https://www.inaturalist.org", "permissive", 5000, 20, prepare_pack, "about 750 MB"),
+    Source("commons_us_money", "US banknotes and coins (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); the designs are US government work",
+           "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1200, 10, prepare_pack, "about 200 MB"),
+    Source("us_road_signs", "US road signs and what they mean (MUTCD drawings and photos, Wikimedia Commons, ready-made pack)",
+           "Drawings public domain (US government work or simple shapes); photos CC0, public domain or CC BY",
+           "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 2000, 20, prepare_pack, "about 150 MB"),
+    Source("commons_packaging", "Packaged goods, packaging and US supermarkets (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0",
+           "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 2500, 20, prepare_pack, "about 400 MB"),
     Source('skin_lesion_photos', 'Skin spots photographed with a phone, adults (PAD-UFES-20, ready-made pack)',
            'CC BY 4.0 (Mendeley Data zr7vgbcyr2)',
            'PAD-UFES-20 (Pacheco et al., 2020), CC BY 4.0', "permissive", 2000, 20, prepare_pack, 'about 400 MB', content="medical"),
@@ -2093,6 +2119,8 @@ PEOPLE_AND_BODILY_PACK_KEYS = (
     "open_images_in_use", "commons_in_use", "open_images_tech",
     # people_activity_packs.py: people in daily activities (all of them)
     "vcoco_actions", "vg_people_actions", "open_images_activities", "commons_daily_life", "dollar_street_routines",
+    # us_packs.py: street people, people by cars, shop photos
+    "commons_us_streets", "commons_us_cars", "commons_packaging",
 )
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + PEOPLE_AND_BODILY_PACK_KEYS
 
@@ -2426,3 +2454,17 @@ PERSONAL_PICTURE_MAKING_OK |= _people_activity_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(
     s.key for s in PEOPLE_ACTIVITY_SOURCES if s.key not in _people_activity_ok)
 _add_collections(PEOPLE_ACTIVITY_SOURCES)
+
+# United States collections that are not open (Commons BY-SA, Open Facts products sold in the USA, iNaturalist BY-SA and
+# BY-NC by state, CPSC recall photos, Freiburg Groceries); the file may be missing.
+try:
+    import us_sources as _us  # noqa: E402
+except ImportError as _e:
+    _us = None
+    if getattr(_e, "name", None) != "us_sources":
+        say(f"(The United States collections could not be loaded: {_e}. They are left out.)")
+US_SOURCES = list(getattr(_us, "US_SOURCES", []) or [])
+_us_ok = set(getattr(_us, "US_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _us_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in US_SOURCES if s.key not in _us_ok)
+_add_collections(US_SOURCES)

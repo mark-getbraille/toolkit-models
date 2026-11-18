@@ -1485,6 +1485,11 @@ PACKS.update(MECHANICAL_PACKS)
 from people_activity_packs import PEOPLE_ACTIVITY_PACKS
 PACKS.update(PEOPLE_ACTIVITY_PACKS)
 
+# United States: HABS houses and rooms (Library of Congress), Commons US homes, streets and street fashion, cars, money,
+# road signs and packaging, and iNaturalist by state.
+from us_packs import US_PACKS
+PACKS.update(US_PACKS)
+
 
 def sha256_of(path):
     """The SHA-256 of a file."""
