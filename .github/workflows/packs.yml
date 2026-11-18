@@ -100,7 +100,7 @@ jobs:
                    "ca_road_signs", "commons_ca_shops", "commons_ca_holidays", "commons_ca_eating_out", "commons_ca_getting_around",
                    "commons_ca_public_places", "commons_ca_archives", "commons_ca_provincial", "commons_ca_daily_life",
                    "dpla_campus", "commons_college_streams", "commons_university_archives",
-                   "gso_objects", "oi_crowdsourced", "pubtabnet_tables"]
+                   "gso_objects", "oi_crowdsourced", "pubtabnet_tables", "caltrans_cctv"]
           words = [w for w in sys.argv[1].split(",") if w]
           # "key+" is a top-up pass of key and "key?" a needs-only run (kept with the mark, which the build job reads);
           # "all?" asks for a needs-only run of every pack.
@@ -407,6 +407,7 @@ jobs:
             gso_objects) limit=2000 ;;
             oi_crowdsourced) limit=4000 ;;
             pubtabnet_tables) limit=3000 ;;
+            caltrans_cctv) limit=2000 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in

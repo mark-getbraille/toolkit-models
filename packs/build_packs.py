@@ -1521,6 +1521,10 @@ PACKS.update(BIGTECH_PACKS)
 from state_packs import STATE_PACKS
 PACKS.update(STATE_PACKS)
 
+# US state agencies' own websites and data feeds (packs/state_web_packs.py): Caltrans traffic camera stills.
+from state_web_packs import STATE_WEB_PACKS
+PACKS.update(STATE_WEB_PACKS)
+
 # Current medicines, medical supplies and instruments, and veterinary medicines (packs/med_vet_packs.py). Its Voice of
 # America pack (voa_commons_photos) is not used: its news photos are mostly named politicians at official events.
 from med_vet_packs import MED_VET_PACKS

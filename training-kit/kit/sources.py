@@ -2081,6 +2081,9 @@ SOURCES = [
            "Pictures CC0, public domain, CC BY or an open government licence (OGL-Canada or provincial; credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1500, 20, prepare_pack, "about 350 MB"),
     Source("commons_ca_daily_life", "Everyday life in Canada: winter, skating, pond hockey, camping, cottage country, commuting, markets (Wikimedia Commons, ready-made pack)",
            "Pictures CC0, public domain, CC BY or an open government licence (OGL-Canada or provincial; credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 2000, 20, prepare_pack, "about 450 MB"),
+    # A US state agency's own data feed (packs/state_web_packs.py): Caltrans traffic camera stills (people distant).
+    Source("caltrans_cctv", "California highway traffic camera pictures (Caltrans; ready-made pack)",
+           "Public domain (California public records; Caltrans Conditions of Use)", "California Department of Transportation (Caltrans), https://cwwp2.dot.ca.gov", "permissive", 2000, 20, prepare_pack, "about 50 MB"),
     # Current medicines, medical supplies and instruments and veterinary medicines (packs/med_vet_packs.py): nothing old
     # or from museum collections. Medicine answers say "This looks like ..." and end "Check the packaging or ask a
     # pharmacist to be sure." The share-alike, Open Facts supplements and DailyMed label entries are in med_vet_sources.py.
@@ -2265,6 +2268,8 @@ PEOPLE_AND_BODILY_PACK_KEYS = (
     "commons_ca_provincial", "commons_ca_daily_life",
     # university_packs.py: campus life, students and townspeople (all of them)
     "dpla_campus", "commons_college_streams", "commons_university_archives",
+    # state_web_packs.py: traffic camera views (people and cars far away)
+    "caltrans_cctv",
 )
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + PEOPLE_AND_BODILY_PACK_KEYS
 
@@ -2743,3 +2748,17 @@ _bigtech_ok = set(getattr(_bigtech, "BIGTECH_PICTURE_MAKING_OK", ()) or ())
 PERSONAL_PICTURE_MAKING_OK |= _bigtech_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in BIGTECH_SOURCES if s.key not in _bigtech_ok)
 _add_collections(BIGTECH_SOURCES)
+
+# US state agencies' own websites that are not open packs (Oregon TripCheck cameras, kept on this computer; Washington
+# Ecology shoreline aerial photos, non-commercial); the file may be missing.
+try:
+    import state_web_sources as _state_web  # noqa: E402
+except ImportError as _e:
+    _state_web = None
+    if getattr(_e, "name", None) != "state_web_sources":
+        say(f"(The US state website collections could not be loaded: {_e}. They are left out.)")
+STATE_WEB_SOURCES = list(getattr(_state_web, "STATE_WEB_SOURCES", []) or [])
+_state_web_ok = set(getattr(_state_web, "STATE_WEB_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _state_web_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in STATE_WEB_SOURCES if s.key not in _state_web_ok)
+_add_collections(STATE_WEB_SOURCES)
