@@ -452,10 +452,15 @@ COMMONS_ON_FOOD = re.compile(r"bread|fruit|food|strawberr|tomato|peach|grape|ber
 def commons_get(s, params, tries=12):
     """A Commons API answer (JSON), waiting and trying again politely when the server asks to slow down (429, 503,
     "maxlag"): it waits as long as the server says, or 5, 10, 20 ... seconds up to five minutes, 12 times (about 40
-    minutes in all) before giving up."""
+    minutes in all) before giving up. In a pack build with a time limit it keeps waiting, five minutes at a time,
+    until half the time limit is spent (build_packs.listing_out_of_time): when many packs read Commons at once its
+    refusals can last an hour or more, and a pack that waits finishes with its pictures instead of failing."""
+    import build_packs
     params = dict(params, format="json", maxlag=5)
     wait = 5
-    for _ in range(tries):
+    attempt = 0
+    while attempt < tries or (build_packs.TIME_LIMIT and not build_packs.listing_out_of_time()):
+        attempt += 1
         try:
             r = s.get(COMMONS_API, params=params, timeout=60)
             if r.status_code == 200:
