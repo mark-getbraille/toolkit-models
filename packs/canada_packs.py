@@ -28,7 +28,10 @@ name a child is marked "child"; graduations are adults only; hospital photos who
 out; archive photos whose words name the dead or injured are marked "content": "graphic". The packs that show people
 are never used for picture-making (wire them into the kit's PEOPLE_AND_BODILY_PACK_KEYS): commons_ca_streets,
 commons_ca_cars, commons_ca_shops, commons_ca_holidays, commons_ca_eating_out, commons_ca_getting_around,
-commons_ca_public_places and commons_ca_archives.
+commons_ca_public_places, commons_ca_archives, commons_ca_provincial and commons_ca_daily_life. Indigenous life:
+sacred and ceremonial scenes (powwows, regalia, smudging, sweat lodges, potlatches, prayers, burials) are left out
+(SACRED), because no source used here says they may be shared; no Indigenous community's own archive with an open
+licence was found (see canada_sources.CANADA_NOT_INCLUDED).
 
 The packs (all open; checked at the source in November 2026):
   commons_ca_homes         Wikimedia Commons: "Houses in <province or territory>" for all 13, Canadian house kinds
@@ -84,6 +87,22 @@ The packs (all open; checked at the source in November 2026):
                            description (build_packs.needs_description). Library and Archives Canada's own search
                            (recherche-collection-search.bac-lac.gc.ca) refused this machine (403), so its photos come
                            from these Commons copies, as the US agencies' do.
+  commons_ca_provincial    Commons files under a province's or territory's Open Government Licence (templates OGL-ON,
+                           OGL-Alberta, OGL-BC, OGL-NB, OGL-YT: "You are free to: Copy, modify, publish, translate,
+                           adapt, distribute or otherwise use the Information in any medium, mode or format for any
+                           lawful purpose", with the attribution "Contains information licensed under the Open
+                           Government Licence - Ontario" and so on; checked at ontario.ca, open.alberta.ca, gov.bc.ca
+                           and the Commons templates for New Brunswick and Yukon). Nearly all are the Archives of
+                           Ontario's own upload (its GLAM Wiki project, 1920s to 1960s Ontario life: farms, cottages,
+                           tourist camps, fairs), whose titles are their captions. Ontario's open-data record of the
+                           same archive says "the actual images are not published under the Open Government
+                           Licence"; the Commons files are the ones the Archives itself released under OGL-ON. The
+                           province is the place. Medical scenes (patients) are left out.
+  commons_ca_daily_life    Commons: everyday life in Canada, 1990 onwards: winter and snow in Canada, Toronto and
+                           Montreal, snow shovels, the Rideau Canal Skateway, ice skating, pond hockey and hockey in
+                           Ontario, ice fishing, tobogganing, canoeing, camping, picnics, cycling, commuters, people in
+                           Toronto, markets and festivals. (people_activity_packs.commons_daily_life takes no Canadian
+                           category; work in Canada is work_farm_mech_packs'.)
 
 The share-alike, non-commercial and research collections on the same subjects (Commons BY-SA files, Open Food,
 Beauty and Products Facts sold in Canada, iNaturalist BY-SA and BY-NC photos in Canada, Health Canada recall photos,
@@ -702,7 +721,9 @@ ARCHIVES = [
 ]
 # The licences taken: public domain, CC0, CC BY, and the Open Government Licence - Canada (Commons writes "OGL-C" or
 # the licence's name); never share-alike, non-commercial or no-derivatives.
-OGL_CANADA = re.compile(r"^(ogl[- ]?c\b|ogl[- ]canada|open government licen[cs]e\s*[-–]\s*canada)", re.I)
+OGL_CANADA = re.compile(r"^(ogl[- ]?(c|on|bc|alberta|ab|nb|yt|ns|pei|nl)\b|ogl[- ](canada|ontario|alberta|yukon)|"
+                        r"open government licen[cs]e\s*[-–]\s*(canada|ontario|british columbia|alberta|new brunswick|"
+                        r"yukon|nova scotia|prince edward island|newfoundland))", re.I)
 NOT_FREE = re.compile(r"\b(SA|NC|ND)\b|-SA|-NC|-ND", re.I)
 # Catalogue numbers and credit lines in archive captions: "MIKAN 3193234", "PA-012345", "e010861234",
 # "Reference No. ...", "Fonds 1244, Item 1234", "Source: Library and Archives Canada", "Credit: ...".
@@ -763,10 +784,10 @@ def archive_entries(s, titles):
     return out
 
 
-def archive_rows(caption, keeper, credit, words):
-    """The rows of one archive photo: its caption (with the province it names as the place) and who keeps it;
-    marked "child" and "content": "graphic" from its words."""
-    prov = province_in(caption)
+def archive_rows(caption, keeper, credit, words, home=""):
+    """The rows of one archive photo: its caption (with the province it names, else the archive's own province
+    home, as the place) and who keeps it; marked "child" and "content": "graphic" from its words."""
+    prov = province_in(caption) or home
     place = where(ca(prov)) if prov else {}
     rows = [{"question": DESCRIBE_Q, "answer": caption, "credit": credit, **place},
             {"question": KEPT_Q, "answer": f"It is kept by {keeper}.", "credit": credit}]
@@ -776,13 +797,26 @@ def archive_rows(caption, keeper, credit, words):
     return rows
 
 
-def build_commons_ca_archives(limit):
-    """The Canadian archive photos pack: each archive's Commons category sampled at random places, its free photos
-    with the archive's caption; a free photo whose caption is under six English words (or not respectful today) is
-    set aside for a description."""
-    s, rng, items, seen = session(), pass_random(1872), [], set()
-    share = math.ceil(limit * 1.2 / len(ARCHIVES))
-    for category, keeper, pages in ARCHIVES:
+# Medical scenes with people in archive photos ("A fresh air patient eating his dinner"): left out.
+PATIENT = re.compile(r"\b(patients?|surgery|surgical|operating (room|theatre)|sanatori(um|a)|x-rays? of)\b", re.I)
+
+
+def title_caption(title):
+    """A file's title as a caption, for archives whose titles are their captions ("File:A cottage at Wasaga Beach
+    (I0026362).jpg" -> "A cottage at Wasaga Beach."): the file type and the archive's image number taken out."""
+    text = title.split(":", 1)[-1].rsplit(".", 1)[0]
+    text = re.sub(r"\s*\((I|C|F|RG|PA|e)?\s?[\d-]{4,}\)\s*$", "", text).strip(" .")
+    return text[:1].upper() + text[1:] + "." if text else ""
+
+
+def archive_pack(sources, limit, prefix, seed, titles_are_captions=False):
+    """A pack of archive photos from [(Commons category, keeper, listing pages, province or "")]: each category
+    sampled at random places, its free photos with the archive's caption (or, with titles_are_captions, the file's
+    title when it has no description of its own); a free photo whose caption is under six English words (or not
+    respectful today) is set aside for a description; hospital photos naming a patient are left out."""
+    s, rng, items, seen = session(), pass_random(seed), [], set()
+    share = math.ceil(limit * 1.2 / len(sources))
+    for category, keeper, pages, home in sources:
         if listing_out_of_time():
             break
         titles = [t for t in sample_members(s, category, pages, rng) if not NOT_A_PHOTO.search(t) and t not in seen]
@@ -800,31 +834,111 @@ def build_commons_ca_archives(limit):
                 if NUDE.search(words) or NOT_SHOWN.search(words):
                     considered(title, url, "its words are about nudity, swimwear or evidence photos")
                     continue
+                if PATIENT.search(words):
+                    considered(title, url, "its words name a patient or an operation (no medical scenes here)")
+                    continue
                 caption = archive_caption(raw)
                 if only_the_name(caption, title):
-                    caption = ""
+                    caption = title_caption(title) if titles_are_captions else ""
+                if not caption and titles_are_captions:
+                    caption = title_caption(title)
                 poor = ("its caption is under six English words" if not caption or len(caption.split()) < 6
                         or not in_english(caption) else
                         "its caption uses words that are not respectful today" if NOT_RESPECTFUL.search(caption)
                         else "")
+                prov = province_in(words) or home
                 if poor:
-                    prov = province_in(f"{title} {raw}")
-                    needs_description(file_name("caarch", title), url, credit, "public domain, CC0, CC BY or OGL-"
-                                      "Canada (each file's own licence)", text=caption or raw[:300], title=title,
-                                      reason=poor, place=ca(prov) if prov else "",
-                                      page_url=credit.rsplit(", ", 1)[-1],
+                    needs_description(file_name(prefix, title), url, credit, "public domain, CC0, CC BY or an Open "
+                                      "Government Licence of Canada or a province (each file's own licence)",
+                                      text=caption or raw[:300], title=title, reason=poor,
+                                      place=ca(prov) if prov else "", page_url=credit.rsplit(", ", 1)[-1],
                                       extra={"keeper": keeper, "commons_category": category, "year": year,
                                              "child": bool(CHILD.search(words)),
                                              "content": "graphic" if GRAPHIC.search(words) else "",
                                              "not_for_picture_making": True})
                     continue
-                items.append((file_name("caarch", title), url, archive_rows(caption, keeper, credit, words)))
+                items.append((file_name(prefix, title), url, archive_rows(caption, keeper, credit, words, home)))
                 got += 1
         say(f"  {got} photos from {keeper}")
     rng.shuffle(items)
     fetched = commons_fetch(items[:int(limit * 1.1) + 2])[:limit]
-    say(f"commons_ca_archives: {len(fetched)} pictures")
+    say(f"{prefix}: {len(fetched)} pictures")
     return with_twins(fetched)
+
+
+def build_commons_ca_archives(limit):
+    """The Canadian archive photos pack (Library and Archives Canada, Toronto, BAnQ, OGL-Canada)."""
+    return archive_pack([(c, k, n, "") for c, k, n in ARCHIVES], limit, "caarch", 1872)
+
+
+# ----------------------------------------------------------------- commons_ca_provincial
+
+# Commons files under a province's or territory's Open Government Licence (each tracking category of the Commons
+# licence templates OGL-ON, OGL-Alberta, OGL-BC, OGL-NB and OGL-YT, checked in November 2026: 3,981, 8, 2, 8 and 2
+# files). Nearly all of OGL-ON is the Archives of Ontario's own upload (its GLAM Wiki project: the Audio-Visual
+# Education Branch photographs and others, titled like "A cottage at Wasaga Beach (I0026362)").
+PROVINCIAL = [
+    ("OGL-ON", "the Archives of Ontario (Open Government Licence - Ontario)", 6, "Ontario"),
+    ("OGL-Alberta", "the Government of Alberta (Open Government Licence - Alberta)", 1, "Alberta"),
+    ("OGL-BC", "the Government of British Columbia (Open Government Licence - British Columbia)", 1,
+     "British Columbia"),
+    ("OGL-NB", "the Government of New Brunswick (Open Government Licence - New Brunswick)", 1, "New Brunswick"),
+    ("OGL-YT", "the Government of Yukon (Open Government Licence - Yukon)", 1, "Yukon"),
+]
+
+
+def build_commons_ca_provincial(limit):
+    """The provincial and territorial government photos pack (their titles are their captions)."""
+    return archive_pack(PROVINCIAL, limit, "caprov", 1791, titles_are_captions=True)
+
+
+# ----------------------------------------------------------------- commons_ca_daily_life
+
+DAILY = [
+    happening("Winter in Canada", "This is winter in Canada: snow, cold and people dressed for it."),
+    happening("Winter in Toronto", "This is winter in Toronto.", 1, TORONTO),
+    happening("Winter in Montreal", "This is winter in Montreal.", 1, MONTREAL),
+    happening("Snow in Toronto", "This is a snowy day in Toronto.", 1, TORONTO),
+    happening("Snow in Montreal", "This is a snowy day in Montreal.", 1, MONTREAL),
+    us_spec("Snow shovels", WHAT_Q, "This is a snow shovel, for clearing snow from driveways and paths.", "", 1),
+    happening("Rideau Canal Skateway", "This is skating on the Rideau Canal Skateway in Ottawa: in winter the frozen "
+                                       "canal becomes a skating path several kilometres long.", 0,
+              "Ottawa, Ontario, Canada"),
+    happening("Ice skating in Canada", "This is ice skating in Canada."),
+    happening("Pond hockey", "This is pond hockey: a casual game of ice hockey outdoors on a frozen pond or rink.", 1,
+              ""),
+    happening("Ice hockey in Ontario", "This is ice hockey in Ontario.", 1, "Ontario, Canada"),
+    happening("Ice fishing in Canada", "This is ice fishing in Canada: fishing through a hole cut in the ice of a "
+                                       "frozen lake, often from a small hut."),
+    happening("Tobogganing in Canada", "This is tobogganing in Canada: sliding down a snowy hill on a sled."),
+    happening("Canoeing in Canada", "This is canoeing in Canada."),
+    happening("Camping in Canada", "This is camping in Canada."),
+    happening("Picnics in Canada", "This is a picnic in Canada."),
+    happening("Cycling in Montreal", "This is cycling in Montreal.", 1, MONTREAL),
+    happening("Cycling in Canada", "This is cycling in Canada."),
+    happening("Commuters in Canada", "These are commuters in Canada, on their way to or from work or school."),
+    us_spec("People in Toronto", DESCRIBE_Q, None, TORONTO, 1),
+    happening("Markets in Canada", "This is a market in Canada."),
+    happening("Festivals in Canada", "This is a festival in Canada."),
+    us_spec("People of Canada", DESCRIBE_Q, None, CANADA, 0),
+]
+# Sacred and ceremonial life is left out (the owner's rule: only when its source says it may be shared, and Commons
+# does not say so), and so are categories and files about named people.
+SACRED = re.compile(r"\b(sacred|ceremon\w*|pow ?wows?|smudg\w*|sweat ?lodges?|potlatch\w*|sun ?dance|regalia|"
+                    r"spirit\w*|prayers?|praying|funerals?|burials?|graves?|cemeter\w*)\b", re.I)
+
+
+def daily_life(items):
+    """The holiday filters (no official events, military events or party politics) and no sacred or ceremonial
+    scenes."""
+    return drop_items(canadian_holidays(items), SACRED, "a sacred or ceremonial scene (left out unless its source "
+                                                          "says it may be shared)")
+
+
+def build_commons_ca_daily_life(limit):
+    """The Commons everyday life in Canada pack: winter, skating and hockey, cottage-country pastimes, cycling,
+    commuting, markets and festivals (photos of 1990 or later)."""
+    return commons_specs_pack(DAILY, limit, "cadaily", after=daily_life)
 
 
 # ----------------------------------------------------------------- the packs
@@ -866,6 +980,17 @@ CANADA_PACKS = {
     "commons_ca_public_places": (build_commons_ca_public_places, COMMONS_CREDIT.format(
         what="categories of Canada Post, Service Canada, pharmacies, libraries, hospitals and other public places "
              "in Canada")),
+    "commons_ca_provincial": (build_commons_ca_provincial,
+                              "Wikimedia Commons files under the Open Government Licences of Ontario, Alberta, "
+                              "British Columbia, New Brunswick and Yukon (Commons templates OGL-ON, OGL-Alberta, "
+                              "OGL-BC, OGL-NB, OGL-YT), nearly all the Archives of Ontario's own upload. Each "
+                              "licence: 'You are free to: Copy, modify, publish, translate, adapt, distribute or "
+                              "otherwise use the Information in any medium, mode or format for any lawful purpose.' "
+                              "Contains information licensed under the Open Government Licence - Ontario (and - "
+                              "Alberta, - British Columbia, - New Brunswick, - Yukon). Each with its file page below."),
+    "commons_ca_daily_life": (build_commons_ca_daily_life, COMMONS_CREDIT.format(
+        what="categories of everyday life in Canada (winter and snow, skating, pond hockey, ice fishing, "
+             "tobogganing, canoeing, camping, cycling, commuting, markets and festivals)")),
     "commons_ca_archives": (build_commons_ca_archives,
                             "Wikimedia Commons copies of photographs kept by Library and Archives Canada, the City of "
                             "Toronto Archives, the Toronto Public Library and Bibliothèque et Archives nationales du "
@@ -890,6 +1015,8 @@ CANADA_LIMITS = {
     "commons_ca_getting_around": 2000,  # 24 categories (station categories have one subcategory per station)
     "commons_ca_public_places": 2000,   # 24 categories
     "commons_ca_archives": 3000,        # 6 categories (about 16,000 files), sampled
+    "commons_ca_provincial": 1500,      # 5 licence categories (about 4,000 files, nearly all Ontario's)
+    "commons_ca_daily_life": 2000,      # 22 categories
 }
 
 

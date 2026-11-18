@@ -43,6 +43,8 @@ def test_licences():
     """Public domain, CC0, CC BY and OGL-Canada are taken; share-alike and non-commercial are not."""
     for ok in ("Public domain", "PD-Canada", "CC0", "CC BY 4.0", "OGL-C", "Open Government Licence - Canada 2.0"):
         assert c.ca_free(ok), ok
+    for ok in ("OGL-ON", "OGL-Alberta", "OGL-BC", "OGL-NB", "OGL-YT", "Open Government Licence – Ontario"):
+        assert c.ca_free(ok), ok
     for no in ("CC BY-SA 4.0", "CC BY-NC 2.0", "OGL-C BY-SA", "", "Copyrighted"):
         assert not c.ca_free(no), no
 
@@ -65,6 +67,19 @@ def test_archive_caption_and_rows():
     assert all(r["content"] == "graphic" for r in rows)
     rows = c.archive_rows("A girl skates on the frozen river in the town.", "LAC", "credit", "a girl skates")
     assert all(r.get("child") for r in rows)
+
+
+def test_provincial_and_daily_life():
+    """An archive title as a caption, the archive's own province as the place, and no sacred scenes."""
+    assert c.title_caption("File:A cottage at Wasaga Beach (I0026362).jpg") == "A cottage at Wasaga Beach."
+    assert c.title_caption("File:A calf having its ear tagged (I0004491).jpg") == "A calf having its ear tagged."
+    rows = c.archive_rows("A group of tents at a tourist camp in Midland.", "the Archives of Ontario", "credit",
+                          "tents", "Ontario")
+    assert rows[0]["place"] == "Ontario, Canada"
+    assert c.PATIENT.search("A fresh air patient eating his dinner") and not c.PATIENT.search("A calf")
+    items = [("a", "u", [{"answer": "This is a festival in Canada.", "facts": {"commons_title": "Powwow regalia"}}]),
+             ("b", "u", [{"answer": "This is pond hockey.", "facts": {"commons_title": "Pond hockey on a lake"}}])]
+    assert [i[0] for i in c.daily_life(items)] == ["b"]
 
 
 def test_sign_meaning():
