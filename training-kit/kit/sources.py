@@ -2020,6 +2020,15 @@ SOURCES = [
     Source("farm_usda_nrcs", "Conservation on US farms and ranches, with USDA NRCS captions (Wikimedia Commons, ready-made pack)",
            "Public domain (US government work); each Commons file checked",
            "USDA Natural Resources Conservation Service via Wikimedia Commons (credited in CREDITS.txt)", "permissive", 3000, 20, prepare_pack, "about 1 GB"),
+    # US state, county and city government photo streams copied to Commons (packs/state_packs.py); all show people.
+    Source("commons_state_roads", "US state transportation and transit photos: roads, work zones, snowplows, bridges, buses and subways (Oregon DOT, NCDOT, MassDOT, Alaska DOT&PF, New York MTA; Wikimedia Commons, ready-made pack)",
+           "Public domain or CC BY, each Commons file's own licence checked", "US state agencies via Wikimedia Commons (credited in CREDITS.txt)", "permissive", 3500, 20, prepare_pack, "about 900 MB"),
+    Source("commons_state_outdoors", "US state parks and wildlife agencies' photos: parks, trails, fish and wildlife (Virginia State Parks, Oregon and California Fish and Wildlife and more; Wikimedia Commons, ready-made pack)",
+           "Public domain or CC BY, each Commons file's own licence checked", "US state agencies via Wikimedia Commons (credited in CREDITS.txt)", "permissive", 3000, 20, prepare_pack, "about 750 MB"),
+    Source("commons_state_response", "US state emergency response: National Guard and fire agencies in floods, fires, storms and vaccination (Wikimedia Commons, ready-made pack)",
+           "Public domain or CC BY, each Commons file's own licence checked", "US state agencies via Wikimedia Commons (credited in CREDITS.txt)", "permissive", 800, 10, prepare_pack, "about 200 MB"),
+    Source("commons_state_community", "US cities, counties and state agencies at work in their communities (public works, events, redevelopment, archives; Wikimedia Commons, ready-made pack)",
+           "Public domain or CC BY, each Commons file's own licence checked", "US state agencies via Wikimedia Commons (credited in CREDITS.txt)", "permissive", 2500, 20, prepare_pack, "about 600 MB"),
     Source('skin_lesion_photos', 'Skin spots photographed with a phone, adults (PAD-UFES-20, ready-made pack)',
            'CC BY 4.0 (Mendeley Data zr7vgbcyr2)',
            'PAD-UFES-20 (Pacheco et al., 2020), CC BY 4.0', "permissive", 2000, 20, prepare_pack, 'about 400 MB', content="medical"),
@@ -2172,6 +2181,8 @@ PEOPLE_AND_BODILY_PACK_KEYS = (
     "commons_us_public_places",
     # work_farm_mech_packs.py: workers at work and NRCS field photos (the farm and building packs are used)
     "work_commons_workplaces", "farm_usda_nrcs",
+    # state_packs.py: US state, county and city government photos (all of them)
+    "commons_state_roads", "commons_state_outdoors", "commons_state_response", "commons_state_community",
 )
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + PEOPLE_AND_BODILY_PACK_KEYS
 
@@ -2560,3 +2571,16 @@ _wfm_ok = set(getattr(_wfm, "WORK_FARM_MECH_PICTURE_MAKING_OK", ()) or ())
 PERSONAL_PICTURE_MAKING_OK |= _wfm_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in WORK_FARM_MECH_SOURCES if s.key not in _wfm_ok)
 _add_collections(WORK_FARM_MECH_SOURCES)
+
+# US state, county and city collections that are not open (share-alike Commons files); the file may be missing.
+try:
+    import state_sources as _state  # noqa: E402
+except ImportError as _e:
+    _state = None
+    if getattr(_e, "name", None) != "state_sources":
+        say(f"(The US state, county and city collections could not be loaded: {_e}. They are left out.)")
+STATE_SOURCES = list(getattr(_state, "STATE_SOURCES", []) or [])
+_state_ok = set(getattr(_state, "STATE_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _state_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in STATE_SOURCES if s.key not in _state_ok)
+_add_collections(STATE_SOURCES)

@@ -1503,6 +1503,10 @@ PACKS.update(DEVICE_PACKS)
 from work_farm_mech_packs import WORK_FARM_MECH_PACKS
 PACKS.update(WORK_FARM_MECH_PACKS)
 
+# US state, county and city government photo streams on Commons (packs/state_packs.py).
+from state_packs import STATE_PACKS
+PACKS.update(STATE_PACKS)
+
 
 def sha256_of(path):
     """The SHA-256 of a file."""
