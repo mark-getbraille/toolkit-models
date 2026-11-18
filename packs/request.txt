@@ -1,4 +1,7 @@
 # Changing this file on main starts .github/workflows/packs.yml for these pack keys (separated by commas), or all.
+# A key with a plus (loc_fsa+) is a top-up pass: the published pack is kept and new pictures are added to it, up to
+# its limit (for a pack that stopped at the time limit; it can be asked for again and again). Without the plus the
+# pack is built again from the start. A top-up that fails or finds nothing new leaves the published pack as it was.
 # Again: four Library of Congress packs (their pictures were refused when several tried at once; downloads now wait
 # and try again when a server is busy) and Commons disasters (Commons asked to slow down while ten packs ran).
 loc_fsa,loc_civil_war,loc_war_disaster,loc_service,commons_disasters

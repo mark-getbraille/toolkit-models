@@ -2,6 +2,10 @@
 # release "training-data", with packs.json listing each pack's parts, size and SHA-256 (the kit reads it).
 # Runs by hand (Actions > Build training packs > Run workflow) or when packs/request.txt changes on main (its text:
 # the pack keys, separated by commas, or all).
+# A key written with a plus ("loc_fsa+") asks for a top-up pass: the published pack is kept and only new pictures are
+# added to it, up to its limit (build_packs.py --top-up). If the pass fails or finds nothing new, the published pack
+# stays as it is. A top-up pack's files are named <key>.pass<N>.zip; the last job removes a pack's old files once
+# packs.json names the new ones.
 name: Build training packs
 
 on:
@@ -11,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       keys:
-        description: "Pack keys, separated by commas, or all"
+        description: "Pack keys, separated by commas, or all (a key with a plus, as loc_fsa+, adds to the published pack)"
         required: true
         default: "all"
 
@@ -79,7 +83,8 @@ jobs:
                    "vcoco_actions", "vg_people_actions", "open_images_activities", "commons_daily_life",
                    "dollar_street_routines", "coco_actions_nc", "coco_actions_sa"]
           words = [w for w in sys.argv[1].split(",") if w]
-          keys = known if words in ([], ["all"]) else [w for w in words if w in known]
+          # "key+" is a top-up pass of key (kept with its plus, which the build job reads).
+          keys = known if words in ([], ["all"]) else [w for w in words if w.rstrip("+") in known]
           print("keys=" + json.dumps(keys))
           PY
 
@@ -105,8 +110,9 @@ jobs:
       - name: Install what the builder needs
         run: |
           python -m pip install requests pillow pyarrow "huggingface_hub>=0.34"
+          key="${{ matrix.key }}"
           # The packs in other languages are also translated into English (OPUS-MT, on the processor).
-          case "${{ matrix.key }}" in
+          case "${key%+}" in
             ksamsok|rijksmuseum|coco_cn|europeana_fi|europeana_cs|europeana_hu|europeana_el|europeana_no|europeana_pl|smk|anefo)
               python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
               python -m pip install "transformers==4.57.6" "sentencepiece==0.2.1" "sacremoses==0.1.1" ;;
@@ -119,7 +125,9 @@ jobs:
           esac
       - name: Build the pack
         run: |
-          case "${{ matrix.key }}" in
+          key="${{ matrix.key }}"
+          key="${key%+}"                 # "key+": a top-up pass of key
+          case "$key" in
             smithsonian) limit=6000 ;;
             coco_questions) limit=8000 ;;
             commons) limit=5000 ;;
@@ -315,15 +323,25 @@ jobs:
             coco_actions_nc) limit=16200 ;;
             coco_actions_sa) limit=2400 ;;
           esac
+          topup=""
+          if [ "$key" != "${{ matrix.key }}" ]; then topup="--top-up"; fi
           # Stop downloading after 290 minutes, keeping what has come, so the pack is published within the job's time.
-          PACK_TIME_LIMIT_MINUTES=290 python packs/build_packs.py "${{ matrix.key }}" --out build/packs --limit "$limit"
+          # A top-up pass that adds nothing writes no manifest: the next step then publishes nothing.
+          PACK_TIME_LIMIT_MINUTES=290 python packs/build_packs.py "$key" --out build/packs --limit "$limit" $topup
       - name: Upload it to the release
         run: |
           gh release view training-data > /dev/null 2>&1 || gh release create training-data \
             --title "Training data packs" \
             --notes "Picture packs for the Picture Model Training Kit (packs/build_packs.py); each zip has CREDITS.txt."
-          files=$(python -c "import json;print(' '.join(json.load(open('build/packs/manifest-${{ matrix.key }}.json'))['files']))")
-          for f in $files manifest-${{ matrix.key }}.json; do
+          key="${{ matrix.key }}"
+          key="${key%+}"
+          if [ ! -f "build/packs/manifest-$key.json" ]; then
+            echo "Nothing new to publish for $key: the published pack is kept as it was."
+            exit 0
+          fi
+          files=$(python -c "import json;print(' '.join(json.load(open('build/packs/manifest-$key.json'))['files']))")
+          # The pack's files first, its manifest last, so packs.json never names files that are not there yet.
+          for f in $files manifest-$key.json; do
             for attempt in 1 2 3 4; do
               gh release upload training-data "build/packs/$f" --clobber && break
               sleep 30
@@ -352,3 +370,23 @@ jobs:
           print(json.dumps(packs, indent=1))
           PY
           gh release upload training-data packs.json --clobber
+      - name: Remove pack files that packs.json no longer names
+        run: |
+          # After a top-up pass (files <key>.pass<N>.zip...) or a rebuild that came out in fewer parts, the pack's
+          # earlier files are left in the release. Only files named like a listed pack's own files ("<key>.zip",
+          # "<key>.zip.001", "<key>.pass2.zip.001") that packs.json does not name are removed.
+          cd merged
+          gh release view training-data --json assets -q '.assets[].name' > assets.txt
+          python3 - > stale.txt <<'PY'
+          import json, re
+          packs = json.load(open("packs.json"))
+          named = {f for p in packs.values() for f in p.get("files", [])}
+          for asset in open("assets.txt").read().split():
+              m = re.match(r"^(.+?)(\.pass\d+)?\.zip(\.\d{3})?$", asset)
+              if m and m.group(1) in packs and asset not in named:
+                  print(asset)
+          PY
+          for f in $(cat stale.txt); do
+            echo "Removing $f (an earlier file of its pack)"
+            gh release delete-asset training-data "$f" --yes || true
+          done
