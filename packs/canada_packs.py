@@ -186,9 +186,17 @@ def home_specs():
     return specs
 
 
+# Subcategories of the room and house categories that are about vehicles ("Dining cars of Canada" sits under
+# "Dining rooms in Canada"): their photos are left out.
+NOT_A_HOME = re.compile(r"\b(dining cars?|sleeping cars?|railway|railroad|trains?|ships?|boats?|ferr(y|ies)|"
+                        r"aircraft|yachts?|buses|motorhomes?)\b", re.I)
+
+
 def build_commons_ca_homes(limit):
-    """The Commons Canadian houses and rooms pack."""
-    return commons_pack(home_specs(), limit, "cahome")
+    """The Commons Canadian houses and rooms pack (photos found in vehicle subcategories left out)."""
+    items = drop_items(us_commons(home_specs(), limit, "cahome"), NOT_A_HOME, "found in a subcategory about "
+                                                                             "vehicles, not homes")
+    return with_twins(commons_fetch(items)[:limit])
 
 
 # ----------------------------------------------------------------- commons_ca_streets
@@ -364,8 +372,8 @@ SIGN_DRAWINGS = ["Diagrams of road signs of Canada", "Diagrams of regulatory roa
                 [f"Diagrams of road signs of {p}" for p in PROVINCES + ["Yukon", "the Northwest Territories"]]
 # Canadian sign numbers: the national manual's ("RA-1", "WA-11", "IB-5", "TC-4") and Ontario's ("Rb-1", "Wa-33"),
 # and Quebec's ("P-10", "D-50-P").
-CA_SIGN_NUMBER = re.compile(r"(?<![A-Za-z0-9])((?:R|W|I|T|G)[A-Ea-e]-\d{1,3}[A-Za-z]{0,2}|[PDT]-\d{2,4}(?:-[A-Z0-9]{1,3})?)"
-                            r"(?![A-Za-z0-9])")
+CA_SIGN_NUMBER = re.compile(r"(?<![A-Za-z0-9])((?:R|W|I|T|G)[A-Ea-e]-\d{1,3}[A-Za-z]{0,2}|"
+                            r"[PDT]-\d{2,4}(?:-[A-Z0-9]{1,3})?)(?![A-Za-z0-9])")
 CA_SIGN_NOISE = re.compile(r"\b(custom|hand-coded|svg|png|drawn|made|version|file|from the manual of uniform traffic "
                            r"control devices( for canada)?|in canada|of canada|canadian|canada|in ontario|of ontario|"
                            r"in quebec|of quebec|ontario|qu[eé]bec|british columbia|alberta|mutcdc|tac)\b", re.I)
@@ -689,7 +697,8 @@ NOT_FREE = re.compile(r"\b(SA|NC|ND)\b|-SA|-NC|-ND", re.I)
 # "Reference No. ...", "Fonds 1244, Item 1234", "Source: Library and Archives Canada", "Credit: ...".
 ARCHIVE_NOISE = re.compile(
     r"(\b(MIKAN|Item ID number|Reference (No\.?|number)|Copy negative( number)?|Accession( number)?|Credit|Source|"
-    r"Restrictions on use|Copyright|Archival reference no\.?)\s*[:#]?[^.;]*[.;]?|\b(Fonds|Series|Item|File)\s+\d[\w,. -]*"
+    r"Restrictions on use|Copyright|Archival reference no\.?)\s*[:#]?[^.;]*[.;]?"
+    r"|\b(Fonds|Series|Item|File)\s+\d[\w,. -]*"
     r"|\b(PA|C|e|R)-?\d{5,9}\b|\b(Library and Archives Canada|Biblioth[eè]que et Archives (nationales du Qu[eé]bec|"
     r"Canada)|City of Toronto Archives|Toronto Public Library)\b[^.;]*[.;]?|\bTitle\s*:\s*)", re.I)
 

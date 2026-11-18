@@ -77,6 +77,9 @@ def test_sign_meaning():
     items = [("a", "u", [{"answer": "x", "facts": {"commons_category": "Speed limit railway signs in Canada"}}]),
              ("b", "u", [{"answer": "x", "facts": {"commons_category": "Speed limit signs in Canada"}}])]
     assert [i[0] for i in c.drop_items(items, c.NOT_ROAD, "not a road sign")] == ["b"]
+    rooms = [("a", "u", [{"answer": "This is a dining room.", "facts": {"commons_category": "Dining cars of Canada"}}]),
+             ("b", "u", [{"answer": "This is a dining room.", "facts": {"commons_category": "Dining rooms in Canada"}}])]
+    assert [i[0] for i in c.drop_items(rooms, c.NOT_A_HOME, "vehicles")] == ["b"]
 
 
 def test_inaturalist():
