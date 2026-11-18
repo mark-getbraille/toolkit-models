@@ -3,7 +3,7 @@ packs/us_modern_packs.py). Canadian houses outside and inside, streets and what 
 plants and animals by province and territory, Canadian money, Canadian road signs (bilingual ones too), shops and
 packaged goods, Canadian holidays (Canada Day, Victoria Day, Thanksgiving in October, Remembrance Day, the Fête
 nationale du Québec), eating out (coffee and doughnut shops, poutine, dépanneurs), getting around (the TTC, the
-Montreal Metro, TransLink, GO Transit, VIA Rail, Canadian airports), public places (Canada Post, Service Canada,
+Montreal Metro, TransLink, GO Transit, VIA Rail, Canadian airports), public places (post offices, Service Canada,
 pharmacies) and old photographs kept by Canadian archives (Library and Archives Canada, the City of Toronto
 Archives, BAnQ) and Government of Canada photos under the Open Government Licence - Canada.
 
@@ -71,7 +71,7 @@ The packs (all open; checked at the source in November 2026):
                            GO Transit, VIA Rail stations, Calgary's CTrain and Ottawa's O-Train, buses and bus stops,
                            the Presto fare card, Toronto Pearson, Vancouver and Montréal-Trudeau airports, gas and
                            charging stations, BC Ferries, parking meters and pedestrian signals.
-  commons_ca_public_places Commons: Canada Post and post offices, Service Canada and ServiceOntario offices,
+  commons_ca_public_places Commons: post offices, Service Canada and ServiceOntario offices,
                            pharmacies (Shoppers Drug Mart, Jean Coutu, Rexall, Uniprix), libraries, hospitals (no
                            patients), city halls, courthouses, fire stations, shopping malls, banks, laundromats,
                            hardware and department stores, church insides, hotels and vending machines.
@@ -508,7 +508,7 @@ SHOPS = [
     place_kind("Supermarkets in Canada", "This is a supermarket in Canada."),
     place_kind("Grocery stores in Canada", "This is a grocery store in Canada."),
     place_kind("Dépanneurs", "This is a dépanneur, a Quebec corner store selling snacks, drinks, milk, beer and "
-                             "everyday things.", 1, "Quebec, Canada"),
+                             "everyday things."),
     place_kind("Convenience stores in Canada", "This is a convenience store in Canada: snacks, drinks and everyday "
                                                "things, often open late."),
     place_kind("Sobeys", "This is a Sobeys, a Canadian supermarket chain."),
@@ -668,8 +668,6 @@ def build_commons_ca_getting_around(limit):
 # ----------------------------------------------------------------- commons_ca_public_places
 
 PUBLIC_PLACES = [
-    place_kind("Canada Post", "This is Canada Post, the national postal service: a post office, a red street "
-                              "mailbox, a community mailbox or a delivery vehicle."),
     place_kind("Post offices in Canada", "This is a post office in Canada."),
     place_kind("Service Canada", "This is a Service Canada office, where people apply for passports, pensions, "
                                  "employment insurance and social insurance numbers.", 0),
@@ -677,9 +675,9 @@ PUBLIC_PLACES = [
                                  "cards and licence plates in Ontario.", 0, "Ontario, Canada"),
     place_kind("Shoppers Drug Mart", "This is a Shoppers Drug Mart, a Canadian pharmacy chain: a pharmacy counter "
                                      "and aisles of health and everyday products."),
-    place_kind("Jean Coutu", "This is a Jean Coutu pharmacy, a Quebec pharmacy chain.", 1, "Quebec, Canada"),
+    place_kind("Jean Coutu", "This is a Jean Coutu pharmacy (a Quebec-based pharmacy chain)."),
     place_kind("Rexall (Canada)", "This is a Rexall pharmacy in Canada."),
-    place_kind("Uniprix", "This is a Uniprix pharmacy, a Quebec pharmacy chain.", 1, "Quebec, Canada"),
+    place_kind("Uniprix", "This is a Uniprix pharmacy (a Quebec-based pharmacy chain)."),
     place_kind("Pharmacies in Canada", "This is a pharmacy in Canada."),
     place_kind("Libraries in Canada", "This is a library in Canada."),
     place_kind("Public libraries in Canada", "This is a public library in Canada."),
@@ -978,7 +976,7 @@ CANADA_PACKS = {
         what="categories of the TTC, Montreal Metro, TransLink, GO Transit, VIA Rail, Canadian airports, buses, "
              "gas and charging stations")),
     "commons_ca_public_places": (build_commons_ca_public_places, COMMONS_CREDIT.format(
-        what="categories of Canada Post, Service Canada, pharmacies, libraries, hospitals and other public places "
+        what="categories of post offices, Service Canada, pharmacies, libraries, hospitals and other public places "
              "in Canada")),
     "commons_ca_provincial": (build_commons_ca_provincial,
                               "Wikimedia Commons files under the Open Government Licences of Ontario, Alberta, "

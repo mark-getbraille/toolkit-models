@@ -161,7 +161,7 @@ CA_SA = (
        ("TransLink (British Columbia)", PLACE_Q, "This is TransLink, Vancouver's public transit.", True),
        ("GO Transit", PLACE_Q, "This is GO Transit, the Toronto region's commuter trains and buses.", True),
        ("Toronto Pearson International Airport", PLACE_Q, "This is Toronto Pearson International Airport.", True),
-       ("Canada Post", PLACE_Q, "This is Canada Post.", True),
+       ("Post offices in Canada", PLACE_Q, "This is a post office in Canada.", True),
        ("Shoppers Drug Mart", PLACE_Q, "This is a Shoppers Drug Mart pharmacy.", True),
        ("Libraries in Canada", PLACE_Q, "This is a library in Canada.", True),
        ("Winter in Canada", HAPPENING_Q, "This is winter in Canada.", True),
