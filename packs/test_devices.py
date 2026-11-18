@@ -90,6 +90,10 @@ def test_commons_rows():
     assert not any(r.get("child") for r in rows)
     assert len(d.commons_rows("File:Old fax machine.jpg", "Old fax machine", "This is a fax machine.", CREDIT)) == 1
     assert d.commons_rows("File:Mower.jpg", "A woman mowing the lawn.", "This is a lawn mower.", CREDIT) == []
+    # A caption in another language is not used as a description; an Anefo photo is already the anefo pack.
+    assert len(d.commons_rows("File:Semafoon.jpg", "Beschrijving : Semafoon officieel van de PTT", "This is a pager.",
+                              CREDIT)) == 1
+    assert d.commons_rows("File:Semafoon, Bestanddeelnr 916-8899.jpg", "", "This is a pager.", CREDIT) == []
     # A file whose words name a child is left out altogether (PERSON names children too).
     assert d.commons_rows("File:Kitchen.jpg", "A toaster oven in the children's kitchen.", "This is a toaster oven.",
                           CREDIT) == []

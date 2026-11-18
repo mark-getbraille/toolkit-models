@@ -96,7 +96,12 @@ WHEN_Q = "About when was this made?"
 # Words that show a person in the picture (these packs show the devices themselves; see the module docstring).
 PERSON = re.compile(r"\b(man|men|woman|women|person|people|persons|boy|boys|girl|girls|child\w*|kids?|bab(y|ies)|"
                     r"toddlers?|teen\w*|users?|worker\w*|operator\w*|customers?|students?|selfie|portraits?|"
-                    r"wearing|holding|he|she|his|her|him|they are|family|families|crowd\w*)\b", re.I)
+                    r"wearing|holding|he|she|his|her|him|they are|family|families|crowd\w*|dr|mr|mrs|ms|sir|"
+                    r"lady|mister|herr|frau|meneer|mevrouw)\b", re.I)
+# A caption in English has some of these words (captions in other languages are not used: no translation here).
+ENGLISH_WORDS = re.compile(r"\b(the|of|and|with|in|at|on|a|an|is|from|for|this|its)\b", re.I)
+# Nationaal Archief (Anefo) photos are already the open "anefo" pack (archive_packs.py), with their Dutch captions.
+ANEFO = re.compile(r"Bestanddeelnr|\bAnefo\b", re.I)
 # Files that are not a photo of the device seen whole: its box, manual, advertisement, insides, parts or screen.
 NOT_THE_DEVICE = re.compile(r"\b(box(es)?|boxed|packag\w*|manuals?|advert\w*|ads?|brochures?|catalog(ue)?s?|logos?|"
                             r"icons?|screenshots?|screen ?shots?|screens? showing|teardowns?|disassembl\w*|"
@@ -270,7 +275,8 @@ def device_picture_rows(subject, title, text):
     """The rows of one picture of a model: [] when the file is not a photo of the device seen whole (its box,
     manual, insides, parts, a drawing ...) or its words name a person or nudity."""
     words = f"{title} {text}"
-    if NOT_THE_DEVICE.search(title) or NOT_THE_DEVICE.search(text) or PERSON.search(words) or NUDE.search(words):
+    if NOT_THE_DEVICE.search(title) or NOT_THE_DEVICE.search(text) or PERSON.search(words) or NUDE.search(words) \
+            or ANEFO.search(words):
         return []
     return model_rows(subject)
 
@@ -503,11 +509,12 @@ def commons_rows(title, text, answer, credit):
     real, respectful caption, "Write a short description ..." with it; [] when it is not a photo of the device itself
     or its words name a person or nudity. Rows whose words name a child are marked "child"."""
     words = f"{title} {text}"
-    if NUDE.search(words) or PERSON.search(words) or NOT_THE_DEVICE.search(title):
+    if NUDE.search(words) or PERSON.search(words) or NOT_THE_DEVICE.search(title) or ANEFO.search(words):
         return []
     place = where(COMMONS_PLACES.get(title, ""))
     rows = [mark_child({"question": WHAT_Q, "answer": answer, "credit": credit, **place}, words)]
     if text and not NOT_RESPECTFUL.search(text) and not FIRST_PERSON.search(text) and \
+            len(ENGLISH_WORDS.findall(text)) >= 2 and \
             set(re.findall(r"[a-z]+", text.lower())) - set(re.findall(r"[a-z]+", title.lower())):
         rows.append(mark_child({"question": ALT_TEXT, "answer": text, "credit": credit, **place}, words))
     return rows

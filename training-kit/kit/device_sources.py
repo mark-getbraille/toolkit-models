@@ -63,7 +63,9 @@ WIKIDATA_SPARQL = "https://query.wikidata.org/sparql"
 # As in packs/device_packs.py: words that show a person, and files that are not a photo of the device itself.
 PERSON = re.compile(r"\b(man|men|woman|women|person|people|persons|boy|boys|girl|girls|child\w*|kids?|bab(y|ies)|"
                     r"toddlers?|teen\w*|users?|worker\w*|operator\w*|customers?|students?|selfie|portraits?|"
-                    r"wearing|holding|he|she|his|her|him|they are|family|families|crowd\w*)\b", re.I)
+                    r"wearing|holding|he|she|his|her|him|they are|family|families|crowd\w*|dr|mr|mrs|ms|sir|"
+                    r"lady|mister|herr|frau|meneer|mevrouw)\b", re.I)
+ENGLISH_WORDS = re.compile(r"\b(the|of|and|with|in|at|on|a|an|is|from|for|this|its)\b", re.I)
 NOT_THE_DEVICE = re.compile(r"\b(box(es)?|boxed|packag\w*|manuals?|advert\w*|ads?|brochures?|catalog(ue)?s?|logos?|"
                             r"icons?|screenshots?|screen ?shots?|screens? showing|teardowns?|disassembl\w*|"
                             r"dismantl\w*|motherboards?|mainboards?|pcbs?|circuit boards?|inside|insides|interior|"
@@ -252,7 +254,8 @@ def sa_device_items(specs, want, prefix, per_category):
             for question, answer in specs[category]:
                 items.append((name, url, {"question": question, "answer": answer, "split": "", "credit": credit,
                                           **child}))
-            if text and set(re.findall(r"[a-z]+", text.lower())) - set(re.findall(r"[a-z]+", title.lower())):
+            if text and len(ENGLISH_WORDS.findall(text)) >= 2 and \
+                    set(re.findall(r"[a-z]+", text.lower())) - set(re.findall(r"[a-z]+", title.lower())):
                 items.append((name, url, {"question": "Write a short description of this picture for someone who "
                                                       "cannot see it.", "answer": text, "split": "",
                                           "credit": credit, **child}))
