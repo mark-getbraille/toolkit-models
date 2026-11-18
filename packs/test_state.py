@@ -60,6 +60,19 @@ def test_why_not():
                                     "the Best Warrior Competition", 2017, True)
     assert m.why_not("Guardsmen hand out bottled water at a water distribution site after the flood", 2019, True) == ""
     assert m.state_caption("Shiras Bull Moose (low resolution only).") == "Shiras Bull Moose."
+    # Seen in the Oregon Guard's stream: a memorial event that names firefighters.
+    assert "emergency" in m.why_not("9/11 Memorial Stair Climb is a tribute to the 343 firefighters who gave their "
+                                    "lives", 2025, True)
+    assert m.why_not("Firefighting crews from the Oregon National Guard battle the Holiday Farm wildfire", 2020,
+                     True) == ""
+
+
+def test_picture_names():
+    """Two long titles that differ only at their end get different file names."""
+    a = "File:9-11 Memorial Stair Climb at Autzen Stadium, Eugene, Oregon on September 11, 2025 - 1.jpg"
+    b = "File:9-11 Memorial Stair Climb at Autzen Stadium, Eugene, Oregon on September 11, 2025 - 2.jpg"
+    assert m.picture_name("stresp", a) != m.picture_name("stresp", b)
+    assert m.picture_name("stresp", a).startswith("stresp-9-11_Memorial") and m.picture_name("x", a).endswith(".jpg")
 
 
 def test_credit_parts():
@@ -103,10 +116,10 @@ def test_agency_pack_logic(monkeypatch):
     build_packs.reset_needs()
     out = m.agency_pack(m.ROADS[:1], 4, "commons_state_roads", "stroad")
     pictures = [(name, row) for name, data, row in out if data]
-    assert [name for name, _ in pictures] == ["stroad-A.jpg"]
+    assert [name for name, _ in pictures] == [m.picture_name("stroad", "File:A.jpg")]
     assert pictures[0][1]["answer"] == "A snowplow clears Highway 26 near Government Camp after a storm."
     assert pictures[0][1]["place"] == "Oregon, USA"
-    assert [n["name"] for n in build_packs.NEEDS] == ["stroad-C.jpg"]
+    assert [n["name"] for n in build_packs.NEEDS] == [m.picture_name("stroad", "File:C.jpg")]
     assert build_packs.NEEDS[0]["licence"] == "CC BY 2.0" and build_packs.NEEDS[0]["not_for_picture_making"]
     build_packs.reset_needs()
 

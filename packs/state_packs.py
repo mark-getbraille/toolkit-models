@@ -13,7 +13,8 @@ photo is only taken here when its OWN licence is open: every photo is a Wikimedi
 stream (mostly copied from Flickr by Commons' bots, with Commons' licence review), and each file's own Commons licence
 is checked (public domain, CC0 or CC BY; never share-alike, non-commercial or no-derivatives: those files are noted
 and left out). Flickr itself is never used (its API terms forbid storing photos; see us_modern_sources.py). The
-share-alike files of the same streams (Knoxville Area Transit, City of Boston Archives ...) are a kit entry in
+share-alike streams (Knoxville Area Transit, the Montgomery County Planning Commission in Pennsylvania, the City of
+Boston Archives' share-alike files) are a kit entry in
 training-kit/kit/state_sources.py, with the state-by-state notes of what was searched, found and left out.
 
 Every answer is the agency's own words or a fixed sentence: "Describe this picture." with the agency's own caption
@@ -49,8 +50,8 @@ The packs (all open; checked at the source in November 2026):
                            (public domain under California law, County of Santa Clara v. Superior Court, 2009; Commons
                            {{PD-CAGov}}), only photos whose words name an emergency.
   commons_state_community  Cities, counties, state archives and state universities: the City of Detroit, the City of
-                           Greenville (North Carolina), Baltimore County Government (public domain marks), the
-                           Montgomery County Planning Commission (Pennsylvania), Ohio's Development Services Agency
+                           Greenville (North Carolina), Baltimore County Government (public domain marks), Ohio's
+                           Development Services Agency
                            (redevelopment projects, CC BY 2.0), the City of Overland Park, the Seattle Municipal
                            Archives (CC BY 4.0), the City of Boston Archives (its CC BY files), the Washington and
                            Missouri State Archives, the Library of Virginia, the Texas State Library and Archives,
@@ -169,9 +170,6 @@ COMMUNITY = [
            "Greenville, North Carolina, USA", 2, r"City of Greenville"),
     agency("Files from Baltimore County Government Flickr stream", f"Baltimore County Government, {COUNTY}",
            "Baltimore County, Maryland, USA", 2, r"Baltimore County"),
-    agency("Files from the Montgomery County Planning Commission (Pennsylvania) Flickr stream",
-           f"the Montgomery County Planning Commission, part of {COUNTY}", "Montgomery County, Pennsylvania, USA", 1,
-           r"Montgomery County"),
     agency("Files from Ohio Redevelopment Projects - ODSA Flickr stream",
            f"the Ohio Development Services Agency (ODSA), {STATE_AGENCY}", "Ohio, USA", 3,
            r"Ohio Redevelopment|ODSA|Development Services"),
@@ -219,14 +217,16 @@ STATE_OFFICIAL = re.compile(r"\b(lieutenant governor|legislat\w*|lawmakers?|stat
 # Words that say a photo shows an emergency or disaster response (the response pack keeps only these).
 EMERGENCY = re.compile(r"\b(flood\w*|hurricanes?|tropical storms?|snowstorms?|snow ?(plow\w*|removal)|blizzards?|"
                        r"ice storms?|tornado\w*|wildfires?|forest fires?|brush fires?|grass fires?|house fires?|"
-                       r"firefight\w*|blazes?|disasters?|emergenc\w*|sandbag\w*|evacuat\w*|rescue\w*|shelters?|"
+                       r"firefighting|blazes?|disasters?|emergenc\w*|sandbag\w*|evacuat\w*|rescue\w*|shelters?|"
                        r"covid\w*|pandemic|vaccin\w*|testing sites?|food banks?|water distribution|debris|levees?|"
                        r"droughts?|earthquakes?|landslides?|mudslides?|power outages?|relief|recovery efforts?|"
                        r"winter storms?|severe weather)\b", re.I)
-# Military training and competitions (the emergency pack leaves them out even when a word above appears).
+# Military training, competitions and memorials (the emergency pack leaves them out even when a word above
+# appears: "fire mission", "Fires Brigade", a 9/11 memorial stair climb "in tribute to the firefighters").
 TRAINING = re.compile(r"\b(training|trains?|exercises?|drills?|competitions?|best warrior|qualif\w*|range|"
                       r"marksmanship|howitzers?|artillery|fire mission|live[- ]fire|deploy\w*|mobiliz\w*|"
-                      r"annual training|field training|ceremon\w*)\b", re.I)
+                      r"annual training|field training|ceremon\w*|memorials?|tributes?|anniversary|"
+                      r"remembrance|stair climb|9/11|honou?r(s|ed|ing)?)\b", re.I)
 # Parts of a state or city caption that are not about the picture (added to us_modern_packs.agency_caption's).
 STATE_NOISE = re.compile(r"(\bphoto(graph)?( credit)?\s*[:/]\s*[^.]*\.?|\b[A-Z][\w&.-]{1,20} photos? (by|courtesy)"
                          r"\b[^.]*\.?|\([^)]*/\s*(MTA|NYCT|MTA New York City Transit)[^)]*\)|"
@@ -247,6 +247,15 @@ def state_caption(text):
     text = RECORD_FIELDS.split(re.sub(r"^\s*Title\s*:\s*", "", text))[0]
     text = agency_caption(STATE_NOISE.sub(" ", text))
     return re.sub(r"\s+([.,;:!?])", r"\1", text)
+
+
+def picture_name(prefix, title):
+    """A pack picture's file name for a Commons file: home_packs.file_name, shortened, with eight characters of
+    the title's SHA-1 so two long titles that differ only at their end ("... September 11, 2025 - 1.jpg" and "...
+    - 2.jpg") get different names."""
+    import hashlib
+    base = file_name(prefix, title)[:-4][:70].rstrip("_-")
+    return f"{base}-{hashlib.sha1(title.encode('utf-8')).hexdigest()[:8]}.jpg"
 
 
 def english(text):
@@ -334,7 +343,7 @@ def agency_pack(specs, limit, key, prefix, emergency_only=False):
                 if only_the_name(caption, title):
                     caption = ""
                 if not caption or len(caption.split()) < 6 or not english(caption):
-                    needs_description(file_name(prefix, title), url, credit, licence_of(credit), text=caption,
+                    needs_description(picture_name(prefix, title), url, credit, licence_of(credit), text=caption,
                                       title=title, reason="its caption is under six English words",
                                       place=spec["place"], place_kind="origin",
                                       page_url=credit.rsplit(", ", 1)[-1],
@@ -343,7 +352,7 @@ def agency_pack(specs, limit, key, prefix, emergency_only=False):
                                              "content": "graphic" if GRAPHIC.search(words) else "",
                                              "not_for_picture_making": True})
                     continue
-                items.append((file_name(prefix, title), url, state_rows(caption, spec, credit, words)))
+                items.append((picture_name(prefix, title), url, state_rows(caption, spec, credit, words)))
                 got += 1
         say(f"  {got} photos from {spec['who']}")
     rng.shuffle(items)
@@ -398,7 +407,7 @@ STATE_LIMITS = {
     "commons_state_roads": 3500,        # 8 categories, about 43,000 files (MTA 23,000, ODOT 12,500), sampled
     "commons_state_outdoors": 3000,     # 8 categories, about 43,000 files (Virginia State Parks 33,800), sampled
     "commons_state_response": 800,      # 6 categories, about 7,800 files; only emergencies are kept
-    "commons_state_community": 2500,    # 18 categories, about 40,000 files; much is pre-1990 or official
+    "commons_state_community": 2500,    # 17 categories, about 40,000 files; much is pre-1990 or official
 }
 
 

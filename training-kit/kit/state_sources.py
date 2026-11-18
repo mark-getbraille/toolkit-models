@@ -42,8 +42,11 @@ The collections (STATE_SOURCES):
     commons_state_sa   Wikimedia Commons files under CC BY-SA or GFDL from state and city government streams: Knoxville
                        Area Transit (Tennessee; 166 files, its Flickr stream is CC BY-SA 2.0: "This file is licensed
                        under the Creative Commons Attribution-Share Alike 2.0 Generic license", e.g.
-                       https://commons.wikimedia.org/wiki/File:Hybrid_buses_(24834828658).jpg) and the share-alike
-                       files of the City of Boston Archives (its Flickr stream mixes CC BY 2.0 and CC BY-SA 2.0).
+                       https://commons.wikimedia.org/wiki/File:Hybrid_buses_(24834828658).jpg), the Montgomery
+                       County Planning Commission (Pennsylvania; 159 files of stations, bridges, parks, farms and
+                       fairs, CC BY-SA 2.0, e.g. https://commons.wikimedia.org/wiki/File:Ambler_station_at_night,
+                       _January_2017.jpg) and the share-alike files of the City of Boston Archives (its Flickr stream
+                       mixes CC BY 2.0 and CC BY-SA 2.0).
                        "Who took this photo?" with the agency, and "Describe this picture." with the file's own
                        caption. Files whose words say they are older than 1990, an official event, crime or a victim,
                        nudity or swimwear are left out; rows naming a child are marked "child".
@@ -82,6 +85,9 @@ OFFICIAL = re.compile(r"\b(governor|lieutenant governor|mayor|senator|congress\w
 STATE_SA = [
     ("Files from Knoxville Area Transit Flickr stream", WHO_Q,
      "It is a photo by Knoxville Area Transit, the city of Knoxville's public transit agency in Tennessee.", False),
+    ("Files from the Montgomery County Planning Commission (Pennsylvania) Flickr stream", WHO_Q,
+     "It is a photo by the Montgomery County Planning Commission, part of the county government of Montgomery County, "
+     "Pennsylvania.", False),
     ("Files from City of Boston Archives Flickr stream", WHO_Q,
      "It is a photo from the City of Boston Archives, a city archive in Massachusetts.", False),
 ]
@@ -108,13 +114,14 @@ def prepare_commons_state_sa(source, data_dir, work, cap):
 SA_TERMS = "https://creativecommons.org/licenses/by-sa/2.0/"
 SA_SUMMARY = "CC BY-SA (or GFDL): use with credit, and anything made from it keeps the same licence."
 STATE_SOURCES = [
-    Source("commons_state_sa", "US city and state government photos: Knoxville Area Transit buses and the City of "
-                               "Boston Archives, files under CC BY-SA (Wikimedia Commons, share-alike)",
+    Source("commons_state_sa", "US city and county government photos: Knoxville Area Transit buses, Montgomery "
+                               "County (Pennsylvania) planning photos and the City of Boston Archives, files under "
+                               "CC BY-SA (Wikimedia Commons, share-alike)",
            "Each file CC BY-SA 2.0 (or GFDL), as its agency licensed it on Flickr and Commons' review confirmed; "
            "captions by the agencies",
-           "Knoxville Area Transit and the City of Boston Archives via Wikimedia Commons, CC BY-SA, each credited in "
-           "its row, https://commons.wikimedia.org",
-           "share-alike", 150, 10, prepare_commons_state_sa, "about 40 MB of pictures", terms=SA_TERMS,
+           "Knoxville Area Transit, the Montgomery County Planning Commission and the City of Boston Archives via "
+           "Wikimedia Commons, CC BY-SA, each credited in its row, https://commons.wikimedia.org",
+           "share-alike", 300, 10, prepare_commons_state_sa, "about 80 MB of pictures", terms=SA_TERMS,
            terms_summary=SA_SUMMARY),
 ]
 
@@ -254,9 +261,9 @@ STATE_SUMMARY = {
                         f"mostly historic); {BUILT} commons_state_community (1990 onwards only)",
     },
     "Pennsylvania": {"local": "Montgomery County Planning Commission, Commons 'Files from the Montgomery County "
-                              "Planning Commission (Pennsylvania) Flickr stream' (159); {built} commons_state_"
-                              "community; Governor Tom Wolf (5,922) and Philadelphia City Council streams: {not_in} "
-                              "(politicians)".format(built=BUILT, not_in=NOT_IN),
+                              "Planning Commission (Pennsylvania) Flickr stream' (159), CC BY-SA 2.0; {sa}; Governor "
+                              "Tom Wolf (5,922) and Philadelphia City Council streams: {not_in} "
+                              "(politicians)".format(sa=SA_ENTRY, not_in=NOT_IN),
                      "universities": f"Penn State Frost Entomological Museum (54, insect specimens): {NOT_IN}"},
     "South Carolina": {"guard": "South Carolina National Guard, Commons 'Files from the South Carolina National Guard "
                                 f"Flickr stream' (213); {BUILT} commons_state_response (emergencies only)"},
