@@ -35,6 +35,19 @@ HARD RULES kept by every fetch function here (screen() below):
     identifiable people: COM:SEX, COM:IDENT). Photographs of people must be the uploader's "own work", be in no
     deletion, copyright or identity-problem category, and have no youthful wording ("teen", "girl", "boy", "young",
     school uniforms). Product photos (sex toys, condoms) must show no person, or follow the same rules.
+  - US PATENT DRAWINGS (us_patent_drawings) only from the USPTO Open Data Portal (its API, with a free key in
+    USPTO_ODP_API_KEY; skipped with a plain message without one). Public domain: the USPTO says the text and
+    drawings of a patent are typically not subject to copyright, except where the patent carries a copyright or
+    mask-work notice (37 CFR 1.71(d)/(e)); any patent with copyright or mask-work wording is left out. Each patent's
+    title, abstract and figure descriptions pass screen(), and its whole text must not mention a child, an animal,
+    harm, restraint, BDSM or non-consensual use. Technical drawings could in principle be an open collection, but
+    they show sex toys and sometimes adult anatomy, so they stay review-only with content "sexual" like the rest.
+  - PRODUCT PHOTOS through OPENVERSE (openverse_products) show NO PERSON: any person, body or youthful word in the
+    title, description or tags (also the machine-made tags) leaves the picture out, and so does any sexual act,
+    fetish or BDSM word, any adult site and any sensitive flag. Only sites whose terms allow re-use by program are
+    used (Wikimedia Commons, open museums and libraries; never Flickr, whose terms forbid robots). Commons files are
+    checked again on Commons and left out when the Commons collections here already read them. Openverse's rate
+    limits are kept and its terms followed (credit, "not endorsed by Openverse").
   - NOTHING from porn sites, scraped web sets (LAION and the like), Reddit, forums or any source of unknown
     provenance. When unsure, a record is left out.
 
@@ -57,13 +70,20 @@ PLUMBING the rest of the kit needs (not done here; other files are being edited 
     person makes an extra, explicit choice for it; it must never be used for picture-making training and never be
     put in a published model ("never_for_picture_making" and "never_publish" are true in describing.json).
 
-Only requests and Pillow are needed (as for the rest of the kit). Nothing is sent anywhere except the downloads.
+Only requests and Pillow are needed (as for the rest of the kit; patent drawing sheets are read out of the USPTO's
+PDF by pdf_images() here, with Pillow). Nothing is sent anywhere except the downloads (and the searches they need;
+the USPTO key goes only to api.uspto.gov).
 """
 
+import io
 import os
+import random
 import re
 import shutil
+import struct
 import time
+import zipfile
+import zlib
 
 import describe_package as dp
 import review_sources as rs
@@ -1406,9 +1426,859 @@ def fetch_commons_vintage_named(folder, cap, say=print):
     return ws.finish(looked, left)
 
 
+# ----------------------------------------------------------------- reading drawing sheets out of a PDF
+
+PDF_OBJECT = re.compile(rb"(\d+)\s+(\d+)\s+obj\b(.*?)\bendobj\b", re.S)
+PDF_STREAM = re.compile(rb"\bstream(?:\r\n|\r|\n)")
+
+
+def pdf_number(head, name, default=None):
+    """A whole number from a PDF object's dictionary (/Width 2560), or default when it is missing or indirect."""
+    m = re.search(rb"/" + name + rb"\s+(-?\d+)(?!\s+\d+\s+R)", head)
+    return int(m.group(1)) if m else default
+
+
+def ccitt_tiff(data, width, height, k, black_is_1=False):
+    """TIFF bytes around a PDF's CCITT fax-coded picture (the way USPTO stores drawing sheets: black and white,
+    Group 4), so that Pillow can open it. k < 0 is Group 4, otherwise Group 3."""
+    compression = 4 if k < 0 else 3
+    entries = [(256, 4, width), (257, 4, height), (258, 3, 1), (259, 3, compression),
+               (262, 3, 1 if black_is_1 else 0), (273, 4, 0), (278, 4, height), (279, 4, len(data))]
+    if compression == 3:
+        entries.append((292, 4, 1 if k > 0 else 0))   # T4Options: two-dimensional coding when k > 0
+    entries.sort()
+    start = 8 + 2 + 12 * len(entries) + 4
+    out = b"II*\x00" + struct.pack("<I", 8) + struct.pack("<H", len(entries))
+    for tag, kind, value in entries:
+        if tag == 273:
+            value = start                              # the picture data comes straight after the directory
+        out += struct.pack("<HHII", tag, kind, 1, value) if kind == 4 else struct.pack("<HHIHH", tag, kind, 1,
+                                                                                         value, 0)
+    return out + struct.pack("<I", 0) + data
+
+
+def pdf_images(data):
+    """[picture bytes Pillow can open] for the pictures in a PDF, in the order they are stored (a USPTO drawings
+    PDF has one scanned sheet per page, stored in page order). Fax-coded (CCITT), JPEG and simple compressed
+    (Flate) pictures are read; anything else is skipped. Only Pillow and the standard library are needed."""
+    found = []
+    for m in PDF_OBJECT.finditer(data or b""):
+        body = m.group(3)
+        s = PDF_STREAM.search(body)
+        if not s:
+            continue
+        head = body[:s.start()]
+        if not re.search(rb"/Subtype\s*/Image\b", head):
+            continue
+        raw = body[s.end():]
+        length = pdf_number(head, b"Length")
+        end = raw.rfind(b"endstream")
+        raw = raw[:length] if length is not None and length <= len(raw) else raw[:end].rstrip(b"\r\n")
+        width, height = pdf_number(head, b"Width"), pdf_number(head, b"Height")
+        if not width or not height:
+            continue
+        try:
+            if b"/CCITTFaxDecode" in head:
+                found.append(ccitt_tiff(raw, width, height, pdf_number(head, b"K", 0),
+                                        bool(re.search(rb"/BlackIs1\s+true", head))))
+            elif b"/DCTDecode" in head:
+                found.append(raw)
+            elif b"/FlateDecode" in head and not re.search(rb"/Predictor\s+([2-9]|1\d)", head):
+                from PIL import Image
+                bits = pdf_number(head, b"BitsPerComponent", 8)
+                mode = {1: "1", 8: "RGB" if b"/DeviceRGB" in head else "L"}.get(bits)
+                if mode:
+                    picture = Image.frombytes(mode, (width, height), zlib.decompress(raw))
+                    out = io.BytesIO()
+                    picture.save(out, "PNG")
+                    found.append(out.getvalue())
+        except (ValueError, zlib.error, OSError):
+            continue                                   # a picture that cannot be read: skipped
+    return found
+
+
+# ----------------------------------------------------------------- US patent drawings (public domain, USPTO)
+
+# US patents: the USPTO's terms (https://www.uspto.gov/terms-use-uspto-websites) say "Subject to limited
+# exceptions reflected in 37 CFR 1.71(d) & (e) and 1.84(s), the text and drawings of a patent are typically not
+# subject to copyright restrictions." Those exceptions are a copyright or mask-work notice the applicant put in the
+# patent; a patent with any such notice (or any copyright wording at all) is left out here.
+# The drawings, the full text and the search come from the USPTO Open Data Portal (api.uspto.gov), the USPTO's own
+# channel for automated use. It needs a free API key (data.uspto.gov, "API key management"), read from the
+# environment variable USPTO_ODP_API_KEY (in a GitHub workflow: a repository secret of that name). Without it the
+# collection is skipped with a plain message. The key is only ever sent to api.uspto.gov.
+# The PatentsView API was paused on 20 March 2026 while it moves into the Open Data Portal; Google Patents is not
+# used (see NOT_INCLUDED).
+USPTO_KEY_ENV = "USPTO_ODP_API_KEY"
+ODP = "https://api.uspto.gov/api/v1/"
+ODP_HOST = "https://api.uspto.gov/"
+PATENT_TERMS = "https://www.uspto.gov/terms-use-uspto-websites"
+PATENT_LICENCE = ("public domain (USPTO: \"the text and drawings of a patent are typically not subject to copyright "
+                  "restrictions\"; patents with a copyright or mask-work notice, 37 CFR 1.71(d)/(e), left out)")
+PATENT_PER_PATENT = 3                     # at most this many drawing sheets from one patent (so many patents share)
+PATENT_PAUSE = 1.0                        # seconds between calls to the Open Data Portal
+PATENT_XML_MOST = 20_000_000              # bytes: a bigger "full text" is a weekly bulk file, not one patent
+
+# What is searched: (field of the Open Data Portal's search, the query, the class codes an answer must carry).
+# CPC A61H19 "Massage for the genitals; devices for improving sexual intercourse"; A61F5/41 "Devices for promoting
+# penis erection"; A61F6/04 "Condoms, sheaths or the like" (A61F2006/04x oral condoms); A61F6/065 "Condom-like
+# devices worn by females"; A61F5/4553 receptacles "placed in the vagina, e.g. for catamenial use" (menstrual cups);
+# and the old US classes 600/38 to 600/41 (sexual appliances), used until 2015.
+PATENT_FAMILIES = [
+    ("cpcClassificationBag", r"A61H19*", ("A61H19",)),
+    ("cpcClassificationBag", r"A61F5\/41*", ("A61F5/41",)),
+    ("cpcClassificationBag", r"A61F6\/04*", ("A61F6/04",)),
+    ("cpcClassificationBag", r"A61F2006\/04*", ("A61F2006/04",)),
+    ("cpcClassificationBag", r"A61F6\/065*", ("A61F6/065",)),
+    ("cpcClassificationBag", r"A61F5\/4553*", ("A61F5/4553",)),
+    ("uspcSymbolText", r"600\/038* OR applicationMetaData.uspcSymbolText:600\/039* OR "
+                       r"applicationMetaData.uspcSymbolText:600\/040* OR applicationMetaData.uspcSymbolText:600\/041*",
+     ("600/038", "600/039", "600/040", "600/041")),
+]
+
+# The device in plain words, from the most specific class the patent carries (first match wins).
+PATENT_KINDS = [
+    ("A61F6/065", "a female condom (a condom worn inside the vagina)"),
+    ("A61F2006/042", "an oral condom (a barrier for oral sex)"),
+    ("A61F6/04", "a condom"), ("A61F2006/04", "a condom"),
+    ("A61F5/4553", "a menstrual cup or a similar device worn inside the vagina"),
+    ("A61F5/41", "a device that helps the penis become or stay erect"),
+    ("A61H19/44", "a long, rounded device for putting inside the body, such as a dildo"),
+    ("A61H19/40", "a device for putting inside the genitals (such as the vagina)"),
+    ("A61H19/34", "a device for stimulating the clitoris"),
+    ("A61H19/32", "a device the genitals are put into, such as a vibrating penis ring"),
+    ("A61H19/30", "a device for stimulating the genitals from outside"),
+    ("A61H19/50", "a device for use during sex"),
+    ("A61H19", "a device for sexual stimulation or genital massage"),
+    ("600/03", "a sexual device"), ("600/04", "a sexual device"),
+]
+
+# Any copyright or mask-work wording: the patent is left out (37 CFR 1.71(d)/(e), 1.84(s)).
+COPYRIGHT_NOTICE = re.compile(r"\bcopyright\w*|\bmask[- ]works?\b|©|&#169;|&copy;|\(c\)\s*(?:19|20)\d\d\b|"
+                              r"\ball rights reserved\b", re.I)
+
+# Technical phrases that would wrongly look like a child, sleep or a "kind" ("sleep mode", "Young's modulus", "of
+# this kind"): taken out before the patent's words are screened. Nothing else is softened.
+TECH_NEUTRAL = re.compile(
+    r"\b(?:sleep|standby|wake|idle|power-?save)[- ]?(?:modes?|states?|timers?|functions?|cycles?)\b|"
+    r"\byoung'?s modulus\b|\b(?:a|any|this|that|the same|each|every|some|other|similar|one|which|what|all) "
+    r"kinds? of\b|\bof (?:this|that|the same|any|a similar|this general) kind\b|\bkind of\b", re.I)
+
+# In a patent's full text: harm, no consent, restraint and BDSM (with review_sources.CHILD and ANIMAL from above).
+PATENT_HARM = re.compile(
+    r"\b(?:rap(?:e|ed|es|ing|ist)|non-?consensual\w*|without (?:her|his|their|the (?:user|partner|person|wearer)'?s?) "
+    r"(?:consent|knowledge)|unconscious|asleep|sleeping (?:person|partner|user|woman|man)|drugged|bdsm|bondage|"
+    r"shibari|restrain\w*|handcuff\w*|shackl\w*|manacl\w*|whip\w*|flogg\w*|spank\w*|tortur\w*|gag(?:ged|s)?|"
+    r"punish\w*|humiliat\w*|dominatri\w*|slaves?|incest\w*|voyeur\w*|hidden cameras?|sadis\w*|masochis\w*|"
+    r"fetish\w*|chastity)\b", re.I)
+
+# A figure description that names the body: the drawing may show anatomy (the reviewer is told).
+BODY_WORDS = re.compile(r"\b(?:user|wearer|body|anatom\w*|penis|penile|vagina\w*|vulva\w*|clitor\w*|labia\w*|"
+                        r"anus|anal|rectum|scrotum|testic\w*|perine\w*|pelvi\w*|breasts?|nipples?|man|woman|male|"
+                        r"female|person|hand|finger\w*|torso|thigh\w*|groin|cervix|uterus)\b", re.I)
+
+FIG_START = re.compile(r"^\s*(?:FIGS?|FIGURES?|Figs?|Figures?)\s*\.?\s*((?:\d+\s*[A-Za-z]?(?:\(\w\))?\s*(?:,|and|&|"
+                       r"to|through|thru|-|–)?\s*)+?)\s+(?:is|are|shows?|illustrates?|depicts?|represents?|presents?|"
+                       r"provides?|displays?)\b\s*(.*)$", re.S)
+FIG_SPLIT = re.compile(r"(?<=[.;])\s+(?=(?:FIGS?|FIGURES?|Figs?|Figures?)\s*\.?\s*\d)")
+
+# The patent wording that says nothing about the picture, taken out of a figure description.
+FIG_BOILERPLATE = [re.compile(p, re.I) for p in [
+    r",?\s*(?:constructed\s+|made\s+|formed\s+|configured\s+)?(?:in accordance with|according to)\s+(?:the\s+)?"
+    r"(?:principles|teachings)\s+of\s+(?:the|this)\s+(?:present\s+)?(?:invention|disclosure)\b",
+    r",?\s*(?:(?:constructed|made|formed|configured)\s+)?(?:according to|in accordance with|consistent with|"
+    r"embodying|of|in|for|showing|illustrating)?\s*(?:an?|one|the|another|a further|some|certain|various|other)\s+"
+    r"(?:(?:preferred|exemplary|alternative|alternate|illustrative|example|first|second|third|fourth|fifth|further|"
+    r"other|particular|non-limiting|specific|modified|additional)\s+)*(?:embodiments?|aspects?|implementations?)\b"
+    r"(?:\s+(?:of|according to|in accordance with)\s+(?:the|this)\s+(?:present\s+)?(?:invention|disclosure|"
+    r"application|subject matter|teachings?))?",
+    r",?\s*(?:of|according to|in accordance with|embodying)\s+(?:the|this)\s+(?:present\s+)?(?:invention|"
+    r"disclosure|application)\b",
+    r"\s+(?:hereof|herein|thereof)\b", r"\s+of the$"]]
+
+# Patent drawing words in plain English.
+FIG_PLAIN = [(re.compile(p, re.I), w) for p, w in [
+    (r"\bFIGS\.?\s*(?=\d)", "figures "), (r"\bFIG\.?\s*(?=\d)", "figure "),
+    (r"\bcross[- ]?sectional (views?)", r"cross-section \1 (as if cut through)"),
+    (r"\b(?<!cross-)(?<!cross )sectional (views?)", r"cross-section \1 (as if cut through)"),
+    (r"\bexploded (?:perspective |isometric )?(views?)", r"exploded \1 (the parts drawn apart)"),
+    (r"\b(side|front|rear|back|top|bottom|left|right|end) elevation(?:al)? (views?)", r"\1 \2"),
+    (r"\belevation(?:al)? (views?)", r"side-on \1"), (r"\btop plan (views?)", r"\1 from above"),
+    (r"\bbottom plan (views?)", r"\1 from below"), (r"\bplan (views?)", r"\1 from above (plan view)"),
+    (r"\bisometric (views?)", r"three-dimensional \1"), (r"\bperspective (views?)", r"\1 at an angle (perspective)"),
+    (r"\bschematic (?:diagram|view|illustration|representation|drawing)(s?)\b", r"simplified diagram\1"),
+    (r"\bschematic(?:ally)?\b", "simplified"), (r"\bblock diagram\b", "block diagram (boxes for the parts, not a "
+                                                                        "picture of the device)"),
+    (r"\bflow ?charts?\b|\bflow diagrams?\b", "flow chart (steps, not a picture of the device)"),
+    (r"\btaken (?:generally |substantially )?(?:along|on|through) (?:the )?(?:lines?|plane) ([\w']+) ?- ?([\w']+)",
+     r"as if cut along line \1-\2"), (r"\bpartially cut[- ]?away\b|\bpartial cut[- ]?away\b|\bcut[- ]?away\b",
+                                      "with part cut away to show the inside"),
+    (r"\bdistal end\b", "far end (distal end)"), (r"\bproximal end\b", "near end (proximal end)"),
+]]
+
+
+def figure_plain(text):
+    """A patent's figure description in plain words: "a perspective view of a vibrator according to one embodiment of
+    the present invention;" becomes "a view at an angle (perspective) of a vibrator"."""
+    text = clean(text).rstrip(" ;.:,")
+    text = re.sub(r"\s*(?:;|,)?\s*\band\s*$", "", text)
+    for pattern in FIG_BOILERPLATE:
+        text = pattern.sub("", text)
+    for pattern, words in FIG_PLAIN:
+        text = pattern.sub(words, text)
+    text = re.sub(r" \(as if cut through\)(,? as if cut along)", r"\1", text)
+    text = re.sub(r"\s+([,;.])", r"\1", clean(text)).rstrip(" ;.:,")
+    return re.sub(r"\s*\band$", "", text)
+
+
+def figure_labels(text):
+    """The figure labels of a figure description's start ("2A and 2B" -> ["2A", "2B"]; "3 through 5" -> 3, 4, 5)."""
+    tokens = re.findall(r"\d+\s*[A-Za-z]?(?![a-z])|through|thru|to|-|–", text)
+    labels, i = [], 0
+    while i < len(tokens):
+        t = tokens[i].replace(" ", "")
+        if t in ("through", "thru", "to", "-", "–"):
+            i += 1
+            continue
+        if (i + 2 < len(tokens) and tokens[i + 1] in ("through", "thru", "to", "-", "–") and t.isdigit()
+                and tokens[i + 2].replace(" ", "").isdigit() and 0 < int(tokens[i + 2]) - int(t) < 30):
+            labels += [str(n) for n in range(int(t), int(tokens[i + 2].replace(" ", "")) + 1)]
+            i += 3
+            continue
+        labels.append(t.upper() if t[-1:].isalpha() else t)
+        i += 1
+    return list(dict.fromkeys(labels))
+
+
+def brief_figures(paragraphs):
+    """[(figure labels, plain description)] from the paragraphs of a patent's "Brief description of the drawings"
+    (each "FIG. 1 is a ..." sentence; one paragraph may hold several)."""
+    if isinstance(paragraphs, str):
+        paragraphs = [paragraphs]
+    out = []
+    for paragraph in paragraphs:
+        for piece in FIG_SPLIT.split(clean(paragraph)):
+            m = FIG_START.match(piece)
+            if not m:
+                continue
+            labels, words = figure_labels(m.group(1)), figure_plain(m.group(2))
+            if labels and words:
+                out.append((labels, words))
+    return out
+
+
+def xml_text(fragment):
+    """Plain text of an XML fragment (tags removed, entities decoded)."""
+    return clean(re.sub(r"<[^>]+>", " ", fragment or ""))
+
+
+def patent_text(xml):
+    """{title, abstract, drawings: [paragraphs], text: all words, number, date, inventors} from a USPTO patent's
+    full-text XML (us-patent-grant). The "Brief description of the drawings" is its <description-of-drawings>, the
+    part between the brief-description-of-drawings markers, or the paragraphs after that heading."""
+    xml = xml or ""
+    section = ""
+    m = re.search(r"<description-of-drawings\b[^>]*>(.*?)</description-of-drawings>", xml, re.S)
+    if m:
+        section = m.group(1)
+    else:
+        m = re.search(r"<\?brief-description-of-drawings[^>]*end=\"lead\"[^>]*\?>(.*?)"
+                      r"<\?brief-description-of-drawings[^>]*end=\"tail\"[^>]*\?>", xml, re.S)
+        if m:
+            section = m.group(1)
+        else:
+            m = re.search(r"<heading\b[^>]*>\s*(?:BRIEF )?DESCRIPTION OF (?:THE )?(?:SEVERAL VIEWS OF THE )?"
+                          r"(?:DRAWINGS?|FIGURES?)[^<]*</heading>(.*?)(?=<heading\b|</description>)", xml, re.S | re.I)
+            section = m.group(1) if m else ""
+    paragraphs = [xml_text(p) for p in re.findall(r"<p\b[^>]*>(.*?)</p>", section, re.S)] or \
+        ([xml_text(section)] if section.strip() else [])
+    names = []
+    for who in re.findall(r"<(?:inventor|us-applicant|applicant)\b[^>]*>(.*?)</(?:inventor|us-applicant|applicant)>",
+                          xml, re.S):
+        first_name = xml_text("".join(re.findall(r"<first-name>(.*?)</first-name>", who, re.S)))
+        last_name = xml_text("".join(re.findall(r"<last-name>(.*?)</last-name>", who, re.S)))
+        if last_name and f"{first_name} {last_name}".strip() not in names:
+            names.append(f"{first_name} {last_name}".strip())
+    pub = re.search(r"<publication-reference\b.*?<doc-number>(.*?)</doc-number>.*?<date>(\d{8})</date>", xml, re.S)
+    title = re.search(r"<invention-title\b[^>]*>(.*?)</invention-title>", xml, re.S)
+    abstract = re.search(r"<abstract\b[^>]*>(.*?)</abstract>", xml, re.S)
+    return {"title": xml_text(title.group(1)) if title else "", "abstract": xml_text(abstract.group(1)) if abstract
+            else "", "drawings": [p for p in paragraphs if p], "text": xml_text(xml),
+            "number": pub.group(1).lstrip("0") if pub else "", "date": pub.group(2) if pub else "",
+            "inventors": names}
+
+
+def patent_problem(title, abstract, figure_words, full_text, raw=""):
+    """"" when a patent may be used; otherwise why it is left out: a copyright or mask-work notice (37 CFR 1.71(d)/(e)),
+    screen() on its title, abstract and figure descriptions (adults only, consent, no violence, no animals), or a
+    child, an animal, harm, restraint or BDSM anywhere in its full text."""
+    if COPYRIGHT_NOTICE.search(f"{raw} {full_text}"):
+        return "the patent carries a copyright or mask-work notice (37 CFR 1.71(d)/(e)), so it is not free to use"
+    why = screen(*(TECH_NEUTRAL.sub(" ", clean(t)) for t in (title, abstract, figure_words)))
+    if why:
+        return why
+    text = TECH_NEUTRAL.sub(" ", clean(full_text))
+    for pattern, reason in ((rs.CHILD, "the patent's text mentions a child or young person"),
+                            (ANIMAL, "the patent's text mentions an animal or creature"),
+                            (PATENT_HARM, "the patent's text mentions harm, no consent, restraint or BDSM")):
+        m = pattern.search(text)
+        if m:
+            return f"{reason} ('{m.group(0)}')"
+    if any(a < 18 for a in rs.ages(text)):
+        return "the patent's text gives an age under 18"
+    return ""
+
+
+def patent_kind(codes):
+    """The device in plain words from a patent's class codes (CPC like "A61H19/44" or US like "600/038000")."""
+    codes = [re.sub(r"\s+", "", clean(c)).upper() for c in codes or [] if c]
+    for prefix, words in PATENT_KINDS:
+        if any(c.startswith(prefix.upper()) for c in codes):
+            return words
+    return "a sexual device"
+
+
+def patent_title(title):
+    """A patent title as a plain title ("VIBRATING MASSAGER" -> "Vibrating massager")."""
+    title = clean(title).rstrip(".")
+    if title.isupper():
+        title = title.capitalize()
+    return title[:1].upper() + title[1:]
+
+
+def patent_credit(number, title, inventors, year):
+    """ "US Patent 9,876,543, Title, First Inventor and others, 2017; public domain (USPTO)"."""
+    shown = f"{int(number):,}" if str(number).isdigit() else number
+    who = ", ".join(inventors[:2]) + (" and others" if len(inventors) > 2 else "") if inventors else \
+        "inventor not stated"
+    return f"US Patent {shown}, {patent_title(title)}, {who}, {year or 'year not stated'}; public domain (USPTO)"
+
+
+def sheet_figures(figures, sheets):
+    """{sheet number (1, 2, ...): (labels, description)} when the drawing sheets can be matched to the figures one to
+    one (as many sheets as figure descriptions, each about one figure); {} when they cannot."""
+    if not figures or len(figures) != sheets or any(len(labels) != 1 for labels, _ in figures):
+        return {}
+    return {i + 1: figures[i] for i in range(sheets)}
+
+
+def patent_draft(kind, title, sheet, sheets, figures):
+    """(draft description, note for the reviewer) for one drawing sheet of a patent: "This is a drawing from a US
+    patent for a condom, titled "...": figure 2, a side view ..." when the sheet's figure is known; otherwise the
+    sheet number and the patent's own list of figures, and the reviewer is asked which figure the sheet shows."""
+    matched = sheet_figures(figures, sheets).get(sheet)
+    lead = f'This is a drawing from a US patent for {kind}, titled "{patent_title(title)}"'
+    style = "Like most patent drawings, it is a black-and-white line drawing, with numbers that point to the parts."
+    if matched:
+        text = f"{lead}: figure {matched[0][0]}, {matched[1]}. {style}"
+        note = ""
+    else:
+        listed = "; ".join(f"figure{'s' if len(l) > 1 else ''} {' and '.join(l)}, {w}" for l, w in figures[:6])
+        text = (f"{lead} (drawing sheet {sheet} of {sheets}). The patent lists its figures like this: {listed}"
+                f"{'; and more' if len(figures) > 6 else ''}. {style}")
+        note = ("Which figure is on this sheet is not known: please say which figure or figures it shows and keep "
+                "only their description.")
+    if BODY_WORDS.search(" ".join(w for _, w in figures)):
+        note += (" The patent's figure descriptions mention the body, so a drawing may show anatomy: check that it "
+                 "shows only an adult body.")
+    return text, note.strip()
+
+
+def odp_get(s, key, url, **kwargs):
+    """A GET from the Open Data Portal with the API key (sent only to api.uspto.gov), pausing politely; the response
+    or None."""
+    if not url.startswith(ODP_HOST):
+        return None
+    time.sleep(PATENT_PAUSE)
+    return rs.get(s, url, headers={"X-API-KEY": key, "Accept": "*/*"}, **kwargs)
+
+
+def odp_search(s, key, family, offset, limit=100):
+    """One page of granted utility patents of one PATENT_FAMILIES entry: [(patent number, application number,
+    title, inventors, year, class codes, grant XML address)]; None when the key is refused."""
+    field, query, prefixes = family
+    body = {"q": f"applicationMetaData.{field}:{query}",
+            "filters": [{"name": "applicationMetaData.applicationTypeLabelName", "value": ["Utility"]}],
+            "pagination": {"offset": offset, "limit": limit}}
+    time.sleep(PATENT_PAUSE)
+    data = None
+    for attempt in range(4):
+        try:
+            r = s.post(ODP + "patent/applications/search", json=body, timeout=90,
+                       headers={"X-API-KEY": key, "Accept": "application/json"})
+        except Exception:  # noqa: BLE001 - tried again
+            time.sleep(5 * (attempt + 1))
+            continue
+        if r.status_code in (401, 403):
+            return None
+        if r.status_code == 429 or r.status_code >= 500:
+            time.sleep(min(60, int(r.headers.get("Retry-After") or 0) or 10 * (attempt + 1)))
+            continue
+        data = r.json() if r.status_code == 200 else {}
+        break
+    rows = []
+    for x in (data or {}).get("patentFileWrapperDataBag") or []:
+        md = x.get("applicationMetaData") or {}
+        number = clean(md.get("patentNumber"))
+        codes = list(md.get("cpcClassificationBag") or []) + [clean(md.get("uspcSymbolText"))]
+        flat = [re.sub(r"\s+", "", c).upper() for c in codes if c]
+        if not number or not any(c.startswith(p.upper()) for c in flat for p in prefixes):
+            continue                                   # not granted, or not really in the class searched
+        inventors = [clean(i.get("inventorNameText") or f"{i.get('firstName', '')} {i.get('lastName', '')}")
+                     for i in md.get("inventorBag") or []]
+        rows.append((number, clean(x.get("applicationNumberText")), clean(md.get("inventionTitle")),
+                     [i for i in inventors if i] or [clean(md.get("firstInventorName"))],
+                     clean(md.get("grantDate"))[:4], codes,
+                     clean((x.get("grantDocumentMetaData") or {}).get("fileLocationURI"))))
+    return rows
+
+
+def grant_xml(s, key, url):
+    """The full-text XML of one granted patent from its Open Data Portal address, or "" (a weekly bulk file, which
+    holds thousands of patents, is not downloaded)."""
+    if not url:
+        return ""
+    r = odp_get(s, key, url, stream=True)
+    if r is None or r.status_code != 200:
+        return ""
+    if int(r.headers.get("Content-Length") or 0) > PATENT_XML_MOST:
+        r.close()
+        return ""
+    data = b""
+    for chunk in r.iter_content(1 << 16):
+        data += chunk
+        if len(data) > PATENT_XML_MOST:
+            r.close()
+            return ""
+    if data[:2] == b"PK":
+        try:
+            with zipfile.ZipFile(io.BytesIO(data)) as z:
+                names = [n for n in z.namelist() if n.lower().endswith(".xml")]
+                data = z.read(names[0]) if names else b""
+        except zipfile.BadZipFile:
+            return ""
+    text = data.decode("utf-8", "replace")
+    return text if text.count("<us-patent-grant") == 1 else ""
+
+
+def drawings_pdf_url(s, key, application):
+    """The address of the latest drawings document (code "DRW...", PDF) of an application, or ""."""
+    r = odp_get(s, key, f"{ODP}patent/applications/{application}/documents")
+    try:
+        docs = (r.json() if r is not None and r.status_code == 200 else {}).get("documentBag") or []
+    except ValueError:
+        docs = []
+    best = ("", "")
+    for d in docs:
+        if not clean(d.get("documentCode")).upper().startswith("DRW"):
+            continue
+        for option in d.get("downloadOptionBag") or []:
+            if clean(option.get("mimeTypeIdentifier")).upper() == "PDF" and option.get("downloadUrl"):
+                when = clean(d.get("officialDate"))
+                if when >= best[0]:
+                    best = (when, option["downloadUrl"])
+    return best[1]
+
+
+def fetch_us_patent_drawings(folder, cap, say=print):
+    """US patent drawings of sex toys, erection aids, condoms and menstrual cups (CPC A61H19, A61F5/41, A61F6/04,
+    A61F6/065, A61F5/4553 and the old US classes 600/38-41), from the USPTO Open Data Portal: the drawing sheets
+    (from the patent's drawings PDF) with each figure's own description from the patent's "Brief description of the
+    drawings", in plain words, and the patent's title. Public domain; any patent with a copyright or mask-work notice
+    is left out. Needs a free key in USPTO_ODP_API_KEY; without it nothing is downloaded and the reason is said.
+    At most PATENT_PER_PATENT sheets per patent; the patents are taken in a shuffled order that stays the same from
+    run to run, so a stopped run carries on."""
+    key = os.environ.get(USPTO_KEY_ENV, "").strip()
+    source = source_by_key("us_patent_drawings")
+    if not key:
+        message = (f"{source['name']}: skipped. This collection needs a free USPTO Open Data Portal API key in the "
+                   f"{USPTO_KEY_ENV} environment variable (in a GitHub workflow, a repository secret of that name). "
+                   f"A key is made at data.uspto.gov, under API key management. Nothing was downloaded.")
+        say(message)
+        return message
+    ws, s = AdultWorkspace(folder, source, say), rs.session()
+    want = max(40, cap // PATENT_PER_PATENT * 2 // len(PATENT_FAMILIES) + 20)
+    lists = []
+    for family in PATENT_FAMILIES:
+        found, offset = [], 0
+        while len(found) < want and offset < 3000:
+            rows = odp_search(s, key, family, offset)
+            if rows is None:
+                message = (f"{source['name']}: the Open Data Portal refused the key in {USPTO_KEY_ENV}. Check that "
+                           "the key is right and still active (data.uspto.gov, API key management).")
+                say(message)
+                return ws.finish(0, 0) + " " + message
+            found += [(f"uspatent-{r[0]}", r) for r in rows]
+            if not rows:
+                break
+            offset += 100
+        random.Random(f"us_patent_drawings {family[1]}").shuffle(found)
+        lists.append(found)
+    patents = take_turns(lists)
+    say(f"US patent drawings: {len(patents)} granted patents found in the classes searched")
+    if not patents:
+        say("The search found nothing. The Open Data Portal's search wording may have changed; nothing was added.")
+    looked = left = 0
+    for tag, (number, application, title, inventors, year, codes, xml_url) in patents:
+        if ws.full(cap) and (len(ws.left_out) >= SHOW_LEFT_OUT or looked > cap // PATENT_PER_PATENT + 20):
+            break
+        if tag in ws.tried:
+            continue
+        looked += 1
+        why = patent_problem(title, "", "", "")
+        info = {}
+        if not why:
+            info = patent_text(grant_xml(s, key, xml_url))
+            if not info["text"]:
+                why = "no full text of the patent to check (its figure descriptions and wording)"
+        if not why:
+            why = patent_problem(info["title"] or title, info["abstract"], " ".join(info["drawings"]),
+                                 info["text"])
+        figures = brief_figures(info.get("drawings")) if not why else []
+        if not why and not figures:
+            why = "no figure descriptions (\"FIG. 1 is ...\") in the patent"
+        if why:
+            ws.leave_out(tag, f"US {number}: {title}", why)
+            left += 1
+            continue
+        if ws.full(cap):
+            continue                                   # full: only screened, to show what the filters leave out
+        pdf_url = drawings_pdf_url(s, key, application)
+        r = odp_get(s, key, pdf_url, timeout=180) if pdf_url else None
+        sheets = pdf_images(r.content) if r is not None and r.status_code == 200 else []
+        if not sheets:
+            ws.leave_out(tag, f"US {number}: {title}", "no drawings document could be read")
+            left += 1
+            continue
+        title = info["title"] or title
+        credit = patent_credit(number, title, info["inventors"] or inventors, year or info["date"][:4])
+        page = f"https://ppubs.uspto.gov/pubwebapp/external.html?q={number}.pn."
+        kind = patent_kind(codes)
+        for sheet in range(1, min(len(sheets), PATENT_PER_PATENT) + 1):
+            name = f"uspatent-{number}-sheet{sheet}.jpg"
+            data = rs.jpeg(sheets[sheet - 1])
+            if ws.done(name) or data is None or ws.full(cap):
+                continue
+            text, note = patent_draft(kind, title, sheet, len(sheets), figures)
+            ws.add(name, data, text, credit, PATENT_LICENCE, page, CONTENT,
+                   (note + " " if note else "") + "Drawings as filed with the application (USPTO file wrapper).")
+        ws.mark_tried(tag)
+    return ws.finish(looked, left)
+
+
+# ----------------------------------------------------------------- Openverse product photos (no person)
+
+# Openverse (api.openverse.org, run by the WordPress project) indexes openly licensed pictures held elsewhere. Its
+# terms (https://docs.openverse.org/terms_of_service.html): keep to the rate limits (without an account 20 searches
+# a minute and 200 a day), do not scrape the catalogue, respect the terms of the sites that hold the pictures, credit
+# CC works, and say that the product was made with Openverse but is not endorsed by it. Openverse does not check
+# licences, so a Wikimedia Commons picture's licence is read again from Commons itself.
+# Almost all of Openverse's sex-toy and condom pictures are on Flickr, whose terms forbid robots and scraping
+# outside its own API (which needs an account): Flickr pictures are not downloaded (see NOT_INCLUDED). Only the
+# sites in OV_SITES, whose terms allow re-use of their open pictures by program, are used.
+OPENVERSE = "https://api.openverse.org/v1/images/"
+OPENVERSE_TERMS = "https://docs.openverse.org/terms_of_service.html"
+OV_PAUSE = 3.5                            # seconds between searches (20 a minute without an account)
+OV_PAGES = 3                              # result pages of 20 per search (200 searches a day without an account)
+OV_LICENCES = {"open": "cc0,pdm,by", "share-alike": "by-sa"}
+OV_SITES = {"wikimedia": "Wikimedia Commons", "wellcome_collection": "Wellcome Collection",
+            "met": "The Metropolitan Museum of Art", "clevelandmuseum": "Cleveland Museum of Art",
+            "europeana": "Europeana", "smithsonian": "the Smithsonian"}
+OV_QUERIES = ("dildo", "sex toy", "vibrator sex toy", "butt plug", "anal beads", "cock ring", "love eggs",
+              "kegel balls", "strap-on dildo", "condom", "female condom", "dental dam", "personal lubricant",
+              "menstrual cup", "vaginal ring", "contraceptive diaphragm", "intrauterine device", "contraceptive pills")
+
+# What the picture must be about: a sex toy or a sexual-health item. "vibrator", "lubricant" and "diaphragm" also
+# name machines, so they count only with a word that makes them sexual.
+PRODUCT = re.compile(
+    r"\b(dildos?|sex ?toys?|butt ?plugs?|anal (?:beads?|plugs?|toys?)|cock ?rings?|penis rings?|love eggs?|"
+    r"ben ?wa balls?|kegel (?:balls?|weights?|exercisers?)|strap-?ons?|(?:(?:fe)?male |internal |external |oral )?"
+    r"condoms?|femidoms?|dental dams?|"
+    r"menstrual cups?|vaginal rings?|nuva ?rings?|intrauterine devices?|iuds?|contraceptive (?:pills?|implants?|"
+    r"diaphragms?|devices?|sponges?|patch(?:es)?)|birth control pills?|diaphragms? \(contracepti\w+\)|"
+    r"(?:sex|adult|personal|clitoral|g-?spot|wand|bullet|couples?'?) (?:toy )?vibrators?|"
+    r"vibrators? \((?:sex|adult) toy\)|personal (?:lubricants?|lube)|sexual lubricants?|lubricant gel)\b", re.I)
+PRODUCT_CONTEXT = re.compile(r"\b(sex(?:ual)?|adult|erotic|personal|intimate|pleasure|toys?)\b", re.I)
+NOT_PRODUCT = re.compile(r"\b(newfoundland|town|village|road ?sign|street sign|concrete|engineering|laboratory "
+                         r"vibrator|shaker table|vibration test\w*|nasa|machine|engine|automotive|car|bicycle|"
+                         r"industrial|vending|dispenser|advert\w*|billboard|poster|campaign|protest\w*|march|"
+                         r"demonstration|cartoon|meme|drawing|sculpture|art|graffiti)\b", re.I)
+
+# The sites porn and adult pictures come from (never used).
+ADULT_SITE = re.compile(r"(porn|xxx|xhamster|xvideos|redtube|youporn|onlyfans|chaturbate|brazzers|motherless|"
+                        r"spankbang|fetlife|literotica|kink\.com|clips4sale|manyvids|\bsex\.com|nsfw|camgirl|"
+                        r"adultfriendfinder|eporner|tnaflix|beeg|tube8|hentai)", re.I)
+
+# Words that mean a person may be in the picture (also the machine-made tags Openverse adds).
+OV_PERSON = re.compile(
+    r"\b(person|persons|people|man|men|woman|women|adults?|girls?|boys?|guys?|lad(?:y|ies)|child\w*|kids?|bab(?:y|ies)|"
+    r"teen\w*|portrait\w*|faces?|hands?|fingers?|body|bodies|skin|human\w*|models?|selfies?|lips|mouth|legs?|feet|"
+    r"foot|arms?|nude|naked|nudity|breasts?|nipples?|penis|vagina|vulva|buttocks|bum|ass|couples?|lingerie|"
+    r"underwear|bikini|female|male|wearing|worn|wears|crowd|audience|speaker|students?|fashion|beauty|sexy|sensual|"
+    r"poses?|posing|smil\w*|hair|he|she|his|her|him|self|myself|me|my|using|holding|held|user|users)\b", re.I)
+# Sexual acts, porn words, fetish and BDSM (with screen() for the rest).
+OV_ACT = re.compile(
+    r"\b(fuck\w*|blow-?jobs?|hand-?jobs?|masturbat\w*|orgasm\w*|penetrat\w*|pegging|fisting|having sex|sex acts?|"
+    r"intercourse|anal sex|oral sex|threesome|orgy|orgies|cum\w*|porn\w*|xxx|nsfw|erotic\w*|hentai|fetish\w*|"
+    r"kink\w*|leather|latex fetish|collars?|cuffs?|harness\w*|gimp|mistress|master|submissive|dominant|"
+    r"pet ?play|puppy ?play|pony ?play|chastity|spreader|sounding|electro-?play|e-?stim)\b", re.I)
+
+
+# Product wording that is not a person ("adult toys", "an adult shop", "for adults only").
+ADULT_PHRASE = re.compile(r"\badult (?:toys?|products?|stores?|shops?|novelt\w+|items?|goods)\b|"
+                          r"\bfor adults(?: only)?\b|\badults only\b", re.I)
+
+
+def ov_tags(item):
+    """(tags people gave, all tags including the machine-made ones) of an Openverse record."""
+    tags = item.get("tags") or []
+    given = [clean(t.get("name")) for t in tags if isinstance(t, dict) and not t.get("accuracy")]
+    every = [clean(t.get("name")) for t in tags if isinstance(t, dict)]
+    return [t for t in given if t], [t for t in every if t]
+
+
+def ov_site(item):
+    """The plain name of an Openverse record's source site when its terms allow re-use by program; "" otherwise."""
+    source = clean(item.get("source")).lower()
+    if source.startswith("smithsonian"):
+        return OV_SITES["smithsonian"]
+    return OV_SITES.get(source, "")
+
+
+def ov_licence(item):
+    """("open" or "share-alike", plain licence) of an Openverse record; ("", "") for anything else (NC, ND ...)."""
+    lic, version = clean(item.get("license")).lower(), clean(item.get("license_version"))
+    if lic in ("cc0", "pdm"):
+        return "open", "CC0" if lic == "cc0" else "public domain (Public Domain Mark)"
+    if lic == "by":
+        return "open", f"CC BY {version}".strip()
+    if lic == "by-sa":
+        return "share-alike", f"CC BY-SA {version}".strip()
+    return "", ""
+
+
+def ov_product(*texts):
+    """The sex toy or sexual-health item a record names (in plain words), or ""."""
+    text = " ".join(clean(t) for t in texts if t)
+    m = PRODUCT.search(text)
+    if m:
+        item = re.sub(r"(?<=[a-z])s$", "", m.group(0).lower()) if not m.group(0).lower().endswith("ss") else \
+            m.group(0).lower()
+        item = re.sub(r"^sex ?toy$", "sex toy", re.sub(r"^butt ?plug$", "butt plug", re.sub(r"^cock ?ring$",
+                                                                                          "cock ring", item)))
+        return "IUD (intrauterine device)" if item == "iud" else plain(item)
+    m = re.search(r"\b(vibrators?|lubricants?|lube)\b", text, re.I)
+    if m and PRODUCT_CONTEXT.search(text):
+        return re.sub(r"s$", "", m.group(0).lower())
+    return ""
+
+
+def ov_check(item, kind):
+    """(reason left out or "", the item named) for one Openverse record in the collection of licence kind ("open" or
+    "share-alike"): the site's terms must allow re-use by program, the licence must be of that kind (never NC or
+    ND), nothing from an adult site, no sensitive flag, about a sex toy or sexual-health item, NO PERSON in the
+    picture by its title, description or any tag (also machine-made tags), no sexual act, fetish or BDSM, and
+    screen() with the photo rules."""
+    title = clean(item.get("title"))
+    given, every = ov_tags(item)
+    desc = clean(item.get("description"))
+    if clean(item.get("source")).lower() == "flickr":
+        return "a Flickr picture (Flickr's terms forbid robots and downloading outside its own API)", ""
+    if not ov_site(item):
+        return f"a site whose terms for re-use by program were not checked ({clean(item.get('source')) or 'none'})", ""
+    lic_kind, _ = ov_licence(item)
+    if lic_kind != kind:
+        return f"licence not in this collection ({clean(item.get('license')) or 'none'})", ""
+    where = " ".join(clean(item.get(k)) for k in ("source", "provider", "foreign_landing_url", "url", "creator",
+                                                  "creator_url"))
+    if ADULT_SITE.search(where) or ADULT_SITE.search(" ".join(every)):
+        return "from a porn or adult site", ""
+    if item.get("mature") or item.get("unstable__sensitivity"):
+        return "marked as sensitive or mature on Openverse", ""
+    product = ov_product(title, desc, " ".join(given))
+    if not product:
+        return "not about a sex toy or sexual-health item", ""
+    if NOT_PRODUCT.search(f"{title} {desc} {' '.join(given)}"):
+        return "about a place, sign, machine, advert or artwork rather than the item itself", ""
+    without_items = ADULT_PHRASE.sub(" ", PRODUCT.sub(" ", f"{title} {desc}"))
+    tag_words = " ".join(ADULT_PHRASE.sub(" ", PRODUCT.sub(" ", t)) for t in every)
+    m = OV_PERSON.search(without_items) or OV_PERSON.search(tag_words)
+    if m:
+        return f"a person may be in the picture ('{m.group(0)}'; consent cannot be checked)", ""
+    m = OV_ACT.search(f"{title} {desc} {' '.join(every)}")
+    if m:
+        return f"a sexual act, porn, fetish or BDSM word ('{m.group(0)}')", ""
+    why = screen(title, desc, " ".join(every), photo=True)
+    return (why, "") if why else ("", product)
+
+
+def ov_commons_check(info, title, kind, product_categories):
+    """The reason a Wikimedia Commons file found through Openverse is left out, or "": Commons' own licence must be
+    of kind, no problem category, not already in the Commons sex-toy or contraception collections (any of its
+    categories read by them), no person by its description or categories, and screen() with the photo rules."""
+    licence = meta_value(info, "LicenseShortName")
+    categories = meta_value(info, "Categories")
+    description = english_description(meta_value(info, "ImageDescription"))
+    if not info.get("mime", "").startswith("image/") or "gif" in info.get("mime", "") or not info.get("thumburl"):
+        return "not a still picture"
+    if rs.commons_licence_kind(licence) != kind:
+        return f"Commons licence not in this collection ({licence or 'none'})"
+    if PROBLEM_CATEGORY.search(categories):
+        return "in a deletion, copyright or identity-problem category"
+    if {c.strip() for c in categories.split("|")} & set(product_categories):
+        return "already in the Commons sex-toy or contraception collections"
+    m = OV_PERSON.search(ADULT_PHRASE.sub(" ", PRODUCT.sub(" ", f"{description} {categories}")))
+    if m:
+        return f"a person may be in the picture ('{m.group(0)}'; consent cannot be checked)"
+    m = OV_ACT.search(f"{title} {description} {categories}")
+    if m:
+        return f"a sexual act, porn, fetish or BDSM word ('{m.group(0)}')"
+    return screen(title, description, categories, photo=True)
+
+
+class Quiet:
+    """Stands in for a workspace when only Commons category names are wanted (nothing is recorded)."""
+
+    def leave_out(self, *_args):
+        """Nothing to record."""
+
+
+def commons_product_categories(s):
+    """The names of every Commons category the sex-toy and contraception collections read (with sub-categories)."""
+    found = set()
+    for group in ("sex_toys", "contraception"):
+        for category, depth in COMMONS_GROUPS[group]["categories"]:
+            found.update(commons_subcats(s, category, depth, Quiet()))
+    return found
+
+
+def ov_draft(site, product, title, description, tags):
+    """(draft description, needs a fuller one?) for an Openverse product photo."""
+    parts = [f"A product photograph of {a_an(product)[0].lower() + a_an(product)[1:]} from {site}; its record names "
+             f"no person in the picture."]
+    if title:
+        own = "" if is_english(title) else " (in the original language)"
+        parts.append(f'Its title{own} is "{plain(title).rstrip(".")}".')
+    if description:
+        parts.append(f"Its description says: {sentence(rs.first_sentences(plain(description), 60, 2))}")
+    if tags:
+        parts.append(sentence("Its tags: " + ", ".join(dict.fromkeys(plain(t).lower() for t in tags[:10]))))
+    thin = useful_words(title, description, " ".join(tags)) < 5 or not is_english(title)
+    if thin:
+        parts.append("The record says little more; it was found by a search for sex toys or sexual-health items.")
+    return " ".join(parts), thin
+
+
+def fetch_openverse(key, kind, folder, cap, say):
+    """Fill collection key with Openverse product photos of licence kind ("open" or "share-alike") from the sites in
+    OV_SITES, keeping to Openverse's rate limits; Commons files are checked again on Commons and those already in
+    the Commons sex-toy and contraception collections are left out."""
+    source = source_by_key(key)
+    ws, s = AdultWorkspace(folder, source, say), rs.session()
+    rows, looked, left, calls = [], 0, 0, 0
+    for query in OV_QUERIES:
+        for page in range(1, OV_PAGES + 1):
+            time.sleep(OV_PAUSE)
+            calls += 1
+            data = rs.get_json(s, OPENVERSE, params={"q": query, "license": OV_LICENCES[kind], "page": page,
+                                                     "page_size": 20, "excluded_source": "flickr"})
+            results = (data or {}).get("results") or []
+            rows += results
+            if len(results) < 20 or page >= ((data or {}).get("page_count") or 1):
+                break
+        if calls > 150:
+            say("Openverse: stopping the searches for today (Openverse allows 200 a day without an account).")
+            break
+    say(f"Openverse: {len(rows)} records found by {calls} searches")
+    candidates, commons = [], {}
+    seen = set()
+    for item in rows:
+        landing = clean(item.get("foreign_landing_url"))
+        curid = re.search(r"[?&]curid=(\d+)", landing)
+        name = f"commons-{curid.group(1)}.jpg" if curid else f"openverse-{clean(item.get('id'))}.jpg"
+        if name in seen or ws.done(name):
+            continue
+        seen.add(name)
+        looked += 1
+        why, product = ov_check(item, kind)
+        if why:
+            ws.leave_out(name, item.get("title"), why)
+            left += 1
+            continue
+        if clean(item.get("source")).lower() == "wikimedia":
+            if not curid:
+                ws.leave_out(name, item.get("title"), "no Commons page id to check the licence on Commons")
+                left += 1
+                continue
+            commons[int(curid.group(1))] = (name, item, product)
+        else:
+            candidates.append((name, item, product, None))
+    if commons:
+        product_categories = commons_product_categories(s)
+        tops = sum(len(COMMONS_GROUPS[g]["categories"]) for g in ("sex_toys", "contraception"))
+        # Only top-level names back means Commons did not answer: no dedupe is possible, so nothing is checked now.
+        ids = sorted(commons) if len(product_categories) > tops else []
+        for start in range(0, len(ids), 50):
+            data = commons_query(s, {"action": "query", "pageids": "|".join(map(str, ids[start:start + 50])),
+                                     "prop": "imageinfo", "iiprop": "url|extmetadata|mime", "iiurlwidth": 1600,
+                                     "iiextmetadatafilter": "LicenseShortName|ImageDescription|Artist|Categories|"
+                                                            "Credit"}) or {}
+            for pid, p in ((data.get("query") or {}).get("pages") or {}).items():
+                if not pid.lstrip("-").isdigit() or int(pid) not in commons:
+                    continue
+                name, item, product = commons.pop(int(pid))
+                info = (p.get("imageinfo") or [{}])[0]
+                why = ov_commons_check(info, clean(p.get("title", ""))[5:], kind, product_categories)
+                if why:
+                    ws.leave_out(name, item.get("title"), why)
+                    left += 1
+                    continue
+                candidates.append((name, item, product, (p.get("title", "")[5:], info)))
+        for name, item, product in commons.values():   # no answer from Commons (busy): tried again next run
+            ws.leave_out("", item.get("title"), "could not be checked on Wikimedia Commons now (tried again next time)")
+            left += 1
+        if commons:
+            say(f"Openverse: {len(commons)} Commons files could not be checked on Commons now; they are tried again "
+                "next time.")
+    items = []
+    for name, item, product, commons_file in candidates:
+        given, _every = ov_tags(item)
+        title = clean(item.get("title"))
+        if commons_file:
+            file_title, info = commons_file
+            licence = meta_value(info, "LicenseShortName")
+            description = english_description(meta_value(info, "ImageDescription"))
+            creator = meta_value(info, "Artist") or clean(item.get("creator")) or "unknown"
+            url, page, site = info["thumburl"], "https://commons.wikimedia.org/wiki/File:" + file_title.replace(
+                " ", "_"), "Wikimedia Commons"
+        else:
+            licence = ov_licence(item)[1]
+            description, creator = "", clean(item.get("creator")) or "unknown"
+            url, page, site = clean(item.get("url")), clean(item.get("foreign_landing_url")), ov_site(item)
+        text, thin = ov_draft(site, product, title, description if is_english(description) else "", given)
+        items.append((name, url, text, f'"{title or "untitled"}" by {creator[:100]}, {site}, {licence}; found with '
+                      f"Openverse (not endorsed by Openverse)", licence, page, CONTENT, THIN_NOTE if thin else "",
+                      rs.GROUPS[3]))
+    say(f"Openverse: {len(items)} usable product photos")
+    left += rs.fill(ws, items, cap, s, workers=2)
+    return ws.finish(looked, left)
+
+
+def fetch_openverse_products(folder, cap, say=print):
+    """Openverse product photos of sex toys, condoms and sexual-health items with NO PERSON in the picture (CC0,
+    public domain or CC BY), from Wikimedia Commons (licence checked again on Commons; files already in the Commons
+    sex-toy and contraception collections left out) and open museum and library sites. Flickr is not used."""
+    return fetch_openverse("openverse_products", "open", folder, cap, say)
+
+
+def fetch_openverse_products_sa(folder, cap, say=print):
+    """The same as fetch_openverse_products, for CC BY-SA photos."""
+    return fetch_openverse("openverse_products_sa", "share-alike", folder, cap, say)
+
+
 # ----------------------------------------------------------------- the collections
 
-COMMONS_TERMS = "https://commons.wikimedia.org/wiki/Commons:Reusing_content_outside_Wikimedia"
+COMMONS_TERMS ="https://commons.wikimedia.org/wiki/Commons:Reusing_content_outside_Wikimedia"
 
 
 def commons_source(key, name, kind, fetch, cap, download):
@@ -1498,6 +2368,29 @@ ADULT_REVIEW_SOURCES = [
          terms=COMMONS_TERMS, terms_summary="public domain or free to use with credit (in CREDITS.txt)",
          credit="Wikimedia Commons; ages from Wikidata birth dates; name, birth year and photo year in CREDITS.txt",
          content=CONTENT, cap=200, download="about 30 MB", fetch=fetch_commons_vintage_named, review_only=True),
+    dict(key="us_patent_drawings", name="US patent drawings of sex toys, erection aids, condoms and menstrual cups "
+         "(review only)", category="open", licence=PATENT_LICENCE, terms=PATENT_TERMS,
+         terms_summary="public domain: free for any use; credit each patent (number, title, inventor, year). Needs a "
+         f"free USPTO Open Data Portal API key in the {USPTO_KEY_ENV} environment variable",
+         credit="United States Patent and Trademark Office (Open Data Portal); each patent's number, title, inventor "
+         "and year in CREDITS.txt", content=CONTENT, cap=1500, download="about 400 MB",
+         fetch=fetch_us_patent_drawings, review_only=True),
+    dict(key="openverse_products", name="Openverse product photos of sex toys, condoms and sexual-health items, no "
+         "person in the picture (review only)", category="open",
+         licence="CC0, public domain or CC BY (each picture's licence checked; Commons files on Commons itself)",
+         terms=OPENVERSE_TERMS, terms_summary="free to use with credit to each author (in CREDITS.txt); made with "
+         "Openverse, not endorsed by Openverse; Openverse's rate limits kept",
+         credit="Wikimedia Commons, museum and library authors found with Openverse (not endorsed by Openverse), "
+         "credited in CREDITS.txt", content=CONTENT, cap=300, download="about 40 MB",
+         fetch=fetch_openverse_products, review_only=True),
+    dict(key="openverse_products_sa", name="Openverse product photos of sex toys, condoms and sexual-health items, no "
+         "person in the picture, share-alike (review only)", category="share-alike",
+         licence="CC BY-SA (each picture's licence checked; Commons files on Commons itself)",
+         terms=OPENVERSE_TERMS, terms_summary="free to use with credit; anything shared that is made from them must "
+         "be CC BY-SA; made with Openverse, not endorsed by Openverse",
+         credit="Wikimedia Commons, museum and library authors found with Openverse (not endorsed by Openverse), "
+         "credited in CREDITS.txt", content=CONTENT, cap=300, download="about 40 MB",
+         fetch=fetch_openverse_products_sa, review_only=True),
 ]
 
 
@@ -1585,6 +2478,44 @@ NOT_INCLUDED = {
     "Open photographs of disabled people's or older adults' sexuality": "a GAP: none found on Commons or in any "
         "open source (Commons has no category for older adults' sexuality and one file under 'Disability and "
         "sexuality', read by commons_inclusive).",
+    # Patents, product photos and sex-education catalogues (looked at November 2026).
+    "PatentsView API (search.patentsview.org)": "not used: paused on 20 March 2026 while PatentsView moves into the "
+        "USPTO Open Data Portal; us_patent_drawings uses the Open Data Portal instead.",
+    "Google Patents (patents.google.com, patentimages.storage.googleapis.com)": "not used: robots.txt allows "
+        "only the single patent pages (search is disallowed), the picture store has no robots.txt or terms, and "
+        "Google's terms forbid scraping content that does not belong to the user; no clear permission for "
+        "automated downloading. The USPTO's own Open Data Portal is used instead.",
+    "USPTO Patent Public Search (ppubs.uspto.gov) and bulk full-text-with-images files": "not used for collecting: "
+        "the USPTO's terms say its online databases are not meant for bulk downloads (automated heavy use may be "
+        "blocked), and the weekly bulk files with images are many gigabytes. The Open Data Portal API is the "
+        "USPTO's channel for automated use.",
+    "US patents filed before 2001": "a gap: the Open Data Portal's file-wrapper data starts with applications "
+        "filed in 2001, so older sex-toy and condom patents (old US classes 600/38-41) are not reached.",
+    "US design patents (drawings only)": "not added yet: they carry no CPC class for these devices and no figure "
+        "text beyond the view names; can be added later.",
+    "Flickr pictures found with Openverse": "not downloaded: almost all of Openverse's sex-toy and condom photos are "
+        "on Flickr, and Flickr's terms forbid robots, scraping and downloading outside its own API (which needs an "
+        "account and key). Openverse's terms ask users to respect the hosting site's terms. A Flickr API key "
+        "could be considered later; photos with people would still be left out (consent cannot be checked).",
+    "Openverse sites other than Wikimedia Commons and open museums and libraries": "not used: their terms for "
+        "re-use by program were not checked (stock sites such as Rawpixel limit downloading).",
+    "MedlinePlus and A.D.A.M. medical illustrations (NIH)": "not open: the pictures are licensed from A.D.A.M., "
+        "Inc. and are copyrighted, although MedlinePlus is a US government site.",
+    "CDC condom and contraception how-to pictures (cdc.gov)": "not added: the pages mix public-domain CDC "
+        "drawings with licensed stock photographs and say third-party pictures need permission; picture-by-picture "
+        "provenance is not given. CDC PHIL (clearly public domain) is used in review_sources.cdc_phil_intimate.",
+    "FDA birth control chart and HHS Office of Population Affairs contraception pages": "not added: mostly text "
+        "and licensed stock pictures; no clearly public-domain set of product drawings found.",
+    "Open textbooks on human sexuality (Lumen Learning, LibreTexts, OpenStax Psychology)": "not added: their "
+        "figures are mixed: Commons and Flickr pictures, stock photos and all-rights-reserved items under one book "
+        "licence, so each picture's own provenance is not clear. OpenStax anatomy figures are in the 'anatomy' "
+        "pack; Commons pictures are read directly by the Commons collections here.",
+    "Sex-position catalogues and sex-toy guides by publishers and retailers (Kama Sutra books with modern "
+    "illustrations, Lovehoney, Adam & Eve, Good Vibrations, Babeland, Cosmopolitan and similar)": "not open: "
+        "copyrighted catalogues and product photos (retailers' sites also forbid scraping). Old public-domain "
+        "Kama Sutra illustrations on Commons are read by commons_sex_drawings.",
+    "Makers' own manuals and product pictures for a sex toy the owner has": "not a collection here: the toolkit's "
+        "Manuals lookup can fetch a maker's manual for the owner's personal use.",
 }
 
 # Companies and bodies whose catalogues could be licensed by contract (nothing is downloaded from them). Any
@@ -1596,6 +2527,9 @@ CONTRACT_CANDIDATES = [
     "OMGYes", "Kenneth Play", "Betty Dodson Foundation", "Beducated", "AMAZE", "Scarleteen",
     "Sexual Health and Disability Alliance", "Love Lives and Disability", "Enhance the UK (Undressing Disability)",
     "Planned Parenthood", "The Kinsey Institute",
+    # Product catalogues (photos of sex toys with no person): makers and retailers.
+    "Lovehoney", "Adam & Eve", "Good Vibrations", "Babeland", "We-Vibe and Womanizer (WOW Tech)", "LELO",
+    "Dame Products", "Fun Factory", "Durex and Trojan (condom makers)",
 ]
 
 
