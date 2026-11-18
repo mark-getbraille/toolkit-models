@@ -35,6 +35,16 @@ pass fails or adds nothing, nothing is published. See "top-up passes" below.
 
     python packs/build_packs.py loc_fsa --out build/packs --limit 6000 --top-up
     python packs/test_top_up.py                    (the top-up self-test: a made-up pack, nothing downloaded)
+
+Pictures that need a description: a picture that passes every rule of its pack but has no good description (none,
+too short, only a title or file name, boilerplate, catalogue numbers, not English) is not thrown away: the builder
+sets it aside with needs_description(), and every build also writes needs-<key>.v<N>.zip (published in the separate
+release "needs-description", see "the needs zip" below). With --needs-only (in packs/request.txt the key with a
+question mark, "loc_fsa?") only those pictures are collected, from the pack's listing read again: the pack itself is
+not built, changed or republished.
+
+    python packs/build_packs.py loc_fsa --out build/packs --limit 6000 --needs-only
+    python packs/test_needs.py                     (the self-test of the pictures set aside)
 """
 
 import argparse
@@ -105,6 +115,126 @@ def considered_lines(rows, names):
                                                      "or left out by a later check)")
         lines.append(json.dumps({"name": name, "url": one["url"], "used": used, "reason": reason}) + "\n")
     return lines
+
+
+# ----------------------------------------------------------------- pictures that need a description
+#
+# Some pictures pass every rule of their pack (licence, safety, "is a photo", size, not a repeat) and are dropped only
+# because the collection gave them no good description: none at all, too short, only a title or a file name, a
+# catalogue number, boilerplate ("This is a photo of a monument ..."), or not English after cleaning. Instead of being
+# thrown away, such a picture is SET ASIDE with needs_description(): it goes into needs-<key>.zip (write_needs), which
+# is published in this repository's release "needs-description", not in the pack. On the training computer Dataset
+# Preparation writes AI drafts for these pictures and people review them; nothing from a needs zip is trained on until
+# a person marks it checked (the zip opens as a review collection, see training-kit/kit/needs_workspace.py).
+#
+# A builder calls needs_description only at the place where it drops a picture for a description reason, and only
+# after the picture has passed every other check the builder makes; needs_description itself also refuses (returns
+# False): a NoDerivatives licence (a new description is a change), a category this kit does not know, words about
+# nudity or sex in what is known of the picture, a picture already in the pack or already set aside, a repeat, and
+# anything over the cap (NEEDS_LIMIT). A picture of a child keeps "child": true and is never for picture-making.
+
+NEEDS = []              # the pictures set aside in this build: one dict per picture (see needs_description)
+NEEDS_SEEN = set()      # their addresses and names, so a picture is set aside once
+NEEDS_LIMIT = int(os.environ.get("NEEDS_LIMIT", "0") or 0)    # 0: main sets it (the pack's limit, at most 2000)
+NEEDS_DEFAULT_MOST = 2000
+NEEDS_ONLY = False      # True in a "needs only" run (main --needs-only): no pack is built, only needs-<key>.zip
+NEEDS_OLD = None        # the published needs zip (OldNeeds) on a top-up or needs-only pass, else None
+PACK_FOR_NEEDS = None   # the published pack (OldPack) in a needs-only run, so its pictures are not set aside again
+NEEDS_URL = "https://github.com/mark-getbraille/toolkit-models/releases/download/needs-description/"
+NEEDS_CATEGORIES = ("open", "share-alike", "noncommercial", "research", "permission")
+# NoDerivatives licences (CC BY-ND, BY-NC-ND, "no derivatives"): writing a new description is a change, so never.
+NO_DERIVATIVES = re.compile(r"(\bND\b|-ND\b|no[\s-]*deriv|noderiv)", re.I)
+# Words about nudity or sex in anything known of the picture: never set aside (as documentary_packs.NOT_SHOWN).
+NEEDS_NOT_SAFE = re.compile(r"\b(nud\w*|naked|nudity|topless|erotic\w*|sex|sexual\w*|sexy|porn\w*|lingerie|"
+                            r"undress\w*|genital\w*)\b", re.I)
+NEEDS_FLAGS = ("child", "content", "not_for_picture_making")     # extra keys kept as marks, not as hints
+_NEEDS_FOLDER = []      # a scratch folder for pictures a builder already holds as bytes (made when first needed)
+
+
+def needs_folder():
+    """The scratch folder where set-aside pictures that a builder already holds as bytes are kept until
+    write_needs puts them in the zip (so thousands of pictures are not kept in memory)."""
+    if not _NEEDS_FOLDER:
+        import tempfile
+        _NEEDS_FOLDER.append(tempfile.mkdtemp(prefix="needs-"))
+    return _NEEDS_FOLDER[0]
+
+
+def needs_description(name, url="", credit="", licence="", category="open", text="", title="", reason="",
+                      place="", place_kind="", extra=None, page_url="", data=None, url_only=False):
+    """Set aside one picture that is dropped ONLY because its description is missing or poor (see above). Call it
+    where the builder drops the picture for that reason, after every other check of the builder has passed.
+
+    name       the file name the picture would have in the pack ("loc-123.jpg")
+    url        the picture's web address (it is downloaded at the end, made like the pack's pictures)
+    credit     the credit line, as the pack would write it; licence: the picture's licence in words
+    category   the licence category: "open" (the packs), "share-alike", "noncommercial", "research", "permission"
+    text       the poor description the collection gave (kept as a hint), title: the record's title
+    reason     why it was dropped, in plain words ("its caption is under six words")
+    place, place_kind   where it is from, as in the pack's rows (places.py)
+    extra      anything else known: tags, keywords, a date, the category it was found in ... (kept as hints), and the
+               marks "child": True, "content": "graphic" or "medical", "not_for_picture_making": True (kept as marks)
+    page_url   the human web page of the record (the museum's object page, the Commons File: page)
+    data       the picture's bytes, when the builder already has them (else it is downloaded from url)
+    url_only   True for a source whose terms do not allow copying its pictures: only the address is kept (as the
+               COCO packs do), never a picture file
+    Returns True when the picture was set aside, False when it was refused (and so dropped as before)."""
+    extra = dict(extra or {})
+    name, url, page_url = str(name or ""), str(url or ""), str(page_url or "")
+    known = " ".join(str(v) for v in (text, title, name, reason, *extra.values()) if v)
+    refusal = ("a NoDerivatives licence (a new description would be a change)" if NO_DERIVATIVES.search(licence or "")
+               else f"an unknown licence category ({category})" if category not in NEEDS_CATEGORIES
+               else "no picture address" if not url and data is None
+               else "its words are about nudity or sex" if NEEDS_NOT_SAFE.search(known)
+               else "already set aside" if (url and url in NEEDS_SEEN) or (name and name in NEEDS_SEEN)
+               else "already in the published pack" if already_in_pack(name, url)
+               or (PACK_FOR_NEEDS is not None and PACK_FOR_NEEDS.has(name, url))
+               else "already in the published needs zip" if NEEDS_OLD is not None and NEEDS_OLD.has(name, url)
+               else "the cap of pictures set aside is reached" if needs_room() <= 0 else "")
+    if refusal:
+        return False
+    try:
+        from expression_packs import CHILD as child_words      # the packs' own child words, in many languages
+    except ImportError:                                         # (only when build_packs is used on its own)
+        child_words = re.compile(r"\b(child\w*|kids?|boys?|girls?|bab(y|ies)|infan\w*|toddler\w*|teen\w*)\b", re.I)
+    child = bool(extra.pop("child", False)) or bool(child_words.search(known))
+    content = str(extra.pop("content", "") or "")
+    not_for_making = bool(extra.pop("not_for_picture_making", False)) or child or content in ("graphic", "medical")
+    hints = {k: v for k, v in (("title", clean(title)), ("text", clean(text)), ("place", place)) if v}
+    hints.update({k: v for k, v in extra.items() if v not in (None, "", [], {})})
+    stored = ""
+    if data is not None and not url_only:
+        small = smaller(data)
+        if not small:
+            return False                        # the picture cannot be read or is tiny: dropped as before
+        stored = os.path.join(needs_folder(), f"{len(NEEDS)}.jpg")
+        with open(stored, "wb") as f:
+            f.write(small)
+    item = {"name": name or f"needs-{len(NEEDS)}.jpg", "url": url, "page_url": page_url, "credit": clean(credit),
+            "licence": clean(licence), "category": category, "hints": hints,
+            "reason": clean(reason) or "no usable description", "place": place, "place_kind": place_kind,
+            "content": content, "child": child, "not_for_picture_making": not_for_making,
+            "url_only": bool(url_only), "stored": stored}
+    NEEDS.append(item)
+    NEEDS_SEEN.update(v for v in (url, name) if v)
+    considered(name, url, f"set aside for a description ({item['reason']})")
+    return True
+
+
+def reset_needs():
+    """Forget every picture set aside (as at the start of a build; the self-tests run several builds in one go)."""
+    global NEEDS_OLD, PACK_FOR_NEEDS, NEEDS_ONLY, NEEDS_LIMIT
+    NEEDS.clear()
+    NEEDS_SEEN.clear()
+    NEEDS_OLD = PACK_FOR_NEEDS = None
+    NEEDS_ONLY = False
+    NEEDS_LIMIT = int(os.environ.get("NEEDS_LIMIT", "0") or 0)
+
+
+def needs_room():
+    """How many more pictures may be set aside (the cap less those already set aside, old and new)."""
+    most = NEEDS_LIMIT or NEEDS_DEFAULT_MOST
+    return most - len(NEEDS) - (NEEDS_OLD.count() if NEEDS_OLD is not None else 0)
 
 
 # ----------------------------------------------------------------- top-up passes
@@ -442,7 +572,10 @@ def smaller(data):
 
 def fetch_all(items, workers=8, pause=0.0):
     """Download pictures: items are (name, address, row); returns [(name, JPEG bytes, row)] for those that came.
-    During a top-up pass, pictures already in the published pack are not downloaded again (new_only)."""
+    During a top-up pass, pictures already in the published pack are not downloaded again (new_only). In a "needs
+    only" run nothing is downloaded (the pack is not built, see NEEDS_ONLY)."""
+    if NEEDS_ONLY:
+        return []
     items = new_only(items)
     s = session()
 
@@ -1458,9 +1591,313 @@ def nothing_new(key, why):
     return 0
 
 
+# ----------------------------------------------------------------- the needs zip (pictures set aside)
+#
+# needs-<key>.zip holds the pictures set aside by needs_description, made like the pack's (JPEG, at most LONG_SIDE
+# pixels), and:
+#   needs.jsonl     one line per picture: {"file": "pictures/<name>" (or "url" only, for a source whose terms do not
+#                   allow copying), "url", "page_url", "credit", "licence", "category", "source": <key>, "hints": {...},
+#                   "reason", "place", "place_kind", "content", "child", "not_for_picture_making", "added": <date>}
+#   describing.json the same pictures as a "Describe pictures" package (training-kit/kit/describe_package.py): every
+#                   picture "new", a REVIEW collection (only pictures a person marks checked are ever trained on;
+#                   never used for picture-making), so the zip can be imported straight into Describe pictures
+#   README.txt      what it is, in plain words; CREDITS.txt: each picture's credit
+# It is published in the release "needs-description" as needs-<key>.v<N>.zip (a new name for each version, so a
+# download that starts while it is being replaced never gets half a file), with needs-manifest-<key>.json; the
+# workflow merges those into needs-manifest.json ({key: {"key", "file", "count", "size", "sha256", "category",
+# "date", "version"}}) and removes the older versions. The release "training-data" is never touched by this.
+
+NEEDS_README = """Pictures that need a description: {key}
+
+These {count} pictures come from the "{key}" collection. Each passed every rule of its training pack (its licence,
+the safety rules, a real photo, big enough, not a repeat) but was left out of the pack only because the collection
+gave it no good description: {reasons}.
+
+Nothing here is ever used for training as it is. A person must first write or correct each description and mark it
+checked.
+
+How to use it
+1. Easiest: in Describe pictures (Alt+J), choose an empty Workspace folder and press Import a package (Alt+I), then
+   choose this zip. It opens as a review collection: every picture is "new", and what the collection said about it
+   (its title, the poor description, tags, the place) is in the picture's notes.
+2. Or run "Build a Review Pack.cmd" in the training kit's folder: it downloads these zips, gathers the text of each
+   picture's web page, writes two AI drafts per picture and builds a review pack for the reviewers.
+3. Then Dataset Preparation can write AI drafts, and people describe and check each picture.
+
+What is inside
+- pictures: the pictures (JPEG, at most 2048 pixels on the long side);
+- needs.jsonl: one line per picture with its credit, licence, licence category, web page, hints and reason;
+- describing.json: the same pictures as a Describe pictures package;
+- CREDITS.txt: the credit of every picture. Keep the credits with the pictures.
+
+Licence category: {categories}. The full field list is in "HOW TO DESCRIBE PICTURES THAT NEED A DESCRIPTION.txt" in
+the training kit's folder.
+"""
+
+
+class OldNeeds:
+    """A published needs zip, downloaded on a top-up or needs-only pass: its rows and pictures, so they are kept in
+    the new version and not set aside twice."""
+
+    def __init__(self, archive, manifest):
+        """Read the downloaded needs zip at archive (described by its manifest entry)."""
+        self.archive, self.manifest = archive, manifest
+        self.version = int(manifest.get("version") or 1)
+        with zipfile.ZipFile(archive) as z:
+            self.rows = [json.loads(line) for line in z.read("needs.jsonl").decode("utf-8").splitlines()
+                         if line.strip()]
+        self.urls = {r[k] for r in self.rows for k in ("url", "page_url") if r.get(k)}
+        self.names = {os.path.basename(r.get("file") or r.get("name") or "") for r in self.rows} - {""}
+
+    def has(self, name="", url=""):
+        """True when a picture (by name or address) is already in the published needs zip."""
+        return bool((url and url in self.urls) or (name and name in self.names))
+
+    def count(self):
+        """How many pictures the published needs zip holds."""
+        return len(self.rows)
+
+    @classmethod
+    def download(cls, key, folder, base=NEEDS_URL):
+        """The published needs zip of key, downloaded into folder and read; None when there is none yet."""
+        manifest = published_needs_manifest(base).get(key)
+        if not manifest:
+            return None
+        os.makedirs(folder, exist_ok=True)
+        archive = os.path.join(folder, f"needs-{key}-published.zip")
+        say(f"Downloading the published needs zip of {key} ({manifest.get('count', '?')} pictures)")
+        download_to(published_file(base, manifest["file"]), archive)
+        if manifest.get("sha256") and sha256_of(archive) != manifest["sha256"]:
+            os.remove(archive)
+            raise SystemExit(f"The published needs zip of {key} did not download whole; nothing is changed.")
+        return cls(archive, manifest)
+
+
+def published_needs_manifest(base=NEEDS_URL):
+    """The published needs-manifest.json ({key: entry}), or {} when there is none. While the workflow replaces it,
+    needs-manifest.next.json (the new copy) is read instead."""
+    import tempfile
+    for name in ("needs-manifest.json", "needs-manifest.next.json"):
+        source = published_file(base, name)
+        if not source.startswith("http") and not os.path.exists(source):
+            continue
+        with tempfile.TemporaryDirectory() as scratch:
+            path = os.path.join(scratch, name)
+            try:
+                download_to(source, path)
+            except Exception as e:  # noqa: BLE001 - not there (yet): try the other name
+                if "404" in str(e):
+                    continue
+                raise
+            with open(path, encoding="utf-8") as f:
+                return json.load(f)
+    return {}
+
+
+def fetch_needs(items, seconds):
+    """The set-aside pictures' JPEG bytes: {index: bytes} for those that came within seconds (a picture a builder
+    already gave is read from the scratch folder). Its own time limit: the pack's limit may be used up already."""
+    import requests
+    deadline = time.time() + seconds
+    s = requests.Session()
+    s.headers["User-Agent"] = USER_AGENT
+
+    def one(pair):
+        """One picture's bytes, or None."""
+        index, item = pair
+        if item["stored"]:
+            with open(item["stored"], "rb") as f:
+                return index, f.read()
+        for attempt in range(3):
+            if time.time() > deadline:
+                return index, None
+            try:
+                r = s.get(item["url"], timeout=60)
+                if r.status_code == 200:
+                    return index, smaller(r.content)
+                if r.status_code in (403, 404, 410):
+                    return index, None
+                time.sleep((5, 20, 0)[attempt])
+            except Exception:  # noqa: BLE001 - tried again, then left out
+                time.sleep((2, 10, 0)[attempt])
+        return index, None
+
+    wanted = [(i, item) for i, item in enumerate(items) if not item["url_only"]]
+    out = {}
+    with concurrent.futures.ThreadPoolExecutor(4) as pool:
+        for done, (index, data) in enumerate(pool.map(one, wanted), 1):
+            if data:
+                out[index] = data
+            if done % 200 == 0:
+                say(f"  needs: {done} of {len(wanted)} pictures fetched ({len(out)} usable)")
+    return out
+
+
+def needs_seconds():
+    """How long the set-aside pictures may take to download: NEEDS_TIME_LIMIT_MINUTES (25 by default) after the
+    pack is written; in a needs-only run, whatever is left of the pack's time limit, and at least that."""
+    own = float(os.environ.get("NEEDS_TIME_LIMIT_MINUTES", "25") or 25) * 60
+    if NEEDS_ONLY and TIME_LIMIT:
+        return max(own, TIME_LIMIT - (time.time() - STARTED))
+    return own
+
+
+def needs_names(items, taken):
+    """A file name for each set-aside picture, unique in the needs zip (names already taken get a number)."""
+    names = []
+    for item in items:
+        base = re.sub(r"[^\w.-]+", "_", os.path.basename(item["name"]))[:120] or "picture.jpg"
+        stem, _dot, _ending = base.rpartition(".")
+        base = (stem or base) + ".jpg"
+        candidate, number = base, 1
+        while candidate in taken:
+            number += 1
+            candidate = f"{base[:-4]}-{number}.jpg"
+        taken.add(candidate)
+        names.append(candidate)
+    return names
+
+
+def needs_hint_text(row):
+    """The hints of a needs row as one plain line, for the picture's notes in Describe pictures."""
+    hints = row.get("hints") or {}
+    parts = [f"{k}: {v if isinstance(v, str) else json.dumps(v, ensure_ascii=False)}" for k, v in hints.items()]
+    return "; ".join(parts)
+
+
+def needs_entry(row):
+    """A picture's entry in the needs zip's describing.json (a Describe pictures package): status "new", the hints
+    in its notes and in "hint", and its source details as text (packages carry only text fields)."""
+    hint = needs_hint_text(row)
+    entry = {"status": "new", "question": NARRATE, "added_at": row.get("added", ""), "hint": hint,
+             "notes": ("What the collection said (may be wrong or incomplete): " + hint) if hint else
+             "The collection gave no description.", "needs_source": row.get("source", ""),
+             "needs_reason": row.get("reason", ""), "page_url": row.get("page_url", ""),
+             "source_url": row.get("url", ""),
+             "credit": row.get("credit", ""), "licence": row.get("licence", ""), "category": row.get("category", "")}
+    if row.get("content"):
+        entry["content"] = row["content"]
+    if row.get("child"):
+        entry["child"] = "yes"
+    if row.get("not_for_picture_making"):
+        entry["not_for_picture_making"] = "yes"
+    if row.get("place"):
+        entry["place"] = row["place"]
+        if row.get("place_kind"):
+            entry["place_kind"] = row["place_kind"]
+    return entry
+
+
+def kit_not_for_picture_making(key):
+    """True when the training kit never uses pack key for picture-making (training-kit/kit/sources.py
+    NOT_FOR_PICTURE_MAKING: people, children, graphic, medical and bodily packs); then every picture it sets aside is
+    marked so too. False when the kit's list cannot be read."""
+    folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "training-kit", "kit")
+    try:
+        sys.path.insert(0, folder)
+        import sources as kit_sources
+        return key in kit_sources.NOT_FOR_PICTURE_MAKING
+    except Exception:  # noqa: BLE001 - the kit is not beside this file: each picture's own marks still count
+        return False
+    finally:
+        if folder in sys.path:
+            sys.path.remove(folder)
+
+
+def write_needs(key, out, entries=(), old=None, seconds=None):
+    """Write needs-<key>.v<N>.zip and needs-manifest-<key>.json into out from NEEDS (and old: the published needs
+    zip, kept first, unchanged). Pictures that ended up in the pack itself (entries) are not set aside. Returns the
+    manifest entry, or None when there is nothing new to publish."""
+    in_pack = {n for n, d, _ in entries if d is not None} | {SOURCES.get(n, "") for n, d, _ in entries if d is not None}
+    in_pack |= {r.get("url", "") for _, _, r in entries if r.get("url")}
+    items = [n for n in NEEDS if n["name"] not in in_pack and (not n["url"] or n["url"] not in in_pack)]
+    if not items:
+        say(f"No pictures were set aside for a description in {key}.")
+        return None
+    say(f"{len(items)} pictures were set aside for a description; fetching them")
+    got = fetch_needs(items, needs_seconds() if seconds is None else seconds)
+    rows, taken = [], set(old.names if old else ())
+    names = needs_names(items, taken)
+    never = kit_not_for_picture_making(key)
+    today = time.strftime("%Y-%m-%d")
+    os.makedirs(out, exist_ok=True)
+    version = (old.version + 1) if old else 1
+    path = os.path.join(out, f"needs-{key}.v{version}.zip")
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_STORED, allowZip64=True) as z:
+        if old is not None:
+            with zipfile.ZipFile(old.archive) as published:
+                for info in published.infolist():
+                    if info.filename.startswith("pictures/") and not info.filename.endswith("/"):
+                        z.writestr(info.filename, published.read(info))
+            rows += old.rows
+        added = 0
+        for index, (item, name) in enumerate(zip(items, names)):
+            row = {"url": item["url"], "page_url": item["page_url"], "credit": item["credit"],
+                   "licence": item["licence"], "category": item["category"], "source": key, "hints": item["hints"],
+                   "reason": item["reason"], "place": item["place"], "place_kind": item["place_kind"],
+                   "content": item["content"], "child": item["child"],
+                   "not_for_picture_making": item["not_for_picture_making"] or never, "added": today}
+            if item["url_only"]:
+                row["url_only"] = True
+            elif index in got:
+                z.writestr(f"pictures/{name}", got[index])
+                row = {"file": f"pictures/{name}", **row}
+            else:
+                continue                        # could not be downloaded: left out
+            rows.append(row)
+            added += 1
+        if not added:
+            say(f"None of the pictures set aside in {key} could be downloaded; nothing new to publish.")
+        z.writestr("needs.jsonl", "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows))
+        pictures = {os.path.basename(r["file"]): needs_entry(r) for r in rows if r.get("file")}
+        categories = sorted({r.get("category") or "open" for r in rows})
+        strictest = next((c for c in reversed(NEEDS_CATEGORIES) if c in categories), "open")
+        meta = {"format": 1, "name": f"Needs a description: {key}", "people": [], "pictures": pictures,
+                "review_only": True, "review_source": f"needs-{key}", "review_category": strictest,
+                "never_for_picture_making": True, "never_publish": False, "needs_source": key,
+                "package": {"made_by": "build_packs.py", "made_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                            "which": "not described"}}
+        z.writestr("describing.json", json.dumps(meta, indent=1, ensure_ascii=False, sort_keys=True))
+        reasons = sorted({r.get("reason", "") for r in rows if r.get("reason")}, key=len)[:6]
+        z.writestr("README.txt", NEEDS_README.format(key=key, count=len(rows), reasons="; ".join(reasons) or
+                                                     "no description", categories=", ".join(categories))
+                   .replace("\n", "\r\n"))
+        credits = [f"{r.get('file') or r.get('url')}: {r['credit']}" for r in rows if r.get("credit")]
+        z.writestr("CREDITS.txt", (PACKS[key][1] if key in PACKS else key) + "\n\n" + "\n".join(credits) + "\n")
+    if not added:
+        os.remove(path)
+        return None
+    manifest = {"key": key, "file": os.path.basename(path), "count": len(rows), "size": os.path.getsize(path),
+                "sha256": sha256_of(path), "category": strictest, "date": today, "version": version}
+    with open(os.path.join(out, f"needs-manifest-{key}.json"), "w", encoding="utf-8") as f:
+        json.dump(manifest, f, indent=1)
+    say(f"needs-{key}: {added} new pictures set aside ({len(rows)} in all) -> {os.path.basename(path)}")
+    return manifest
+
+
+def start_needs(key, out, needs_only, top_up, packs_base=PACKS_URL, needs_base=NEEDS_URL):
+    """Get ready to set pictures aside: on a top-up pass or a needs-only run, download the published needs zip (so
+    it is kept and nothing is set aside twice); in a needs-only run also the published pack (its pictures are never
+    set aside). A failure here never stops a top-up of the pack: the needs zip is then simply started afresh."""
+    global NEEDS_OLD, PACK_FOR_NEEDS
+    if not (needs_only or top_up):
+        return
+    try:
+        NEEDS_OLD = OldNeeds.download(key, os.path.join(out, "published"), needs_base)
+    except Exception as e:  # noqa: BLE001 - said; a top-up of the pack goes on
+        if needs_only:
+            raise
+        say(f"The published needs zip of {key} could not be read ({e}); a new one is started.")
+    if needs_only and TOP_UP is None:
+        PACK_FOR_NEEDS = OldPack.download(key, os.path.join(out, "published"), packs_base)
+        if PACK_FOR_NEEDS is None:
+            say(f"The {key} pack is not published yet: every picture set aside is kept.")
+
+
 def main(argv=None):
     """Build one pack (see the module docstring), or with --top-up add pictures to the published one (see "top-up
-    passes" above)."""
+    passes" above), or with --needs-only collect only the pictures that need a description (see "the needs zip");
+    every build also writes the pictures it set aside into needs-<key>.zip."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("key", choices=sorted(PACKS))
     parser.add_argument("--out", default="build/packs")
@@ -1469,16 +1906,39 @@ def main(argv=None):
                         help="add pictures to the published pack (up to --limit) instead of building it again")
     parser.add_argument("--published", default=os.environ.get("PACKS_PUBLISHED", PACKS_URL),
                         help="where the published packs are (the release's address; a folder for testing)")
+    parser.add_argument("--needs-only", action="store_true",
+                        help="only collect the pictures that need a description (needs-<key>.zip); the pack itself "
+                             "is not built, published or changed")
+    parser.add_argument("--needs-published", default=os.environ.get("NEEDS_PUBLISHED", ""),
+                        help="where the published needs zips are (the release's address; a folder for testing). "
+                             "Default: the release \"needs-description\", or the --published folder when that is a "
+                             "folder")
     args = parser.parse_args(argv)
+    if not args.needs_published:
+        args.needs_published = NEEDS_URL if args.published.startswith(("http://", "https://")) else args.published
+    global NEEDS_LIMIT, NEEDS_ONLY
+    NEEDS_LIMIT = NEEDS_LIMIT or min(args.limit, NEEDS_DEFAULT_MOST)
+    NEEDS_ONLY = args.needs_only
     limit = args.limit
+    if args.needs_only:
+        start_needs(args.key, args.out, True, False, args.published, args.needs_published)
+        if needs_room() <= 0:
+            say(f"The needs zip of {args.key} already has its cap of {NEEDS_LIMIT} pictures; nothing to do.")
+            return 0
+        PACKS[args.key][0](limit)                   # the listing only: fetch_all downloads nothing (NEEDS_ONLY)
+        manifest = write_needs(args.key, args.out, old=NEEDS_OLD)
+        say(json.dumps(manifest) if manifest else f"Nothing new was set aside for {args.key}.")
+        return 0
     if args.top_up:
         limit = start_top_up(args.key, args.limit, args.out, args.published)
         if limit <= 0:
             return nothing_new(args.key, "it already has its limit of pictures")
+        start_needs(args.key, args.out, False, True, args.published, args.needs_published)
     entries = PACKS[args.key][0](limit)
     if TOP_UP is not None:
         entries, added = TOP_UP.keep_new(entries or [], limit)
         if not added:
+            write_needs(args.key, args.out, old=NEEDS_OLD)      # what this pass set aside is still kept
             return nothing_new(args.key, "this pass found no picture that is not in it already")
     elif not entries:
         raise SystemExit(f"The {args.key} pack came out empty.")
@@ -1489,6 +1949,7 @@ def main(argv=None):
         say(f"Top-up pass {PASS}: the {args.key} pack now has {manifest['pictures']} picture rows "
             f"({len(TOP_UP.names)} pictures before this pass).")
     say(json.dumps(manifest))
+    write_needs(args.key, args.out, entries, old=NEEDS_OLD)    # the pictures set aside for a description
     return 0
 
 

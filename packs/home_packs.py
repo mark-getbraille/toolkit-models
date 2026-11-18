@@ -434,6 +434,8 @@ def commons_fetch(items, workers=2, raw=False):
     minute) and tries again, up to five times, instead of leaving the picture out. raw: the bytes as sent (a
     drawing's see-through PNG), not made into a JPEG."""
     import concurrent.futures
+    if build_packs.NEEDS_ONLY:                 # a "needs only" run builds no pack: nothing is downloaded
+        return []
     items = new_only(items)                    # (a top-up pass: only pictures not in the pack yet)
     s = session()
 

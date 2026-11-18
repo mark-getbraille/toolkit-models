@@ -62,6 +62,13 @@ PACKAGE_PICTURES = "pictures/"           # the pictures and descriptions are in 
 # never used for training (own_data.py reads only descriptions people saved).
 DRAFT_KEYS = ("draft", "draft_agreement", "draft_engines", "draft_qwen", "draft_internvl", "draft_florence",
               "draft_yours", "started_from_draft")
+# What a picture's collection said about it, for pictures that came without a good description (the "needs
+# description" zips of the training packs, kit\needs_workspace.py, and review packs, kit\review_pack.py): hints, its
+# web page and the text gathered from it ("page_text": {"alt": ..., "caption": ...}, kept on this computer only), its
+# credit, licence and marks. Kept in the entry and carried in packages; NEVER used for training (only a description a
+# person saves is). "child" and "not_for_picture_making" are "yes" when set.
+NEEDS_KEYS = ("hint", "needs_source", "needs_reason", "page_url", "source_url", "credit", "licence", "category",
+              "child", "not_for_picture_making", "place", "place_kind", "page_text", "page_text_sources")
 FORMAT = 1                               # the version of describing.json's layout
 
 NEW, DESCRIBED, CHECKED, LOOK, SKIP = "new", "described", "checked", "needs another look", "skip"
@@ -827,6 +834,8 @@ def checked_entry(theirs):
     for key, value in theirs.items():
         if key == "seen":
             entry[key] = [f for f in value if isinstance(f, str)][-SEEN_MOST:] if isinstance(value, list) else []
+        elif key in ("page_text", "page_text_sources") and isinstance(value, dict):
+            entry[key] = {str(k): v for k, v in value.items() if isinstance(v, str)}   # text fields only
         elif isinstance(value, str):
             entry[key] = value
     if entry.get("status") not in STATUSES:
@@ -842,7 +851,7 @@ def add_from_package(workspace, name, data, theirs, text, others, tally):
     entry.update({k: v for k, v in theirs.items() if k in entry})
     if theirs.get("content"):
         entry["content"] = theirs["content"]      # a review picture's content tag ("intimate" ...) comes along
-    for key in DRAFT_KEYS:                         # the computer's drafts (Dataset Preparation) come along too
+    for key in DRAFT_KEYS + NEEDS_KEYS:            # the computer's drafts and the collection's hints come along
         if theirs.get(key):
             entry[key] = theirs[key]
     entry["added_at"] = entry["added_at"] or now()
@@ -882,7 +891,7 @@ def merge_picture(workspace, name, theirs, their_text, their_others, sender, tal
     their_newer = (theirs.get("changed_at") or "") > (entry["changed_at"] or "")
     fields = ("status", "described_by", "described_at", "checked_by", "checked_at", "question", "changed_at")
     counted = False
-    for key in DRAFT_KEYS:                         # drafts we do not have yet come along (ours are kept)
+    for key in DRAFT_KEYS + NEEDS_KEYS:            # drafts and hints we do not have yet come along (ours kept)
         if theirs.get(key) and not entry.get(key):
             entry[key] = theirs[key]
     if their_text and not our_text:                                   # only theirs: take it

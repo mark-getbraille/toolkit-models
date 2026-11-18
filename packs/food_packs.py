@@ -498,6 +498,12 @@ def commons_description(caption, description):
     return ""
 
 
+def credit_licence(credit):
+    """The licence named in a credit line made by commons_entries ("<title> by <artist>, <licence>, <page>")."""
+    parts = credit.rsplit(", ", 2)
+    return parts[-2] if len(parts) == 3 else ""
+
+
 COMMONS_PLACES = {}        # {file title: the country at the file's camera coordinates}, filled by commons_entries
 
 

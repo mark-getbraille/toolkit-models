@@ -23,3 +23,15 @@ Safety rules apply to every category:
   sexual violence, pictures whose focus is a dead or injured child, and torture or execution scenes (unless the
   record is documented evidence, such as the liberation of the camps) are always left out.
 Every licence is checked at its source, and every picture keeps its credit.
+
+## Pictures that need a description
+
+A picture that passes every rule above and every check of its builder (licence, safety, a real photo, size, not a
+repeat) but is dropped ONLY because its description is missing or poor is set aside instead of thrown away
+(`build_packs.needs_description`): it goes into `needs-<key>.vN.zip` in the release "needs-description", never into
+the pack. It keeps its pack's licence category, its credit, its marks ("child", "content": "graphic" or "medical")
+and is never used for picture-making when it shows a child, graphic or medical content, or comes from a pack in the
+kit's NOT_FOR_PICTURE_MAKING. NoDerivatives licences are never set aside (a new description is a change); a source
+whose terms forbid copying its pictures gives address-only rows. Nothing set aside is trained on until a person
+describes it and marks it checked (the zip opens in the kit as a review collection). Pictures whose safety or age
+can only be judged from their words (medical, anatomy, nudes in art, children's rites) are never set aside.

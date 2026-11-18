@@ -204,8 +204,11 @@ class RemoteZip:
 
 
 def fetch_from_zip(zipped, items, workers=6):
-    """Pictures from a RemoteZip: items are (name, (offset, size, method), rows); returns [(name, JPEG, rows)]."""
+    """Pictures from a RemoteZip: items are (name, (offset, size, method), rows); returns [(name, JPEG, rows)]. In a
+    "needs only" run (build_packs.NEEDS_ONLY) nothing is read: the pack is not being built."""
     import concurrent.futures
+    if build_packs.NEEDS_ONLY:
+        return []
 
     def one(item):
         """One picture, or None."""
