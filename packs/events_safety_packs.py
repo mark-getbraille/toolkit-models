@@ -101,6 +101,7 @@ import time
 
 import build_packs  # noqa: F401 - loaded first: the other pack files and build_packs import each other
 from build_packs import session, clean, say, first_sentences, LONG_SIDE, COMMONS_FREE
+from build_packs import listing_out_of_time  # noqa: E402
 from food_packs import commons_get, commons_members, commons_description, with_twins, count_pictures, sentence
 from documentary_packs import tidy, usable, get_json, loc_picture, loc_free, loc_place, place_words, LOC
 from archive_packs import (GRIM, not_shown, graphic_rows, sentence_case, lc_place, US_STATES, NARA, NARA_SEARCH,
@@ -671,6 +672,8 @@ def build_loc_events(limit):
     rng.shuffle(searches)
     per_search = max(2, int(limit * 1.3) // len(searches) + 1)
     for path, name, term in searches:
+        if listing_out_of_time():          # leave the rest of the time for fetching what was found
+            break
         time.sleep(2)                     # the Library asks programs to keep to about one request a second
         first = get_json(s, LOC + path, {"fo": "json", "c": 100, "q": term, "at": "pagination"}, pause=15) or {}
         pages = max(1, min(20, int(((first.get("pagination") or {}).get("total")) or 1)))

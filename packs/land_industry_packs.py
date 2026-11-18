@@ -101,6 +101,7 @@ import time
 
 import build_packs  # noqa: F401 - loaded first: the other pack files and build_packs import each other
 from build_packs import session, clean, smaller, fetch_all, say, article, first_sentences, NARRATE, ALT_TEXT  # noqa: F401,E501
+from build_packs import listing_out_of_time  # noqa: E402
 from food_packs import sentence, listed, with_twins, count_pictures, commons_members, commons_entries, commons_place
 from expression_packs import CHILD
 from world_life_packs import remote_zip
@@ -1341,6 +1342,8 @@ def build_loc_haer(limit):
     s, rng, items = session(), random.Random(513), []
     per_term = limit // len(HAER_TERMS) + 2
     for term in HAER_TERMS:
+        if listing_out_of_time():          # leave the rest of the time for fetching what was found
+            break
         found = haer_items(s, term, int(per_term * 1.3), rng)
         items += [i for i in found if i[0] not in {x[0] for x in items}]
         say(f"  HAER '{term}': {len(found)} photos")
