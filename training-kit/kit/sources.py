@@ -2029,6 +2029,28 @@ SOURCES = [
            "Public domain or CC BY, each Commons file's own licence checked", "US state agencies via Wikimedia Commons (credited in CREDITS.txt)", "permissive", 800, 10, prepare_pack, "about 200 MB"),
     Source("commons_state_community", "US cities, counties and state agencies at work in their communities (public works, events, redevelopment, archives; Wikimedia Commons, ready-made pack)",
            "Public domain or CC BY, each Commons file's own licence checked", "US state agencies via Wikimedia Commons (credited in CREDITS.txt)", "permissive", 2500, 20, prepare_pack, "about 600 MB"),
+    # Current medicines, medical supplies and instruments and veterinary medicines (packs/med_vet_packs.py): nothing old
+    # or from museum collections. Medicine answers say "This looks like ..." and end "Check the packaging or ask a
+    # pharmacist to be sure." The share-alike, Open Facts supplements and DailyMed label entries are in med_vet_sources.py.
+    Source("med_commons_supplies", "Medical supplies at home: bandages, syringes, insulin pens, inhalers, ice packs, pill organizers and more (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain, CC BY or an open government licence (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 2000, 20, prepare_pack, "about 500 MB"),
+    Source("med_commons_instruments", "Surgical and medical instruments: scissors, forceps, clamps, scalpels, stethoscopes (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain, CC BY or an open government licence (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 600, 10, prepare_pack, "about 150 MB"),
+    Source("med_commons_medicines", "Current medicines: tablets, capsules, blister packs, bottles and creams (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain, CC BY or an open government licence (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1500, 20, prepare_pack, "about 350 MB"),
+    Source("vet_commons_medicine", "Veterinary medicines and animal care: pet and livestock medicines, ear tags, vet clinics (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain, CC BY or an open government licence (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 500, 10, prepare_pack, "about 120 MB"),
+    Source("dental_instruments", "Dental and surgical instruments, one per photo: 22 kinds (Mendeley Data mh6zpc7y9g, ready-made pack)",
+           "CC BY 4.0 (Mendeley Data mh6zpc7y9g)", "Dental instruments image set, Mendeley Data mh6zpc7y9g, CC BY 4.0",
+           "permissive", 800, 20, prepare_pack, "about 300 MB"),
+    Source("open_images_medical", "Medical things in everyday photos: gloves, masks, braces, stretchers, wheelchairs (Open Images V7, ready-made pack)",
+           "Labels CC BY 4.0 (Google Open Images); photos CC BY 2.0, each author credited",
+           "Open Images V7 (Google), CC BY 4.0 labels; photos CC BY 2.0, credited in ATTRIBUTION.txt", "permissive", 900, 20,
+           prepare_pack, "about 400 MB"),
+    Source("cdc_phil_supplies", "Medical supplies and protective equipment in CDC photos, 2000 or later (CDC Public Health Image Library, ready-made pack)",
+           "Public domain (CDC PHIL items marked 'Permission is not required for public domain images')",
+           "Centers for Disease Control and Prevention, Public Health Image Library (public domain)", "permissive", 400, 10,
+           prepare_pack, "about 150 MB"),
     Source('skin_lesion_photos', 'Skin spots photographed with a phone, adults (PAD-UFES-20, ready-made pack)',
            'CC BY 4.0 (Mendeley Data zr7vgbcyr2)',
            'PAD-UFES-20 (Pacheco et al., 2020), CC BY 4.0', "permissive", 2000, 20, prepare_pack, 'about 400 MB', content="medical"),
@@ -2183,6 +2205,8 @@ PEOPLE_AND_BODILY_PACK_KEYS = (
     "work_commons_workplaces", "farm_usda_nrcs",
     # state_packs.py: US state, county and city government photos (all of them)
     "commons_state_roads", "commons_state_outdoors", "commons_state_response", "commons_state_community",
+    # med_vet_packs.py: Open Images and CDC photos of people using medical things
+    "open_images_medical", "cdc_phil_supplies",
 )
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + PEOPLE_AND_BODILY_PACK_KEYS
 
@@ -2584,3 +2608,17 @@ _state_ok = set(getattr(_state, "STATE_PICTURE_MAKING_OK", ()) or ())
 PERSONAL_PICTURE_MAKING_OK |= _state_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in STATE_SOURCES if s.key not in _state_ok)
 _add_collections(STATE_SOURCES)
+
+# Medicine and medical supply collections that are not open (Commons BY-SA; Open Facts supplements sold in the US and
+# Canada; DailyMed human and animal drug label pictures, research use); the file may be missing.
+try:
+    import med_vet_sources as _med_vet  # noqa: E402
+except ImportError as _e:
+    _med_vet = None
+    if getattr(_e, "name", None) != "med_vet_sources":
+        say(f"(The medicine and medical supply collections could not be loaded: {_e}. They are left out.)")
+MED_VET_SOURCES = list(getattr(_med_vet, "MED_VET_SOURCES", []) or [])
+_med_vet_ok = set(getattr(_med_vet, "MED_VET_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _med_vet_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in MED_VET_SOURCES if s.key not in _med_vet_ok)
+_add_collections(MED_VET_SOURCES)

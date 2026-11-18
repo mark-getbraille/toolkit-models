@@ -1507,6 +1507,11 @@ PACKS.update(WORK_FARM_MECH_PACKS)
 from state_packs import STATE_PACKS
 PACKS.update(STATE_PACKS)
 
+# Current medicines, medical supplies and instruments, and veterinary medicines (packs/med_vet_packs.py). Its Voice of
+# America pack (voa_commons_photos) is not used: its news photos are mostly named politicians at official events.
+from med_vet_packs import MED_VET_PACKS
+PACKS.update({k: v for k, v in MED_VET_PACKS.items() if k != "voa_commons_photos"})
+
 
 def sha256_of(path):
     """The SHA-256 of a file."""

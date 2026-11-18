@@ -93,7 +93,9 @@ jobs:
                    "commons_us_getting_around", "commons_us_public_places", "us_federal_forms", "imageinwords",
                    "wikidata_devices", "commons_devices", "nmah_devices",
                    "work_commons_workplaces", "farm_commons_equipment", "mech_commons_building", "farm_usda_nrcs",
-                   "commons_state_roads", "commons_state_outdoors", "commons_state_response", "commons_state_community"]
+                   "commons_state_roads", "commons_state_outdoors", "commons_state_response", "commons_state_community",
+                   "med_commons_supplies", "med_commons_instruments", "med_commons_medicines", "vet_commons_medicine",
+                   "dental_instruments", "open_images_medical", "cdc_phil_supplies"]
           words = [w for w in sys.argv[1].split(",") if w]
           # "key+" is a top-up pass of key and "key?" a needs-only run (kept with the mark, which the build job reads);
           # "all?" asks for a needs-only run of every pack.
@@ -371,6 +373,13 @@ jobs:
             commons_state_outdoors) limit=3000 ;;
             commons_state_response) limit=800 ;;
             commons_state_community) limit=2500 ;;
+            med_commons_supplies) limit=2000 ;;
+            med_commons_instruments) limit=600 ;;
+            med_commons_medicines) limit=1500 ;;
+            vet_commons_medicine) limit=500 ;;
+            dental_instruments) limit=800 ;;
+            open_images_medical) limit=900 ;;
+            cdc_phil_supplies) limit=400 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in
