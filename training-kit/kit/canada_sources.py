@@ -163,7 +163,12 @@ CA_SA = (
        ("Toronto Pearson International Airport", PLACE_Q, "This is Toronto Pearson International Airport.", True),
        ("Canada Post", PLACE_Q, "This is Canada Post.", True),
        ("Shoppers Drug Mart", PLACE_Q, "This is a Shoppers Drug Mart pharmacy.", True),
-       ("Libraries in Canada", PLACE_Q, "This is a library in Canada.", True)])
+       ("Libraries in Canada", PLACE_Q, "This is a library in Canada.", True),
+       ("Winter in Canada", HAPPENING_Q, "This is winter in Canada.", True),
+       ("Pond hockey", HAPPENING_Q, "This is pond hockey, ice hockey played outdoors.", True),
+       ("Rideau Canal Skateway", HAPPENING_Q, "This is skating on the Rideau Canal Skateway in Ottawa.", False),
+       ("Ice fishing in Canada", HAPPENING_Q, "This is ice fishing in Canada.", True),
+       ("Canoeing in Canada", HAPPENING_Q, "This is canoeing in Canada.", True)])
 
 
 def prepare_commons_ca_sa(source, data_dir, work, cap):
@@ -754,7 +759,39 @@ CANADA_NOT_INCLUDED = {
         "be given new descriptions.",
 }
 
+CANADA_NOT_INCLUDED.update({
+    "Archives of Ontario images beyond its own Commons upload (data.ontario.ca 'Archives of Ontario photographs and "
+    "maps')":
+        "the open-data record is under the Open Government Licence - Ontario but says 'The dataset does not include "
+        "actual digitized images ... Please note that the actual images are not published under the Open "
+        "Government Licence.' Only the files the Archives itself released on Commons under OGL-ON are used "
+        "(packs/canada_packs.py commons_ca_provincial).",
+    "Provincial open-data portals (data.ontario.ca, catalogue.data.gov.bc.ca, open.alberta.ca, donneesquebec.ca)":
+        "searched for photo collections in November 2026: only aerial and orthophoto imagery (vertical survey "
+        "pictures with no description), highway-camera data without a licence ('notspecified') and Montréal's "
+        "archive selection (the montreal_archives entry). No provincial ministry (transportation, parks, agriculture, "
+        "health, emergency management) publishes a captioned photo gallery under its open licence there; their "
+        "Flickr streams cannot be used (Flickr's API terms).",
+    "Indigenous community life":
+        "the owner's rule: only from community-approved or openly licensed sources, and nothing sacred or "
+        "ceremonial unless the source says it may be shared. No Indigenous community's or organisation's own "
+        "archive with an open licence and sharing permission was found; Commons' 'Indigenous peoples in Canada' "
+        "is openly licensed but not community-approved and mixes ceremonies, regalia and named people, so it is not "
+        "taken (the daily-life pack also leaves out sacred and ceremonial words). Candidates to ask are in "
+        "CANADA_PERMISSION_CANDIDATES.",
+})
+
 CANADA_PERMISSION_CANDIDATES = {
+    "Indigenous community archives and media (for example the Inuit Heritage Trust, the Shingwauk Residential "
+    "Schools Centre, APTN, Indigenous Services Canada's photo library)":
+        "Have: photographs of everyday community life chosen by the communities. Ask each first, saying what is "
+        "wanted (everyday scenes only, described for blind people, credited) and asking which pictures may be "
+        "shared; nothing sacred or ceremonial unless they say so. (Contacts not checked from this machine.)",
+    "Provincial ministries with Crown-copyright photo libraries (BC Parks, Ontario Parks, provincial transportation "
+    "and ferry services)":
+        "Have: photos of parks, roads, ferries and services. Terms: Crown copyright of the province unless a page "
+        "says otherwise (not checked page by page from this machine). Ask each ministry's communications office "
+        "for release under its province's Open Government Licence.",
     "Library and Archives Canada":
         "Has: millions of photographs of Canadian life with captions (rights item by item). Ask (bulk access for "
         "describing pictures for blind people): https://library-archives.canada.ca/eng/services/public/"
