@@ -546,6 +546,25 @@ def without_copy_sites(entries):
     return out
 
 
+OLDEST_YEAR = 1990          # manuals of products from about 1990 to today (an item with no known year is kept)
+
+
+def before_1990(doc):
+    """True when an Internet Archive item's own year (or date), or a year in its title, is before OLDEST_YEAR. Items
+    with no year at all are kept: most manuals' records give none."""
+    years = []
+    for field in ("year", "date"):
+        value = doc.get(field)
+        for v in (value if isinstance(value, list) else [value]):
+            m = re.match(r"\s*(\d{4})", str(v or ""))
+            if m:
+                years.append(int(m.group(1)))
+    title = doc.get("title")
+    title = " ".join(title) if isinstance(title, list) else str(title or "")
+    years += [int(y) for y in re.findall(r"\b(19[0-8]\d)\b", title)]
+    return bool(years) and max(years) < OLDEST_YEAR
+
+
 def ia_search(fetch, words, collections=("manuals", "computermanuals"), limit=200):
     """Items of the manual collections whose title has the words (each word in quotes), without the copies of
     manual-copying sites (left out by the search itself, and again by copy_site_item)."""
@@ -557,10 +576,10 @@ def ia_search(fetch, words, collections=("manuals", "computermanuals"), limit=20
         url = "https://archive.org/advancedsearch.php?" + urllib.parse.urlencode(
             [("q", f"mediatype:texts AND ({where}) AND title:({title}) AND NOT ({not_copies})")] +
             [("fl[]", f) for f in ("identifier", "title", "item_size", "collection", "rights", "licenseurl",
-                                   "subject", "source", "originalurl")] +
+                                   "subject", "source", "originalurl", "year", "date")] +
             [("rows", IA_ROWS), ("page", page), ("output", "json")])
         docs = ((fetch.json(url).get("response") or {}).get("docs") or [])
-        items += [d for d in docs if not copy_site_item(d.get("identifier"), d)]
+        items += [d for d in docs if not copy_site_item(d.get("identifier"), d) and not before_1990(d)]
         if len(docs) < IA_ROWS:
             break
         page += 1

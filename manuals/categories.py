@@ -32,7 +32,14 @@ WIKIDATA_WORDS = {"personal_electronics": ["laptop", "computer", "keyboard", "mo
                                            "smartwatch", "tablet computer", "headphone"],
                   "cars": ["car model", "automobile model", "vehicle model", "motorcycle model"],
                   "office_equipment": ["printer", "computer printer", "photocopier"],
-                  "small_kitchen": ["kitchen appliance"], "home_appliances": ["home appliance", "major appliance"]}
+                  "small_kitchen": ["kitchen appliance"], "home_appliances": ["home appliance", "major appliance"],
+                  "computers": ["computer model", "personal computer", "desktop computer", "laptop", "notebook computer",
+                                "video game console", "home video game console", "handheld game console", "router",
+                                "computer monitor"],
+                  "tv_audio_video": ["television", "television model", "smart TV", "home theater", "AV receiver",
+                                     "streaming media player", "soundbar", "Blu-ray player", "DVD player"],
+                  "older_electronics": ["videocassette recorder", "camcorder", "personal digital assistant",
+                                        "portable cassette player", "portable CD player", "MiniDisc", "pager"]}
 
 CATEGORIES = {
     "frozen_meals": dict(
@@ -68,6 +75,35 @@ CATEGORIES = {
         kind="manuals", licence="CC0 (facts and links); each manual belongs to its maker",
         ia=["label maker", "labeler", "label printer", "laminator", "calculator", "stapler", "paper cutter",
             "pencil sharpener", "postage scale", "binding machine"]),
+    "computers": dict(
+        name="Computers, game consoles and home networks (manuals)",
+        description="Desktop and laptop computers, monitors, keyboards, mice, printers' cousins the scanners aside: "
+                    "routers, modems, Wi-Fi extenders, external drives, webcams and game consoles.",
+        kind="manuals", licence="CC0 (facts and links); each manual belongs to its maker",
+        ia=["desktop computer", "laptop", "notebook computer", "computer", "monitor", "keyboard", "mouse",
+            "router", "modem", "wireless", "network", "hard drive", "external drive", "webcam", "chromebook",
+            "macbook", "imac", "thinkpad", "nintendo", "playstation", "xbox", "game console", "sega"],
+        wikidata=True),
+    "tv_audio_video": dict(
+        name="Televisions, home theater and audio (manuals)",
+        description="Televisions, remote controls, cable and satellite boxes, streaming players, DVD and Blu-ray "
+                    "players, soundbars, home theater receivers, stereos, CD players and turntables.",
+        kind="manuals", licence="CC0 (facts and links); each manual belongs to its maker",
+        ia=["television", "tv", "lcd tv", "plasma", "remote control", "universal remote", "cable box",
+            "satellite receiver", "digital converter", "roku", "streaming", "dvd player", "blu-ray", "soundbar",
+            "home theater", "receiver", "amplifier", "stereo", "cd player", "turntable", "boombox"],
+        wikidata=True, energystar=["pd96-rr3d"]),
+    "older_electronics": dict(
+        name="Older electronics still around (1990s and 2000s manuals)",
+        description="VCRs, TV-VCR combos, camcorders, DVD recorders, cassette and CD players, Walkmans and "
+                    "Discmans, MiniDisc, answering machines, cordless phones, pagers, PDAs, film cameras, clock "
+                    "radios and digital photo frames.",
+        kind="manuals", licence="CC0 (facts and links); each manual belongs to its maker",
+        ia=["vcr", "videocassette recorder", "video cassette recorder", "tv/vcr", "camcorder", "video camera",
+            "dvd recorder", "cassette", "walkman", "discman", "minidisc", "answering machine", "cordless",
+            "pager", "palm", "pda", "film camera", "35mm", "clock radio", "photo frame", "caller id",
+            "word processor", "typewriter"],
+        wikidata=True),
     "office_equipment": dict(
         name="Office equipment (manuals)",
         description="Printers, copiers, shredders, fax machines, scanners and office telephones.",
@@ -87,6 +123,27 @@ CATEGORIES = {
         kind="manuals", licence="CC0 (facts and links); each manual belongs to its maker",
         ia=["laser level", "multimeter", "stud finder", "caliper", "tape measure", "torque wrench",
             "laser measure", "distance meter", "voltage tester", "thermometer gun"]),
+    "lawn_garden": dict(
+        name="Lawn, garden and outdoor equipment (manuals)",
+        description="Lawn mowers and riding mowers, string trimmers, leaf blowers, hedge trimmers, snow blowers, "
+                    "tillers, chainsaws, generators, pressure washers, sprinkler timers, grills and smokers.",
+        kind="manuals", licence="CC0 (facts and links); each manual belongs to its maker",
+        ia=["lawn mower", "lawnmower", "riding mower", "lawn tractor", "zero turn", "string trimmer",
+            "weed eater", "leaf blower", "hedge trimmer", "snow blower", "snowblower", "snow thrower", "tiller",
+            "chainsaw", "generator", "pressure washer", "sprinkler", "irrigation", "gas grill", "grill",
+            "smoker", "edger", "log splitter", "pool pump"]),
+    "home_systems": dict(
+        name="Around the house: safety, comfort and smart home (manuals)",
+        description="Smoke and carbon monoxide alarms, garage door openers, doorbells, security systems, smart "
+                    "speakers, light timers, ceiling fans, space heaters, fans, air purifiers, water softeners, "
+                    "garbage disposals, sump pumps, alarm clocks and sewing machines.",
+        kind="manuals", licence="CC0 (facts and links); each manual belongs to its maker",
+        ia=["smoke alarm", "smoke detector", "carbon monoxide", "garage door", "doorbell", "security system",
+            "alarm system", "smart speaker", "echo", "timer", "ceiling fan", "space heater", "fan",
+            "air purifier", "water softener", "water filter", "garbage disposal", "sump pump", "alarm clock",
+            "sewing machine", "iron", "steamer", "hair dryer", "shaver", "electric toothbrush", "treadmill",
+            "exercise bike", "elliptical"],
+        energystar=[]),
     "home_appliances": dict(
         name="Home appliances (manuals)",
         description="Washers, dryers, dishwashers, microwave ovens, ranges, refrigerators, air conditioners, "
@@ -100,12 +157,11 @@ CATEGORIES = {
                     "7p2p-wkbf"]),
     "personal_electronics": dict(
         name="Personal electronics and phones (manuals)",
-        description="Mobile phones, radios, headphones, speakers, cameras, music players, tablets, e-readers and "
-                    "watches.",
+        description="Mobile phones, radios, headphones, speakers, digital cameras, music players, tablets, "
+                    "e-readers and watches.",
         kind="manuals", licence="CC0 (facts and links); each manual belongs to its maker",
         ia=["mobile phone", "cell phone", "cellular", "smartphone", "radio", "headphones", "headset", "speaker",
-            "digital camera", "camcorder", "mp3 player", "tablet", "e-reader", "watch", "gps", "walkie talkie",
-            "television"],
+            "digital camera", "mp3 player", "tablet", "e-reader", "watch", "gps", "walkie talkie"],
         wikidata=True, energystar=["pd96-rr3d"]),
     "accessibility": dict(
         name="Accessibility devices (manuals)",

@@ -86,6 +86,8 @@ jobs:
             product_directions) limit=1200 ;;
             health_devices) limit=1500 ;;
             cars) limit=600 ;;
+            # The big household collections: products from about 1990 to today.
+            computers|tv_audio_video|older_electronics|lawn_garden|home_systems|home_appliances|small_kitchen) limit=4000 ;;
             *) limit=1500 ;;
           esac
           # Stop requesting after 290 minutes (listing stops at half of that), so the index is published in time.
