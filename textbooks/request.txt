@@ -3,5 +3,5 @@
 # siyavula, dspace (the reference works of the WHO, World Bank and FAO).
 # Add "pictures" as a key to put the pictures into the books (much larger files); without it the books keep every
 # picture's description and caption as text.
-# Again with the non-profit, government, field-manual and course groups.
-all
+# Again: every book, plus the publications (reports, journals, news, magazines, history; newspapers only by name).
+all,publications
