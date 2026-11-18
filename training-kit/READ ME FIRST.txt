@@ -70,9 +70,45 @@ do not sell it, publish it, put it in a product or share it outside personal, no
 "-personal", its report starts with a PERSONAL USE ONLY warning listing those collections and their terms, and its
 zip holds PERSONAL-USE-ONLY.txt. A follow-up training only carries on from a personal-use training when you tick
 the same box again.
-Collections that need a sign-up or a signed agreement (for example MIMIC or ImageNet) cannot be downloaded by the
-kit. If you got such a collection yourself, and its terms allow it, you can put its pictures with their descriptions
+Most collections that need a sign-up or a signed agreement (for example MIMIC or ImageNet) cannot be downloaded
+by the kit (the few it can are below). If you got such a collection yourself, and its terms allow it, you can put its pictures with their descriptions
 into your own pictures folder (see HOW TO ADD YOUR OWN PICTURES.txt); the result is then for personal use only too.
+
+Personal use and sign-up collections
+"Personal use: everything allowed" (Alt+1) is one check box that ticks every collection you may use for your own,
+private training: the share-alike ones (Wikipedia), the non-commercial ones, the research-only ones, and the sign-up
+ones whose key or files are on this computer. Before it ticks anything, a window says what it means and how much it
+downloads in all, and lists the research-only terms. Read it (Alt+A), tick "I understand" (Alt+I) and press OK
+(Alt+O); Cancel (Alt+C) or Escape changes nothing. What it means: the model is for your personal, private use only.
+Never publish it, share it, sell it or put it in a product; the licences of the non-commercial and research
+collections forbid selling the model or anything it makes. It does not tick art with nudity, medical pictures,
+graphic scenes or adult sexual content: those keep their own questions. For a picture-making model, collections of
+people and other collections not allowed for picture-making are still left out. Unticking it puts the three boxes
+back as they were. The program remembers it.
+
+Sign-up collections need your own free account. Each one, the first time it runs, says where to get its key, the
+line of the terms you agree to, and what it adds; without its key it is left out and the training carries on.
+- DVIDS (US forces at work, and Canadian Armed Forces photos): DVIDS_API_KEY. Sign up at https://api.dvidshub.net
+  (Sign up at the top right), then create an API application; its key starts with key-.
+- Kaggle Chess Positions (chess diagrams read out square by square): KAGGLE_USERNAME and KAGGLE_KEY. Make a free
+  account at https://www.kaggle.com , open Settings, API, Create New Token. The kaggle.json file it gives holds both;
+  you can also simply keep that file in the .kaggle folder of your user folder.
+- Flickr30k (everyday photos described by people): no key. Fill in the request form at
+  https://forms.illinois.edu/sec/229675 . Put the files you receive (flickr30k-images.tar.gz and flickr30k.tar.gz) in
+  Documents\Picture Model Training sign-up files\flickr30k.
+- Museums Victoria (household appliances, radios, tools): no key; it downloads slowly on your computer and says so
+  plainly if the museum refuses your computer.
+- Keys the kit already uses: EUROPEANA_KEY (https://pro.europeana.eu/page/get-api), DPLA_API_KEY
+  (https://pro.dp.la/developers/api-basics) and SI_API_KEY (https://api.data.gov/signup/).
+Two ways to give the program a key:
+1. In the "Personal use: everything allowed" window press "Sign-up keys" (Alt+K), type each key in its field and
+   press Save (Alt+S). They are kept only in your own settings folder on this computer
+   (%APPDATA%\Picture Model Training\signup-keys.json), never in the training folder and never in the log.
+2. Or as a Windows environment variable for your account: press Start, type "environment variables", choose "Edit
+   environment variables for your account", press New, type the name (for example DVIDS_API_KEY) and the key, and
+   press OK twice. Close and open the program again so it sees the new variable.
+Warning: never paste a key into a chat, an e-mail, a forum or a support message. Anyone with your key can use your
+account. If a key was shared by mistake, make a new one on the site and delete the old one.
 
 Review collections
 Some picture collections are kept for a blind adult's own private describer only: medical pictures of adult
