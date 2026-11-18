@@ -2672,3 +2672,24 @@ _canada_ok = set(getattr(_canada, "CANADA_PICTURE_MAKING_OK", ()) or ())
 PERSONAL_PICTURE_MAKING_OK |= _canada_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in CANADA_SOURCES if s.key not in _canada_ok)
 _add_collections(CANADA_SOURCES)
+
+# Sign-up collections: the owner's own free keys or request forms, downloaded only on his computer, for personal use
+# (DVIDS, Kaggle Chess Positions, Flickr30k, Museums Victoria); without a key each says so and adds nothing. Its
+# ready() tells the wizard which have what they need. The file may be missing.
+try:
+    import signup_sources as _signup  # noqa: E402
+except ImportError as _e:
+    _signup = None
+    if getattr(_e, "name", None) != "signup_sources":
+        say(f"(The sign-up collections could not be loaded: {_e}. They are left out.)")
+SIGNUP_SOURCES = list(getattr(_signup, "SIGNUP_SOURCES", []) or [])
+_signup_ok = set(getattr(_signup, "SIGNUP_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _signup_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in SIGNUP_SOURCES if s.key not in _signup_ok)
+_add_collections(SIGNUP_SOURCES)
+
+
+def signup_ready(source):
+    """True when a collection has what it needs on this computer: a sign-up collection its keys or files
+    (signup_sources.ready); every other collection True."""
+    return _signup.ready(source) if _signup is not None else True
