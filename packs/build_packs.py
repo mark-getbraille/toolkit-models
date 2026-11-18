@@ -185,7 +185,10 @@ def fetch_all(items, workers=8, pause=0.0):
         name, url, row = item
         if pause:
             time.sleep(pause)
-        for _ in range(2):
+        answer = "no answer"
+        for attempt in range(4):
+            if out_of_time():
+                break
             try:
                 r = s.get(url, timeout=60)
                 if r.status_code == 200:
@@ -196,12 +199,19 @@ def fetch_all(items, workers=8, pause=0.0):
                 if r.status_code in (403, 404, 410):
                     considered(name, url, f"could not be downloaded (the server answered {r.status_code})")
                     return None
-            except Exception:  # noqa: BLE001 - tried once more, then left out
-                time.sleep(2)
-        considered(name, url, "could not be downloaded (no good answer after two tries)")
+                answer = f"the server answered {r.status_code}"
+                # Too many requests or busy (429, 5xx): wait as long as the server asks, else 10, 30, 60 seconds.
+                # (The Library of Congress refused 160 FSA photos in half a minute when they were tried at once.)
+                after = r.headers.get("Retry-After", "")
+                time.sleep(min(int(after), 120) if after.isdigit() else (10, 30, 60, 0)[attempt])
+            except Exception as e:  # noqa: BLE001 - tried again, then left out
+                answer = type(e).__name__
+                time.sleep((2, 10, 30, 0)[attempt])
+        considered(name, url, f"could not be downloaded ({answer}, after four tries)")
+        failures.append(answer)
         return None
 
-    out, done = [], 0
+    out, done, failures = [], 0, []
     with concurrent.futures.ThreadPoolExecutor(workers) as pool:
         for result in pool.map(one, items):
             done += 1
@@ -209,6 +219,9 @@ def fetch_all(items, workers=8, pause=0.0):
                 out.append(result)
             if done % 500 == 0:
                 say(f"  {done} of {len(items)} pictures fetched ({len(out)} usable)")
+    if failures:                                      # say why pictures did not come, so a failed build explains itself
+        common = max(set(failures), key=failures.count)
+        say(f"  {len(failures)} pictures could not be downloaded; the most common reason: {common}")
     return out
 
 
