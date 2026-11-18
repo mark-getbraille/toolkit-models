@@ -192,6 +192,16 @@ CA_FACTS_CREDIT = "Open Food Facts contributors, product {code}: photos CC BY-SA
                   "https://world.openfoodfacts.org/product/{code}"
 
 
+# Supplements, vitamins, cough drops and throat lozenges: taken by med_vet_sources.openfacts_supplements (US and
+# Canada), so they are skipped here and the two entries do not repeat each other.
+SUPPLEMENT_TAGS = {"en:dietary-supplements", "en:vitamins", "en:cough-drops", "en:throat-lozenges"}
+
+
+def is_supplement(hit):
+    """True when a product's categories name a supplement, vitamin, cough drop or throat lozenge."""
+    return bool(SUPPLEMENT_TAGS & set(hit.get("categories_tags") or []))
+
+
 def ca_barcode(code):
     """True when a product's barcode is one sold on Canadian shelves: a North American UPC (GS1 prefixes 000 to 139,
     which GS1 Canada also gives out) or a GS1 Canada EAN (754 and 755); so a European product also sold in Canada is
@@ -224,11 +234,12 @@ def ca_food_items(want):
                 data = get_json(OFF_SEARCH, {"q": f'countries_tags:"en:canada" AND categories_tags:"en:{category}"',
                                              "page_size": 100, "page": page, "sort_by": "-unique_scans_n",
                                              "fields": "code,product_name,product_name_en,brands,quantity,images,"
-                                                       "languages_codes"})
+                                                       "languages_codes,categories_tags"})
             except RuntimeError:
                 break
             batch = data.get("hits") or []
-            hits += [h for h in batch if ca_barcode(h.get("code")) and off_us_front(h["code"], h.get("images"))]
+            hits += [h for h in batch if ca_barcode(h.get("code")) and off_us_front(h["code"], h.get("images"))
+                     and not is_supplement(h)]
             if len(batch) < 100:
                 break
             page += 1
@@ -271,7 +282,7 @@ def ca_site_items(site, want):
         if len({i[0] for i in items}) >= want:
             break
         url = facts_image(site, hit.get("code") or "", hit.get("images") or {}, "front", "en") \
-            if ca_barcode(hit.get("code")) else ""
+            if ca_barcode(hit.get("code")) and not is_supplement(hit) else ""
         answer = off_name(hit)
         if not url or not answer or NOT_SHOWN.search(answer):
             continue

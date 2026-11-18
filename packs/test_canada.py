@@ -136,6 +136,8 @@ def test_barcodes_and_labels():
     assert k.bilingual_row({"languages_codes": {"en": 5, "fr": 4}}, {"credit": "c"})["answer"] == \
         "The label is in English and French."
     assert k.bilingual_row({"languages_codes": {"en": 5}}, {}) is None
+    assert k.is_supplement({"categories_tags": ["en:snacks", "en:throat-lozenges"]})
+    assert not k.is_supplement({"categories_tags": ["en:snacks"]}) and not k.is_supplement({})
 
 
 def test_montreal_rows():
