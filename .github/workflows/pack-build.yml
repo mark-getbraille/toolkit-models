@@ -324,6 +324,13 @@ jobs:
             field_manual_figures) limit=2500 ;;
             cd_booklets) limit=1200 ;;
             cd_films) limit=1200 ;;
+            commons_drugs) limit=800 ;;
+            commons_drug_paraphernalia) limit=1000 ;;
+            commons_cbp_seizures) limit=300 ;;
+            cdc_phil_drugs) limit=60 ;;
+            commons_firearm_accessories) limit=1500 ;;
+            commons_firearm_kinds) limit=2000 ;;
+            wikidata_firearms) limit=500 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in

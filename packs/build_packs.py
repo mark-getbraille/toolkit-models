@@ -1590,6 +1590,12 @@ PACKS.update(CIVIL_DEFENSE_PACKS)
 from med_vet_packs import MED_VET_PACKS
 PACKS.update({k: v for k, v in MED_VET_PACKS.items() if k != "voa_commons_photos"})
 
+# Drugs, counterfeit pills and paraphernalia, and firearms and firearm accessories (packs/drug_firearm_packs.py):
+# Commons drug, paraphernalia, accessory, gun-kind and maker categories, CBP seizure photos, CDC PHIL drug photos and
+# Wikidata firearm models with a picture. Never used for picture-making (the kit's NOT_FOR_PICTURE_MAKING).
+from drug_firearm_packs import DRUG_FIREARM_PACKS
+PACKS.update(DRUG_FIREARM_PACKS)
+
 
 # The packs whose builder reads the Wikimedia Commons API (commons_get, commons_members, commons_entries,
 # mechanical_packs.mech_entries, us_packs.us_commons, documentary_packs.commons_get or COMMONS_API itself). When many
@@ -1626,6 +1632,9 @@ COMMONS_KEYS = frozenset({
     "work_commons_workplaces", "farm_commons_equipment", "mech_commons_building", "farm_usda_nrcs",
     "commons_college_streams", "commons_university_archives",
     "med_commons_supplies", "med_commons_instruments", "med_commons_medicines", "vet_commons_medicine",
+    # drugs, paraphernalia and firearms (drug_firearm_packs.py; cdc_phil_drugs reads only CDC PHIL)
+    "commons_drugs", "commons_drug_paraphernalia", "commons_cbp_seizures", "commons_firearm_accessories",
+    "commons_firearm_kinds", "wikidata_firearms",
 })
 
 
