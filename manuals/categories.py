@@ -26,6 +26,11 @@ Each category: name, description, kind, licence (of the index), and its sources:
   energuide   words of the file names of Natural Resources Canada's EnerGuide appliance lists ("dishwashers",
               "ranges"): brand and model of appliances sold in Canada (Open Government Licence - Canada)
   volunteers  the kinds of the Picture Describers export taken ("cooking", "directions", "warnings", "storage")
+  makers      makers' own manual libraries (MAKERS below): read by the builder only where the maker's robots.txt
+              allows it AND its terms do not forbid programs; otherwise the library's address is only listed, by
+              hand, for the person to open (build_manuals.maker_entries)
+  exclude     a regular expression: products and documents whose name or kind matches are never put in the index
+  guidance    general guidance pages linked from the collection (title, address, who publishes it)
 """
 
 OFF_US = 'countries_tags:"en:united-states"'
@@ -41,7 +46,119 @@ WIKIDATA_WORDS = {"personal_electronics": ["laptop", "computer", "keyboard", "mo
                   "tv_audio_video": ["television", "television model", "smart TV", "home theater", "AV receiver",
                                      "streaming media player", "soundbar", "Blu-ray player", "DVD player"],
                   "older_electronics": ["videocassette recorder", "camcorder", "personal digital assistant",
-                                        "portable cassette player", "portable CD player", "MiniDisc", "pager"]}
+                                        "portable cassette player", "portable CD player", "MiniDisc", "pager"],
+                  "firearms": ["firearm model", "firearm", "pistol", "revolver", "rifle", "shotgun", "handgun",
+                               "air gun", "air rifle", "air pistol", "BB gun", "gun safe"]}
+
+# ------------------------------------------------------------------------------------------- firearms
+# Why this collection exists (the owner's and his team's decision): a blind person living in a household with a
+# firearm deserves the same information on handling, storing and maintaining it safely that its maker gives every
+# sighted owner, in the maker's own owner's manual. The index holds facts and links only; the toolkit puts a short
+# safety note first whenever it offers one of these manuals.
+#
+# Never in this collection (FIREARMS_EXCLUDE, checked on every product and document name and kind): suppressors and
+# other NFA items, conversion or modification parts and kits, automatic-fire parts, unfinished receivers and jigs,
+# reloading equipment, armorer's (gunsmith) manuals, and military-only weapon kinds; nor sales papers (catalogues,
+# warranty and order forms, spec sheets).
+FIREARMS_EXCLUDE = (r"suppressor|silencer|solvent trap|\bnfa\b|short[- ]barrel(?:l?ed)? (?:rifle|shotgun)|\bsb[rs]\b|"
+                    r"conver(?:sion|t)|auto[- ]?sear|full[- ]?auto|select[- ]?fire|machine ?gun|machine pistol|"
+                    r"submachine|assault rifle|battle rifle|automatic rifle|bump[- ]?stock|forced[- ]reset|"
+                    r"binary trigger|trigger (?:kit|group|upgrade|information)|performance[- ]trigger|"
+                    r"80 ?%|unfinished|jig\b|build kit|lower receiver|reload|powder measure|bullet mold|"
+                    r"armou?rer|grenade|personal defen[cs]e weapon|anti[- ]materi[ae]l")
+NOT_A_MANUAL = (r"warranty|buyer'?s? ?guide|annual|catalog|patent|order form|inspection form|awareness form|"
+                r"price ?list|rebate|code of conduct|spec ?sheet|fact ?sheet|press release|dealer")
+
+# The makers. access:
+#   read     robots.txt allows programs and the terms (read on 2026-11-19) do not forbid them: the builder reads the
+#            pages listed (only those) and keeps the manual links on them that point to the maker's own files
+#            (hosts); "page_links": links to the maker's manuals published as web pages (Browning, Winchester).
+#   link     the terms forbid robots, scraping or indexing, or the site refuses programs: nothing is read; the
+#            library's address (entered by hand) is listed for the person to open in their browser.
+#   mention  the terms forbid even linking without permission: the site is named in words only, no address.
+# type: what the maker's products are when a document does not say ("pistol", "firearm", "airgun", "safe").
+MAKERS = [
+    dict(key="glock", maker="GLOCK", type="pistol", access="read",
+         library="https://us.glock.com/en/owners-resources/downloadable-materials",
+         pages=["https://us.glock.com/en/owners-resources/downloadable-materials"],
+         hosts=["eu-assets.contentstack.com", "us.glock.com"],
+         reason="robots.txt allows all; terms allow downloading content for personal, non-commercial use"),
+    dict(key="henry", maker="Henry Repeating Arms", type="rifle", access="read",
+         library="https://www.henryusa.com/own-a-henry/henry-owners-manuals/",
+         pages=["https://www.henryusa.com/own-a-henry/henry-owners-manuals/"], hosts=["www.henryusa.com"],
+         reason="robots.txt allows the page (crawl delay 10 seconds, kept); no terms page found"),
+    dict(key="remington", maker="Remington", type="firearm", access="read",
+         library="https://remington-arms.com/owners-manuals/", pages=["https://remington-arms.com/owners-manuals/"],
+         hosts=["remington-arms.com"], reason="robots.txt allows all; no terms page found"),
+    dict(key="browning", maker="Browning", type="firearm", access="read",
+         library="https://www.browning.com/support/owners-manuals.html",
+         pages=["https://www.browning.com/support/owners-manuals.html"], hosts=["www.browning.com"],
+         page_links=r"^https://www\.browning\.com/support/owners-manuals/[a-z0-9-]+\.html$",
+         reason="robots.txt allows the pages; its terms page has no rule against programs"),
+    dict(key="winchester", maker="Winchester", type="firearm", access="read",
+         library="https://www.winchesterguns.com/support/owners-manuals.html",
+         pages=["https://www.winchesterguns.com/support/owners-manuals.html"], hosts=["www.winchesterguns.com"],
+         page_links=r"^https://www\.winchesterguns\.com/support/owners-manuals/[a-z0-9-]+\.html$",
+         reason="no robots.txt (all allowed); its legal page has no rule against programs"),
+    dict(key="smith-wesson", maker="Smith & Wesson", type="firearm", access="mention", site="smith-wesson.com",
+         reason="terms forbid data mining and placing links to its sites without permission"),
+    dict(key="ruger", maker="Ruger", type="firearm", access="link",
+         library="https://ruger.com/dataProcess/serialHistory/manuals.php",
+         reason="terms forbid robots and indexing (only search engines)"),
+    dict(key="marlin", maker="Marlin (Ruger)", type="rifle", access="link",
+         library="https://www.marlinfirearms.com/s/instructionManuals/",
+         reason="terms forbid robots and indexing (only search engines)"),
+    dict(key="taurus", maker="Taurus", type="firearm", access="link", library="https://www.taurususa.com/support/",
+         reason="terms forbid robots and indexing (only search engines)"),
+    dict(key="savage", maker="Savage Arms", type="firearm", access="link",
+         library="https://savagearms.com/content/manuals", reason="terms forbid data mining and robots"),
+    dict(key="sig", maker="SIG Sauer", type="firearm", access="link",
+         library="https://www.sigsauer.com/support/owners-manuals/",
+         reason="the site refuses programs (HTTP 403), so its terms could not be read"),
+    dict(key="mossberg", maker="Mossberg", type="firearm", access="link", library="https://www.mossberg.com/",
+         reason="the site refuses programs (HTTP 403); manual library address not confirmed"),
+    dict(key="springfield", maker="Springfield Armory", type="firearm", access="link",
+         library="https://support.springfield-armory.com/manuals",
+         reason="the manual list is built by scripts in the browser; not read"),
+    dict(key="kimber", maker="Kimber", type="firearm", access="link",
+         library="https://www.kimberamerica.com/manuals-and-catalogs",
+         reason="the site refuses programs (HTTP 403); address from Kimber's own FAQ"),
+    dict(key="beretta", maker="Beretta", type="firearm", access="link",
+         library="https://www.beretta.com/en/services/beretta-services/user-manuals",
+         reason="robots.txt could not be read from the build machine; not read"),
+    dict(key="benelli", maker="Benelli", type="shotgun", access="link", library="https://www.benelliusa.com/",
+         reason="the site refuses programs (HTTP 403)"),
+    dict(key="cz", maker="CZ", type="firearm", access="link", library="https://www.czfirearms.com/hub",
+         reason="the site could not be reached from the build machine; not read"),
+    dict(key="hk", maker="Heckler & Koch (civilian models)", type="firearm", access="link",
+         library="https://hk-usa.com/", reason="the site refuses programs (HTTP 403)"),
+    # Airguns and BB guns.
+    dict(key="umarex", maker="Umarex", type="airgun", access="link", library="https://www.umarexusa.com/product-manuals",
+         reason="its manual files are on mediacenter.umarexusa.com, whose robots.txt disallows everything"),
+    dict(key="crosman", maker="Crosman", type="airgun", access="link", library="https://www.crosman.com/",
+         reason="the site refuses programs (HTTP 403)"),
+    dict(key="daisy", maker="Daisy", type="airgun", access="link", library="https://www.daisy.com/",
+         reason="the site refuses programs (HTTP 403)"),
+    dict(key="gamo", maker="Gamo", type="airgun", access="link", library="https://www.gamousa.com/",
+         reason="the site refuses programs (HTTP 403)"),
+    # Safes and locks for storing firearms.
+    dict(key="sentrysafe", maker="SentrySafe", type="safe", access="link",
+         library="https://www.sentrysafe.com/support/product-manuals",
+         reason="terms (Master Lock) forbid spiders, robots and indexers"),
+    dict(key="stack-on", maker="Stack-On", type="safe", access="link",
+         library="https://stack-on.com/support/product-manuals/", reason="terms forbid bots and scraping tools"),
+    dict(key="liberty", maker="Liberty Safe", type="safe", access="link", library="https://libertysafe.com/",
+         reason="terms forbid robots and spiders"),
+    dict(key="vaultek", maker="Vaultek", type="safe", access="link", library="https://vaulteksafe.com/",
+         reason="terms forbid spidering, crawling and scraping"),
+]
+
+# General safe-storage guidance linked from the collection (linking allowed: NSSF's linking policy grants plain-text
+# links to projectchildsafe.org).
+FIREARMS_GUIDANCE = [
+    dict(title="Securing your firearm (Project ChildSafe)", url="https://projectchildsafe.org/securing-your-firearm/",
+         by="Project ChildSafe, a program of the National Shooting Sports Foundation"),
+]
 
 CATEGORIES = {
     "frozen_meals": dict(
@@ -193,4 +310,11 @@ CATEGORIES = {
         kind="manuals", licence="CC0 (facts and links); each manual belongs to its maker",
         ia=["owner's manual", "owners manual", "owner manual"], ia_collections=("manuals_toyota",),
         wikidata=True),
+    "firearms": dict(
+        name="Firearms (owner's manuals)",
+        description="Makers' own owner's and instruction manuals for civilian pistols, revolvers, rifles and "
+                    "shotguns, airguns and BB guns, and gun safes and locks: how to handle, store, clean and "
+                    "maintain them safely, as the maker tells every owner. Links only, fetched from the maker.",
+        kind="manuals", licence="CC0 (facts and links); each manual belongs to its maker",
+        makers=MAKERS, wikidata=True, exclude=FIREARMS_EXCLUDE, guidance=FIREARMS_GUIDANCE),
 }

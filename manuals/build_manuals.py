@@ -37,6 +37,14 @@ Sources, and why each may be used by a program:
   The Picture Describers website (describe.getbraille.com)   its export of volunteer-checked instructions, read with
       the API key in the repository secret DESCRIBE_SITE_KEY ("Authorization: Bearer", never in this repository; a
       key that may fetch, 2,000 uses a day), paged with next_since; skipped without it.
+  Makers' own manual libraries (category firearms, categories.MAKERS)   each maker's robots.txt and terms were read
+      on 2026-11-19: a library is READ only where robots.txt allows this builder (checked again at every build) and
+      the terms do not forbid programs (GLOCK, Henry, Remington, Browning, Winchester): only the pages listed, only
+      links to the maker's own files, a HEAD request for each PDF's size, never the manual itself. Makers whose
+      terms forbid robots, scraping or indexing, or whose sites refuse programs, are only LINKED (the library's
+      address, entered by hand, for the person to open); Smith & Wesson, whose terms forbid links without
+      permission, is only NAMED. Never suppressors, NFA items, conversion or automatic-fire parts, reloading
+      equipment or armorer's manuals (categories.FIREARMS_EXCLUDE).
   Not used: ManualsLib and other manual-copying sites (their terms forbid automated use), nor the Internet Archive's
       copies of them (items such as manualsbase-id-2170, manualsonline-id-..., manualzilla-id-..., manualsplus_...:
       COPY_SITE_ITEMS, or an item whose metadata names one of NEVER_SITES): never put into any index (the owner's
@@ -55,6 +63,7 @@ import base64
 import gzip
 import hashlib
 import html
+import html.parser
 import io
 import json
 import os
@@ -78,7 +87,8 @@ GAPS = {"search.openfoodfacts.org": 6.5, "world.openfoodfacts.org": 0.7, "world.
         "images.openproductsfacts.org": 0.2, "static.openfoodfacts.org": 0.2, "archive.org": 1.0,
         "query.wikidata.org": 2.0, "commons.wikimedia.org": 0.5, "upload.wikimedia.org": 0.2,
         "api.fda.gov": 0.5, "describe.getbraille.com": 1.0, "data.energystar.gov": 1.0,
-        "open.canada.ca": 1.0, "natural-resources.canada.ca": 1.0, "www.nrcan.gc.ca": 1.0}
+        "open.canada.ca": 1.0, "natural-resources.canada.ca": 1.0, "www.nrcan.gc.ca": 1.0,
+        "www.henryusa.com": 10.0}           # Henry's robots.txt asks for a crawl delay of 10 seconds
 DEFAULT_GAP = 1.0
 TIMEOUT = 40
 STARTED = time.time()
@@ -189,6 +199,21 @@ class Fetcher:
                 continue
             raise RuntimeError(f"{url}: HTTP {status}")
         raise RuntimeError(f"{url}: the server stayed busy" + (f" ({error})" if error is not None else ""))
+
+    def size(self, url):
+        """The size in bytes a server gives for url (a HEAD request: nothing is downloaded), or 0 when unknown."""
+        host = (urllib.parse.urlsplit(url).hostname or "").lower()
+        if out_of_time():
+            return 0
+        self._wait(host)
+        try:
+            r = self.session.head(url, timeout=TIMEOUT, allow_redirects=True)
+            return int(r.headers.get("Content-Length") or 0) if r.status_code == 200 else 0
+        except Exception:  # noqa: BLE001 - the size is only a help
+            return 0
+        finally:
+            self.last[host] = time.monotonic()
+            self.requests += 1
 
     def json(self, url, headers=None, cache=True):
         """The JSON of url."""
@@ -722,14 +747,18 @@ def wikidata_rows(fetch):
 
 
 def wikidata_entries(rows, key):
-    """The entries of the category key: items whose kind's label has one of its words (and is not software)."""
+    """The entries of the category key: items whose kind's label has one of its words (and is not software), and
+    neither whose kind nor name matches the category's "exclude" rule (firearms: no suppressors, machine guns ...)."""
     cat = C.CATEGORIES[key]
     words = [w.lower() for w in (cat.get("ia") or []) + C.WIKIDATA_WORDS.get(key, [])]
+    exclude = re.compile(cat["exclude"], re.I) if cat.get("exclude") else None
     by_item = {}
     for r in rows:
         kind = r.get("kindLabel", "").lower()
         if not kind or BAD_KINDS.search(kind) or not any(re.search(r"\b" + re.escape(w) + r"s?\b", kind)
                                                          for w in words):
+            continue
+        if exclude is not None and (exclude.search(kind) or exclude.search(r.get("itemLabel", ""))):
             continue
         qid = r["item"].rsplit("/", 1)[-1]
         e = by_item.setdefault(qid, {"id": f"wd-{qid}", "name": r.get("itemLabel", ""),
@@ -876,6 +905,234 @@ def energuide_entries(fetch, kinds, limit):
     return out
 
 
+# --------------------------------------------------------------------------- makers' own manual libraries (firearms)
+#
+# categories.MAKERS lists each maker and what may be done with its site (access "read", "link" or "mention", with
+# the reason, from its robots.txt and terms). Only "read" makers are fetched, only the pages listed for them, and only
+# when robots.txt allows this builder; the manual links kept are those that point to the maker's own files (its
+# "hosts"). The manuals are never downloaded: their address (and the size the server gives, by a HEAD request) is all.
+
+class _LinkParser(html.parser.HTMLParser):
+    """Collects (address, link text, the heading above it) of every link of a page."""
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.links, self.heading = [], ""
+        self._href, self._text, self._label = None, [], ""
+        self._in_heading, self._heading_text = False, []
+
+    def handle_starttag(self, tag, attrs):
+        a = dict(attrs)
+        if tag in ("h1", "h2", "h3", "h4", "h5"):
+            self._in_heading, self._heading_text = True, []
+        elif tag == "a" and a.get("href"):
+            self._href, self._text, self._label = a["href"], [], a.get("title") or ""
+
+    def handle_endtag(self, tag):
+        if tag in ("h1", "h2", "h3", "h4", "h5") and self._in_heading:
+            self._in_heading = False
+            self.heading = " ".join("".join(self._heading_text).split())
+        elif tag == "a" and self._href is not None:
+            text = " ".join("".join(self._text).split()) or self._label
+            self.links.append((self._href, text, self.heading))
+            self._href = None
+
+    def handle_data(self, data):
+        if self._href is not None:
+            self._text.append(data)
+        if self._in_heading:
+            self._heading_text.append(data)
+
+
+GENERIC_LIBRARY = re.compile(r"^(?:(?:firearms?|guns?|manuals?|all|products?)\b\s*)*$", re.I)   # a list page
+GENERIC_LINK = re.compile(r"^(click here.*|download.*|here|pdf|view.*|open.*|read more|manual|\s*)$", re.I)
+PDF_IN_TEXT = re.compile(r"https?://[^\s\"'<>\\]+?\.pdf(?:\?[^\s\"'<>\\]*)?", re.I)
+TITLE_BEFORE = re.compile(r"""(?<![a-z])["']?title["']?\s*:\s*(?:"([^"]{2,120})"|'([^']{2,120})')""", re.I)
+SUBTITLE_BEFORE = re.compile(r"""(?<![a-z])["']?subtitle["']?\s*:\s*(?:"([^"]{2,160})"|'([^']{2,160})')""", re.I)
+TYPES = [("air rifle", "airgun"), ("air pistol", "airgun"), ("airgun", "airgun"), ("air gun", "airgun"),
+         ("bb gun", "airgun"), ("pellet", "airgun"), ("revolver", "revolver"), ("pistol", "pistol"),
+         ("handgun", "pistol"), ("shotgun", "shotgun"), ("carbine", "rifle"), ("rifle", "rifle"),
+         ("cable lock", "lock"), ("trigger lock", "lock"), ("gun lock", "lock"), ("safe", "safe"),
+         ("vault", "safe"), ("cabinet", "safe")]
+
+
+def title_from_file(url):
+    """A readable title from a PDF's file name ("51959_Instructions-for-use_Gen6_14102025-EN-low.pdf" ->
+    "Instructions for use Gen6"): no numbers of 5 or more digits, no "EN", "low", "web", "final", "rev"."""
+    name = urllib.parse.unquote(urllib.parse.urlsplit(url).path.rsplit("/", 1)[-1])
+    q = urllib.parse.parse_qs(urllib.parse.urlsplit(url).query).get("name")
+    if q:
+        name = q[0]
+    name = re.sub(r"\.pdf$", "", name, flags=re.I)
+    words = [w for w in re.split(r"[\s_\-+()]+", name) if w and not re.fullmatch(
+        r"\d{5,}|en|low|lr|web|file|final|rev\w*|v\d+|\d+|digital", w, re.I)]
+    return " ".join(words)
+
+
+def product_type(text, default):
+    """The kind of product a document is about, from its words ("pistol", "rifle", "airgun", "safe" ...), else
+    default."""
+    t = str(text or "").lower()
+    for word, kind in TYPES:
+        if re.search(r"\b" + re.escape(word) + r"s?\b", t):
+            return kind
+    return default
+
+
+def library_links(text, base):
+    """[(address, title)] of the links of a manual library page: its <a> links (a link that only says "Click here
+    to download" takes the heading above it) and the PDF addresses written in its scripts (a "title:" and
+    "subtitle:" just before one name it; else its file name). Pages sent as escaped HTML (an XML answer holding
+    "&lt;a href=...") are read too. Each address once, in order."""
+    if "&lt;a " in text:
+        text = html.unescape(text)
+    parser = _LinkParser()
+    try:
+        parser.feed(text)
+    except Exception:  # noqa: BLE001 - a broken page gives the links read so far
+        pass
+    out, seen = [], set()
+    for href, label, heading in parser.links:
+        url = urllib.parse.urljoin(base, html.unescape(href.strip()))
+        if not url.startswith("http") or url in seen:
+            continue
+        title = heading if GENERIC_LINK.match(label or "") else label
+        seen.add(url)
+        out.append((url, title or ""))
+    for m in PDF_IN_TEXT.finditer(text):
+        url = m.group(0).replace("\\u0026", "&")
+        if url in seen:
+            continue
+        seen.add(url)
+        before = text[max(0, m.start() - 400):m.start()]
+        titles = ["".join(t) for t in TITLE_BEFORE.findall(before)]
+        subtitles = ["".join(t) for t in SUBTITLE_BEFORE.findall(before)]
+        title = titles[-1] if titles else title_from_file(url)
+        if titles and subtitles:
+            title += " " + subtitles[-1]
+        out.append((url, html.unescape(title)))
+    return out
+
+
+_ROBOTS = {}
+
+
+def robots_allows(fetch, url):
+    """True when the robots.txt of url's site allows this builder to read url. No robots.txt (HTTP 404) allows
+    everything; a robots.txt that cannot be read allows nothing."""
+    import urllib.robotparser
+    parts = urllib.parse.urlsplit(url)
+    site = f"{parts.scheme}://{parts.netloc}"
+    if site not in _ROBOTS:
+        parser = urllib.robotparser.RobotFileParser()
+        try:
+            parser.parse(fetch.text(site + "/robots.txt").splitlines())
+        except RuntimeError as e:
+            if "HTTP 404" in str(e) or "HTTP 410" in str(e):
+                parser.parse([])
+            else:
+                parser = None
+        except OutOfTime:
+            return False
+        _ROBOTS[site] = parser
+    parser = _ROBOTS[site]
+    return parser is not None and parser.can_fetch(USER_AGENT, url)
+
+
+def firearm_model(name, maker):
+    """The model in a manual's title, without the maker's name and the words about the document ("GLOCK Owner's
+    Manual Models G17 - G48" -> "Models G17 - G48"; "Model 870 Pump-Action Shotgun — Owner's Manual" -> "Model 870
+    Pump-Action Shotgun")."""
+    text = re.split(r"\s+[—–]\s+", str(name or ""))[0]
+    for word in maker.replace("(", " ").replace(")", " ").split():
+        text = re.sub(r"\b" + re.escape(word) + r"\b", " ", text, flags=re.I)
+    text = re.sub(r"\b(owner'?s?|owner’s|user|instruction|operator'?s?)\b|\b(manual|instructions?|supplement(al)?|"
+                  r"addendum|sheet|for|series)\b", " ", text, flags=re.I)
+    return " ".join(text.split()).strip(" -:,&")
+
+
+def maker_entry(maker, title, url, kind, size=0):
+    """One index entry: a maker's manual (kind "pdf", or "page" for a manual published as a web page)."""
+    name = re.sub(r"\s*[®™©]", "", " ".join(str(title or "").replace("’", "'").split())) or title_from_file(url)
+    words = name if maker["maker"].split()[0].lower() in name.lower() else f"{maker['maker']} {name}"
+    return {"id": f"fa-{maker['key']}-{hashlib.sha256(url.encode('utf-8')).hexdigest()[:10]}",
+            "brand": maker["maker"], "model": firearm_model(name, maker["maker"]), "name": words,
+            "type": product_type(name + " " + re.sub(r"[-_/.]+", " ", urllib.parse.urlsplit(url).path), maker["type"]),
+            "category": "firearms", "barcodes": [], "fcc_ids": [],
+            "ic_ids": [], "source": f"{maker['maker']}'s own manual library", "page": maker.get("library", ""),
+            "manuals": [{"title": words, "url": url, "page": maker.get("library", "") if kind == "pdf" else url,
+                         "kind": kind, "size": int(size or 0),
+                         "rights": f"belongs to its maker ({maker['maker']}); fetched from the maker for the "
+                                   "owner's own use", "source": "the maker"}]}
+
+
+def library_entry(maker):
+    """The entry of a maker's whole library: its address (for "read" and "link" makers; for "mention", its site in
+    words only), for the person to open when no manual of their model is listed."""
+    library = maker.get("library", "") if maker["access"] in ("read", "link") else ""
+    return {"id": f"fa-{maker['key']}-library", "brand": maker["maker"], "model": "",
+            "name": f"{maker['maker']} owner's manuals (the maker's own library)", "type": maker["type"],
+            "category": "firearms", "barcodes": [], "fcc_ids": [], "ic_ids": [], "source": "the maker's site",
+            "page": library, "site": maker.get("site", ""), "access": maker["access"], "access_reason": maker["reason"],
+            "manuals": [{"title": f"{maker['maker']} owner's manuals", "url": "", "page": library, "kind": "library",
+                         "size": 0, "rights": f"belongs to its maker ({maker['maker']})", "source": "the maker"}]
+            if library else []}
+
+
+def wanted_document(title, url, exclude):
+    """True when a document of a maker's library is a manual the index may hold: not a sales paper (NOT_A_MANUAL)
+    and nothing the category excludes (suppressors, conversion parts, reloading ...)."""
+    words = f"{title} {title_from_file(url)}"
+    return not re.search(C.NOT_A_MANUAL, words, re.I) and not (exclude and re.search(exclude, words, re.I))
+
+
+def maker_documents(fetch, maker, exclude, sizes=True):
+    """The manual entries of one "read" maker: the links of its listed pages that point to its own files (a PDF on
+    one of its hosts) or, with page_links, to its manuals published as web pages. Returns (entries, notes)."""
+    entries, notes, seen = [], [], set()
+    page_rule = re.compile(maker["page_links"]) if maker.get("page_links") else None
+    for page in maker.get("pages") or []:
+        if not robots_allows(fetch, page):
+            notes.append(f"{maker['maker']}: robots.txt does not allow {page}; skipped")
+            continue
+        try:
+            text = fetch.text(page)
+        except (RuntimeError, OutOfTime) as e:
+            notes.append(f"{maker['maker']}: {e}")
+            continue
+        for url, title in library_links(text, page):
+            host = (urllib.parse.urlsplit(url).hostname or "").lower()
+            is_pdf = urllib.parse.urlsplit(url).path.lower().endswith(".pdf") or ".pdf" in url.lower()
+            if url in seen or host not in maker.get("hosts", []):
+                continue
+            if is_pdf:
+                kind = "pdf"
+            elif page_rule is not None and page_rule.match(url.split("#")[0]) and url.split("#")[0] != page:
+                kind = "page"
+            else:
+                continue
+            if not wanted_document(title, url, exclude) or GENERIC_LIBRARY.match(firearm_model(title, maker["maker"])):
+                continue
+            seen.add(url)
+            size = fetch.size(url) if sizes and kind == "pdf" and robots_allows(fetch, url) else 0
+            entries.append(maker_entry(maker, title, url, kind, size))
+    return entries, notes
+
+
+def maker_entries(fetch, makers, exclude=None, sizes=True):
+    """The entries of every maker: the manuals of "read" makers, and one library entry for each maker (so the
+    toolkit can always offer the maker's own page, or name its site). Returns (entries, notes)."""
+    entries, notes = [], []
+    for maker in makers:
+        if maker["access"] == "read" and not listing_out_of_time():
+            got, why = maker_documents(fetch, maker, exclude, sizes)
+            entries += got
+            notes += why
+            say(f"{maker['maker']}: {len(got)} manuals")
+        entries.append(library_entry(maker))
+    return entries, notes
+
+
 def attach_manuals(entries, manual_entries):
     """Give device records (openFDA, ENERGY STAR, EnerGuide) the manuals of Internet Archive items of the same brand
     and model, and the Canadian certification numbers those items print."""
@@ -962,6 +1219,10 @@ def build(key, out_dir, limit, fetch):
             say(f"{key}: {len(wd)} Wikidata products with a manual address")
         except (RuntimeError, OutOfTime, ValueError) as e:
             notes.append(f"Wikidata failed: {e}")
+    if cat.get("makers"):
+        got, why = maker_entries(fetch, cat["makers"], cat.get("exclude"))
+        manual_entries += got
+        notes += why
     if cat.get("udi"):
         devices = []
         for term in cat["udi"]:
@@ -1013,6 +1274,13 @@ def write(key, entries, out_dir, notes=(), requests_made=0):
                           "Government Licence - Canada" if cat.get("energuide") else ""),
              "copyright": "Facts and links only: the manuals belong to their makers and are not published here.",
              "notes": list(notes)[:50], "entries": entries}
+    if cat.get("guidance"):
+        index["guidance"] = cat["guidance"]
+    if cat.get("makers"):
+        index["makers"] = [{k: m.get(k, "") for k in ("key", "maker", "type", "access", "library", "site", "reason")}
+                           for m in cat["makers"]]
+        index["copyright"] += (" Makers' sites are read only where their robots.txt and terms allow programs; the "
+                               "others are linked (or named) for the person to open.")
     raw = gzip.compress(json.dumps(index, ensure_ascii=False, separators=(",", ":")).encode("utf-8"), mtime=0)
     os.makedirs(out_dir, exist_ok=True)
     # The same entries give the same checksum whatever day they were built (merge_catalogue keeps a new version only
