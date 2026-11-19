@@ -5,13 +5,17 @@ It checks that:
   - a "read" maker's library page gives one entry per manual on the maker's own hosts, titled from the link (or
     the heading above a "Click here to download" link, or a script's title:/subtitle:), with its type;
   - links to other sites (copying sites, dealers) are never kept, nor sales papers, nor anything excluded
-    ("solvent trap" and suppressor build kits, automatic weapons such as MP5s, conversion and capacity-increase
-    kits, reloading, armorer's manuals, automatic-fire parts), while a commercially made suppressor's owner's
-    manual, a semi-automatic rifle's manual and a safety data sheet are kept, with their types;
-  - robots.txt is obeyed: a page it disallows is not read;
+    (suppressor build and baffle kits, automatic-fire conversion parts such as auto sears and conversion kits,
+    reloading, armorer's manuals), while a commercially made suppressor's owner's manual, a semi-automatic rifle's
+    manual, a safety data sheet and, by the owner's policy of November 2026, the legal but regulated items (a solvent
+    trap's instructions, an 80% lower jig's manual, a binary trigger's, a magazine extension's, an automatic
+    firearm's manual) are kept, with their types;
+  - robots.txt is obeyed: a page it disallows is not read, and a manual file it disallows is left out;
+  - a US military manual of an automatic firearm is indexed only when the front of its own text says Distribution
+    Statement A and shows no restricted marking;
   - "link" and "mention" makers are never fetched: a link maker gets its library address, a mention maker only its
     site in words;
-  - Wikidata rows of excluded kinds (machine guns, suppressors) are left out;
+  - Wikidata rows of machine guns are now kept, while auto sears and suppressor kits are left out;
   - the written index carries the safe-storage guidance and the makers' access decisions.
 
 Run it from the repository's folder:   python3 -m pytest manuals/test_firearms.py
@@ -47,12 +51,19 @@ download</span></a></p>
 <p><a href="/manuals/Regency.pdf">Regency Over Under</a></p>
 <p><a href="/manuals/Example-Conversion-Kit.pdf">22 Conversion Kit Instructions</a></p>
 <p><a href="/manuals/Example-Reloading-Press.pdf">Reloading Press Manual</a></p>
+<p><a href="/manuals/Example-Easy-Jig.pdf">AR-15 80% Lower Easy Jig Manual</a></p>
+<p><a href="/manuals/Example-Binary.pdf">BT-1 Binary Trigger Installation Manual</a></p>
+<p><a href="/manuals/Example-DIAS.pdf">Drop-In Auto Sear Instructions</a></p>
+<p><a href="/manuals/Example-Old-Jig.pdf">Old Jig Manual</a></p>
 <p><a href="/manuals/Example-Armorers-Manual.pdf">X1 Armorer's Manual</a></p>
 <p><a href="/manuals/Example-Warranty-Form.pdf">Warranty Form</a></p>
 <p><a href="/manuals/Buyers-Guide-2026.pdf">Buyers Guide 2026</a></p>
 <p><a href="https://www.manualslib.com/manual/1/Example-X1.html">Example X1 manual (copy)</a></p>
 <p><a href="https://dealer.example.test/Example-X1.pdf">Example X1 manual at a dealer</a></p>
 <p><a href="/support/owners-manuals/model-70-rifle.html">Model 70 Rifle</a></p>
+<h3>Instructions</h3>
+<p><a href="/manuals/Example-V5-Jig-Manual.pdf">https://www.example-maker.test/manuals/Example-V5-Jig-Manual.pdf</a></p>
+<p><a href="/manuals/Example-Ultimate-Jig.pdf">go here</a></p>
 <script>var m = [{ title: "Model 9", subtitle: "Air Rifle - Owner's Manual",
  url: "https://www.example-maker.test/uploads/9-Manual-RD1-REV-0926.pdf" }];</script>
 </body></html>"""
@@ -87,7 +98,8 @@ def setup_function():
 
 def test_a_read_makers_manuals_are_listed_with_titles_and_types():
     fetch = FakeFetch({"https://www.example-maker.test/manuals": LIBRARY,
-                       "https://www.example-maker.test/robots.txt": "User-agent: *\nAllow: /\n"})
+                       "https://www.example-maker.test/robots.txt": "User-agent: *\nDisallow: "
+                                                                    "/manuals/Example-Old-Jig.pdf\nAllow: /\n"})
     entries, notes = B.maker_documents(fetch, MAKER, C.FIREARMS_EXCLUDE)
     by_name = {e["name"]: e for e in entries}
 
@@ -116,9 +128,18 @@ def test_a_read_makers_manuals_are_listed_with_titles_and_types():
     assert find("Regency Over Under")["type"] == "shotgun"
     names = " ".join(by_name).lower()
     assert "years old" not in names
-    for never in ("solvent trap", "parts kit", "mp5", "extension", "conversion", "reloading", "armorer", "warranty",
-                  "buyers", "copy", "dealer"):
+    for never in ("parts kit", "conversion", "auto sear", "reloading", "armorer", "warranty", "buyers", "copy",
+                  "dealer", "old jig"):
         assert never not in names, never
+    # Legal but regulated items (the owner's policy of November 2026): kept, with their types.
+    assert find("Solvent Trap Kit")["type"] == "solvent trap"
+    assert find("80% Lower Easy Jig")["type"] == "frame"
+    assert find("Binary Trigger")["type"] == "trigger"
+    assert find("+5 Magazine Extension")["type"] == "magazine"
+    assert find("MP5 Operator Manual")["manuals"][0]["kind"] == "pdf"
+    assert find("Example Jig Manual")["type"] == "frame"     # a bare address under "Instructions": the file name
+    assert find("Ultimate Jig")["type"] == "frame"                      # "go here": the file name
+    assert any("robots.txt does not allow" in n and "Old-Jig" in n for n in notes)
     for e in entries:
         assert e["fcc_ids"] == [] and e["ic_ids"] == [] and "belongs to its maker" in e["manuals"][0]["rights"]
     assert not any(u.startswith("HEAD") and "dealer" in u for u in fetch.asked)
@@ -172,15 +193,18 @@ def test_wikidata_excluded_kinds_are_left_out():
              "url": "https://maker.test/p1.pdf"},
             {"item": "http://www.wikidata.org/entity/Q2", "itemLabel": "Example M2", "kindLabel": "machine gun",
              "url": "https://maker.test/m2.pdf"},
-            {"item": "http://www.wikidata.org/entity/Q3", "itemLabel": "Example S3 solvent trap kit",
+            {"item": "http://www.wikidata.org/entity/Q3", "itemLabel": "Example S3 suppressor build kit",
              "kindLabel": "rifle accessory", "url": "https://maker.test/s3.pdf"},
+            {"item": "http://www.wikidata.org/entity/Q7", "itemLabel": "Example D7 drop-in auto sear",
+             "kindLabel": "firearm component", "url": "https://maker.test/d7.pdf"},
             {"item": "http://www.wikidata.org/entity/Q5", "itemLabel": "Example U5", "kindLabel": "assault rifle",
              "url": "https://maker.test/u5.pdf"},
             {"item": "http://www.wikidata.org/entity/Q6", "itemLabel": "Example B6", "kindLabel": "bolt-action rifle",
              "url": "https://maker.test/b6.pdf"},
             {"item": "http://www.wikidata.org/entity/Q4", "itemLabel": "Example A4", "kindLabel": "submachine gun",
              "url": "https://maker.test/a4.pdf"}]
-    assert [e["name"] for e in B.wikidata_entries(rows, "firearms")] == ["Example P1", "Example B6"]
+    assert [e["name"] for e in B.wikidata_entries(rows, "firearms")] == ["Example P1", "Example M2", "Example U5",
+                                                                         "Example B6", "Example A4"]
 
 
 def test_the_index_has_guidance_and_makers(tmp_path):
@@ -213,13 +237,51 @@ def test_the_makers_cover_long_guns_accessories_cleaning_optics_and_suppressors(
 def test_index_exclusions():
     import re
     rule = re.compile(C.FIREARMS_EXCLUDE, re.I)
-    for never in ("Universal Solvent Trap Kit", "9mm solvent trap cups", "Suppressor build kit", "Baffle stack",
-                  "Fuel filter adapter", "Drop-in auto sear", "Lightning link", "Forced reset trigger kit",
-                  "Binary trigger group", "Bump stock", "80% lower jig", "Polymer 80% frame", "HK MP5",
-                  "Uzi submachine gun", "M249 machine gun", "Short-barreled rifle", "Glock +5 magazine extension",
-                  "Capacity increase kit", "Select-fire conversion"):
+    for never in ("Suppressor build kit", "Baffle stack", "Pre-drilled solvent trap cups", "Indexed cones",
+                  "Fuel filter adapter",
+                  "Drop-in auto sear", "Lightning link", "Glock switch", "Select-fire conversion kit",
+                  "Reloading press", "X1 Armorer's Manual"):
         assert rule.search(never), never
     for kept in ("Model 870 Pump-Action Shotgun", "Model 7400 Semi-Automatic Rifle", "Ghost-M Owner's Manual",
                  "Suppressor Cleaning Concentrate (SDS)", "Hoppe's No. 9 SDS", "BoreSnake", "Cable lock",
-                 "Speed loader", "Riflescope manual", "Bipod"):
+                 "Speed loader", "Riflescope manual", "Bipod",
+                 # legal but regulated (the owner's policy of November 2026)
+                 "Universal Solvent Trap Kit", "Undrilled solvent trap cups", "Forced reset trigger kit",
+                 "Binary trigger group", "Bump stock",
+                 "80% lower jig", "Polymer 80% frame", "HK MP5", "Uzi submachine gun", "M249 machine gun",
+                 "Short-barreled rifle", "Glock +5 magazine extension", "Capacity increase kit"):
         assert not rule.search(kept), kept
+
+
+def test_public_release_military_manuals_need_distribution_a():
+    def item(ident):
+        return {"metadata": {"title": ident}, "files": [{"name": f"{ident}.pdf", "source": "original",
+                                                          "size": "1000"}, {"name": f"{ident}_djvu.txt"}]}
+    front = {"open": "TC 3-22.249 May 2017 DISTRIBUTION RESTRICTION: Approved for public release; distribution is "
+                     "unlimited. Headquarters, Department of the Army",
+             "limited": "DISTRIBUTION RESTRICTION: Distribution C: authorized to US Government agencies only. "
+                        "Approved for public release; distribution is unlimited",
+             "silent": "Headquarters, Department of the Army. Chapter 1."}
+
+    class Fetch(FakeFetch):
+        def json(self, url, headers=None):
+            return item(url.rsplit("/", 1)[-1])
+    pages = {f"https://archive.org/download/{k}/{k}_djvu.txt": v for k, v in front.items()}
+    docs = [dict(ia=k, brand="US Army", model=k, name=f"Manual {k}") for k in front]
+    entries, notes = B.public_manual_entries(Fetch(pages), docs)
+    assert [e["model"] for e in entries] == ["open"]
+    assert entries[0]["type"] == "automatic" and entries[0]["manuals"][0]["kind"] == "pdf"
+    assert entries[0]["manuals"][0]["release"].startswith("Distribution Statement A")
+    assert any("restricted marking" in n for n in notes) and any("no Distribution Statement A" in n for n in notes)
+    assert {d["ia"] for d in C.PUBLIC_MANUALS} == {"tc-3-22.249-light-machine-gun-m-249-series-2017",
+                                                   "medium-machine-gun-tc-3-22.240",
+                                                   "heavy-machine-gun-m-2-series-tc-3-22.50"}
+
+
+def test_the_regulated_items_makers_are_listed_with_their_access():
+    by_key = {m["key"]: m for m in C.MAKERS}
+    for key, access in (("80-percent-arms", "read"), ("5d-tactical", "read"), ("juggernaut", "read"),
+                        ("modulus", "link"), ("lone-wolf", "link"), ("franklin", "read"), ("fostech", "read"),
+                        ("rare-breed", "link"), ("slide-fire", "link"), ("pearce", "link"),
+                        ("shield-arms", "link")):
+        assert by_key[key]["access"] == access, key

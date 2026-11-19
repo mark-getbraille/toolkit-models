@@ -47,9 +47,18 @@ Sources, and why each may be used by a program:
       M-Pro 7, Break-Free, Ballistol, Otis, Real Avid, Lucas, Birchwood Casey, Rem Oil), whose safety data sheets
       the person opens from the link; Smith & Wesson, whose terms forbid links without permission, is only NAMED.
       A document whose title or file name says "SDS" or "safety data sheet" is marked document "safety data sheet".
-      Never anything for making or converting into a suppressor ("solvent trap" kits), automatic weapons or
-      automatic-fire parts, other NFA weapons, conversion or capacity-increase kits, 80% lowers and jigs, reloading
-      equipment or armorer's manuals (categories.FIREARMS_EXCLUDE).
+      A manual file that the maker's robots.txt disallows is left out. Legal but regulated items (the owner's
+      policy of November 2026) are kept, the toolkit saying a legal note with each: the instructions of
+      unfinished frames and receivers, their jigs and kits (80% Arms, 5D Tactical, Juggernaut Tactical read;
+      Modulus Arms, Lone Wolf linked), binary and forced-reset triggers (Franklin Armory, Fostech read; Rare Breed
+      linked), bump stocks (Slide Fire linked), magazine extensions (Pearce Grip, Shield Arms linked), solvent traps,
+      NFA and automatic firearms. Never anything for making a suppressor (suppressor and baffle kits, drilled cups,
+      filter adapters), automatic-fire conversion parts (auto sears, lightning links, "switches", conversion
+      kits), reloading equipment or armorer's manuals (categories.FIREARMS_EXCLUDE).
+  US military manuals of automatic firearms (category firearms, categories.PUBLIC_MANUALS)   the Internet Archive's
+      copies of Army training circulars, each put in the index only when the front of its own text says "Approved
+      for public release; distribution is unlimited" (Distribution Statement A) and shows no restricted marking
+      (public_manual_entries, checked at every build).
   Not used: ManualsLib and other manual-copying sites (their terms forbid automated use), nor the Internet Archive's
       copies of them (items such as manualsbase-id-2170, manualsonline-id-..., manualzilla-id-..., manualsplus_...:
       COPY_SITE_ITEMS, or an item whose metadata names one of NEVER_SITES): never put into any index (the owner's
@@ -952,14 +961,23 @@ class _LinkParser(html.parser.HTMLParser):
 GENERIC_LIBRARY = re.compile(r"^(?:(?:firearms?|guns?|manuals?|all|products?)\b\s*)*$", re.I)   # a list page
 # A heading that is not a manual's title (an age question, a cookie notice): the file name is used instead.
 NOT_A_TITLE = re.compile(r"\?\s*$|years old|cookies?|newsletter|subscribe|sign up|log ?in", re.I)
-GENERIC_LINK = re.compile(r"^(click here.*|download.*|here|pdf|view.*|open.*|read more|manual|\s*)$", re.I)
+# A link whose words say nothing of the manual ("Click here", "go here", or the bare address written out).
+# A heading that only names the page ("Instructions", "Manuals"): the file name is used instead.
+GENERIC_HEADING = re.compile(r"^(?:instructions?|manuals?|downloads?|owner'?s manuals?|resources?|support)$", re.I)
+GENERIC_LINK = re.compile(r"^(click here.*|download.*|(?:go |see )?here|pdf|view.*|open.*|read more|manual|"
+                          r"https?://\S+|\s*)$", re.I)
 PDF_IN_TEXT = re.compile(r"https?://[^\s\"'<>\\]+?\.pdf(?:\?[^\s\"'<>\\]*)?", re.I)
 TITLE_BEFORE = re.compile(r"""(?<![a-z])["']?title["']?\s*:\s*(?:"([^"]{2,120})"|'([^']{2,120})')""", re.I)
 SUBTITLE_BEFORE = re.compile(r"""(?<![a-z])["']?subtitle["']?\s*:\s*(?:"([^"]{2,160})"|'([^']{2,160})')""", re.I)
 # The kind of product a document is about, from the words of its title (the accessories first, so that "Pistol
 # Magazine Loader" or "Rifle Scope" is not taken for the firearm itself; product_type looks for the firearm words
 # first for a firearm maker).
-TYPES = [("safety data sheet", "chemical"), ("sds", "chemical"), ("msds", "chemical"), ("solvent", "chemical"),
+TYPES = [("solvent trap", "solvent trap"), ("jig", "frame"), ("80 lower", "frame"), ("80 frame", "frame"),
+         ("unfinished", "frame"), ("receiver blank", "frame"), ("parts kit", "frame"), ("build kit", "frame"),
+         ("binary", "trigger"), ("bfsiii", "trigger"), ("forced reset", "trigger"), ("forced-reset", "trigger"),
+         ("frt", "trigger"), ("bump stock", "stock"), ("bump fire", "stock"), ("magazine extension", "magazine"),
+         ("machine gun", "automatic"), ("submachine gun", "automatic"), ("safety data sheet", "chemical"),
+         ("sds", "chemical"), ("msds", "chemical"), ("solvent", "chemical"),
          ("bore cleaner", "chemical"), ("lubricant", "chemical"), ("gun oil", "chemical"), ("clp", "chemical"),
          ("grease", "chemical"), ("cleaning kit", "cleaning"), ("cleaning rod", "cleaning"),
          ("bore brush", "cleaning"), ("bore snake", "cleaning"), ("boresnake", "cleaning"), ("jag", "cleaning"),
@@ -981,7 +999,8 @@ FIREARM_TYPES = {"pistol", "revolver", "rifle", "shotgun", "firearm", "airgun"}
 # its owner's manual.
 DOCUMENT_WORDS = {"chemical": "safety data sheets", "cleaning": "instructions and safety data sheets",
                   "holster": "instructions", "magazine": "instructions", "loader": "instructions",
-                  "lock": "instructions", "mount": "instructions"}
+                  "lock": "instructions", "mount": "instructions", "frame": "instructions",
+                  "trigger": "instructions", "stock": "instructions", "solvent trap": "instructions"}
 SDS_WORDS = re.compile(r"\bm?sds\b|safety[- ]data[- ]sheet", re.I)
 
 
@@ -1029,7 +1048,7 @@ def library_links(text, base):
         if not url.startswith("http") or url in seen:
             continue
         title = heading if GENERIC_LINK.match(label or "") else label
-        if title and NOT_A_TITLE.search(title):
+        if title and (NOT_A_TITLE.search(title) or GENERIC_HEADING.match(title)):
             title = title_from_file(url) if url.lower().split("?")[0].endswith(".pdf") else ""
         seen.add(url)
         out.append((url, title or ""))
@@ -1160,7 +1179,10 @@ def maker_documents(fetch, maker, exclude, sizes=True):
             if not wanted_document(title, url, exclude) or GENERIC_LIBRARY.match(firearm_model(title, maker["maker"])):
                 continue
             seen.add(url)
-            size = fetch.size(url) if sizes and kind == "pdf" and robots_allows(fetch, url) else 0
+            if not robots_allows(fetch, url):
+                notes.append(f"{maker['maker']}: robots.txt does not allow {url}; left out")
+                continue
+            size = fetch.size(url) if sizes and kind == "pdf" else 0
             entries.append(maker_entry(maker, title, url, kind, size))
     return entries, notes
 
@@ -1176,6 +1198,61 @@ def maker_entries(fetch, makers, exclude=None, sizes=True):
             notes += why
             say(f"{maker['maker']}: {len(got)} manuals")
         entries.append(library_entry(maker))
+    return entries, notes
+
+
+# Distribution Statement A, and the markings that refuse a document even when it is also printed (the same rule as
+# training-kit/kit/uxo_personal_sources.py).
+DISTRIBUTION_A = re.compile(r"approved\s+for\s+public\s+release\s*[;,.:]?\s*distribution\s+is\s+unlimited", re.I)
+RESTRICTED = re.compile(r"distribution\s*(?:statement\s*)?[B-F]\s*[:.\-–—]|distribution\s+statement\s+[B-F]\b|"
+                        r"distribution\s+authori[sz]ed\s+to|for\s+official\s+use\s+only|\bFOUO\b|\bCUI\b|"
+                        r"controlled\s+unclassified|\bNOFORN\b|export[- ]controlled|warning:?\s+this\s+document\s+"
+                        r"contains\s+technical\s+data\s+whose\s+export", re.I)
+FRONT_CHARS = 12000
+
+
+def public_release(front_text):
+    """(True, "") when the front of a document's text says Distribution Statement A and shows no restricted
+    marking; else (False, why)."""
+    text = " ".join(str(front_text or "").split())
+    bad = RESTRICTED.search(text)
+    if bad:
+        return False, f"a restricted marking ({bad.group(0)})"
+    if not DISTRIBUTION_A.search(text):
+        return False, "no Distribution Statement A on its front pages"
+    return True, ""
+
+
+def public_manual_entries(fetch, docs):
+    """The index entries of publicly released military manuals (categories.PUBLIC_MANUALS): each Internet Archive
+    item's PDF, kept only when the front of its own text passes public_release. Returns (entries, notes)."""
+    entries, notes = [], []
+    for doc in docs:
+        if listing_out_of_time():
+            break
+        try:
+            pdf, size, text = ia_files(fetch, doc["ia"])
+            base = f"https://archive.org/download/{urllib.parse.quote(doc['ia'])}/"
+            front = fetch.text(base + urllib.parse.quote(text))[:FRONT_CHARS] if text else ""
+        except (RuntimeError, OutOfTime, ValueError, CopySite) as e:
+            notes.append(f"{doc['name']}: {e}")
+            continue
+        ok, why = public_release(front)
+        if not ok or not pdf:
+            notes.append(f"{doc['name']}: left out ({why or 'no PDF'})")
+            continue
+        entries.append({"id": f"fa-public-{doc['ia']}", "brand": doc["brand"], "model": doc["model"],
+                        "name": doc["name"], "type": "automatic", "category": "firearms", "barcodes": [],
+                        "fcc_ids": [], "ic_ids": [], "source": "Internet Archive",
+                        "page": f"https://archive.org/details/{urllib.parse.quote(doc['ia'])}",
+                        "manuals": [{"title": doc["name"], "url": base + urllib.parse.quote(pdf),
+                                     "page": f"https://archive.org/details/{urllib.parse.quote(doc['ia'])}",
+                                     "kind": "pdf", "ia": doc["ia"], "size": size, "document": "manual",
+                                     "text_url": base + urllib.parse.quote(text) if text else "",
+                                     "release": "Distribution Statement A: approved for public release; "
+                                                "distribution is unlimited",
+                                     "rights": "a US government work (public domain)",
+                                     "source": "Internet Archive"}]})
     return entries, notes
 
 
@@ -1269,6 +1346,11 @@ def build(key, out_dir, limit, fetch):
         got, why = maker_entries(fetch, cat["makers"], cat.get("exclude"))
         manual_entries += got
         notes += why
+    if cat.get("public_manuals"):
+        got, why = public_manual_entries(fetch, cat["public_manuals"])
+        manual_entries += got
+        notes += why
+        say(f"{key}: {len(got)} publicly released military manuals")
     if cat.get("udi"):
         devices = []
         for term in cat["udi"]:

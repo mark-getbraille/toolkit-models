@@ -52,7 +52,9 @@ WIKIDATA_WORDS = {"personal_electronics": ["laptop", "computer", "keyboard", "mo
                                "lever-action rifle", "pump-action shotgun", "semi-automatic rifle",
                                "semi-automatic shotgun", "double-barreled shotgun", "single-shot rifle",
                                "telescopic sight", "red dot sight", "holographic weapon sight", "laser sight",
-                               "weapon-mounted light", "bipod", "holster", "firearm suppressor"]}
+                               "weapon-mounted light", "bipod", "holster", "firearm suppressor", "machine gun",
+                               "submachine gun", "light machine gun", "general-purpose machine gun",
+                               "heavy machine gun"]}
 
 # ------------------------------------------------------------------------------------------- firearms
 # Why this collection exists (the owner's and his team's decision): a blind person living in a household with a
@@ -68,26 +70,29 @@ WIKIDATA_WORDS = {"personal_electronics": ["laptop", "computer", "keyboard", "mo
 # rings); and COMMERCIALLY MADE suppressors (legal and regulated in much of Europe and most US states: the makers'
 # owner's manuals for mounting, cleaning and safe use).
 #
+# Legal but regulated items (the owner's and his team's policy of November 2026: "identify what it is, mention that
+# it may not be legal, and link to the manual; it is not our place to gatekeep information"): the toolkit identifies
+# them with a plain legal note and offers the MAKER'S OWN published instructions, under the same robots.txt and
+# terms rules as every maker. They are: unfinished frames and receivers ("80 percent" lowers and frames), their jigs
+# and weapon parts kits; magazine extensions and capacity kits; bump stocks; forced-reset and binary triggers;
+# solvent traps sold as cleaning accessories; short-barrelled rifles and shotguns and other NFA firearms; and
+# AUTOMATIC firearms (machine guns, submachine guns, select-fire rifles), with their makers' manuals where openly
+# published and US military manuals ONLY when publicly released (Distribution Statement A printed on the document
+# itself, checked again at every build: PUBLIC_MANUALS).
+#
 # Never in this collection (FIREARMS_EXCLUDE, checked on every product and document name and kind): anything for
-# MAKING or converting into a suppressor ("solvent trap" kits, suppressor or baffle kits and parts, fuel or oil
-# filter adapters, Form 1 builds); automatic weapons and automatic-fire parts (machine guns, submachine guns,
-# select-fire, auto sears, "lightning links", forced-reset and binary triggers, bump stocks); conversion or
-# modification parts and kits, magazine capacity-increase kits; unfinished receivers, 80% lowers and jigs;
-# short-barrelled rifles and shotguns and other NFA weapons; reloading equipment; armorer's (gunsmith) manuals; nor
-# sales papers (catalogues, warranty and order forms, spec sheets, flyers).
-FIREARMS_EXCLUDE = (r"solvent[- ]?trap|(?:suppressor|silencer|baffle|wipe|monocore)s?\s+(?:build\s+)?(?:kit|parts?|"
-                    r"tubes?|cups?|cones?|stacks?|blanks?)\b|baffle\s+(?:kit|cone|cup|stack)|storage\s+(?:cup|cone)s?|"
-                    r"fuel[- ]filter|oil[- ]filter\s+(?:adapt|kit)|form\s*1\b|\bnfa\s+(?:weapon|item|firearm)|"
-                    r"short[- ]barrel(?:l?ed)? (?:rifle|shotgun)|\bsb[rs]\b|any other weapon|\baow\b|"
-                    r"destructive device|conver(?:sion|t)|auto[- ]?sear|lightning[- ]link|full[- ]?auto|"
-                    r"select[- ]?fire|machine ?gun|machine pistol|submachine|\bsmgs?\b|assault rifle|"
-                    r"battle rifle|(?<!semi-)(?<!semi )(?<!semi)automatic (?:rifle|weapon)|\bmp ?5\b|\buzi\b|"
-                    r"\bm249\b|\bm240\b|bump[- ]?stock|forced[- ]reset|binary trigger|"
-                    r"trigger (?:kit|group|upgrade|information)|performance[- ]trigger|"
-                    r"capacity[- ](?:increase|upgrade|extension)|magazine (?:extension|rebuild) kit|"
-                    r"\+\s?\d+\s+(?:magazine |mag )?(?:extension|base ?(?:pad|plate))|parts kit|"
-                    r"80 ?%|unfinished|jig\b|build kit|lower receiver|reload|powder measure|bullet mold|"
-                    r"armou?rer|grenade|personal defen[cs]e weapon|anti[- ]materi[ae]l")
+# MAKING a suppressor (suppressor or baffle kits and parts, pre-drilled or indexed cups and cones, fuel or oil filter
+# adapters, Form 1 build kits); automatic-fire CONVERSION parts, which civilians cannot legally own in the US unless
+# registered before 1986 and which have no civilian manuals (auto sears, drop-in auto sears, "lightning links",
+# "switches", conversion kits); destructive devices and grenades; reloading equipment; armorer's (gunsmith) manuals;
+# nor sales papers (catalogues, warranty and order forms, spec sheets, flyers).
+FIREARMS_EXCLUDE = (r"(?:suppressor|silencer|baffle|wipe|monocore)s?\s+(?:build\s+)?(?:kit|parts?|tubes?|cups?|cones?|"
+                    r"stacks?|blanks?)\b|baffle\s+(?:kit|cone|cup|stack)|"
+                    r"(?<!un)(?:pre-?)?drilled\b.{0,30}?(?:cups?|cones?)|indexed\b.{0,30}?(?:cups?|cones?)|"
+                    r"fuel[- ]filter|oil[- ]filter\s+(?:adapt|kit)|form\s*1\b|"
+                    r"destructive device|conver(?:sion|t)|auto[- ]?sear|lightning[- ]link|swift[- ]link|"
+                    r"(?:glock|auto|selector)\s+switch|grenade|anti[- ]materi[ae]l|reload|powder measure|bullet mold|"
+                    r"armou?rer")
 NOT_A_MANUAL = (r"warranty|buyer'?s? ?guide|annual|catalog|patent|order form|inspection form|awareness form|"
                 r"price ?list|rebate|code of conduct|spec ?sheet|fact ?sheet|press release|dealer|flyer|brochure|"
                 r"sell ?sheet|sales|product codes")
@@ -102,7 +107,9 @@ NOT_A_MANUAL = (r"warranty|buyer'?s? ?guide|annual|catalog|patent|order form|ins
 # type: what the maker's products are when a document does not say: "pistol", "rifle", "shotgun", "firearm",
 #   "airgun", "safe", "lock", "holster", "magazine", "loader", "cleaning" (tools and kits), "chemical" (solvents,
 #   bore cleaners, oils and lubricants: their safety data sheets), "optic" (scopes and sights), "laser", "light",
-#   "mount" (slings, bipods, rails and rings) or "suppressor" (commercially made).
+#   "mount" (slings, bipods, rails and rings), "suppressor" (commercially made), "frame" (unfinished frames and
+#   receivers, their jigs and parts kits), "trigger" (binary and forced-reset triggers), "stock" (bump stocks) or
+#   "automatic" (automatic firearms).
 MAKERS = [
     dict(key="glock", maker="GLOCK", type="pistol", access="read",
          library="https://us.glock.com/en/owners-resources/downloadable-materials",
@@ -324,6 +331,63 @@ MAKERS = [
     dict(key="a-tec", maker="A-TEC", type="suppressor", access="link",
          library="https://www.a-tec.no/maintenance-and-instructions",
          reason="no terms page found; its instructions are not files a program can list; not read"),
+    # Legal but regulated items (the owner's policy of November 2026; read on 2026-11-19). Unfinished frames and
+    # receivers ("80 percent" lowers and frames), their jigs and weapon parts kits: the makers' own instructions.
+    # Polymer80 is not listed: the company closed and its site is a parked page. JSD Supply is not listed: its
+    # site's certificate does not match its name, so it could not be checked.
+    dict(key="80-percent-arms", maker="80% Arms", type="frame", access="read",
+         library="https://www.80percentarms.com/instructions-and-faq/",
+         pages=["https://www.80percentarms.com/instructions-and-faq/"], hosts=["www.80percentarms.com"],
+         reason="robots.txt allows the page (it disallows some older manual files, which are left out); no terms "
+                "page found"),
+    dict(key="5d-tactical", maker="5D Tactical", type="frame", access="read",
+         library="https://www.5dtactical.com/Instructions/", pages=["https://www.5dtactical.com/Instructions/"],
+         hosts=["www.5dtactical.com"],
+         reason="robots.txt allows the page; its terms have no rule against programs (they allow copies for your "
+                "own non-commercial use)"),
+    dict(key="juggernaut", maker="Juggernaut Tactical", type="frame", access="read",
+         library="https://jtactical.com/products/80-lower-jig-ar10-ar15-ultimate",
+         pages=["https://jtactical.com/products/80-lower-jig-ar10-ar15-ultimate"], hosts=["jtactical.com"],
+         reason="robots.txt allows the page; its terms are terms of sale, with no rule against programs"),
+    dict(key="modulus", maker="Modulus Arms", type="frame", access="link",
+         library="https://www.modulusarms.com/instructions",
+         reason="terms forbid spidering, crawling and scraping"),
+    dict(key="lone-wolf", maker="Lone Wolf", type="frame", access="link", library="https://lonewolfdist.com/",
+         reason="terms forbid robots and allow links to the home page only"),
+    # Binary and forced-reset triggers, bump stocks.
+    dict(key="franklin", maker="Franklin Armory", type="firearm", access="read",
+         library="https://franklinarmory.com/manuals-install-videos/",
+         pages=["https://franklinarmory.com/manuals-install-videos/"], hosts=["franklinarmory.com"],
+         reason="robots.txt allows the page; its terms have no rule against programs and allow downloading for "
+                "personal, non-commercial use (as GLOCK's do)"),
+    dict(key="fostech", maker="Fostech", type="trigger", access="read", library="https://fostech.com/manuals-patents/",
+         pages=["https://fostech.com/manuals-patents/"], hosts=["fostech.com"],
+         reason="robots.txt allows the page; its terms forbid robots only for entering its sweepstakes"),
+    dict(key="rare-breed", maker="Rare Breed Triggers", type="trigger", access="link",
+         library="https://rarebreedtriggers.com/installation-videos/",
+         reason="terms forbid spidering, crawling and scraping"),
+    dict(key="slide-fire", maker="Slide Fire", type="stock", access="link", library="https://bumpstock.com/shop",
+         reason="robots.txt allows and its terms have no rule against programs, but its installation instructions "
+                "are pictures on each product page, not files a program can list; not read"),
+    # Magazine extensions and capacity kits.
+    dict(key="pearce", maker="Pearce Grip", type="magazine", access="link", library="https://www.pearcegrip.com/",
+         reason="terms forbid spidering, crawling and scraping"),
+    dict(key="shield-arms", maker="Shield Arms", type="magazine", access="link", library="https://shieldarms.com/",
+         reason="the site refuses programs (a browser check)"),
+]
+
+# Automatic firearms: US military manuals, ONLY when publicly released (the owner's decision of November 2026). Each
+# is the Internet Archive's copy (armypubs.army.mil's robots.txt shuts out programs) and is put in the index only
+# when the front of its text says "Approved for public release; distribution is unlimited" (Distribution Statement
+# A) and shows no restricted marking (Distribution B to F, FOUO, CUI ...): build_manuals.public_manual_entries
+# checks it at every build. Checked by hand on 2026-11-19: all three print Distribution Statement A.
+PUBLIC_MANUALS = [
+    dict(ia="tc-3-22.249-light-machine-gun-m-249-series-2017", brand="US Army", model="M249",
+         name="TC 3-22.249, Light Machine Gun M249 Series (2017)"),
+    dict(ia="medium-machine-gun-tc-3-22.240", brand="US Army", model="M240",
+         name="TC 3-22.240, Medium Machine Gun M240 Series (2017)"),
+    dict(ia="heavy-machine-gun-m-2-series-tc-3-22.50", brand="US Army", model="M2",
+         name="TC 3-22.50, Heavy Machine Gun M2 Series (2017)"),
 ]
 
 # General safe-storage guidance linked from the collection (linking allowed: NSSF's linking policy grants plain-text
@@ -488,8 +552,13 @@ CATEGORIES = {
         description="Makers' own owner's and instruction manuals for civilian pistols, revolvers, rifles and "
                     "shotguns, airguns and BB guns; gun safes and locks; holsters, magazines and loaders; cleaning "
                     "tools and the safety data sheets of cleaning chemicals; scopes, sights, lasers, lights and "
-                    "mounts; and commercially made suppressors: how to handle, store, clean and maintain them "
-                    "safely, as the maker tells every owner. Links only, fetched from the maker.",
+                    "mounts; commercially made suppressors; and legal but regulated items (unfinished frames and "
+                    "receivers with their jigs and kits, magazine extensions, bump stocks, binary and forced-reset "
+                    "triggers, solvent traps, NFA firearms and automatic firearms, with publicly released military "
+                    "manuals for the last): how to handle, store, clean and maintain them safely, as the maker "
+                    "tells every owner. The toolkit says a plain legal note with each regulated item. Links only, "
+                    "fetched from the maker.",
         kind="manuals", licence="CC0 (facts and links); each manual belongs to its maker",
-        makers=MAKERS, wikidata=True, exclude=FIREARMS_EXCLUDE, guidance=FIREARMS_GUIDANCE),
+        makers=MAKERS, wikidata=True, exclude=FIREARMS_EXCLUDE, guidance=FIREARMS_GUIDANCE,
+        public_manuals=PUBLIC_MANUALS),
 }
