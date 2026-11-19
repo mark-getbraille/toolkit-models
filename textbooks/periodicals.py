@@ -18,7 +18,9 @@ Groups (the "group" field of each catalogue entry; the names are in sources.GROU
                                                articles from the Europe PMC open-access subset (CC BY and CC0 only)
                                                on topics useful to a blind adult
   news         News, open-licensed             Global Voices (CC BY 3.0); Voice of America's own reporting (public
-                                               domain; news-agency copy left out); NASA news releases (public
+                                               domain; news-agency and partner copy left out; the last 60 days and
+                                               every year back to 2001) and VOA Learning English by year; NASA news
+                                               releases (public
                                                domain); KFF Health News (CC BY-NC-ND 4.0) and The Conversation (CC
                                                BY-ND 4.0), both whole and unchanged. News ages fast: the entries
                                                carry a "note" saying so, and "published" is the newest item's date
@@ -26,7 +28,8 @@ Groups (the "group" field of each catalogue entry; the names are in sources.GROU
   history      Reference, history              the State Department's "Milestones" essays and "Foreign Relations of
                                                the United States" volumes (public domain and CC0); historic
                                                newspapers from Chronicling America (Library of Congress; only those
-                                               published more than 95 years ago)
+                                               published more than 95 years ago); VOA radio scripts of the 1970s
+                                               (Internet Archive, public domain)
 
 The whole-and-unchanged rule (sources.WHOLE_AND_UNCHANGED, the owner's decision of 2026-11-18): a NoDerivatives
 licence (CC BY-ND, CC BY-NC-ND) is used only for works kept WHOLE with their TEXT UNCHANGED, converted in format
@@ -63,6 +66,7 @@ import argparse
 import csv
 import datetime
 import gzip
+import hashlib
 import html
 import io
 import json
@@ -112,6 +116,10 @@ EPMC_TOPICS = {
 }
 
 US_GOV, US_GOV_URL = sources.US_GOV, sources.US_GOV_URL
+
+VOA_NOTICE = ("All text, audio and video material produced exclusively by the Voice of America is in the public "
+              "domain (VOA's copyright statement). Credit: voanews.com, Voice of America.")
+VOA_LICENCE_TEXT = r"produced exclusively by the Voice of America is in the public domain"
 
 SOURCES = {
     "crs": dict(
@@ -232,15 +240,42 @@ SOURCES = {
         subject="US and world news", publisher="Voice of America (VOA)", country="United States",
         licence="Public domain (VOA's own reporting)", licence_url="https://www.voanews.com/p/5338.html",
         source="https://www.voanews.com/",
-        description="Recent news stories written by Voice of America's own reporters (the last 60 days). Stories "
-                    "that use material from news agencies (AP, Reuters, AFP) are left out, as VOA's terms ask.",
-        notice="All text, audio and video material produced exclusively by the Voice of America is in the public "
-               "domain (VOA's copyright statement). Credit: voanews.com, Voice of America.",
+        description="News stories written by Voice of America's own reporters: the last 60 days (recent) or one "
+                    "year (back to 2001). Stories that use material from news agencies (AP, Reuters, AFP and others) "
+                    "or from partners are left out, as VOA's terms ask.",
+        notice=VOA_NOTICE,
         changes="made into web pages with the pictures, videos and site menus left out; stories with news-agency "
-                "material left out",
-        licence_page="https://www.voanews.com/p/5338.html",
-        licence_text=r"produced exclusively by the Voice of America is in the public domain",
-        pieces=lambda today: ["recent"], piece_rule=r"^recent$", days=60),
+                "or partner material left out",
+        licence_page="https://www.voanews.com/p/5338.html", licence_text=VOA_LICENCE_TEXT,
+        # recent and the last three years by default; every year back to 2001 by key (pub:voa:2001 ... pub:voa:2022).
+        pieces=lambda today: ["recent"] + _years(2, today), piece_rule=r"^(recent|20[0-2]\d)$", days=60,
+        budget_minutes=200),
+    "voa_learning": dict(
+        group="news", driver="voa", site="https://learningenglish.voanews.com",
+        series_title="VOA Learning English", subject="News in simpler English", publisher="Voice of America (VOA)",
+        country="United States", licence="Public domain (VOA's own reporting)",
+        licence_url="https://www.voanews.com/p/5338.html", source="https://learningenglish.voanews.com/",
+        description="Voice of America's Learning English stories, written in slower, simpler English, one year per "
+                    "book (back to 2001). Stories using news-agency or partner material are left out.",
+        notice=VOA_NOTICE + " (The Kiwix library's VOA Learning English is a snapshot of the current site, with its "
+                            "videos; these books are the text of past years.)",
+        changes="made into web pages with the pictures, audio, videos and site menus left out; stories with "
+                "news-agency or partner material left out",
+        licence_page="https://www.voanews.com/p/5338.html", licence_text=VOA_LICENCE_TEXT,
+        pieces=lambda today: _years(2, today), piece_rule=r"^20[0-2]\d$", budget_minutes=200),
+    "voa_history": dict(
+        group="history", driver="voa_history", series_title="Voice of America radio scripts",
+        subject="US and world history (radio scripts)", publisher="Voice of America (VOA)", country="United States",
+        licence=US_GOV, licence_url=US_GOV_URL, source="https://archive.org/details/voa-radio-scripts",
+        collection="voa-radio-scripts",
+        description="Scripts of VOA's English radio reports (Backgrounders, This Week, Dateline, From the Bookshelf "
+                    "and others), scanned by the Internet Archive from the Library of Congress's microfilm, as their "
+                    "machine-read text. One book per decade; so far only the 1970s are online as text.",
+        notice="Works of the Voice of America, a US government agency (public domain; the Internet Archive marks each "
+               "with the Public Domain Mark). The machine-read text has the scanner's mistakes. VOA's older "
+               "broadcasts survive mostly as sound recordings, which are not in these books.",
+        changes="the machine-read text of each script, made into web pages", date_label="Broadcast",
+        pieces=lambda today: ["1970s"], piece_rule=r"^19[4-9]0s$"),
     "state_milestones": dict(
         group="history", driver="milestones", series_title="Milestones in the History of U.S. Foreign Relations",
         subject="US history and foreign relations", publisher="Office of the Historian, US Department of State",
@@ -314,6 +349,14 @@ LICENCE_LINES = {
     "global_voices": "globalvoices.org footer: \"This site is licensed as Creative Commons Attribution 3.0\" "
                      "(creativecommons.org/licenses/by/3.0/). robots.txt: \"Crawl-delay: 10\", only /wp-admin/, "
                      "/wp-includes/ and /site/ disallowed; the WordPress REST API (/wp-json/) is used.",
+    "voa_history": "archive.org collection voa-radio-scripts: each item \"Scanned from Library of Congress microfilm "
+                   "01769 (113 reels, 1953-1980)\", creator \"..., Voice of America\", licenseurl "
+                   "https://creativecommons.org/publicdomain/mark/1.0/; 2,173 items, all 1976-1978 (checked "
+                   "2026-11-19). archive.org/robots.txt allows /details/, /metadata/ and /download/.",
+    "voa_learning": "The VOA copyright statement (www.voanews.com/p/5338.html) covers Learning English, a VOA "
+                    "service; learningenglish.voanews.com/robots.txt allows /a/ (no Crawl-delay). Kiwix's "
+                    "voa_learning_en_all (2025-01, 892 articles, 7 GB with videos) is a snapshot of the current "
+                    "site, not the archive.",
     "voa": "www.voanews.com/p/5338.html, Copyright Statement: \"All text, audio and video material produced "
            "exclusively by the Voice of America is in the public domain. ... voanews.com content may also contain "
            "... copyrighted material that is licensed for use in VOA programming only.\" and \"VOA has individual "
@@ -425,7 +468,10 @@ NOT_INCLUDED = [
      "(University of Toronto/Université Laval; Australian National University): not openly licensed."),
     ("Wikisource and Project Gutenberg history books", "Already in the Kiwix library."),
     ("Low-tech Magazine", "Already in the Kiwix library (solar.lowtechmagazine.com_mul_all), so not built again."),
-    ("VOA Learning English", "Already in the Kiwix library (voa_learning_en_all)."),
+    ("VOA broadcasts before the web (1942 to 2000) other than the 1970s scripts", "They survive mostly as sound "
+     "recordings (out of scope: no text). The Library of Congress's microfilm of VOA scripts (1953-1980) is on the "
+     "Internet Archive as text only for the 1970s so far. The National Archives catalogue's API needs a key and its "
+     "robots.txt disallows automated reading, so nothing is taken from it."),
     ("Make:, Hackaday, Practical Action", "Copyright of their publishers, or no licence stated."),
 ]
 
@@ -953,21 +999,24 @@ def atom_items(spec, piece, cache, left_out, today):
     return out
 
 
-# ====================================================================== Voice of America
+# ====================================================================== Voice of America (and Learning English)
 
 VOA_SITE = "https://www.voanews.com"
-# Material VOA licenses from news agencies is not in the public domain; a story that names one is left out.
-WIRE = re.compile(r"\b(Associated Press|Reuters|Agence France[- ]Presse|AFP)\b|\(AP\)|\bAP\b")
+# Material VOA licenses from news agencies or takes from partners is not in the public domain: a story whose byline
+# or text names a news agency, or says it was published first elsewhere, is left out whole.
+WIRE = re.compile(r"\b(Associated Press|Reuters|Agence France[- ]Presse|AFP|Bloomberg|Xinhua|United Press "
+                  r"International|UPI|Deutsche Presse-Agentur|dpa|Kyodo|Yonhap|ANSA|EFE|Getty Images)\b|\(AP\)|"
+                  r"\bAP\b|originally (?:been )?published|republished (?:with|from|by)|reprinted with permission")
+SLUG_DATE = re.compile(r"-((?:19|20)\d\d)-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])-")
+INCOMPLETE = {}                  # (source, piece) -> (stories read, stories listed) of a year not finished in time
 
 
-def voa_items(spec, piece, cache, left_out, today):
-    """Voice of America's own stories of the last spec["days"] days, from its sitemaps (read fresh), without any
-    story by or naming a news agency, newest first."""
-    since = ((today or datetime.date.today()) - datetime.timedelta(days=spec.get("days", 60))).isoformat()
-    index = B.fetch(f"{VOA_SITE}/sitemap.xml", None)
+def voa_sitemap(spec):
+    """[(address, lastmod)] of every story (/a/) in the site's sitemaps (read fresh), newest sitemap first."""
+    site = spec.get("site", VOA_SITE)
+    index = B.fetch(f"{site}/sitemap.xml", None)
     maps = [u for u in re.findall(r"<loc>\s*([^<\s]+\.xml\.gz)\s*</loc>", index)]
     maps.sort(key=lambda u: [int(n) for n in re.findall(r"\d+", u.rsplit("/", 1)[-1])])
-    urls = []
     for m in maps:
         data = B.fetch(m, None, binary=True)
         try:
@@ -975,41 +1024,144 @@ def voa_items(spec, piece, cache, left_out, today):
         except OSError:
             pass                                             # already unpacked
         found = re.findall(r"<loc>\s*([^<\s]+)\s*</loc>\s*<lastmod>\s*([^<\s]+)", data.decode("utf-8", "replace"))
-        recent = [u for u, when in found if when[:10] >= since and "/a/" in u]
-        urls += [u for u in recent if u not in urls]
-        if not recent or len(urls) >= spec.get("limit", 1500):
-            break
-    out, wire, failed = [], 0, 0
-    for url in urls[:spec.get("limit", 1500)]:
-        if not robots_ok(spec, url, cache):
-            failed += 1
-            continue
+        yield [(u, when) for u, when in found if "/a/" in u]
+
+
+def voa_year_of(url, lastmod):
+    """The year a story belongs to: the date in its address when it has one (older stories: "a-13-2008-05-31-
+    voa7"; their pages say the day the site moved, 2009), else the year of its last change."""
+    m = SLUG_DATE.search(url)
+    return m.group(1) if m else lastmod[:4]
+
+
+def voa_story(spec, url, cache):
+    """("story", item) for one of VOA's own stories, ("wire", None) for one with news-agency or partner material,
+    ("none", None) for a page that is not a written story (a video or audio page) or cannot be read. What was found is
+    kept in the cache (as a small record, not the page), so a year that is built over several runs goes on where it
+    stopped."""
+    record = os.path.join(cache, "voa-stories", hashlib.sha256(url.encode()).hexdigest()[:40] + ".json") \
+        if cache else None
+    if record and os.path.exists(record):
+        with open(record, encoding="utf-8") as f:
+            kind, found = json.load(f)
+        return kind, found
+    kind, found = "none", None
+    if robots_ok(spec, url, cache):
         try:
-            text = B.fetch(url, cache)
+            text = B.fetch(url, None)
         except (urllib.error.URLError, OSError):
-            failed += 1
-            continue
+            return "none", None                              # not recorded: tried again next time
         art = next((d for d in json_ld(text) if d.get("@type") in ("NewsArticle", "Article", "ReportageNewsArticle")),
                    {})
         authors = art.get("author") or []
         authors = [a.get("name", "") for a in (authors if isinstance(authors, list) else [authors])
                    if isinstance(a, dict)]
         raw = div_inner(text, r'<div class="wsw">')
-        if not raw:
-            failed += 1
-            continue
         plain = html.unescape(re.sub(r"<[^>]+>", " ", raw))
-        if any(WIRE.search(a) for a in authors) or WIRE.search(plain):
-            wire += 1
-            continue
-        when = B.iso_date(art.get("datePublished", "")) or B.page_date(text)
-        title = B.first_heading(text) or html.unescape(art.get("headline") or art.get("name") or "")
-        out.append(item(url, title, when, clean(raw, url), month_unit(when),
-                        byline=("By " + ", ".join(a for a in authors if a)) if any(authors) else ""))
-    if wire or failed:
-        left_out.append({"title": f"{spec['series_title']}, {piece}", "reason": f"{wire} stories with news-agency "
-                         f"material were left out; {failed} could not be read or are not allowed by robots.txt."})
+        if raw and (any(WIRE.search(a) for a in authors) or WIRE.search(plain)):
+            kind = "wire"
+        elif raw and plain.strip():
+            m = SLUG_DATE.search(url)
+            when = "-".join(m.groups()) if m else (B.iso_date(art.get("datePublished", "")) or B.page_date(text))
+            title = B.first_heading(text) or html.unescape(art.get("headline") or art.get("name") or "")
+            kind = "story"
+            found = item(url, title, when, clean(raw, url), month_unit(when),
+                         byline=("By " + ", ".join(a for a in authors if a)) if any(authors) else "")
+    if record:
+        os.makedirs(os.path.dirname(record), exist_ok=True)
+        with open(record, "w", encoding="utf-8") as f:
+            json.dump([kind, found], f, ensure_ascii=False)
+    return kind, found
+
+
+def voa_items(spec, piece, cache, left_out, today):
+    """VOA's own stories, newest first: piece "recent" (changed in the last spec["days"] days) or a year ("2019":
+    every story of that year in the sitemaps, back to 2001). Stories with news-agency or partner material are left
+    out whole. A year is large (up to about 80,000 addresses at one request a second), so a run stops after
+    spec["budget_minutes"] and the book says how far it got (INCOMPLETE); the next run goes on from the cache."""
+    import time
+    if piece == "recent":
+        since = ((today or datetime.date.today()) - datetime.timedelta(days=spec.get("days", 60))).isoformat()
+        urls = []
+        for found in voa_sitemap(spec):
+            recent = [u for u, when in found if when[:10] >= since]
+            urls += [u for u in recent if u not in urls]
+            if not recent or len(urls) >= spec.get("limit", 1500):
+                break
+        urls = urls[:spec.get("limit", 1500)]
+    else:
+        urls = list(dict.fromkeys(u for found in voa_sitemap(spec) for u, when in found
+                                  if voa_year_of(u, when) == piece))
+        urls = urls[:spec.get("limit", 200000)]
+    out, counts, start = [], {"wire": 0, "none": 0}, time.monotonic()
+    budget = spec.get("budget_minutes", 200) * 60
+    for number, url in enumerate(urls):
+        if piece != "recent" and time.monotonic() - start > budget:
+            INCOMPLETE[(spec["name"], piece)] = (number, len(urls))
+            left_out.append({"title": f"{spec['series_title']}, {piece}", "reason": f"Not finished in this run: "
+                             f"{number} of {len(urls)} addresses read; build the key again to go on (the cache keeps "
+                             "what was read)."})
+            break
+        kind, found = voa_story(spec, url, cache)
+        if kind == "story":
+            out.append(found)
+        else:
+            counts[kind] += 1
+    if counts["wire"] or counts["none"]:
+        left_out.append({"title": f"{spec['series_title']}, {piece}", "reason": f"{counts['wire']} stories with "
+                         f"news-agency or partner material were left out; {counts['none']} addresses are not written "
+                         "stories (video or audio pages) or could not be read."})
     out.sort(key=lambda i: i["date"], reverse=True)
+    return out
+
+
+# ====================================================================== VOA radio scripts (Internet Archive)
+
+IA = "https://archive.org"
+
+
+def voa_history_items(spec, piece, cache, left_out, today):
+    """VOA radio scripts of one decade (piece "1970s") from the Internet Archive's collection voa-radio-scripts
+    (scanned from the Library of Congress's microfilm; Public Domain Mark), each script's machine-read (OCR) text.
+    Only items marked public domain and credited to the Voice of America are kept."""
+    decade = int(piece[:4])
+    query = urllib.parse.urlencode({"q": f"collection:{spec['collection']} AND date:[{decade}-01-01 TO "
+                                         f"{decade + 9}-12-31]", "fl[]": ["identifier", "date"], "rows": 20000,
+                                    "output": "json"}, doseq=True)
+    search = f"{IA}/advancedsearch.php?{query}"
+    if not robots_ok(spec, search, cache):
+        return []
+    docs = json.loads(B.fetch(search, None)).get("response", {}).get("docs", [])
+    out, refused = [], 0
+    for d in sorted(docs, key=lambda d: d.get("date", ""))[:spec.get("limit", MAX_ITEMS * 4)]:
+        ident = d["identifier"]
+        try:
+            meta = json.loads(B.fetch(f"{IA}/metadata/{ident}", cache))
+        except (urllib.error.URLError, OSError, ValueError):
+            refused += 1
+            continue
+        m = meta.get("metadata", {})
+        creator = " ".join(m.get("creator") if isinstance(m.get("creator"), list) else [m.get("creator") or ""])
+        txt = next((f["name"] for f in meta.get("files", []) if f.get("format") == "DjVuTXT"), "")
+        if "publicdomain" not in (m.get("licenseurl") or "") or "Voice of America" not in creator or not txt:
+            refused += 1
+            continue
+        try:
+            text = B.fetch(f"{IA}/download/{ident}/{urllib.parse.quote(txt)}", cache)
+        except (urllib.error.URLError, OSError):
+            refused += 1
+            continue
+        when = B.iso_date(m.get("date", ""))
+        title = re.sub(r"\s*\(VOA Radio Script\)\s*$", "", m.get("title", ident))
+        byline = re.sub(r",?\s*Voice of America\s*$", "", creator).strip()
+        out.append(item(f"{IA}/details/{ident}", title, when, ocr_html(text), when[:4],
+                        byline=f"By {byline}, Voice of America" if byline else "Voice of America"))
+    if refused:
+        left_out.append({"title": f"{spec['series_title']}, {piece}", "reason": f"{refused} items were left out: not "
+                         "marked public domain, not credited to the Voice of America, or without a text."})
+    if not docs:
+        left_out.append({"title": f"{spec['series_title']}, {piece}", "reason": "The Internet Archive has no VOA "
+                         "radio scripts as text for this decade (only the 1970s so far)."})
     return out
 
 
@@ -1301,7 +1453,8 @@ def chronam_items(spec, piece, cache, left_out, today):
 
 DRIVERS = {"crs": crs_items, "amber_waves": amber_waves_items, "elife": elife_digest_items,
            "europepmc": europepmc_items,
-           "wordpress": wordpress_items, "atom": atom_items, "voa": voa_items, "milestones": milestones_items,
+           "wordpress": wordpress_items, "atom": atom_items, "voa": voa_items, "voa_history": voa_history_items,
+           "milestones": milestones_items,
            "frus": frus_items, "chronam": chronam_items}
 
 
@@ -1311,7 +1464,7 @@ def piece_label(name, piece):
     """How a piece is named in its book's title ("2026", "the 2010s", "Blindness and low vision", "recent")."""
     if name == "europepmc_reviews":
         return EPMC_TOPICS[piece][0]
-    if name == "voa":
+    if name == "voa" and piece == "recent":
         return "recent stories"
     if name == "the_conversation":
         return {"us": "United States edition", "uk": "UK edition", "au": "Australia edition", "ca": "Canada edition",
@@ -1370,6 +1523,10 @@ def make_book(name, piece, items):
         book.pages.append(B.Page(path, i["title"], "".join(head) + "\n" + i["body"] + tail, 0, i["unit"]))
     book.published = PUBLISHED.get((name, piece)) or B.newest_date([i["date"] for i in items])
     book.series, book.piece, book.item_dates = name, piece, [i["date"] for i in items]
+    book.incomplete = INCOMPLETE.get((name, piece))
+    if book.incomplete:
+        book.description += (f" Not complete yet: {book.incomplete[0]:,} of {book.incomplete[1]:,} addresses read; "
+                             "each build adds more.")
     return book
 
 
@@ -1402,9 +1559,10 @@ def catalogue_extra(book):
     dates = sorted(d for d in getattr(book, "item_dates", []) if d)
     spec = SOURCES.get(getattr(book, "series", ""), {})
     note = " ".join(x for x in (GROUP_NOTES.get(book.group, ""), spec.get("catalogue_note", "")) if x)
+    done = getattr(book, "incomplete", None)
     return {"group_name": GROUPS.get(book.group, book.group), "series": getattr(book, "series", ""),
             "piece": getattr(book, "piece", ""), "items": len(book.pages), "newest": dates[-1] if dates else "",
-            "oldest": dates[0] if dates else "", "note": note}
+            "oldest": dates[0] if dates else "", "note": note, "complete": not done}
 
 
 def build_periodicals(keys, out_dir, cache=None, date=None, today=None):

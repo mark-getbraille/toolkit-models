@@ -69,7 +69,12 @@ def test_keys():
     assert "pub:europepmc_reviews:vision" in keys and "pub:voa:recent" in keys
     assert not any(k.startswith("pub:chronicling_america") for k in keys)
     assert P.expand_keys(["pub:news"], TODAY)[0].startswith("pub:global_voices")
-    assert P.expand_keys(["pub:history"], TODAY)[0] == "pub:state_milestones:all"
+    assert "pub:state_milestones:all" in P.expand_keys(["pub:history"], TODAY)
+    voa = [k for k in keys if k.startswith("pub:voa:")]
+    assert voa == ["pub:voa:recent", "pub:voa:2026", "pub:voa:2025", "pub:voa:2024"]          # older years by key
+    assert "pub:voa_history:1970s" in keys and "pub:voa_learning:2026" in keys
+    assert P.expand_keys(["pub:voa:2001", "pub:voa:1999", "pub:voa_history:1940s"], TODAY) == \
+        ["pub:voa:2001", "pub:voa_history:1940s"]
     assert P.expand_keys(["pub:crs:1999x", "pub:nothing", "pub:chronicling_america:vermont-1910s"], TODAY) == \
         ["pub:chronicling_america:vermont-1910s"]
     for spec in P.SOURCES.values():
@@ -236,7 +241,7 @@ def test_voa(monkeypatch):
     items = P.voa_items(P.SOURCES["voa"], "recent", None, left, TODAY)
     assert [i["title"] for i in items] == ["Headline Jo Reporter"] and items[0]["date"] == "2026-11-10"
     assert "More." in items[0]["body"] and "Related" not in items[0]["body"] and items[0]["byline"] == "By Jo Reporter"
-    assert "1 stories with news-agency material" in left[0]["reason"]
+    assert "1 stories with news-agency or partner material" in left[0]["reason"]
 
 
 ARTICLE = ("<p>First paragraph, with a <a href='https://x.example/'>link</a>.</p><h2>A heading with nothing under "
@@ -387,3 +392,81 @@ def test_chronicling_america_slow_down(monkeypatch):
     assert P.chronam_items(P.SOURCES["chronicling_america"], "vermont-1920s", None, left, TODAY) == []
     assert left and "slow down" in left[0]["reason"] and len(left) == 1
     assert B.CRAWL_DELAY["www.loc.gov"] >= P.LOC_PAUSE
+
+
+def test_voa_year_archive(monkeypatch, tmp_path):
+    """A VOA year: every story whose address has that year's date (older stories) or whose last change is in that
+    year, its date from the address when there is one; what was read is kept as small records in the cache, so a run
+    that stops at its time limit (book marked not complete) goes on from there next time."""
+    sitemap = gzip.compress(
+        b'<urlset><url><loc>https://www.voanews.com/a/a-13-2008-05-31-voa7/1.html</loc><lastmod>2009-11-01'
+        b'</lastmod></url><url><loc>https://www.voanews.com/a/new/2.html</loc><lastmod>2008-07-01</lastmod></url>'
+        b'<url><loc>https://www.voanews.com/a/video/3.html</loc><lastmod>2008-02-01</lastmod></url>'
+        b'<url><loc>https://www.voanews.com/a/other/4.html</loc><lastmod>2019-02-01</lastmod></url></urlset>')
+    reads = []
+
+    def page(url):
+        """A made-up story (the video page has no written story)."""
+        reads.append(url)
+        if "video" in url:
+            return "<h1>A video</h1><div>player</div>"
+        ld = json.dumps({"@type": "NewsArticle", "author": [{"name": "VOA"}], "datePublished": "2009-11-01 00:00:00Z"})
+        return (f'<script type="application/ld+json">{ld}</script><h1>Story {url[-6]}</h1>'
+                f'<div class="wsw"><p>Text of {url[-6]}.</p></div>')
+    use(monkeypatch, [("voanews.com/sitemap.xml", "<sitemapindex><sitemap><loc>https://www.voanews.com/"
+                       "sitemap_1_1.xml.gz</loc></sitemap></sitemapindex>"), ("sitemap_1_1.xml.gz", sitemap),
+                      ("/a/", page)])
+    cache = str(tmp_path / "cache")
+    left = []
+    items = P.voa_items(P.SOURCES["voa"], "2008", cache, left, TODAY)
+    assert [(i["title"], i["date"]) for i in items] == [("Story 2", "2009-11-01"), ("Story 1", "2008-05-31")]
+    assert "1 addresses are not written stories" in left[0]["reason"]
+    reads.clear()
+    assert len(P.voa_items(P.SOURCES["voa"], "2008", cache, [], TODAY)) == 2 and reads == []   # from the records
+    spec = dict(P.SOURCES["voa"], budget_minutes=0)
+    left = []
+    P.voa_items(spec, "2019", None, left, TODAY)
+    assert P.INCOMPLETE[("voa", "2019")] == (0, 1) and "Not finished in this run" in left[0]["reason"]
+    book = P.make_book("voa", "2019", [P.item("https://www.voanews.com/a/x/9.html", "X", "2019-02-01", "<p>x</p>")])
+    assert P.catalogue_extra(book)["complete"] is False and "Not complete yet" in book.description
+    P.INCOMPLETE.clear()
+
+
+def test_voa_learning_english(monkeypatch):
+    """VOA Learning English uses the same reader on its own site."""
+    sitemap = gzip.compress(b'<urlset><url><loc>https://learningenglish.voanews.com/a/lesson/5.html</loc>'
+                            b'<lastmod>2021-03-01</lastmod></url></urlset>')
+    ld = json.dumps({"@type": "NewsArticle", "author": [{"name": "Anna Teacher"}],
+                     "datePublished": "2021-03-01 00:00:00Z"})
+    use(monkeypatch, [("learningenglish.voanews.com/sitemap.xml", "<sitemapindex><sitemap><loc>https://"
+                       "learningenglish.voanews.com/sitemap_2_1.xml.gz</loc></sitemap></sitemapindex>"),
+                      ("sitemap_2_1.xml.gz", sitemap),
+                      ("/a/lesson/5.html", f'<script type="application/ld+json">{ld}</script><h1>Lesson Five</h1>'
+                                           f'<div class="wsw"><p>Slow words.</p></div>')])
+    items = P.voa_items(P.SOURCES["voa_learning"], "2021", None, [], TODAY)
+    assert [(i["title"], i["date"], i["byline"]) for i in items] == [("Lesson Five", "2021-03-01", "By Anna Teacher")]
+
+
+def test_voa_history_scripts(monkeypatch):
+    """VOA radio scripts from the Internet Archive: only public-domain items credited to the Voice of America, each
+    with its OCR text and broadcast date; a decade without scripts says so."""
+    def meta(url):
+        """Two made-up items: one public domain, one without the mark."""
+        ok = "script-a" in url
+        return json.dumps({"metadata": {"title": "Corn Belt (VOA Radio Script)", "date": "1976-03-18",
+                                        "creator": "Rod Writer, Voice of America",
+                                        "licenseurl": "https://creativecommons.org/publicdomain/mark/1.0/" if ok
+                                        else ""},
+                           "files": [{"name": "a b#1_djvu.txt", "format": "DjVuTXT"}]})
+    use(monkeypatch, [("advancedsearch.php", lambda u: json.dumps({"response": {"docs": (
+        [{"identifier": "script-a", "date": "1976-03-18"}, {"identifier": "script-b", "date": "1976-04-01"}]
+        if "1970" in u else [])}})), ("/metadata/", meta),
+        ("/download/script-a/a%20b%231_djvu.txt", "BACKGROUNDER NO. 1\nCORN BELT\n\nVOICE: SOME AREAS")])
+    left = []
+    items = P.voa_history_items(P.SOURCES["voa_history"], "1970s", None, left, TODAY)
+    assert [(i["title"], i["date"], i["byline"]) for i in items] == [("Corn Belt", "1976-03-18",
+                                                                       "By Rod Writer, Voice of America")]
+    assert "CORN BELT" in items[0]["body"] and "1 items were left out" in left[0]["reason"]
+    left = []
+    assert P.voa_history_items(P.SOURCES["voa_history"], "1950s", None, left, TODAY) == []
+    assert "only the 1970s" in left[0]["reason"]
