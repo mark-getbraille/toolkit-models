@@ -1,0 +1,9 @@
+# The automatic builds of the textbooks workflow (.github/workflows/textbooks.yml). To stop one, change "on" to
+# "off" and commit to main; to start it again, change it back. Times are UTC.
+#   daily     10:23 every day: the current news pieces again (VOA, Learning English, Global Voices, NASA, KFF
+#             Health News, The Conversation, CRS, UK Hansard, Oireachtas debates, GOV.UK speeches)
+#   backfill  :17 every hour: the next older piece of any source, small and quick sources first, until all are in
+#   weekly    09:41 on Sundays: every other book whose source changed is built again as a new version (old kept)
+daily: on
+backfill: on
+weekly: on

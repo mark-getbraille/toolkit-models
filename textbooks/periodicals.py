@@ -66,7 +66,6 @@ import argparse
 import csv
 import datetime
 import gzip
-import hashlib
 import html
 import io
 import json
@@ -136,7 +135,7 @@ SOURCES = {
                "written for Members of Congress and should not be relied upon for other purposes than public "
                "understanding.",
         changes="made into web pages with the pictures left out",
-        pieces=lambda today: _years(3, today), piece_rule=r"^(19|20)\d\d$"),
+        daily=lambda today: _years(0, today), pieces=lambda today: _years(3, today), piece_rule=r"^(19|20)\d\d$"),
     "amber_waves": dict(
         group="periodicals", driver="amber_waves", series_title="Amber Waves (USDA Economic Research Service)",
         subject="Food, farming and rural America", publisher="Economic Research Service, US Department of "
@@ -166,7 +165,7 @@ SOURCES = {
                     "first, on one topic. Each article's authors, journal, date, DOI and own licence are on its "
                     "page.",
         changes="made into web pages with the figures and the reference lists left out (figure captions kept)",
-        pieces=lambda today: list(EPMC_TOPICS), piece_rule="^(" + "|".join(EPMC_TOPICS) + ")$",
+        pieces=lambda today: list(EPMC_TOPICS), piece_rule="^(" + "|".join(EPMC_TOPICS) + r")(-(19|20)\d\d)?$",
         per_piece=150, years_back=5),
     "global_voices": dict(
         group="news", driver="wordpress", site="https://globalvoices.org", series_title="Global Voices",
@@ -183,7 +182,7 @@ SOURCES = {
         skip=r"originally (?:been )?published|\brepublished\b|is being (?:re)?published|"
              r"content[- ](?:sharing|partnership) agreement|produced (?:as part of|by|for|with)",
         skip_reason="republished from partner outlets (they are under those outlets' terms)",
-        pieces=lambda today: _years(1, today), piece_rule=r"^20\d\d$"),
+        daily=lambda today: _years(0, today), pieces=lambda today: _years(1, today), piece_rule=r"^20\d\d$"),
     "kff_health_news": dict(
         group="news", driver="wordpress", site="https://kffhealthnews.org", series_title="KFF Health News",
         subject="US health news", publisher="KFF Health News", country="United States",
@@ -204,7 +203,7 @@ SOURCES = {
         skip=r"All Rights Reserved|reprinted with permission|republished (?:with permission|from)|"
              r"originally (?:been )?published (?:by|in|on)",
         skip_reason="marked \"All Rights Reserved\" or published first by another outlet",
-        pieces=lambda today: _years(1, today), piece_rule=r"^20\d\d$"),
+        daily=lambda today: _years(0, today), pieces=lambda today: _years(1, today), piece_rule=r"^20\d\d$"),
     "nasa_news": dict(
         group="news", driver="wordpress", site="https://www.nasa.gov", rest_base="press-release",
         series_title="NASA news releases", subject="Space, science and NASA missions",
@@ -216,7 +215,7 @@ SOURCES = {
         changes="made into web pages with the pictures left out (their descriptions kept)",
         licence_page="https://www.nasa.gov/nasa-brand-center/images-and-media/",
         licence_text=r"generally are not subject to copyright in the United States",
-        pieces=lambda today: _years(1, today), piece_rule=r"^20\d\d$"),
+        daily=lambda today: _years(0, today), pieces=lambda today: _years(1, today), piece_rule=r"^20\d\d$"),
     "the_conversation": dict(
         group="news", driver="atom", series_title="The Conversation",
         subject="News and analysis by academic experts", publisher="The Conversation", country="International",
@@ -233,8 +232,9 @@ SOURCES = {
                "Conversation does not license them for republication).",
         licence_page="https://theconversation.com/us/republishing-guidelines",
         licence_text=r"publish all our work under a\s*(?:<[^>]+>\s*)*Creative Commons",
+        daily=lambda today: ["us", "uk", "au", "ca", "africa", "global"],
         pieces=lambda today: ["us", "uk", "au", "ca", "africa", "global"],
-        piece_rule=r"^(us|uk|au|ca|africa|global|nz|europe)$"),
+        piece_rule=r"^(us|uk|au|ca|africa|global|nz|europe)(-20[1-2]\d)?$", budget_minutes=200),
     "voa": dict(
         group="news", driver="voa", series_title="Voice of America news",
         subject="US and world news", publisher="Voice of America (VOA)", country="United States",
@@ -248,7 +248,8 @@ SOURCES = {
                 "or partner material left out",
         licence_page="https://www.voanews.com/p/5338.html", licence_text=VOA_LICENCE_TEXT,
         # recent and the last three years by default; every year back to 2001 by key (pub:voa:2001 ... pub:voa:2022).
-        pieces=lambda today: ["recent"] + _years(2, today), piece_rule=r"^(recent|20[0-2]\d)$", days=60,
+        daily=lambda today: ["recent"] + _years(0, today),
+        pieces=lambda today: ["recent"] + _years(2, today), piece_rule=r"^(recent|199[5-9]|20[0-2]\d)$", days=60,
         budget_minutes=200),
     "voa_learning": dict(
         group="news", driver="voa", site="https://learningenglish.voanews.com",
@@ -262,6 +263,7 @@ SOURCES = {
         changes="made into web pages with the pictures, audio, videos and site menus left out; stories with "
                 "news-agency or partner material left out",
         licence_page="https://www.voanews.com/p/5338.html", licence_text=VOA_LICENCE_TEXT,
+        daily=lambda today: _years(0, today),
         pieces=lambda today: _years(2, today), piece_rule=r"^20[0-2]\d$", budget_minutes=200),
     "voa_history": dict(
         group="history", driver="voa_history", series_title="Voice of America radio scripts",
@@ -276,6 +278,43 @@ SOURCES = {
                "broadcasts survive mostly as sound recordings, which are not in these books.",
         changes="the machine-read text of each script, made into web pages", date_label="Broadcast",
         pieces=lambda today: ["1970s"], piece_rule=r"^19[4-9]0s$"),
+    "uk_hansard": dict(
+        group="news", driver="uk_hansard", series_title="Hansard, UK Parliament debates",
+        subject="UK Parliament: debates (House of Commons and House of Lords)", publisher="UK Parliament",
+        country="United Kingdom", licence="Open Parliament Licence v3.0",
+        licence_url="https://www.parliament.uk/site-information/copyright-parliament/open-parliament-licence/",
+        source="https://hansard.parliament.uk/",
+        description="The official report of what was said in the House of Commons and the House of Lords, one page "
+                    "per debate (with its sitting date), from Parliament's Hansard API. One book per year.",
+        notice="Contains Parliamentary information licensed under the Open Parliament Licence v3.0.",
+        changes="made into web pages, one per debate",
+        pieces=lambda today: _years(0, today), daily=lambda today: _years(0, today),
+        piece_rule=r"^(18|19|20)\d\d$", budget_minutes=200),
+    "oireachtas_debates": dict(
+        group="news", driver="oireachtas", series_title="Oireachtas debates (Dáil and Seanad)",
+        subject="Irish Parliament: debates", publisher="Houses of the Oireachtas", country="Ireland",
+        licence="CC BY 4.0", licence_url=CC_BY_4, source="https://www.oireachtas.ie/en/debates/",
+        description="The official reports of the debates of Dáil Éireann and Seanad Éireann, one page per sitting "
+                    "day, from the Oireachtas open data. One book per year.",
+        notice="Houses of the Oireachtas, licensed under the Oireachtas (Open Data) PSI Licence, which incorporates "
+               "the Creative Commons Attribution 4.0 International License.",
+        changes="made into web pages, one per sitting day, with each speaker's name before their words",
+        licence_page="https://www.oireachtas.ie/en/open-data/license/",
+        licence_text=r"Oireachtas \(Open Data\) PSI Licence",
+        pieces=lambda today: _years(0, today), daily=lambda today: _years(0, today), piece_rule=r"^(19|20)\d\d$"),
+    "govuk_speeches": dict(
+        group="news", driver="govuk_speeches", series_title="UK government speeches (GOV.UK)",
+        subject="Speeches and statements by UK ministers and officials", publisher="HM Government (GOV.UK)",
+        country="United Kingdom", licence="OGL-UK-3.0",
+        licence_url="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/",
+        source="https://www.gov.uk/search/news-and-communications",
+        description="Speeches, statements to Parliament and transcripts published on GOV.UK, each with the date it "
+                    "was delivered, the speaker and the department. One book per year.",
+        notice="Contains public sector information licensed under the Open Government Licence v3.0.",
+        changes="made into web pages with the pictures left out (their descriptions kept)",
+        licence_page="https://www.gov.uk/help/terms-conditions",
+        licence_text=r"published under the Open Government Licence",
+        pieces=lambda today: _years(0, today), daily=lambda today: _years(0, today), piece_rule=r"^(19|20)\d\d$"),
     "state_milestones": dict(
         group="history", driver="milestones", series_title="Milestones in the History of U.S. Foreign Relations",
         subject="US history and foreign relations", publisher="Office of the Historian, US Department of State",
@@ -349,6 +388,20 @@ LICENCE_LINES = {
     "global_voices": "globalvoices.org footer: \"This site is licensed as Creative Commons Attribution 3.0\" "
                      "(creativecommons.org/licenses/by/3.0/). robots.txt: \"Crawl-delay: 10\", only /wp-admin/, "
                      "/wp-includes/ and /site/ disallowed; the WordPress REST API (/wp-json/) is used.",
+    "uk_hansard": "Hansard is Parliamentary copyright, licensed under the Open Parliament Licence v3.0 "
+                  "(parliament.uk). "
+                  "The licence page and hansard.parliament.uk refuse automated requests (a Cloudflare check), so the "
+                  "licence could not be checked again by the builder: recorded by hand. Read from Parliament's "
+                  "documented Hansard API (hansard-api.parliament.uk).",
+    "oireachtas_debates": "www.oireachtas.ie/en/open-data/license/ and its PDF: \"OIREACHTAS (OPEN DATA) PSI LICENCE: "
+                          "Licence incorporating the Creative Commons Attribution 4.0 International License\"; "
+                          "\"The terms on which the Licensee may re-use documents covered by this Licence are those "
+                          "set out in the Creative Commons Attribution 4.0 International License\". Read from the "
+                          "documented "
+                          "API (api.oireachtas.ie) and data.oireachtas.ie.",
+    "govuk_speeches": "www.gov.uk/help/terms-conditions: \"Most content on GOV.UK is subject to Crown copyright "
+                      "protection and is published under the Open Government Licence (OGL)\". GOV.UK's search and "
+                      "content APIs are public; robots.txt only disallows print pages and site search pages.",
     "voa_history": "archive.org collection voa-radio-scripts: each item \"Scanned from Library of Congress microfilm "
                    "01769 (113 reels, 1953-1980)\", creator \"..., Voice of America\", licenseurl "
                    "https://creativecommons.org/publicdomain/mark/1.0/; 2,173 items, all 1976-1978 (checked "
@@ -435,6 +488,31 @@ NOT_INCLUDED = [
      "publishers (SAGE): not openly licensed."),
     ("Wikinews", "Wikinews was closed and made read-only by the Wikimedia Foundation in 2026; it is not in the "
      "Kiwix catalogue. Its archive (CC BY 2.5) could be made into one book later."),
+    ("NPR (National Public Radio)", "Not included. Its terms of use (www.npr.org/about-npr/179876898/terms-of-use) "
+     "forbid copying or using its material for commercial purposes \"without the prior written consent of NPR\" and "
+     "say: \"You may not use, or enable others to use, any content ... to build or train large language models, "
+     "machine learning tools, or artificial intelligence (AI) systems without the prior written consent of NPR\"; "
+     "its robots.txt also blocks AI crawlers. A permission letter to NPR has been drafted for the owner."),
+    ("Radio Free Europe/Radio Liberty, Radio Free Asia, Alhurra/MBN", "US-funded but private corporations (grantees), "
+     "not US government agencies: their reporting is their own copyright, not public domain, and no reuse licence "
+     "was found (RFE/RL's terms pages could not be found automatically; rfa.org and alhurra.com redirect)."),
+    ("PBS NewsHour transcripts", "Copyright of NewsHour Productions; not openly licensed."),
+    ("C-SPAN", "Its own video and transcripts are its copyright (and c-span.org refuses automated requests). House "
+     "and Senate floor proceedings are public domain; their record is the Congressional Record (govinfo), not built "
+     "yet."),
+    ("White House, State Department and Defense Department briefings and transcripts", "Public domain (whitehouse.gov: "
+     "\"government-produced materials appearing on this site are not copyright protected\"), but whitehouse.gov's "
+     "API and state.gov and defense.gov refuse automated requests (403)."),
+    ("Hansard of the Parliament of Canada and Government of Canada news releases", "Canada's House of Commons asks "
+     "for the Speaker's permission to reproduce its proceedings (parliamentary privilege); canada.ca allows only "
+     "non-commercial reproduction. Not built (a personal-use group would be needed)."),
+    ("CBC/Radio-Canada, BBC, ABC (Australia), RTÉ", "Copyright of each broadcaster; not openly licensed (abc.net.au "
+     "and rte.ie also refuse automated requests to their terms pages)."),
+    ("Hansard of the Parliament of Australia and Australian government media releases", "aph.gov.au blocks automated "
+     "requests (\"Page Blocked by WAF\"); not checked further."),
+    ("RNZ, New Zealand Hansard and Beehive releases", "RNZ's terms page could not be found automatically (robots.txt "
+     "asks Crawl-delay 7); parliament.nz allows all robots and beehive.govt.nz has a copyright page, but their "
+     "licence wording could not be read automatically (pages built by scripts). Check by hand before adding."),
     ("ProPublica", "CC BY-NC-ND, but its \"Steal Our Stories\" terms say: \"You can't republish our material "
      "wholesale, or automatically; you need to select stories to be republished individually\", and ask for its "
      "PixelPing tag: left out (stories could be added one by one, chosen by hand)."),
@@ -478,10 +556,114 @@ NOT_INCLUDED = [
 
 # ====================================================================== keys
 
+def _back(first, today=None, skip_current=False):
+    """Years from this year (or last year) back to first, newest first, as strings."""
+    year = (today or datetime.date.today()).year - (1 if skip_current else 0)
+    return [str(y) for y in range(year, first - 1, -1)]
+
+
+US_STATES = ["alabama", "alaska", "arizona", "arkansas", "california", "colorado", "connecticut", "delaware",
+             "district-of-columbia", "florida", "georgia", "hawaii", "idaho", "illinois", "indiana", "iowa", "kansas",
+             "kentucky", "louisiana", "maine", "maryland", "massachusetts", "michigan", "minnesota", "mississippi",
+             "missouri", "montana", "nebraska", "nevada", "new-hampshire", "new-jersey", "new-mexico", "new-york",
+             "north-carolina", "north-dakota", "ohio", "oklahoma", "oregon", "pennsylvania", "rhode-island",
+             "south-carolina", "south-dakota", "tennessee", "texas", "utah", "vermont", "virginia", "washington",
+             "west-virginia", "wisconsin", "wyoming", "puerto-rico", "virgin-islands"]
+
+
+def frus_volumes():
+    """Every volume id of Foreign Relations of the United States in the Office of the Historian's repository (its
+    file list, read with git without downloading the volumes), newest first."""
+    import subprocess
+    import tempfile
+    folder = os.path.join(tempfile.gettempdir(), "frus-list")
+    try:
+        if not os.path.isdir(os.path.join(folder, ".git")):
+            subprocess.run(["git", "clone", "-q", "--depth", "1", "--filter=blob:none", "--no-checkout",
+                            SOURCES["frus"]["repo"], folder], check=True, timeout=1800)
+        names = subprocess.run(["git", "-C", folder, "ls-tree", "--name-only", "HEAD", "volumes/"],
+                               capture_output=True, text=True, check=True).stdout.split()
+    except (OSError, subprocess.SubprocessError):
+        return list(SOURCES["frus"]["pieces"](None))
+    ids = [n.rsplit("/", 1)[-1][:-4] for n in names if n.endswith(".xml")]
+    return sorted(ids, key=lambda v: (re.search(r"\d{4}", v).group(0) if re.search(r"\d{4}", v) else "0", v),
+                  reverse=True)
+
+
+# Every source's pieces back to its beginning, newest first (the backfill works through them; they can also be
+# built by key). The earliest years were checked on 2026-11-19.
+ALL_PIECES = {
+    "voa_history": lambda t: ["1970s", "1990s", "1980s", "1960s", "1950s", "1940s"],
+    "voa_learning": lambda t: _back(2001, t, True),
+    "state_milestones": lambda t: ["all"],
+    "frus": lambda t: frus_volumes(),
+    "crs": lambda t: _back(1971, t, True),
+    "amber_waves": lambda t: ["2020s", "2010s", "2000s"],
+    "kff_health_news": lambda t: _back(2009, t, True),
+    "global_voices": lambda t: _back(2004, t, True),
+    "elife_digests": lambda t: _back(2012, t, True),
+    "europepmc_reviews": lambda t: list(EPMC_TOPICS) + [f"{k}-{y}" for y in _back(2000, t)[6:] for k in EPMC_TOPICS],
+    "govuk_speeches": lambda t: _back(2000, t, True),
+    "oireachtas_debates": lambda t: _back(1919, t, True),
+    "voa": lambda t: _back(1995, t, True),
+    "nasa_news": lambda t: _back(2004, t, True),
+    "the_conversation": lambda t: [f"{e}-{y}" for y in _back(2011, t, True)
+                                   for e in ("us", "uk", "au", "ca", "africa", "global", "nz", "europe")],
+    "uk_hansard": lambda t: _back(1803, t, True),
+    "chronicling_america": lambda t: [f"{st}-{d}s" for d in range(1920, 1760, -10) for st in US_STATES],
+}
+# Small and quick sources first, then the big ones.
+BACKFILL_ORDER = ["voa_history", "voa_learning", "state_milestones", "frus", "crs", "amber_waves", "kff_health_news",
+                  "global_voices", "elife_digests", "europepmc_reviews", "govuk_speeches", "oireachtas_debates", "voa",
+                  "nasa_news", "the_conversation", "uk_hansard", "chronicling_america"]
+
+
+def daily_keys(today=None):
+    """The keys of the daily refresh (the workflow's daily schedule): every source's spec["daily"] pieces (the
+    current ones). The pieces read from Voice of America's two sites are joined with "+" into one key, so they are
+    built one after another in one job (one request at a time to VOA)."""
+    voa, other = [], []
+    for name, spec in SOURCES.items():
+        for piece in spec.get("daily", lambda t: [])(today):
+            (voa if spec.get("driver") == "voa" else other).append(f"pub:{name}:{piece}")
+    return (["+".join(voa)] if voa else []) + other
+
+
+def done_keys(catalogue):
+    """The piece keys already collected: in the catalogue's "pieces_done" (built complete, or found empty), or a book
+    built from the key that is not marked "complete": false."""
+    done = set((catalogue or {}).get("pieces_done", []))
+    done |= {b["key"] for b in (catalogue or {}).get("books", []) if b.get("key") and b.get("complete") is not False}
+    return done
+
+
+def next_backfill(catalogue, today=None, pieces=None):
+    """The next piece the backfill schedule builds: the first source of BACKFILL_ORDER with a piece not yet collected
+    (newest first; a piece marked "complete": false is built again to go on); "" when everything is collected.
+    pieces: {source: list of pieces} instead of ALL_PIECES (for tests)."""
+    done = done_keys(catalogue)
+    for name in BACKFILL_ORDER:
+        for piece in pieces[name] if pieces is not None and name in pieces else ALL_PIECES[name](today):
+            key = f"pub:{name}:{piece}"
+            if key not in done:
+                return key
+    return ""
+
+
 def expand_keys(words, today=None):
-    """The one-piece keys ("pub:crs:2026") of a list of words ("pub:all", "pub:news", "pub:crs", "pub:crs:2026")."""
+    """The one-piece keys ("pub:crs:2026") of a list of words ("pub:all", "pub:news", "pub:crs", "pub:crs:2026",
+    "pub:daily"); keys joined with "+" (built one after another in one job) are kept joined when every part is
+    valid."""
     out = []
     for w in words:
+        if "+" in w:
+            parts = w.split("+")
+            if all(expand_keys([x], today) == [x] for x in parts):
+                out.append(w)
+            continue
+        if w == "pub:daily":
+            out += daily_keys(today)
+            continue
         parts = w.split(":")
         if parts[0] != "pub" or len(parts) < 2:
             continue
@@ -876,10 +1058,12 @@ def europepmc_items(spec, piece, cache, left_out, today):
     """The newest review articles on the topic piece (EPMC_TOPICS) in Europe PMC's open-access subset under CC BY
     or CC0 (asked for in the search, and checked again in each article's own text), at most spec["per_piece"]."""
     year = (today or datetime.date.today()).year
-    name, words = EPMC_TOPICS[piece]
+    topic, _, only = piece.partition("-")              # "vision" (the last years) or "vision-2015" (one older year)
+    name, words = EPMC_TOPICS[topic]
+    first, last = (int(only), int(only)) if only else (year - spec["years_back"], year)
+    name = f"{name}, {only}" if only else name
     query = (f"(TITLE:({words}) OR KW:({words})) AND (LICENSE:\"cc by\" OR LICENSE:\"cc0\") AND OPEN_ACCESS:y AND "
-             f"PUB_TYPE:\"review\" AND LANG:eng AND IN_EPMC:y AND FIRST_PDATE:[{year - spec['years_back']}-01-01 TO "
-             f"{year}-12-31]")
+             f"PUB_TYPE:\"review\" AND LANG:eng AND IN_EPMC:y AND FIRST_PDATE:[{first}-01-01 TO {last}-12-31]")
     out = []
     for r, art in epmc_articles(spec, query, spec.get("per_piece", 150), cache, left_out,
                                 f"{spec['series_title']}: {name}"):
@@ -965,9 +1149,55 @@ def wordpress_items(spec, piece, cache, left_out, today):
 ATOM = "{http://www.w3.org/2005/Atom}"
 
 
+def conversation_archive_items(spec, piece, cache, left_out, today):
+    """The articles of one edition and year of The Conversation (piece "us-2015"), from its yearly archive sitemap
+    (theconversation.com/<edition>/sitemap_archive_<year>.xml), each read from its page and kept whole and unchanged
+    (the article body, with its authors and date); stops after spec["budget_minutes"] (the next run goes on from the
+    cache)."""
+    import time
+    edition, year = piece.rsplit("-", 1)
+    found = re.findall(r"<loc>\s*([^<\s]+)\s*</loc>",
+                       B.fetch(f"https://theconversation.com/{edition}/sitemap_archive_{year}.xml", None))
+    out, failed, start, whole = [], 0, time.monotonic(), bool(spec.get("unchanged"))
+    for number, url in enumerate(found):
+        if time.monotonic() - start > spec.get("budget_minutes", 200) * 60:
+            INCOMPLETE[(spec["name"], piece)] = (number, len(found))
+            left_out.append({"title": f"{spec['series_title']}, {piece}", "reason": f"Not finished in this run: "
+                             f"{number} of {len(found)} articles read; build the key again to go on."})
+            break
+        if not robots_ok(spec, url, cache):
+            failed += 1
+            continue
+        try:
+            text = B.fetch(url, cache)
+        except (urllib.error.URLError, OSError):
+            failed += 1
+            continue
+        raw = div_inner(text, r'<div[^>]*itemprop="articleBody"[^>]*>')
+        if not raw:
+            failed += 1
+            continue
+        for pattern in spec.get("drop_html", []):
+            raw = re.sub(pattern, "", raw)
+        when = B.iso_date((re.search(r'itemprop="datePublished"[^>]*content="([^"]+)"', text) or
+                           re.search(r'<time[^>]*datetime="([^"]+)"', text) or [None, ""])[1])
+        authors = [" ".join(html.unescape(re.sub(r"<[^>]+>", " ", a)).split())
+                   for a in re.findall(r'<a[^>]*class="[^"]*author-name[^"]*"[^>]*>(.*?)</a>', text, re.S)]
+        credit = f"{spec['credit']} " if spec.get("credit") else ""
+        out.append(item(url, B.first_heading(text), when, clean(raw, url, whole), month_unit(when),
+                        byline=f"{credit}By {'; '.join(authors)}" if authors else credit.strip()))
+    if failed:
+        left_out.append({"title": f"{spec['series_title']}, {piece}", "reason": f"{failed} articles could not be "
+                         "read."})
+    out.sort(key=lambda i: i["date"], reverse=True)
+    return out
+
+
 def atom_items(spec, piece, cache, left_out, today):
     """The articles of a news feed (spec["feed"] with the piece, such as The Conversation's edition "us"), each
     kept whole and unchanged; an entry whose own <rights> does not match spec["rights"] is left out."""
+    if re.search(r"-\d{4}$", piece):                         # a year of an edition: its archive sitemap
+        return conversation_archive_items(spec, piece, cache, left_out, today)
     url = spec["feed"].format(piece=piece)
     if not robots_ok(spec, url, cache):
         left_out.append({"title": f"{spec['series_title']}, {piece}", "reason": "robots.txt does not allow its feed."})
@@ -1034,16 +1264,13 @@ def voa_year_of(url, lastmod):
     return m.group(1) if m else lastmod[:4]
 
 
-def voa_story(spec, url, cache):
+def voa_story(spec, url, cache, records=None):
     """("story", item) for one of VOA's own stories, ("wire", None) for one with news-agency or partner material,
-    ("none", None) for a page that is not a written story (a video or audio page) or cannot be read. What was found is
-    kept in the cache (as a small record, not the page), so a year that is built over several runs goes on where it
-    stopped."""
-    record = os.path.join(cache, "voa-stories", hashlib.sha256(url.encode()).hexdigest()[:40] + ".json") \
-        if cache else None
-    if record and os.path.exists(record):
-        with open(record, encoding="utf-8") as f:
-            kind, found = json.load(f)
+    ("none", None) for a page that is not a written story (a video or audio page) or cannot be read. records: what
+    earlier runs found ({address: [kind, item]}, from the year's records file in the release, see load_records); a
+    story found there is not read again, and what is read now is added to it."""
+    if records is not None and url in records:
+        kind, found = records[url]
         return kind, found
     kind, found = "none", None
     if robots_ok(spec, url, cache):
@@ -1067,10 +1294,134 @@ def voa_story(spec, url, cache):
             kind = "story"
             found = item(url, title, when, clean(raw, url), month_unit(when),
                          byline=("By " + ", ".join(a for a in authors if a)) if any(authors) else "")
-    if record:
-        os.makedirs(os.path.dirname(record), exist_ok=True)
-        with open(record, "w", encoding="utf-8") as f:
-            json.dump([kind, found], f, ensure_ascii=False)
+    if records is not None:
+        records[url] = [kind, found]
+    return kind, found
+
+
+# The records of a long piece (what each address turned out to be, with the stories' text) are published in the
+# release next to the book, as <book name>.records.json.xz, so a year built over many runs never depends on the
+# Actions cache (which drops old entries). SIDE_FILES collects the files build_periodicals writes and uploads.
+SIDE_FILES = {}                  # (source, piece) -> (file name, bytes)
+
+
+def release_for(name):
+    """The GitHub release a source's books are published in ("publications-voa"): one release per source keeps each
+    under GitHub's limit of 1,000 files per release (the textbooks have their own release, "textbooks")."""
+    return f"publications-{name.replace('_', '-')}"
+
+
+def release_url(name):
+    """The download address of a source's release."""
+    return f"{B.RELEASE.rsplit('/', 1)[0]}/{release_for(name)}"
+
+
+def records_name(name, piece):
+    """The file name of a piece's records in the release ("voa_2008.records.json.xz")."""
+    return f"{name}_{piece}.records.json.xz"
+
+
+def load_records(name, piece):
+    """{address: [kind, item]} from the piece's records file in the release ({} when there is none yet)."""
+    import lzma
+    try:
+        data = B.fetch(f"{release_url(name)}/{records_name(name, piece)}", None, binary=True)
+        return json.loads(lzma.decompress(data).decode("utf-8"))
+    except (urllib.error.URLError, OSError, ValueError, lzma.LZMAError):
+        return {}
+
+
+def keep_records(name, piece, records):
+    """Remember the piece's records to be written and uploaded next to its book (sorted, xz-compressed)."""
+    import lzma
+    data = json.dumps(dict(sorted(records.items())), ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    SIDE_FILES[(name, piece)] = (records_name(name, piece), lzma.compress(data, preset=9))
+
+
+WAYBACK = "https://web.archive.org"
+VOA_OLD_HOSTS = ["www.voa.gov", "voa.gov", "www.voanews.com", "voanews.com"]
+# The first part of an address on VOA's old sites that names a service in another language (left out: English only).
+VOA_LANGUAGES = {
+    "albanian", "amharic", "arabic", "armenian", "azeri", "bangla", "bengali", "bosnian", "brazilian", "bulgarian",
+    "burmese", "cantonese", "chinese", "croatian", "czech", "dari", "estonian", "farsi", "french", "georgian",
+    "greek", "hausa", "hindi", "hungarian", "indonesian", "khmer", "kinyarwanda", "kirundi", "korean", "kurdish",
+    "lao", "latvian", "lithuanian", "macedonian", "mandarin", "ndebele", "oromo", "pashto", "persian", "polish",
+    "portuguese", "romanian", "russian", "serbian", "shona", "slovak", "slovene", "somali", "spanish", "swahili",
+    "tibetan", "tigrigna", "turkish", "ukrainian", "urdu", "uzbek", "vietnamese", "afaan", "afl", "cpanel"}
+
+
+def wayback_captures(spec, year, cache):
+    """[(capture time, address)] of the web pages of VOA's old sites captured in one year by the Internet Archive's
+    Wayback Machine (its documented CDX API: one capture per address, HTML answers with status 200, read 5,000 at a
+    time), without the services in other languages, pictures and scripts."""
+    out, seen = [], set()
+    for host in VOA_OLD_HOSTS:
+        resume = ""
+        while True:
+            query = urllib.parse.urlencode({"url": f"{host}/*", "from": year, "to": year, "output": "json",
+                                            "filter": ["statuscode:200", "mimetype:text/html"], "collapse": "urlkey",
+                                            "fl": "timestamp,original", "limit": 5000, "showResumeKey": "true",
+                                            **({"resumeKey": resume} if resume else {})}, doseq=True)
+            try:
+                rows = json.loads(B.fetch(f"{WAYBACK}/cdx/search/cdx?{query}", cache) or "[]")
+            except (urllib.error.URLError, OSError, ValueError):
+                break
+            resume = ""
+            if rows and rows[-1] and len(rows[-1]) == 1:     # the last row is the key to read on from
+                resume = rows[-1][0]
+                rows = rows[:-2] if len(rows) > 1 and not rows[-2] else rows[:-1]
+            for row in rows[1:] if rows and rows[0] == ["timestamp", "original"] else rows:
+                if len(row) != 2:
+                    continue
+                ts, url = row
+                path = urllib.parse.urlsplit(url).path.lower()
+                first = path.strip("/").split("/")[0] if path.strip("/") else ""
+                if first in VOA_LANGUAGES or not re.search(r"\.(s?html?|cfm|asp)$", path):
+                    continue
+                key = re.sub(r"^https?://(www\.)?", "", url.lower()).replace(":80/", "/")
+                if key not in seen:
+                    seen.add(key)
+                    out.append((ts, url))
+            if not resume:
+                break
+    return out
+
+
+def voa_wayback_story(spec, ts, url, records):
+    """("story", item), ("wire", None) or ("none", None) for one page of VOA's old sites as the Wayback Machine
+    captured it (its original HTML, the "id_" form): a written English story of at least 120 words, without
+    news-agency material; dated by the date it gives ("DATE=5/31/98", "May 31, 1998") or else the capture's day."""
+    if url in records:
+        return records[url]
+    kind, found = "none", None
+    try:
+        text = B.fetch(f"{WAYBACK}/web/{ts}id_/{url}", None)
+    except (urllib.error.URLError, OSError):
+        return "none", None
+    body = re.search(r"(?is)<body\b[^>]*>(.*)</body>", text)
+    body = body.group(1) if body else text
+    plain = " ".join(html.unescape(re.sub(r"<[^>]+>", " ", re.sub(r"(?is)<(script|style)[^>]*>.*?</\1>", " ",
+                                                                   body))).split())
+    if len(plain.split()) >= 120:
+        if WIRE.search(plain):
+            kind = "wire"
+        else:
+            m = re.search(r"DATE=\s*(\d{1,2})/(\d{1,2})/(\d{2,4})", plain)
+            if m:
+                y = int(m.group(3)) + (1900 if len(m.group(3)) == 2 and int(m.group(3)) > 40 else 0) + \
+                    (2000 if len(m.group(3)) == 2 and int(m.group(3)) <= 40 else 0)
+                when = f"{y:04d}-{int(m.group(1)):02d}-{int(m.group(2)):02d}"
+            else:
+                when = B.iso_date(plain[:600]) or f"{ts[:4]}-{ts[4:6]}-{ts[6:8]}"
+            if not when.startswith(ts[:2]) and not when.startswith("19") and not when.startswith("20"):
+                when = f"{ts[:4]}-{ts[4:6]}-{ts[6:8]}"
+            title = re.search(r"(?is)<title[^>]*>(.*?)</title>", text)
+            title = " ".join(html.unescape(title.group(1)).split()) if title else url
+            kind, found = "story", item(f"{WAYBACK}/web/{ts}/{url}", title, when,
+                                        clean(body, f"{WAYBACK}/web/{ts}/{url}"), month_unit(when),
+                                        byline="Voice of America (as captured by the Internet Archive's Wayback "
+                                               "Machine)")
+    records[url] = [kind, found]
     return kind, found
 
 
@@ -1078,8 +1429,11 @@ def voa_items(spec, piece, cache, left_out, today):
     """VOA's own stories, newest first: piece "recent" (changed in the last spec["days"] days) or a year ("2019":
     every story of that year in the sitemaps, back to 2001). Stories with news-agency or partner material are left
     out whole. A year is large (up to about 80,000 addresses at one request a second), so a run stops after
-    spec["budget_minutes"] and the book says how far it got (INCOMPLETE); the next run goes on from the cache."""
+    spec["budget_minutes"] and the book says how far it got (INCOMPLETE); the next run goes on from the year's
+    records file in the release (load_records)."""
     import time
+    if spec["name"] == "voa" and piece != "recent" and piece < "2001":
+        return voa_wayback_items(spec, piece, cache, left_out, today)
     if piece == "recent":
         since = ((today or datetime.date.today()) - datetime.timedelta(days=spec.get("days", 60))).isoformat()
         urls = []
@@ -1095,6 +1449,7 @@ def voa_items(spec, piece, cache, left_out, today):
         urls = urls[:spec.get("limit", 200000)]
     out, counts, start = [], {"wire": 0, "none": 0}, time.monotonic()
     budget = spec.get("budget_minutes", 200) * 60
+    records = load_records(spec["name"], piece) if piece != "recent" else None
     for number, url in enumerate(urls):
         if piece != "recent" and time.monotonic() - start > budget:
             INCOMPLETE[(spec["name"], piece)] = (number, len(urls))
@@ -1102,15 +1457,45 @@ def voa_items(spec, piece, cache, left_out, today):
                              f"{number} of {len(urls)} addresses read; build the key again to go on (the cache keeps "
                              "what was read)."})
             break
-        kind, found = voa_story(spec, url, cache)
+        kind, found = voa_story(spec, url, cache, records)
         if kind == "story":
             out.append(found)
         else:
             counts[kind] += 1
+    if records is not None:
+        keep_records(spec["name"], piece, records)
     if counts["wire"] or counts["none"]:
         left_out.append({"title": f"{spec['series_title']}, {piece}", "reason": f"{counts['wire']} stories with "
                          f"news-agency or partner material were left out; {counts['none']} addresses are not written "
                          "stories (video or audio pages) or could not be read."})
+    out.sort(key=lambda i: i["date"], reverse=True)
+    return out
+
+
+def voa_wayback_items(spec, piece, cache, left_out, today):
+    """VOA's own English stories of a year before 2001 (piece "1998"), from the Wayback Machine's captures of VOA's
+    old sites (www.voa.gov and voanews.com), one request at a time, within spec["budget_minutes"] a run; what was
+    read is kept in the year's records file in the release (load_records), so the next run goes on."""
+    import time
+    records = load_records(spec["name"], piece)
+    captures = wayback_captures(spec, piece, cache)
+    out, counts, start = [], {"wire": 0, "none": 0}, time.monotonic()
+    for number, (ts, url) in enumerate(captures):
+        if time.monotonic() - start > spec.get("budget_minutes", 200) * 60:
+            INCOMPLETE[(spec["name"], piece)] = (number, len(captures))
+            left_out.append({"title": f"{spec['series_title']}, {piece}", "reason": f"Not finished in this run: "
+                             f"{number} of {len(captures)} captured pages read; build the key again to go on."})
+            break
+        kind, found = voa_wayback_story(spec, ts, url, records)
+        if kind == "story" and found["date"][:4] == piece:
+            out.append(found)
+        elif kind != "story":
+            counts[kind] += 1
+    keep_records(spec["name"], piece, records)
+    if counts["wire"] or counts["none"]:
+        left_out.append({"title": f"{spec['series_title']}, {piece}", "reason": f"{counts['wire']} pages with "
+                         f"news-agency material were left out; {counts['none']} captured pages are not stories "
+                         "(menus, schedules, short pages) or could not be read."})
     out.sort(key=lambda i: i["date"], reverse=True)
     return out
 
@@ -1162,6 +1547,182 @@ def voa_history_items(spec, piece, cache, left_out, today):
     if not docs:
         left_out.append({"title": f"{spec['series_title']}, {piece}", "reason": "The Internet Archive has no VOA "
                          "radio scripts as text for this decade (only the 1970s so far)."})
+    return out
+
+
+# ====================================================================== parliaments and government speeches
+
+HANSARD_API = "https://hansard-api.parliament.uk"
+
+
+def hansard_items(el, depth=3):
+    """The HTML of a Hansard API debate's items and child debates: each contribution with its speaker's name."""
+    parts = []
+    for it in el.get("Items", []):
+        value = it.get("Value") or ""
+        if it.get("HRSTag") == "hs_ColumnNumber" or not re.sub(r"<[^>]+>", "", value).strip():
+            continue
+        who = it.get("AttributedTo")
+        lead = f"<strong>{B.esc(who)}:</strong> " if who else ""
+        tag = "h3" if it.get("ItemType") == "Timestamp" else "p"
+        parts.append(f"<{tag}>{lead}{value}</{tag}>")
+    for child in el.get("ChildDebates", []):
+        title = (child.get("Overview") or {}).get("Title", "")
+        parts.append(f"<h{depth}>{B.esc(title)}</h{depth}>" + hansard_items(child, min(depth + 1, 6)))
+    return "".join(parts)
+
+
+def uk_hansard_items(spec, piece, cache, left_out, today):
+    """The debates of the House of Commons and the House of Lords in the year piece, from Parliament's Hansard API:
+    each sitting day's main debates (the top of its section tree), one page each, under the sitting month. Days of the
+    last two weeks are read fresh (the report is corrected for a while), older ones from the cache."""
+    import time
+    year, today = int(piece), today or datetime.date.today()
+    fresh_from = today - datetime.timedelta(days=14)
+    out, start, failed = [], time.monotonic(), 0
+    day = datetime.date(year, 1, 1)
+    while day.year == year and day <= today:
+        if time.monotonic() - start > spec.get("budget_minutes", 200) * 60:
+            INCOMPLETE[(spec["name"], piece)] = (day.timetuple().tm_yday, 365)
+            left_out.append({"title": f"{spec['series_title']}, {piece}", "reason": f"Not finished in this run: read "
+                             f"up to {day}; build the key again (the cache keeps what was read)."})
+            break
+        use = None if day >= fresh_from else cache
+        for house in ("Commons", "Lords"):
+            url = f"{HANSARD_API}/overview/sectiontrees.json?date={day}&house={house}&section=Debate"
+            try:
+                trees = json.loads(B.fetch(url, use))
+            except (urllib.error.URLError, OSError, ValueError):
+                failed += 1
+                continue
+            for tree in trees if isinstance(trees, list) else []:
+                nodes = tree.get("SectionTreeItems") or []
+                root = next((n["Id"] for n in nodes if n.get("ParentId") is None), None)
+                for n in nodes:
+                    if n.get("ParentId") != root or not n.get("ExternalId") or n.get("HRSTag") == "hs_3MainHdg":
+                        continue
+                    try:
+                        debate = json.loads(B.fetch(f"{HANSARD_API}/debates/debate/{n['ExternalId']}.json", use))
+                    except (urllib.error.URLError, OSError, ValueError):
+                        failed += 1
+                        continue
+                    body = clean(hansard_items(debate), "https://hansard.parliament.uk/")
+                    if not body:
+                        continue
+                    where = (debate.get("Overview") or {}).get("Location") or f"House of {house}"
+                    title = f"{' '.join((n.get('Title') or '').split())} ({where}, {day})"
+                    link = f"https://hansard.parliament.uk/{house}/{day}/debates/{n['ExternalId']}"
+                    out.append(item(link, title, day.isoformat(), body, month_unit(day.isoformat())))
+        day += datetime.timedelta(days=1)
+    if failed:
+        left_out.append({"title": f"{spec['series_title']}, {piece}", "reason": f"{failed} days or debates could "
+                         "not be read."})
+    return out
+
+
+OIREACHTAS_API = "https://api.oireachtas.ie/v1"
+
+
+def akn_html(el, depth=2):
+    """The HTML of an Akoma Ntoso debate record (the Oireachtas' XML): headings of its sections, each speech's
+    speaker before their paragraphs, and the paragraphs; everything else as its words."""
+    parts = [B.esc(el.text)] if el.text and el.text.strip() else []
+    for child in el:
+        tag = _tag(child)
+        if tag in ("meta", "recordedTime"):
+            pass
+        elif tag == "heading":
+            parts.append(f"<h{depth}>{B.esc(_words(child))}</h{depth}>")
+        elif tag == "debateSection":
+            parts.append(akn_html(child, min(depth + 1, 6)))
+        elif tag == "from":
+            parts.append(f"<p><strong>{B.esc(_words(child))}:</strong></p>")
+        elif tag in ("p", "summary", "narrative"):
+            parts.append(f"<p>{B.esc(_words(child))}</p>")
+        else:
+            parts.append(akn_html(child, depth))
+        if child.tail and child.tail.strip():
+            parts.append(B.esc(child.tail))
+    return "".join(parts)
+
+
+def oireachtas_items(spec, piece, cache, left_out, today):
+    """The sitting days of Dáil Éireann and Seanad Éireann in the year piece, from the Oireachtas open data API, one
+    page per chamber and day (the day's whole debate record). Days of the last two weeks are read fresh."""
+    today = today or datetime.date.today()
+    fresh_from = (today - datetime.timedelta(days=14)).isoformat()
+    out, failed, skip = [], 0, 0
+    while True:
+        query = urllib.parse.urlencode({"chamber_type": "house", "date_start": f"{piece}-01-01",
+                                        "date_end": f"{piece}-12-31", "limit": 200, "skip": skip})
+        data = json.loads(B.fetch(f"{OIREACHTAS_API}/debates?{query}", None))
+        results = data.get("results", [])
+        for r in results:
+            rec = r.get("debateRecord", {})
+            day = rec.get("date", "")
+            chamber = (rec.get("chamber") or {}).get("showAs") or (rec.get("house") or {}).get("showAs", "")
+            xml = ((rec.get("formats") or {}).get("xml") or {}).get("uri")
+            if not xml or not day:
+                continue
+            try:
+                root = ET.fromstring(B.fetch(xml, None if day >= fresh_from else cache).encode("utf-8"))
+            except (urllib.error.URLError, OSError, ET.ParseError):
+                failed += 1
+                continue
+            body = clean(akn_html(root), "https://www.oireachtas.ie/")
+            link = xml.rsplit("/debate/", 1)[0].replace("https://data.oireachtas.ie/akn/ie/debateRecord/",
+                                                         "https://www.oireachtas.ie/en/debates/debate/")
+            out.append(item(link, f"{chamber} debates, {day}", day, body, month_unit(day)))
+        skip += len(results)
+        if len(results) < 200:
+            break
+    if failed:
+        left_out.append({"title": f"{spec['series_title']}, {piece}", "reason": f"{failed} days could not be read."})
+    out.sort(key=lambda i: i["date"], reverse=True)
+    return out
+
+
+GOVUK = "https://www.gov.uk"
+
+
+def govuk_speeches_items(spec, piece, cache, left_out, today):
+    """The speeches published on GOV.UK in the year piece (search API, document type "speech", then each one's
+    record from the content API): the speech as published, the speaker, department, and the day it was delivered."""
+    out, start, failed = [], 0, 0
+    while True:
+        query = urllib.parse.urlencode({"filter_content_store_document_type": "speech", "count": 1000,
+                                        "start": start, "order": "-public_timestamp",
+                                        "filter_public_timestamp": f"from:{piece}-01-01,to:{piece}-12-31",
+                                        "fields": "link,public_timestamp"})
+        data = json.loads(B.fetch(f"{GOVUK}/api/search.json?{query}", None))
+        results = data.get("results", [])
+        for r in results:
+            link = r.get("link", "")
+            if len(out) >= spec.get("limit", 20000):
+                break
+            if not link.startswith("/"):
+                continue
+            try:
+                d = json.loads(B.fetch(f"{GOVUK}/api/content{link}", cache))
+            except (urllib.error.URLError, OSError, ValueError):
+                failed += 1
+                continue
+            det = d.get("details") or {}
+            when = B.iso_date(det.get("delivered_on") or d.get("first_published_at") or r.get("public_timestamp", ""))
+            links = d.get("links") or {}
+            who = ", ".join(x.get("title", "") for x in links.get("speaker", []))
+            orgs = ", ".join(x.get("title", "") for x in links.get("organisations", []))
+            kind = det.get("speech_type_explanation") or ""
+            byline = "; ".join(x for x in (who, orgs, kind) if x)
+            out.append(item(f"{GOVUK}{link}", d.get("title", link), when, clean(det.get("body", ""), f"{GOVUK}{link}"),
+                            month_unit(when), byline=byline))
+        start += len(results)
+        if len(results) < 1000 or len(out) >= spec.get("limit", 20000):
+            break
+    if failed:
+        left_out.append({"title": f"{spec['series_title']}, {piece}", "reason": f"{failed} speeches could not be "
+                         "read."})
+    out.sort(key=lambda i: i["date"], reverse=True)
     return out
 
 
@@ -1454,7 +2015,8 @@ def chronam_items(spec, piece, cache, left_out, today):
 DRIVERS = {"crs": crs_items, "amber_waves": amber_waves_items, "elife": elife_digest_items,
            "europepmc": europepmc_items,
            "wordpress": wordpress_items, "atom": atom_items, "voa": voa_items, "voa_history": voa_history_items,
-           "milestones": milestones_items,
+           "milestones": milestones_items, "uk_hansard": uk_hansard_items, "oireachtas": oireachtas_items,
+           "govuk_speeches": govuk_speeches_items,
            "frus": frus_items, "chronam": chronam_items}
 
 
@@ -1463,9 +2025,15 @@ DRIVERS = {"crs": crs_items, "amber_waves": amber_waves_items, "elife": elife_di
 def piece_label(name, piece):
     """How a piece is named in its book's title ("2026", "the 2010s", "Blindness and low vision", "recent")."""
     if name == "europepmc_reviews":
-        return EPMC_TOPICS[piece][0]
+        topic, _, only = piece.partition("-")
+        return EPMC_TOPICS[topic][0] + (f", {only}" if only else "")
+    if name == "uk_hansard" and piece.isdigit():
+        return piece
     if name == "voa" and piece == "recent":
         return "recent stories"
+    if name == "the_conversation" and re.search(r"-\d{4}$", piece):
+        edition, year = piece.rsplit("-", 1)
+        return f"{piece_label(name, edition)}, {year}"
     if name == "the_conversation":
         return {"us": "United States edition", "uk": "UK edition", "au": "Australia edition", "ca": "Canada edition",
                 "africa": "Africa edition", "global": "global edition", "nz": "New Zealand edition",
@@ -1578,13 +2146,33 @@ def build_periodicals(keys, out_dir, cache=None, date=None, today=None):
         except Exception as e:  # noqa: BLE001 - one piece's failure does not stop the others; said in the manifest
             left_out.append({"title": key, "reason": f"It could not be built ({e})."})
             books = []
+        spec = SOURCES[key.split(":")[1]]
+        # News pieces and VOA years are rebuilt under the same monthly name; the other pieces keep every version.
+        versioned = not spec.get("daily") and spec["driver"] != "voa"
         for book in books:
-            entry = B.write_book(book, out_dir, date)
+            entry = B.write_book(book, out_dir, date, versioned=versioned)
             entry.update(catalogue_extra(book))
+            entry["key"] = key
+            entry["release"] = release_for(spec["name"])         # its own release (see release_for)
+            entry["url"] = f"{release_url(spec['name'])}/{entry['file']}"
+            if versioned:
+                import updates                   # here, not at the top: updates imports the builder
+                entry["fingerprint"] = updates.pub_sign(key)
             print(f"{entry['file']}: {entry['items']} items, {entry['size']:,} bytes, {entry['licence']}")
             entries.append(entry)
         safe = re.sub(r"[^a-z0-9_-]+", "_", key.lower())
-        manifest = {"key": key, "books": entries, "left_out": left_out, "files": [e["file"] for e in entries]}
+        files = [e["file"] for e in entries]
+        for (name, piece), (side, data) in list(SIDE_FILES.items()):
+            if f"pub:{name}:{piece}" == key:                 # the piece's records, uploaded next to its book
+                with open(os.path.join(out_dir, side), "wb") as f:
+                    f.write(data)
+                files.append(side)
+                del SIDE_FILES[(name, piece)]
+        _src, _name, _piece = key.split(":", 2)
+        finished = (_name, _piece) not in INCOMPLETE and not any("could not be built" in x["reason"] for x in left_out)
+        manifest = {"key": key, "release": release_for(key.split(":")[1]), "books": entries,
+                    "left_out": left_out, "files": files,
+                    "done": [key] if finished else []}         # collected (or empty): the backfill moves on
         with open(os.path.join(out_dir, f"manifest-{safe}.json"), "w", encoding="utf-8") as f:
             json.dump(manifest, f, indent=1, ensure_ascii=False)
         manifests[key] = manifest
@@ -1598,7 +2186,16 @@ def main(argv=None):
     p.add_argument("--out", default="build/textbooks")
     p.add_argument("--cache", default=None)
     p.add_argument("--list", action="store_true", help="only print the piece keys the words stand for")
+    p.add_argument("--next-backfill", default=None, metavar="TEXTBOOKS_JSON",
+                   help="print the next piece to backfill, from the published catalogue (nothing when all done)")
     a = p.parse_args(argv)
+    if a.next_backfill is not None:
+        catalogue = {}
+        if os.path.exists(a.next_backfill):
+            with open(a.next_backfill, encoding="utf-8") as f:
+                catalogue = json.load(f)
+        print(next_backfill(catalogue))
+        return 0
     if a.list:
         print("\n".join(expand_keys(a.keys)))
         return 0

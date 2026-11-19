@@ -351,10 +351,26 @@ def index_page(book):
     return re.sub(r"<ul></ul>", "", "\n".join(out))
 
 
-def write_book(book, out_dir, date=None):
-    """Write book as <name>_<YYYY-MM>.zim in out_dir and return its catalogue entry (manifest_entry)."""
+def content_sha256(book):
+    """A checksum of a book's text (title, licence, pages and pictures), the same for two builds of the same text
+    although their ZIM files differ (each file has its own id and date): updates.merge_versions keeps a new version
+    only when this changed."""
+    h = hashlib.sha256()
+    for part in (book.title, book.licence, book.notice, book.description):
+        h.update((part or "").encode("utf-8") + b"\0")
+    for p in book.pages:
+        h.update(f"{p.path}\0{p.title}\0{p.unit}\0{p.body}\0".encode("utf-8"))
+    for path in sorted(book.resources):
+        h.update(path.encode("utf-8") + hashlib.sha256(book.resources[path][0]).digest())
+    return h.hexdigest()
+
+
+def write_book(book, out_dir, date=None, versioned=False):
+    """Write book in out_dir and return its catalogue entry (manifest_entry). The file is <name>.<YYYY-MM-DD>.zim
+    with versioned=True (a kept version: every rebuild is a new file and the old ones stay, see updates.py), else
+    <name>_<YYYY-MM>.zim (replaced by the next build in the same month: news pieces, VOA years)."""
     date = date or datetime.date.today()
-    file_id = f"{book.name}_{date:%Y-%m}"
+    file_id = f"{book.name}.{date:%Y-%m-%d}" if versioned else f"{book.name}_{date:%Y-%m}"
     w = ZimWriter()
     pages = book.pages
     for i, p in enumerate(pages):
@@ -377,7 +393,9 @@ def write_book(book, out_dir, date=None):
     os.makedirs(out_dir, exist_ok=True)
     path = os.path.join(out_dir, file_id + ".zim")
     count = w.write(path, main="index")
-    return manifest_entry(book, file_id, path, count, date)
+    entry = manifest_entry(book, file_id, path, count, date)
+    entry["content_sha256"] = content_sha256(book)
+    return entry
 
 
 def file_sha256(path):
@@ -399,8 +417,10 @@ def manifest_entry(book, file_id, path, count, date):
     return {
         "id": file_id, "name": book.name, "title": book.title, "subject": book.subject, "level": book.level,
         "group": book.group, "publisher": book.publisher, "credit": book.publisher, "country": book.country,
-        "licence": book.licence, "licence_url": book.licence_url, "licence_kind": licence_kind(book.licence, book.unchanged),
-        "licence_text": licence_words(book.licence, book.unchanged), "unchanged": book.unchanged, "language": book.language, "flavour": book.flavour,
+        "licence": book.licence, "licence_url": book.licence_url,
+        "licence_kind": licence_kind(book.licence, book.unchanged),
+        "licence_text": licence_words(book.licence, book.unchanged), "unchanged": book.unchanged,
+        "language": book.language, "flavour": book.flavour,
         "date": date.isoformat(), "published": book.published, "region": book.region,
         "size": os.path.getsize(path), "sha256": file_sha256(path),
         "article_count": count, "file": os.path.basename(path), "url": f"{RELEASE}/{os.path.basename(path)}",
@@ -2066,9 +2086,12 @@ def build(keys, out_dir, cache=None, pictures=False, local_osbooks=None, date=No
     for key in plan:
         if key.startswith("pub:"):               # periodicals, journals, reports, news, history (periodicals.py)
             import periodicals                   # here, not at the top: periodicals imports this module
-            manifests.update(periodicals.build_periodicals([key], out_dir, cache, date))
+            # "pub:voa:recent+pub:voa:2026": pieces built one after another in this one job
+            manifests.update(periodicals.build_periodicals(key.split("+"), out_dir, cache, date))
             continue
         books, left_out = [], []
+        import updates                           # here, not at the top: updates imports this module
+        sign = updates.fingerprint(key)          # the source's sign of change now, kept in the catalogue
         try:
             if key.startswith("osbooks:") or key.startswith("local:"):
                 if catalogue is None:
@@ -2140,11 +2163,14 @@ def build(keys, out_dir, cache=None, pictures=False, local_osbooks=None, date=No
             if not book.pages:
                 left_out.append({"title": book.title, "reason": "No pages could be read."})
                 continue
-            entry = write_book(book, out_dir, date)
+            entry = write_book(book, out_dir, date, versioned=True)
+            entry["key"] = key                   # what to build again when its source changes (updates.py)
+            entry["fingerprint"] = sign
             print(f"{entry['file']}: {entry['article_count']} pages, {entry['size']:,} bytes, {entry['licence']}")
             entries.append(entry)
         safe = re.sub(r"[^a-z0-9_-]+", "_", key.lower().split("/")[-1])
-        manifest = {"key": key, "books": entries, "left_out": left_out, "files": [e["file"] for e in entries]}
+        manifest = {"key": key, "release": "textbooks", "books": entries, "left_out": left_out,
+                    "files": [e["file"] for e in entries], "done": [key]}
         with open(os.path.join(out_dir, f"manifest-{safe}.json"), "w", encoding="utf-8") as f:
             json.dump(manifest, f, indent=1, ensure_ascii=False)
         manifests[key] = manifest
@@ -2155,7 +2181,8 @@ def merge(manifest_paths, existing=None):
     """The catalogue textbooks.json from the manifests: the newest release of each book, the left-out books,
     sources.NOT_INCLUDED and the names of the groups (sources.GROUPS: group key -> collection name). existing:
     the textbooks.json published before (books it has that no manifest built again are kept)."""
-    books = {}
+    import updates                               # here, not at the top: updates imports this module
+    books, done = {}, set((existing or {}).get("pieces_done", []))
     for old in (existing or {}).get("books", []):
         books[old["name"]] = old
     left = []
@@ -2165,9 +2192,9 @@ def merge(manifest_paths, existing=None):
         with open(path, encoding="utf-8") as f:
             data = json.load(f)
         for entry in data.get("books", []):
-            if entry["name"] not in books or entry["date"] >= books[entry["name"]]["date"]:
-                books[entry["name"]] = entry
+            books[entry["name"]] = updates.merge_versions(books.get(entry["name"]), entry)   # every version kept
         left += data.get("left_out", [])
+        done |= set(data.get("done", []))
     seen = set()
     left = [x for x in left if not (x["title"] in seen or seen.add(x["title"]))]
     import periodicals                           # here, not at the top: periodicals imports this module
@@ -2176,7 +2203,7 @@ def merge(manifest_paths, existing=None):
             "left_out": left, "not_included": [{"title": t, "reason": r} for t, r in sources.NOT_INCLUDED +
                                                periodicals.NOT_INCLUDED],
             "licence_lines": {**sources.LICENCE_LINES, **periodicals.LICENCE_LINES}, "groups": sources.GROUPS,
-            "group_notes": periodicals.GROUP_NOTES}
+            "group_notes": periodicals.GROUP_NOTES, "pieces_done": sorted(done)}
 
 
 def main(argv=None):

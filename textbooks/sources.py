@@ -364,6 +364,8 @@ ALLOWED = {
     "CC BY-NC": "non-commercial", "CC BY-NC-SA": "non-commercial",
     # Old works in the US public domain (more than 95 years after publication): the historic newspapers.
     "Public domain (published before 1931)": "open",
+    # UK Parliament's licence for Hansard and other Parliamentary copyright material (like the OGL).
+    "Open Parliament Licence v3.0": "open",
 }
 
 # The whole-and-unchanged rule (the owner's decision of 2026-11-18). A NoDerivatives licence (CC BY-ND, CC BY-NC-ND)

@@ -73,8 +73,10 @@ def test_keys():
     voa = [k for k in keys if k.startswith("pub:voa:")]
     assert voa == ["pub:voa:recent", "pub:voa:2026", "pub:voa:2025", "pub:voa:2024"]          # older years by key
     assert "pub:voa_history:1970s" in keys and "pub:voa_learning:2026" in keys
-    assert P.expand_keys(["pub:voa:2001", "pub:voa:1999", "pub:voa_history:1940s"], TODAY) == \
-        ["pub:voa:2001", "pub:voa_history:1940s"]
+    assert P.expand_keys(["pub:voa:2001", "pub:voa:1994", "pub:voa:1996", "pub:voa_history:1940s"], TODAY) == \
+        ["pub:voa:2001", "pub:voa:1996", "pub:voa_history:1940s"]
+    assert P.expand_keys(["pub:the_conversation:us-2015", "pub:europepmc_reviews:vision-2010"], TODAY) == \
+        ["pub:the_conversation:us-2015", "pub:europepmc_reviews:vision-2010"]
     assert P.expand_keys(["pub:crs:1999x", "pub:nothing", "pub:chronicling_america:vermont-1910s"], TODAY) == \
         ["pub:chronicling_america:vermont-1910s"]
     for spec in P.SOURCES.values():
@@ -421,8 +423,18 @@ def test_voa_year_archive(monkeypatch, tmp_path):
     items = P.voa_items(P.SOURCES["voa"], "2008", cache, left, TODAY)
     assert [(i["title"], i["date"]) for i in items] == [("Story 2", "2009-11-01"), ("Story 1", "2008-05-31")]
     assert "1 addresses are not written stories" in left[0]["reason"]
+    name, data = P.SIDE_FILES[("voa", "2008")]                       # the records, published next to the book
+    assert name == "voa_2008.records.json.xz"
+    monkeypatch.setattr(B, "fetch", fake_fetch([(f"{P.release_url('voa')}/{name}", data)] + [
+        ("voanews.com/sitemap.xml", "<sitemapindex><sitemap><loc>https://www.voanews.com/sitemap_1_1.xml.gz</loc>"
+                                    "</sitemap></sitemapindex>"), ("sitemap_1_1.xml.gz", sitemap), ("/a/", page)]))
     reads.clear()
-    assert len(P.voa_items(P.SOURCES["voa"], "2008", cache, [], TODAY)) == 2 and reads == []   # from the records
+    assert len(P.voa_items(P.SOURCES["voa"], "2008", None, [], TODAY)) == 2 and reads == []   # from the records
+    out = tmp_path / "out"
+    P.SIDE_FILES[("voa", "2008")] = (name, data)
+    monkeypatch.setattr(P, "books_for_key", lambda key, cache, left, today: [])
+    manifest = P.build_periodicals(["pub:voa:2008"], str(out), today=TODAY)["pub:voa:2008"]
+    assert manifest["files"] == [name] and (out / name).exists()      # uploaded with the manifest's files
     spec = dict(P.SOURCES["voa"], budget_minutes=0)
     left = []
     P.voa_items(spec, "2019", None, left, TODAY)
@@ -470,3 +482,139 @@ def test_voa_history_scripts(monkeypatch):
     left = []
     assert P.voa_history_items(P.SOURCES["voa_history"], "1950s", None, left, TODAY) == []
     assert "only the 1970s" in left[0]["reason"]
+
+
+def test_daily_and_backfill():
+    """The daily refresh rebuilds the current pieces (VOA's joined into one key, one request at a time); the backfill
+    picks Learning English years newest first, then voanews.com years, skipping complete ones."""
+    keys = P.expand_keys(["pub:daily"], TODAY)
+    assert keys[0] == "pub:voa:recent+pub:voa:2026+pub:voa_learning:2026"
+    for k in ("pub:crs:2026", "pub:global_voices:2026", "pub:nasa_news:2026", "pub:kff_health_news:2026",
+              "pub:the_conversation:uk", "pub:uk_hansard:2026", "pub:oireachtas_debates:2026",
+              "pub:govuk_speeches:2026"):
+        assert k in keys
+    assert P.expand_keys(["pub:voa:recent+pub:voa:2026"], TODAY) == ["pub:voa:recent+pub:voa:2026"]
+    assert P.expand_keys(["pub:voa:recent+pub:nothing:1"], TODAY) == []
+    pieces = {name: [] for name in P.BACKFILL_ORDER}
+    pieces.update({"voa_history": ["1970s", "1960s"], "voa_learning": ["2025", "2024"], "voa": ["2025", "1996"]})
+    assert P.BACKFILL_ORDER.index("voa_learning") < P.BACKFILL_ORDER.index("voa") < \
+        P.BACKFILL_ORDER.index("chronicling_america")                        # small and quick first
+    assert P.next_backfill({"books": []}, TODAY, pieces) == "pub:voa_history:1970s"
+    catalogue = {"pieces_done": ["pub:voa_history:1970s", "pub:voa_history:1960s"],   # 1960s: found empty
+                 "books": [{"name": "voa_learning_2025", "key": "pub:voa_learning:2025", "complete": False}]}
+    assert P.next_backfill(catalogue, TODAY, pieces) == "pub:voa_learning:2025"       # not complete: go on
+    catalogue["books"][0]["complete"] = True
+    catalogue["pieces_done"] += ["pub:voa_learning:2024", "pub:voa:2025"]
+    assert P.next_backfill(catalogue, TODAY, pieces) == "pub:voa:1996"
+    catalogue["pieces_done"].append("pub:voa:1996")
+    every = catalogue
+    assert P.next_backfill(every, TODAY, pieces) == ""
+
+
+def test_uk_hansard(monkeypatch):
+    """UK Hansard: each sitting day's main debates, one page each with the speakers' names, dated by the day."""
+    tree = json.dumps([{"SectionTreeItems": [
+        {"Id": 1, "ParentId": None, "Title": "Commons Chamber", "ExternalId": "root"},
+        {"Id": 2, "ParentId": 1, "Title": "House of Commons", "ExternalId": "hdg", "HRSTag": "hs_3MainHdg"},
+        {"Id": 3, "ParentId": 1, "Title": "Made-up Statement", "ExternalId": "deb-3", "HRSTag": "hs_2cStatement"}]}])
+    debate = json.dumps({"Overview": {"Title": "Made-up Statement", "Location": "Commons Chamber"}, "Items": [
+        {"ItemType": "Contribution", "HRSTag": "hs_ColumnNumber", "Value": "<span></span>"},
+        {"ItemType": "Contribution", "AttributedTo": "Mr Speaker", "Value": "Order, order."}],
+        "ChildDebates": [{"Overview": {"Title": "Part Two"}, "Items": [
+            {"ItemType": "Contribution", "AttributedTo": "A Member", "Value": "I agree."}]}]})
+    use(monkeypatch, [("sectiontrees.json?date=2026-01-05&house=Commons", tree),
+                      ("sectiontrees.json", "[]"), ("/debates/debate/deb-3.json", debate)])
+    items = P.uk_hansard_items(P.SOURCES["uk_hansard"], "2026", None, [], datetime.date(2026, 1, 10))
+    assert [(i["title"], i["date"], i["unit"]) for i in items] == [
+        ("Made-up Statement (Commons Chamber, 2026-01-05)", "2026-01-05", "January 2026")]
+    assert "<strong>Mr Speaker:</strong> Order, order." in items[0]["body"] and "<h3>Part Two</h3>" in items[0]["body"]
+
+
+def test_oireachtas(monkeypatch):
+    """Oireachtas debates: one page per chamber and sitting day, with the speakers' names (CC BY 4.0)."""
+    listing = json.dumps({"results": [{"debateRecord": {"date": "2026-11-18", "chamber": {"showAs": "Dáil Éireann"},
+                                                        "formats": {"xml": {"uri": "https://data.oireachtas.ie/akn/ie/"
+                                                                            "debateRecord/dail/2026-11-18/debate/"
+                                                                            "mul@/main.xml"}}}}]})
+    akn = ('<akomaNtoso xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0"><debate><meta>x</meta><debateBody>'
+           '<debateSection><heading>Topical Issues</heading><speech><from>Deputy A<recordedTime/></from>'
+           '<p>A question.</p></speech></debateSection></debateBody></debate></akomaNtoso>')
+    use(monkeypatch, [("/v1/debates?", listing), ("main.xml", akn)])
+    items = P.oireachtas_items(P.SOURCES["oireachtas_debates"], "2026", None, [], TODAY)
+    assert items[0]["title"] == "Dáil Éireann debates, 2026-11-18" and items[0]["date"] == "2026-11-18"
+    assert "<h3>Topical Issues</h3>" in items[0]["body"] and "<strong>Deputy A:</strong>" in items[0]["body"]
+    assert items[0]["url"] == "https://www.oireachtas.ie/en/debates/debate/dail/2026-11-18"
+
+
+def test_govuk_speeches(monkeypatch):
+    """GOV.UK speeches: each speech as published, with speaker, department and the day it was delivered."""
+    search = json.dumps({"results": [{"link": "/government/speeches/a-speech", "public_timestamp": "2026-11-10"}]})
+    content = json.dumps({"title": "A Speech", "first_published_at": "2026-11-10T19:43:00+00:00", "details": {
+        "body": "<p>Thank you all.</p>", "delivered_on": "2026-11-09T18:40:00+00:00",
+        "speech_type_explanation": "Transcript of the speech, exactly as it was delivered"},
+        "links": {"speaker": [{"title": "A Minister"}], "organisations": [{"title": "Cabinet Office"}]}})
+    use(monkeypatch, [("/api/search.json?", search), ("/api/content/government/speeches/a-speech", content)])
+    items = P.govuk_speeches_items(P.SOURCES["govuk_speeches"], "2026", None, [], TODAY)
+    assert [(i["title"], i["date"]) for i in items] == [("A Speech", "2026-11-09")]
+    assert items[0]["byline"].startswith("A Minister; Cabinet Office; Transcript")
+    assert "Thank you all." in items[0]["body"]
+
+
+def test_voa_before_2001_from_the_wayback_machine(monkeypatch):
+    """VOA before 2001: pages of its old sites captured by the Wayback Machine (CDX API), English only, written
+    stories only, wire copy left out, dated by their own DATE= line."""
+    long_text = " ".join(["word"] * 130)
+    cdx = json.dumps([["timestamp", "original"],
+                      ["19980601000000", "http://www.voa.gov:80/news/story1.html"],
+                      ["19980602000000", "http://www.voa.gov:80/chinese/story2.html"],
+                      ["19980603000000", "http://www.voa.gov:80/news/wire.html"],
+                      ["19980604000000", "http://www.voa.gov:80/menu.html"],
+                      ["19980605000000", "http://www.voa.gov:80/logo.gif"]])
+    use(monkeypatch, [("/cdx/search/cdx?url=www.voa.gov", cdx), ("/cdx/search/cdx", "[]"),
+                      ("story1.html", f"<html><title>Made-up Story</title><body><p>DATE=5/31/98</p><p>{long_text}"
+                                      f"</p></body></html>"),
+                      ("wire.html", f"<body><p>{long_text} (AP)</p></body>"), ("menu.html", "<body>Home News</body>")])
+    left = []
+    items = P.voa_items(P.SOURCES["voa"], "1998", None, left, TODAY)
+    assert [(i["title"], i["date"]) for i in items] == [("Made-up Story", "1998-05-31")]
+    assert items[0]["url"].startswith("https://web.archive.org/web/19980601000000/")
+    assert "1 pages with news-agency material" in left[0]["reason"] and "1 captured pages are not" in left[0]["reason"]
+    assert P.SIDE_FILES.pop(("voa", "1998"))[0] == "voa_1998.records.json.xz"
+
+
+def test_conversation_year_archive(monkeypatch):
+    """The Conversation's older years: the edition's yearly archive sitemap, each article kept whole."""
+    use(monkeypatch, [("/us/sitemap_archive_2015.xml", "<urlset><url><loc>https://theconversation.com/a-1</loc>"
+                                                        "</url></urlset>"),
+                      ("theconversation.com/a-1", '<h1>Old Article</h1><time datetime="2015-12-23T11:14:13Z">x</time>'
+                                                  '<a class="author-name" href="/p">Dr B</a>'
+                                                  '<div itemprop="articleBody">'
+                                                  '<p>Every word.</p><h2>Empty</h2></div><div>Related</div>'),
+                      ("republishing-guidelines", "publish all our work under a Creative Commons licence")])
+    book = P.books_for_key("pub:the_conversation:us-2015", None, [], TODAY)[0]
+    assert book.title == "The Conversation, United States edition, 2015" and book.unchanged
+    page = book.pages[0]
+    assert page.title == "Old Article" and "<h2>Empty</h2>" in page.body and "Related" not in page.body
+    assert "By Dr B" in page.body and "2015-12-23" in page.body
+
+
+def test_finished_pieces_are_recorded(monkeypatch, tmp_path):
+    """A piece built completely, or found empty, is listed as done in its manifest (and merged into the catalogue's
+    pieces_done), so the backfill moves on; a piece cut short by its time limit is not."""
+    monkeypatch.setattr(P, "books_for_key", lambda key, cache, left, today: [])
+    m = P.build_periodicals(["pub:voa_history:1950s"], str(tmp_path), today=TODAY)["pub:voa_history:1950s"]
+    assert m["done"] == ["pub:voa_history:1950s"]
+    P.INCOMPLETE[("voa", "2019")] = (5, 10)
+    m = P.build_periodicals(["pub:voa:2019"], str(tmp_path), today=TODAY)["pub:voa:2019"]
+    assert m["done"] == []
+    P.INCOMPLETE.clear()
+    data = B.merge([str(tmp_path / "manifest-pub_voa_history_1950s.json")], {"pieces_done": ["pub:x:1"]})
+    assert data["pieces_done"] == ["pub:voa_history:1950s", "pub:x:1"]
+
+
+def test_joined_key_is_built_piece_by_piece(monkeypatch, tmp_path):
+    """The daily refresh's joined VOA key is built as its pieces, one after another, each with its own manifest."""
+    built = []
+    monkeypatch.setattr(P, "books_for_key", lambda key, cache, left, today: built.append(key) or [])
+    manifests = B.build(["pub:voa:recent+pub:voa_learning:2026"], str(tmp_path))
+    assert built == ["pub:voa:recent", "pub:voa_learning:2026"] and set(manifests) == set(built)

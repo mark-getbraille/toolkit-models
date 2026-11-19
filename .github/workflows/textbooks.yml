@@ -11,13 +11,22 @@
 # The ZIM files are written by our own writer (textbooks/zimwrite.py, from the openZIM format description); no GPL
 # library (libzim) is used. Every book's licence is checked again from its source while it is built
 # (textbooks/sources.py lists what was checked by hand and what was left out, and why).
-# Runs by hand (Actions > Build textbooks > Run workflow) or when textbooks/request.txt changes on main.
+# Runs by hand (Actions > Build textbooks > Run workflow), when textbooks/request.txt changes on main, and on three
+# schedules (times in UTC; each can be stopped in textbooks/schedule.txt):
+#   daily    10:23        the current news pieces again (periodicals.daily_keys)
+#   backfill every hour :17  the next older piece of any source, small and quick sources first (periodicals.next_backfill)
+#   weekly   Sundays 09:41  every other book whose source changed (updates.changed_keys); a changed book is a new
+#                          version and the old file is kept (textbooks.json "versions")
 name: Build textbooks
 
 on:
   push:
     branches: ["main"]
     paths: ["textbooks/request.txt"]
+  schedule:
+    - cron: "23 10 * * *"
+    - cron: "17 * * * *"
+    - cron: "41 9 * * 0"
   workflow_dispatch:
     inputs:
       keys:
@@ -28,8 +37,9 @@ on:
 permissions:
   contents: write
 
+# One run of each kind at a time (the daily, the backfill, the weekly check and manual runs do not wait for each other).
 concurrency:
-  group: textbooks
+  group: textbooks-${{ github.event.schedule || 'manual' }}
   cancel-in-progress: false
 
 jobs:
@@ -38,28 +48,55 @@ jobs:
     outputs:
       keys: ${{ steps.keys.outputs.keys }}
       pictures: ${{ steps.keys.outputs.pictures }}
+      mode: ${{ steps.keys.outputs.mode }}
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
+      - name: The catalogue published now (for the backfill and the weekly check)
+        if: github.event_name == 'schedule'
+        run: gh release download textbooks -p 'textbooks.json' -O previous.json --clobber || echo '{}' > previous.json
       - id: keys
         run: |
           keys='${{ inputs.keys }}'
           if [ -z "$keys" ]; then keys=$(grep -v '^#' textbooks/request.txt | tr -d '[:space:]'); fi
-          python3 - "$keys" >> "$GITHUB_OUTPUT" <<'PY'
-          import json, sys
+          python3 - "$keys" "${{ github.event.schedule }}" >> "$GITHUB_OUTPUT" <<'PY'
+          import json, re, sys
           sys.path.insert(0, "textbooks")
           import sources
           words = [w for w in sys.argv[1].split(",") if w]
+          schedule = sys.argv[2]
+          switches = dict(re.findall(r"^\s*(\w+)\s*:\s*(\w+)", open("textbooks/schedule.txt").read(), re.M))
+          mode = {"23 10 * * *": "daily", "17 * * * *": "backfill", "41 9 * * 0": "weekly"}.get(schedule, "manual")
           pictures = "pictures" in words
           words = [w for w in words if w != "pictures"]
-          keys = sources.expand_keys(words or ["all"])
+          if mode != "manual" and switches.get(mode, "on").lower() != "on":
+              keys = []                                   # stopped in textbooks/schedule.txt
+          elif mode == "daily":
+              keys = sources.expand_keys(["pub:daily"])
+          elif mode == "backfill":
+              import periodicals
+              key = periodicals.next_backfill(json.load(open("previous.json")))
+              keys = [key] if key else []
+          elif mode == "weekly":
+              import updates
+              keys = updates.changed_keys(json.load(open("previous.json")))
+          else:
+              keys = sources.expand_keys(words or ["all"])
           print("keys=" + json.dumps(list(dict.fromkeys(keys))))
           print("pictures=" + ("--pictures" if pictures else ""))
+          print("mode=" + mode)
           PY
 
   build:
     needs: plan
+    if: needs.plan.outputs.keys != '[]'
     runs-on: ubuntu-latest
     timeout-minutes: 240
+    # Voice of America is read by one job at a time, whichever run it belongs to (one request at a time per site).
+    concurrency:
+      group: ${{ contains(matrix.key, 'pub:voa') && 'textbooks-voa-site' || format('textbooks-{0}-{1}', github.run_id, matrix.key) }}
+      cancel-in-progress: false
     strategy:
       fail-fast: false
       # Few at a time: one request at a time per site, with a pause, is the rule; GitHub's clones are cheap.
@@ -75,35 +112,39 @@ jobs:
           python-version: "3.12"
       - name: Install what the builder needs (zstandard BSD, pypdf BSD, pypdfium2 Apache/BSD)
         run: python -m pip install zstandard pypdf "pypdfium2==5.15.2"
-      - name: Keep the pages read between runs
+      - name: Keep the pages read between runs (the weekly check reads every page fresh)
         uses: actions/cache@v4
         with:
           path: build/textbooks-cache
           key: textbooks-cache-${{ matrix.key }}-${{ github.run_id }}
-          restore-keys: textbooks-cache-${{ matrix.key }}-
+          restore-keys: ${{ needs.plan.outputs.mode == 'weekly' && 'textbooks-cache-never-' || format('textbooks-cache-{0}-', matrix.key) }}
       - name: Build the books
         run: |
           python textbooks/build_textbooks.py "${{ matrix.key }}" --out build/textbooks --cache build/textbooks-cache \
             ${{ needs.plan.outputs.pictures }}
-      - name: Upload them to the release
+      - name: Upload them to their releases (manifests to "textbooks", where the catalogue is merged)
         run: |
           gh release view textbooks > /dev/null 2>&1 || gh release create textbooks \
             --title "Open textbooks" \
             --notes "Open textbooks and reference works as ZIM files for the Digital Accessibility Toolkit's offline libraries (they open in the free Kiwix apps too). Each book's licence, credit and original are in textbooks.json and on its welcome page. Built by textbooks/build_textbooks.py."
-          for manifest in build/textbooks/manifest-*.json; do
-            files=$(python -c "import json,sys;print(' '.join(json.load(open(sys.argv[1]))['files']))" "$manifest")
-            for f in $files $(basename "$manifest"); do
-              src="build/textbooks/$f"
-              for attempt in 1 2 3 4; do
-                gh release upload textbooks "$src" --clobber && break
-                sleep 30
-              done
+          upload() {
+            for attempt in 1 2 3 4; do
+              gh release upload "$1" "$2" --clobber && return 0
+              sleep 30
             done
+          }
+          for manifest in build/textbooks/manifest-*.json; do
+            release=$(python -c "import json,sys;print(json.load(open(sys.argv[1])).get('release','textbooks'))" "$manifest")
+            gh release view "$release" > /dev/null 2>&1 || gh release create "$release" --title "Publications: $release" \
+              --notes "Periodicals, journals, reports, news and history for the Digital Accessibility Toolkit (textbooks/periodicals.py); listed in the textbooks release's textbooks.json."
+            files=$(python -c "import json,sys;print(' '.join(json.load(open(sys.argv[1]))['files']))" "$manifest")
+            for f in $files; do upload "$release" "build/textbooks/$f"; done
+            upload textbooks "$manifest"
           done
 
   catalogue:
-    needs: build
-    if: always()
+    needs: [plan, build]
+    if: always() && needs.plan.outputs.keys != '[]'
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
@@ -119,16 +160,53 @@ jobs:
           gh release download textbooks -p 'textbooks.json' -O previous.json --clobber || true
           cd ..
           python textbooks/build_textbooks.py --merge merged/manifest-*.json --existing merged/previous.json --out merged
+      - name: Move the oldest kept versions to archive releases when a release nears GitHub's 1,000 files
+        run: |
+          counts=$(python - <<'PY'
+          import json, subprocess
+          cat = json.load(open("merged/textbooks.json"))
+          releases = sorted({v["url"].split("/download/")[1].split("/")[0] for b in cat["books"]
+                             for v in b.get("versions", []) if "/download/" in v.get("url", "")})
+          counts = {}
+          for r in releases:
+              out = subprocess.run(["gh", "release", "view", r, "--json", "assets", "-q", ".assets | length"],
+                                   capture_output=True, text=True)
+              counts[r] = int(out.stdout.strip() or 0)
+          print(json.dumps(counts))
+          PY
+          )
+          moves=$(python textbooks/updates.py --archive-plan merged/textbooks.json --assets "$counts")
+          echo "$moves" | python -c "import json,sys;[print(m['from'],m['to'],m['file']) for m in json.load(sys.stdin)]" |
+          while read -r from to file; do
+            gh release view "$to" > /dev/null 2>&1 || gh release create "$to" --title "Older versions: $to" \
+              --notes "Older versions of the books, kept (textbooks.json lists each book's versions)."
+            mkdir -p moving && gh release download "$from" -p "$file" -D moving --clobber &&
+              gh release upload "$to" "moving/$file" --clobber && gh release delete-asset "$from" "$file" -y
+            rm -f "moving/$file"
+          done
+      - name: Publish textbooks.json, then remove the manifests it now holds
+        run: |
           for attempt in 1 2 3 4; do
             gh release upload textbooks merged/textbooks.json --clobber && break
             sleep 30
           done
-      - name: Delete the book files no longer listed (older releases of the same books)
-        run: |
-          keep=$(python -c "import json;print(' '.join(b['file'] for b in json.load(open('merged/textbooks.json'))['books']))")
-          for asset in $(gh release view textbooks --json assets -q '.assets[].name' | grep '\.zim$'); do
-            case " $keep " in
-              *" $asset "*) ;;
-              *) gh release delete-asset textbooks "$asset" -y || true ;;
-            esac
+          for m in merged/manifest-*.json; do
+            [ -e "$m" ] && gh release delete-asset textbooks "$(basename "$m")" -y || true
           done
+      - name: Delete only files no version lists and older than two days (a running build's new files stay)
+        run: |
+          python - <<'PY'
+          import datetime, json, subprocess
+          cat = json.load(open("merged/textbooks.json"))
+          keep = {v["url"].rsplit("/", 1)[-1] for b in cat["books"] for v in b.get("versions", [{"url": b["url"]}])}
+          keep |= {b["file"] for b in cat["books"]}
+          releases = {"textbooks"} | {b.get("release", "textbooks") for b in cat["books"]}
+          old = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=2)).isoformat()
+          for r in sorted(releases):
+              out = subprocess.run(["gh", "release", "view", r, "--json", "assets"], capture_output=True, text=True)
+              if out.returncode:
+                  continue
+              for a in json.loads(out.stdout)["assets"]:
+                  if a["name"].endswith(".zim") and a["name"] not in keep and a.get("createdAt", "9") < old:
+                      subprocess.run(["gh", "release", "delete-asset", r, a["name"], "-y"])
+          PY
