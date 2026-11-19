@@ -8,4 +8,5 @@
 # art, nude photo studies, the Met's whole collection, packaged goods), and the three Commons packs that failed
 # again (they now keep what they found when Commons keeps refusing).
 # Evening of 19 November (2): the Getty museum pack, a top-up pass with its higher limit (8,000).
-getty_museum+
+# Evening of 19 November (3): the Newberry Library and the state digital libraries (Midwest, South, West).
+newberry_library,state_libraries_midwest,state_libraries_south,state_libraries_west
