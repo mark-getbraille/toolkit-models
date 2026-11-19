@@ -1,6 +1,9 @@
 """The reviewer window for DOCUMENTED ADULT PHOTOGRAPHS (training-kit/kit/adult_photo_review.py): an optional second
 look by the owner's sighted team at the photographs that were approved automatically because their institution's
-record documents that every person in them is an adult.
+record documents that every person in them is an adult; and the LINK-ONLY records (sexual photographs whose record
+does not document that): no picture of them is fetched or shown; the window writes a polite enquiry to the
+institution, and approves one only with the documentation the institution gives (pasted or summarised), never on
+anyone's judgement of how old the people look.
 
 Only those approved photographs are ever listed or shown: a record without that documentation was never downloaded
 and is not in the review folder at all. The picture is read from its approved file into memory and shown with the
@@ -150,10 +153,85 @@ class ReviewWindow(Rules):
                 ("&Close", "Close the window", lambda e: self.EndModal(wx.ID_CANCEL))):
             row.Add(self.button(label, tip, handler), 0, wx.ALL, 4)
         s.Add(row, 0, wx.ALL, 4)
+        # Link-only records: sexual photographs whose record does not document that everyone is an adult. Never
+        # fetched or shown here; an enquiry asks the institution, and only its documentation can approve one.
+        self.links = self.labelled(s, "&Link-only records waiting for documentation (no picture is shown):",
+                                   lambda: wx.ListBox(self.panel), 1)
+        self.links.Bind(wx.EVT_LISTBOX, lambda e: self.show_link())
+        self.evidence = self.labelled(s, "Documentation from the &institution (paste or summarise it):",
+                                      lambda: wx.TextCtrl(self.panel, style=wx.TE_MULTILINE))
+        row = wx.BoxSizer(wx.HORIZONTAL)
+        for label, tip, handler in (
+                ("Write an e&nquiry", "Write a polite enquiry to the institution into the review folder",
+                 self.on_enquiry),
+                ("Approve with &documentation", "Approve only with the institution's documentation of identities, "
+                 "ages or model releases", self.on_documented),
+                ("Not appro&ved", "Not approved (also for unsure): never listed or fetched again", self.on_not)):
+            row.Add(self.button(label, tip, handler), 0, wx.ALL, 4)
+        s.Add(row, 0, wx.ALL, 4)
         self.status = self.labelled(s, "S&tatus:", lambda: wx.TextCtrl(self.panel, style=wx.TE_READONLY))
         self.panel.SetSizer(s)
-        self.items = []
+        self.items, self.link_rows = [], []
         self.fill()
+        self.fill_links()
+
+    def fill_links(self):
+        """List the link-only records still waiting for documentation."""
+        self.link_rows = [i for i in apr.link_items(self.review) if i.get("status") == "waiting for documentation"]
+        # The "Ask the institution first" records come first, each marked so.
+        self.link_rows.sort(key=lambda i: i.get("section") != apr.ASK_FIRST_SECTION)
+        self.links.Set([("ASK THE INSTITUTION FIRST (send the enquiry before opening the page): "
+                         if i.get("section") == apr.ASK_FIRST_SECTION else "") +
+                        f"{i['title'][:70]} ({i['institution']})" for i in self.link_rows] or [])
+
+    def current_link(self):
+        """The selected link-only record, or None."""
+        n = self.links.GetSelection()
+        return self.link_rows[n] if 0 <= n < len(self.link_rows) else None
+
+    def show_link(self):
+        """Show a link-only record's words (never its picture)."""
+        item = self.current_link()
+        if item:
+            self.text.SetValue(f"{item.get('section', '')}\n"
+                               f"Title: {item['title']}\nInstitution: {item['institution']}\nRecord: {item['id']}\n"
+                               f"Rights: {item['rights']} ({item['group']})\nCatalogue words: "
+                               f"{item['catalogue_text']}\nPage: {item['page_url']}\nEnquiry: "
+                               f"{item.get('enquiry') or 'not written yet'}")
+            self.say("A link-only record: no picture is shown. Write an enquiry; approve only with the "
+                     "institution's documentation.")
+
+    def on_enquiry(self, _event):
+        """Write the enquiry for the selected link-only record."""
+        item = self.current_link()
+        if item:
+            path = apr.enquiry(self.review, item["id"])
+            self.fill_links()
+            self.say(f"The enquiry was written to {path}. Fill in your name and email, and send it yourself.")
+
+    def on_documented(self, _event):
+        """Approve the selected link-only record with the documentation typed in the field."""
+        item = self.current_link()
+        if not item:
+            return
+        try:
+            done = apr.approve_documented(self.review, item["id"], self.person, self.evidence.GetValue())
+        except apr.NotEnoughEvidence as e:
+            self.say(str(e))
+            return
+        self.evidence.SetValue("")
+        self.fill_links()
+        self.fill()
+        self.say("Approved with the institution's documentation: the picture was downloaded." if done else
+                 "The picture could not be downloaded now; try again later.")
+
+    def on_not(self, _event):
+        """Not approved (or unsure): recorded and blocked."""
+        item = self.current_link()
+        if item:
+            apr.not_approved(self.review, item["id"], self.person)
+            self.fill_links()
+            self.say("Not approved: it will never be listed or fetched again.")
 
     def fill(self, keep=0):
         """List the approved pictures still in the review folder."""
@@ -213,8 +291,9 @@ class ReviewWindow(Rules):
                      "Unsure counts as reject: the picture was deleted and will never be fetched again.")
 
     def keys(self, event, key):
-        """Y approves and N rejects (every field of this window is read-only, so the keys never type)."""
-        if event.AltDown() or event.ControlDown():
+        """Y approves and N rejects the selected approved picture; never while typing documentation or on the
+        link-only list (those records are approved only with documentation, by their own button)."""
+        if event.AltDown() or event.ControlDown() or self.FindFocus() in (self.evidence, self.links):
             return False
         if key in (ord("Y"), ord("y")):
             self.decide("approve")

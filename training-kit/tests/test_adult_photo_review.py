@@ -53,11 +53,11 @@ def record(rid, title, text="", names=(), dates=("1925",), kind=PHOTO, rights="N
 
 def gate(r):
     """documented() on a made-up record."""
-    return apr.documented([r["title"], r["catalogue_text"]], r["names"], r["dates"], r["kind"])
+    return apr.documented([r["title"], r["catalogue_text"]], r["names"], r["dates"], r["kind"], r["rights"])
 
 
 def test_minor_and_ambiguous_words_leave_a_record_out():
-    for title in ("Nude girl on a beach", "Two boys bathing nude", "Nude study of a young woman",
+    for title in ("Nude girl on a beach", "Two boys bathing nude", "Sexual intercourse, a young woman",
                   "Nude maiden", "Youthful nude model", "Teenage couple, sexual intercourse", "Nude, aged 16",
                   "Nude schoolgirl", "Infant nude", "Nude study of an adolescent", "A 17-year-old nude model"):
         reason, why = gate(record("x", title, "The models were adults.", ("Doe, Jane, 1890-1960",)))
@@ -140,11 +140,12 @@ def test_search_approves_only_documented_and_never_lists_the_rest(tmp_path):
     approved, counts, s = run(folder)
     assert approved == 2
     assert s.fetched == ["https://tile.loc.gov/loc-1.jpg", "https://tile.loc.gov/loc-2.jpg"]   # nothing else fetched
-    assert counts["a child or young person, or an age under 18"] == 2
+    assert counts["a child or young person, or an age under 18"] == 1
+    assert counts[apr.STUDY_CATEGORY] == 2                   # open nude studies: the nude_photo_studies pack's
     text = all_text(folder)
     for title in ("Nude girl by a stream", "Nude study of a young woman", "loc-3", "loc-4", "loc-5"):
         assert title not in text, title                                    # left out: only counted, never named
-    assert "left out, a child or young person, or an age under 18: 2" in text
+    assert "left out, a child or young person, or an age under 18: 1" in text
     review = apr.ReviewFolder(folder)
     items = {i["id"]: i for i in review.items()}
     assert set(items) == {"loc-1", "loc-2"}
@@ -254,3 +255,133 @@ def test_descriptions_follow_the_guide():
                               "named, photo year 1925: Doe, Jane, born 1890")
     assert "documents that the people shown are adults (named, photo year 1925" in text
     assert not apr.JUDGEMENT.search(text) and "explicit" in text
+
+
+def test_non_sexual_nude_studies():
+    """A non-sexual nude photograph describing an adult is taken here when its rights are personal use only (open
+    ones are the nude_photo_studies pack's); one describing no adult, naming a group, family or young person, or
+    anything sexual needs documentation as before."""
+    personal, open_rights = "In copyright", "Public Domain Mark"
+    study = record("s1", "A young woman posing naked in a photographic studio. Photograph, ca.1900.", rights=personal)
+    reason, content = apr.documented([study["title"]], (), study["dates"], study["kind"], personal)
+    assert reason.startswith("a non-sexual nude study") and content == "nudity"
+    assert apr.documented([study["title"]], (), study["dates"], study["kind"], open_rights) == ("", apr.STUDY_CATEGORY)
+    for title in ("A naked figure in a studio. Photograph.", "A family posing naked. Photograph.",
+                  "A naked girl in a studio. Photograph.", "Group of naked women. Photograph.",
+                  "A naked youth. Photograph.", "A young couple, naked, making love. Photograph."):
+        assert apr.documented([title], (), ("1900",), PHOTO, personal)[0] == "", title
+
+
+def test_nude_study_words_match_the_pack():
+    """The local builder's nude-study words are the open pack's (packs/adult_art_packs.py)."""
+    sys.path.insert(0, os.path.join(os.path.dirname(KIT), "packs"))
+    import build_packs  # noqa: F401 - loaded first, as the pack files expect
+    import adult_art_packs as pack
+    assert apr.ADULT_CUE.pattern == pack.ADULT_CUE.pattern
+    assert apr.PEOPLE_UNKNOWN.pattern == pack.PEOPLE_UNKNOWN.pattern
+
+
+LINK_RECORDS = [
+    record("loc-10", "Couple, sexual intercourse. Photograph.", "Anonymous studio photograph, ca. 1900."),
+    record("loc-11", "A girl and a man, sexual intercourse. Photograph."),
+    record("loc-12", "A boy, sexual intercourse. Photograph."),
+    record("loc-13", "Couple, sexual intercourse, she is aged 16. Photograph."),
+]
+
+
+def test_link_only_list_has_no_pictures_and_no_minor_records(tmp_path):
+    folder = str(tmp_path / "review")
+    approved, counts, s = run(folder, records=LINK_RECORDS)
+    assert approved == 0 and s.fetched == []                         # nothing fetched at all
+    review = apr.ReviewFolder(folder)
+    items = apr.link_items(review)
+    assert [i["id"] for i in items] == ["loc-10", "loc-11", "loc-12"]   # an age under 18: never listed
+    assert items[0]["section"] == apr.NO_DOCUMENTATION_SECTION
+    assert items[1]["section"] == items[2]["section"] == apr.ASK_FIRST_SECTION
+    assert set(items[0]) == set(apr.LINK_COLUMNS) and "image" not in " ".join(apr.LINK_COLUMNS)
+    with open(review.path(apr.LINK_ONLY), encoding="utf-8") as f:
+        text = f.read()
+    assert "tile.loc.gov" not in text and "loc-13" not in text and "aged 16" not in text
+    assert not any(n.lower().endswith((".jpg", ".png")) for _b, _d, files in os.walk(folder) for n in files)
+
+
+def test_enquiry_has_placeholders_only(tmp_path):
+    folder = str(tmp_path / "review")
+    run(folder, records=LINK_RECORDS)
+    review = apr.ReviewFolder(folder)
+    path = apr.enquiry(review, "loc-10")
+    assert path.startswith(review.path(apr.ENQUIRIES))
+    with open(path, encoding="utf-8") as f:
+        text = f.read()
+    assert "[YOUR NAME]" in text and "[YOUR EMAIL]" in text and "loc-10" in text and "model releases" in text
+    assert "@" not in text.replace("<[YOUR EMAIL]>", "")
+
+
+def test_approval_needs_documentation_and_fetches_only_then(tmp_path):
+    folder = str(tmp_path / "review")
+    run(folder, records=LINK_RECORDS)
+    review = apr.ReviewFolder(folder)
+    s = FakeSession()
+    for evidence in ("", "looks old", "They look well over 18 to me"[:15]):
+        with pytest.raises(apr.NotEnoughEvidence):
+            apr.approve_documented(review, "loc-10", "Pat", evidence, s=s, image_url="https://tile.loc.gov/x.jpg")
+    with pytest.raises(apr.NotEnoughEvidence):
+        apr.approve_documented(review, "loc-10", "", "The archive's model release forms name both sitters, born "
+                               "1870 and 1872.", s=s, image_url="https://tile.loc.gov/x.jpg")
+    assert s.fetched == []                                           # nothing fetched before a documented approval
+    evidence = "Email from the archive, 3 Dec 2026: model releases on file; both sitters born 1870 and 1872."
+    assert apr.approve_documented(review, "loc-10", "Pat", evidence, s=s, image_url="https://tile.loc.gov/x.jpg")
+    assert s.fetched == ["https://tile.loc.gov/x.jpg"]
+    last = review.decisions()[-1]
+    assert (last["id"], last["decision"], last["by"]) == ("loc-10", "approved with documentation", "Pat")
+    assert "model releases" in last["reason"] and last["time"]
+    item = next(i for i in review.items() if i["id"] == "loc-10")
+    assert item["status"].startswith("approved: documented by the institution")
+    rows, *_ = own_data.check_folder(os.path.join(folder, apr.APPROVED), contents=("nudity", "sexual"))
+    assert [os.path.basename(r["original"]) for r in rows] == ["loc-10.jpg"]
+
+
+def test_not_approved_blocks(tmp_path):
+    folder = str(tmp_path / "review")
+    run(folder, records=LINK_RECORDS)
+    review = apr.ReviewFolder(folder)
+    apr.not_approved(review, "loc-10", "Pat", "unsure")
+    assert "loc-10" in review.blocked() and apr.link_items(review)[0]["status"] == "unsure"
+    rows, *_ = own_data.check_folder(os.path.join(folder, apr.APPROVED), contents=("nudity", "sexual")) \
+        if os.path.isdir(os.path.join(folder, apr.APPROVED)) else ([],)
+    assert rows == []
+
+
+def test_ask_the_institution_first(tmp_path):
+    """Girl, boy, lad or lass alone in a sexual photograph's record: listed first, approved only with documentation
+    of age; any other minor word still leaves the record out and unlisted."""
+    folder = str(tmp_path / "review")
+    others = [record("loc-20", "A girl and a teenager, sexual intercourse. Photograph."),
+              record("loc-21", "Schoolgirl, sexual intercourse. Photograph."),
+              record("loc-22", "A boy and a child, sexual intercourse. Photograph."),
+              record("loc-23", "A lass and a lad, sexual intercourse. Photograph.")]
+    run(folder, records=LINK_RECORDS + others)
+    review = apr.ReviewFolder(folder)
+    listed = {i["id"]: i["section"] for i in apr.link_items(review)}
+    assert set(listed) == {"loc-10", "loc-11", "loc-12", "loc-23"}
+    assert listed["loc-23"] == apr.ASK_FIRST_SECTION and "BEFORE opening the page" in apr.ASK_FIRST_SECTION
+    s = FakeSession()
+    with pytest.raises(apr.NotEnoughEvidence):        # documentation that says nothing about age is not enough
+        apr.approve_documented(review, "loc-11", "Pat", "The archive replied that the photographer is known.",
+                               s=s, image_url="https://tile.loc.gov/x.jpg")
+    assert s.fetched == []
+    assert apr.approve_documented(review, "loc-11", "Pat", "The archive's model register gives both sitters' "
+                                  "birth years, 1871 and 1874; the photograph is dated 1899.", s=s,
+                                  image_url="https://tile.loc.gov/x.jpg")
+
+
+def test_the_window_offers_no_judgement_option(app, tmp_path):
+    """The reviewer window approves link-only records only with documentation: no button about how old people look."""
+    import adult_photo_window as w
+    folder = str(tmp_path / "review")
+    run(folder, records=LINK_RECORDS)
+    window = w.ReviewWindow(None, folder, "Pat")
+    labels = [c.GetLabel().lower() for c in window.panel.GetChildren() if isinstance(c, wx.Button)]
+    assert not any("over 18" in l or "look" in l or "judg" in l for l in labels)
+    assert window.links.GetString(0).startswith("ASK THE INSTITUTION FIRST")
+    window.Destroy()

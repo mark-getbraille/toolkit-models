@@ -23,6 +23,10 @@ institution's own record DOCUMENTS that every person in it is an adult, before a
           says "unidentified", "unknown", "anonymous", "others", "group" and the like is left out.
      Anonymous records are left out. Residual risk, said plainly: a catalogue can be wrong (a wrong date, or a name
      that is the photographer's rather than the sitter's); the reviewer window is there for a second look.
+  3b. NON-SEXUAL NUDE STUDIES (the owner's decision): a nude photograph with nothing sexual in its record may
+     instead DESCRIBE AN ADULT ("a woman", "a man", "a young woman", "an adult", "a male model": ADULT_CUE) and
+     name no group, family or class (PEOPLE_UNKNOWN). Only personal-use ones are taken here; open ones are the
+     open pack nude_photo_studies (packs/adult_art_packs.py, built in CI).
   4. Licence: the record's own rights statement decides the GROUP, "open" (public domain, CC0, CC BY, "No known
      restrictions on publication") or "personal use only" (anything else). Personal-use pictures go into a workspace
      whose "review_category" is "noncommercial", so training uses them only with the personal-use choice.
@@ -141,23 +145,62 @@ def licence_group(rights):
     return PERSONAL
 
 
-def documented(texts, names=(), dates=(), kind_texts=()):
-    """(reason, content) when a record may be taken: reason says how adulthood is documented; content is "sexual"
-    or "nudity". Otherwise ("", why) where why is one of the counted CATEGORIES (the record itself is never said).
-    texts: the record's words; names: its personal-name headings; dates: its dates; kind_texts: its format words."""
+# NON-SEXUAL NUDE STUDIES (the owner's decision, November 2026): a nude photograph with nothing sexual in its record
+# (a studio, art-school, medical or anthropometric study) needs no documented age, but its record must DESCRIBE AN
+# ADULT (ADULT_CUE), name no group, family or class (PEOPLE_UNKNOWN) and no young person ("young woman" and "young
+# man" are allowed). Open ones are the open pack packs/adult_art_packs.py nude_photo_studies (built in CI); this
+# builder takes the personal-use ones. The words are the same as that pack's (a test compares them).
+ADULT_CUE = re.compile(r"\b(wom[ae]n|m[ae]n|lad(y|ies)|gentlem[ae]n|adults?|adult (male|female)|(male|female) "
+                       r"models?|artist'?s models?|athletes?|wrestlers?|strong ?m[ae]n|bodybuilders?|soldiers?|"
+                       r"sailors?|dancers?|wi(fe|ves)|husbands?|elderly|old (wom[ae]n|m[ae]n))\b", re.I)
+PEOPLE_UNKNOWN = re.compile(r"\b(group|groups|crowd|several|people|famil(y|ies)|tribe\w*|villagers?|class|"
+                            r"classes|series of (wom[ae]n|m[ae]n|people|figures)|population|mothers?|fathers?|"
+                            r"parents?|siblings?|brothers?|sisters?|growth|development|puberty|tanner)\b", re.I)
+YOUNG_ADULT = re.compile(r"\byoung (wom[ae]n|m[ae]n)\b", re.I)
+STUDY_CATEGORY = "a non-sexual nude study with open rights (in the nude_photo_studies pack instead)"
+# The owner's adjustment: in 1800s and 1900s captions "girl(s)", "boy(s)", "lad" and "lass" often mean young adults.
+# A SEXUAL photograph whose ONLY young-person words are these is listed by its link in the "Ask the institution
+# first" section, and is approved only with the institution's documentation that every person was 18 or over
+# (AGE_EVIDENCE: an age, a birth date or year, or the word adult). Every other minor word still leaves it out.
+GIRL_BOY = re.compile(r"\b(girls?|boys?|lads?|lass(ie)?s?)\b", re.I)
+ASK_FIRST = "only girl, boy, lad or lass named: ask the institution first"
+AGE_EVIDENCE = re.compile(r"\b(18|eighteen|(1[89]|[2-9]\d) ?(years?|yrs?)|aged (1[89]|[2-9]\d)|adults?|born|"
+                          r"dates? of birth|birth ?dates?|(1[6-9]|20)\d\d)\b", re.I)
+
+
+def documented(texts, names=(), dates=(), kind_texts=(), rights=""):
+    """(reason, content) when a record may be taken: reason says how adulthood is documented (or that it is a
+    non-sexual nude study describing an adult, for personal-use rights); content is "sexual" or "nudity".
+    Otherwise ("", why) where why is one of the counted CATEGORIES (the record itself is never said). texts: the
+    record's words; names: its personal-name headings; dates: its dates; kind_texts: its format words; rights: its
+    rights statement."""
     text = " ".join(clean(t) for t in texts if t)
     kind = " ".join(clean(t) for t in kind_texts if t)
     if not PHOTO.search(f"{kind} {text}") or NOT_PHOTO.search(kind):
         return "", "not a photograph"
     if not (NUDE.search(text) or SEX.search(text)):
         return "", "not about nudity or sex"
-    why = ars.screen(text, " ".join(clean(n) for n in names), photo=True)
+    content = "sexual" if SEX.search(text) else "nudity"
+    # "young woman" and "young man" are allowed in a non-sexual nude photograph's record only.
+    screened = YOUNG_ADULT.sub(" ", text) if content == "nudity" else text
+    why = ars.screen(screened, " ".join(clean(n) for n in names), photo=True)
+    if why and content == "sexual" and GIRL_BOY.search(screened) and \
+            not ars.screen(GIRL_BOY.sub(" ", screened), " ".join(clean(n) for n in names), photo=True):
+        return "", ASK_FIRST                      # only girl(s), boy(s), lad or lass: ask the institution first
     if why:
         return "", ("a child or young person, or an age under 18" if "young person" in why or "under 18" in why else
                     "violence, no consent, a myth, an animal or doubtful photo wording")
-    content = "sexual" if SEX.search(text) else "nudity"
     if STATED_ADULTS.search(text) and not TAKEN_BACK.search(text):
         return f"the record states: {STATED_ADULTS.search(text).group(0)}", content
+    if content == "nudity" and not names:
+        if PEOPLE_UNKNOWN.search(text) or UNNAMED.search(text):
+            return "", "not every person is documented"
+        cue = ADULT_CUE.search(text)
+        if not cue:
+            return "", "adulthood not documented (anonymous, or a birth or photo date missing or under 18)"
+        if licence_group(rights) == OPEN:
+            return "", STUDY_CATEGORY
+        return f"a non-sexual nude study; the record describes an adult (\"{cue.group(0)}\")", content
     if UNNAMED.search(text):
         return "", "not every person is documented"
     year = earliest_year(*dates)
@@ -183,7 +226,7 @@ def documented(texts, names=(), dates=(), kind_texts=()):
 CATEGORIES = ("not a photograph", "not about nudity or sex", "a child or young person, or an age under 18",
               "violence, no consent, a myth, an animal or doubtful photo wording", "not every person is documented",
               "adulthood not documented (anonymous, or a birth or photo date missing or under 18)", "blocked earlier",
-              "already approved", "the picture could not be downloaded")
+              "already approved", "the picture could not be downloaded", STUDY_CATEGORY, ASK_FIRST)
 
 
 # ----------------------------------------------------------------- the review folder
@@ -370,6 +413,173 @@ def fetch_into_memory(session, url, timeout=60):
         return None
 
 
+# ----------------------------------------------------------------- link-only records and enquiries
+
+# The owner's change (November 2026): a SEXUAL photograph whose record passes every word screen (no minor word:
+# "girl" and "boy" stay hard exclusions for photographs) but does not document that everyone is an adult is not
+# just dropped: it is listed BY ITS LINK ONLY in link-only.csv (institution, id, title, catalogue text, rights,
+# group, catalogue page: never a picture or a picture address), so the owner can ask the institution about the
+# sitters (enquiry()). It is approved ONLY with documentation the institution gives (approve_documented): never on
+# anyone's judgement of how old the people look, which cannot settle age; nobody needs to open the picture to send
+# an enquiry. Undecided or unsure counts as not approved.
+LINK_ONLY = "link-only.csv"
+LINK_COLUMNS = ("section", "id", "institution", "title", "catalogue_text", "rights", "group", "page_url", "status",
+                "enquiry", "decided_by", "decided_at", "evidence")
+ASK_FIRST_SECTION = ("Ask the institution first: send the enquiry BEFORE opening the page. These records name a "
+                     "girl, boy, lad or lass; they are approved only with the institution's documentation that every "
+                     "person was 18 or over.")
+NO_DOCUMENTATION_SECTION = "No documented adulthood: approved only with the institution's documentation."
+ENQUIRIES = "enquiries"
+UNDOCUMENTED = ("not every person is documented",
+                "adulthood not documented (anonymous, or a birth or photo date missing or under 18)")
+MIN_EVIDENCE = 20                  # characters of documentation a reviewer must give to approve
+
+
+def link_items(review):
+    """The rows of link-only.csv (dicts)."""
+    try:
+        with open(review.path(LINK_ONLY), encoding="utf-8", newline="") as f:
+            return list(csv.DictReader(f))
+    except FileNotFoundError:
+        return []
+
+
+def save_link_items(review, items):
+    """Write link-only.csv (safely)."""
+    temporary = review.path(LINK_ONLY + ".new")
+    with open(temporary, "w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=LINK_COLUMNS)
+        w.writeheader()
+        for item in items:
+            w.writerow({k: item.get(k, "") for k in LINK_COLUMNS})
+    os.replace(temporary, review.path(LINK_ONLY))
+
+
+def link_only(review, record, ask_first=False):
+    """List a sexual record without documented adulthood by its link only (never twice, never a blocked one);
+    ask_first: in the "Ask the institution first" section (only girl, boy, lad or lass named)."""
+    items = link_items(review)
+    if record["id"] in review.blocked() or any(i["id"] == record["id"] for i in items):
+        return False
+    items.append({"section": ASK_FIRST_SECTION if ask_first else NO_DOCUMENTATION_SECTION, "id": record["id"], "institution": record["institution"], "title": record["title"],
+                  "catalogue_text": record["catalogue_text"][:1000], "rights": record["rights"],
+                  "group": licence_group(record["rights"]), "page_url": record["page_url"],
+                  "status": "waiting for documentation"})
+    save_link_items(review, items)
+    return True
+
+
+ENQUIRY = """To: [the institution's rights and reproductions, or collections, contact]
+From: [YOUR NAME] <[YOUR EMAIL]>
+Subject: Question about the people shown in catalogue record {id}
+
+Dear colleagues,
+
+I am preparing a private, accessible picture-description tool for a blind adult and would like to include the
+photograph described in your catalogue record below, which is publicly listed with the rights statement shown.
+
+  Title: {title}
+  Record: {id}
+  Link: {page_url}
+  Rights statement: {rights}
+
+Before using it, I need to be certain that everyone shown was an adult (18 or over) and took part willingly. Does
+your institution hold any information about the people photographed: their identities, their ages or dates of
+birth, the date of the photograph, or model releases or other consent records? Anything you can share, or a
+pointer to where such information is kept, would be very welcome.
+
+If no such information exists, I will not use the photograph.
+
+Thank you for your help.
+
+With kind regards,
+[YOUR NAME]
+"""
+
+
+def enquiry(review, item_id):
+    """Write a polite enquiry to the institution about one link-only record into the review folder's enquiries
+    folder (placeholders for the sender: the owner fills in and sends it himself). Returns its path."""
+    items = link_items(review)
+    item = next(i for i in items if i["id"] == item_id)
+    folder = review.path(ENQUIRIES)
+    os.makedirs(folder, exist_ok=True)
+    path = os.path.join(folder, dp.safe_name(item_id) + ".txt")
+    with open(path, "w", encoding="utf-8", newline="\r\n") as f:
+        f.write(ENQUIRY.format(**{k: item.get(k, "") for k in ("id", "title", "page_url", "rights")}))
+    item["enquiry"] = os.path.relpath(path, review.folder)
+    save_link_items(review, items)
+    review.log(item_id, "enquiry written", "", "")
+    return path
+
+
+class NotEnoughEvidence(ValueError):
+    """Approval was asked without documentation from the institution."""
+
+
+def approve_documented(review, item_id, person, evidence, s=None, image_url=None):
+    """Approve a link-only record WITH DOCUMENTATION FROM THE INSTITUTION (evidence: pasted or summarised, at least
+    MIN_EVIDENCE characters; a reviewer's name is needed too). Only then is its picture found (image_url_for) and
+    downloaded into the approved workspace, logged with the name, time and evidence. Raises NotEnoughEvidence
+    otherwise, before anything is fetched."""
+    evidence, person = clean(evidence), clean(person)
+    if len(evidence) < MIN_EVIDENCE or not person:
+        raise NotEnoughEvidence("Approval needs the reviewer's name and the documentation the institution gave "
+                                "(identities, ages or model releases), pasted or summarised.")
+    items = link_items(review)
+    item = next(i for i in items if i["id"] == item_id)
+    if item.get("section") == ASK_FIRST_SECTION and not AGE_EVIDENCE.search(evidence):
+        raise NotEnoughEvidence("This record names a girl, boy, lad or lass: approval needs the institution's "
+                                "documentation that every person was 18 or over (an age, a birth date or year, or "
+                                "that they were adults).")
+    s = s or session()
+    url = image_url or image_url_for(s, item)
+    data = smaller_jpeg(fetch_into_memory(s, url) or b"") if url else None
+    if not data:
+        return False
+    reason = f"documentation from the institution: {evidence[:300]}"
+    record = {"id": item["id"], "title": item["title"], "institution": item["institution"],
+              "catalogue_text": item["catalogue_text"], "rights": item["rights"], "group": item["group"],
+              "page_url": item["page_url"], "image_url": url, "year": ""}
+    file = approve(review, record, data, reason, "sexual")
+    review.log(item_id, "approved with documentation", person, evidence[:500])
+    listed = review.items()
+    listed.append({**{k: record.get(k, "") for k in LIST_COLUMNS}, "reason": reason, "content": "sexual",
+                   "file": file, "status": "approved: documented by the institution"})
+    review.save_items(listed)
+    item.update(status="approved with documentation", decided_by=person, decided_at=now(), evidence=evidence[:500])
+    save_link_items(review, items)
+    return True
+
+
+def not_approved(review, item_id, person, decision="not approved"):
+    """Not approved (or unsure): recorded, and the record is blocked (never listed or fetched again)."""
+    items = link_items(review)
+    for item in items:
+        if item["id"] == item_id:
+            item.update(status=decision, decided_by=person, decided_at=now())
+    save_link_items(review, items)
+    review.block(item_id)
+    review.log(item_id, decision, person)
+
+
+def image_url_for(s, item):
+    """The picture address of a link-only record, read from its institution's record only when it is approved."""
+    try:
+        if item["id"].startswith("loc-"):
+            data = s.get(item["page_url"], params={"fo": "json"}, timeout=90).json()
+            images = [i.split("#")[0] for i in as_list((data.get("item") or {}).get("image_url") or
+                                                       data.get("image_url")) if isinstance(i, str)]
+            return images[-1] if images else ""
+        if item["id"].startswith("wellcome-"):
+            work = s.get(WELLCOME + "works/" + item["id"][9:], params={"include": "images"}, timeout=90).json()
+            image = s.get(WELLCOME + "images/" + work["images"][0]["id"], timeout=90).json()
+            return image["locations"][0]["url"].replace("info.json", "full/!1600,1600/0/default.jpg")
+    except Exception:  # noqa: BLE001 - not found
+        return ""
+    return ""
+
+
 # ----------------------------------------------------------------- the sources
 
 def session():
@@ -505,10 +715,13 @@ def search(folder, most=200, say=print, sources=SOURCES, s=None):
                 counts["already approved"] = counts.get("already approved", 0) + 1
                 continue
             reason, content = documented([record["title"], record["catalogue_text"]], record["names"],
-                                         record["dates"], record["kind"])
+                                         record["dates"], record["kind"], record["rights"])
             if not reason:
                 counts[content] = counts.get(content, 0) + 1
-                continue                          # left out entirely: never listed, fetched or shown
+                if content == ASK_FIRST or (content in UNDOCUMENTED and
+                                            SEX.search(f"{record['title']} {record['catalogue_text']}")):
+                    link_only(review, record, ask_first=content == ASK_FIRST)   # by its link only, for an enquiry
+                continue                          # never fetched or shown
             data = smaller_jpeg(fetch_into_memory(s, record["image_url"]) or b"") if record["image_url"] else None
             if not data:
                 counts["the picture could not be downloaded"] = counts.get("the picture could not be downloaded",
