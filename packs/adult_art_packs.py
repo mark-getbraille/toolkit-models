@@ -29,7 +29,9 @@ The packs (ADULT_ART_PACKS):
                     of Art ("Public Domain", full image), Statens Museum for Kunst (Public Domain Mark or CC0), the
                     Rijksmuseum (Public Domain Mark or CC0), Europeana (CC0, Public Domain Mark or CC BY; its key from
                     the build's EUROPEANA_KEY secret), four more Smithsonian units (Cooper Hewitt, Freer and Sackler,
-                    African Art, Hirshhorn: CC0), and the non-sexual nudes the erotic_art searches find. Danish and
+                    African Art, Hirshhorn: CC0), the J. Paul Getty Museum (Linked Art, linked_art.py: each
+                    IMAGE'S own rights statement CC0 or Public Domain Mark; getty_items also gives erotic_art and
+                    nude_photo_studies their Getty works), and the non-sexual nudes the erotic_art searches find. Danish and
                     Dutch titles are put in English word for word (foreign_title) or the work is left out; the
                     providers' English only (never Europeana's machine translations). Left out as well: death,
                     killing and torture (NUDE_HARM), specimens and documents (NOT_ART). Not read yet, with the
@@ -105,7 +107,7 @@ import sys
 import time
 
 import build_packs  # noqa: F401 - loaded first: the other pack files and build_packs import each other
-from build_packs import session, say, clean, first_sentences, LONG_SIDE, COMMONS_FREE
+from build_packs import session, say, clean, first_sentences, LONG_SIDE, COMMONS_FREE, pass_random
 from food_packs import commons_get, commons_members, sentence
 from service_packs import finish
 from places import where, place_from_text
@@ -853,6 +855,67 @@ def europeana_nudes(want):
     return items[:want]
 
 
+# ----------------------------------------------------------------- The J. Paul Getty Museum (Linked Art)
+
+GETTY_NUDE_WORDS = r"nude|naked|nudity|acad[eé]mie|academy figure|life study|[eé]corch|bather|figure study"
+GETTY_EROTIC_WORDS = r"erotic|shunga|lovers|intercourse|making love|lovemaking|amorous|copulat|kama sutra|mithuna"
+GETTY_SEEN = {}                    # {object address: (record, picture, rights)}: read once for all three packs
+
+
+def getty_items(want, role):
+    """(name, picture address, rows) of Getty Museum objects (linked_art.py: its SPARQL endpoint finds them by
+    their names, then each object's Linked Art record and its image's record are read, paced), the IMAGE'S OWN
+    rights statement CC0 or the Public Domain Mark. role decides the pack and the rules: "nudes" (museum_art_nudes:
+    nude_candidate; not photographs, not sexual), "erotic" (erotic_art: erotic_left_out, the review route and the
+    allow-list as the other museums), "photos" (nude_photo_studies: nude_photo_left_out)."""
+    import linked_art as la
+    s = session()
+    pattern = GETTY_EROTIC_WORDS if role == "erotic" else GETTY_NUDE_WORDS
+    uris = la.getty_objects(s, pattern)
+    pass_random(f"getty-{role}").shuffle(uris)
+    say(f"Getty Museum ({role}): {len(uris)} objects found by their names")
+    items = []
+    for uri in uris:
+        if len(items) >= want:
+            break
+        if uri not in GETTY_SEEN:
+            GETTY_SEEN[uri] = la.getty_record(s, uri)
+        record, picture, rights = GETTY_SEEN[uri]
+        if not record:
+            continue
+        f = la.plain_fields(record)
+        title, oid = f["title"], uri.rsplit("/", 1)[-1]
+        if not picture or rights not in ("CC0", "Public Domain Mark"):
+            note("Getty", title or oid, f"its image is not CC0 or public domain ({rights or 'no open image'})")
+            continue
+        home = next((x["id"] for x in la.as_list(record.get("subject_of")) if isinstance(x, dict) and
+                     "getty.edu/art/collection" in str(x.get("id", ""))), uri)
+        credit = f"The J. Paul Getty Museum, {rights} (open content): {title}" + \
+            (f", {f['artist']}" if f["artist"] else "") + f", {home}"
+        name, kind_text = f"getty-{oid[:36]}.jpg", f"{f['kind']} {' '.join(la.types(record))} {f['medium']}"
+        is_photo = bool(PHOTO_WORDS.search(kind_text))
+        if role == "photos":
+            if is_photo and not nude_photo_left_out(title, f["text"], kind=kind_text):
+                items.append((name, picture, nude_photo_rows(title, credit)))
+            continue
+        if role == "erotic":
+            why = erotic_left_out(f["text"], f["medium"], kind=kind_text, title=title)
+            if reviewed(why, "Getty Museum", oid, title, home):
+                why = ""
+            if why:
+                note("Getty", title, why)
+                continue
+            items.append((name, picture, erotic_rows(credit, title, f["kind"], f["artist"], f["date"], f["medium"],
+                                                     f["text"], (), "museum", f["place"])))
+            continue
+        item = nude_candidate("Getty", name, picture, title, credit, f["kind"], f["artist"], f["date"],
+                              f["medium"], f["text"], f["place"])
+        if item:
+            items.append(item)
+    say(f"Getty Museum ({role}): {len(items)} usable")
+    return items
+
+
 # More Smithsonian units read from the open-access data (as body_packs.si_items): Cooper Hewitt (drawings and
 # prints), the Freer and Sackler galleries, the National Museum of African Art and the Hirshhorn.
 SI_MORE_UNITS = ("chndm", "fsg", "nmafa", "hmsg")
@@ -899,7 +962,7 @@ def erotic_rows(credit, title, kind="", artist="", date="", medium="", text="", 
                 place=""):
     """The two rows of an erotic_art picture, each with "content": "sexual": "Describe this picture." (the record's
     opening sentence, its description in plain words and its subject tags) and "Is there sexual content ...?"."""
-    answer = plain(lead(title, kind, artist, date, medium))
+    answer = plain(lead(title, singular_kind(kind), artist, date, medium))
     words = first_sentences(plain(text), 90) if text else ""
     if words and words.lower() not in answer.lower():
         answer += " " + sentence(words)
@@ -1446,10 +1509,11 @@ def build_nude_photo_studies(limit):
     """The nude_photo_studies pack: Wellcome Collection photographs (wellcome_nude_photos) and the Minneapolis
     Institute of Art's public-domain nude photographs (mia_nudes(photos=True)), each by nude_photo_left_out."""
     items = wellcome_nude_photos(int(limit * 1.0) + 2)
-    try:
-        items += mia_nudes(int(limit * 0.3) + 2, photos=True)
-    except Exception as error:  # noqa: BLE001 - Mia down: Wellcome only
-        say(f"mia photographs: left out ({error})")
+    for key, collect in (("mia", lambda n: mia_nudes(n, photos=True)), ("getty", lambda n: getty_items(n, "photos"))):
+        try:
+            items += collect(int(limit * 0.3) + 2)
+        except Exception as error:  # noqa: BLE001 - one source down: the others
+            say(f"{key} photographs: left out ({error})")
     return finish("nude_photo_studies", items, limit, workers=3, pause=0.3)
 
 
@@ -1463,8 +1527,12 @@ MUSEUM_NUDES_LATER = {
     "Te Papa": "its API needs a key: for the local kit",
     "Finnish National Gallery": "its API needs a key: for the local kit",
     "Nationalmuseum Sweden": "open API not explored in this pass",
-    "Getty, Yale University Art Gallery, Yale Center for British Art, Princeton": "Linked Art and IIIF only; a "
-        "reader for Linked Art is a later pass",
+    "Yale University Art Gallery and Yale Center for British Art": "their search (LUX) answers automated readers "
+        "with an AWS WAF challenge and their sites with a Cloudflare challenge; the IIIF manifests are open but "
+        "cannot be searched, and walking every manifest would go against those challenges: not read",
+    "Princeton University Art Museum": "its data API and IIIF manifests give no rights statement on the record "
+        "(\"restrictions: None\" is not public domain or CC0), and its website is behind a Cloudflare challenge: "
+        "not in the CI packs; a personal-use reader for the local kit is possible later",
     "Walters, LACMA, Barnes, RISD Museum": "no current open search API found in this pass",
     "Royal Academy of Arts": "no open API and no open licence on its images: not read",
     "Wikimedia Commons (nude paintings, sculpture, academic drawings, life drawing)": "Commons refused every request "
@@ -1474,7 +1542,8 @@ MUSEUM_NUDES_LATER = {
 
 # Each source's share of erotic_art (a source with fewer gives what it has).
 EROTIC_SHARES = (("met", met_erotic, 0.25), ("aic", aic_erotic, 0.1), ("cma", cma_erotic, 0.1),
-                 ("wellcome", wellcome_erotic, 0.2), ("commons", commons_erotic, 0.35))
+                 ("wellcome", wellcome_erotic, 0.2), ("commons", commons_erotic, 0.35),
+                 ("getty", lambda n: getty_items(n, "erotic"), 0.05))
 # Each museum's share of museum_art_nudes (as body_packs.ART_SHARES).
 NUDES_SHARES = (("met", body_packs.met_items, 0.45), ("nga", body_packs.nga_items, 0.25),
                 ("si", body_packs.si_items, 0.12), ("cma", body_packs.cma_items, 0.08),
@@ -1507,7 +1576,7 @@ def build_museum_art_nudes(limit):
     # Museums art_nudes does not read (their works are never in art_nudes): the Minneapolis Institute of Art, SMK,
     # the Rijksmuseum and more Smithsonian units, each about a tenth of the pack.
     for key, collect in (("mia", mia_nudes), ("smk", smk_nudes), ("rijks", rijks_nudes), ("si_more", si_more_nudes),
-                         ("europeana", europeana_nudes)):
+                         ("europeana", europeana_nudes), ("getty", lambda n: getty_items(n, "nudes"))):
         try:
             items += collect(max(2, round(limit * 0.1 * 1.3)))
         except Exception as error:  # noqa: BLE001 - one museum down does not stop the pack
@@ -1536,7 +1605,7 @@ ADULT_ART_PACKS = {
                          "Cleveland Museum of Art (CC0), National Gallery of Art, Washington (CC0), Smithsonian "
                          "Institution (CC0), Minneapolis Institute of Art (public domain), Statens Museum for Kunst "
                          "and Rijksmuseum (Public Domain Mark or CC0), Europeana partners (CC0, Public Domain Mark or "
-                         "CC BY). No photographs, no sexual acts or sexual violence, and no child "
+                         "CC BY), The J. Paul Getty Museum (open content, CC0 per image). No photographs, no sexual acts or sexual violence, and no child "
                          "in any work with sexual or romantic wording."),
     "erotic_art": (build_erotic_art,
                    "Erotic art and illustration showing adults (shunga, Indian and Persian erotic painting, Greek and "
