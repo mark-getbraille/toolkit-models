@@ -72,6 +72,10 @@ def test_rows_and_lines():
     f = made_up("File:Colt Python revolver.jpg", "A Colt Python revolver with a six-inch barrel.", "Revolvers")
     rows = d.gun_rows(f, *[d.KINDS["Revolvers"][i] for i in (0, 1, 3)])
     assert len(rows) == 2 and all(r["answer"].endswith(d.GUN_LINE) for r in rows)
+    # A photo of several guns gets no kind's answer (found in a test build, 19 November 2026).
+    for title in ("File:Flintlock pistol and revolver (23898639212).jpg", "File:Revolvers at a show.jpg",
+                  "File:A collection of rifles.jpg"):
+        assert d.gun_rows(made_up(title), *[d.KINDS["Revolvers"][i] for i in (0, 1, 3)]) == [], title
 
 
 def test_gun_files_left_out():

@@ -441,6 +441,21 @@ def accessory_left_out(f):
     return ""
 
 
+# A file's own words naming more than one gun ("Flintlock pistol and revolver", "Pistols", "a collection of rifles"):
+# one kind or maker's answer would not fit it.
+GUN = r"(guns?|pistols?|revolvers?|rifles?|shotguns?|carbines?|muskets?|derringers?|handguns?)"
+MANY_GUNS = re.compile(rf"\b{GUN}\s+(and|&|with|or|vs\.?|versus)\s+(an? |the |\w+ ){{0,3}}{GUN}\b|"
+                       r"\b(pistols|revolvers|rifles|shotguns|carbines|muskets|derringers|handguns|guns|firearms)\b|"
+                       r"\b(collection|display|several|various|assortment|comparison|compared|group|row|rack)\b",
+                       re.I)
+
+
+def gun_rows_ok(f):
+    """True when a gun file's own words (title and caption) name one gun, not several."""
+    own = f"{f['title'].split(':', 1)[-1].rsplit('.', 1)[0].replace('_', ' ')} {f['caption']}"
+    return not MANY_GUNS.search(own)
+
+
 def gun_left_out(f):
     """Why a Commons file of a gun is left out ("" when kept): safety_rites_packs.gun_ok (no actions, harm, toys,
     drawings, children, cartridges alone), a gun pointed at someone, making or converting, and people."""
@@ -458,7 +473,11 @@ def accessory_rows(f, question, answer, line):
 
 
 def gun_rows(f, question, answer, line):
-    """The rows of one file of a gun kind or maker category, each with GUN_LINE."""
+    """The rows of one file of a gun kind or maker category, each with GUN_LINE; none for a file whose own words
+    name several guns (MANY_GUNS)."""
+    if not gun_rows_ok(f):
+        considered(f["title"], f["url"], "its words name several guns, so one kind's answer would not fit")
+        return []
     return thing_rows(f, question, answer, line, gun_left_out)
 
 
