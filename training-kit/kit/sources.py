@@ -28,7 +28,8 @@ Two more content tags come from the REVIEW collections (review_sources.py, adult
 trusted sighted adult screens first, used through own_data.py from "Describe pictures" workspaces): "intimate"
 (medical and educational pictures of adult genitals and breasts) is used only when BOTH with_nudity and with_medical
 are chosen, and "sexual" (adult sexual content) only with with_sexual, which itself needs with_nudity; sexual content
-is for personal use only. allowed_contents() gives the tags a training's choices allow. A picture-making model never
+is for personal use only. One ready-made pack is marked "sexual" as a whole: erotic_art (packs/adult_art_packs.py,
+erotic art showing adults), and museum_art_nudes is marked "nudity". allowed_contents() gives the tags a training's choices allow. A picture-making model never
 learns from either (PICTURE_MAKING_NEVER), nor from any review collection.
 One more content tag, "graphic" (war, disasters, injuries and death, described plainly: the dead and injured, wounds,
 severe destruction with casualties), is used only with with_graphic (train.py --with-graphic). It can mark a whole
@@ -95,8 +96,8 @@ class Source:
     download   roughly how much it downloads, for the screen ("7.6 GB")
     content    "" for most collections; "nudity" (non-sexual nudes in art: only with --with-nudity), "medical"
                (medical and anatomy pictures: only with --with-medical) or "graphic" (war, disasters, injuries and
-               death: only with --with-graphic); "intimate" and "sexual" are known too (see allowed_contents), though
-               today only review collections use them
+               death: only with --with-graphic); "intimate" and "sexual" are known too (see allowed_contents);
+               "sexual" is used by the review collections and the erotic_art pack
     terms      for a personal-use collection: the web address of its licence or terms page ("" when none; the first
                web address in its licence or credit is used then)
     terms_summary  for a personal-use collection: its terms in one plain line ("" when none; its licence is used)"""
@@ -2181,6 +2182,25 @@ SOURCES = [
            "Museum of Art, the National Gallery of Art (Washington) and the Smithsonian American Art Museum, CC0 or "
            "public domain, each work credited in CREDITS.txt", "permissive", 3000, 10, prepare_pack, "about 600 MB",
            content="nudity"),
+    # Fine-art nudity that art_nudes leaves out, and erotic art showing adults (packs/adult_art_packs.py). Labelled
+    # collections: museum_art_nudes only with --with-nudity, erotic_art only with --with-sexual (which needs
+    # --with-nudity; the add-on is then personal use only, see train.py). Never for picture-making
+    # (ADULT_ART_PACK_KEYS). No photographs of people in either; any record naming or suggesting a young person is
+    # left out of erotic_art, and of museum_art_nudes whenever it has a sexual or romantic word.
+    Source("museum_art_nudes", "More nudes in art: Madonna and Child, putti, mythology, lovers and classical statues (ready-made pack)",
+           "CC0 or public domain (The Met, Art Institute of Chicago, Cleveland Museum of Art, National Gallery of "
+           "Art, Smithsonian; each work credited in the pack's CREDITS.txt)",
+           "Fine-art nudes from The Metropolitan Museum of Art, the Art Institute of Chicago, the Cleveland Museum of "
+           "Art, the National Gallery of Art (Washington) and the Smithsonian American Art Museum, CC0 or public "
+           "domain, each work credited in CREDITS.txt", "permissive", 1500, 10, prepare_pack, "about 300 MB",
+           content="nudity"),
+    Source("erotic_art", "Erotic art showing adults: shunga, Indian and Persian painting, Greek and Roman art, temple sculpture, European prints, sex-education drawings (ready-made pack)",
+           "Public domain, CC0 or CC BY, item by item (The Met, Art Institute of Chicago, Cleveland Museum of Art, "
+           "Wellcome Collection, Wikimedia Commons; each credited in the pack's CREDITS.txt)",
+           "The Metropolitan Museum of Art, Art Institute of Chicago, Cleveland Museum of Art (CC0); Wellcome "
+           "Collection (public domain, CC0 or CC BY 4.0); Wikimedia Commons authors (CC0, public domain or CC BY); "
+           "each item credited in CREDITS.txt", "permissive", 1500, 10, prepare_pack, "about 300 MB",
+           content="sexual"),
     Source("anatomy", "Anatomy figures: OpenStax Anatomy and Physiology and Gray's Anatomy plates (ready-made pack)",
            "OpenStax figures CC BY 4.0 (first edition); Gray's Anatomy (1918) plates public domain",
            "OpenStax, Anatomy and Physiology (2013, first edition), Rice University, CC BY 4.0, "
@@ -2312,6 +2332,8 @@ PEOPLE_AND_BODILY_PACK_KEYS = (
     "cd_booklets", "cd_films",
     # drug_firearm_packs.py: CBP seizure photos (officers) and CDC PHIL drug photos
     "commons_cbp_seizures", "cdc_phil_drugs",
+    # adult_art_packs.py: nudes and erotic art (both of them)
+    "museum_art_nudes", "erotic_art",
 )
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + PEOPLE_AND_BODILY_PACK_KEYS
 # The drug and firearm packs (packs/drug_firearm_packs.py): describing only, never for picture-making, whether or not
@@ -2319,6 +2341,11 @@ NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + PEOPLE_AND_BODILY_PACK_KEYS
 DRUG_FIREARM_PACK_KEYS = ("commons_drugs", "commons_drug_paraphernalia", "commons_cbp_seizures", "cdc_phil_drugs",
                           "commons_firearm_accessories", "commons_firearm_kinds", "wikidata_firearms")
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + tuple(k for k in DRUG_FIREARM_PACK_KEYS
+                                                        if k not in NOT_FOR_PICTURE_MAKING)
+# The nudes and erotic art packs (packs/adult_art_packs.py): describing only, never for picture-making (they are in
+# PEOPLE_AND_BODILY_PACK_KEYS too).
+ADULT_ART_PACK_KEYS = ("museum_art_nudes", "erotic_art")
+NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + tuple(k for k in ADULT_ART_PACK_KEYS
                                                         if k not in NOT_FOR_PICTURE_MAKING)
 
 

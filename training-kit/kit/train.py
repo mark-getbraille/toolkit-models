@@ -724,14 +724,18 @@ def content_lines(info):
                      "trusted sighted adult: for personal use only.")
         if info.get("sexual_used"):
             lines.append(SEXUAL_NOTE)
+    elif info.get("sexual_used"):
+        lines.append(SEXUAL_NOTE)                 # the erotic_art pack without review pictures
     if info.get("own_pictures"):
         lines.append(OWN_NOTE + f" ({info['own_pictures']} questions and answers about your own pictures"
                      + (", trained on alone" if info.get("own_only") else "") + ".)")
     return lines
 
 
-SEXUAL_NOTE = ("Adult sexual content was learned from (checked pictures of reviewed collections): personal use only. "
-               "Never publish this add-on, share it or put it in a product.")
+SEXUAL_NOTE = ("Adult sexual content was learned from (the erotic art pack and/or checked pictures of reviewed "
+               "collections): personal use only. Never publish this add-on, share it or put it in a product.")
+SEXUAL_WARNING = ("PERSONAL USE ONLY. This add-on learned from adult sexual content (erotic art). Do not sell it, "
+                  "publish it, put it in a product or share it outside personal, non-commercial use.")
 REVIEW_WARNING = ("PERSONAL USE ONLY. This add-on learned from review collections (pictures screened and checked by "
                   "a trusted sighted adult). Do not sell it, publish it, put it in a product or share it outside "
                   "personal, non-commercial use.")
@@ -739,9 +743,10 @@ REVIEW_WARNING = ("PERSONAL USE ONLY. This add-on learned from review collection
 
 def personal_chosen(info):
     """True when a personal-use choice was made (non-commercial or research-only collections), a personal-use
-    collection is among those learned from, or pictures of review collections were learned from: the add-on is
-    then for personal use only."""
+    collection is among those learned from, pictures of review collections were learned from, or adult sexual
+    content was (the erotic_art pack, too): the add-on is then for personal use only."""
     return bool(info.get("with_noncommercial") or info.get("with_research") or info.get("review_pictures") or
+                info.get("sexual_used") or
                 any(sources.is_personal(s) for s in sources.SOURCES if s.key in info.get("collections", ())))
 
 
@@ -752,8 +757,11 @@ def personal_lines(info):
         return []
     personal_choice = info.get("with_noncommercial") or info.get("with_research") or \
         any(sources.is_personal(s) for s in sources.SOURCES if s.key in info.get("collections", ()))
-    lines = [sources.PERSONAL_WARNING if personal_choice else REVIEW_WARNING]
+    lines = [sources.PERSONAL_WARNING if personal_choice else REVIEW_WARNING if info.get("review_pictures") else
+             SEXUAL_WARNING]
     lines += review_lines(info)
+    if info.get("sexual_used") and not info.get("review_pictures"):
+        lines.append(SEXUAL_NOTE)
     if not personal_choice:
         return lines
     used = [s for s in sources.SOURCES if sources.is_personal(s) and s.key in info.get("collections", ())]
@@ -1125,6 +1133,8 @@ def main(argv=None):
             needs = {c: bool(state.data[f"train-{base_run}"].get(c)) for c in wanted_now}
             needs.update({c: wanted_now[c] or needs[c] for c in ("noncommercial", "research", "review")})
             needs.update({c: (c in review_contents) or needs[c] for c in ("intimate", "sexual")})
+            # A sexual-content pack added now (erotic_art) makes the follow-up need that choice too.
+            needs["sexual"] = needs["sexual"] or any(sources.content_of(k) == "sexual" for k in new)
             # Graphic scenes chosen now: the follow-up may learn from them (rows of any pack), so it needs the choice.
             needs["graphic"] = needs["graphic"] or wanted_now["graphic"]
             plan = {"run": f"{args.model}-plus-{_time.strftime('%Y%m%d-%H%M')}" + ("-personal" if personal else ""),
@@ -1204,6 +1214,8 @@ def main(argv=None):
     if any(r.get("review") for r in train_rows):
         used.add("review")
         personal = True
+    if "sexual" in used:
+        personal = True                          # adult sexual content (erotic_art too): personal use only
     if not plan:
         # A training with the content choices is its own training too ("4b-nudity-medical"); named after the
         # collections really prepared, so a training started before those packs existed carries on as it was.
