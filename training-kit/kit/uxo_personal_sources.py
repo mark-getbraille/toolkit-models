@@ -866,6 +866,11 @@ def fetch_topic(topic, folder, cap, say=say_nothing, documents_base=None, downlo
     Archive download (for tests); fm: the figure tools (field_manual_packs), "find" to look for them, None for
     none."""
     source = next(s for s in UXO_PERSONAL_SOURCES if s["topic"] == topic)
+    try:
+        import pypdfium2  # noqa: F401 - only checked here, used by process_document
+    except ImportError:
+        raise RuntimeError("the PDF reader pypdfium2 is not installed in the kit's Python, so the manuals cannot "
+                           "be checked; nothing was downloaded") from None
     out_folder = personal_folder(topic, documents_base)
     os.makedirs(out_folder, exist_ok=True)
     ws = make_review_workspace(folder, source, say)
