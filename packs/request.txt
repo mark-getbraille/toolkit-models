@@ -4,6 +4,7 @@
 # pack is built again from the start. A top-up that fails or finds nothing new leaves the published pack as it was.
 # A key with a question mark (loc_highsmith?) is a needs-only run: only the pictures dropped for a missing or poor
 # description are collected and published in the release needs-description; the pack itself is not changed.
-# Again, after the run of 19 November: the four packs that failed (Commons kept refusing; one dropped connection).
-# Commons packs now build in their own lane, two at a time, and dropped connections are tried again.
-commons_us_eating_out,commons_disasters,field_manual_figures,commons_packaging
+# Evening of 19 November: the new packs (drugs and paraphernalia, firearm accessories and kinds, museum and erotic
+# art, nude photo studies, the Met's whole collection, packaged goods), and the three Commons packs that failed
+# again (they now keep what they found when Commons keeps refusing).
+abo_packaged_goods,cdc_phil_drugs,commons_cbp_seizures,commons_drug_paraphernalia,commons_drugs,commons_firearm_accessories,commons_firearm_kinds,erotic_art,met_collection,museum_art_nudes,nude_photo_studies,open_images_packaged_goods,wikidata_firearms,commons_us_eating_out,commons_disasters,commons_packaging
