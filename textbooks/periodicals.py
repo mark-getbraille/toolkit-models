@@ -272,12 +272,13 @@ SOURCES = {
         collection="voa-radio-scripts",
         description="Scripts of VOA's English radio reports (Backgrounders, This Week, Dateline, From the Bookshelf "
                     "and others), scanned by the Internet Archive from the Library of Congress's microfilm, as their "
-                    "machine-read text. One book per decade; so far only the 1970s are online as text.",
+                    "machine-read text. One book per year (a whole decade did not fit in one build job); so far only the "
+                    "1970s are online as text.",
         notice="Works of the Voice of America, a US government agency (public domain; the Internet Archive marks each "
                "with the Public Domain Mark). The machine-read text has the scanner's mistakes. VOA's older "
                "broadcasts survive mostly as sound recordings, which are not in these books.",
         changes="the machine-read text of each script, made into web pages", date_label="Broadcast",
-        pieces=lambda today: ["1970s"], piece_rule=r"^19[4-9]0s$"),
+        pieces=lambda today: [str(y) for y in range(1970, 1980)], piece_rule=r"^19[4-9](0s|\d)$"),
     "uk_hansard": dict(
         group="news", driver="uk_hansard", series_title="Hansard, UK Parliament debates",
         subject="UK Parliament: debates (House of Commons and House of Lords)", publisher="UK Parliament",
@@ -593,7 +594,7 @@ def frus_volumes():
 # Every source's pieces back to its beginning, newest first (the backfill works through them; they can also be
 # built by key). The earliest years were checked on 2026-11-19.
 ALL_PIECES = {
-    "voa_history": lambda t: ["1970s", "1990s", "1980s", "1960s", "1950s", "1940s"],
+    "voa_history": lambda t: [str(y) for y in range(1970, 1980)] + ["1990s", "1980s", "1960s", "1950s", "1940s"],
     "voa_learning": lambda t: _back(2001, t, True),
     "state_milestones": lambda t: ["all"],
     "frus": lambda t: frus_volumes(),
@@ -1513,12 +1514,13 @@ IA = "https://archive.org"
 
 
 def voa_history_items(spec, piece, cache, left_out, today):
-    """VOA radio scripts of one decade (piece "1970s") from the Internet Archive's collection voa-radio-scripts
+    """VOA radio scripts of one year (piece "1975") or one decade (piece "1970s") from the Internet Archive's collection voa-radio-scripts
     (scanned from the Library of Congress's microfilm; Public Domain Mark), each script's machine-read (OCR) text.
     Only items marked public domain and credited to the Voice of America are kept."""
-    decade = int(piece[:4])
-    query = urllib.parse.urlencode({"q": f"collection:{spec['collection']} AND date:[{decade}-01-01 TO "
-                                         f"{decade + 9}-12-31]", "fl[]": ["identifier", "date"], "rows": 20000,
+    first = int(piece[:4])
+    last = first + 9 if piece.endswith("s") else first
+    query = urllib.parse.urlencode({"q": f"collection:{spec['collection']} AND date:[{first}-01-01 TO "
+                                         f"{last}-12-31]", "fl[]": ["identifier", "date"], "rows": 20000,
                                     "output": "json"}, doseq=True)
     search = f"{IA}/advancedsearch.php?{query}"
     if not robots_ok(spec, search, cache):
@@ -1553,7 +1555,7 @@ def voa_history_items(spec, piece, cache, left_out, today):
                          "marked public domain, not credited to the Voice of America, or without a text."})
     if not docs:
         left_out.append({"title": f"{spec['series_title']}, {piece}", "reason": "The Internet Archive has no VOA "
-                         "radio scripts as text for this decade (only the 1970s so far)."})
+                         "radio scripts as text for these years (only the 1970s so far)."})
     return out
 
 

@@ -72,7 +72,7 @@ def test_keys():
     assert "pub:state_milestones:all" in P.expand_keys(["pub:history"], TODAY)
     voa = [k for k in keys if k.startswith("pub:voa:")]
     assert voa == ["pub:voa:recent", "pub:voa:2026", "pub:voa:2025", "pub:voa:2024"]          # older years by key
-    assert "pub:voa_history:1970s" in keys and "pub:voa_learning:2026" in keys
+    assert "pub:voa_history:1975" in keys and "pub:voa_learning:2026" in keys
     assert P.expand_keys(["pub:voa:2001", "pub:voa:1994", "pub:voa:1996", "pub:voa_history:1940s"], TODAY) == \
         ["pub:voa:2001", "pub:voa:1996", "pub:voa_history:1940s"]
     assert P.expand_keys(["pub:the_conversation:us-2015", "pub:europepmc_reviews:vision-2010"], TODAY) == \
