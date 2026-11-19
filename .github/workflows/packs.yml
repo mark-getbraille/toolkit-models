@@ -519,6 +519,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
+      # This job has no checkout, so gh must be told the repository (without it every gh command failed and the
+      # combined needs-manifest.json was never written).
+      GH_REPO: ${{ github.repository }}
     steps:
       - name: Merge the needs zips' manifests into needs-manifest.json
         run: |
