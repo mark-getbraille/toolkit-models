@@ -1867,6 +1867,22 @@ SOURCES = [
            'Amazon Berkeley Objects: data and images by Amazon.com; dataset by Matthieu Guillaumin, Thomas '
            'Dideriksen, Kenan Deng, Himanshu Arora, Jasmine Collins and Jitendra Malik, CC BY 4.0', "permissive",
            2700, 20, prepare_pack, 'about 1.2 GB'),
+    # Modern packaged goods (packs/packaged_goods_packs.py): the ABO catalogue photos of groceries, drinks, vitamins,
+    # medicines, toiletries, cleaning products and pet food (rows carry "place_kind": "market", like abo_products),
+    # and Open Images photos with a packaging label (often with people: not for picture-making). The personal-use FDA
+    # recall photos and the collections looked at and left out are in packaged_goods_sources.py.
+    Source('abo_packaged_goods', 'What is this? Packaged groceries, drinks, vitamins, medicines, toiletries, cleaning '
+           'products and pet food, with brand, name and size, mostly from US and Canadian shops (Amazon Berkeley '
+           'Objects, ready-made pack)',
+           'CC BY 4.0 (Amazon Berkeley Objects)',
+           'Amazon Berkeley Objects: data and images by Amazon.com; dataset by Matthieu Guillaumin, Thomas '
+           'Dideriksen, Kenan Deng, Himanshu Arora, Jasmine Collins and Jitendra Malik, CC BY 4.0', "permissive",
+           6000, 30, prepare_pack, 'about 2.7 GB'),
+    Source('open_images_packaged_goods', 'What packaged goods are in this picture? Cans, bottles, cardboard packaging '
+           'and ready meals in everyday photos (Open Images V7, ready-made pack)',
+           'Labels CC BY 4.0 (Google Open Images); photos CC BY 2.0, each author credited',
+           'Open Images V7 (Google), CC BY 4.0 labels; photos CC BY 2.0, credited in ATTRIBUTION.txt',
+           "permissive", 500, 10, prepare_pack, 'about 150 MB'),
     Source('open_images_in_use', 'What is the person doing with it? People holding, using, playing, reading, eating '
            'and riding (Open Images V7, ready-made pack)',
            'Annotations CC BY 4.0 (Google Open Images); photos CC BY 2.0, each author credited',
@@ -2351,6 +2367,9 @@ PEOPLE_AND_BODILY_PACK_KEYS = (
     "commons_cbp_seizures", "cdc_phil_drugs",
     # adult_art_packs.py: nudes and erotic art (both of them)
     "museum_art_nudes", "erotic_art", "nude_photo_studies",
+    # packaged_goods_packs.py: Open Images packaging photos, which often show people (the ABO catalogue photos of
+    # packaged goods are used)
+    "open_images_packaged_goods",
 )
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + PEOPLE_AND_BODILY_PACK_KEYS
 # The drug and firearm packs (packs/drug_firearm_packs.py): describing only, never for picture-making, whether or not
@@ -2727,6 +2746,21 @@ _us_ok = set(getattr(_us, "US_PICTURE_MAKING_OK", ()) or ())
 PERSONAL_PICTURE_MAKING_OK |= _us_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in US_SOURCES if s.key not in _us_ok)
 _add_collections(US_SOURCES)
+
+# Packaged-goods collections that are not open (FDA recall photos: the recalling companies' own, personal use only);
+# the file may be missing. None is used for picture-making (PACKAGED_GOODS_PICTURE_MAKING_OK is empty).
+try:
+    import packaged_goods_sources as _packaged_goods  # noqa: E402
+except ImportError as _e:
+    _packaged_goods = None
+    if getattr(_e, "name", None) != "packaged_goods_sources":
+        say(f"(The packaged-goods collections could not be loaded: {_e}. They are left out.)")
+PACKAGED_GOODS_SOURCES = list(getattr(_packaged_goods, "PACKAGED_GOODS_SOURCES", []) or [])
+_packaged_goods_ok = set(getattr(_packaged_goods, "PACKAGED_GOODS_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _packaged_goods_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(
+    s.key for s in PACKAGED_GOODS_SOURCES if s.key not in _packaged_goods_ok)
+_add_collections(PACKAGED_GOODS_SOURCES)
 
 # Modern-America collections that are not open (Commons BY-SA files of the same categories; NLM's C3PI pill photos,
 # research use only); the file may be missing.
