@@ -152,12 +152,12 @@ def record_rows(a, r, s=None, pause=PAUSE):
 
 def princeton_items(cap, s=None, a=None, pause=PAUSE):
     """(file name, picture address, row) for up to cap Princeton works by the open packs' rules."""
-    import requests
     a = a or pack_tools()
     if a is None:
         raise RuntimeError("this collection needs the packs folder of the toolkit-models repository beside the kit "
                            "(or its folder in PICTURE_KIT_PACKS), for the same rules as the open packs")
     if s is None:
+        import requests                  # only for a real download (the tests pass their own session)
         s = requests.Session()
         s.headers["User-Agent"] = USER_AGENT
     items, seen = [], set()
@@ -257,12 +257,12 @@ def general_rows(a, r):
 def princeton_general_items(cap, s=None, a=None, pause=PAUSE):
     """(file name, picture address, row) for up to cap Princeton objects of any subject (general_rows), the same
     number from each query; each object's own record read (paced) for its label texts."""
-    import requests
     a = a or pack_tools()
     if a is None:
         raise RuntimeError("this collection needs the packs folder of the toolkit-models repository beside the kit "
                            "(or its folder in PICTURE_KIT_PACKS), for the same rules as the open packs")
     if s is None:
+        import requests                  # only for a real download (the tests pass their own session)
         s = requests.Session()
         s.headers["User-Agent"] = USER_AGENT
     per = max(2, cap // len(GENERAL_QUERIES) + 1)
