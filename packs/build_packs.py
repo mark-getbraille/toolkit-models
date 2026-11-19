@@ -1609,6 +1609,12 @@ PACKS.update(ADULT_ART_PACKS)
 from packaged_goods_packs import PACKAGED_GOODS_PACKS
 PACKS.update(PACKAGED_GOODS_PACKS)
 
+# US state digital libraries and the Newberry Library (packs/state_collections_packs.py): the CONTENTdm API, OAI-PMH,
+# the Digital Library of Georgia's API and the Newberry's search API; only items whose own rights statement is open
+# (NoC-US, NKC, Public Domain Mark, CC0, CC BY) with no restricting words. None reads Commons.
+from state_collections_packs import STATE_COLLECTIONS_PACKS
+PACKS.update(STATE_COLLECTIONS_PACKS)
+
 
 # The packs whose builder reads the Wikimedia Commons API (commons_get, commons_members, commons_entries,
 # mechanical_packs.mech_entries, us_packs.us_commons, documentary_packs.commons_get or COMMONS_API itself). When many
