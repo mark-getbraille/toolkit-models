@@ -31,7 +31,8 @@ The packs (ADULT_ART_PACKS):
                     the build's EUROPEANA_KEY secret), four more Smithsonian units (Cooper Hewitt, Freer and Sackler,
                     African Art, Hirshhorn: CC0), the J. Paul Getty Museum (Linked Art, linked_art.py: each
                     IMAGE'S own rights statement CC0 or Public Domain Mark; getty_items also gives erotic_art and
-                    nude_photo_studies their Getty works), and the non-sexual nudes the erotic_art searches find. Danish and
+                    nude_photo_studies their Getty works), the Newberry Library (prints and drawings whose Rights Status is No
+                    Copyright - United States: newberry_nudes, through state_collections_packs), and the non-sexual nudes the erotic_art searches find. Danish and
                     Dutch titles are put in English word for word (foreign_title) or the work is left out; the
                     providers' English only (never Europeana's machine translations). Left out as well: death,
                     killing and torture (NUDE_HARM), specimens and documents (NOT_ART). Not read yet, with the
@@ -1015,6 +1016,25 @@ def met_more(want, role, s=None, known=None):
     return items
 
 
+# ----------------------------------------------------------------- The Newberry Library (Chicago)
+
+def newberry_nudes(want):
+    """(name, picture address, rows) of the Newberry Library's prints, drawings and paintings whose Rights Status is
+    "No Copyright - United States" and whose words name nudity (state_collections_packs.newberry_nude_records: its
+    search API, paced as its robots.txt asks), by nude_candidate (no photographs, nothing sexual, the child rules).
+    The newberry_library pack itself leaves every nude out, so they come here."""
+    import state_collections_packs as scp
+    items = []
+    for name, url, title, credit, kind, text in scp.newberry_nude_records(want * 3):
+        item = nude_candidate("Newberry", name, url, title, credit, kind, "", "", "", text)
+        if item:
+            items.append(item)
+        if len(items) >= want:
+            break
+    say(f"Newberry Library: {len(items)} usable")
+    return items
+
+
 # More Smithsonian units read from the open-access data (as body_packs.si_items): Cooper Hewitt (drawings and
 # prints), the Freer and Sackler galleries, the National Museum of African Art and the Hirshhorn.
 SI_MORE_UNITS = ("chndm", "fsg", "nmafa", "hmsg")
@@ -1678,7 +1698,8 @@ def build_museum_art_nudes(limit):
     # the Rijksmuseum and more Smithsonian units, each about a tenth of the pack.
     for key, collect in (("mia", mia_nudes), ("smk", smk_nudes), ("rijks", rijks_nudes), ("si_more", si_more_nudes),
                          ("europeana", europeana_nudes), ("getty", lambda n: getty_items(n, "nudes")),
-                         ("met_more", lambda n: met_more(n, "nudes"))):
+                         ("met_more", lambda n: met_more(n, "nudes")),
+                         ("newberry", newberry_nudes)):
         try:
             items += collect(max(2, round(limit * 0.1 * 1.3)))
         except Exception as error:  # noqa: BLE001 - one museum down does not stop the pack
@@ -1707,7 +1728,7 @@ ADULT_ART_PACKS = {
                          "Cleveland Museum of Art (CC0), National Gallery of Art, Washington (CC0), Smithsonian "
                          "Institution (CC0), Minneapolis Institute of Art (public domain), Statens Museum for Kunst "
                          "and Rijksmuseum (Public Domain Mark or CC0), Europeana partners (CC0, Public Domain Mark or "
-                         "CC BY), The J. Paul Getty Museum (open content, CC0 per image). No photographs, no sexual acts or sexual violence, and no child "
+                         "CC BY), The J. Paul Getty Museum (open content, CC0 per image), the Newberry Library (No Copyright - United States). No photographs, no sexual acts or sexual violence, and no child "
                          "in any work with sexual or romantic wording."),
     "erotic_art": (build_erotic_art,
                    "Erotic art and illustration showing adults (shunga, Indian and Persian erotic painting, Greek and "

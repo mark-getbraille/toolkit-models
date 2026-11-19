@@ -1887,6 +1887,31 @@ SOURCES = [
            'Labels CC BY 4.0 (Google Open Images); photos CC BY 2.0, each author credited',
            'Open Images V7 (Google), CC BY 4.0 labels; photos CC BY 2.0, credited in ATTRIBUTION.txt',
            "permissive", 500, 10, prepare_pack, 'about 150 MB'),
+    # US state digital libraries and the Newberry Library (packs/state_collections_packs.py): only items whose own
+    # rights statement is open, with no restricting words; people appear, so never for picture-making. The items with
+    # no rights statement (or research-only words) are the personal-use entry in state_collections_personal_sources.py.
+    Source("newberry_library", "Postcards, photographs, prints and maps of towns, buildings, landscapes and everyday "
+           "life, mostly 1880 to 1950 (the Newberry Library, Chicago; ready-made pack)",
+           "Each item's Rights Status No Copyright - United States (the Newberry's open access policy: any lawful use)",
+           "From the Newberry Library, https://collections.newberry.org (each item credited in CREDITS.txt)",
+           "permissive", 4000, 20, prepare_pack, "about 1.5 GB"),
+    Source("state_libraries_midwest", "Towns, farms, buildings, work and daily life from Ohio, Indiana, Illinois, "
+           "Wisconsin and North Dakota libraries and archives (state digital libraries, ready-made pack)",
+           "Each item No Copyright - United States, No Known Copyright, Public Domain Mark, CC0 or CC BY (its own "
+           "statement)", "Ohio Memory, Ball State University, Illinois Digital Archives, "
+           "Ohio University, UW-Milwaukee and Digital Horizons (each item credited in CREDITS.txt)",
+           "permissive", 3000, 20, prepare_pack, "about 1 GB"),
+    Source("state_libraries_south", "Towns, farms, buildings, work and daily life from Georgia, Kentucky, Alabama "
+           "and Maryland libraries and archives (state digital libraries, ready-made pack)",
+           "Each item No Copyright - United States, No Known Copyright, Public Domain Mark, CC0 or CC BY (its own "
+           "statement)", "The Digital Library of Georgia, Kentucky Digital Library, Auburn University, the Alabama "
+           "Department of Archives and History and Digital Maryland (each item credited in CREDITS.txt)",
+           "permissive", 3000, 20, prepare_pack, "about 1 GB"),
+    Source("state_libraries_west", "Towns, farms, landscapes, work and daily life from Washington, New Mexico and "
+           "Arizona university libraries (state digital libraries, ready-made pack)",
+           "Each item No Copyright - United States, No Known Copyright, Public Domain Mark, CC0 or CC BY (its own "
+           "statement)", "Washington State University, University of New Mexico and Northern Arizona University "
+           "libraries (each item credited in CREDITS.txt)", "permissive", 2500, 20, prepare_pack, "about 800 MB"),
     Source('open_images_in_use', 'What is the person doing with it? People holding, using, playing, reading, eating '
            'and riding (Open Images V7, ready-made pack)',
            'Annotations CC BY 4.0 (Google Open Images); photos CC BY 2.0, each author credited',
@@ -2375,6 +2400,8 @@ PEOPLE_AND_BODILY_PACK_KEYS = (
     # packaged_goods_packs.py: Open Images packaging photos, which often show people (the ABO catalogue photos of
     # packaged goods are used)
     "open_images_packaged_goods",
+    # state_collections_packs.py: state digital libraries and the Newberry (people at work and in daily life)
+    "newberry_library", "state_libraries_midwest", "state_libraries_south", "state_libraries_west",
 )
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + PEOPLE_AND_BODILY_PACK_KEYS
 # The drug and firearm packs (packs/drug_firearm_packs.py): describing only, never for picture-making, whether or not
@@ -2705,6 +2732,19 @@ except ImportError as _e:
 PRINCETON_SOURCES = list(getattr(_princeton, "PRINCETON_SOURCES", []) or [])
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in PRINCETON_SOURCES)
 _add_collections(PRINCETON_SOURCES)
+
+# US state digital library items with no rights statement, or whose rights words allow research or private study
+# only: personal use only, downloaded on the owner's computer with the open packs' rules; the file may be missing.
+# Never used for picture-making.
+try:
+    import state_collections_personal_sources as _state_collections  # noqa: E402
+except ImportError as _e:
+    _state_collections = None
+    if getattr(_e, "name", None) != "state_collections_personal_sources":
+        say(f"(The state digital library personal-use collection could not be loaded: {_e}. It is left out.)")
+STATE_COLLECTIONS_SOURCES = list(getattr(_state_collections, "STATE_COLLECTIONS_SOURCES", []) or [])
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in STATE_COLLECTIONS_SOURCES)
+_add_collections(STATE_COLLECTIONS_SOURCES)
 
 # Things and materials collections that are not open (EPIC-KITCHENS, Charades, PACO, MINC); the file may be missing.
 try:

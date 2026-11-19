@@ -337,6 +337,10 @@ jobs:
             met_collection) limit=6000 ;;
             abo_packaged_goods) limit=6000 ;;
             open_images_packaged_goods) limit=500 ;;
+            newberry_library) limit=4000 ;;
+            state_libraries_midwest) limit=3000 ;;
+            state_libraries_south) limit=3000 ;;
+            state_libraries_west) limit=2500 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in
