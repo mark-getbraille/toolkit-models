@@ -417,7 +417,12 @@ def us_commons(specs, limit, prefix, extra=None, drawings=False):
                 break
             spec, files = q
             if files is None:
-                files = [(t, sub) for t, sub in spec_files(s, spec) if t not in seen]
+                try:
+                    files = [(t, sub) for t, sub in spec_files(s, spec) if t not in seen]
+                except RuntimeError as e:      # Commons kept refusing: keep what was found and stop asking
+                    say(f"  {prefix}: {e} Keeping the {len(items)} pictures found so far.")
+                    queues = []
+                    break
                 random.Random(spec["category"]).shuffle(files)
                 say(f"Commons {spec['category']}: {len(files)} files")
             batch, q[1] = files[:share * 2], files[share * 2:]
@@ -425,8 +430,13 @@ def us_commons(specs, limit, prefix, extra=None, drawings=False):
                 queues.remove(q)
                 continue
             subs = dict(batch)
-            entries = mech_entries(s, [t for t, _ in batch], drawings=drawings)
-            cats = file_categories(s, [e[0] for e in entries]) if extra else {}
+            try:
+                entries = mech_entries(s, [t for t, _ in batch], drawings=drawings)
+                cats = file_categories(s, [e[0] for e in entries]) if extra else {}
+            except RuntimeError as e:          # Commons kept refusing: keep what was found and stop asking
+                say(f"  {prefix}: {e} Keeping the {len(items)} pictures found so far.")
+                queues = []
+                break
             got = 0
             for title, url, credit, text, _ in entries:
                 if got >= share or title in seen:
