@@ -733,7 +733,7 @@ DRUG_FIREARM_PACKS = {
 DRUG_FIREARM_LIMITS = {
     "commons_drugs": 800,                # 22 categories, about 1,100 files before the checks
     "commons_drug_paraphernalia": 1000,  # 11 categories, about 1,300 files before the checks
-    "commons_cbp_seizures": 300,         # about 300 CBP files whose title names a drug seizure
+    "commons_cbp_seizures": 300,         # 202 CBP files whose title names a drug seizure (19 November 2026)
     "cdc_phil_drugs": 60,                # 43 PHIL photos found; 6 passed the checks in a test (19 November 2026)
     "commons_firearm_accessories": 1500, # 38 categories, about 4,500 files before the checks (most military lights)
     "commons_firearm_kinds": 2000,       # 20 kind and about 90 maker categories, their own files only
