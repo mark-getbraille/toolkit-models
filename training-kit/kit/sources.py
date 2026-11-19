@@ -2689,6 +2689,19 @@ NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(
     s.key for s in DRUG_FIREARM_SOURCES if s.key not in _drug_firearm_ok)
 _add_collections(DRUG_FIREARM_SOURCES)
 
+# The Princeton University Art Museum's nudes, figure studies and erotic art: personal use only (no rights statement
+# on its records), downloaded on the owner's computer with the open packs' rules; the file may be missing. Never used
+# for picture-making.
+try:
+    import princeton_personal_sources as _princeton  # noqa: E402
+except ImportError as _e:
+    _princeton = None
+    if getattr(_e, "name", None) != "princeton_personal_sources":
+        say(f"(The Princeton collection could not be loaded: {_e}. It is left out.)")
+PRINCETON_SOURCES = list(getattr(_princeton, "PRINCETON_SOURCES", []) or [])
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in PRINCETON_SOURCES)
+_add_collections(PRINCETON_SOURCES)
+
 # Things and materials collections that are not open (EPIC-KITCHENS, Charades, PACO, MINC); the file may be missing.
 try:
     import things_sources as _things  # noqa: E402
