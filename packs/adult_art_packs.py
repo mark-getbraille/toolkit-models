@@ -28,7 +28,10 @@ The packs (ADULT_ART_PACKS):
                     violence and the stories that are about it (SEX_VIOLENCE: rape, abduction, Leda, Europa, the
                     Sabines, Lucretia, Ganymede ...); and ANY work whose words name a child or young person (MINOR)
                     TOGETHER with a sexual or romantic word (body_packs.SEXUAL: kiss, embrace, lovers, seduction,
-                    nymphs, satyrs, courtesans ...): a child is only ever kept in a plainly non-sexual work.
+                    nymphs, satyrs, courtesans ...); and any work whose nude subject is a REAL child or young person
+                    (a girl, a boy, a youth, a son, students ...: real_young_person). The only children kept are
+                    the owner's list, in plainly non-sexual works: the Christ Child and the infant Saint John, the
+                    Holy Family, putti, cherubs, Cupid and angels (SACRED_OR_WINGED).
   erotic_art        Sexual acts and erotica in ART and ILLUSTRATION from open-access institution records: Japanese
                     shunga and Indian, Persian and Nepalese erotic paintings, Greek and Roman vases, European erotic
                     prints (The Met, the Art Institute of Chicago, the Cleveland Museum of Art), historical erotica
@@ -141,7 +144,7 @@ SEX_VIOLENCE = re.compile(
     r"\b(rap(e|ed|es|ing|ist|ists)|ravish\w*|abduct\w*|kidnap\w*|assault\w*|violat\w*|forc(ed|ibly)|"
     r"captiv\w*|enslav\w*|slave\w*|verkracht\w*|vergewaltig\w*|enlèvement|stupro|violación)\b|"
     r"\b(Leda|Europa|Sabines?|Lucretia|Lucrece|Tarquin\w*|Ganymede|Pasipha[eë]|Proserpin\w*|Persephone|"
-    r"Orithyia|Deianira|Nessus|Philomela|Tereus|Callisto|Antiope)\b")
+    r"Orithyia|Deianira|Nessus|Philomela|Tereus|Callisto|Antiope|Aegina|Io|Daphne|Syrinx|Arethusa)\b")
 
 # The kit's adults-only screens for sexual content (training-kit/kit/adult_review_sources.py, kept the same here so
 # the open pack is never looser than the review collections): violence or no consent, the myths about rape,
@@ -213,6 +216,8 @@ def nudes_left_out(source, title, *texts, kind=""):
         reason = f"sexual violence or its story: {SEX_VIOLENCE.search(text).group(0)}"
     elif minor and wide:
         reason = f"a young person ({minor}) with a sexual or romantic word ({wide.group(0)})"
+    elif minor and real_young_person(text):
+        reason = f"a real child or young person as the nude subject ({real_young_person(text)})"
     if reason:
         if reason != "in art_nudes already":
             note(source, title, reason)
@@ -223,6 +228,26 @@ def nudes_left_out(source, title, *texts, kind=""):
 
 
 CHILD_TITLES = set()
+
+# The only children museum_art_nudes keeps (the owner's list): the Christ Child with the Madonna, the infant Saint
+# John, the Holy Family, putti, cherubs, Cupid and other winged child figures, and angels. A generic child word
+# ("child", "infant", "baby", "children") is taken as one of them only when one of them is named too.
+SACRED_OR_WINGED = re.compile(
+    r"\b((Madonna|Virgin|Mary)( and| with)( the)? (Child|Infant)\w*|Christ Child|Child Jesus|Infants? (Christ|Jesus|"
+    r"Saint John|St\.? John)\w*|Holy Family|Madonna\w*|Virgin|Nativity|Christ|Jesus|Saint John|St\.? John|"
+    r"put(to|ti|ten|tini)|cupids?|amor(ino|ini|etto|etti)|amoretti|cherub\w*|angel\w*|seraph\w*|genius|genii|"
+    r"bambino|bambin\w*|enfant J[ée]sus|Christkind\w*|Jesuskind\w*|kindeke)\b", re.I)
+GENERIC_CHILD = re.compile(r"\b(child(ren)?|infants?|bab(y|ies)|kids?)\b", re.I)
+
+
+def real_young_person(text):
+    """The first word of a nude work's text that names a REAL child or young person as its subject (a girl, a boy,
+    a youth, a son, students ...), not one of the sacred or winged figures museum_art_nudes may keep (SACRED_OR_
+    WINGED); a generic child word counts unless such a figure is named. "" when none."""
+    rest = SACRED_OR_WINGED.sub(" ", text)
+    if SACRED_OR_WINGED.search(text):
+        rest = GENERIC_CHILD.sub(" ", rest)
+    return minor_word(rest)
 
 
 def erotic_left_out(*texts, kind="", title="", need_topic=True, need_art=True):

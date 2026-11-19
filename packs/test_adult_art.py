@@ -8,7 +8,8 @@ It checks that:
     word excludes the item); violence or no consent, the myths about rape or a minor, animals, photographs, and
     records that are not artworks or not about sex; and keeps plain adult erotic art;
   - museum_art_nudes takes only what art_nudes leaves out, never a photograph, a sexual act or sexual violence,
-    keeps a child only in a plainly non-sexual work (Madonna and Child, putti) and marks its rows "child";
+    keeps a child only as a sacred or winged figure (Madonna and Child, putti, Cupid, cherubs) in a plainly
+    non-sexual work, never a real girl, boy or youth as the nude subject, and marks those rows "child";
   - each item's own licence is checked: The Met isPublicDomain, Cleveland CC0, Wellcome pdm/cc-0/cc-by, Commons
     CC0/public domain/CC BY (never SA, NC or ND, never no licence);
   - every erotic_art row carries "content": "sexual", and crude or catalogue words are put in plain English;
@@ -77,7 +78,8 @@ def test_nudes_screen():
     sexual or romantic words; children only in plainly non-sexual works, marked."""
     a.CHILD_TITLES.clear()
     kept = [("Madonna and Child", "oil on panel"), ("Venus and Cupid", "oil on canvas"), ("Putti playing", "etching"),
-            ("Susanna and the Elders", "oil on canvas"), ("Nymph bathing", "marble"), ("The Kiss", "bronze")]
+            ("Susanna and the Elders", "oil on canvas"), ("Nymph bathing", "marble"), ("The Kiss", "bronze"),
+            ("Virgin and Child with Saint John", "tempera"), ("Venus and Cupid; the child reaches up", "engraving")]
     for title, kind in kept:
         assert a.nudes_left_out("test", title, kind=kind) is False, title
     assert {"Madonna and Child", "Venus and Cupid", "Putti playing"} <= a.CHILD_TITLES
@@ -85,9 +87,13 @@ def test_nudes_screen():
     dropped = [("Standing female nude", "drawing"),              # art_nudes's already
                ("Nude girl", "gelatin silver print"), ("Female nude in a kiss", "photograph"),
                ("Erotic scene with nymphs", "etching"), ("Shunga", "woodblock print"),
-               ("Leda and the Swan", "oil"), ("The Rape of the Sabine Women", "engraving"),
+               ("Leda and the Swan", "oil"), ("Aegina Visited by Jupiter", "oil on canvas"), ("The Rape of the Sabine Women", "engraving"),
                ("Ganymede", "marble"), ("Cupid and Psyche kissing", "marble"), ("Bacchanal with putti", "print"),
-               ("Young lovers embracing", "drawing")]
+               ("Young lovers embracing", "drawing"),
+               # a real child or young person as the nude subject: never (only sacred or winged child figures)
+               ("Study from the Nude of a Girl Standing", "drypoint"), ("Study for the Nude Youth", "red chalk"),
+               ("Nude boy bathing", "oil on canvas"), ("Pompeiian design with nude figures; children", "gouache"),
+               ("Venus and Cupid with a girl", "engraving")]
     for title, kind in dropped:
         assert a.nudes_left_out("test", title, kind=kind) is True, title
 
