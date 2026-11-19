@@ -2171,6 +2171,7 @@ def build(keys, out_dir, cache=None, pictures=False, local_osbooks=None, date=No
         safe = re.sub(r"[^a-z0-9_-]+", "_", key.lower().split("/")[-1])
         manifest = {"key": key, "release": "textbooks", "books": entries, "left_out": left_out,
                     "files": [e["file"] for e in entries], "done": [key]}
+        os.makedirs(out_dir, exist_ok=True)      # a key that built no book (a retired edition) still writes its manifest
         with open(os.path.join(out_dir, f"manifest-{safe}.json"), "w", encoding="utf-8") as f:
             json.dump(manifest, f, indent=1, ensure_ascii=False)
         manifests[key] = manifest

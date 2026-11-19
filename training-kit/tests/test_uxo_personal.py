@@ -315,7 +315,7 @@ def test_made_up_pdf_end_to_end(tmp_path):
     fm = ux.figure_tools()
     if fm is None:
         pytest.skip("packs/field_manual_packs.py is not here")
-    import pypdfium2 as pdfium
+    pdfium = pytest.importorskip("pypdfium2")
     doc = ux.archive_doc("fm-99-1", "FM 99-1 (made up)", "Made-up UXO manual", "Nobody", 2026, "uxo")
     data = made_up_manual()
     result = ux.process_document(doc, data, "uxo", fm)
