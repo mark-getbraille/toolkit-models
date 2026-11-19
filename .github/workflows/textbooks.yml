@@ -25,7 +25,6 @@ on:
     paths: ["textbooks/request.txt"]
   schedule:
     - cron: "23 10 * * *"
-    - cron: "17 * * * *"
     - cron: "41 9 * * 0"
   workflow_dispatch:
     inputs:
@@ -33,13 +32,17 @@ on:
         description: "Keys separated by commas (osbooks, osbooks:<repository>, siyavula, dspace, nonprofit, fieldmanuals, government, courses, guides, laws, laws-more, group:<group>, guide:<name>, law:<name>, pdf:<name>, publications, pub:<group>, pub:<source>, pub:<source>:<piece>, pictures), or all"
         required: true
         default: "all"
+      schedule:
+        description: "Leave empty. The hourly backfill (textbooks-backfill.yml) fills in its schedule here."
+        required: false
+        default: ""
 
 permissions:
   contents: write
 
 # One run of each kind at a time (the daily, the backfill, the weekly check and manual runs do not wait for each other).
 concurrency:
-  group: textbooks-${{ github.event.schedule || 'manual' }}
+  group: textbooks-${{ github.event.schedule || inputs.schedule || 'manual' }}
   cancel-in-progress: false
 
 jobs:
@@ -54,13 +57,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: The catalogue published now (for the backfill and the weekly check)
-        if: github.event_name == 'schedule'
+        if: github.event_name == 'schedule' || inputs.schedule != ''
         run: gh release download textbooks -p 'textbooks.json' -O previous.json --clobber || echo '{}' > previous.json
       - id: keys
         run: |
           keys='${{ inputs.keys }}'
           if [ -z "$keys" ]; then keys=$(grep -v '^#' textbooks/request.txt | tr -d '[:space:]'); fi
-          python3 - "$keys" "${{ github.event.schedule }}" >> "$GITHUB_OUTPUT" <<'PY'
+          python3 - "$keys" "${{ github.event.schedule || inputs.schedule }}" >> "$GITHUB_OUTPUT" <<'PY'
           import json, re, sys
           sys.path.insert(0, "textbooks")
           import sources

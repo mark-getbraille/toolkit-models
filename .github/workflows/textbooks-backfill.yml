@@ -1,0 +1,23 @@
+name: Textbooks hourly backfill
+
+# GitHub never started the hourly "17 * * * *" schedule inside "Build textbooks" (the daily one in the same file
+# did start), so the backfill has its own small workflow: each hour it starts "Build textbooks" with the backfill's
+# schedule filled in, and that run works exactly as a scheduled backfill would (one older piece at a time; stopped
+# by "backfill: off" in textbooks/schedule.txt).
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  actions: write
+
+jobs:
+  start:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - run: gh workflow run textbooks.yml -f keys=all -f "schedule=17 * * * *"
