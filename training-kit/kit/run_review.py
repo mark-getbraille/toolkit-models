@@ -41,14 +41,15 @@ def all_sources():
     for module_name, list_name in (("review_sources", "REVIEW_SOURCES"),
                                    ("adult_review_sources", "ADULT_REVIEW_SOURCES"),
                                    ("vintage_review_sources", "VINTAGE_REVIEW_SOURCES"),
-                                   ("permission_sources", "PERMISSION_SOURCES")):
+                                   ("permission_sources", "PERMISSION_SOURCES"),
+                                   ("uxo_personal_sources", "UXO_PERSONAL_SOURCES")):
         try:
             module = __import__(module_name)
             for item in getattr(module, list_name, []) or []:
                 if isinstance(item, dict) and item.get("key") and callable(item.get("fetch")):
                     found[item["key"]] = dict(item, _permission=getattr(module, "permission_on_file", None))
         except ModuleNotFoundError as e:
-            if not (e.name == module_name == "permission_sources"):      # that list may simply not be there yet
+            if not (e.name == module_name and module_name in ("permission_sources", "uxo_personal_sources")):
                 notes.append(f"The list {module_name}.py could not be loaded ({e}); its collections are left out.")
         except Exception as e:  # noqa: BLE001 - said in plain words; the other list still works
             notes.append(f"The list {module_name}.py could not be loaded ({str(e).splitlines()[0][:150]}); its "

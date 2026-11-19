@@ -122,7 +122,8 @@ def review_lists(wizard):
     for module_name, list_name, what in (("review_sources", "REVIEW_SOURCES", "medical"),
                                          ("adult_review_sources", "ADULT_REVIEW_SOURCES", "adult"),
                                          ("vintage_review_sources", "VINTAGE_REVIEW_SOURCES", "vintage"),
-                                         ("permission_sources", "PERMISSION_SOURCES", "permission")):
+                                         ("permission_sources", "PERMISSION_SOURCES", "permission"),
+                                         ("uxo_personal_sources", "UXO_PERSONAL_SOURCES", "recognition")):
         try:
             module = __import__(module_name)
             on_file = getattr(module, "permission_on_file", None)
@@ -133,7 +134,7 @@ def review_lists(wizard):
                         copy["_permission"] = on_file
                     items.append(copy)
         except ModuleNotFoundError as e:
-            if e.name != module_name or what != "permission":   # the permission list may simply not be there yet
+            if e.name != module_name or what not in ("permission", "recognition"):   # may simply not be there
                 notes.append(f"The {what} review collections could not be loaded ({e}), so they are not listed.")
         except Exception as e:  # noqa: BLE001 - said in plain words
             notes.append(f"The {what} review collections could not be loaded ({str(e).splitlines()[0][:120]}), so "
