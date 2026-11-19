@@ -91,9 +91,10 @@ SEXUAL = re.compile(
 EXCLUDED = []
 
 
-def left_out(source, title, *texts):
+def left_out(source, title, *texts, kind=""):
     """True when a record must be left out because its title, tags or text mention a young person or sexual
-    content; the reason is noted in EXCLUDED."""
+    content; the reason is noted in EXCLUDED. kind (the record's classification and medium) is not used here: it is
+    for the other screens a builder may be given (adult_art_packs.nudes_left_out)."""
     text = " ".join(clean(t) for t in (title, *texts) if t)
     for kind, pattern in (("minor", MINOR), ("sexual", SEXUAL)):
         found = pattern.search(text)
@@ -278,9 +279,11 @@ MET = "https://collectionapi.metmuseum.org/public/collection/v1"
 MET_TAGS = ("Female Nudes", "Male Nudes")      # the Met's subject tags (Getty AAT) for nudes
 
 
-def met_items(want):
+def met_items(want, drop=None):
     """(name, picture address, rows) for public-domain Met works tagged "Female Nudes" or "Male Nudes" (the
-    v1.1 search pages through the tag's objects; each object's record gives the tags, title and picture)."""
+    v1.1 search pages through the tag's objects; each object's record gives the tags, title and picture). drop is
+    the screen (left_out unless another is given: adult_art_packs uses its own)."""
+    drop = drop or left_out
     s, ids = session(), []
     for tag in MET_TAGS:
         offset = 0
@@ -316,7 +319,8 @@ def met_items(want):
                     continue
                 tags = [t.get("term", "") for t in o.get("tags") or []]
                 title = clean(o.get("title"))
-                if not title or left_out("Met", title, " ".join(tags), o.get("objectName"), o.get("medium")):
+                if not title or drop("Met", title, " ".join(tags), o.get("objectName"), o.get("medium"),
+                                     kind=f"{o.get('classification')} {o.get('objectName')} {o.get('medium')}"):
                     continue
                 female, male = "Female Nudes" in tags, "Male Nudes" in tags
                 others = [t.lower() for t in tags if t not in MET_TAGS and len(t) < 30][:5]
@@ -344,10 +348,11 @@ AIC_FIELDS = ["id", "title", "subject_titles", "term_titles", "description", "sh
               "place_of_origin"]
 
 
-def aic_items(want):
+def aic_items(want, drop=None):
     """(name, picture address, rows) for public-domain Art Institute works with the subject "nudes" or "nude" or
     "naked" in the title; the answer uses the museum's alt text (written for screen readers) or its short
-    description."""
+    description. drop: the screen (left_out unless another is given)."""
+    drop = drop or left_out
     s = session()
     s.headers["AIC-User-Agent"] = s.headers["User-Agent"]
     query = {"query": {"bool": {"must": [
@@ -369,7 +374,8 @@ def aic_items(want):
             text = alt if len(alt.split()) >= 8 else clean(a.get("short_description"))
             if not title or not a.get("image_id") or not (NUDITY_WORDS.search(f"{title} {terms} {alt}")):
                 continue
-            if left_out("AIC", title, terms, text, a.get("description")):
+            if drop("AIC", title, terms, text, a.get("description"),
+                    kind=f"{a.get('classification_title')} {a.get('medium_display')}"):
                 continue
             female, male = nudity_kind(terms, title, text)
             artist = clean(a.get("artist_display")).split("\n")[0]
@@ -392,9 +398,11 @@ def aic_items(want):
 CMA = "https://openaccess-api.clevelandart.org/api/artworks/"
 
 
-def cma_items(want):
+def cma_items(want, drop=None):
     """(name, picture address, rows) for CC0 Cleveland works whose title or description says nude or naked; the
-    answer uses the museum's description (its "digital description" or alt text when there is one)."""
+    answer uses the museum's description (its "digital description" or alt text when there is one). drop: the
+    screen (left_out unless another is given)."""
+    drop = drop or left_out
     s, items, seen = session(), [], set()
     for word in ("nude", "naked"):
         skip = 0
@@ -414,7 +422,8 @@ def cma_items(want):
                                                        "wall_description") if len(clean(a.get(k)).split()) >= 8), "")
                 if not title or not NUDITY_WORDS.search(f"{title} {text}"):
                     continue
-                if left_out("Cleveland", title, text, a.get("type"), a.get("technique")):
+                if drop("Cleveland", title, text, a.get("type"), a.get("technique"),
+                        kind=f"{a.get('type')} {a.get('technique')}"):
                     continue
                 images = a.get("images") or {}
                 url = (images.get("print") or images.get("web") or {}).get("url")
@@ -458,9 +467,11 @@ def nga_tables(folder):
     return paths
 
 
-def nga_items(want):
+def nga_items(want, drop=None):
     """(name, picture address, rows) for open-access National Gallery works with a "nude" keyword (Nude, Female
-    nude, Male nude, Standing female nude ...); the answer uses the gallery's alt text ("assistive text")."""
+    nude, Male nude, Standing female nude ...); the answer uses the gallery's alt text ("assistive text"). drop:
+    the screen (left_out unless another is given)."""
+    drop = drop or left_out
     csv.field_size_limit(1 << 30)
     cache = os.environ.get("BODY_PACKS_CACHE")
     with tempfile.TemporaryDirectory() as temp:
@@ -487,7 +498,7 @@ def nga_items(want):
             continue
         title, alt = clean(o["title"]), clean(image["assistivetext"])
         words = " ".join(terms[k])
-        if left_out("NGA", title, words, alt):
+        if drop("NGA", title, words, alt, kind=f"{o['classification']} {o['medium']}"):
             continue
         female, male = nudity_kind(words)
         credit = f"National Gallery of Art, Washington, CC0: {title}, {clean(o['attribution'])}, " \
@@ -506,10 +517,12 @@ def nga_items(want):
 SI_NUDE_UNITS = ("saam",)      # the Hirshhorn was tried: no CC0 picture of a nude
 
 
-def si_items(want):
+def si_items(want, drop=None):
     """(name, picture address, rows) for Smithsonian American Art Museum records whose topics say
     nude (or "Nudity") and whose picture is CC0; the answer uses the accessibility text or gallery label when there
-    is one (build_packs.si_row), otherwise the record's title, artist, date and medium."""
+    is one (build_packs.si_row), otherwise the record's title, artist, date and medium. drop: the screen (left_out
+    unless another is given)."""
+    drop = drop or left_out
     from build_packs import si_keys, si_row, si_place, SI_BUCKET
     s, items = session(), []
     per_unit = want // len(SI_NUDE_UNITS) + 1
@@ -542,7 +555,9 @@ def si_items(want):
                     continue
                 got = si_row(record)
                 text = got[1]["answer"] if got else ""
-                if left_out("Smithsonian", title, " ".join(topics), text):
+                if drop("Smithsonian", title, " ".join(topics), text,
+                        kind=" ".join(clean(x.get("content")) for x in freetext.get("physicalDescription", []))
+                        + " " + " ".join(clean(x.get("content")) for x in freetext.get("objectType", []))):
                     continue
 
                 def field(name, label):

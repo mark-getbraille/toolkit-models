@@ -1596,6 +1596,13 @@ PACKS.update({k: v for k, v in MED_VET_PACKS.items() if k != "voa_commons_photos
 from drug_firearm_packs import DRUG_FIREARM_PACKS
 PACKS.update(DRUG_FIREARM_PACKS)
 
+# Fine-art nudity that art_nudes leaves out (Madonna and Child, putti, mythology, lovers) and erotic art showing
+# adults (shunga, Indian and Persian painting, Greek and Roman vases and frescoes, temple sculpture, European prints,
+# sex-education drawings), packs/adult_art_packs.py. Labelled collections: the kit uses them only with the nudity
+# and adult-sexual-content choices, and never for picture-making. No photographs of people in either.
+from adult_art_packs import ADULT_ART_PACKS
+PACKS.update(ADULT_ART_PACKS)
+
 
 # The packs whose builder reads the Wikimedia Commons API (commons_get, commons_members, commons_entries,
 # mechanical_packs.mech_entries, us_packs.us_commons, documentary_packs.commons_get or COMMONS_API itself). When many
@@ -1635,6 +1642,8 @@ COMMONS_KEYS = frozenset({
     # drugs, paraphernalia and firearms (drug_firearm_packs.py; cdc_phil_drugs reads only CDC PHIL)
     "commons_drugs", "commons_drug_paraphernalia", "commons_cbp_seizures", "commons_firearm_accessories",
     "commons_firearm_kinds", "wikidata_firearms",
+    # nudes and erotic art (adult_art_packs.py; museum_art_nudes reads only museum APIs)
+    "erotic_art",
 })
 
 

@@ -104,7 +104,8 @@ jobs:
                    "dpla_campus", "commons_college_streams", "commons_university_archives",
                    "gso_objects", "oi_crowdsourced", "pubtabnet_tables", "caltrans_cctv", "owid_charts", "field_manual_figures", "cd_booklets", "cd_films",
                    "commons_drugs", "commons_drug_paraphernalia", "commons_cbp_seizures", "cdc_phil_drugs",
-                   "commons_firearm_accessories", "commons_firearm_kinds", "wikidata_firearms"]
+                   "commons_firearm_accessories", "commons_firearm_kinds", "wikidata_firearms",
+                   "museum_art_nudes", "erotic_art"]
           words = [w for w in sys.argv[1].split(",") if w]
           # "key+" is a top-up pass of key and "key?" a needs-only run (kept with the mark, which the build job reads);
           # "all?" asks for a needs-only run of every pack.

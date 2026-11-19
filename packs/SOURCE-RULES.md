@@ -12,9 +12,17 @@ dropped only because of its licence.
 | Needing sign-up | any collection behind a login, form or signed agreement | Listed with its link in the kit's source files; the owner can get it and use the own-pictures folder |
 
 Safety rules apply to every category:
-- no sexual content;
-- children only in everyday scenes, expressions, medical close-ups under the childhood-illness rules, and the birth
-  context; never unclothed children elsewhere, never in nude art;
+- no sexual content, except the two labelled collections of `adult_art_packs.py` (the owner's decision, November
+  2026): museum_art_nudes (fine-art nudity, content "nudity") and erotic_art (sexual acts between adults in ART and
+  ILLUSTRATION only, content "sexual", which makes a trained add-on personal use only). Both are describing only,
+  never for picture-making. Hard limits, never relaxed: no photograph of a nude child; no artwork of any period
+  showing a child in a sexual way; nothing sexual where any figure is or may be under 18 (in erotic_art ANY word
+  that names or may name a young person leaves the item out, "young woman" and "maiden" included; when in doubt,
+  out); no sexual violence, no consent problems, no animals; no photographs of sexual acts (there is no automatic
+  age check in this repository, so none is gathered);
+- children only in everyday scenes, expressions, medical close-ups under the childhood-illness rules, the birth
+  context, and plainly non-sexual works of art in museum_art_nudes (Madonna and Child, putti: never a photograph,
+  never with a sexual or romantic word, rows marked "child"); never unclothed children elsewhere;
 - adult-only for medical photos of people where ages are known;
 - picture-making never learns from pictures of children, medical pictures, or the birth and childhood-illness
   collections;
