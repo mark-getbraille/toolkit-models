@@ -93,6 +93,14 @@ def test_us_place():
     assert m.us_place("Drugstores--North Carolina--Washington; Rivers--North Carolina") == \
         "Washington, North Carolina, USA"
     assert m.us_place("DigitalOai.Models.GenericLabelNode") == ""
+    assert m.us_place("Bathgate (N.D.); North Dakota") == "Bathgate, North Dakota, USA"
+    assert m.us_place("Saint Joseph's College and Academy (Emmitsburg, Md.)") == "Emmitsburg, Maryland, USA"
+    assert m.us_place("Governmental investigations--Washington (State)--Pullman") == "Pullman, Washington, USA"
+    assert m.us_place("Houses--Ohio") == "Ohio, USA"
+    # A scan of a letter, an article or a menu filed as a still image is not a picture.
+    assert m.DOCUMENT.search("Letters to Mr. R. S. Sanborn from W. A. Brown")
+    assert m.DOCUMENT.search("Breakfast, dinner, and supper menus at the school")
+    assert not m.DOCUMENT.search("Main Street looking north") and not m.DOCUMENT.search("Map of Illinois")
     # Notes about the back of a postcard and its dating are not about the picture.
     assert m.own_words("Postcard of a street scene. Addressed on verso to Miss Lucy Myers. Date from postmarks.",
                        set()) == "Postcard of a street scene."

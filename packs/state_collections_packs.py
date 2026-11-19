@@ -194,6 +194,12 @@ NOT_A_PICTURE = re.compile(r"\b(text|texts|newspapers?|letters?|correspondence|l
                            r"yearbooks?|directories|directory|catalogs?|catalogues?|programs?|programmes?|"
                            r"transcripts?|oral histor\w*|sound|audio|moving ?image|video|film|reports?|"
                            r"certificates?|documents?|records|forms?|receipts?|invoices?|bills?|tickets?)\b", re.I)
+# A record whose title or description says it is a document (a letter, an article, a menu ...), even when the site
+# files it as a still image: a scan of text is not a picture to describe.
+DOCUMENT = re.compile(r"(^\W*(letters?|telegrams?|memo(randum|s)?|newspapers?|(newspaper )?articles?|clippings?|"
+                      r"menus?|programs?|receipts?|minutes|reports?|invoices?|certificates?|deeds?|ledgers?|"
+                      r"typescripts?|manuscripts?|transcripts?|lists?|forms?|pages?|diar(y|ies)|notes)\b|"
+                      r"\b(letters? (to|from|written)|newspaper articles?|(breakfast|dinner|supper) menus?)\b)", re.I)
 PHOTO_WORDS = re.compile(r"\b(photo\w*|postcards?|post cards?|negatives?|slides?|glass plates?|snapshots?|"
                          r"stereographs?|lantern slides?|prints?, photographic|gelatin silver|albumen|cyanotype)\b",
                          re.I)
@@ -241,13 +247,16 @@ NOT_THE_PICTURE = re.compile(r"^(addressed\b|postmark|postmarked|date (from|appr
                              r"transcri(bed|ption)|note:|notes?:|this item was digitized|digitized\b|digitization|"
                              r"written on (the )?(back|verso)|on (the )?(back|verso)\b|verso\b|message on|"
                              r"stamp(ed)? on|publisher'?s? (number|no)|card (number|no)|caption reads|"
-                             r"\"?photo only copyrighted)", re.I)
+                             r"\"?photo only copyrighted|detached from|uniform title|at head of title|scale\b|"
+                             r"\W*(1|one) maps?\b|pt\. \d)|\b\d+(\.\d+)? ?x ?\d+(\.\d+)? ?(cm|in)\b|\bhand col\b",
+                             re.I)
 
 
 def own_words(text, shared):
     """A description without its collection's shared sentences and without notes about the back of the item, its
     dating or its digitization (NOT_THE_PICTURE)."""
-    return " ".join(s for s in sentences(text) if s not in shared and not NOT_THE_PICTURE.search(s))
+    return " ".join(s for s in sentences(text) if s not in shared and not NOT_THE_PICTURE.search(s)
+                    and re.search(r"[A-Za-z]{3,}", s))          # not a leftover "Pt." or "2, no."
 
 
 def year_of(*values):
@@ -301,17 +310,22 @@ def us_place(*values):
     for value in values:
         for text in (value if isinstance(value, list) else [value]):
             text = str(text or "")
-            pieces += text.split(";") if "--" in text else [text]
+            pieces += text.split(";")
     for text in pieces:
             text = clean(text)
             if not text or "." in text.split(",")[0] and "Models" in text:
                 continue                                  # software noise ("DigitalOai.Models.GenericLabelNode")
-            m = re.match(r"^([^()]+?)\s*\(([^()]+)\)\s*$", text)             # "Athens (Ga.)"
-            if m and state_named(m.group(2)):
-                town = m.group(1).strip()
-                return place_name(*([] if NOT_A_TOWN.search(town) else [town]), state_named(m.group(2)), "USA")
+            m = re.match(r"^(.*?)\s*\(([^()]+)\)\s*$", text)        # "Athens (Ga.)", "X (Emmitsburg, Md.)"
+            if m:
+                outer, inner = m.group(1).strip(), [p.strip() for p in m.group(2).split(",")]
+                if inner == ["State"] and state_named(outer):
+                    return place_name(state_named(outer), "USA")             # "Washington (State)"
+                if state_named(inner[-1]):
+                    town = inner[-2] if len(inner) > 1 else outer
+                    town = "" if not town or NOT_A_TOWN.search(town) or state_named(town) else town
+                    return place_name(town, state_named(inner[-1]), "USA")
             if "--" in text:                                                   # a subject heading
-                parts = [p.strip(" .") for p in text.split("--")]
+                parts = [re.sub(r"\s*\(State\)$", "", p.strip(" .")) for p in text.split("--")]
                 for i, p in enumerate(parts):
                     if state_named(p):
                         town = parts[i + 1] if i + 1 < len(parts) else ""
@@ -364,6 +378,9 @@ def judge(item, rights_values, items, answers, key):
     if reason:
         considered(item["name"], item["page"], reason)
         return reason
+    if DOCUMENT.search(item["title"]) or DOCUMENT.search(item.get("description", "")[:200]):
+        considered(item["name"], item["page"], "a document (a letter, an article, a menu ...), not a picture")
+        return "a document"
     if not item.get("url"):
         considered(item["name"], item["page"], "no picture address (a document or a multi-page item)")
         return "no picture"
@@ -631,7 +648,7 @@ def cdm_candidate(site, alias, collection, roles, record, shared):
     kind = clean(" ".join([cdm_value(record, roles, "type"), cdm_value(record, roles, "format")]))
     subjects = [s.strip() for s in re.split(r";", cdm_value(record, roles, "subject")) if s.strip()][:10]
     place = us_place(cdm_value(record, roles, "place"), cdm_value(record, roles, "subject"))
-    library = clean(cdm_value(record, roles, "library")).split(";")[0][:120] or site.name
+    library = re.sub(r",\s*\d+\s.*$", "", clean(cdm_value(record, roles, "library")).split(";")[0])[:120] or site.name
     single = str(record.get("filetype") or "").lower() in IMAGE_FILES
     picture_ok = single and not (NOT_A_PICTURE.search(kind) and not PHOTO_WORDS.search(kind)
                                  and "image" not in kind.lower())
