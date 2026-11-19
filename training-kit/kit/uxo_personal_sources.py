@@ -602,6 +602,17 @@ SMALL_ARMS_NOT_INCLUDED = {
         "no Distribution Statement A; and half of it is operation.",
     "DIA Small-Caliber Ammunition Identification Guide (DTIC ADA165896)": "ammunition, not the firearm itself; "
                                                                          "its release line cannot be read.",
+    "TM 10698A-10/1, Shotgun, Combat, 12 Gauge, Semi-Automatic, M1014 operator's manual (USMC, 2000)":
+        "looked for in November 2026 as the only shotgun manual found: its cover says 'Distribution is limited to "
+        "U.S. Government agencies only' and 'For Official Use Only': refused.",
+    "TC 3-22.12, M26 Modular Accessory Shotgun System (2014)": "listed by the Army Publishing Directorate, but no "
+                                                              "public copy found (the APD gives it only on its "
+                                                              "CAC-only library, and its robots.txt disallows "
+                                                              "programs); its release statement could not be "
+                                                              "checked, so it is not included.",
+    "M500 (Mossberg 500) military shotgun manuals": "no copy found with a Distribution Statement A.",
+    "TM 9-285, Shotguns, All Types (1942)": "printed before distribution statements; no Distribution Statement A, and "
+                                            "mostly operation and care.",
     "State hunter-education manuals": "copyrighted (most are published by a private company for the states); no "
                                       "open licence found.",
     "TC 3-22.9 and the other training circulars' marksmanship chapters": "kept documents; the chapters on aiming, "

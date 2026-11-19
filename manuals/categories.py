@@ -48,7 +48,11 @@ WIKIDATA_WORDS = {"personal_electronics": ["laptop", "computer", "keyboard", "mo
                   "older_electronics": ["videocassette recorder", "camcorder", "personal digital assistant",
                                         "portable cassette player", "portable CD player", "MiniDisc", "pager"],
                   "firearms": ["firearm model", "firearm", "pistol", "revolver", "rifle", "shotgun", "handgun",
-                               "air gun", "air rifle", "air pistol", "BB gun", "gun safe"]}
+                               "air gun", "air rifle", "air pistol", "BB gun", "gun safe", "bolt-action rifle",
+                               "lever-action rifle", "pump-action shotgun", "semi-automatic rifle",
+                               "semi-automatic shotgun", "double-barreled shotgun", "single-shot rifle",
+                               "telescopic sight", "red dot sight", "holographic weapon sight", "laser sight",
+                               "weapon-mounted light", "bipod", "holster", "firearm suppressor"]}
 
 # ------------------------------------------------------------------------------------------- firearms
 # Why this collection exists (the owner's and his team's decision): a blind person living in a household with a
@@ -56,18 +60,37 @@ WIKIDATA_WORDS = {"personal_electronics": ["laptop", "computer", "keyboard", "mo
 # sighted owner, in the maker's own owner's manual. The index holds facts and links only; the toolkit puts a short
 # safety note first whenever it offers one of these manuals.
 #
-# Never in this collection (FIREARMS_EXCLUDE, checked on every product and document name and kind): suppressors and
-# other NFA items, conversion or modification parts and kits, automatic-fire parts, unfinished receivers and jigs,
-# reloading equipment, armorer's (gunsmith) manuals, and military-only weapon kinds; nor sales papers (catalogues,
-# warranty and order forms, spec sheets).
-FIREARMS_EXCLUDE = (r"suppressor|silencer|solvent trap|\bnfa\b|short[- ]barrel(?:l?ed)? (?:rifle|shotgun)|\bsb[rs]\b|"
-                    r"conver(?:sion|t)|auto[- ]?sear|full[- ]?auto|select[- ]?fire|machine ?gun|machine pistol|"
-                    r"submachine|assault rifle|battle rifle|automatic rifle|bump[- ]?stock|forced[- ]reset|"
-                    r"binary trigger|trigger (?:kit|group|upgrade|information)|performance[- ]trigger|"
+# What it covers (owner's decisions of November 2026): civilian firearms (handguns, and rifles and shotguns of every
+# common action: bolt, lever, pump, semi-automatic, break-action, single-shot), airguns and BB guns; gun safes, lock
+# boxes and gun locks; holsters, magazines, speed loaders, moon clips and magazine loaders; cleaning tools and
+# chemicals (for chemicals the maker's SAFETY DATA SHEET is the important document); mounted accessories (scopes,
+# red-dot and holographic sights, magnifiers, iron sights, laser sights, weapon lights, slings, bipods, mounts and
+# rings); and COMMERCIALLY MADE suppressors (legal and regulated in much of Europe and most US states: the makers'
+# owner's manuals for mounting, cleaning and safe use).
+#
+# Never in this collection (FIREARMS_EXCLUDE, checked on every product and document name and kind): anything for
+# MAKING or converting into a suppressor ("solvent trap" kits, suppressor or baffle kits and parts, fuel or oil
+# filter adapters, Form 1 builds); automatic weapons and automatic-fire parts (machine guns, submachine guns,
+# select-fire, auto sears, "lightning links", forced-reset and binary triggers, bump stocks); conversion or
+# modification parts and kits, magazine capacity-increase kits; unfinished receivers, 80% lowers and jigs;
+# short-barrelled rifles and shotguns and other NFA weapons; reloading equipment; armorer's (gunsmith) manuals; nor
+# sales papers (catalogues, warranty and order forms, spec sheets, flyers).
+FIREARMS_EXCLUDE = (r"solvent[- ]?trap|(?:suppressor|silencer|baffle|wipe|monocore)s?\s+(?:build\s+)?(?:kit|parts?|"
+                    r"tubes?|cups?|cones?|stacks?|blanks?)\b|baffle\s+(?:kit|cone|cup|stack)|storage\s+(?:cup|cone)s?|"
+                    r"fuel[- ]filter|oil[- ]filter\s+(?:adapt|kit)|form\s*1\b|\bnfa\s+(?:weapon|item|firearm)|"
+                    r"short[- ]barrel(?:l?ed)? (?:rifle|shotgun)|\bsb[rs]\b|any other weapon|\baow\b|"
+                    r"destructive device|conver(?:sion|t)|auto[- ]?sear|lightning[- ]link|full[- ]?auto|"
+                    r"select[- ]?fire|machine ?gun|machine pistol|submachine|\bsmgs?\b|assault rifle|"
+                    r"battle rifle|(?<!semi-)(?<!semi )(?<!semi)automatic (?:rifle|weapon)|\bmp ?5\b|\buzi\b|"
+                    r"\bm249\b|\bm240\b|bump[- ]?stock|forced[- ]reset|binary trigger|"
+                    r"trigger (?:kit|group|upgrade|information)|performance[- ]trigger|"
+                    r"capacity[- ](?:increase|upgrade|extension)|magazine (?:extension|rebuild) kit|"
+                    r"\+\s?\d+\s+(?:magazine |mag )?(?:extension|base ?(?:pad|plate))|parts kit|"
                     r"80 ?%|unfinished|jig\b|build kit|lower receiver|reload|powder measure|bullet mold|"
                     r"armou?rer|grenade|personal defen[cs]e weapon|anti[- ]materi[ae]l")
 NOT_A_MANUAL = (r"warranty|buyer'?s? ?guide|annual|catalog|patent|order form|inspection form|awareness form|"
-                r"price ?list|rebate|code of conduct|spec ?sheet|fact ?sheet|press release|dealer")
+                r"price ?list|rebate|code of conduct|spec ?sheet|fact ?sheet|press release|dealer|flyer|brochure|"
+                r"sell ?sheet|sales|product codes")
 
 # The makers. access:
 #   read     robots.txt allows programs and the terms (read on 2026-11-19) do not forbid them: the builder reads the
@@ -76,7 +99,10 @@ NOT_A_MANUAL = (r"warranty|buyer'?s? ?guide|annual|catalog|patent|order form|ins
 #   link     the terms forbid robots, scraping or indexing, or the site refuses programs: nothing is read; the
 #            library's address (entered by hand) is listed for the person to open in their browser.
 #   mention  the terms forbid even linking without permission: the site is named in words only, no address.
-# type: what the maker's products are when a document does not say ("pistol", "firearm", "airgun", "safe").
+# type: what the maker's products are when a document does not say: "pistol", "rifle", "shotgun", "firearm",
+#   "airgun", "safe", "lock", "holster", "magazine", "loader", "cleaning" (tools and kits), "chemical" (solvents,
+#   bore cleaners, oils and lubricants: their safety data sheets), "optic" (scopes and sights), "laser", "light",
+#   "mount" (slings, bipods, rails and rings) or "suppressor" (commercially made).
 MAKERS = [
     dict(key="glock", maker="GLOCK", type="pistol", access="read",
          library="https://us.glock.com/en/owners-resources/downloadable-materials",
@@ -151,6 +177,153 @@ MAKERS = [
          reason="terms forbid robots and spiders"),
     dict(key="vaultek", maker="Vaultek", type="safe", access="link", library="https://vaulteksafe.com/",
          reason="terms forbid spidering, crawling and scraping"),
+    # Long guns (read on 2026-11-19).
+    dict(key="weatherby", maker="Weatherby", type="rifle", access="read",
+         library="https://weatherby.com/support/owners-manuals/",
+         pages=["https://weatherby.com/support/owners-manuals/"], hosts=["weatherby.com"],
+         reason="robots.txt allows the page; no terms page found (only a privacy policy)"),
+    dict(key="bergara", maker="Bergara", type="rifle", access="read",
+         library="https://www.bergara.online/us/support/user-manuals/",
+         pages=["https://www.bergara.online/us/support/user-manuals/"], hosts=["www.bergara.online"],
+         reason="robots.txt allows all; its terms of use have no rule against programs"),
+    dict(key="franchi", maker="Franchi", type="shotgun", access="link",
+         library="https://www.franchiusa.com/resources/manuals",
+         reason="robots.txt allows, but its terms (on shopfranchi.com) refuse programs (HTTP 403), so they could "
+                "not be read"),
+    dict(key="stoeger", maker="Stoeger", type="shotgun", access="link", library="https://stoegerindustries.com/",
+         reason="the site refuses programs (HTTP 403)"),
+    dict(key="tikka", maker="Tikka (Sako)", type="rifle", access="link",
+         library="https://www.sako.global/tikka/support",
+         reason="its support pages are built by scripts in the browser; not read"),
+    dict(key="ithaca", maker="Ithaca", type="shotgun", access="link", library="https://ithacagun.com/",
+         reason="robots.txt allows and its legal notice has no rule against programs, but the site often resets "
+                "the build machine's connections; its Model 37 manual is linked from its home page"),
+    dict(key="rossi", maker="Rossi", type="firearm", access="link", library="https://www.rossiusa.com/",
+         reason="the site could not be reached from the build machine (HTTP/2 error)"),
+    # More safes and gun locks.
+    dict(key="gunvault", maker="GunVault", type="safe", access="link",
+         library="https://gunvault.com/support/product-manuals/",
+         reason="terms forbid automated systems (bots, scraping tools)"),
+    dict(key="fortress", maker="Fortress", type="safe", access="link",
+         library="https://www.fortresssafe.com/user-manual.html",
+         reason="the site resets the build machine's connections; not read"),
+    dict(key="hornady-security", maker="Hornady Security", type="safe", access="link",
+         library="https://www.hornady.com/support/user-manuals",
+         reason="robots.txt allows and the terms have no rule against programs, but the manual list is built by "
+                "scripts in the browser; not read"),
+    dict(key="master-lock", maker="Master Lock", type="lock", access="link", library="https://www.masterlock.com/",
+         reason="the company of SentrySafe: linked only, as SentrySafe is"),
+    # Holsters, magazines and loaders.
+    dict(key="safariland", maker="Safariland", type="holster", access="link", library="https://safariland.com/",
+         reason="terms forbid robots and data mining, and allow links to the home page only"),
+    dict(key="galco", maker="Galco", type="holster", access="link", library="https://www.galco.com/",
+         reason="the site refuses programs (HTTP 403)"),
+    dict(key="magpul", maker="Magpul", type="magazine", access="link", library="https://magpul.com/",
+         reason="no manual library found (instructions are on product pages); not read"),
+    dict(key="maglula", maker="maglula (UpLULA)", type="loader", access="link", library="https://www.maglula.com/",
+         reason="no manual library found; not read"),
+    dict(key="hks", maker="HKS", type="loader", access="link", library="https://www.hksspeedloaders.com/",
+         reason="no manual library found; not read"),
+    # Cleaning tools and chemicals: for chemicals, the maker's safety data sheets (SDS).
+    dict(key="hoppes", maker="Hoppe's", type="chemical", access="link",
+         library="https://www.primos.com/pages/hoppes-sds",
+         reason="Hoppe's (with M-Pro 7 and Gunslick) publishes its safety data sheets on primos.com; robots.txt "
+                "allows the page, but the terms the site links (Revelyst) forbid data mining and robots"),
+    dict(key="m-pro-7", maker="M-Pro 7", type="chemical", access="link",
+         library="https://www.primos.com/pages/hoppes-sds",
+         reason="its safety data sheets are on the Hoppe's SDS page (primos.com), whose terms forbid robots"),
+    dict(key="otis", maker="Otis Technology", type="cleaning", access="link", library="https://otistec.com/",
+         reason="robots.txt allows its SDS page, but its terms forbid deep links for any commercial purpose "
+                "without permission (the toolkit is sold): only its home page is linked; the safety data sheets "
+                "are under Product information, SDS"),
+    dict(key="break-free", maker="Break-Free (Safariland)", type="chemical", access="link",
+         library="https://safariland.com/",
+         reason="breakfree.com could not be reached (HTTP 530); Safariland's terms forbid robots and allow links "
+                "to the home page only"),
+    dict(key="ballistol", maker="Ballistol", type="chemical", access="link", library="https://ballistol.com/",
+         reason="terms forbid spidering, crawling and scraping; no safety data sheet page found on the site"),
+    dict(key="real-avid", maker="Real Avid", type="cleaning", access="link", library="https://realavid.com/",
+         reason="terms forbid spidering, crawling and scraping; no manual or SDS page found on the site"),
+    dict(key="lucas", maker="Lucas Oil", type="chemical", access="link", library="https://www.lucasoil.com/sds/",
+         reason="terms forbid bots, spiders and indexing agents (linking is allowed)"),
+    dict(key="birchwood-casey", maker="Birchwood Casey", type="chemical", access="link",
+         library="https://www.birchwoodcasey.com/", reason="the site refuses programs (Incapsula)"),
+    dict(key="rem-oil", maker="Rem Oil (Remington gun care)", type="chemical", access="link",
+         library="https://www.remington.com/",
+         reason="terms (The Kinetic Group) forbid data mining and robots; no SDS page found on the site"),
+    # Mounted accessories: optics, lasers, lights, slings, bipods and mounts.
+    dict(key="burris", maker="Burris", type="optic", access="read",
+         library="https://www.burrisoptics.com/support/user-manuals",
+         pages=["https://www.burrisoptics.com/support/user-manuals"], hosts=["www.burrisoptics.com"],
+         reason="robots.txt allows the page; its terms of use have no rule against programs"),
+    dict(key="eotech", maker="EOTECH", type="optic", access="read",
+         library="https://www.eotechinc.com/pages/help-center-product-manuals",
+         pages=["https://www.eotechinc.com/pages/help-center-product-manuals"],
+         hosts=["cdn.shopify.com", "www.eotechinc.com"],
+         reason="robots.txt allows the page; its terms of service have no rule against programs"),
+    dict(key="vortex", maker="Vortex Optics", type="optic", access="link", library="https://vortexoptics.com/",
+         reason="no manual library page found to read (its manuals are on product pages); not read"),
+    dict(key="leupold", maker="Leupold", type="optic", access="link", library="https://www.leupold.com/support",
+         reason="its manuals are not on a page programs can read (scripts); not read"),
+    dict(key="trijicon", maker="Trijicon", type="optic", access="link", library="https://www.trijicon.com/support",
+         reason="its manuals are not on a page programs can read (scripts); not read"),
+    dict(key="aimpoint", maker="Aimpoint", type="optic", access="link", library="https://www.aimpoint.us/",
+         reason="the site refuses programs (HTTP 403)"),
+    dict(key="holosun", maker="Holosun", type="optic", access="link", library="https://www.holosun.com/",
+         reason="no manual library page found to read; not read"),
+    dict(key="bushnell", maker="Bushnell", type="optic", access="link", library="https://www.bushnell.com/",
+         reason="terms (Revelyst) forbid data mining and robots"),
+    dict(key="nikon", maker="Nikon (sport optics, legacy)", type="optic", access="link",
+         library="https://downloadcenter.nikonimglib.com/en/index.html",
+         reason="Nikon's terms reserve the right to block automated systems, bots and crawlers; not read"),
+    dict(key="primary-arms", maker="Primary Arms", type="optic", access="link", library="https://www.primaryarms.com/",
+         reason="no manual library page found to read; not read"),
+    dict(key="surefire", maker="SureFire", type="light", access="link", library="https://www.surefire.com/",
+         reason="no manual library page found to read; not read (SureFire also makes suppressors)"),
+    dict(key="streamlight", maker="Streamlight", type="light", access="link",
+         library="https://www.streamlight.com/support",
+         reason="its manuals are not on a page programs can read (scripts); not read"),
+    dict(key="crimson-trace", maker="Crimson Trace", type="laser", access="link",
+         library="https://www.crimsontrace.com/", reason="terms (American Outdoor Brands) forbid data mining"),
+    dict(key="viridian", maker="Viridian", type="laser", access="link", library="https://viridian.tech/product-manuals",
+         reason="terms forbid robots, spiders and indexing (only search engines)"),
+    dict(key="harris", maker="Harris Bipods", type="mount", access="link", library="https://www.harrisbipods.com/",
+         reason="the site resets the build machine's connections; not read"),
+    # Commercially made suppressors (owner's decision of November 2026: legal and regulated in much of Europe and
+    # most US states; the makers' owner's manuals for mounting, cleaning and safe use).
+    dict(key="dead-air", maker="Dead Air", type="suppressor", access="read",
+         library="https://deadairsilencers.com/owners-manuals/",
+         pages=["https://deadairsilencers.com/owners-manuals/"], hosts=["deadairsilencers.com"],
+         reason="robots.txt allows the page; no terms page found (only a privacy policy)"),
+    dict(key="huxwrx", maker="HUXWRX", type="suppressor", access="read", library="https://huxwrx.com/manuals",
+         pages=["https://huxwrx.com/manuals"], hosts=["huxwrx.com"],
+         reason="robots.txt allows the page; its terms have no rule against programs"),
+    dict(key="silencerco", maker="SilencerCo", type="suppressor", access="link", library="https://silencerco.com/",
+         reason="the site refuses programs (HTTP 403)"),
+    dict(key="rugged", maker="Rugged Suppressors", type="suppressor", access="link",
+         library="https://www.ruggedsuppressors.com/", reason="terms forbid spidering, crawling and scraping"),
+    dict(key="thunder-beast", maker="Thunder Beast Arms", type="suppressor", access="link",
+         library="https://www.thunderbeastarms.com/",
+         reason="its certificate could not be checked from the build machine; not read"),
+    dict(key="banish", maker="Banish (Silencer Central)", type="suppressor", access="link",
+         library="https://www.banishsuppressors.com/customer-care/product-manuals/",
+         reason="terms forbid automated tools that extract content beyond what the terms allow"),
+    dict(key="q", maker="Q", type="suppressor", access="link", library="https://thebigq.com/",
+         reason="no manual library page found; not read"),
+    dict(key="griffin", maker="Griffin Armament", type="suppressor", access="link",
+         library="https://griffinarmament.com/manuals/",
+         reason="its manual and terms pages refuse programs (HTTP 403)"),
+    dict(key="ase-utra", maker="Ase Utra", type="suppressor", access="link",
+         library="https://www.aseutra.fi/product-support/",
+         reason="no terms page found; its support page holds product leaflets, not read"),
+    dict(key="jaki", maker="Jaki", type="suppressor", access="link", library="https://jaki.fi/",
+         reason="no manual library page found; not read"),
+    dict(key="hausken", maker="Hausken", type="suppressor", access="link",
+         library="https://www.hausken-silencers.com/en/downloads",
+         reason="its downloads page holds flyers and sales sheets, not manuals; not read"),
+    dict(key="a-tec", maker="A-TEC", type="suppressor", access="link",
+         library="https://www.a-tec.no/maintenance-and-instructions",
+         reason="no terms page found; its instructions are not files a program can list; not read"),
 ]
 
 # General safe-storage guidance linked from the collection (linking allowed: NSSF's linking policy grants plain-text
@@ -313,8 +486,10 @@ CATEGORIES = {
     "firearms": dict(
         name="Firearms (owner's manuals)",
         description="Makers' own owner's and instruction manuals for civilian pistols, revolvers, rifles and "
-                    "shotguns, airguns and BB guns, and gun safes and locks: how to handle, store, clean and "
-                    "maintain them safely, as the maker tells every owner. Links only, fetched from the maker.",
+                    "shotguns, airguns and BB guns; gun safes and locks; holsters, magazines and loaders; cleaning "
+                    "tools and the safety data sheets of cleaning chemicals; scopes, sights, lasers, lights and "
+                    "mounts; and commercially made suppressors: how to handle, store, clean and maintain them "
+                    "safely, as the maker tells every owner. Links only, fetched from the maker.",
         kind="manuals", licence="CC0 (facts and links); each manual belongs to its maker",
         makers=MAKERS, wikidata=True, exclude=FIREARMS_EXCLUDE, guidance=FIREARMS_GUIDANCE),
 }

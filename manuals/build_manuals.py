@@ -39,11 +39,16 @@ Sources, and why each may be used by a program:
       key that may fetch, 2,000 uses a day), paged with next_since; skipped without it.
   Makers' own manual libraries (category firearms, categories.MAKERS)   each maker's robots.txt and terms were read
       on 2026-11-19: a library is READ only where robots.txt allows this builder (checked again at every build) and
-      the terms do not forbid programs (GLOCK, Henry, Remington, Browning, Winchester): only the pages listed, only
-      links to the maker's own files, a HEAD request for each PDF's size, never the manual itself. Makers whose
-      terms forbid robots, scraping or indexing, or whose sites refuse programs, are only LINKED (the library's
-      address, entered by hand, for the person to open); Smith & Wesson, whose terms forbid links without
-      permission, is only NAMED. Never suppressors, NFA items, conversion or automatic-fire parts, reloading
+      the terms do not forbid programs (GLOCK, Henry, Remington, Browning, Winchester, Weatherby, Bergara; the optics
+      makers Burris and EOTECH; the suppressor makers Dead Air and HUXWRX): only the pages listed, only links to
+      the maker's own files, a HEAD request for each PDF's size, never the manual itself. Makers whose terms forbid
+      robots, scraping or indexing, or whose sites refuse programs, are only LINKED (the library's address,
+      entered by hand, for the person to open): among them every cleaning-chemical maker checked (Hoppe's and
+      M-Pro 7, Break-Free, Ballistol, Otis, Real Avid, Lucas, Birchwood Casey, Rem Oil), whose safety data sheets
+      the person opens from the link; Smith & Wesson, whose terms forbid links without permission, is only NAMED.
+      A document whose title or file name says "SDS" or "safety data sheet" is marked document "safety data sheet".
+      Never anything for making or converting into a suppressor ("solvent trap" kits), automatic weapons or
+      automatic-fire parts, other NFA weapons, conversion or capacity-increase kits, 80% lowers and jigs, reloading
       equipment or armorer's manuals (categories.FIREARMS_EXCLUDE).
   Not used: ManualsLib and other manual-copying sites (their terms forbid automated use), nor the Internet Archive's
       copies of them (items such as manualsbase-id-2170, manualsonline-id-..., manualzilla-id-..., manualsplus_...:
@@ -748,7 +753,7 @@ def wikidata_rows(fetch):
 
 def wikidata_entries(rows, key):
     """The entries of the category key: items whose kind's label has one of its words (and is not software), and
-    neither whose kind nor name matches the category's "exclude" rule (firearms: no suppressors, machine guns ...)."""
+    neither whose kind nor name matches the category's "exclude" rule (firearms: no machine guns, solvent traps ...)."""
     cat = C.CATEGORIES[key]
     words = [w.lower() for w in (cat.get("ia") or []) + C.WIKIDATA_WORDS.get(key, [])]
     exclude = re.compile(cat["exclude"], re.I) if cat.get("exclude") else None
@@ -945,15 +950,39 @@ class _LinkParser(html.parser.HTMLParser):
 
 
 GENERIC_LIBRARY = re.compile(r"^(?:(?:firearms?|guns?|manuals?|all|products?)\b\s*)*$", re.I)   # a list page
+# A heading that is not a manual's title (an age question, a cookie notice): the file name is used instead.
+NOT_A_TITLE = re.compile(r"\?\s*$|years old|cookies?|newsletter|subscribe|sign up|log ?in", re.I)
 GENERIC_LINK = re.compile(r"^(click here.*|download.*|here|pdf|view.*|open.*|read more|manual|\s*)$", re.I)
 PDF_IN_TEXT = re.compile(r"https?://[^\s\"'<>\\]+?\.pdf(?:\?[^\s\"'<>\\]*)?", re.I)
 TITLE_BEFORE = re.compile(r"""(?<![a-z])["']?title["']?\s*:\s*(?:"([^"]{2,120})"|'([^']{2,120})')""", re.I)
 SUBTITLE_BEFORE = re.compile(r"""(?<![a-z])["']?subtitle["']?\s*:\s*(?:"([^"]{2,160})"|'([^']{2,160})')""", re.I)
-TYPES = [("air rifle", "airgun"), ("air pistol", "airgun"), ("airgun", "airgun"), ("air gun", "airgun"),
+# The kind of product a document is about, from the words of its title (the accessories first, so that "Pistol
+# Magazine Loader" or "Rifle Scope" is not taken for the firearm itself; product_type looks for the firearm words
+# first for a firearm maker).
+TYPES = [("safety data sheet", "chemical"), ("sds", "chemical"), ("msds", "chemical"), ("solvent", "chemical"),
+         ("bore cleaner", "chemical"), ("lubricant", "chemical"), ("gun oil", "chemical"), ("clp", "chemical"),
+         ("grease", "chemical"), ("cleaning kit", "cleaning"), ("cleaning rod", "cleaning"),
+         ("bore brush", "cleaning"), ("bore snake", "cleaning"), ("boresnake", "cleaning"), ("jag", "cleaning"),
+         ("suppressor", "suppressor"), ("silencer", "suppressor"), ("moderator", "suppressor"),
+         ("magazine loader", "loader"), ("speed loader", "loader"), ("speedloader", "loader"),
+         ("moon clip", "loader"), ("stripper clip", "loader"), ("uplula", "loader"), ("magazine", "magazine"),
+         ("holster", "holster"), ("laser", "laser"), ("weapon light", "light"), ("weaponlight", "light"),
+         ("flashlight", "light"), ("riflescope", "optic"), ("scope", "optic"), ("red dot", "optic"),
+         ("reflex sight", "optic"), ("holographic", "optic"), ("magnifier", "optic"), ("sight", "optic"),
+         ("optic", "optic"), ("bipod", "mount"), ("sling", "mount"), ("scope mount", "mount"), ("rings", "mount"),
+         ("air rifle", "airgun"), ("air pistol", "airgun"), ("airgun", "airgun"), ("air gun", "airgun"),
          ("bb gun", "airgun"), ("pellet", "airgun"), ("revolver", "revolver"), ("pistol", "pistol"),
-         ("handgun", "pistol"), ("shotgun", "shotgun"), ("carbine", "rifle"), ("rifle", "rifle"),
-         ("cable lock", "lock"), ("trigger lock", "lock"), ("gun lock", "lock"), ("safe", "safe"),
-         ("vault", "safe"), ("cabinet", "safe")]
+         ("handgun", "pistol"), ("shotgun", "shotgun"), ("over under", "shotgun"), ("over-under", "shotgun"),
+         ("over/under", "shotgun"), ("o/u", "shotgun"), ("side by side", "shotgun"), ("side-by-side", "shotgun"),
+         ("carbine", "rifle"), ("rifle", "rifle"), ("cable lock", "lock"), ("trigger lock", "lock"), ("gun lock", "lock"), ("lock box", "safe"),
+         ("lockbox", "safe"), ("safe", "safe"), ("vault", "safe"), ("cabinet", "safe")]
+FIREARM_TYPES = {"pistol", "revolver", "rifle", "shotgun", "firearm", "airgun"}
+# What a maker's documents are called, by its type: a chemical's document is its safety data sheet; a firearm's,
+# its owner's manual.
+DOCUMENT_WORDS = {"chemical": "safety data sheets", "cleaning": "instructions and safety data sheets",
+                  "holster": "instructions", "magazine": "instructions", "loader": "instructions",
+                  "lock": "instructions", "mount": "instructions"}
+SDS_WORDS = re.compile(r"\bm?sds\b|safety[- ]data[- ]sheet", re.I)
 
 
 def title_from_file(url):
@@ -970,10 +999,13 @@ def title_from_file(url):
 
 
 def product_type(text, default):
-    """The kind of product a document is about, from its words ("pistol", "rifle", "airgun", "safe" ...), else
-    default."""
+    """The kind of product a document is about, from its words ("pistol", "rifle", "airgun", "safe", "optic",
+    "suppressor", "chemical" ...), else default. For a firearm maker the firearm words are looked for first."""
     t = str(text or "").lower()
-    for word, kind in TYPES:
+    order = TYPES
+    if default in FIREARM_TYPES:          # a gun maker's "Tube Magazine Rifle" is a rifle: the firearm words first
+        order = [w for w in TYPES if w[1] in FIREARM_TYPES] + [w for w in TYPES if w[1] not in FIREARM_TYPES]
+    for word, kind in order:
         if re.search(r"\b" + re.escape(word) + r"s?\b", t):
             return kind
     return default
@@ -997,6 +1029,8 @@ def library_links(text, base):
         if not url.startswith("http") or url in seen:
             continue
         title = heading if GENERIC_LINK.match(label or "") else label
+        if title and NOT_A_TITLE.search(title):
+            title = title_from_file(url) if url.lower().split("?")[0].endswith(".pdf") else ""
         seen.add(url)
         out.append((url, title or ""))
     for m in PDF_IN_TEXT.finditer(text):
@@ -1053,7 +1087,8 @@ def firearm_model(name, maker):
 
 def maker_entry(maker, title, url, kind, size=0):
     """One index entry: a maker's manual (kind "pdf", or "page" for a manual published as a web page)."""
-    name = re.sub(r"\s*[®™©]", "", " ".join(str(title or "").replace("’", "'").split())) or title_from_file(url)
+    name = re.sub(r"\s*[®™©]", "", " ".join(str(title or "").replace("’", "'").split()))
+    name = re.sub(r"[\s→»›>]+$", "", name) or title_from_file(url)          # "FLOW →": no arrow
     words = name if maker["maker"].split()[0].lower() in name.lower() else f"{maker['maker']} {name}"
     return {"id": f"fa-{maker['key']}-{hashlib.sha256(url.encode('utf-8')).hexdigest()[:10]}",
             "brand": maker["maker"], "model": firearm_model(name, maker["maker"]), "name": words,
@@ -1061,9 +1096,19 @@ def maker_entry(maker, title, url, kind, size=0):
             "category": "firearms", "barcodes": [], "fcc_ids": [],
             "ic_ids": [], "source": f"{maker['maker']}'s own manual library", "page": maker.get("library", ""),
             "manuals": [{"title": words, "url": url, "page": maker.get("library", "") if kind == "pdf" else url,
-                         "kind": kind, "size": int(size or 0),
+                         "kind": kind, "size": int(size or 0), "document": document_of(words, url),
                          "rights": f"belongs to its maker ({maker['maker']}); fetched from the maker for the "
                                    "owner's own use", "source": "the maker"}]}
+
+
+def document_of(title, url=""):
+    """"safety data sheet" for a chemical's SDS (its title or file name says so), else "manual"."""
+    return "safety data sheet" if SDS_WORDS.search(f"{title} {title_from_file(url) if url else ''}") else "manual"
+
+
+def documents_word(maker):
+    """What the maker's documents are called: "owner's manuals", "safety data sheets", "instructions" ..."""
+    return DOCUMENT_WORDS.get(maker.get("type", ""), "owner's manuals")
 
 
 def library_entry(maker):
@@ -1071,17 +1116,18 @@ def library_entry(maker):
     words only), for the person to open when no manual of their model is listed."""
     library = maker.get("library", "") if maker["access"] in ("read", "link") else ""
     return {"id": f"fa-{maker['key']}-library", "brand": maker["maker"], "model": "",
-            "name": f"{maker['maker']} owner's manuals (the maker's own library)", "type": maker["type"],
+            "name": f"{maker['maker']} {documents_word(maker)} (the maker's own library)", "type": maker["type"],
             "category": "firearms", "barcodes": [], "fcc_ids": [], "ic_ids": [], "source": "the maker's site",
             "page": library, "site": maker.get("site", ""), "access": maker["access"], "access_reason": maker["reason"],
-            "manuals": [{"title": f"{maker['maker']} owner's manuals", "url": "", "page": library, "kind": "library",
+            "manuals": [{"title": f"{maker['maker']} {documents_word(maker)}", "url": "", "page": library,
+                         "kind": "library", "document": "library",
                          "size": 0, "rights": f"belongs to its maker ({maker['maker']})", "source": "the maker"}]
             if library else []}
 
 
 def wanted_document(title, url, exclude):
     """True when a document of a maker's library is a manual the index may hold: not a sales paper (NOT_A_MANUAL)
-    and nothing the category excludes (suppressors, conversion parts, reloading ...)."""
+    and nothing the category excludes (solvent traps, automatic weapons, conversion parts, reloading ...)."""
     words = f"{title} {title_from_file(url)}"
     return not re.search(C.NOT_A_MANUAL, words, re.I) and not (exclude and re.search(exclude, words, re.I))
 
