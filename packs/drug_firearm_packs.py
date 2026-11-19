@@ -405,7 +405,13 @@ def build_cdc_phil_drugs(limit):
 # service_packs.GRAPHIC catch most; these are the rest).
 POINTED = re.compile(r"\b(point(s|ed|ing)? (a |the |his |her )?(gun|pistol|rifle|revolver|shotgun|weapon)s? at|"
                      r"at gunpoint|held up|hold-?up|hostages?|threat\w*|mass shooting|shooting (victims?|scene)|"
-                     r"crime scenes?|homicide|assassinat\w*)\b", re.I)
+                     r"crime scenes?|homicide|assassinat\w*|attacks?|attackers?|massacres?|spree|terroris\w*|"
+                     r"killers?|perpetrat\w*|shooters?|shootings?|used (by|in) the)\b", re.I)
+# Artillery and other large guns: not firearms (some Commons accessory categories, such as "Muzzle brakes", hold
+# them too).
+ARTILLERY = re.compile(r"\b(artillery|cannons?|howitzers?|anti-?tank|anti-?aircraft|tanks?|field guns?|naval guns?|"
+                       r"gun turrets?|turrets?|warships?|ships?|fortress\w*|flak|pak ?\d+|mortars?|"
+                       r"\d+(\.\d+)? ?cm|\d{2,3} ?mm (gun|cannon))\b", re.I)
 # Anything for MAKING a suppressor or converting a gun to automatic fire (as manuals/categories.FIREARMS_EXCLUDE).
 NOT_FOR_MAKING = re.compile(r"\b(solvent traps?|baffles?|build kits?|form 1|drilled|indexed|filter adapters?|"
                             r"oil filters?|fuel filters?|home-?made|homemade|improvised|auto ?sears?|lightning links?|"
@@ -426,6 +432,8 @@ def accessory_left_out(f):
         return "its words name harm, death, a child or something never shown"
     if ACCESSORY_NOT.search(words) or POINTED.search(words):
         return "its words name shooting, crime, a toy or replica, or a drawing"
+    if ARTILLERY.search(words):
+        return "its words name artillery or another large gun, not a firearm"
     if NOT_FOR_MAKING.search(words):
         return "its words name something for making a suppressor or converting a gun"
     if PEOPLE_FOCUS.search(words) or PERSON.search(words) or MORE_PEOPLE.search(words):
@@ -437,7 +445,7 @@ def gun_left_out(f):
     """Why a Commons file of a gun is left out ("" when kept): safety_rites_packs.gun_ok (no actions, harm, toys,
     drawings, children, cartridges alone), a gun pointed at someone, making or converting, and people."""
     words = words_of(f)
-    if not gun_ok(f, "gun") or POINTED.search(words) or NOT_FOR_MAKING.search(words):
+    if not gun_ok(f, "gun") or POINTED.search(words) or NOT_FOR_MAKING.search(words) or ARTILLERY.search(words):
         return "its words name an action with a gun, harm, a toy, a drawing, a child, or making or converting one"
     if PEOPLE_FOCUS.search(words) or PERSON.search(words) or MORE_PEOPLE.search(words):
         return "its words name a person (this pack shows the guns themselves)"

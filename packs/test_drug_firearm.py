@@ -85,6 +85,14 @@ def test_gun_files_left_out():
     assert d.accessory_left_out(made_up("File:Gun cleaning kit.jpg", "A gun cleaning kit with rods and brushes.")) \
         == ""
     assert d.accessory_left_out(made_up("File:Holster.jpg", "A soldier wearing a holster."))
+    # Crime evidence and artillery (found in a test build, 19 November 2026) are left out.
+    assert d.accessory_left_out(made_up("File:D.C. Sniper Bushmaster XM-15 Rifle.png", "The Bushmaster XM-15 used "
+                                        "by the D.C. snipers during their attacks in October 2002."))
+    assert d.accessory_left_out(made_up("File:Pak 40 anti-tank gun in Oulu.jpg", "Pak 40 anti-tank gun in Oulu."))
+    assert d.accessory_left_out(made_up("File:Furggels - Fortress Artillery 15 cm.jpg", "The muzzle brake of a 15 "
+                                        "cm gun."))
+    assert d.accessory_left_out(made_up("File:Muzzle brake on a rifle.jpg", "A muzzle brake on a bolt-action rifle.")) \
+        == ""
 
 
 def test_cbp_titles():
