@@ -322,3 +322,11 @@ def test_new_collections_are_review_only_sexual_content():
     keys = [s["key"] for s in ars.ADULT_REVIEW_SOURCES]
     assert len(keys) == len(set(keys))
     assert any("Flickr" in k for k in ars.NOT_INCLUDED) and any("Google Patents" in k for k in ars.NOT_INCLUDED)
+
+
+def test_english_kind_is_not_a_child_word():
+    """"kind" means a child in Dutch and German, but "a kind of" / "all kinds" in English does not leave a record out."""
+    assert ars.screen("A kind of screen painted with lovers") == ""
+    assert ars.screen("Two lovers among all kinds of flowers") == ""
+    assert ars.screen("Twee figuren, een kind en een vrouw")           # Dutch: a child
+    assert ars.screen("Ein Kind schläft")                               # German: a child

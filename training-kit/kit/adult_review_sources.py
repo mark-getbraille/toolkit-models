@@ -139,6 +139,13 @@ MINOR = re.compile(
     r"mädchen|knabe\w*|junge[nr]?|jugend\w*|bambin\w*|fanciull\w*|ragazz\w*|niñ[oa]s?|joven\w*|muchach\w*|"
     r"hylas|narcissus|adonis|hyacinth\w*|endymion|attis|psyche|embryo\w*)\b", re.I)
 
+# "kind" is the Dutch and German word for a child, but in English it means "sort": "a kind of", "this kind", "all
+# kinds". Those English uses are taken out before MINOR looks at the text, so they no longer leave a record out.
+ENGLISH_KIND = re.compile(
+    r"\b(?:a|the|this|that|these|those|any|some|every|one|each|what|which|same|other|another|all|its|their|"
+    r"his|her|our|many|several|various|different|unusual|rare|first|only|new|similar)\s+kinds?\b|\bkinds?\s+of\b",
+    re.I)
+
 # "school" is a child word, except an art school ("Kano school", "school of Rembrandt").
 ART_SCHOOL = re.compile(
     r"\b(?!(?:Boarding|High|Primary|Secondary|Grammar|Middle|Elementary|Sunday|Catholic|Public|Private|Girls'?|"
@@ -285,7 +292,7 @@ def screen(*texts, photo=False):
     """"" when the texts may be used; otherwise the reason they are left out (adults only, consent, no violence, no
     animals; photo=True adds the photo rules: no youthful or doubtful wording)."""
     text = " ".join(clean(t) for t in texts if t)
-    no_art_school = ART_SCHOOL.sub(" ", text)
+    no_art_school = ENGLISH_KIND.sub(" ", ART_SCHOOL.sub(" ", text))
     for pattern, why in ((rs.CHILD, "mentions or suggests a child or young person"),
                          (MINOR, "mentions or suggests a child or young person")):
         m = pattern.search(no_art_school)
