@@ -23,6 +23,17 @@ The packs (ADULT_ART_PACKS):
                     instead of art_nudes's, so no work is in both packs. Asked "Describe this picture." and "Is there
                     nudity in this picture?" (body_packs.art_rows: the museum's own words, alt text where it has
                     it). Rows of works whose words name a child carry "child": true.
+                    WIDER (November 2026, the owner's request: the describer struggles with nudes): also every nude
+                    and academic study (ACADEMY: académie d'homme, life study, écorché, academy figure ...) from
+                    museums art_nudes does not read, each record's own licence checked: the Minneapolis Institute
+                    of Art ("Public Domain", full image), Statens Museum for Kunst (Public Domain Mark or CC0), the
+                    Rijksmuseum (Public Domain Mark or CC0), Europeana (CC0, Public Domain Mark or CC BY; its key from
+                    the build's EUROPEANA_KEY secret), four more Smithsonian units (Cooper Hewitt, Freer and Sackler,
+                    African Art, Hirshhorn: CC0), and the non-sexual nudes the erotic_art searches find. Danish and
+                    Dutch titles are put in English word for word (foreign_title) or the work is left out; the
+                    providers' English only (never Europeana's machine translations). Left out as well: death,
+                    killing and torture (NUDE_HARM), specimens and documents (NOT_ART). Not read yet, with the
+                    reason: MUSEUM_NUDES_LATER.
                     Left out (nudes_left_out): PHOTOGRAPHS (never a photograph in this pack, so never a photograph
                     of a nude child); any sexual act or erotica (SEX_ACT: those go to erotic_art's screen); sexual
                     violence and the stories that are about it (SEX_VIOLENCE: rape, abduction, Leda, Europa, the
@@ -181,7 +192,7 @@ ANIMAL = re.compile(
 # A photograph (never in these packs: an old photograph of a nude or of sex is anonymous, and age cannot be known).
 PHOTO_WORDS = re.compile(
     r"\b(photograph\w*|photos?|albumen|gelatin silver|silver gelatin|daguerreotype\w*|ambrotype\w*|tintype\w*|"
-    r"carte(s)? de visite|cabinet card\w*|stereograph\w*|stereoview\w*|stereo card\w*|collodion|negatives?|"
+    r"carte(s)?[- ]de[- ]visite|cabinet card\w*|stereograph\w*|stereoview\w*|stereo card\w*|collodion|negatives?|"
     r"lantern slide\w*|glass plate\w*|platinum print|palladium print|cyanotype\w*|photogravure\w*|"
     r"chromogenic|inkjet print|pigment print|dye transfer|salted paper|calotype\w*|film still\w*|foto\w*|"
     r"photographie\w*|postcards?)\b", re.I)
@@ -222,6 +233,8 @@ def nudes_left_out(source, title, *texts, kind="", routed=False):
         reason = f"sexual act or erotica: {SEX_ACT.search(text).group(0)}"
     elif SEX_VIOLENCE.search(text):
         reason = f"sexual violence or its story: {SEX_VIOLENCE.search(text).group(0)}"
+    elif NUDE_HARM.search(text):
+        reason = f"death, killing or torture: {NUDE_HARM.search(text).group(0)}"
     elif minor and wide:
         reason = f"a young person ({minor}) with a sexual or romantic word ({wide.group(0)})"
     elif minor and real_young_person(text):
@@ -236,6 +249,10 @@ def nudes_left_out(source, title, *texts, kind="", routed=False):
 
 
 CHILD_TITLES = set()
+# Death, killing and torture: never in a nudes pack (graphic scenes are other packs' and need their own choice).
+NUDE_HARM = re.compile(r"\b(corpses?|cadavers?|dead|death|dying|killed|killing|murder\w*|tortur\w*|flayed|"
+                       r"executions?|executed|beheaded|severed|massacre\w*|suicide|slaughter\w*|martyrdom|"
+                       r"crucifixion|lynch\w*)\b", re.I)
 
 # The only children museum_art_nudes keeps (the owner's list): the Christ Child with the Madonna, the infant Saint
 # John, the Holy Family, putti, cherubs, Cupid and other winged child figures, and angels. A generic child word
@@ -507,24 +524,346 @@ def write_review_list(path):
 ROUTED = []
 
 
-def route_to_nudes(source, name, url, title, credit, kind="", artist="", date="", medium="", text="", place="",
+# Academic studies of the nude ("académie", "life study", "écorché", "academy figure"): nude by definition, even when
+# the record does not say "nude".
+# ("académie" alone also names academies and buildings, and "from the life" portraits: neither counts alone.)
+ACADEMY = re.compile(r"\b(acad[ée]mies? (d'homme|de femme|study|drawing|figure)s?|academy (figures?|studies|study|"
+                     r"drawings?)|academic (nudes?|studies|study|drawings?)|life (studies|study|drawings?|class)|"
+                     r"[ée]corch[ée]s?|model (study|studies)|studies? (of|from) (a|the) (nude )?model|"
+                     r"figure studies from the model)\b", re.I)
+
+
+NOT_ART = re.compile(r"\b(specimens?|herbarium|fossils?|plants?|botan\w*|zoolog\w*|maps?|charts?|letters?|"
+                     r"manuscript text|books? cover)\b", re.I)
+
+
+def nude_candidate(source, name, url, title, credit, kind="", artist="", date="", medium="", text="", place="",
                    others=()):
-    """Offer a non-sexual work found by an erotic search to museum_art_nudes: kept in ROUTED when its words name
-    nudity (body_packs.NUDITY_WORDS) and it passes nudes_left_out(routed=True). Rows as art_nudes's (body_packs
-    art_rows), marked "child" when its words name a sacred or winged child figure."""
+    """(name, picture address, rows) for a museum_art_nudes work from a source that art_nudes does not read, or
+    None: its words must name nudity (body_packs.NUDITY_WORDS) or an academic nude study (ACADEMY), it must pass
+    nudes_left_out(routed=True) (no photograph, nothing sexual, no sexual violence, the child rules), and its rows are
+    art_nudes's (body_packs.art_rows), marked "child" when its words name a sacred or winged child figure."""
     words = " ".join(clean(t) for t in (title, text, *others) if t)
-    if not body_packs.NUDITY_WORDS.search(words) or any(n == name for n, _, _ in ROUTED):
-        return False
+    if not (body_packs.NUDITY_WORDS.search(words) or ACADEMY.search(words)):
+        return None
+    if NOT_ART.search(f"{kind} {title}"):
+        return None                               # a specimen or a document, not a work of art
     if nudes_left_out(source, title, text, *others, kind=f"{kind} {medium}", routed=True):
-        return False
+        return None
     female, male = body_packs.nudity_kind(words)
-    rows = body_packs.art_rows(text, credit, title, kind, artist, date, medium, female, male)
+    rows = body_packs.art_rows(text, credit, title, singular_kind(kind), artist, date, medium, female, male)
     if place:
         rows = made_in(rows, place_from_text(place))
     if minor_word(words):
         rows = [dict(r, child=True) for r in rows]
-    ROUTED.append((name, url, rows))
-    return True
+    return (name, url, rows)
+
+
+def singular_kind(kind):
+    """A museum's classification as one kind ("Prints, works on paper" -> "print", "Paintings" -> "painting")."""
+    kind = re.sub(r"^works of art$", "work of art", clean(kind).split(",")[0].split(";")[0].strip(), flags=re.I)
+    return re.sub(r"(?<=[a-z])s$", "", kind) if re.fullmatch(r"[A-Za-z ]+s", kind) and not kind.lower().endswith(
+        ("ss", "us")) else kind
+
+
+def route_to_nudes(source, name, url, title, credit, kind="", artist="", date="", medium="", text="", place="",
+                   others=()):
+    """Offer a non-sexual work found by an erotic search to museum_art_nudes (nude_candidate); kept in ROUTED. True
+    when kept."""
+    if any(n == name for n, _, _ in ROUTED):
+        return False
+    item = nude_candidate(source, name, url, title, credit, kind, artist, date, medium, text, place, others)
+    if item:
+        ROUTED.append(item)
+    return bool(item)
+
+
+# ----------------------------------------------------------------- museum_art_nudes: more museums
+
+MIA = "https://search.artsmia.org/"
+NUDE_QUERIES = ("nude", "naked", "académie", "academy figure", "life study", "figure study", "écorché",
+                "nude model", "female nude", "male nude", "bather", "bathers")
+
+
+def mia_records(s, query, most):
+    """Minneapolis Institute of Art search hits (its public search API) for one query."""
+    data = get_json(s, MIA + requests_quote(query), params={"size": most}) or {}
+    return [h.get("_source") or {} for h in (data.get("hits") or {}).get("hits") or []]
+
+
+def requests_quote(text):
+    """text for a web address path."""
+    from urllib.parse import quote
+    return quote(text)
+
+
+def mia_nudes(want, photos=False):
+    """(name, picture address, rows) for Minneapolis Institute of Art works whose own record says "Public Domain"
+    and whose image may be shown in full: nudes and academic studies (nude_candidate), or, with photos=True, nude
+    photographs for nude_photo_studies (nude_photo_left_out)."""
+    s, items, seen = session(), [], set()
+    for q in NUDE_QUERIES:
+        for r in mia_records(s, q, 500):
+            oid = str(r.get("id") or "")
+            if not oid or oid in seen:
+                continue
+            seen.add(oid)
+            title = clean(r.get("title"))
+            if r.get("rights_type") != "Public Domain" or r.get("image") != "valid" or \
+                    r.get("Rights_Image_Display") not in (None, "", "Full") or not title:
+                note("Mia", title or oid, "not public domain, or no full picture")
+                continue
+            kind = clean(r.get("classification") or r.get("object_name"))
+            artist = clean(r.get("artist"))
+            credit = f"Minneapolis Institute of Art, public domain: {title}" + (f", {artist}" if artist else "") + \
+                f", https://collections.artsmia.org/art/{oid}"
+            url = f"https://{int(oid) % 7}.api.artsmia.org/800/{oid}.jpg" if oid.isdigit() else ""
+            text = clean(r.get("text") or r.get("description"))
+            is_photo = bool(PHOTO_WORDS.search(f"{kind} {r.get('medium')}"))
+            if photos:
+                if is_photo and not nude_photo_left_out(title, text, kind=f"{kind} {r.get('medium')}"):
+                    items.append((f"mia-{oid}.jpg", url, nude_photo_rows(title, credit)))
+                continue
+            item = nude_candidate("Mia", f"mia-{oid}.jpg", url, title, credit, kind, artist, clean(r.get("dated")),
+                                  clean(r.get("medium")), text, clean(r.get("country")))
+            if item:
+                items.append(item)
+        time.sleep(0.5)
+        if len(items) >= want:
+            break
+    say(f"Minneapolis Institute of Art{' photographs' if photos else ''}: {len(items)} usable")
+    return items[:want]
+
+
+SMK = "https://api.smk.dk/api/v1/art/search/"
+SMK_QUERIES = ("nøgen", "nøgne", "akt", "aktstudie", "nude", "naked", "model", "académie", "croquis")
+# Danish and Dutch catalogue words of nude titles, in English; a title is used only when every word is known (or
+# the record gives an English title).
+FOREIGN_WORDS = {
+    "nøgen": "nude", "nøgne": "nude", "halvnøgen": "half-nude", "akt": "nude study", "aktstudie": "nude study",
+    "aktstudier": "nude studies", "model": "model", "modellen": "the model", "mandlig": "male", "kvindelig": "female",
+    "kvinde": "woman", "kvinder": "women", "mand": "man", "mænd": "men", "liggende": "reclining", "stående": "standing",
+    "siddende": "seated", "knælende": "kneeling", "ryg": "back", "set": "seen", "fra": "from", "ryggen": "behind",
+    "studie": "study", "studier": "studies", "af": "of", "en": "a", "et": "a", "med": "with", "og": "and", "i": "in",
+    "badende": "bathing", "figur": "figure", "figurer": "figures", "hoved": "head", "arm": "arm", "arme": "arms",
+    "ben": "legs", "torso": "torso", "naakt": "nude", "naakte": "nude", "vrouw": "woman", "vrouwen": "women",
+    "man": "man", "mannen": "men", "staand": "standing", "staande": "standing", "zittend": "seated",
+    "zittende": "seated", "liggend": "reclining", "liggende_nl": "reclining", "knielend": "kneeling",
+    "knielende": "kneeling", "op": "on", "de": "the", "het": "the", "een": "a", "van": "of", "met": "with",
+    "rug": "back", "rugfiguur": "figure seen from behind", "studie_nl": "study", "academie": "académie",
+    "académie": "académie", "naaktstudie": "nude study", "modelstudie": "model study", "badende_nl": "bathing",
+    "baadster": "bather", "baadsters": "bathers", "bader": "bather", "figuur": "figure", "mannelijk": "male",
+    "vrouwelijk": "female", "zijaanzicht": "side view", "vooraanzicht": "front view", "croquis": "sketch",
+}
+
+
+def foreign_title(title):
+    """A short Danish or Dutch nude title in English when every word is known ("Nøgen mandlig model" -> "Nude male
+    model"), else ""."""
+    words = re.findall(r"[\wæøåÆØÅéÉ'-]+", clean(title).lower())
+    out = []
+    for w in words:
+        english = FOREIGN_WORDS.get(w) or FOREIGN_WORDS.get(w + "_nl")
+        if not english:
+            return ""
+        out.append(english)
+    text = " ".join(out)
+    return text[:1].upper() + text[1:] if text else ""
+
+
+def smk_nudes(want):
+    """(name, picture address, rows) for Statens Museum for Kunst works (its open API) with a public-domain or CC0
+    licence on their own record, found by Danish and English nude words: the English title, or the Danish one put
+    in English (foreign_title); nude_candidate checks them."""
+    s, items, seen = session(), [], set()
+    for q in SMK_QUERIES:
+        offset = 0
+        while offset < 2000:
+            data = get_json(s, SMK, params={"keys": q, "offset": offset, "rows": 100, "lang": "en",
+                                            "filters": "[has_image:true],[public_domain:true]"}) or {}
+            records = data.get("items") or []
+            for it in records:
+                oid = clean(it.get("object_number") or it.get("id"))
+                if not oid or oid in seen:
+                    continue
+                seen.add(oid)
+                rights = clean(it.get("rights"))
+                picture = it.get("image_thumbnail") or ""
+                if not re.search(r"publicdomain/(mark|zero)", rights) or not picture:
+                    note("SMK", oid, "not public domain, or no picture")
+                    continue
+                titles = it.get("titles") or []
+                english = next((clean(t.get("title")) for t in titles if (t.get("language") or "").lower()
+                                .startswith(("eng", "en"))), "")
+                danish = next((clean(t.get("title")) for t in titles), "")
+                title = english or foreign_title(danish)
+                if not title:
+                    note("SMK", danish, "no English title and the Danish one could not be put in English")
+                    continue
+                kind = clean(((it.get("object_names") or [{}])[0] or {}).get("name"))
+                medium = ", ".join(clean(t) for t in (it.get("techniques") or [])[:2])
+                artist = clean(((it.get("production") or [{}])[0] or {}).get("creator"))
+                date = clean(((it.get("production_date") or [{}])[0] or {}).get("period"))
+                credit = f"Statens Museum for Kunst (SMK), public domain ({rights}): {title}" + \
+                    (f", {artist}" if artist else "") + f", {it.get('frontend_url', '')}"
+                others = [danish, q if q in ("nøgen", "nøgne", "akt", "aktstudie") else ""]
+                if q in ("nøgen", "nøgne", "akt", "aktstudie") and not body_packs.NUDITY_WORDS.search(title):
+                    others.append("nude")             # found by a Danish nude word: the record is about a nude
+                item = nude_candidate("SMK", f"smk-{re.sub(r'[^\w-]', '_', oid)}.jpg", picture, title, credit, kind,
+                                      artist, date, medium, "", "Denmark" if not artist else "", others)
+                if item:
+                    items.append(item)
+            offset += len(records)
+            if len(records) < 100 or len(items) >= want:
+                break
+            time.sleep(0.5)
+        if len(items) >= want:
+            break
+    say(f"SMK: {len(items)} usable")
+    return items[:want]
+
+
+RIJKS = "https://data.rijksmuseum.nl/search/collection"
+RIJKS_SEARCHES = ({"title": "naakt"}, {"description": "naakt"}, {"title": "naakte"}, {"title": "academie"},
+                  {"title": "modelstudie"}, {"title": "naaktstudie"}, {"title": "nude"})
+
+
+def rijks_record(s, uri):
+    """The fields of one Rijksmuseum object (its linked-data record, as the kit's adult_review_sources reads it), or
+    None."""
+    data = get_json(s, uri, params={"_profile": "edm-framed", "_mediatype": "application/ld+json"})
+    if not data or "aggregatedCHO" not in data:
+        return None
+    c = data["aggregatedCHO"]
+
+    def as_list(value):
+        """A linked-data value as a list."""
+        return value if isinstance(value, list) else [value] if value else []
+
+    def first(value):
+        """The first text of a value."""
+        value = as_list(value)
+        return clean(value[0]) if value and isinstance(value[0], str) else ""
+    title, desc = c.get("title") or {}, c.get("description") or {}
+    maker = ""
+    for who in as_list(c.get("creator")):
+        labels = as_list(who.get("http://www.w3.org/2004/02/skos/core#prefLabel") if isinstance(who, dict) else None)
+        maker = next((clean(x.get("@value")) for x in labels if isinstance(x, dict) and x.get("@language") == "en"),
+                     maker)
+    kinds = []
+    for t in as_list(c.get("dcType")) + as_list(c.get("http://www.europeanafashion.eu/edmfp/technique")):
+        for x in as_list(t.get("http://www.w3.org/2004/02/skos/core#prefLabel") if isinstance(t, dict) else None):
+            if isinstance(x, dict) and x.get("@language") == "en":
+                kinds.append(clean(x.get("@value")))
+    created = as_list(c.get("created"))
+    date = next((clean(x.get("@value")) for x in created if isinstance(x, dict) and x.get("@language") == "en"), "")
+    shown = (data.get("isShownBy") or {}).get("id", "")
+    return {"title": first(title.get("en")), "title_nl": first(title.get("nl")), "desc_en": first(desc.get("en")),
+            "maker": maker, "date": date, "kind": "; ".join(kinds), "rights": clean(data.get("edmRights")),
+            "picture": shown.replace("/full/max/", "/full/1600,/"),
+            "page": clean((data.get("isShownAt") or {}).get("id"))}
+
+
+def rijks_nudes(want):
+    """(name, picture address, rows) for Rijksmuseum works found by Dutch and English nude words, public domain or
+    CC0 on their own record, with an English title (or a Dutch one put in English)."""
+    s, lists = session(), []
+    for search in RIJKS_SEARCHES:
+        found, url, params = [], RIJKS, dict(search, imageAvailable="true")
+        while url and len(found) < want * 3 + 20:
+            data = get_json(s, url, params=params)
+            if not data:
+                break
+            found += [(x["id"].rsplit("/", 1)[-1], x["id"]) for x in data.get("orderedItems") or []]
+            url, params = (data.get("next") or {}).get("id"), None
+        lists.append(found)
+    items = []
+    for oid, uri in take_turns(lists):
+        if len(items) >= want:
+            break
+        time.sleep(0.2)
+        r = rijks_record(s, uri)
+        if not r or not re.search(r"publicdomain/(mark|zero)", r["rights"]) or not r["picture"]:
+            note("Rijksmuseum", oid, "not public domain, or no picture")
+            continue
+        title = r["title"] or foreign_title(r["title_nl"])
+        if not title:
+            note("Rijksmuseum", r["title_nl"], "no English title and the Dutch one could not be put in English")
+            continue
+        credit = f"Rijksmuseum, public domain ({r['rights']}): {title}" + (f", {r['maker']}" if r["maker"] else "") + \
+            f", {r['page']}"
+        others = [r["title_nl"]] + (["nude"] if re.search(r"\bnaakt", r["title_nl"], re.I) else [])
+        item = nude_candidate("Rijksmuseum", f"rijks-{oid}.jpg", r["picture"], title, credit,
+                              r["kind"].split(";")[0], r["maker"], r["date"], "", r["desc_en"], "", others)
+        if item:
+            items.append(item)
+    say(f"Rijksmuseum: {len(items)} usable")
+    return items
+
+
+EUROPEANA = "https://api.europeana.eu/record/v2/search.json"
+EUROPEANA_QUERIES = ("nude", "naked", "nude study", "académie", "life drawing", "naakt", "nøgen", "Aktstudie",
+                     "nudo", "desnudo")
+EUROPEANA_FREE = re.compile(r"creativecommons\.org/(publicdomain/(zero|mark)/|licenses/by/\d)", re.I)
+
+
+def europeana_nudes(want):
+    """(name, picture address, rows) for Europeana artworks found by nude words in several languages, whose own
+    rights statement is CC0, the Public Domain Mark or CC BY (never SA, NC or ND), with an English title (or one
+    put in English by foreign_title). The key is the build's EUROPEANA_KEY (a repository secret in CI, the person's
+    own setting locally; never in the repository), else Europeana's public test key."""
+    s, lists = session(), []
+    key = os.environ.get("EUROPEANA_KEY") or "api2demo"
+    for q in EUROPEANA_QUERIES:
+        data = get_json(s, EUROPEANA, params={"wskey": key, "query": q, "qf": "TYPE:IMAGE", "reusability": "open",
+                                              "rows": 100, "profile": "rich"}) or {}
+        found = []
+        for it in data.get("items") or []:
+            rights = " ".join(it.get("rights") or [])
+            picture = (it.get("edmIsShownBy") or [""])[0]
+            if not EUROPEANA_FREE.search(rights) or re.search(r"by-(sa|nc|nd)", rights) or not picture:
+                note("Europeana", (it.get("title") or [""])[0], "licence not open, or no picture")
+                continue
+            # Only the provider's own English (Europeana adds machine translations to other records' titles, often
+            # wrong), or a Danish or Dutch title put in English word for word.
+            original = clean((it.get("title") or [""])[0])
+            title = original if (it.get("language") or []) == ["en"] else foreign_title(original)
+            if not title:
+                note("Europeana", original, "no English title")
+                continue
+            kind = clean(((it.get("dcTypeLangAware") or {}).get("en") or it.get("dcType") or [""])[0])
+            provider = clean((it.get("dataProvider") or ["Europeana"])[0])
+            artist = clean((it.get("dcCreator") or [""])[0])
+            if re.search(r"https?:|^#|^\d|_person$|^[A-F0-9-]{20,}$", artist):
+                artist = ""                       # an identifier, not a name
+            credit = f"{provider} via Europeana, {rights}: {title}" + (f", {artist}" if artist else "") + \
+                f", https://www.europeana.eu/item{it['id']}"
+            desc = clean((it.get("dcDescriptionLangAware") or {}).get("en", [""])[0]) if \
+                isinstance(it.get("dcDescriptionLangAware"), dict) else ""
+            others = [original] + (["nude"] if q in ("naakt", "nøgen", "Aktstudie", "nudo", "desnudo") else [])
+            item = nude_candidate("Europeana", "europeana-" + re.sub(r"[^\w-]+", "_", it["id"])[-80:] + ".jpg",
+                                  picture, title, credit, kind, artist, clean((it.get("year") or [""])[0]), "",
+                                  desc, "", others)
+            if item:
+                found.append(item)
+        lists.append(found)
+        time.sleep(0.5)
+    items = take_turns(lists)
+    say(f"Europeana: {len(items)} usable")
+    return items[:want]
+
+
+# More Smithsonian units read from the open-access data (as body_packs.si_items): Cooper Hewitt (drawings and
+# prints), the Freer and Sackler galleries, the National Museum of African Art and the Hirshhorn.
+SI_MORE_UNITS = ("chndm", "fsg", "nmafa", "hmsg")
+
+
+def si_more_nudes(want):
+    """(name, picture address, rows) for CC0 nudes of SI_MORE_UNITS (body_packs.si_items with this pack's screen)."""
+    def screen(source, title, *texts, kind=""):
+        """nudes_left_out for works art_nudes does not read."""
+        return nudes_left_out(source, title, *texts, kind=kind, routed=True)
+    return body_packs.si_items(want, drop=screen, units=SI_MORE_UNITS)
 
 
 # ----------------------------------------------------------------- plain words
@@ -1104,11 +1443,34 @@ def wellcome_nude_photos(want, s=None):
 
 
 def build_nude_photo_studies(limit):
-    """The nude_photo_studies pack (see wellcome_nude_photos)."""
-    return finish("nude_photo_studies", wellcome_nude_photos(int(limit * 1.3) + 2), limit, workers=3, pause=0.3)
+    """The nude_photo_studies pack: Wellcome Collection photographs (wellcome_nude_photos) and the Minneapolis
+    Institute of Art's public-domain nude photographs (mia_nudes(photos=True)), each by nude_photo_left_out."""
+    items = wellcome_nude_photos(int(limit * 1.0) + 2)
+    try:
+        items += mia_nudes(int(limit * 0.3) + 2, photos=True)
+    except Exception as error:  # noqa: BLE001 - Mia down: Wellcome only
+        say(f"mia photographs: left out ({error})")
+    return finish("nude_photo_studies", items, limit, workers=3, pause=0.3)
 
 
 # ----------------------------------------------------------------- the packs
+
+# Sources looked at for museum_art_nudes and nude_photo_studies and not read yet (November 2026), with the reason.
+MUSEUM_NUDES_LATER = {
+    "Paris Musées (incl. Petit Palais, Beaux-Arts collections)": "its API needs a personal token: for the local kit",
+    "Harvard Art Museums": "its API needs a key, and its robots.txt disallows all robots: not read",
+    "Brooklyn Museum": "its API needs a key: for the local kit",
+    "Te Papa": "its API needs a key: for the local kit",
+    "Finnish National Gallery": "its API needs a key: for the local kit",
+    "Nationalmuseum Sweden": "open API not explored in this pass",
+    "Getty, Yale University Art Gallery, Yale Center for British Art, Princeton": "Linked Art and IIIF only; a "
+        "reader for Linked Art is a later pass",
+    "Walters, LACMA, Barnes, RISD Museum": "no current open search API found in this pass",
+    "Royal Academy of Arts": "no open API and no open licence on its images: not read",
+    "Wikimedia Commons (nude paintings, sculpture, academic drawings, life drawing)": "Commons refused every request "
+        "from the build machine (429) during this pass, so category names could not be checked: a later pass, in "
+        "the Commons lane",
+}
 
 # Each source's share of erotic_art (a source with fewer gives what it has).
 EROTIC_SHARES = (("met", met_erotic, 0.25), ("aic", aic_erotic, 0.1), ("cma", cma_erotic, 0.1),
@@ -1142,6 +1504,14 @@ def build_museum_art_nudes(limit):
             items += collect(max(2, round(limit * share * 1.3)), drop=nudes_left_out)
         except Exception as error:  # noqa: BLE001 - one museum down does not stop the pack
             say(f"{key}: left out ({error})")
+    # Museums art_nudes does not read (their works are never in art_nudes): the Minneapolis Institute of Art, SMK,
+    # the Rijksmuseum and more Smithsonian units, each about a tenth of the pack.
+    for key, collect in (("mia", mia_nudes), ("smk", smk_nudes), ("rijks", rijks_nudes), ("si_more", si_more_nudes),
+                         ("europeana", europeana_nudes)):
+        try:
+            items += collect(max(2, round(limit * 0.1 * 1.3)))
+        except Exception as error:  # noqa: BLE001 - one museum down does not stop the pack
+            say(f"{key}: left out ({error})")
     # The non-sexual nudes the erotic searches found (route_to_nudes): about a tenth of the pack.
     try:
         ROUTED.clear()
@@ -1159,11 +1529,14 @@ def build_museum_art_nudes(limit):
 
 ADULT_ART_PACKS = {
     "museum_art_nudes": (build_museum_art_nudes,
-                         "Fine-art nudity (Madonna and Child, putti and cherubs, mythology, bathers, lovers, classical "
-                         "statues) that art_nudes leaves out, from open-access museum collections, each work credited "
-                         "below: The Metropolitan Museum of Art (public domain, CC0), Art Institute of Chicago (CC0), "
+                         "Fine-art nudity and academic studies of the nude (Madonna and Child, putti and cherubs, "
+                         "mythology, bathers, lovers, classical statues, life drawings) that art_nudes leaves out or "
+                         "does not read, from open-access collections, each work credited below with its own licence: "
+                         "The Metropolitan Museum of Art (public domain, CC0), Art Institute of Chicago (CC0), "
                          "Cleveland Museum of Art (CC0), National Gallery of Art, Washington (CC0), Smithsonian "
-                         "American Art Museum (CC0). No photographs, no sexual acts or sexual violence, and no child "
+                         "Institution (CC0), Minneapolis Institute of Art (public domain), Statens Museum for Kunst "
+                         "and Rijksmuseum (Public Domain Mark or CC0), Europeana partners (CC0, Public Domain Mark or "
+                         "CC BY). No photographs, no sexual acts or sexual violence, and no child "
                          "in any work with sexual or romantic wording."),
     "erotic_art": (build_erotic_art,
                    "Erotic art and illustration showing adults (shunga, Indian and Persian erotic painting, Greek and "
@@ -1181,9 +1554,10 @@ ADULT_ART_PACKS = {
 
 # The limits of the workflow (pack-build.yml), from the test builds of November 2026 (see the commit message).
 ADULT_ART_LIMITS = {
-    "museum_art_nudes": 1500,
+    "museum_art_nudes": 2000,       # the first five museums' left-outs, Mia (~100), SMK (~200), Rijksmuseum,
+                                     # Europeana (~150), more Smithsonian units, routed works (test, 19 Nov 2026)
     "erotic_art": 1500,
-    "nude_photo_studies": 300,
+    "nude_photo_studies": 300,     # Wellcome (147 usable in the test) and Mia's public-domain photographs
 }
 
 

@@ -2200,13 +2200,14 @@ SOURCES = [
     # --with-nudity; the add-on is then personal use only, see train.py). Never for picture-making
     # (ADULT_ART_PACK_KEYS). No photographs of people in either; any record naming or suggesting a young person is
     # left out of erotic_art, and of museum_art_nudes whenever it has a sexual or romantic word.
-    Source("museum_art_nudes", "More nudes in art: Madonna and Child, putti, mythology, lovers and classical statues (ready-made pack)",
-           "CC0 or public domain (The Met, Art Institute of Chicago, Cleveland Museum of Art, National Gallery of "
-           "Art, Smithsonian; each work credited in the pack's CREDITS.txt)",
+    Source("museum_art_nudes", "More nudes in art and life drawings: Madonna and Child, putti, mythology, lovers, classical statues, academic studies (ready-made pack)",
+           "CC0, public domain or CC BY, item by item (The Met, Art Institute of Chicago, Cleveland, National Gallery "
+           "of Art, Smithsonian, Minneapolis Institute of Art, SMK, Rijksmuseum, Europeana partners; each work "
+           "credited in the pack's CREDITS.txt)",
            "Fine-art nudes from The Metropolitan Museum of Art, the Art Institute of Chicago, the Cleveland Museum of "
-           "Art, the National Gallery of Art (Washington) and the Smithsonian American Art Museum, CC0 or public "
-           "domain, each work credited in CREDITS.txt", "permissive", 1500, 10, prepare_pack, "about 300 MB",
-           content="nudity"),
+           "Art, the National Gallery of Art (Washington), the Smithsonian Institution, the Minneapolis Institute of "
+           "Art, Statens Museum for Kunst, the Rijksmuseum and Europeana partners, each work credited with its "
+           "licence in CREDITS.txt", "permissive", 2000, 10, prepare_pack, "about 400 MB", content="nudity"),
     Source("erotic_art", "Erotic art showing adults: shunga, Indian and Persian painting, Greek and Roman art, temple sculpture, European prints, sex-education drawings (ready-made pack)",
            "Public domain, CC0 or CC BY, item by item (The Met, Art Institute of Chicago, Cleveland Museum of Art, "
            "Wellcome Collection, Wikimedia Commons; each credited in the pack's CREDITS.txt)",

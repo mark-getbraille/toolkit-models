@@ -356,3 +356,29 @@ def test_the_repository_allow_list():
     allowed = a.allowed_items()
     assert ("Wellcome Collection", "rwtpkyxg") in allowed and "young women" in allowed[("Wellcome Collection",
                                                                                          "rwtpkyxg")]
+
+
+def test_more_museums_nude_candidate_and_words():
+    """New museums: nude or academic words needed; death, photographs, sex and real children left out; Danish and
+    Dutch titles put in English only when every word is known; plural classifications made one kind."""
+    item = a.nude_candidate("Mia", "mia-1.jpg", "https://x/1.jpg", "Académie d'homme: seated man", "credit", "Drawings",
+                            "A. Artist", "1850", "charcoal")
+    assert item and item[2][0]["answer"].startswith("Académie d'homme: seated man: a drawing by A. Artist")
+    for title, kind in (("The Corpses of the De Witt Brothers, nude", "Paintings"), ("Nude woman", "Photographs"),
+                        ("Nude girl bathing", "Paintings"), ("Erotic nude", "Prints"), ("A landscape", "Paintings")):
+        assert a.nude_candidate("Mia", "m.jpg", "u", title, "c", kind) is None, title
+    assert a.foreign_title("Nøgen mandlig model") == "Nude male model"
+    assert a.foreign_title("Liggende nøgen kvinde") == "Reclining nude woman"
+    assert a.foreign_title("Staande naakte vrouw") == "Standing nude woman"
+    assert a.foreign_title("Portræt af kongen") == ""
+    assert a.singular_kind("Prints, works on paper") == "Print" and a.singular_kind("Glass") == "Glass"
+
+
+def test_academy_words_and_carte_de_visite():
+    """An academy building or a portrait drawn "from the life" is not an academic nude; a carte-de-visite is a
+    photograph."""
+    assert a.nude_candidate("E", "e.jpg", "u", "Athènes. - L' Académie", "c", "image") is None
+    assert a.nude_candidate("E", "e.jpg", "u", "Portrait of a doctor, drawn from the life", "c", "drawing") is None
+    assert a.nude_candidate("E", "e.jpg", "u", "Académie d'homme, seated", "c", "drawing")
+    assert a.nude_candidate("E", "e.jpg", "u", "Nude", "c", "carte-de-visite") is None
+    assert a.nude_candidate("E", "e.jpg", "u", "Senna morongii, naked pods", "c", "preserved specimen") is None

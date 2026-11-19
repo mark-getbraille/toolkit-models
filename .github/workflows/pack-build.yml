@@ -331,7 +331,7 @@ jobs:
             commons_firearm_accessories) limit=1500 ;;
             commons_firearm_kinds) limit=2000 ;;
             wikidata_firearms) limit=500 ;;
-            museum_art_nudes) limit=1500 ;;
+            museum_art_nudes) limit=2000 ;;
             erotic_art) limit=1500 ;;
             nude_photo_studies) limit=300 ;;
           esac

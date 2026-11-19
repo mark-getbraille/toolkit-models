@@ -517,16 +517,17 @@ def nga_items(want, drop=None):
 SI_NUDE_UNITS = ("saam",)      # the Hirshhorn was tried: no CC0 picture of a nude
 
 
-def si_items(want, drop=None):
+def si_items(want, drop=None, units=None):
     """(name, picture address, rows) for Smithsonian American Art Museum records whose topics say
     nude (or "Nudity") and whose picture is CC0; the answer uses the accessibility text or gallery label when there
     is one (build_packs.si_row), otherwise the record's title, artist, date and medium. drop: the screen (left_out
-    unless another is given)."""
+    unless another is given); units: the Smithsonian units read (SI_NUDE_UNITS unless given)."""
     drop = drop or left_out
+    units = tuple(units or SI_NUDE_UNITS)
     from build_packs import si_keys, si_row, si_place, SI_BUCKET
     s, items = session(), []
-    per_unit = want // len(SI_NUDE_UNITS) + 1
-    for unit in SI_NUDE_UNITS:
+    per_unit = want // len(units) + 1
+    for unit in units:
         keys = si_keys(unit)
         random.Random(unit + "-nude").shuffle(keys)
         found = 0
