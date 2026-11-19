@@ -1033,7 +1033,8 @@ ARCHIVE_PACKS = {
 ARCHIVE_LIMITS = {
     "nara": 5000,                     # DOCUMERICA ~15,900 (search reaches 10,000), WRA ~4,000, Ansel Adams ~220
     "nypl": 6000,                     # of about 180,000 public-domain still images; titles of 6 words or more
-    "getty_museum": 4000,             # of about 62,000 described objects; those with "No Copyright"
+    "getty_museum": 8000,             # (raised from 4,000, November 2026: a top-up pass adds the new ones) of about
+                                      # 62,000 described objects; those with "No Copyright"
     "digital_commonwealth": 3000,     # of about 115,000 unrestricted photographs; many titles are too short
     "smk": 3000,                      # of about 39,500 public-domain works; those with a descriptive title
     "anefo": 6000,                    # of about 430,000 files; Dutch captions of 6 words or more

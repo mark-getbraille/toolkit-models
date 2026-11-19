@@ -161,7 +161,7 @@ jobs:
             commons_safety) limit=2000 ;;
             nara) limit=5000 ;;
             nypl) limit=6000 ;;
-            getty_museum) limit=4000 ;;
+            getty_museum) limit=8000 ;;
             digital_commonwealth) limit=3000 ;;
             smk) limit=3000 ;;
             anefo) limit=6000 ;;
@@ -334,6 +334,7 @@ jobs:
             museum_art_nudes) limit=2000 ;;
             erotic_art) limit=1500 ;;
             nude_photo_studies) limit=300 ;;
+            met_collection) limit=6000 ;;
             abo_packaged_goods) limit=6000 ;;
             open_images_packaged_goods) limit=500 ;;
           esac

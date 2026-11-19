@@ -106,7 +106,8 @@ jobs:
                    "commons_drugs", "commons_drug_paraphernalia", "commons_cbp_seizures", "cdc_phil_drugs",
                    "commons_firearm_accessories", "commons_firearm_kinds", "wikidata_firearms",
                    "museum_art_nudes", "erotic_art", "nude_photo_studies",
-                   "abo_packaged_goods", "open_images_packaged_goods"]
+                   "abo_packaged_goods", "open_images_packaged_goods",
+                   "met_collection"]
           words = [w for w in sys.argv[1].split(",") if w]
           # "key+" is a top-up pass of key and "key?" a needs-only run (kept with the mark, which the build job reads);
           # "all?" asks for a needs-only run of every pack.

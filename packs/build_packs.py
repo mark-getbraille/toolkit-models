@@ -1603,6 +1603,11 @@ PACKS.update(DRUG_FIREARM_PACKS)
 from adult_art_packs import ADULT_ART_PACKS
 PACKS.update(ADULT_ART_PACKS)
 
+# General museum collections (packs/museum_general_packs.py): the Met's open objects of every department beyond its
+# highlights and musical instruments (nudes and erotica are in the packs above).
+from museum_general_packs import MUSEUM_GENERAL_PACKS
+PACKS.update(MUSEUM_GENERAL_PACKS)
+
 # Modern packaged goods (packs/packaged_goods_packs.py): Amazon Berkeley Objects catalogue photos of groceries, drinks,
 # vitamins, medicines, toiletries, cleaning products and pet food (the types abo_products leaves out), and Open Images
 # photos with a packaging label people checked. Neither reads Commons.

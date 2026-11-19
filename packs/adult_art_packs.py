@@ -916,6 +916,99 @@ def getty_items(want, role):
     return items
 
 
+# ----------------------------------------------------------------- The Met, a second pass (wider words)
+
+# The owner's list (November 2026): more words and the departments where nudes, erotica and nude photographs are.
+MET_MORE_TERMS = ("nude", "naked", "bather", "bathers", "Venus", "Adam and Eve", "Susanna", "Bathsheba", "Leda",
+                  "académie", "figure study", "life drawing", "torso", "odalisque", "nymph", "satyr", "Danaë",
+                  "Three Graces", "Saint Sebastian", "Hercules", "Apollo", "kouros", "male nude", "female nude")
+# Drawings and Prints, Photographs, Greek and Roman Art, Asian Art, Modern Art, European Sculpture and Decorative Arts.
+MET_MORE_DEPARTMENTS = (9, 19, 13, 6, 21, 12)
+MET_SEEN = {}                      # {object id: record}: read once for all three packs
+
+
+def met_ids(s, params, most=2000):
+    """Object ids of one Met v1.1 search (with images), up to most."""
+    ids, offset = [], 0
+    while len(ids) < most:
+        page = get_json(s, MET + "v1.1/search", params=dict(params, hasImages="true", limit=100, offset=offset)) \
+            or {}
+        found = page.get("objectIDs") or []
+        ids += found
+        offset += len(found)
+        if not found or offset >= (page.get("total") or 0):
+            break
+        time.sleep(0.2)
+    return ids[:most]
+
+
+def met_known_ids(s):
+    """The Met objects the other readers already take: those tagged Female or Male Nudes (art_nudes and
+    museum_art_nudes, body_packs.met_items) and those of the erotic searches (met_erotic)."""
+    known = set()
+    for tag in body_packs.MET_TAGS:
+        known.update(met_ids(s, {"q": tag, "tags": "true"}, 6000))
+    for q in MET_QUERIES:
+        known.update(met_ids(s, {"q": q}, 3000))
+    return known
+
+
+def met_more(want, role, s=None, known=None):
+    """(name, picture address, rows) of Met objects found by MET_MORE_TERMS (all departments, and each of
+    MET_MORE_DEPARTMENTS) that the other readers do not take (met_known_ids), isPublicDomain, by role: "nudes"
+    (museum_art_nudes: nude_candidate), "erotic" (erotic_art: erotic_left_out, the review route), "photos"
+    (nude_photo_studies: nude_photo_left_out)."""
+    s = s or session()
+    known = met_known_ids(s) if known is None else known
+    lists = []
+    for term in MET_MORE_TERMS:
+        lists.append(met_ids(s, {"q": term}, 400))
+        for department in MET_MORE_DEPARTMENTS:
+            lists.append(met_ids(s, {"q": term, "departmentId": department}, 100))
+    ids = [i for i in take_turns([[(x,) for x in l] for l in lists]) if i[0] not in known]
+    say(f"Met second pass ({role}): {len(ids)} objects not taken by the other readers")
+    items = []
+    for (oid,) in ids:
+        if len(items) >= want:
+            break
+        if oid not in MET_SEEN:
+            time.sleep(0.1)
+            MET_SEEN[oid] = get_json(s, f"{MET}v1/objects/{oid}") or {}
+        o = MET_SEEN[oid]
+        title = clean(o.get("title"))
+        picture = o.get("primaryImage") or o.get("primaryImageSmall")
+        if not o.get("isPublicDomain") or not picture or not title:
+            continue
+        tags = [t.get("term", "") for t in (o.get("tags") or [])]
+        kind = f"{o.get('classification')} {o.get('objectName')} {o.get('medium')}"
+        artist = clean(o.get("artistDisplayName"))
+        credit = f"The Metropolitan Museum of Art, public domain (CC0): {title}" + (f", {artist}" if artist else "") \
+            + f", {o.get('objectURL', '')}"
+        name = f"met-{oid}.jpg"
+        if role == "photos":
+            if PHOTO_WORDS.search(kind) and not nude_photo_left_out(title, " ".join(tags), kind=kind):
+                items.append((name, picture, nude_photo_rows(title, credit)))
+            continue
+        why = erotic_left_out(" ".join(tags), o.get("objectName"), o.get("medium"), o.get("culture"), kind=kind,
+                              title=title)
+        if role == "erotic":
+            if reviewed(why, "The Met", oid, title, o.get("objectURL", "")):
+                why = ""
+            if not why:
+                items.append((name, picture, erotic_rows(credit, title, o.get("objectName"), artist,
+                                                         o.get("objectDate"), o.get("medium"), "", tags, "museum",
+                                                         o.get("culture") or o.get("country"))))
+            continue
+        if why == NOT_SEXUAL:
+            item = nude_candidate("Met", name, picture, title, credit, o.get("objectName"), artist,
+                                  o.get("objectDate"), o.get("medium"), "", o.get("culture") or o.get("country"),
+                                  tags)
+            if item:
+                items.append(item)
+    say(f"Met second pass ({role}): {len(items)} usable")
+    return items
+
+
 # More Smithsonian units read from the open-access data (as body_packs.si_items): Cooper Hewitt (drawings and
 # prints), the Freer and Sackler galleries, the National Museum of African Art and the Hirshhorn.
 SI_MORE_UNITS = ("chndm", "fsg", "nmafa", "hmsg")
@@ -1509,7 +1602,8 @@ def build_nude_photo_studies(limit):
     """The nude_photo_studies pack: Wellcome Collection photographs (wellcome_nude_photos) and the Minneapolis
     Institute of Art's public-domain nude photographs (mia_nudes(photos=True)), each by nude_photo_left_out."""
     items = wellcome_nude_photos(int(limit * 1.0) + 2)
-    for key, collect in (("mia", lambda n: mia_nudes(n, photos=True)), ("getty", lambda n: getty_items(n, "photos"))):
+    for key, collect in (("mia", lambda n: mia_nudes(n, photos=True)), ("getty", lambda n: getty_items(n, "photos")),
+                         ("met_more", lambda n: met_more(n, "photos"))):
         try:
             items += collect(int(limit * 0.3) + 2)
         except Exception as error:  # noqa: BLE001 - one source down: the others
@@ -1543,7 +1637,7 @@ MUSEUM_NUDES_LATER = {
 # Each source's share of erotic_art (a source with fewer gives what it has).
 EROTIC_SHARES = (("met", met_erotic, 0.25), ("aic", aic_erotic, 0.1), ("cma", cma_erotic, 0.1),
                  ("wellcome", wellcome_erotic, 0.2), ("commons", commons_erotic, 0.35),
-                 ("getty", lambda n: getty_items(n, "erotic"), 0.05))
+                 ("getty", lambda n: getty_items(n, "erotic"), 0.05), ("met_more", lambda n: met_more(n, "erotic"), 0.05))
 # Each museum's share of museum_art_nudes (as body_packs.ART_SHARES).
 NUDES_SHARES = (("met", body_packs.met_items, 0.45), ("nga", body_packs.nga_items, 0.25),
                 ("si", body_packs.si_items, 0.12), ("cma", body_packs.cma_items, 0.08),
@@ -1576,7 +1670,8 @@ def build_museum_art_nudes(limit):
     # Museums art_nudes does not read (their works are never in art_nudes): the Minneapolis Institute of Art, SMK,
     # the Rijksmuseum and more Smithsonian units, each about a tenth of the pack.
     for key, collect in (("mia", mia_nudes), ("smk", smk_nudes), ("rijks", rijks_nudes), ("si_more", si_more_nudes),
-                         ("europeana", europeana_nudes), ("getty", lambda n: getty_items(n, "nudes"))):
+                         ("europeana", europeana_nudes), ("getty", lambda n: getty_items(n, "nudes")),
+                         ("met_more", lambda n: met_more(n, "nudes"))):
         try:
             items += collect(max(2, round(limit * 0.1 * 1.3)))
         except Exception as error:  # noqa: BLE001 - one museum down does not stop the pack
