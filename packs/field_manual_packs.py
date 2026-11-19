@@ -131,7 +131,15 @@ def unsafe_pages(doc):
     marks = []
     try:
         for item in doc.get_toc(max_depth=1):
-            marks.append((item.title or "", item.page_index if item.page_index is not None else -1))
+            # pypdfium2 5 reads a bookmark with get_title() and get_dest().get_index(); version 4 had .title and
+            # .page_index. Both are read, so a version change can never silently stop the weapons check.
+            title = item.get_title() if hasattr(item, "get_title") else getattr(item, "title", "")
+            if hasattr(item, "get_dest"):
+                dest = item.get_dest()
+                page = dest.get_index() if dest is not None else None
+            else:
+                page = getattr(item, "page_index", None)
+            marks.append((title or "", page if page is not None else -1))
     except Exception:  # noqa: BLE001 - a manual without bookmarks
         return set()
     marks = sorted((p, t) for t, p in marks if p >= 0)

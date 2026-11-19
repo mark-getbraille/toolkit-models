@@ -117,3 +117,44 @@ def test_tables_and_kit_notes():
     import ngo_sources
     assert ngo_sources.NGO_SOURCES == [] and ngo_sources.NGO_PICTURE_MAKING_OK == ()
     assert ngo_sources.NGO_NOT_INCLUDED and ngo_sources.NGO_PERMISSION_CANDIDATES
+
+
+def test_unsafe_pages_reads_pypdfium2_5_bookmarks():
+    """unsafe_pages reads bookmarks the way pypdfium2 5 gives them (get_title, get_dest().get_index()) and the
+    older way (title, page_index), so a weapons chapter is always skipped."""
+    import field_manual_packs as fm
+
+    class Dest:
+        def __init__(self, i):
+            self.i = i
+
+        def get_index(self):
+            return self.i
+
+    class New:
+        def __init__(self, t, i):
+            self.t, self.i = t, i
+
+        def get_title(self):
+            return self.t
+
+        def get_dest(self):
+            return Dest(self.i)
+
+    class Old:
+        def __init__(self, t, i):
+            self.title, self.page_index = t, i
+
+    class Doc:
+        def __init__(self, items):
+            self.items = items
+
+        def get_toc(self, max_depth=1):
+            return iter(self.items)
+
+        def __len__(self):
+            return 30
+
+    for kind in (New, Old):
+        doc = Doc([kind("Chapter 1. Shelters", 0), kind("Chapter 2. Weapons", 10), kind("Chapter 3. Knots", 20)])
+        assert fm.unsafe_pages(doc) == set(range(10, 20)), kind
