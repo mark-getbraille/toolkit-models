@@ -1,0 +1,3 @@
+# The automatic weekly build of the manual collections (.github/workflows/manuals.yml), Wednesdays 09:53 UTC.
+# To stop it, change "on" to "off" and commit to main; change it back to start it again.
+weekly: on

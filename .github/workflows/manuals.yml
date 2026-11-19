@@ -5,12 +5,17 @@
 # manuals themselves (the toolkit fetches them from their official addresses for the owner's own use).
 # Runs by hand (Actions > Build manual collections > Run workflow) or when manuals/request.txt changes on main (its
 # text: the category keys, separated by commas, or all).
+# Also every Wednesday at 09:53 UTC (stop it in manuals/schedule.txt): every collection is built again; one whose
+# entries changed is published under a new name (manuals-<key>.<YYYY-MM-DD>.json.gz) and the older ones are kept
+# and listed in manuals.json "versions".
 name: Build manual collections
 
 on:
   push:
     branches: ["main"]
     paths: ["manuals/request.txt"]
+  schedule:
+    - cron: "53 9 * * 3"
   workflow_dispatch:
     inputs:
       keys:
@@ -36,6 +41,9 @@ jobs:
         run: |
           keys='${{ inputs.keys }}'
           if [ -z "$keys" ]; then keys=$(grep -v '^#' manuals/request.txt | tr -d '[:space:]'); fi
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            if grep -Eq '^\s*weekly\s*:\s*on' manuals/schedule.txt; then keys=all; else keys=none; fi
+          fi
           python3 - "$keys" >> "$GITHUB_OUTPUT" <<'PY'
           import json, sys
           sys.path.insert(0, "manuals")
@@ -48,6 +56,7 @@ jobs:
 
   build:
     needs: plan
+    if: needs.plan.outputs.keys != '[]'
     runs-on: ubuntu-latest
     timeout-minutes: 350
     strategy:
@@ -107,25 +116,34 @@ jobs:
           done
 
   catalogue:
-    needs: build
-    if: always()
+    needs: [plan, build]
+    if: always() && needs.plan.outputs.keys != '[]'
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
-      - name: Merge the manifests into manuals.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Merge the manifests into manuals.json (every version kept)
         run: |
           mkdir -p merged && cd merged
           gh release download manuals -p 'manifest-*.json' --clobber || true
-          python3 - <<'PY'
-          import glob, json, time
-          collections = {}
-          for path in sorted(glob.glob("manifest-*.json")):
-              data = json.load(open(path))
-              collections[data["key"]] = data
-          json.dump({"built": time.strftime("%Y-%m-%d"), "collections": collections}, open("manuals.json", "w"),
-                    indent=1)
-          print(json.dumps(collections, indent=1))
+          gh release download manuals -p 'manuals.json' -O previous.json --clobber || true
+          cd ..
+          python manuals/build_manuals.py --merge merged/manifest-*.json --existing merged/previous.json --out merged
+          gh release upload manuals merged/manuals.json --clobber
+      - name: Delete only index files no version lists and older than two days (same entries built again)
+        run: |
+          python - <<'PY'
+          import datetime, json, subprocess
+          cat = json.load(open("merged/manuals.json"))
+          keep = {c["file"] for c in cat["collections"].values()}
+          keep |= {v["file"] for c in cat["collections"].values() for v in c.get("versions", [])}
+          old = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=2)).isoformat()
+          out = subprocess.run(["gh", "release", "view", "manuals", "--json", "assets"], capture_output=True, text=True)
+          for a in json.loads(out.stdout or '{"assets": []}')["assets"]:
+              if a["name"].startswith("manuals-") and a["name"] not in keep and a.get("createdAt", "9") < old:
+                  subprocess.run(["gh", "release", "delete-asset", "manuals", a["name"], "-y"])
           PY
-          gh release upload manuals manuals.json --clobber

@@ -130,7 +130,14 @@ and why):
   "About cancer", USGS This Dynamic Earth) and PDFs (IRS Publications 17, 554 and 907, Medicare & You, the 2010 ADA
   Standards), and UK guides under the Open Government Licence (the NHS Health A to Z, GOV.UK's guides for disabled
   people and on benefits, the Highway Code). Each site's copyright policy is checked at every build.
-- Never a "NoDerivatives" work: a ZIM file is an adaptation (pages rewritten as web pages, formulas as text).
+- A "NoDerivatives" work only kept whole with its text unchanged (format conversion only, which CC licences allow):
+  every page then says "Converted to an accessible format; the text is unchanged." (W3C WAI documents, the ICEB Rules
+  of Unified English Braille, KFF Health News, The Conversation).
+- **Publications** (`textbooks/periodicals.py`, keys `publications` and `pub:...`): government reports, open-access
+  journal articles, open-licensed news, magazines, parliamentary debates and history, each source split into pieces
+  (years, decades, topics, editions, volumes, or state and decade), every item with its date, in its own release
+  (`publications-<source>`), listed in `textbooks.json` with `complete` (false while a piece is still being
+  collected) and `pieces_done`.
 
 How the books are made accessible: one page per chapter and section with headings; an index page listing every unit,
 chapter and section; every figure's number, the publisher's description of the picture and its caption as text
@@ -146,3 +153,30 @@ The workflow `.github/workflows/textbooks.yml` builds the books when someone sta
 `law:us_code_ada`; `sources.expand_keys` lists them). `python -m pytest textbooks` tests the builder with a made-up book and a made-up website.
 
 Each book keeps its own licence; the credit and licence are on its welcome page and in `textbooks.json`.
+
+### Automatic updates, and where old versions are
+
+The workflows also run on their own, on GitHub's schedule (times in UTC):
+
+- **Daily news, 10:23**: the current pieces of the news sources are built again (Voice of America's recent stories
+  and this year, VOA Learning English, Global Voices, NASA, KFF Health News, The Conversation, CRS reports, UK Hansard,
+  Oireachtas debates, GOV.UK speeches). A news book keeps one file per month.
+- **Backfill, every hour at :17**: the next older piece of any source, small and quick sources first (VOA radio
+  scripts, Learning English, Milestones, FRUS, CRS, Amber Waves, KFF Health News, Global Voices, ...), then the big
+  ones (VOA years, NASA, The Conversation, Hansard, historic newspapers), newest to oldest, one piece at a time.
+  A piece too large for one run is published as far as it got with `"complete": false` and continued by the next
+  run; VOA's are read by one job at a time.
+- **Weekly update check, Sundays 09:41**: every other book's source is asked cheaply whether it changed (a
+  repository's newest commit, an edition date, a PDF's checksum or server date, a sitemap's dates); only changed
+  books are built again (`textbooks/updates.py`).
+- **Manual collections, Wednesdays 09:53** (`.github/workflows/manuals.yml`): every collection is built again.
+
+**Stop switches**: `textbooks/schedule.txt` (`daily`, `backfill`, `weekly`) and `manuals/schedule.txt` (`weekly`):
+change `on` to `off` and commit to main; change it back to start again.
+
+**Old versions are kept.** A book or manual collection that changed is published under a new name
+(`<name>.<YYYY-MM-DD>.zim`, `manuals-<key>.<YYYY-MM-DD>.json.gz`) and the old file stays. `textbooks.json` and
+`manuals.json` list, for each book or collection, `versions` (file, url, size, sha256, published, built,
+change_note), newest first; the newest is also in the entry's own fields. A rebuild with the same text adds no
+version. When a release nears GitHub's limit of 1,000 files, its oldest versions move to yearly archive releases
+(`textbooks-archive-2026`, `publications-voa-archive-2026`, ...) and their addresses in the list follow.

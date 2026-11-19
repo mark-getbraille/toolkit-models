@@ -1015,7 +1015,11 @@ def write(key, entries, out_dir, notes=(), requests_made=0):
              "notes": list(notes)[:50], "entries": entries}
     raw = gzip.compress(json.dumps(index, ensure_ascii=False, separators=(",", ":")).encode("utf-8"), mtime=0)
     os.makedirs(out_dir, exist_ok=True)
-    name = f"manuals-{key}.json.gz"
+    # The same entries give the same checksum whatever day they were built (merge_catalogue keeps a new version only
+    # when this changed); each build is a new file, so every version stays in the release.
+    content = hashlib.sha256(json.dumps({k: v for k, v in index.items() if k != "built"}, ensure_ascii=False,
+                                        sort_keys=True).encode("utf-8")).hexdigest()
+    name = f"manuals-{key}.{built}.json.gz"
     with open(os.path.join(out_dir, name), "wb") as f:
         f.write(raw)
     # The manuals the toolkit fetches: those with a PDF address, and the Internet Archive items whose file it finds
@@ -1028,21 +1032,60 @@ def write(key, entries, out_dir, notes=(), requests_made=0):
                 "thumbnails": sum(1 for e in entries if e.get("thumb")),
                 "file": name, "size": len(raw), "sha256": hashlib.sha256(raw).hexdigest(),
                 "manual_count": len(manuals), "manuals_size": sum(int(m.get("size") or 0) for m in manuals),
-                "built": built, "requests": requests_made, "files": [name]}
+                "built": built, "requests": requests_made, "files": [name], "content_sha256": content}
     with open(os.path.join(out_dir, f"manifest-{key}.json"), "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=1)
     say(json.dumps({k: v for k, v in manifest.items() if k != "description"}))
     return manifest
 
 
+RELEASE = "https://github.com/mark-getbraille/toolkit-models/releases/download/manuals"
+
+
+def merge_catalogue(manifests, previous=None, today=None):
+    """manuals.json from the newest manifests (one per category) and the manuals.json published before: every
+    collection's newest version in its own fields (as before, so the toolkit's present code keeps working) and
+    "versions" ([{file, url, size, sha256, published, built, change_note}], newest first) with every version kept. A
+    rebuild with the same entries as the newest version (content_sha256) adds no version."""
+    collections = dict((previous or {}).get("collections", {}))
+    for m in manifests:
+        old = collections.get(m["key"])
+        version = {"file": m["file"], "url": f"{RELEASE}/{m['file']}", "size": m["size"], "sha256": m["sha256"],
+                   "published": m["built"], "built": m["built"], "change_note": ""}
+        if old is None:
+            collections[m["key"]] = dict(m, versions=[dict(version, change_note="First version")])
+            continue
+        versions = list(old.get("versions") or [{"file": old["file"], "url": f"{RELEASE}/{old['file']}",
+                                                 "size": old.get("size", 0), "sha256": old.get("sha256", ""),
+                                                 "published": old.get("built", ""), "built": old.get("built", ""),
+                                                 "change_note": ""}])
+        if m.get("content_sha256") and m.get("content_sha256") == old.get("content_sha256"):
+            continue                                        # the same entries: the newest version stays
+        versions = [v for v in versions if v["file"] != m["file"]]
+        versions.insert(0, dict(version, change_note=f"Rebuilt: {m.get('entries', 0)} entries"))
+        versions.sort(key=lambda v: (v.get("built", ""), v["file"]), reverse=True)
+        main = m if versions[0]["file"] == m["file"] else old
+        collections[m["key"]] = dict(main, versions=versions)
+    return {"built": today or time.strftime("%Y-%m-%d"), "collections": collections}
+
+
 def main(argv=None):
-    """Build the categories named (or all)."""
+    """Build the categories named (or all), or merge manifests into manuals.json (--merge)."""
     parser = argparse.ArgumentParser(description="Build the toolkit's manual and instruction collections.")
-    parser.add_argument("keys", help="category keys separated by commas, or all")
+    parser.add_argument("keys", nargs="?", default="all", help="category keys separated by commas, or all")
     parser.add_argument("--out", default="build/manuals")
     parser.add_argument("--cache", default="build/manuals-cache")
     parser.add_argument("--limit", type=int, default=300, help="products to look at per category, about")
+    parser.add_argument("--merge", nargs="*", default=None, help="merge these manifests into manuals.json")
+    parser.add_argument("--existing", default=None, help="the manuals.json published before (with --merge)")
     args = parser.parse_args(argv)
+    if args.merge is not None:
+        previous = json.load(open(args.existing)) if args.existing and os.path.exists(args.existing) else None
+        manifests = [json.load(open(p)) for p in sorted(args.merge) if os.path.exists(p)]
+        os.makedirs(args.out, exist_ok=True)
+        with open(os.path.join(args.out, "manuals.json"), "w", encoding="utf-8") as f:
+            json.dump(merge_catalogue(manifests, previous), f, indent=1)
+        return 0
     keys = list(C.CATEGORIES) if args.keys == "all" else [k for k in args.keys.split(",") if k]
     unknown = [k for k in keys if k not in C.CATEGORIES]
     if unknown:
