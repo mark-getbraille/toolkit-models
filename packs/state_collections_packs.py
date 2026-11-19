@@ -198,8 +198,10 @@ NOT_A_PICTURE = re.compile(r"\b(text|texts|newspapers?|letters?|correspondence|l
 # files it as a still image: a scan of text is not a picture to describe.
 DOCUMENT = re.compile(r"(^\W*(letters?|telegrams?|memo(randum|s)?|newspapers?|(newspaper )?articles?|clippings?|"
                       r"menus?|programs?|receipts?|minutes|reports?|invoices?|certificates?|deeds?|ledgers?|"
-                      r"typescripts?|manuscripts?|transcripts?|lists?|forms?|pages?|diar(y|ies)|notes)\b|"
-                      r"\b(letters? (to|from|written)|newspaper articles?|(breakfast|dinner|supper) menus?)\b)", re.I)
+                      r"typescripts?|manuscripts?|transcripts?|lists?|forms?|pages?|diar(y|ies)|notes|"
+                      r"press releases?|statements?|speech(es)?|announcements?|resolutions?|petitions?)\b|"
+                      r"\b(letters? (to|from|written)|newspaper articles?|(breakfast|dinner|supper) menus?|"
+                      r"press releases?)\b)", re.I)
 PHOTO_WORDS = re.compile(r"\b(photo\w*|postcards?|post cards?|negatives?|slides?|glass plates?|snapshots?|"
                          r"stereographs?|lantern slides?|prints?, photographic|gelatin silver|albumen|cyanotype)\b",
                          re.I)
