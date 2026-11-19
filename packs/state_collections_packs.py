@@ -97,7 +97,7 @@ from expression_packs import CHILD
 from university_packs import left_out_because, marked, long_enough, record_text, iiif_image
 from us_modern_packs import GRAPHIC
 from us_packs import DESCRIBE_Q
-from places import where, place_from_text
+from places import where, place_name
 
 WHERE_Q = "Where was this photo taken?"
 OPEN_CATEGORY = "open"
@@ -235,9 +235,19 @@ def shared_sentences(texts, least=3, share=0.2):
     return {s for s, n in counts.items() if n >= least and n >= share * len(texts)}
 
 
+# Catalogue notes that are not about what the picture shows: the back of a postcard, postmarks, dating notes,
+# transcriptions and digitization notes.
+NOT_THE_PICTURE = re.compile(r"^(addressed\b|postmark|postmarked|date (from|approximated|taken)|dated from|"
+                             r"transcri(bed|ption)|note:|notes?:|this item was digitized|digitized\b|digitization|"
+                             r"written on (the )?(back|verso)|on (the )?(back|verso)\b|verso\b|message on|"
+                             r"stamp(ed)? on|publisher'?s? (number|no)|card (number|no)|caption reads|"
+                             r"\"?photo only copyrighted)", re.I)
+
+
 def own_words(text, shared):
-    """A description without its collection's shared sentences."""
-    return " ".join(s for s in sentences(text) if s not in shared)
+    """A description without its collection's shared sentences and without notes about the back of the item, its
+    dating or its digitization (NOT_THE_PICTURE)."""
+    return " ".join(s for s in sentences(text) if s not in shared and not NOT_THE_PICTURE.search(s))
 
 
 def year_of(*values):
@@ -249,37 +259,80 @@ def year_of(*values):
     return 0
 
 
-US_STATE = re.compile(r"\b(Alabama|Alaska|Arizona|Arkansas|California|Colorado|Connecticut|Delaware|Florida|Georgia|"
-                      r"Hawaii|Idaho|Illinois|Indiana|Iowa|Kansas|Kentucky|Louisiana|Maine|Maryland|Massachusetts|"
-                      r"Michigan|Minnesota|Mississippi|Missouri|Montana|Nebraska|Nevada|New Hampshire|New Jersey|"
-                      r"New Mexico|New York|North Carolina|North Dakota|Ohio|Oklahoma|Oregon|Pennsylvania|"
-                      r"Rhode Island|South Carolina|South Dakota|Tennessee|Texas|Utah|Vermont|Virginia|Washington|"
-                      r"West Virginia|Wisconsin|Wyoming|District of Columbia)\b")
+STATES = ("Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", "Florida",
+          "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine",
+          "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska",
+          "Nevada", "New Hampshire", "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio",
+          "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", "Tennessee",
+          "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming",
+          "District of Columbia")
+# The abbreviations library catalogues use for the states ("Athens (Ga.)", "Washington, N.C.").
+STATE_ABBREVIATIONS = {
+    "ala": "Alabama", "ariz": "Arizona", "ark": "Arkansas", "calif": "California", "colo": "Colorado",
+    "conn": "Connecticut", "del": "Delaware", "d.c": "District of Columbia", "fla": "Florida", "ga": "Georgia",
+    "ill": "Illinois", "ind": "Indiana", "kan": "Kansas", "kans": "Kansas", "ky": "Kentucky", "la": "Louisiana",
+    "me": "Maine", "md": "Maryland", "mass": "Massachusetts", "mich": "Michigan", "minn": "Minnesota",
+    "miss": "Mississippi", "mo": "Missouri", "mont": "Montana", "neb": "Nebraska", "nebr": "Nebraska",
+    "nev": "Nevada", "n.h": "New Hampshire", "n.j": "New Jersey", "n.m": "New Mexico", "n. mex": "New Mexico",
+    "n.y": "New York", "n.c": "North Carolina", "n.d": "North Dakota", "n. dak": "North Dakota", "okla": "Oklahoma",
+    "or": "Oregon", "oreg": "Oregon", "pa": "Pennsylvania", "r.i": "Rhode Island", "s.c": "South Carolina",
+    "s.d": "South Dakota", "s. dak": "South Dakota", "tenn": "Tennessee", "tex": "Texas", "vt": "Vermont",
+    "va": "Virginia", "wash": "Washington", "w. va": "West Virginia", "w.va": "West Virginia", "wis": "Wisconsin",
+    "wisc": "Wisconsin", "wyo": "Wyoming"}
+US_STATE = re.compile(r"\b(" + "|".join(STATES) + r")\b")
+NOT_A_TOWN = re.compile(r"\b(county|counties|region|river|creek|mountains|street|avenue|road|"
+                        r"united states|north america|u\.s|usa)\b|^\d|^-?\d+(\.\d+)?$", re.I)
+
+
+def state_named(part):
+    """The state a place part names in full or as a catalogue abbreviation ("N.C.", "Ga", "Ohio"), else ""."""
+    part = " ".join(part.split()).strip(" .()")
+    if part in STATES:
+        return part
+    return STATE_ABBREVIATIONS.get(part.lower().rstrip("."), "")
 
 
 def us_place(*values):
-    """A US place from a record's place fields ("Athens (Ohio)", "United States, Georgia, Clarke County, Athens,
-    33.9, -83.3", "Bismarck, North Dakota"): "Athens, Ohio, USA"; "" when no US state is named. Coordinates and county
-    names are dropped."""
+    """A US place from a record's PLACE fields, in the forms catalogues write them: "Athens (Ohio)", "Washington,
+    N.C.", "United States, Georgia, Clarke County, Athens, 33.96, -83.37", "Bismarck, North Dakota", or a subject
+    heading "Streets--North Carolina--Washington": "Athens, Ohio, USA". The town is the part next to the state (before
+    it, or after it in a subject heading), never a county, river or street; "" when no US state is named."""
+    pieces = []
     for value in values:
         for text in (value if isinstance(value, list) else [value]):
+            text = str(text or "")
+            pieces += text.split(";") if "--" in text else [text]
+    for text in pieces:
             text = clean(text)
-            if not text:
+            if not text or "." in text.split(",")[0] and "Models" in text:
+                continue                                  # software noise ("DigitalOai.Models.GenericLabelNode")
+            m = re.match(r"^([^()]+?)\s*\(([^()]+)\)\s*$", text)             # "Athens (Ga.)"
+            if m and state_named(m.group(2)):
+                town = m.group(1).strip()
+                return place_name(*([] if NOT_A_TOWN.search(town) else [town]), state_named(m.group(2)), "USA")
+            if "--" in text:                                                   # a subject heading
+                parts = [p.strip(" .") for p in text.split("--")]
+                for i, p in enumerate(parts):
+                    if state_named(p):
+                        town = parts[i + 1] if i + 1 < len(parts) else ""
+                        town = "" if NOT_A_TOWN.search(town) or not town[:1].isupper() else town
+                        return place_name(town, state_named(p), "USA")
                 continue
-            parts = [p.strip(" .()") for p in re.split(r"[;,()]|--", text) if p.strip(" .()")]
-            parts = [p for p in parts if not re.fullmatch(r"-?\d+(\.\d+)?", p) and not re.search(r"\bcounty\b",
-                                                                                              p, re.I)
-                     and p.lower() not in ("united states", "usa", "u.s.", "us", "north america")]
-            state = next((p for p in parts if US_STATE.fullmatch(p)), "")
-            if not state:
-                m = US_STATE.search(text)
-                state = m.group(0) if m else ""
-            if not state:
-                continue
-            town = next((p for p in parts if p != state and not US_STATE.fullmatch(p) and len(p) < 40), "")
-            if state == "Washington" and town in ("D.C.", "DC"):
-                return "Washington, D.C., USA"
-            return place_from_text(f"{town + ', ' if town else ''}{state}, United States") or f"{state}, USA"
+            parts = [p.strip(" ()") for p in re.split(r"[;,]", text) if p.strip(" .()")]
+            for i, p in enumerate(parts):
+                state = state_named(p)
+                if not state:
+                    continue
+                if state == "Washington" and i + 1 < len(parts) and state_named(parts[i + 1]):
+                    continue                                                   # "Washington, N.C.": the town
+                before = parts[i - 1] if i > 0 else ""
+                after = parts[i + 1] if i + 1 < len(parts) else ""
+                town = before if before and not NOT_A_TOWN.search(before) and \
+                    (not state_named(before) or before == "Washington") else ""
+                if not town and re.search(r"united states|usa", " ".join(parts[:i]), re.I):
+                    later = [q for q in parts[i + 1:] if not NOT_A_TOWN.search(q) and not state_named(q)]
+                    town = later[0] if later else ""                          # "United States, Georgia, ..., Athens"
+                return place_name(town, state, "USA")
     return ""
 
 
@@ -1001,6 +1054,7 @@ def build_newberry_library(limit):
     """The Newberry Library pack (newberry_items)."""
     s, rng, answers = session(), pass_random("newberry_library"), set()
     items = newberry_items(int(limit * 1.3) + 4, rng, answers, RobotsGuard(s), s)
+    rng.shuffle(items)                    # the formats and series mixed, not the first series read
     items = new_only(items)
     fetched = fetch_all(items[:int(limit * 1.2) + 2], workers=3, pause=0.5)[:limit]
     say(f"newberry_library: {len(fetched)} pictures, {sum(1 for _, _, r in fetched if r[0].get('child'))} marked "

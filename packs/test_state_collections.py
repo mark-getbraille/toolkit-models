@@ -87,6 +87,15 @@ def test_us_place():
     assert m.us_place(["United States, Georgia, Clarke County, Athens, 33.96095, -83.37794"]) == "Athens, Georgia, USA"
     assert m.us_place("Bismarck, North Dakota") == "Bismarck, North Dakota, USA"
     assert m.us_place("Paris, France") == ""
+    assert m.us_place("Washington, N.C.") == "Washington, North Carolina, USA"
+    assert m.us_place("Chicago (Ill.)") == "Chicago, Illinois, USA"
+    assert m.us_place("Pamlico River (N.C.)") == "North Carolina, USA"
+    assert m.us_place("Drugstores--North Carolina--Washington; Rivers--North Carolina") == \
+        "Washington, North Carolina, USA"
+    assert m.us_place("DigitalOai.Models.GenericLabelNode") == ""
+    # Notes about the back of a postcard and its dating are not about the picture.
+    assert m.own_words("Postcard of a street scene. Addressed on verso to Miss Lucy Myers. Date from postmarks.",
+                       set()) == "Postcard of a street scene."
 
 
 def candidate(**changes):
