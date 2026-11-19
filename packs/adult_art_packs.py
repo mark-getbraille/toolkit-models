@@ -400,7 +400,7 @@ MYTH_FACTS = [
     (r"Philomela|Tereus", THEME_FORCE, "It shows the story of Philomela, who was raped by Tereus."),
     (r"Callisto", THEME_FORCE, "It shows the story of Callisto, whom Zeus (Jupiter) forced himself on."),
     (r"Cassandra|Ajax", THEME_FORCE, "It shows the rape of Cassandra by Ajax."),
-    (r"Lapiths?|Centaurs?", THEME_FORCE, "It shows the centaurs trying to carry off the Lapith women by force."),
+    (r"Lapiths?", THEME_FORCE, "It shows the centaurs trying to carry off the Lapith women by force."),
     (r"Potiphar\w*", THEME_FORCE, "It shows Potiphar's wife trying to force herself on Joseph."),
     (r"Dinah", THEME_FORCE, "It shows the story of Dinah, who was raped by Shechem."),
     (r"Daphne|Syrinx|Arethusa", THEME_FORCE, "It shows a nymph fleeing a god who pursues her."),
@@ -440,7 +440,13 @@ def is_sexual(text):
     violence (SEXUAL_FORCE, or a force story of MYTH_FACTS)."""
     if TOPIC.search(NOT_TOPIC.sub(" ", text)) or SEXUAL_FORCE.search(text):
         return True
-    return any(theme == THEME_FORCE and pattern.search(text) for pattern, theme, _ in MYTH_FACTS)
+    # The stories of abduction and rape make a work sexual by their names; the PURSUIT stories (Daphne, Syrinx,
+    # Arethusa, Io, Aegina, Antiope) do not: a porcelain "Apollo and Daphne" is not erotica.
+    return any(theme == THEME_FORCE and not PURSUIT.search(said) and pattern.search(text)
+               for pattern, theme, said in MYTH_FACTS)
+
+
+PURSUIT = re.compile(r"\bpursu", re.I)
 
 
 NOT_SEXUAL = "not about sex or erotica"
@@ -1062,8 +1068,9 @@ def erotic_rows(credit, title, kind="", artist="", date="", medium="", text="", 
     tags = [plain(t).lower() for t in tags if clean(t) and len(clean(t)) < 40]
     if tags:
         answer += " " + sentence(f"The {owner}'s subject tags: " + ", ".join(dict.fromkeys(tags)))
-    if not SEX_ACT.search(answer):
-        answer += f" The {owner} files it as erotic art."
+    record_words = " ".join(clean(t) for t in (title, text, " ".join(tags)) if t)
+    if not SEX_ACT.search(answer) and TOPIC.search(NOT_TOPIC.sub(" ", record_words)):
+        answer += f" The {owner} files it as erotic art."       # only when the record's own words say so
     rows = [{"question": DESCRIBE, "answer": answer, "credit": credit, "content": CONTENT},
             {"question": IS_SEXUAL, "answer": SEXUAL_YES.format(owner=owner), "credit": credit, "content": CONTENT}]
     rows = with_theme(rows, " ".join(clean(t) for t in (title, text, " ".join(tags)) if t))

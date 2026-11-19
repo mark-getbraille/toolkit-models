@@ -382,3 +382,17 @@ def test_academy_words_and_carte_de_visite():
     assert a.nude_candidate("E", "e.jpg", "u", "Académie d'homme, seated", "c", "drawing")
     assert a.nude_candidate("E", "e.jpg", "u", "Nude", "c", "carte-de-visite") is None
     assert a.nude_candidate("E", "e.jpg", "u", "Senna morongii, naked pods", "c", "preserved specimen") is None
+
+
+def test_pursuit_myths_and_centaurs_are_not_erotica_alone():
+    """From the Met's second pass: a porcelain Apollo and Daphne, or a nymph riding a centaur, is not erotica by
+    its names; the abduction stories still are; "files it as erotic art" only when the record says erotic."""
+    for title in ("Apollo and Daphne, porcelain", "Dish with Apollo and Daphne", "Nymph riding a centaur",
+                  "Io and Jupiter"):
+        assert not a.is_sexual(title), title
+    for title in ("The Abduction of Proserpina", "The Rape of the Sabine Women", "Lapiths and Centaurs"):
+        assert a.is_sexual(title), title
+    rows = a.erotic_rows("c", "The Abduction of Proserpina", "bronze")
+    assert "files it as erotic art" not in rows[0]["answer"]
+    assert "files it as erotic art" in a.erotic_rows("c", "A couple, erotic print", "print", tags=())[0]["answer"] \
+        or "erotic" in a.erotic_rows("c", "A couple, erotic print", "print")[0]["answer"]
