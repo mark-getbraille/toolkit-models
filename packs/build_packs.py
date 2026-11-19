@@ -1603,6 +1603,12 @@ PACKS.update(DRUG_FIREARM_PACKS)
 from adult_art_packs import ADULT_ART_PACKS
 PACKS.update(ADULT_ART_PACKS)
 
+# Modern packaged goods (packs/packaged_goods_packs.py): Amazon Berkeley Objects catalogue photos of groceries, drinks,
+# vitamins, medicines, toiletries, cleaning products and pet food (the types abo_products leaves out), and Open Images
+# photos with a packaging label people checked. Neither reads Commons.
+from packaged_goods_packs import PACKAGED_GOODS_PACKS
+PACKS.update(PACKAGED_GOODS_PACKS)
+
 
 # The packs whose builder reads the Wikimedia Commons API (commons_get, commons_members, commons_entries,
 # mechanical_packs.mech_entries, us_packs.us_commons, documentary_packs.commons_get or COMMONS_API itself). When many

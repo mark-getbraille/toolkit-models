@@ -334,6 +334,8 @@ jobs:
             museum_art_nudes) limit=1500 ;;
             erotic_art) limit=1500 ;;
             nude_photo_studies) limit=300 ;;
+            abo_packaged_goods) limit=6000 ;;
+            open_images_packaged_goods) limit=500 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in
