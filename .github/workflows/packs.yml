@@ -36,6 +36,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       keys: ${{ steps.keys.outputs.keys }}
+      commons: ${{ steps.keys.outputs.commons }}
+      other: ${{ steps.keys.outputs.other }}
     steps:
       - uses: actions/checkout@v4
       - id: keys
@@ -109,369 +111,40 @@ jobs:
           else:
               keys = known if words in ([], ["all"]) else [w for w in words if w.rstrip("+?") in known]
           print("keys=" + json.dumps(keys))
+          # The two lanes (build_packs.pack_lanes): the packs that read Wikimedia Commons, and the rest. build_packs is
+          # imported with its printing sent to the log, so nothing but these lines reaches GITHUB_OUTPUT.
+          import contextlib
+          sys.path.insert(0, "packs")
+          with contextlib.redirect_stdout(sys.stderr):
+              from build_packs import pack_lanes
+          commons, other = pack_lanes(keys)
+          print("commons=" + json.dumps(commons))
+          print("other=" + json.dumps(other))
           PY
 
+  # The builds run in two lanes at the same time (the build job itself is in pack-build.yml): the packs that read
+  # Wikimedia Commons (build_packs.COMMONS_KEYS) two at a time, because Commons refused requests (429) for hours when
+  # many read it together, and every other pack eight at a time. A lane with no keys is skipped.
   build:
     needs: plan
-    runs-on: ubuntu-latest
-    timeout-minutes: 350
-    strategy:
-      fail-fast: false
-      max-parallel: 10
-      matrix:
-        key: ${{ fromJSON(needs.plan.outputs.keys) }}
-    env:
-      GH_TOKEN: ${{ github.token }}
-      HF_HUB_DISABLE_TELEMETRY: "1"
-      # Europeana's free API key (a repository secret); without it the builders use the public demonstration key.
-      EUROPEANA_KEY: ${{ secrets.EUROPEANA_KEY }}
-      # The Digital Public Library of America's key (a repository secret); without it dpla_campus publishes nothing.
-      DPLA_API_KEY: ${{ secrets.DPLA_API_KEY }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Install what the builder needs
-        run: |
-          python -m pip install requests pillow pyarrow "huggingface_hub>=0.34"
-          key="${{ matrix.key }}"
-          key="${key%+}"
-          # The packs in other languages are also translated into English (OPUS-MT, on the processor); a needs-only
-          # run ("key?") translates nothing.
-          if [ "${key%\?}" != "$key" ]; then key="needs-only"; fi
-          case "$key" in
-            ksamsok|rijksmuseum|coco_cn|europeana_fi|europeana_cs|europeana_hu|europeana_el|europeana_no|europeana_pl|smk|anefo)
-              python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
-              python -m pip install "transformers==4.57.6" "sentencepiece==0.2.1" "sacremoses==0.1.1" ;;
-            cd_booklets)
-              python -m pip install numpy "pypdfium2==5.15.2" ;;
-            cd_films)
-              python -m pip install numpy && sudo apt-get update && sudo apt-get install -y ffmpeg ;;
-            us_federal_forms|field_manual_figures)
-              python -m pip install "pypdfium2==5.15.2" ;;
-            seoul_sidewalks|urine_samples)
-              python -m pip install "pillow-heif==1.1.1" ;;
-            # PLP2019's drone photos and TyreNet's tyres come in RAR archives and AMLID's in a 7-Zip archive, which Python cannot open:
-            # bsdtar (libarchive) does.
-            plp_floating_targets|amlid_landmines|tyre_condition)
-              sudo apt-get update && sudo apt-get install -y libarchive-tools ;;
-          esac
-      - name: Build the pack
-        run: |
-          key="${{ matrix.key }}"
-          key="${key%+}"                 # "key+": a top-up pass of key
-          key="${key%\?}"                # "key?": a needs-only run of key
-          case "$key" in
-            smithsonian) limit=6000 ;;
-            coco_questions) limit=8000 ;;
-            commons) limit=5000 ;;
-            tepapa) limit=3000 ;;
-            inaturalist) limit=12000 ;;
-            nutrition5k) limit=3500 ;;
-            fresh_rotten) limit=3200 ;;
-            banknotes) limit=3000 ;;
-            cattle_health) limit=1700 ;;
-            clothing) limit=5000 ;;
-            japan_search) limit=3000 ;;
-            ksamsok) limit=5000 ;;
-            rijksmuseum) limit=6000 ;;
-            stair_captions) limit=20000 ;;
-            coco_cn) limit=4000 ;;
-            eggs) limit=6000 ;;
-            beef) limit=60 ;;
-            taiwan_pills) limit=2000 ;;
-            pharmassist) limit=2050 ;;
-            mediseg) limit=6000 ;;
-            open_images_food) limit=10000 ;;
-            grocery_store) limit=5421 ;;
-            fish_eyes) limit=4390 ;;
-            commons_food) limit=1500 ;;
-            open_images_objects) limit=12000 ;;
-            orbit) limit=7000 ;;
-            core50) limit=4000 ;;
-            lila_camera_traps) limit=8000 ;;
-            gbif_species) limit=6000 ;;
-            commons_breeds) limit=3000 ;;
-            textocr) limit=8000 ;;
-            coco_text) limit=1200 ;;
-            cord) limit=1000 ;;
-            doclaynet) limit=6000 ;;
-            plotqa) limit=6000 ;;
-            loc_letters) limit=8000 ;;
-            ptl_crossings) limit=5000 ;;
-            uroac_crossings) limit=1000 ;;
-            open_images_street) limit=5000 ;;
-            walkway_dhaka) limit=1000 ;;
-            outdoor_navigation) limit=700 ;;
-            seoul_sidewalks) limit=514 ;;
-            dollar_street) limit=8000 ;;
-            geode) limit=6000 ;;
-            art_nudes) limit=4000 ;;
-            anatomy) limit=1500 ;;
-            skin_lesion_photos) limit=2259 ;;
-            isic_skin) limit=12000 ;;
-            gi_endoscopy) limit=8000 ;;
-            chest_xray) limit=8000 ;;
-            case_report_figures) limit=10000 ;;
-            vet_case_figures) limit=3000 ;;
-            cdc_medical) limit=600 ;;
-            childhood_illness) limit=300 ;;
-            medical_collections) limit=300 ;;
-            birth_and_feeding) limit=1500 ;;
-            oi_expressions) limit=12000 ;;
-            commons_expressions) limit=1500 ;;
-            bice_gestures) limit=1430 ;;
-            vqa_expressions) limit=1200 ;;
-            xm3600) limit=3600 ;;
-            europeana_fi) limit=6000 ;;
-            europeana_cs) limit=4000 ;;
-            europeana_hu) limit=4000 ;;
-            europeana_el) limit=4000 ;;
-            europeana_no) limit=6000 ;;
-            europeana_pl) limit=1500 ;;
-            bd_taka) limit=547 ;;
-            medpack_id) limit=1444 ;;
-            fashionpedia) limit=5000 ;;
-            loc_highsmith) limit=6000 ;;
-            loc_fsa) limit=6000 ;;
-            loc_world) limit=4000 ;;
-            npgallery) limit=6000 ;;
-            earth_observatory) limit=3000 ;;
-            eso) limit=1200 ;;
-            usgs) limit=4000 ;;
-            commons_valued) limit=2500 ;;
-            open_images_disability) limit=219 ;;
-            commons_disability) limit=1500 ;;
-            tapad_tactile_paving) limit=2811 ;;
-            loc_civil_war) limit=3000 ;;
-            loc_war_disaster) limit=3000 ;;
-            nara_war) limit=1500 ;;
-            ushmm) limit=2500 ;;
-            commons_war) limit=2500 ;;
-            commons_disasters) limit=2500 ;;
-            commons_safety) limit=2000 ;;
-            nara) limit=5000 ;;
-            nypl) limit=6000 ;;
-            getty_museum) limit=4000 ;;
-            digital_commonwealth) limit=3000 ;;
-            smk) limit=3000 ;;
-            anefo) limit=6000 ;;
-            kremlin) limit=3000 ;;
-            awm) limit=3000 ;;
-            commons_military) limit=4000 ;;
-            commons_airplanes) limit=2500 ;;
-            commons_uniformed) limit=4000 ;;
-            loc_service) limit=4000 ;;
-            nara_military) limit=3000 ;;
-            army_mil) limit=250 ;;
-            nasm_aircraft) limit=1200 ;;
-            nmah_service) limit=1500 ;;
-            scatspotter) limit=3000 ;;
-            inat_droppings) limit=1500 ;;
-            open_images_bodily) limit=3000 ;;
-            commons_bodily) limit=100 ;;
-            case_report_bodily) limit=150 ;;
-            urine_samples) limit=532 ;;
-            open_images_culture) limit=8000 ;;
-            wikidata_sports) limit=3000 ;;
-            wikidata_instruments) limit=4000 ;;
-            met_instruments) limit=3500 ;;
-            wikidata_worship) limit=4000 ;;
-            commons_religious_life) limit=2000 ;;
-            wikidata_landmarks) limit=4000 ;;
-            wikidata_architecture) limit=2500 ;;
-            gldv2_landmarks) limit=4000 ;;
-            wikidata_vehicle_models) limit=4000 ;;
-            commons_vehicle_kinds) limit=1500 ;;
-            wikidata_toys_games) limit=2000 ;;
-            playing_cards) limit=1877 ;;
-            chess_pieces) limit=289 ;;
-            chess_positions) limit=3000 ;;
-            chess_drawings) limit=500 ;;
-            drawn_cards) limit=500 ;;
-            deepscores_sheet_music) limit=2000 ;;
-            agml_plant_health) limit=6000 ;;
-            agml_weeds) limit=3000 ;;
-            agml_harvest) limit=1200 ;;
-            gwhd_wheat) limit=2000 ;;
-            poultry_droppings) limit=2000 ;;
-            inat_crops) limit=2400 ;;
-            trashnet) limit=1500 ;;
-            taco_litter) limit=1500 ;;
-            ccsn_clouds) limit=2500 ;;
-            weather_images) limit=1100 ;;
-            eurosat) limit=600 ;;
-            commons_land_industry) limit=4000 ;;
-            loc_haer) limit=3000 ;;
-            plitter_street) limit=2500 ;;
-            plp_floating_targets) limit=30 ;;
-            usda_ars) limit=300 ;;
-            clock_times) limit=1300 ;;
-            seven_segment) limit=3333 ;;
-            open_images_home) limit=3900 ;;
-            commons_pests) limit=900 ;;
-            commons_appliances) limit=700 ;;
-            commons_connectors) limit=900 ;;
-            laundry_symbols) limit=600 ;;
-            commons_tools) limit=1200 ;;
-            commons_personal) limit=1000 ;;
-            commons_hairstyles) limit=600 ;;
-            commons_kitchen) limit=900 ;;
-            commons_events) limit=4000 ;;
-            loc_events) limit=3000 ;;
-            nara_events) limit=2500 ;;
-            europeana_events) limit=1500 ;;
-            safety_signs) limit=2500 ;;
-            commons_safety_photos) limit=4000 ;;
-            safety_training) limit=1200 ;;
-            dfire_cameras) limit=4000 ;;
-            commons_munition_models) limit=1500 ;;
-            commons_uxo) limit=2000 ;;
-            amlid_landmines) limit=1100 ;;
-            commons_firearms) limit=3000 ;;
-            commons_cartridges) limit=1500 ;;
-            commons_child_rites) limit=1200 ;;
-            europeana_child_rites) limit=400 ;;
-            abo_products) limit=6000 ;;
-            open_images_in_use) limit=4000 ;;
-            open_images_tech) limit=4500 ;;
-            commons_things) limit=2500 ;;
-            commons_in_use) limit=1500 ;;
-            brick_quality) limit=1500 ;;
-            codd_materials) limit=1400 ;;
-            nyuad_materials) limit=208 ;;
-            commons_car_parts) limit=3500 ;;
-            commons_cycle_parts) limit=2500 ;;
-            commons_machine_parts) limit=3500 ;;
-            commons_engine_bays) limit=1500 ;;
-            iso_machine_symbols) limit=2300 ;;
-            corolla_engine_bay) limit=1452 ;;
-            tyre_condition) limit=4100 ;;
-            spark_plug_condition) limit=697 ;;
-            planetary_gearbox) limit=150 ;;
-            vcoco_actions) limit=1800 ;;
-            vg_people_actions) limit=1800 ;;
-            open_images_activities) limit=6000 ;;
-            commons_daily_life) limit=3500 ;;
-            dollar_street_routines) limit=1250 ;;
-            coco_actions_nc) limit=16200 ;;
-            coco_actions_sa) limit=2400 ;;
-            loc_habs_houses) limit=3000 ;;
-            commons_us_homes) limit=4000 ;;
-            commons_us_streets) limit=3000 ;;
-            commons_us_cars) limit=2500 ;;
-            inaturalist_us) limit=5000 ;;
-            commons_us_money) limit=1200 ;;
-            us_road_signs) limit=2000 ;;
-            commons_packaging) limit=2500 ;;
-            commons_us_agencies) limit=4000 ;;
-            commons_us_controls) limit=2000 ;;
-            commons_us_holidays) limit=2500 ;;
-            commons_us_eating_out) limit=2500 ;;
-            commons_us_getting_around) limit=3000 ;;
-            commons_us_public_places) limit=3000 ;;
-            us_federal_forms) limit=200 ;;
-            imageinwords) limit=500 ;;
-            wikidata_devices) limit=3000 ;;
-            commons_devices) limit=2500 ;;
-            nmah_devices) limit=150 ;;
-            work_commons_workplaces) limit=1500 ;;
-            farm_commons_equipment) limit=2500 ;;
-            mech_commons_building) limit=1200 ;;
-            farm_usda_nrcs) limit=3000 ;;
-            commons_state_roads) limit=3500 ;;
-            commons_state_outdoors) limit=3000 ;;
-            commons_state_response) limit=800 ;;
-            commons_state_community) limit=2500 ;;
-            med_commons_supplies) limit=2000 ;;
-            med_commons_instruments) limit=600 ;;
-            med_commons_medicines) limit=1500 ;;
-            vet_commons_medicine) limit=500 ;;
-            dental_instruments) limit=800 ;;
-            open_images_medical) limit=900 ;;
-            cdc_phil_supplies) limit=400 ;;
-            commons_ca_homes) limit=2500 ;;
-            commons_ca_streets) limit=2000 ;;
-            commons_ca_cars) limit=1200 ;;
-            inaturalist_ca) limit=4000 ;;
-            commons_ca_money) limit=600 ;;
-            ca_road_signs) limit=1500 ;;
-            commons_ca_shops) limit=800 ;;
-            commons_ca_holidays) limit=1500 ;;
-            commons_ca_eating_out) limit=1200 ;;
-            commons_ca_getting_around) limit=2000 ;;
-            commons_ca_public_places) limit=2000 ;;
-            commons_ca_archives) limit=3000 ;;
-            commons_ca_provincial) limit=1500 ;;
-            commons_ca_daily_life) limit=2000 ;;
-            dpla_campus) limit=6000 ;;
-            commons_college_streams) limit=4000 ;;
-            commons_university_archives) limit=3000 ;;
-            gso_objects) limit=2000 ;;
-            oi_crowdsourced) limit=4000 ;;
-            pubtabnet_tables) limit=3000 ;;
-            caltrans_cctv) limit=2000 ;;
-            owid_charts) limit=3000 ;;
-            field_manual_figures) limit=2500 ;;
-            cd_booklets) limit=1200 ;;
-            cd_films) limit=1200 ;;
-          esac
-          mode=""
-          case "${{ matrix.key }}" in
-            *+) mode="--top-up" ;;
-            *\?) mode="--needs-only" ;;
-          esac
-          # Stop downloading after 290 minutes, keeping what has come, so the pack is published within the job's time;
-          # the pictures set aside for a description then get up to 25 minutes more to download.
-          # A top-up pass that adds nothing writes no manifest: the next step then publishes nothing.
-          PACK_TIME_LIMIT_MINUTES=290 NEEDS_TIME_LIMIT_MINUTES=25 \
-            python packs/build_packs.py "$key" --out build/packs --limit "$limit" $mode
-      - name: Upload it to the release
-        run: |
-          gh release view training-data > /dev/null 2>&1 || gh release create training-data \
-            --title "Training data packs" \
-            --notes "Picture packs for the Picture Model Training Kit (packs/build_packs.py); each zip has CREDITS.txt."
-          key="${{ matrix.key }}"
-          key="${key%+}"
-          key="${key%\?}"
-          if [ ! -f "build/packs/manifest-$key.json" ]; then
-            echo "Nothing new to publish for $key: the published pack is kept as it was."
-            exit 0
-          fi
-          files=$(python -c "import json;print(' '.join(json.load(open('build/packs/manifest-$key.json'))['files']))")
-          # The pack's files first, its manifest last, so packs.json never names files that are not there yet.
-          for f in $files manifest-$key.json; do
-            for attempt in 1 2 3 4; do
-              gh release upload training-data "build/packs/$f" --clobber && break
-              sleep 30
-            done
-          done
-      - name: Upload the pictures that need a description
-        run: |
-          # A separate release: training-data is never touched here. The zip has a new name for each version
-          # (needs-<key>.v<N>.zip), so someone downloading the old one while this runs still gets a whole file.
-          gh release view needs-description > /dev/null 2>&1 || gh release create needs-description \
-            --title "Pictures that need a description" \
-            --notes "Pictures the pack builders set aside because their description was missing or poor (packs/build_packs.py needs_description). Each needs-<key>.vN.zip opens in the training kit's Describe pictures (Import a package) or with Build a Review Pack.cmd. Nothing here is trained on until a person describes and checks it."
-          key="${{ matrix.key }}"
-          key="${key%+}"
-          key="${key%\?}"
-          if [ ! -f "build/packs/needs-manifest-$key.json" ]; then
-            echo "No pictures were set aside for a description in $key."
-            exit 0
-          fi
-          file=$(python -c "import json;print(json.load(open('build/packs/needs-manifest-$key.json'))['file'])")
-          # The zip first, its manifest last, so needs-manifest.json never names a file that is not there yet.
-          for f in $file needs-manifest-$key.json; do
-            for attempt in 1 2 3 4; do
-              gh release upload needs-description "build/packs/$f" --clobber && break
-              sleep 30
-            done
-          done
+    if: needs.plan.outputs.other != '[]'
+    uses: ./.github/workflows/pack-build.yml
+    with:
+      keys: ${{ needs.plan.outputs.other }}
+      parallel: 8
+    secrets: inherit
+
+  build-commons:
+    needs: plan
+    if: needs.plan.outputs.commons != '[]'
+    uses: ./.github/workflows/pack-build.yml
+    with:
+      keys: ${{ needs.plan.outputs.commons }}
+      parallel: 2
+    secrets: inherit
 
   manifest:
-    needs: build
+    needs: [build, build-commons]
     if: always()
     runs-on: ubuntu-latest
     env:
@@ -514,7 +187,7 @@ jobs:
           done
 
   needs-manifest:
-    needs: build
+    needs: [build, build-commons]
     if: always()
     runs-on: ubuntu-latest
     env:

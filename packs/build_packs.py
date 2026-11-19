@@ -1591,6 +1591,52 @@ from med_vet_packs import MED_VET_PACKS
 PACKS.update({k: v for k, v in MED_VET_PACKS.items() if k != "voa_commons_photos"})
 
 
+# The packs whose builder reads the Wikimedia Commons API (commons_get, commons_members, commons_entries,
+# mechanical_packs.mech_entries, us_packs.us_commons, documentary_packs.commons_get or COMMONS_API itself). When many
+# of them ran at once (the workflow ran ten packs together), Commons refused requests (429) for hours and the packs
+# failed or came out empty. The workflow (.github/workflows/packs.yml) therefore builds these in their own lane, two
+# at a time, and every other pack in a lane of eight (pack_lanes). A new pack that reads Commons must be added here:
+# test_lanes.py checks every key named commons_... and every builder that calls one of those helpers.
+COMMONS_KEYS = frozenset({
+    # Commons categories, captions and featured pictures
+    "commons", "commons_food", "commons_breeds", "commons_expressions", "commons_valued", "commons_disability",
+    "commons_war", "commons_disasters", "commons_safety", "commons_military", "commons_airplanes",
+    "commons_uniformed", "commons_bodily", "commons_religious_life", "commons_vehicle_kinds",
+    "commons_land_industry", "commons_pests", "commons_appliances", "commons_connectors", "commons_tools",
+    "commons_personal", "commons_hairstyles", "commons_kitchen", "commons_events", "commons_safety_photos",
+    "commons_munition_models", "commons_uxo", "commons_firearms", "commons_cartridges", "commons_child_rites",
+    "commons_things", "commons_in_use", "commons_car_parts", "commons_cycle_parts", "commons_machine_parts",
+    "commons_engine_bays", "commons_daily_life", "commons_devices", "commons_packaging",
+    # other packs that take their pictures (or part of them) from Commons
+    "anatomy", "birth_and_feeding", "anefo", "laundry_symbols", "safety_signs", "safety_training",
+    "iso_machine_symbols",
+    # Wikidata items whose pictures are read from Commons
+    "wikidata_sports", "wikidata_instruments", "wikidata_worship", "wikidata_landmarks", "wikidata_architecture",
+    "wikidata_vehicle_models", "wikidata_toys_games", "wikidata_devices",
+    # United States
+    "commons_us_homes", "commons_us_streets", "commons_us_cars", "commons_us_money", "us_road_signs",
+    "commons_us_agencies", "commons_us_controls", "commons_us_holidays", "commons_us_eating_out",
+    "commons_us_getting_around", "commons_us_public_places",
+    "commons_state_roads", "commons_state_outdoors", "commons_state_response", "commons_state_community",
+    # Canada
+    "commons_ca_homes", "commons_ca_streets", "commons_ca_cars", "commons_ca_money", "ca_road_signs",
+    "commons_ca_shops", "commons_ca_holidays", "commons_ca_eating_out", "commons_ca_getting_around",
+    "commons_ca_public_places", "commons_ca_archives", "commons_ca_provincial", "commons_ca_daily_life",
+    # workplaces, farms and buildings; colleges; medicine and veterinary medicine
+    "work_commons_workplaces", "farm_commons_equipment", "mech_commons_building", "farm_usda_nrcs",
+    "commons_college_streams", "commons_university_archives",
+    "med_commons_supplies", "med_commons_instruments", "med_commons_medicines", "vet_commons_medicine",
+})
+
+
+def pack_lanes(keys):
+    """Split the workflow's pack keys into (Commons lane, other lane), keeping their order. A key may carry the
+    workflow's marks ("loc_fsa+" a top-up pass, "loc_fsa?" a needs-only run): the mark is kept, and the key goes to
+    the Commons lane when the key without it is in COMMONS_KEYS (a top-up or needs-only run reads Commons too)."""
+    commons = [k for k in keys if k.rstrip("+?") in COMMONS_KEYS]
+    return commons, [k for k in keys if k.rstrip("+?") not in COMMONS_KEYS]
+
+
 def sha256_of(path):
     """The SHA-256 of a file."""
     digest = hashlib.sha256()
