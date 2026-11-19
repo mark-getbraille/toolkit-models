@@ -67,6 +67,57 @@ def test_shifted_font_cover_is_read():
     assert not ux.release_check(A_LINE + " " + bad)[0]
 
 
+def test_public_education_allow_list():
+    """The owner's allow-list: named US government public safety education (the DoD 3Rs material from
+    denix.osd.mil, the BLM and FWS handbook from its Internet Archive copy) is accepted without Distribution A, with
+    the note; a restricted marking still refuses it; nothing else gets that basis."""
+    assert ux.PUBLIC_EDUCATION == ("public safety education material of a US government agency, published for "
+                                   "distribution to the public (17 U.S.C. 105)")
+    ok, line = ux.release_check("Recognize, Retreat, Report. Call 911.", "public_education")
+    assert ok and line == ux.PUBLIC_EDUCATION
+    ok, why = ux.release_check("Recognize, Retreat, Report. FOR OFFICIAL USE ONLY", "public_education")
+    assert not ok and "restricted" in why
+    assert not ux.release_check("Recognize, Retreat, Report.")[0]          # not on the list: refused as before
+    docs = ux.PUBLIC_EDUCATION_DOCUMENTS
+    assert len(docs) >= 10 and all(d in ux.UXO_DOCUMENTS for d in docs)
+    for d in docs:
+        assert d["basis"] == "public_education" and d["title"] and d["publisher"] and d["topic"] == "uxo"
+        if d["source"] == "url":
+            assert d["url"].startswith("https://www.denix.osd.mil/uxo/") and d["url"].endswith(".pdf")
+            assert "3Rs" in d["publisher"] and d["page"].startswith("https://www.denix.osd.mil/uxo/")
+        else:
+            assert d["source"] == "archive" and d["id"] == "militarymunition00unit"
+    others = [d for docs_ in ux.DOCUMENTS.values() for d in docs_ if d not in docs]
+    assert all(d["basis"] == "statement" for d in others)
+
+
+def test_public_education_still_filtered():
+    """An allow-listed document still goes through the section filter (a disposal section is dropped)."""
+    pages = [page("Recognize, Retreat, Report"), page("Chapter 1 Recognize"), page("Chapter 2 Retreat"),
+             page("Chapter 3 Report"), page("Chapter 4 Disposal Procedures")]
+    result = ux.filter_pages(pages, [], "uxo")
+    assert result["kept"] == [0, 1, 2, 3] and "Chapter 4 Disposal Procedures" in result["dropped"]
+
+
+def test_robots_check():
+    """A missing robots.txt allows reading; a robots.txt that disallows the path refuses it."""
+    class Answer:
+        def __init__(self, code, text=""):
+            self.status_code, self.text = code, text
+
+    class Session:
+        def __init__(self, answer):
+            self.answer = answer
+
+        def get(self, url, timeout=0):
+            return self.answer
+    url = "https://www.denix.osd.mil/uxo/denix-files/sites/72/a.pdf"
+    assert ux.robots_allow(url, Session(Answer(404)))
+    assert not ux.robots_allow(url, Session(Answer(200, "User-agent: *\nDisallow: /uxo/")))
+    assert ux.robots_allow(url, Session(Answer(200, "User-agent: *\nDisallow: /private/")))
+    assert not ux.robots_allow(url, Session(Answer(503)))
+
+
 def test_licence_basis():
     """A humanitarian body's document is kept only when its stated open licence is printed in it."""
     licence = r"Creative Commons Attribution[- ]4\.0|CC BY 4\.0"
@@ -196,8 +247,11 @@ def test_tables_are_personal_review_only():
         assert s["content"] == "graphic" and s["content"] in sources.PICTURE_MAKING_NEVER
         assert s["category"] == "research" and callable(s["fetch"])
     assert ux.UXO_PICTURE_MAKING_OK == set()
+    allowed = {id(d) for d in ux.PUBLIC_EDUCATION_DOCUMENTS}
     for docs in ux.DOCUMENTS.values():
         for d in docs:
+            if id(d) in allowed:
+                continue
             assert d["basis"] == "statement" and d["page"].startswith("https://archive.org/details/")
     assert ux.PERSONAL_LINE == "PERSONAL USE; NOT FOR REDISTRIBUTION."
     assert ux.personal_folder("uxo").endswith(os.path.join("Picture Model Training personal files",

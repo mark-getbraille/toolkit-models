@@ -15,9 +15,14 @@ STRICT SCOPE (enforced in code, not only promised):
      pages) says "Approved for public release; distribution is unlimited" (Distribution Statement A), or, for a
      humanitarian body's document, shows the open licence named in its entry (basis "licence"). Any restricted
      marking (Distribution B to F, "distribution authorized to", FOUO, CUI, NOFORN, export-controlled) refuses it,
-     even when Distribution A is also printed. Some Army PDFs print the statement in a font whose letters come out
-     moved by 29 places (",675,%87,21" for "DISTRIBUTION"); the check also reads that form (unshifted), so the
-     statement is checked, never assumed.
+     even when Distribution A is also printed. By the owner's decision (November 2026), public safety education
+     that US government agencies publish for handing out to the public is also accepted, but only by name on an
+     allow-list (PUBLIC_EDUCATION_DOCUMENTS: the DoD 3Rs "Recognize, Retreat, Report" guides, pocket cards and
+     fact sheets from denix.osd.mil, and the 2006 BLM and FWS munitions handbook), as PUBLIC_EDUCATION; a
+     restricted marking still refuses them, and the section filter still applies. They are read only from the
+     agency's own site (its robots.txt checked first) or from the Internet Archive copy of that exact document.
+     Some Army PDFs print the statement in a font whose letters come out moved by 29 places (",675,%87,21" for
+     "DISTRIBUTION"); the check also reads that form (unshifted), so the statement is checked, never assumed.
   2. RECOGNITION AND SAFETY SECTIONS ONLY (filter_pages). Each page's section titles are found from the PDF's
      bookmarks and from the headings printed on the page (chapter and appendix lines, and short capital-letter
      headings, carried on to the following pages until the next heading). A page is left out when any of its titles
@@ -70,14 +75,17 @@ How to use (for the kit's own code):
                         licence, terms, terms_summary, credit, content "graphic", cap, download, fetch,
                         review_only True) plus personal_only, never_publish and never_for_picture_making (all True).
                         fetch(folder, cap, say) fills the review workspace and the personal documents folder.
-  UXO_DOCUMENTS, SMALL_ARMS_DOCUMENTS   the documents (checked by hand in November 2026; checked again in code).
-  UXO_NOT_INCLUDED, SMALL_ARMS_NOT_INCLUDED, OWNER_DECISION   looked at and left out, with the reason.
+  UXO_DOCUMENTS, SMALL_ARMS_DOCUMENTS   the documents (checked by hand in November 2026; checked again in code);
+                        UXO_DOCUMENTS ends with PUBLIC_EDUCATION_DOCUMENTS, the owner's allow-list.
+  UXO_NOT_INCLUDED, SMALL_ARMS_NOT_INCLUDED   looked at and left out, with the reason; OWNER_DECISION the
+                        owner's decisions about material outside the strict rule.
 
     python uxo_personal_sources.py uxo <workspace folder> [cap]          (a quick run of one collection)
     python uxo_personal_sources.py check <PDF file> uxo|small_arms        (what the filters keep, offline)
 
-Nothing is sent anywhere except the downloads from the Internet Archive (its documented metadata and download
-addresses; its robots.txt allows them).
+Nothing is sent anywhere except the downloads: from the Internet Archive (its documented metadata and download
+addresses; its robots.txt allows them) and, for the allow-listed 3Rs material, from denix.osd.mil (robots.txt
+checked before each download).
 """
 
 import io
@@ -122,6 +130,10 @@ RESTRICTED = re.compile(r"distribution\s*(statement\s*)?[B-F]\s*[:.\-–—]|dis
                         r"export[- ]?controlled|\bITAR\b|not\s+releasable\s+to", re.I)
 
 
+PUBLIC_EDUCATION = ("public safety education material of a US government agency, published for distribution to the "
+                    "public (17 U.S.C. 105)")
+
+
 def unshifted(text):
     """The text with every character moved 29 places on: some Army PDFs print the cover in a font whose letters come
     out 29 places early (",675,%87,21" is "DISTRIBUTION"). Only used for the release check."""
@@ -131,13 +143,16 @@ def unshifted(text):
 def release_check(front_text, basis="statement", licence=None):
     """(True, the line found) when the document's front matter shows it is publicly released, else (False, the
     reason). basis "statement": Distribution Statement A ("Approved for public release; distribution is
-    unlimited"); basis "licence": licence (a regular expression for the open licence its publisher states). A
-    restricted marking always refuses, in either form of the text."""
+    unlimited"); basis "licence": licence (a regular expression for the open licence its publisher states); basis
+    "public_education": a document on the owner's allow-list (PUBLIC_EDUCATION_DOCUMENTS), accepted without a
+    statement as PUBLIC_EDUCATION. A restricted marking always refuses, in either form of the text."""
     text = " ".join((front_text or "").split())
     for form in (text, unshifted(text)):
         bad = RESTRICTED.search(form)
         if bad:
             return False, f"its front matter shows a restricted marking ({' '.join(bad.group(0).split())})"
+    if basis == "public_education":
+        return True, PUBLIC_EDUCATION
     if basis == "licence":
         found = re.search(licence, text, re.I) if licence else None
         if found:
@@ -243,9 +258,10 @@ def page_titles(pages, bookmarks=()):
     "heading". pages: each page's text (lines separated by new lines); bookmarks: [(level, title, page index)].
 
     A bookmark covers its page up to and INCLUDING the page where the next bookmark of the same or a higher level
-    starts (a section can end part-way down a page), unless that page begins with a chapter line. A printed heading covers the rest of its page and the following
-    pages until the next heading of the same or a higher level (a chapter line ends the capital-letter headings). A
-    page with three or more chapter lines is a contents page: its headings are not used."""
+    starts (a section can end part-way down a page), unless that page begins with a chapter line. A printed heading
+    covers the rest of its page and the following pages until the next heading of the same or a higher level (a
+    chapter line ends the capital-letter headings). A page with three or more chapter lines is a contents page: its
+    headings are not used."""
     count = len(pages)
     out = [[] for _ in range(count)]
     marks = sorted((p, lvl, " ".join(str(t).split())) for lvl, t, p in bookmarks
@@ -393,7 +409,8 @@ def figure_answer(document, label, caption, topic):
     words = " ".join(w.lower() if re.fullmatch(r"\(?[A-Z][a-z]+(-[A-Za-z][a-z]+)*[,;:)]?", w)
                      and w.strip("(),;:").split("-")[0] not in PROPER else w for w in words.split())
     line = UXO_LINE if topic == "uxo" else GUN_LINE
-    return f"This is a figure from {document['short']} (approved for public release): figure {label}, {words}. {line}"
+    kind = "public safety education" if document.get("basis") == "public_education" else "approved for public release"
+    return f"This is a figure from {document['short']} ({kind}): figure {label}, {words}. {line}"
 
 
 def figure_rows(document, kept_pages, page_captions, topic):
@@ -421,6 +438,16 @@ def archive_doc(identifier, short, title, publisher, year, topic, note=""):
     return {"id": identifier, "source": "archive", "short": short, "title": title, "publisher": publisher,
             "year": year, "topic": topic, "basis": "statement", "licence": None, "note": note,
             "page": f"{ARCHIVE}/details/{identifier}"}
+
+
+def public_education_doc(url, short, title, agency, year, topic="uxo", page="", identifier=""):
+    """One document on the owner's allow-list of US government public safety education (no Distribution Statement
+    A line on it; accepted as PUBLIC_EDUCATION, still refused for any restricted marking and still filtered). It is
+    read from url on the agency's own site, or from the Internet Archive item identifier (a copy of that exact
+    document)."""
+    return {"id": identifier or os.path.splitext(url.rsplit("/", 1)[-1])[0], "source": "archive" if identifier else
+            "url", "url": url, "short": short, "title": title, "publisher": agency, "year": year, "topic": topic,
+            "basis": "public_education", "licence": None, "note": "", "page": page or url}
 
 
 # Checked by hand in November 2026 (front matter, contents and figures); every check is made again in code.
@@ -470,6 +497,63 @@ SMALL_ARMS_DOCUMENTS = [
                 "small_arms", "Kept: overview, safety and the weapon's description."),
 ]
 
+# The owner's allow-list (decision of November 2026): public safety education that US government agencies publish
+# for handing out to the public, without a formal Distribution Statement A line. Each was downloaded and read in
+# November 2026 (no restricted marking; the section filter keeps every page of the 3Rs material). The 3Rs files
+# come from the DoD 3Rs Explosives Safety Education Program's own site (denix.osd.mil; its robots.txt answers
+# "not found", so nothing is disallowed, and it is checked again before each download).
+DENIX = "https://www.denix.osd.mil/uxo/denix-files/sites/72/"
+THREE_RS = "the DoD 3Rs Explosives Safety Education Program (US Army Corps of Engineers for the Department of Defense)"
+THREE_RS_PAGES = {"guide": "https://www.denix.osd.mil/uxo/educational-resources/safety-guides/",
+                  "card": "https://www.denix.osd.mil/uxo/educational-resources/pocket-cards/",
+                  "fact": "https://www.denix.osd.mil/uxo/educational-resources/fact-sheets/"}
+PUBLIC_EDUCATION_DOCUMENTS = [
+    public_education_doc(DENIX + path, short, title, THREE_RS, year, page=THREE_RS_PAGES[kind])
+    for path, short, title, year, kind in (
+        ("2023/02/3Rs_Guide_Outdoor_Recreation-2022.11.10.pdf", "the 3Rs outdoor recreation guide",
+         "3Rs Explosives Safety Guide: Outdoor Recreation", 2022, "guide"),
+        ("2023/02/3Rs_Guide_Hunters-2022.02.09.pdf", "the 3Rs guide for hunters",
+         "3Rs Explosives Safety Guide: Hunters", 2022, "guide"),
+        ("2023/02/3Rs_Guide_Off-Road-2022.02.09.pdf", "the 3Rs off-road guide",
+         "3Rs Explosives Safety Guide: Off-Road", 2022, "guide"),
+        ("2023/02/3Rs_Guide_Construction-2022.11.10.pdf", "the 3Rs construction guide",
+         "3Rs Explosives Safety Guide: Construction", 2022, "guide"),
+        ("2023/02/3Rs_Guide_Recycling_Industry-2022.11.10.pdf", "the 3Rs recycling industry guide",
+         "3Rs Explosives Safety Guide: Recycling Industry", 2022, "guide"),
+        ("2023/02/3Rs_Guide_Wildland_Firefighting-2022.11.10.pdf", "the 3Rs wildland firefighting guide",
+         "3Rs Explosives Safety Guide: Wildland Firefighting", 2022, "guide"),
+        ("2023/02/3Rs_Guide_Military_Families-2022.01.14.pdf", "the 3Rs guide for military families",
+         "3Rs Explosives Safety Guide: Military Families", 2022, "guide"),
+        ("2023/02/3Rs_Guide_Kids_Families-2022.02.09.pdf", "the 3Rs guide for kids and families",
+         "3Rs Explosives Safety Guide: Kids and Families", 2022, "guide"),
+        ("2026/09/2026.08.28-3Rs-Maritime-Industry-Guide-English-Print-508-1.pdf", "the 3Rs maritime industry "
+         "guide", "3Rs Explosives Safety Guide: Maritime Industry", 2026, "guide"),
+        ("2023/02/Military_Munitions_Safety_Pocket_Card-2022.05.23.pdf", "the 3Rs military munitions safety "
+         "pocket card", "Military Munitions Safety Guide (3Rs pocket card)", 2022, "card"),
+        ("2023/02/Hiker_Pocket_Card-2022.01.18.pdf", "the 3Rs hiker pocket card", "3Rs pocket card: Hikers", 2022,
+         "card"),
+        ("2023/02/Hunter_Pocket_Card-2022.05.23.pdf", "the 3Rs hunter pocket card", "3Rs pocket card: Hunters",
+         2022, "card"),
+        ("2023/02/Biker_Pocket_Card-2022.05.23.pdf", "the 3Rs biker pocket card", "3Rs pocket card: Bikers", 2022,
+         "card"),
+        ("2023/02/Diver_Pocket_Card-2022.05.23.pdf", "the 3Rs diver pocket card", "3Rs pocket card: Divers", 2022,
+         "card"),
+        ("2023/02/3Rs_Factsheet_UXO_Safety-2022.11.10.pdf", "the 3Rs UXO safety fact sheet",
+         "3Rs fact sheet: Explosives Safety (UXO)", 2022, "fact"),
+        ("2023/02/3Rs_Factsheet_CAIS-2021.11.19-1.pdf", "the 3Rs fact sheet on chemical agent identification sets",
+         "3Rs fact sheet: Chemical Agent Identification Sets (CAIS)", 2021, "fact"),
+        ("2023/02/3Rs_Factsheet_AE_Amnesty-2022.11.10.pdf", "the 3Rs ammunition and explosives amnesty fact "
+         "sheet", "3Rs fact sheet: Ammunition and Explosives Amnesty", 2022, "fact"),
+    )] + [
+    # The handbook's agencies did not keep it on their sites; the Internet Archive copy of that exact book is read.
+    public_education_doc("https://archive.org/details/militarymunition00unit", "the BLM and FWS munitions handbook "
+                         "(2006)", "Military Munitions and Explosives of Concern: A Handbook for Federal Land "
+                         "Managers, with Emphasis on Unexploded Ordnance", "US Department of the Interior, Bureau "
+                         "of Land Management and US Fish and Wildlife Service", 2006,
+                         identifier="militarymunition00unit"),
+]
+UXO_DOCUMENTS += PUBLIC_EDUCATION_DOCUMENTS
+
 DOCUMENTS = {"uxo": UXO_DOCUMENTS, "small_arms": SMALL_ARMS_DOCUMENTS}
 
 UXO_NOT_INCLUDED = {
@@ -485,10 +569,9 @@ UXO_NOT_INCLUDED = {
     "UNMAS and UN mine-action material": "UN copyright; use beyond credited journalism needs the UN's licence.",
     "NATO EOD and ordnance-recognition publications (AEODP and others)":
         "no NATO recognition document marked releasable to the public was found as a downloadable copy.",
-    "Military Munitions and Explosives of Concern: A Handbook for Federal Land Managers (BLM and FWS, 2006), "
-    "archive.org militarymunition00unit":
-        "a public US civilian-agency handbook, but it carries no Distribution Statement A line, which the owner's "
-        "rule requires (see OWNER_DECISION).",
+    "3Rs material in other languages (Spanish, Portuguese, Japanese and others), posters, colouring books, "
+    "stickers and videos": "the English guides, pocket cards and fact sheets carry the same words; the rest has "
+                           "little text or is not a PDF.",
     "Afghanistan Ordnance Identification Guide, Volume 1 (Naval EOD Technology Division, 2004), archive.org "
     "afghanistan-ordnance-identification-guide-volume-1":
         "Distribution Statement A and written for people who are not EOD technicians, but it is a 472-page scan "
@@ -526,16 +609,13 @@ SMALL_ARMS_NOT_INCLUDED = {
                                                                         "ammunition are cut by the section filter.",
 }
 
-# Material that is clearly meant for the public but lacks the line the owner's rule asks for: not downloaded; the
-# owner can decide.
+# The owner's decisions about material outside the strict rule (November 2026).
 OWNER_DECISION = {
     "DoD 3Rs Explosives Safety Education Program (US Army Corps of Engineers): safety guides, pocket cards and fact "
     "sheets, https://www.denix.osd.mil/uxo/educational-resources/":
-        "public safety education from the Department of Defense (US government works), made to be handed out, but "
-        "the PDFs carry no 'Distribution Statement A' line and no licence statement. Not downloaded under the "
-        "strict rule; adding them would need the owner's rule to accept 'published by DoD for public education'.",
+        "INCLUDED by the owner's decision, by name on PUBLIC_EDUCATION_DOCUMENTS: " + PUBLIC_EDUCATION + ".",
     "Military Munitions and Explosives of Concern handbook (BLM and FWS, 2006)":
-        "the same: a US civilian-agency work with no Distribution Statement A line.",
+        "INCLUDED by the owner's decision, by name on PUBLIC_EDUCATION_DOCUMENTS (Internet Archive copy).",
 }
 
 
@@ -716,7 +796,8 @@ def readme_text(topic, results):
              "They were downloaded on this computer for the owner's personal use only. Do not share, upload or "
              "redistribute them, and do not put them in anything that is published.",
              "Each one says in its own front matter that it is approved for public release (Distribution "
-             "Statement A); the program checked this before keeping it.",
+             "Statement A), or is on the owner's list of " + PUBLIC_EDUCATION + "; none shows a restricted "
+             "marking. The program checked this before keeping it.",
              "Sections outside recognition and safety (" + ("render-safe, disposal, demolition, fuze functioning, "
                                                             "charges, manufacturing, modifying, arming or "
                                                             "employing munitions" if topic == "uxo" else
@@ -860,6 +941,40 @@ def download_pdf(identifier, session=None):
     return None, f"could not be downloaded from {url}"
 
 
+def robots_allow(url, session):
+    """True when the site's robots.txt lets the kit read url (a robots.txt that is missing allows everything)."""
+    from urllib.parse import urlsplit
+    from urllib.robotparser import RobotFileParser
+    parts = urlsplit(url)
+    r = session.get(f"{parts.scheme}://{parts.netloc}/robots.txt", timeout=60)
+    if r.status_code in (404, 410):
+        return True
+    if r.status_code != 200:
+        return False                                 # unsure: not read
+    rules = RobotFileParser()
+    rules.parse(r.text.splitlines())
+    return rules.can_fetch(USER_AGENT, url)
+
+
+def download_document(document, session=None):
+    """(PDF bytes, address) of one document: from the Internet Archive (download_pdf) or, for an allow-listed
+    agency document, from its own address after checking the site's robots.txt; or (None, reason)."""
+    if document.get("source") != "url":
+        return download_pdf(document["id"], session)
+    import requests
+    s = session or requests.Session()
+    s.headers["User-Agent"] = USER_AGENT
+    url = document["url"]
+    if not robots_allow(url, s):
+        return None, f"the site's robots.txt does not allow reading {url}"
+    for attempt in range(3):
+        r = s.get(url, timeout=300)
+        if r.status_code == 200 and r.content[:5] == b"%PDF-":
+            return r.content, url
+        time.sleep(5 * (attempt + 1))
+    return None, f"could not be downloaded from {url}"
+
+
 def fetch_topic(topic, folder, cap, say=say_nothing, documents_base=None, download=None, fm="find"):
     """Fill topic's review workspace (folder) with figure crops and its personal folder with the documents (see the
     module docstring); returns a plain summary. download(document) -> (bytes, address) replaces the Internet
@@ -883,7 +998,7 @@ def fetch_topic(topic, folder, cap, say=say_nothing, documents_base=None, downlo
     for document in DOCUMENTS[topic]:
         say(f"  {document['title']} ...")
         try:
-            data, where = download(document) if download else download_pdf(document["id"])
+            data, where = download(document) if download else download_document(document)
         except Exception as e:  # noqa: BLE001 - said plainly; the others go on
             data, where = None, f"could not be downloaded now ({str(e)[:100]})"
         if data is None:
@@ -910,7 +1025,7 @@ def fetch_topic(topic, folder, cap, say=say_nothing, documents_base=None, downlo
                 break
             if ws.done(name):
                 continue
-            ws.add(name, jpeg, answer, credit, "Public domain (US government work); Distribution Statement A",
+            ws.add(name, jpeg, answer, credit, "Public domain (US government work); " + result["release"],
                    document["page"], content="graphic",
                    note=f"Figure {label} ({caption}). The document is in {out_folder}.")
     with open(os.path.join(out_folder, README), "w", encoding="utf-8", newline="") as f:
@@ -937,18 +1052,20 @@ def fetch_small_arms_recognition(folder, cap, say=say_nothing):
 
 # ----------------------------------------------------------------- the table
 
-TERMS_SUMMARY = ("US government works approved for public release (Distribution Statement A); kept for personal "
+TERMS_SUMMARY = ("US government works approved for public release (Distribution Statement A), or public safety "
+                 "education published by a US government agency for the public; kept for personal "
                  "use only by the owner's rule: never shared, never published, never used to make pictures.")
 
 UXO_PERSONAL_SOURCES = [
     dict(key="uxo_recognition_personal", topic="uxo",
          name="Unexploded ordnance recognition: figures from public military manuals (personal use, review)",
          category="research", licence="Public domain (US government works), each with Distribution Statement A "
-                                      "checked in its own front matter",
+                                      "checked in its own front matter, or on the owner's public-education list",
          terms="https://www.esd.whs.mil/Portals/54/Documents/DD/issuances/dodi/523024p.pdf",
          terms_summary=TERMS_SUMMARY,
-         credit="US Army, Marine Corps, Navy and Air Force multi-service publications and the Naval EOD Technology "
-                "Division, copies on the Internet Archive (https://archive.org), credited per picture",
+         credit="US Army, Marine Corps, Navy and Air Force multi-service publications, the Naval EOD Technology "
+                "Division, the DoD 3Rs Explosives Safety Education Program (https://www.denix.osd.mil/uxo/) and the "
+                "BLM and FWS; copies on the Internet Archive (https://archive.org); credited per picture",
          content="graphic", cap=300, download="about 150 MB of PDFs", fetch=fetch_uxo_recognition,
          review_only=True, personal_only=True, never_publish=True, never_for_picture_making=True),
     dict(key="small_arms_recognition_personal", topic="small_arms",
