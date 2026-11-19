@@ -642,6 +642,9 @@ def next_backfill(catalogue, today=None, pieces=None):
     (newest first; a piece marked "complete": false is built again to go on); "" when everything is collected.
     pieces: {source: list of pieces} instead of ALL_PIECES (for tests)."""
     done = done_keys(catalogue)
+    # A piece that failed three times (a site that stopped answering) is skipped so the others go on; it can still
+    # be built by key, and a success clears it.
+    done |= {k for k, n in (catalogue or {}).get("pieces_failed", {}).items() if n >= 3}
     for name in BACKFILL_ORDER:
         for piece in pieces[name] if pieces is not None and name in pieces else ALL_PIECES[name](today):
             key = f"pub:{name}:{piece}"
@@ -1339,6 +1342,7 @@ def keep_records(name, piece, records):
 
 
 WAYBACK = "https://web.archive.org"
+WAYBACK_PAUSE = 5.0
 VOA_OLD_HOSTS = ["www.voa.gov", "voa.gov", "www.voanews.com", "voanews.com"]
 # The first part of an address on VOA's old sites that names a service in another language (left out: English only).
 VOA_LANGUAGES = {
@@ -1355,6 +1359,9 @@ def wayback_captures(spec, year, cache):
     Wayback Machine (its documented CDX API: one capture per address, HTML answers with status 200, read 5,000 at a
     time), without the services in other languages, pictures and scripts."""
     out, seen = [], set()
+    # The Wayback Machine limits automated use and stops answering for a while when asked too fast (seen from the
+    # build machine on 2026-11-19): one request every WAYBACK_PAUSE seconds.
+    B.CRAWL_DELAY["web.archive.org"] = max(B.CRAWL_DELAY.get("web.archive.org", 0), WAYBACK_PAUSE)
     for host in VOA_OLD_HOSTS:
         resume = ""
         while True:
@@ -1364,8 +1371,8 @@ def wayback_captures(spec, year, cache):
                                             **({"resumeKey": resume} if resume else {})}, doseq=True)
             try:
                 rows = json.loads(B.fetch(f"{WAYBACK}/cdx/search/cdx?{query}", cache) or "[]")
-            except (urllib.error.URLError, OSError, ValueError):
-                break
+            except (urllib.error.URLError, OSError, ValueError) as e:
+                raise RuntimeError(f"the Wayback Machine did not answer ({e}); try again later") from e
             resume = ""
             if rows and rows[-1] and len(rows[-1]) == 1:     # the last row is the key to read on from
                 resume = rows[-1][0]
@@ -2170,8 +2177,9 @@ def build_periodicals(keys, out_dir, cache=None, date=None, today=None):
                 del SIDE_FILES[(name, piece)]
         _src, _name, _piece = key.split(":", 2)
         finished = (_name, _piece) not in INCOMPLETE and not any("could not be built" in x["reason"] for x in left_out)
+        failed = [key] if any("could not be built" in x["reason"] for x in left_out) else []
         manifest = {"key": key, "release": release_for(key.split(":")[1]), "books": entries,
-                    "left_out": left_out, "files": files,
+                    "left_out": left_out, "files": files, "failed": failed,
                     "done": [key] if finished else []}         # collected (or empty): the backfill moves on
         with open(os.path.join(out_dir, f"manifest-{safe}.json"), "w", encoding="utf-8") as f:
             json.dump(manifest, f, indent=1, ensure_ascii=False)

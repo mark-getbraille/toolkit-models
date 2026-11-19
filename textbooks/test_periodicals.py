@@ -506,6 +506,9 @@ def test_daily_and_backfill():
     catalogue["books"][0]["complete"] = True
     catalogue["pieces_done"] += ["pub:voa_learning:2024", "pub:voa:2025"]
     assert P.next_backfill(catalogue, TODAY, pieces) == "pub:voa:1996"
+    catalogue["pieces_failed"] = {"pub:voa:1996": 3}                  # a site that stopped answering: skipped
+    assert P.next_backfill(catalogue, TODAY, pieces) == ""
+    catalogue["pieces_failed"] = {}
     catalogue["pieces_done"].append("pub:voa:1996")
     every = catalogue
     assert P.next_backfill(every, TODAY, pieces) == ""

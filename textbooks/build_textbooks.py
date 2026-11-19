@@ -2183,6 +2183,7 @@ def merge(manifest_paths, existing=None):
     the textbooks.json published before (books it has that no manifest built again are kept)."""
     import updates                               # here, not at the top: updates imports this module
     books, done = {}, set((existing or {}).get("pieces_done", []))
+    failed = dict((existing or {}).get("pieces_failed", {}))
     for old in (existing or {}).get("books", []):
         books[old["name"]] = old
     left = []
@@ -2195,6 +2196,8 @@ def merge(manifest_paths, existing=None):
             books[entry["name"]] = updates.merge_versions(books.get(entry["name"]), entry)   # every version kept
         left += data.get("left_out", [])
         done |= set(data.get("done", []))
+        for k in data.get("failed", []):
+            failed[k] = failed.get(k, 0) + 1
     seen = set()
     left = [x for x in left if not (x["title"] in seen or seen.add(x["title"]))]
     import periodicals                           # here, not at the top: periodicals imports this module
@@ -2203,7 +2206,8 @@ def merge(manifest_paths, existing=None):
             "left_out": left, "not_included": [{"title": t, "reason": r} for t, r in sources.NOT_INCLUDED +
                                                periodicals.NOT_INCLUDED],
             "licence_lines": {**sources.LICENCE_LINES, **periodicals.LICENCE_LINES}, "groups": sources.GROUPS,
-            "group_notes": periodicals.GROUP_NOTES, "pieces_done": sorted(done)}
+            "group_notes": periodicals.GROUP_NOTES, "pieces_done": sorted(done),
+            "pieces_failed": {k: n for k, n in sorted(failed.items()) if k not in done}}
 
 
 def main(argv=None):
