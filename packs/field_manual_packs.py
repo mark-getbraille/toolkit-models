@@ -317,11 +317,23 @@ def build_field_manual_figures(limit):
     for identifier, manual, medical in manuals:
         if len(out) >= limit or listing_out_of_time():
             break
-        pdf_url, page_url = manual_pdf(identifier, s)
+        # The session tries a dropped connection again (build_packs.session, also on the file server archive.org
+        # redirects to); a manual that still cannot be read is left out, so it never fails the whole pack.
+        try:
+            pdf_url, page_url = manual_pdf(identifier, s)
+        except Exception as e:  # noqa: BLE001 - the item's details could not be read: this manual is left out
+            considered(identifier, f"https://archive.org/details/{identifier}",
+                       f"its Internet Archive details could not be read ({type(e).__name__})")
+            continue
         if not pdf_url:
             considered(identifier, page_url, "the Internet Archive item has no PDF")
             continue
-        r = s.get(pdf_url, timeout=600)
+        try:
+            r = s.get(pdf_url, timeout=600)
+        except Exception as e:  # noqa: BLE001 - tried again by the session already: this manual is left out
+            say(f"  {manual}: could not be downloaded ({type(e).__name__})")
+            considered(identifier, pdf_url, f"could not be downloaded ({type(e).__name__}, after several tries)")
+            continue
         if r.status_code != 200:
             considered(identifier, pdf_url, f"could not be downloaded (the server answered {r.status_code})")
             continue

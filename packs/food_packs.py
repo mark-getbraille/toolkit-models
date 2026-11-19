@@ -454,7 +454,9 @@ def commons_get(s, params, tries=12):
     "maxlag"): it waits as long as the server says, or 5, 10, 20 ... seconds up to five minutes, 12 times (about 40
     minutes in all) before giving up. In a pack build with a time limit it keeps waiting, five minutes at a time,
     until half the time limit is spent (build_packs.listing_out_of_time): when many packs read Commons at once its
-    refusals can last an hour or more, and a pack that waits finishes with its pictures instead of failing."""
+    refusals can last an hour or more, and a pack that waits finishes with its pictures instead of failing.
+    Every request waits until at least build_packs.COMMONS_PAUSE (1 second) has passed since this build's last
+    Commons request (build_packs.commons_pace), so a pack reads Commons at a steady, gentle pace."""
     import build_packs
     params = dict(params, format="json", maxlag=5)
     wait = 5
@@ -462,6 +464,7 @@ def commons_get(s, params, tries=12):
     while attempt < tries or (build_packs.TIME_LIMIT and not build_packs.listing_out_of_time()):
         attempt += 1
         try:
+            build_packs.commons_pace()
             r = s.get(COMMONS_API, params=params, timeout=60)
             if r.status_code == 200:
                 data = r.json()

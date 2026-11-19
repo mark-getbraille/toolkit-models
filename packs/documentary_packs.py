@@ -599,10 +599,12 @@ VALUED = "Category:Valued images sorted by promotion date"
 
 
 def commons_get(s, params, tries=8):
-    """A Commons API answer, waiting politely when the server asks to slow down (maxlag or 429)."""
+    """A Commons API answer, waiting politely when the server asks to slow down (maxlag or 429), each request at
+    least build_packs.COMMONS_PAUSE seconds after this build's last Commons request (build_packs.commons_pace)."""
     wait = 5
     for _ in range(tries):
         try:
+            build_packs.commons_pace()
             r = s.get(COMMONS_API, params=dict(params, format="json", maxlag=5), timeout=60)
             if r.status_code == 200:
                 data = r.json()

@@ -57,6 +57,7 @@ import os
 import random
 import re
 import sys
+import threading
 import time
 import zipfile
 
@@ -536,19 +537,47 @@ def listing_out_of_time():
     return bool(TIME_LIMIT) and time.time() - STARTED > TIME_LIMIT * LISTING_SHARE
 
 
-def session():
+# A connection that drops once (a file server closing the encrypted connection early, "SSL: UNEXPECTED_EOF", a reset,
+# a broken chunked download, a read that times out) is tried again after these pauses, in seconds, instead of failing
+# the pack: field_manual_figures failed on one such drop from an Internet Archive file server, 18 November.
+TRANSIENT_WAITS = (5, 15, 45)
+
+
+def transient_errors():
+    """The requests errors that are worth trying again: a dropped or refused connection (SSLError and ConnectTimeout
+    are kinds of ConnectionError), a download cut off part-way, a server that stopped answering."""
+    import requests
+    e = requests.exceptions
+    return (e.ConnectionError, e.ChunkedEncodingError, e.ReadTimeout)
+
+
+def session(transient_tries=len(TRANSIENT_WAITS) + 1):
     """A requests session with the kit's name (Wikimedia asks for one with a contact). Once the build is out of time,
-    every request it makes fails straight away (see TIME_LIMIT)."""
+    every request it makes fails straight away (see TIME_LIMIT). A request that fails with a dropped connection
+    (transient_errors) is made again, up to transient_tries times in all, after the TRANSIENT_WAITS pauses. The whole
+    request is made again, so a drop on a server it was redirected to (archive.org sends each download on to one of
+    its file servers) is covered too. transient_tries=1 makes each request once (for callers with their own retries)."""
     import requests
 
     class TimedSession(requests.Session):
-        """A session that stops downloading when the build's time is up."""
+        """A session that stops downloading when the build's time is up and tries dropped connections again."""
 
         def request(self, *args, **kwargs):
-            """Make the request, or fail at once when out of time."""
-            if out_of_time():
-                raise requests.exceptions.ConnectionError("the pack's time limit has passed")
-            return super().request(*args, **kwargs)
+            """Make the request, or fail at once when out of time; try again after a dropped connection."""
+            attempt = 0
+            while True:
+                if out_of_time():
+                    raise requests.exceptions.ConnectionError("the pack's time limit has passed")
+                attempt += 1
+                try:
+                    return super().request(*args, **kwargs)
+                except transient_errors() as e:
+                    if attempt >= transient_tries or out_of_time():
+                        raise
+                    wait = TRANSIENT_WAITS[min(attempt, len(TRANSIENT_WAITS)) - 1]
+                    url = str(args[1] if len(args) > 1 else kwargs.get("url", ""))
+                    say(f"  {type(e).__name__} from {url.split('?')[0][:100]}: trying again in {wait} seconds")
+                    time.sleep(wait)
 
     s = TimedSession()
     s.headers["User-Agent"] = USER_AGENT
@@ -577,7 +606,7 @@ def fetch_all(items, workers=8, pause=0.0):
     if NEEDS_ONLY:
         return []
     items = new_only(items)
-    s = session()
+    s = session(transient_tries=1)      # one() below tries each picture four times itself (dropped connections too)
 
     def one(item):
         """One picture, or None."""
@@ -826,6 +855,22 @@ def build_coco_questions(limit):
 COMMONS_API = "https://commons.wikimedia.org/w/api.php"
 COMMONS_CATEGORIES = ("Category:Featured pictures on Wikimedia Commons", "Category:Quality images")
 COMMONS_FREE = re.compile(r"^(cc0|public domain|pd|cc by \d|cc-by-\d|cc by-\d)", re.I)
+# The least time, in seconds, between two requests to the Commons API from one pack build. Commons refused requests
+# (429) for hours when many packs read it at once (17 to 19 November); a steady pace is gentler than bursts. The
+# workflow also runs the Commons packs in their own lane, two at a time (COMMONS_KEYS).
+COMMONS_PAUSE = 1.0
+_COMMONS_LAST = [0.0]           # when the last Commons request of this build was made
+_COMMONS_LOCK = threading.Lock()
+
+
+def commons_pace():
+    """Wait, when needed, so Commons API requests from this build are at least COMMONS_PAUSE seconds apart (called
+    just before each request; safe to call from several threads)."""
+    with _COMMONS_LOCK:
+        gap = COMMONS_PAUSE - (time.time() - _COMMONS_LAST[0])
+        if gap > 0:
+            time.sleep(gap)
+        _COMMONS_LAST[0] = time.time()
 
 
 def build_commons(limit):
@@ -837,6 +882,7 @@ def build_commons(limit):
                   "iiurlwidth": LONG_SIDE, "iiextmetadatafilter": "LicenseShortName|Artist|GPSLatitude|GPSLongitude", "maxlag": 5}
         while len(items) < limit * 1.3 and not out_of_time():
             try:
+                commons_pace()
                 data = s.get(COMMONS_API, params=params, timeout=60).json()
             except Exception:  # noqa: BLE001 - wait and try again once
                 time.sleep(10)
@@ -848,6 +894,7 @@ def build_commons(limit):
                 entities = {}
                 for attempt in range(4):        # Commons sometimes answers "slow down" with a web page, not data
                     try:
+                        commons_pace()
                         entities = s.get(COMMONS_API, timeout=60, params={
                             "action": "wbgetentities", "format": "json", "ids": "|".join(ids), "props": "labels",
                             "languages": "en", "maxlag": 5}).json().get("entities", {})
