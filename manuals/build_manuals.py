@@ -55,6 +55,15 @@ Sources, and why each may be used by a program:
       NFA and automatic firearms. Never anything for making a suppressor (suppressor and baffle kits, drilled cups,
       filter adapters), automatic-fire conversion parts (auto sears, lightning links, "switches", conversion
       kits), reloading equipment or armorer's manuals (categories.FIREARMS_EXCLUDE).
+  Makers' own manual libraries (category smoking_vaping, manuals/smoking_vaping.py)   vaporizers, e-rigs, water
+      pipes, hookahs, rolling machines, grinders and nicotine e-cigarettes, under the same robots.txt and terms rules
+      (read on 2026-11-19): Puffco is READ (its product support pages, the manual PDFs on its shop's file host,
+      titled from their file names: file_titles); every other maker is LINKED (Arizer, Firefly, DynaVap, Khalil
+      Mamoon and RAW forbid robots or crawling; DaVinci and RAW forbid deep links, so their home page only; Storz &
+      Bickel did not answer programs; JUUL and NJOY refuse them; PAX, G Pen, GRAV publish no page of manual files;
+      Vaporesso's terms could not be read by a program). Never anything for making, extracting or growing drugs,
+      pill presses, or the steam "vaporizers" that are humidifiers (smoking_vaping.SMOKING_EXCLUDE). Its entries
+      carry their own category and kinds (vaporizer, e-rig, water pipe, hookah, rolling, grinder, e-cigarette).
   US military manuals of automatic firearms (category firearms, categories.PUBLIC_MANUALS)   the Internet Archive's
       copies of Army training circulars, each put in the index only when the front of its own text says "Approved
       for public release; distribution is unlimited" (Distribution Statement A) and shows no restricted marking
@@ -1017,12 +1026,21 @@ def title_from_file(url):
     return " ".join(words)
 
 
-def product_type(text, default):
+def file_title(url):
+    """title_from_file, with the short words some makers use in their file names written out ("Peak Digital IM" ->
+    "Peak Digital Instruction Manual", "PIVOT QSG" -> "PIVOT Quick Start Guide"): for a maker with "file_titles"."""
+    words = re.sub(r"\bIM\b", "Instruction Manual", title_from_file(url))
+    words = re.sub(r"\bQSG\b", "Quick Start Guide", words)
+    return re.sub(r"(?<=[a-z0-9])(?=Instructions?\b|Manual\b)", " ", words)
+
+
+def product_type(text, default, types=None):
     """The kind of product a document is about, from its words ("pistol", "rifle", "airgun", "safe", "optic",
-    "suppressor", "chemical" ...), else default. For a firearm maker the firearm words are looked for first."""
+    "suppressor", "chemical" ...), else default. For a firearm maker the firearm words are looked for first. types:
+    another category's own [(word, kind)] list instead of TYPES (a maker's "types", as in manuals/smoking_vaping.py)."""
     t = str(text or "").lower()
-    order = TYPES
-    if default in FIREARM_TYPES:          # a gun maker's "Tube Magazine Rifle" is a rifle: the firearm words first
+    order = TYPES if types is None else types
+    if types is None and default in FIREARM_TYPES:          # a gun maker's "Tube Magazine Rifle" is a rifle: the firearm words first
         order = [w for w in TYPES if w[1] in FIREARM_TYPES] + [w for w in TYPES if w[1] not in FIREARM_TYPES]
     for word, kind in order:
         if re.search(r"\b" + re.escape(word) + r"s?\b", t):
@@ -1109,10 +1127,11 @@ def maker_entry(maker, title, url, kind, size=0):
     name = re.sub(r"\s*[®™©]", "", " ".join(str(title or "").replace("’", "'").split()))
     name = re.sub(r"[\s→»›>]+$", "", name) or title_from_file(url)          # "FLOW →": no arrow
     words = name if maker["maker"].split()[0].lower() in name.lower() else f"{maker['maker']} {name}"
-    return {"id": f"fa-{maker['key']}-{hashlib.sha256(url.encode('utf-8')).hexdigest()[:10]}",
+    return {"id": f"{maker.get('prefix', 'fa')}-{maker['key']}-{hashlib.sha256(url.encode('utf-8')).hexdigest()[:10]}",
             "brand": maker["maker"], "model": firearm_model(name, maker["maker"]), "name": words,
-            "type": product_type(name + " " + re.sub(r"[-_/.]+", " ", urllib.parse.urlsplit(url).path), maker["type"]),
-            "category": "firearms", "barcodes": [], "fcc_ids": [],
+            "type": product_type(name + " " + re.sub(r"[-_/.]+", " ", urllib.parse.urlsplit(url).path), maker["type"],
+                                 maker.get("types")),
+            "category": maker.get("category", "firearms"), "barcodes": [], "fcc_ids": [],
             "ic_ids": [], "source": f"{maker['maker']}'s own manual library", "page": maker.get("library", ""),
             "manuals": [{"title": words, "url": url, "page": maker.get("library", "") if kind == "pdf" else url,
                          "kind": kind, "size": int(size or 0), "document": document_of(words, url),
@@ -1126,17 +1145,18 @@ def document_of(title, url=""):
 
 
 def documents_word(maker):
-    """What the maker's documents are called: "owner's manuals", "safety data sheets", "instructions" ..."""
-    return DOCUMENT_WORDS.get(maker.get("type", ""), "owner's manuals")
+    """What the maker's documents are called: "owner's manuals", "safety data sheets", "instructions" ... (a maker's
+    own "documents" first)."""
+    return maker.get("documents") or DOCUMENT_WORDS.get(maker.get("type", ""), "owner's manuals")
 
 
 def library_entry(maker):
     """The entry of a maker's whole library: its address (for "read" and "link" makers; for "mention", its site in
     words only), for the person to open when no manual of their model is listed."""
     library = maker.get("library", "") if maker["access"] in ("read", "link") else ""
-    return {"id": f"fa-{maker['key']}-library", "brand": maker["maker"], "model": "",
+    return {"id": f"{maker.get('prefix', 'fa')}-{maker['key']}-library", "brand": maker["maker"], "model": "",
             "name": f"{maker['maker']} {documents_word(maker)} (the maker's own library)", "type": maker["type"],
-            "category": "firearms", "barcodes": [], "fcc_ids": [], "ic_ids": [], "source": "the maker's site",
+            "category": maker.get("category", "firearms"), "barcodes": [], "fcc_ids": [], "ic_ids": [], "source": "the maker's site",
             "page": library, "site": maker.get("site", ""), "access": maker["access"], "access_reason": maker["reason"],
             "manuals": [{"title": f"{maker['maker']} {documents_word(maker)}", "url": "", "page": library,
                          "kind": "library", "document": "library",
@@ -1176,6 +1196,8 @@ def maker_documents(fetch, maker, exclude, sizes=True):
                 kind = "page"
             else:
                 continue
+            if maker.get("file_titles") and is_pdf:
+                title = file_title(url)       # headings on its pages sit beside the wrong files (Puffco)
             if not wanted_document(title, url, exclude) or GENERIC_LIBRARY.match(firearm_model(title, maker["maker"])):
                 continue
             seen.add(url)

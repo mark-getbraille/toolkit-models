@@ -562,3 +562,9 @@ CATEGORIES = {
         makers=MAKERS, wikidata=True, exclude=FIREARMS_EXCLUDE, guidance=FIREARMS_GUIDANCE,
         public_manuals=PUBLIC_MANUALS),
 }
+
+# Vaporizers, pipes and smoking accessories: its makers, their access decisions and exclusions are in
+# manuals/smoking_vaping.py (kept apart from the firearms lists above).
+from smoking_vaping import CATEGORY as _SMOKING_VAPING  # noqa: E402
+
+CATEGORIES["smoking_vaping"] = _SMOKING_VAPING
