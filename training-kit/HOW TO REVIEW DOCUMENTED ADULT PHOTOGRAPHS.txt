@@ -1,0 +1,31 @@
+HOW TO REVIEW DOCUMENTED ADULT PHOTOGRAPHS
+
+What this is
+These are photographs of nudity or of sex between adults from institution catalogues (the Library of Congress and
+the Wellcome Collection). A photograph is only ever downloaded when the institution's own record documents that
+every person in it is an adult: either the record says so ("adult models", "consenting adults"), or every person it
+names has a birth year that shows they were 18 or over when the photo was taken. Anonymous photographs, and any
+record with a word about a child or a young person, are never downloaded or shown.
+
+Such photographs are approved automatically. This window is for an optional second look.
+
+Getting them (on your own computer only; nothing is published)
+  python training-kit\kit\adult_photo_review.py search "B:\Picture Library\Review\Documented adult photographs"
+Then open the window:
+  python training-kit\wizard\adult_photo_window.py "B:\Picture Library\Review\Documented adult photographs"
+
+The window
+Type your name once. Each picture is shown with its title, institution, the reason it was approved, its rights and
+the catalogue's words.
+  Approve (Alt+A, or Y): every person is clearly an adult. Your name and the time are written down.
+  Reject (Alt+R, or N): the picture is deleted and never fetched again.
+  Unsure (Alt+S): counts as Reject.
+  Open the catalogue page (Alt+O): the institution's own page in your browser.
+  Escape closes. F1 opens this guide.
+When in doubt, reject.
+
+Training
+The approved pictures are in the "approved" folder, in describing workspaces. Training uses them only when you
+choose them as review folders and make the matching choices (adult sexual content needs art with nudity; pictures
+whose rights are not open need the personal-use choice). A training with them is for personal use only and is never
+published. They are never used for picture-making.

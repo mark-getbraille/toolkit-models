@@ -2347,6 +2347,9 @@ NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + tuple(k for k in DRUG_FIREARM_
 ADULT_ART_PACK_KEYS = ("museum_art_nudes", "erotic_art")
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + tuple(k for k in ADULT_ART_PACK_KEYS
                                                         if k not in NOT_FOR_PICTURE_MAKING)
+# The documented-adult photographs (adult_photo_review.py, gathered on the owner's own computer): review workspaces
+# (never used for picture-making in any case: own_data leaves review pictures out of it), listed here too.
+NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + ("adult_photo_review",)
 
 
 def content_of(key):

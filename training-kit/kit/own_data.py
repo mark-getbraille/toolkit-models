@@ -315,7 +315,8 @@ def workspace_info(folder, cache):
     A folder that is not a workspace, or whose work file cannot be read, gives empty values. cache keeps each
     folder's answer."""
     if folder not in cache:
-        info = {"pictures": {}, "review": False, "content": "", "category": "", "name": "", "workspace": False}
+        info = {"pictures": {}, "review": False, "content": "", "category": "", "name": "", "workspace": False,
+                "documented": False}
         try:
             with open(os.path.join(folder, WORK_FILE), encoding="utf-8") as f:
                 data = json.load(f)
@@ -323,6 +324,9 @@ def workspace_info(folder, cache):
             info["review"] = data.get("review_only") is True or str(data.get("review_only")).lower() == "true"
             info["content"] = clean(data.get("content", "")).lower()
             info["category"] = clean(data.get("review_category", "")).lower()
+            # A documented-adults workspace (adult_photo_review.py): a picture is used only while its entry keeps
+            # its approval ("adult_approved_by"), on top of being "checked".
+            info["documented"] = data.get("documented_adults") is True
             info["name"] = clean(data.get("review_source", "")) or clean(data.get("name", "")) or \
                 os.path.basename(folder)
             for name, entry in data.get("pictures", {}).items():
@@ -330,7 +334,8 @@ def workspace_info(folder, cache):
                     info["pictures"][name.lower()] = (str(entry.get("status", "new")),
                                                       clean(entry.get("question", "")),
                                                       clean(entry.get("content", "")).lower(),
-                                                      str(entry.get("child", "")).lower() in ("yes", "true"))
+                                                      str(entry.get("child", "")).lower() in ("yes", "true"),
+                                                      bool(clean(entry.get("adult_approved_by", ""))))
         except (OSError, ValueError, AttributeError):
             pass
         cache[folder] = info
@@ -460,7 +465,8 @@ def check_folder(folder, copies=None, report=None, contents=(), review=True, cat
             if home_info["category"] not in categories:
                 problems["terms"].setdefault((home_info["name"], home_info["category"]), []).append(relative)
                 continue
-            if not status or same_path(home) != same_path(base) or status[0] not in REVIEW_READY:
+            if not status or same_path(home) != same_path(base) or status[0] not in REVIEW_READY or \
+                    (home_info["documented"] and not status[4]):
                 problems["waiting"].append(relative)
                 continue
             tags[picture] = (home_info["name"], home_info["category"],
