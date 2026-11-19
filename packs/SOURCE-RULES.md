@@ -21,9 +21,13 @@ Safety rules apply to every category:
   woman", "young man", "young couple", "maiden", "nymph" and "youthful" count as adult only outside Japanese works,
   where they often stand for wakashu or musume); no animals; no killing, torture or execution. erotic_art KEEPS works
   of sexual violence, no consent and restraint (the owner's decision, November 2026), said factually and tagged
-  "theme" so a training can leave them out (train.py --without-sexual-violence). Photographs of nudity or sex are
-  only in the kit's local, never-published training-kit/kit/adult_photo_review.py, and only when the institution's
-  record documents that every person is an adult. Descriptions follow training-kit/HOW TO DESCRIBE SEXUAL CONTENT,
+  "theme" so a training can leave them out (train.py --without-sexual-violence). erotic_art decides first whether a
+  work is sexual; non-sexual nudes its searches find go to museum_art_nudes. nude_photo_studies (content "nudity")
+  holds NON-SEXUAL nude photographs (studio, art-school, medical, anthropometric) with an open licence on their own
+  record, only when the record describes an adult ("a woman", "a man", "a young woman" ...) and names no young
+  person, group or family. Photographs of sex, and personal-use nude studies, are only in the kit's local,
+  never-published training-kit/kit/adult_photo_review.py (sex: only when the record documents every person is an
+  adult). Descriptions follow training-kit/HOW TO DESCRIBE SEXUAL CONTENT,
   NUDITY AND CONSENT.txt;
 - children only in everyday scenes, expressions, medical close-ups under the childhood-illness rules, the birth
   context, and plainly non-sexual works of art in museum_art_nudes (Madonna and Child, putti: never a photograph,

@@ -36,7 +36,7 @@ REPO = os.path.dirname(HERE)
 def test_erotic_minor_words_exclude():
     """Clear minor words, or an age under 18, leave an erotic artwork out; so do adult-sounding "young" phrases in a
     Japanese work (where they often stand for wakashu or musume)."""
-    for title in ("Lovers with a child nearby, shunga", "A boy and a woman, erotic print", "Girl and lover, erotic",
+    for title in ("Lovers with a child nearby, shunga", "A boy and a child, erotic print", "Girl and baby, erotic",
                   "Young woman and her lover, shunga", "Young man with a courtesan, ukiyo-e erotic print",
                   "Erotic scene with putti", "Cupid and Venus, erotic", "Eros watching lovers, erotic",
                   "Schoolgirl, erotic", "Erotic print of students", "Erotic print of a pupil",
@@ -253,3 +253,106 @@ def test_wiring():
     assert sources.leave_out_themes(rows, sources.SEXUAL_VIOLENCE_THEMES) == [{"theme": ""}, {}]
     assert sources.leave_out_themes(rows, ()) == rows
     assert a.THEME_FORCE in sources.SEXUAL_VIOLENCE_THEMES and a.THEME_NO_CONSENT in sources.SEXUAL_VIOLENCE_THEMES
+
+
+def test_sexual_first_then_young_person_words():
+    """Whether a work is sexual is decided first: a work that is not is never a young-person exclusion; in a sexual
+    work the kinship words, "petit", "little", painting schools, "Asia Minor" and names do not count, the clear minor
+    words do, and incest is left out on its own."""
+    not_sexual = ["Bronze mirror with a support in the form of Eros", "Petit chair", "Kano school screen",
+                  "A Mother Mourning", "The Family, a print by Cruikshank", "Sleeping Venus", "Susanna bathing",
+                  "An essay on minor plants"]
+    for title in not_sexual:
+        assert a.erotic_left_out(kind="print", title=title) == a.NOT_SEXUAL, title
+    kept = ["Erotic scene, Kano school", "Erotic print: a mother of the house and her lover",
+            "A little erotic album", "Erotic scene in Asia Minor", "Erotic print by Virginia Schooley",
+            "Lovers, a son of the household and a courtesan, erotic engraving", "Petit album of erotic prints"]
+    for title in kept:
+        assert a.erotic_left_out(kind="engraving", title=title) == "", (title, a.erotic_left_out(kind="engraving",
+                                                                                                  title=title))
+    for title in ("Erotic scene with a minor", "Underage lovers, erotic", "A schoolgirl, erotic", "Erotic pupil",
+                  "Girls in an erotic scene with a teenager", "Erotic scene with a baby", "Erotic scene, she is fifteen years old",
+                  "Erotic scene with Eros", "Erotic print: a young attendant watches, shunga"):
+        assert a.erotic_left_out(kind="print", title=title).startswith("names or may name"), title
+    for title in ("A chorus girl and her lover, erotic print", "His girlfriend, erotic etching"):
+        assert a.erotic_left_out(kind="etching", title=title) == "", title
+    for title in ("Lot and his Daughters, erotic", "Erotic scene of incest", "Father and daughter, erotic",
+                  "Bacchanales: The Satyr's Family, erotic"):
+        assert a.erotic_left_out(kind="print", title=title).startswith("incest"), title
+    assert a.is_sexual("The Abduction of Proserpina") and not a.is_sexual("A sleeping nymph")
+
+
+def test_non_sexual_nudes_go_to_museum_art_nudes():
+    """A non-sexual nude found by an erotic search goes to museum_art_nudes (its child rules apply there); a
+    non-sexual work without nudity, and a child with a romantic word, do not."""
+    a.ROUTED.clear()
+    assert a.route_to_nudes("Met", "met-1.jpg", "https://x/1.jpg", "Venus and Cupid, nude", "credit", "print")
+    assert a.ROUTED[0][2][0]["child"] is True and a.ROUTED[0][2][1]["question"] == "Is there nudity in this picture?"
+    assert not a.route_to_nudes("Met", "met-2.jpg", "https://x/2.jpg", "The Swing", "credit", "painting")
+    assert not a.route_to_nudes("Met", "met-3.jpg", "https://x/3.jpg", "Cupid and Psyche kissing, nude", "credit",
+                                "marble")
+    assert not a.route_to_nudes("Met", "met-4.jpg", "https://x/4.jpg", "Nude girl", "credit", "gelatin silver print")
+    assert len(a.ROUTED) == 1
+
+
+def test_japanese_young_couple_alone_is_kept():
+    """The owner's decision: in a Japanese work "young couple" alone does not exclude; "young man", "young woman" and
+    the youth words still do."""
+    assert a.erotic_left_out(kind="woodcut", title="A young couple making love, woman above. Woodcut by Moronobu, "
+                                                    "shunga") == ""
+    for title in ("A young couple making love; a young man watches, shunga", "A young woman and her lover, shunga",
+                  "A young couple, the man in furisode, shunga", "A young couple and a wakashu, shunga"):
+        assert a.erotic_left_out(kind="woodcut", title=title).startswith("names or may name"), title
+
+
+def test_nude_photo_studies_screen():
+    """Non-sexual nude photographs: kept when the record describes an adult (young woman or man allowed); left out
+    for young-person words, groups and families, no adult described, anything sexual, artworks."""
+    kept = ["A young woman, posing naked in a classical attitude, against a square column. Photograph, ca.1900.",
+            "Two men posing naked in a photographic studio. Stereo photograph, c.1900.",
+            "A naked man with locomotor ataxia, walking. Collotype after Eadweard Muybridge, 1887."]
+    for title in kept:
+        assert a.nude_photo_left_out(title, kind="Photographs") == "", title
+    out = ["Boys swimming naked. Photograph.", "A naked Sicilian male, outdoors. Photograph, 1900.",
+           "A naked girl in a studio. Photograph.", "A family bathing naked. Photograph.",
+           "A youthful nude model. Photograph.", "A naked couple making love. Photograph.",
+           "An enema administered to a naked man. Photograph, 1890/1920, of a Persian drawing.",
+           "A naked woman aged 16. Photograph.", "A naked man riding a horse. Collotype after Muybridge."]
+    for title in out:
+        assert a.nude_photo_left_out(title, kind="Photographs"), title
+    rows = a.nude_photo_rows(kept[0], "credit")
+    assert all(r["content"] == "nudity" for r in rows) and rows[1]["answer"] == a.NUDE_PHOTO_YES
+
+
+def test_girl_or_boy_alone_goes_to_review_and_the_allow_list(tmp_path, monkeypatch):
+    """A sexual artwork whose only young-person word is girl(s), boy(s), lad or lass is held for the team's review
+    (never for a photograph, never with a clear minor word); the allow-list lets an approved one in."""
+    for title in ("Two Chinese girls with bound feet are making love on a mattress. Lithograph, 1829.",
+                  "A boy and a woman, erotic print", "The lad and the lass, erotic engraving"):
+        assert a.erotic_left_out(kind="lithograph", title=title).startswith(a.REVIEW), title
+    for title, kind in (("Girls making love, erotic", "gelatin silver print"),
+                        ("A girl and a child, erotic print", "print"), ("Schoolgirls, erotic print", "print"),
+                        ("A boy aged 15, erotic print", "print"), ("Girls and Cupid, erotic print", "print"),
+                        ("A girl in furisode, shunga", "print"),
+                        ("A man and a woman making love, while a boy looks on. Gouache painting.", "gouache"),
+                        ("Lovers watched by a girl, erotic print", "print")):
+        assert a.erotic_left_out(kind=kind, title=title).startswith(("names or may name", "a photograph")), title
+    allow = tmp_path / "allow.txt"
+    allow.write_text("# comment\nWellcome Collection\trwtpkyxg\tnote\n", encoding="utf-8")
+    monkeypatch.setattr(a, "ALLOW_FILE", str(allow))
+    a.REVIEW_ITEMS.clear()
+    why = a.erotic_left_out(kind="lithograph", title="Two Chinese girls ... making love. Lithograph.")
+    assert a.reviewed(why, "Wellcome Collection", "rwtpkyxg", "Two Chinese girls", "https://x") is True
+    assert a.reviewed(why, "Wellcome Collection", "other", "Two girls", "https://y") is False
+    assert a.reviewed("names or may name a young person (child)", "Wellcome Collection", "rwtpkyxg", "t", "l") is False
+    out = tmp_path / "review.txt"
+    a.write_review_list(str(out))
+    lines = [l for l in out.read_text(encoding="utf-8").splitlines() if not l.startswith("#")]
+    assert lines == ["Wellcome Collection\tother\tTwo girls\thttps://y\tgirls\t"]
+
+
+def test_the_repository_allow_list():
+    """The allow-list in the repository holds the owner's decision on the Mauzaisse lithograph."""
+    allowed = a.allowed_items()
+    assert ("Wellcome Collection", "rwtpkyxg") in allowed and "young women" in allowed[("Wellcome Collection",
+                                                                                         "rwtpkyxg")]

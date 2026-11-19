@@ -40,17 +40,29 @@ The packs (ADULT_ART_PACKS):
                     photographs OF ARTWORKS) and of drawings of sex positions, sex-education diagrams and Kama Sutra
                     illustrations (drawings only). Asked "Describe this picture." and "Is there sexual content in
                     this picture?".
-                    Left out (erotic_left_out), ADULTS ONLY: ANY word that names or may name a child or young
-                    person (art_minor_word: body_packs.MINOR, the kit's own lists, and the shunga words for youths
-                    and apprentices: wakashu, chigo, kagema, furisode, kamuro, shinzo, 若衆, 稚児 ...), so also every
-                    putto, cherub, Cupid, Eros, Ganymede, school, student, son and daughter; any age under 18. The
-                    owner's decision (November 2026): the adult phrases "young woman", "young man", "young couple",
-                    "maiden", "nymph" and "youthful" do not leave an ARTWORK out, EXCEPT in a Japanese work, where
-                    catalogues often put wakashu and musume into English that way (JAPANESE). A sexual artwork
+                    FIRST: is the work sexual (an explicit act or an erotic scene, or rape or abduction: is_sexual)?
+                    A work that is not is left out as "not about sex or erotica", never as a young-person exclusion;
+                    if it shows nudity it is offered to museum_art_nudes (route_to_nudes), whose child rules apply.
+                    THEN, for a sexual work, ADULTS ONLY: any young-person word (art_minor_word, whole words: child,
+                    boy, girl (not "girlfriend", "chorus girl" ...), infant, baby, teen, adolescent, juvenile, a
+                    minor, underage, schoolgirl, pupil, student, bare "young" or "youth", putto, cherub, Cupid, Eros,
+                    Ganymede and the other youths of myth, virgin, apprentice, the Japanese youth words wakashu,
+                    chigo, kagema, furisode, kamuro, shinzo, 若衆, 稚児 ...) or an age under 18 in figures or words.
+                    GIRL OR BOY ONLY (the owner's decision): a sexual artwork whose ONLY young-person words are
+                    girl(s), boy(s), lad or lass (older catalogue English for young women or men) is held for the
+                    team's review instead (REVIEW): its title and catalogue link go on a review list written only on
+                    the owner's own computer (ADULT_ART_REVIEW_LIST, or --review-list; never committed or published),
+                    and it is kept only when packs/erotic_art_allow.txt allows it after a sighted person has looked
+                    at the museum's page. Never for photographs, never with any clear minor word.
+                    The adult phrases "young woman", "young man", "young couple", "maiden", "nymph" and "youthful"
+                    do not count (the owner's decision, November 2026), EXCEPT in a Japanese work, where catalogues
+                    often put wakashu and musume into English that way (there "young", "youth", "maid" and
+                    "attendant" count too). Kinship words, "petit", "little", painting "schools" and "Asia Minor" do
+                    not count; incest and parent-child pairings are left out on their own (INCEST). A sexual artwork
                     showing a minor stays out without exception. Also left out: killing, death, torture, execution,
-                    suicide and private pictures (HARM); any animal or creature (no bestiality); records that are not
-                    an artwork; and every PHOTOGRAPH (photographs are training-kit/kit/adult_photo_review.py's, on
-                    the owner's own computer, documented adults only).
+                    suicide and private pictures (HARM); any animal or creature (no bestiality; Leda, Pasiphae);
+                    records that are not an artwork; and every PHOTOGRAPH (photographs are training-kit/kit/
+                    adult_photo_review.py's, on the owner's own computer, documented adults only).
                     KEPT AND SAID PLAINLY (the owner's decision): works of sexual violence and no consent (abduction
                     and rape themes, the Sabine women, Persephone, Lucretia, coercion, sleep or drunkenness, voyeurs)
                     and of restraint. theme_of adds a factual sentence ("It shows the abduction of Persephone
@@ -76,6 +88,7 @@ The fixed sentences here were written for these packs; every other word of an an
     python packs/adult_art_packs.py erotic_art --limit 8      (prints a few rows and some left-out records)
 """
 
+import os
 import re
 import sys
 import time
@@ -192,16 +205,17 @@ NOT_TOPIC = re.compile(r"\b(art|music|nature|book|wine|dog|cat|horse|garden|oper
 SYMBOL = re.compile(r"\b(linga\w*|lingam\w*|yoni|shivling\w*|shiva ?linga\w*)\b", re.I)
 
 
-def nudes_left_out(source, title, *texts, kind=""):
+def nudes_left_out(source, title, *texts, kind="", routed=False):
     """True when a museum record is NOT for museum_art_nudes (the reason noted in LEFT): it is art_nudes's (neither
     body_packs.MINOR nor body_packs.SEXUAL names anything), a photograph, a sexual act or erotica, sexual violence,
     or a child or young person together with a sexual or romantic word. A kept record whose words name a child is
-    remembered in CHILD_TITLES (its rows get "child": true)."""
+    remembered in CHILD_TITLES (its rows get "child": true). routed=True for a work found by the erotic searches
+    (route_to_nudes), which is not art_nudes's whatever its words."""
     text = " ".join(clean(t) for t in (title, *texts) if t)
     minor, wide = minor_word(text), SEXUAL.search(text)
     reason = ""
-    if not MINOR.search(text) and not wide:
-        reason = "in art_nudes already"
+    if not MINOR.search(text) and not wide and not routed:
+        reason = "in art_nudes already"           # (a work routed from the erotic searches is not art_nudes's)
     elif PHOTO_WORDS.search(f"{clean(kind)} {clean(title)}"):
         reason = "a photograph (this pack has none)"
     elif SEX_ACT.search(text):
@@ -254,12 +268,80 @@ ADULT_PHRASES = re.compile(r"\b(young (wom[ae]n|m[ae]n|couples?|lad(y|ies)|wi(fe
                            r"maidens?|nymphs?|youthful)\b", re.I)
 
 
+# The young-person words of a SEXUAL artwork (whole words only; the coordinator's sample of the first list, November
+# 2026, showed kinship words, "petit", "little", painting "schools", "Asia Minor" and names such as "Virginia"
+# catching works that are neither sexual nor about minors). Kept, without exception: child, children, boy(s),
+# girl(s) (adult phrases such as "girlfriend" or "chorus girl" excepted), infant, baby, toddler, teen, adolescent,
+# juvenile, puberty, a minor or minors, underage, schoolgirl, schoolboy, school pupil, pupil, student, school
+# uniform, ages under 18, the Japanese youth words, putto, cherub, Cupid, Eros, Ganymede and the other youths of
+# myth, virgin; and bare "young" or "youth" (only the adult phrases of ADULT_PHRASES are rescued).
+SEX_MINOR = re.compile(
+    r"\b(child|children|childhood|childlike|kids?|boys?|boyhood|boyish|girls?|girlhood|girlish|infants?|infancy|"
+    r"bab(y|ies)|toddlers?|newborns?|teen|teens|teenage\w*|teenager\w*|adolescen\w*|juvenile\w*|pubert\w*|"
+    r"pubescen\w*|prepubescen\w*|minors|underage|under-age|under 18|schoolgirls?|schoolboys?|school ?(girls?|boys?|"
+    r"pupils?|children|uniforms?)|pupils?|students?|young|youngsters?|youths?|lads?|lass(ie)?s?|nymphets?|"
+    r"lolita\w*|loli|shota\w*|barely legal|put(to|ti|tini)|cherub\w*|cupids?|amor(ino|ini|etto|etti)|amoretti|"
+    r"eros|erotes|ganymed\w*|hylas|hyacinth(us)?|narcissus|endymion|adonis|attis|kouros|kouroi|ephebe\w*|"
+    r"virgins?|apprentices?|wakash[uū]|chigo|kagema|furisode|kamuro|shinz[oō]|iroko|musume|enfant\w*|"
+    r"fillette\w*|gar[cç]on\w*|ragazz\w*|fanciull\w*|bambin\w*|ni[nñ][oa]s?|muchach\w*|m[aä]dchen|"
+    r"knabe\w*|kinder|kindje\w*|meisje\w*|jongen\w*|knaap\w*|puer|pueri|puella\w*|jeune\w*)\b|"
+    r"\b(a|the|any) minor\b(?! (arts?|keys?|gods?|godd?ess\w*|deit\w*|planets?|prophets?|orders?|damage|"
+    r"repairs?|role|figure))|"
+    r"若衆|稚児|陰間|振袖|禿|新造|小姓|少年|少女|子供|子ども|こども|童|娘|幼|稚", re.I)
+# Adult phrases with "girl" (not a child).
+GIRL_ADULT = re.compile(r"\b(girlfriends?|call ?girls?|show ?girls?|chorus ?girls?|cover ?girls?|pin-?up ?girls?|"
+                        r"working ?girls?|dancing ?girls?|bar ?girls?)\b", re.I)
+# In a Japanese work, the words catalogues use in English for wakashu, musume or young attendants also count.
+JAPANESE_MINOR = re.compile(r"\b(young\w*|youth\w*|maids?|maidservants?|attendants?|little|petite?)\b", re.I)
+JAPANESE_COUPLE = re.compile(r"\byoung couples?\b", re.I)
+# Ages in words under 18 ("fifteen years old", "aged sixteen").
+AGE_WORDS = re.compile(r"\b(aged |age )?(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|"
+                       r"fourteen|fifteen|sixteen|seventeen)[- ](years?[- ]old|year-old)\b|\baged (one|two|three|"
+                       r"four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|"
+                       r"seventeen)\b", re.I)
+# Incest, parent-child pairings and families in a sexual work (left out: the kinship words no longer count as
+# young-person words, so these are named here; a family in a sexual series may include a child the record does not
+# name, such as "The Satyr's Family").
+INCEST = re.compile(r"\b(incest\w*|father and daughters?|mother and sons?|brother and sisters?|sister and "
+                    r"brothers?|his daughters?|her sons?|Amnon|famil(y|ies)|famille|familie)\b|\bLot\b", re.I)
+
+
 def art_minor_word(text):
-    """minor_word for an artwork of erotic_art: the adult phrases (ADULT_PHRASES: "young woman", "maiden", "nymph",
-    "youthful" ...) do not count, except in a Japanese work (JAPANESE); every other minor word still does (child,
-    boy, girl, infant, teen, adolescent, minor, school, pupil, ages under 18, wakashu, furisode, putto, Cupid,
-    Eros ...)."""
-    return minor_word(text if JAPANESE.search(text) else ADULT_PHRASES.sub(" ", text))
+    """The young-person word of a SEXUAL artwork ("" when none): SEX_MINOR on the text without the adult phrases
+    (ADULT_PHRASES: "young woman", "maiden", "nymph", "youthful" ...; GIRL_ADULT: "girlfriend", "chorus girl" ...);
+    in a Japanese work (JAPANESE) the adult phrases are not rescued and JAPANESE_MINOR counts too; ages under 18 in
+    figures or words."""
+    return ", ".join(art_minor_words(text))
+
+
+def art_minor_words(text):
+    """Every young-person word of a sexual artwork's text (see art_minor_word), in order, each once."""
+    japanese = bool(JAPANESE.search(text))
+    # In a Japanese work "young couple" alone is rescued (the owner's decision); "young man" or "young woman" on its
+    # own, and every youth word, still count.
+    rest = GIRL_ADULT.sub(" ", JAPANESE_COUPLE.sub(" ", text) if japanese else ADULT_PHRASES.sub(" ", text))
+    found = [m.group(0) for pattern in (SEX_MINOR, JAPANESE_MINOR if japanese else None, AGE_WORDS) if pattern
+             for m in pattern.finditer(rest)]
+    found += [m.group(0) for m in AGE.finditer(rest) if int(next(g for g in m.groups() if g)) < 18]
+    return list(dict.fromkeys(found))
+
+
+# In older catalogue English "girl(s)", "boy(s)", "lad" and "lass" often mean young women or men. A sexual ARTWORK
+# whose ONLY young-person words are these goes to a review list instead of being dropped silently; the owner's
+# sighted team looks at the museum's own page and may allow it (erotic_art_allow.txt). Never for photographs.
+AMBIGUOUS_YOUNG = re.compile(r"^(girls?|boys?|lads?|lass(ie)?s?)$", re.I)
+REVIEW = "for review: its only young-person word may mean a young adult in older English"
+
+
+# A girl or boy WATCHING a sexual scene is a child in a sexual scene, not a young adult taking part: never reviewed.
+ONLOOKER = re.compile(r"\b(girls?|boys?|lads?|lass(ie)?s?)\b[^.;]{0,40}\b(looks? on|looking on|watch\w*|peep\w*|"
+                      r"spy\w*|spies|observ\w*|sees|seeing|onlookers?)\b|\b(watched|observed|seen|spied on) by "
+                      r"(an? |the |two |three )?(young )?(girls?|boys?|lads?|lass(ie)?s?)\b", re.I)
+
+
+def only_ambiguous(words, text=""):
+    """True when every young-person word found is girl(s), boy(s), lad or lass, and no girl or boy is watching."""
+    return bool(words) and all(AMBIGUOUS_YOUNG.match(w) for w in words) and not ONLOOKER.search(text)
 
 
 # The myths whose art shows sex with an animal (Leda and the swan, Pasiphae and the bull): left out like ANIMAL.
@@ -328,17 +410,41 @@ def theme_of(text):
     return "", ""
 
 
+# Words and stories of SEXUAL violence (rape, abduction and the force myths of MYTH_FACTS): a work naming them is
+# sexual. Sleep, watching, restraint or a weapon alone are not (a "Sleeping Venus" is a nude, not erotica).
+SEXUAL_FORCE = re.compile(r"\b(rap(e|ed|es|ing|ist|ists)|ravish\w*|abduct\w*|kidnap\w*|verkracht\w*|ontvoer\w*|"
+                          r"vergewaltig\w*|enlèvement|stupro|violación)\b", re.I)
+
+
+def is_sexual(text):
+    """True when an artwork's words say it is sexual: an explicit act or an erotic scene (TOPIC), or sexual
+    violence (SEXUAL_FORCE, or a force story of MYTH_FACTS)."""
+    if TOPIC.search(NOT_TOPIC.sub(" ", text)) or SEXUAL_FORCE.search(text):
+        return True
+    return any(theme == THEME_FORCE and pattern.search(text) for pattern, theme, _ in MYTH_FACTS)
+
+
+NOT_SEXUAL = "not about sex or erotica"
+
+
 def erotic_left_out(*texts, kind="", title="", need_topic=True, need_art=True):
-    """The reason an erotic_art record is left out, or "" when it may be used: a word that names or may name a
-    child or young person, or an age under 18 (art_minor_word: the adult phrases do not count outside Japanese
-    works); killing, death, torture or private pictures (HARM); an animal or creature (no bestiality); a religious
-    symbol; a photograph; not an artwork (need_art); not about sex or erotica (need_topic). Force, no consent and
-    restraint do NOT leave a work out: theme_of names them in its answer."""
+    """The reason an erotic_art record is left out, or "" when it may be used. FIRST whether it is sexual
+    (is_sexual; need_topic=False for a Commons category of erotic art, which is sexual by being there): a record
+    that is not is left out as NOT_SEXUAL and is never counted as a young-person exclusion (its nudity, if any, may
+    go to museum_art_nudes: route_to_nudes). Then, for a sexual work: a young-person word or an age under 18
+    (art_minor_word); incest; killing, death, torture or private pictures (HARM); an animal or creature (no
+    bestiality); a religious symbol; a photograph; not an artwork (need_art). Force, no consent and restraint do
+    NOT leave a work out: theme_of names them in its answer."""
     text = " ".join(clean(t) for t in (title, *texts) if t)
-    minor = art_minor_word(text)
-    if minor:
-        return f"names or may name a young person ({minor})"
-    for pattern, why in ((HARM, "killing, death, torture or a private picture"), (ANIMAL, "an animal or creature"),
+    if need_topic and not is_sexual(text):
+        return NOT_SEXUAL
+    words = art_minor_words(text)
+    if words:
+        if only_ambiguous(words, text) and not PHOTO_WORDS.search(f"{clean(kind)} {clean(title)}"):
+            return f"{REVIEW} ({', '.join(words)})"
+        return f"names or may name a young person ({', '.join(words)})"
+    for pattern, why in ((INCEST, "incest, a parent and child, or a family"),
+                         (HARM, "killing, death, torture or a private picture"), (ANIMAL, "an animal or creature"),
                          (ANIMAL_MYTH, "an animal or creature (a myth of sex with an animal)"),
                          (SYMBOL, "a religious symbol, not people")):
         m = pattern.search(text)
@@ -348,9 +454,77 @@ def erotic_left_out(*texts, kind="", title="", need_topic=True, need_art=True):
         return "a photograph (no photographs of sexual acts in this pass)"
     if need_art and not ART_KIND.search(clean(kind)):
         return "the record does not show an artwork"
-    if need_topic and not TOPIC.search(NOT_TOPIC.sub(" ", text)) and not theme_of(text)[0]:
-        return "not about sex or erotica"
     return ""
+
+
+ALLOW_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "erotic_art_allow.txt")
+# The review list is written only on the owner's own computer (the environment variable ADULT_ART_REVIEW_LIST names
+# the file, or main()'s quick try writes it), never in the repository or a published build: a list of sexual
+# artworks whose records mention girls or boys is for the team's eyes only.
+REVIEW_ITEMS = []
+
+
+def allowed_items(path=None):
+    """{(institution, id): note} from the allow-list (lines "institution<TAB>id<TAB>note"; "#" starts a comment)."""
+    out = {}
+    try:
+        with open(path or ALLOW_FILE, encoding="utf-8") as f:
+            for line in f:
+                parts = [p.strip() for p in line.rstrip("\n").split("\t")]
+                if len(parts) >= 2 and parts[0] and not parts[0].startswith("#"):
+                    out[(parts[0], parts[1])] = parts[2] if len(parts) > 2 else ""
+    except FileNotFoundError:
+        pass
+    return out
+
+
+def reviewed(why, institution, item_id, title, link):
+    """For a work left out with REVIEW: True when the allow-list allows it (it is then kept); otherwise it is put on
+    the review list (REVIEW_ITEMS) and False. Any other reason: False."""
+    if not why.startswith(REVIEW):
+        return False
+    if (institution, str(item_id)) in allowed_items():
+        return True
+    if not any(r[0] == institution and r[1] == str(item_id) for r in REVIEW_ITEMS):
+        REVIEW_ITEMS.append((institution, str(item_id), clean(title)[:200], link, why[len(REVIEW):].strip(" ()")))
+    return False
+
+
+def write_review_list(path):
+    """Write the review list: one line per work, institution, id, title, catalogue link, the words, and a blank
+    decision for the team (titles and links only: no pictures)."""
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("# erotic_art works whose only young-person word is girl(s), boy(s), lad or lass. Look at the "
+                "museum's own page;\n# if every figure is clearly an adult, copy the line's institution and id to "
+                "packs/erotic_art_allow.txt with a note.\n# institution\tid\ttitle\tlink\twords\tdecision\n")
+        for institution, item_id, title, link, words in REVIEW_ITEMS:
+            f.write(f"{institution}\t{item_id}\t{title}\t{link}\t{words}\t\n")
+
+
+# Works found by the erotic searches that are NOT sexual but show nudity: offered to museum_art_nudes, where its own
+# child rules apply (nudes_left_out(routed=True): putti, Cupid and the Christ Child are fine there in a plainly
+# non-sexual work). (name, picture address, rows) items, filled by the museum readers below.
+ROUTED = []
+
+
+def route_to_nudes(source, name, url, title, credit, kind="", artist="", date="", medium="", text="", place="",
+                   others=()):
+    """Offer a non-sexual work found by an erotic search to museum_art_nudes: kept in ROUTED when its words name
+    nudity (body_packs.NUDITY_WORDS) and it passes nudes_left_out(routed=True). Rows as art_nudes's (body_packs
+    art_rows), marked "child" when its words name a sacred or winged child figure."""
+    words = " ".join(clean(t) for t in (title, text, *others) if t)
+    if not body_packs.NUDITY_WORDS.search(words) or any(n == name for n, _, _ in ROUTED):
+        return False
+    if nudes_left_out(source, title, text, *others, kind=f"{kind} {medium}", routed=True):
+        return False
+    female, male = body_packs.nudity_kind(words)
+    rows = body_packs.art_rows(text, credit, title, kind, artist, date, medium, female, male)
+    if place:
+        rows = made_in(rows, place_from_text(place))
+    if minor_word(words):
+        rows = [dict(r, child=True) for r in rows]
+    ROUTED.append((name, url, rows))
+    return True
 
 
 # ----------------------------------------------------------------- plain words
@@ -476,12 +650,18 @@ def met_erotic(want):
         kind = f"{o.get('classification')} {o.get('objectName')} {o.get('medium')}"
         why = erotic_left_out(" ".join(tags), o.get("objectName"), o.get("medium"), o.get("culture"),
                               kind=kind, title=title)
-        if why:
-            note("Met", title, why)
-            continue
         artist = clean(o.get("artistDisplayName"))
         credit = f"The Metropolitan Museum of Art, public domain (CC0): {title}" + (f", {artist}" if artist else "") \
             + f", {o.get('objectURL', '')}"
+        if why == NOT_SEXUAL:
+            route_to_nudes("Met", name, o["primaryImage"] or o["primaryImageSmall"], title, credit,
+                           o.get("objectName"), artist, o.get("objectDate"), o.get("medium"),
+                           "", o.get("culture") or o.get("country"), tags)
+        if reviewed(why, "The Met", oid, title, o.get("objectURL", "")):
+            why = ""
+        if why:
+            note("Met", title, why)
+            continue
         rows = erotic_rows(credit, title, o.get("objectName"), artist, o.get("objectDate"), o.get("medium"),
                            "", tags, "museum", o.get("culture") or o.get("country"))
         items.append((name, o["primaryImage"] or o["primaryImageSmall"], rows))
@@ -524,20 +704,26 @@ def aic_erotic(want):
             kind = f"{a.get('classification_title')} {' '.join(a.get('classification_titles') or [])} " \
                    f"{a.get('medium_display')} {' '.join(a.get('term_titles') or [])}"
             why = erotic_left_out(desc, alt, " ".join(subjects), kind=kind, title=title)
-            if why:
-                note("AIC", title, why)
-                continue
             artist = clean(a.get("artist_display")).split("\n")[0]
             credit = f"Art Institute of Chicago, CC0 (public domain): {title}, {artist}, " \
                      f"https://www.artic.edu/artworks/{a['id']}"
             text = alt if len(alt.split()) >= 8 else desc
             classification = re.sub(r"s? \(visual works?\)", "", clean(a.get("classification_title")))
+            picture = f"https://www.artic.edu/iiif/2/{a['image_id']}/full/1686,/0/default.jpg"
+            if why == NOT_SEXUAL:
+                route_to_nudes("AIC", f"aic-{a['id']}.jpg", picture, title, credit, classification,
+                               re.sub(r"\s*\(.*", "", artist), a.get("date_display"), a.get("medium_display"), text,
+                               a.get("place_of_origin"), subjects)
+            if reviewed(why, "Art Institute of Chicago", a["id"], title, f"https://www.artic.edu/artworks/{a['id']}"):
+                why = ""
+            if why:
+                note("AIC", title, why)
+                continue
             rows = erotic_rows(credit, title, classification, re.sub(r"\s*\(.*", "", artist),
                                a.get("date_display"), a.get("medium_display"), text,
                                [t for t in subjects if not SEX_ACT.search(t) or t.lower() == "erotica"], "museum",
                                a.get("place_of_origin"))
-            items.append((f"aic-{a['id']}.jpg", f"https://www.artic.edu/iiif/2/{a['image_id']}/full/1686,/0/default.jpg",
-                          rows))
+            items.append((f"aic-{a['id']}.jpg", picture, rows))
         if len(records) < 100:
             break
         page += 1
@@ -570,12 +756,18 @@ def cma_erotic(want):
                 desc = clean(a.get("digital_description") or a.get("wall_description") or a.get("description"))
                 kind = f"{a.get('type')} {a.get('technique')}"
                 why = erotic_left_out(desc, a.get("type"), a.get("technique"), kind=kind, title=title)
-                if why:
-                    note("Cleveland", title, why)
-                    continue
                 maker = clean(((a.get("creators") or [{}])[0] or {}).get("description"))
                 credit = f"Cleveland Museum of Art, CC0: {title}, {maker or 'unknown maker'}, {a.get('url', '')}"
                 culture = str((a.get("culture") or [""])[0]).split(",")[0]
+                if why == NOT_SEXUAL:
+                    route_to_nudes("Cleveland", f"cma-{a['id']}.jpg", web, title, credit, a.get("type"),
+                                   re.sub(r"\s*\(.*", "", maker), a.get("creation_date"), a.get("technique"), desc,
+                                   culture)
+                if reviewed(why, "Cleveland Museum of Art", a["id"], title, a.get("url", "")):
+                    why = ""
+                if why:
+                    note("Cleveland", title, why)
+                    continue
                 rows = erotic_rows(credit, title, a.get("type"), re.sub(r"\s*\(.*", "", maker),
                                    a.get("creation_date"), a.get("technique"), desc, (), "museum", culture)
                 found.append((f"cma-{a['id']}.jpg", web, rows))
@@ -621,6 +813,9 @@ def wellcome_erotic(want):
                 genres = [clean(t.get("label")) for t in src.get("genres") or []]
                 kind = f"{title} {' '.join(genres)}"
                 why = erotic_left_out(" ".join(subjects), " ".join(genres), kind=kind, title=title)
+                if reviewed(why, "Wellcome Collection", src.get("id", ""), title,
+                            f"https://wellcomecollection.org/works/{src.get('id', '')}"):
+                    why = ""
                 if why:
                     note("Wellcome", title, why)
                     continue
@@ -735,6 +930,9 @@ def commons_item(title, info, group):
         why = erotic_left_out(text, categories, need_art=False, need_topic=False)
         if why.startswith("a photograph"):
             why = ""                       # a photograph OF an artwork is checked below instead
+        if reviewed(why, "Wikimedia Commons", title, stem, "https://commons.wikimedia.org/wiki/" +
+                    title.replace(" ", "_")):
+            why = ""
     if not why and group == "drawn" and not drawn:
         why = "not a drawing (this group is drawings and illustrations only)"
     if not why and group == "art" and not drawn and not ARTWORK.search(f"{text} {categories}"):
@@ -787,6 +985,129 @@ def commons_erotic(want):
     return items[:want]
 
 
+# ----------------------------------------------------------------- nude_photo_studies: Wellcome Collection
+
+# The owner's decision (November 2026): NON-SEXUAL nude photographs (studio and art-school poses, medical and
+# anthropometric photographs) that an institution shows publicly with an OPEN licence may be used without a
+# documented age. This pack's safeguard instead: the record must DESCRIBE AN ADULT (ADULT_CUE: a woman, a man, a
+# young woman or young man, an adult, a model ...), name no child or young person (art_minor_word: the clear minor
+# words and ages under 18; "young woman" and "young man" allowed), no group, family or class (people whose ages
+# are not given), and nothing sexual (SEX_ACT, TOPIC: those photographs belong only to the kit's documented-adult
+# set). Personal-use photographs (not open) are the kit's local builder's (training-kit/kit/adult_photo_review.py).
+NUDE_PHOTO_QUERIES = ("naked photograph", "nude photograph", "posing naked", "nude model photograph",
+                      "naked man photograph", "naked woman photograph", "anthropometric photograph naked",
+                      "naked stereograph")
+ADULT_CUE = re.compile(r"\b(wom[ae]n|m[ae]n|lad(y|ies)|gentlem[ae]n|adults?|adult (male|female)|(male|female) "
+                       r"models?|artist'?s models?|athletes?|wrestlers?|strong ?m[ae]n|bodybuilders?|soldiers?|"
+                       r"sailors?|dancers?|wi(fe|ves)|husbands?|elderly|old (wom[ae]n|m[ae]n))\b", re.I)
+PEOPLE_UNKNOWN = re.compile(r"\b(group|groups|crowd|several|people|famil(y|ies)|tribe\w*|villagers?|class|"
+                            r"classes|series of (wom[ae]n|m[ae]n|people|figures)|population|mothers?|fathers?|"
+                            r"parents?|siblings?|brothers?|sisters?|growth|development|puberty|tanner)\b", re.I)
+ART_REPRODUCTION = re.compile(r"\b(photograph|photo|halftone|reproduction)\w*,? [^.]{0,20}\bof an? ([\w-]+ ){0,3}"
+                              r"(drawing|painting|print|sculpture|statue|engraving|miniature|manuscript|relief|"
+                              r"fresco|mural)s?\b|"
+                              r"\bafter an? (drawing|painting|print|sculpture|statue|engraving)\b", re.I)
+
+
+def nude_photo_left_out(title, *texts, kind=""):
+    """The reason a record is not for nude_photo_studies, or "" when it may be used: not a photograph (or a
+    photograph of an artwork); no nudity named; anything sexual; a young-person word or an age under 18; a group,
+    family or class; no word describing an adult (ADULT_CUE); harm; an animal."""
+    text = " ".join(clean(t) for t in (title, *texts) if t)
+    if not PHOTO_WORDS.search(f"{clean(kind)} {text}") or ART_REPRODUCTION.search(text):
+        return "not a photograph of people (or a photograph of an artwork)"
+    if not body_packs.NUDITY_WORDS.search(text):
+        return "no nudity named"
+    if SEX_ACT.search(text) or TOPIC.search(NOT_TOPIC.sub(" ", text)) or SEXUAL_FORCE.search(text):
+        return "sexual (only the kit's documented-adult set may hold sexual photographs)"
+    minor = minor_word_photo(text)
+    if minor:
+        return f"names or may name a young person ({minor})"
+    if PEOPLE_UNKNOWN.search(text):
+        return f"a group, family or class, whose ages are not given ({PEOPLE_UNKNOWN.search(text).group(0)})"
+    if not ADULT_CUE.search(text):
+        return "the record does not describe an adult"
+    for pattern, why in ((HARM, "harm"), (ANIMAL, "an animal")):
+        if pattern.search(text):
+            return why
+    return ""
+
+
+def minor_word_photo(text):
+    """The young-person word of a nude photograph's record ("" when none): art_minor_word's words, with "young
+    woman" and "young man" allowed (and nothing else rescued: no maiden, nymph or youthful), in any culture."""
+    rest = GIRL_ADULT.sub(" ", re.sub(r"\byoung (wom[ae]n|m[ae]n)\b", " ", text, flags=re.I))
+    found = SEX_MINOR.search(rest) or AGE_WORDS.search(rest) or re.search(r"\b(maidens?|nymphs?|youthful|"
+                                                                         r"little|petite?|small (wom[ae]n|m[ae]n|"
+                                                                         r"figure))\b", rest, re.I)
+    if found:
+        return found.group(0)
+    for m in AGE.finditer(rest):
+        if int(next(g for g in m.groups() if g)) < 18:
+            return m.group(0)
+    return ""
+
+
+NUDE_PHOTO_YES = "Yes: it is a non-sexual nude photograph, a studio, art-school, medical or anthropometric study."
+OPEN_WELLCOME = {"pdm": "public domain (Public Domain Mark)", "cc-0": "CC0", "cc-by": "CC BY 4.0"}
+
+
+def nude_photo_rows(title, credit, subjects=()):
+    """The two rows of a nude photograph: its description in the record's own words, plainly and non-sexually,
+    and the nudity question. Every row "content": "nudity"."""
+    words = sentence(plain(title).rstrip("."))
+    tags = [plain(t).lower() for t in subjects if clean(t) and len(clean(t)) < 40 and not clean(t).isupper()]
+    if tags:
+        words += " " + sentence("The library's subject tags: " + ", ".join(dict.fromkeys(tags)))
+    return [{"question": DESCRIBE, "answer": words, "credit": credit, "content": "nudity"},
+            {"question": "Is there nudity in this picture?", "answer": NUDE_PHOTO_YES, "credit": credit,
+             "content": "nudity"}]
+
+
+def wellcome_nude_photos(want, s=None):
+    """(name, picture address, rows) for Wellcome Collection photographs that pass nude_photo_left_out and whose
+    own licence is open (pdm, cc-0, cc-by)."""
+    s, lists = s or session(), []
+    for q in NUDE_PHOTO_QUERIES:
+        found, page = [], 1
+        while len(found) < want * 2 + 10 and page <= 5:
+            data = get_json(s, WELLCOME, params={"query": q, "pageSize": 100, "page": page,
+                                                 "locations.license": ",".join(OPEN_WELLCOME),
+                                                 "include": "source.subjects,source.genres"}) or {}
+            for x in data.get("results") or []:
+                src = x.get("source") or {}
+                title = clean(src.get("title"))
+                loc = (x.get("locations") or [{}])[0]
+                lic = (loc.get("license") or {}).get("id", "")
+                if lic not in OPEN_WELLCOME or not loc.get("url", "").endswith("info.json") or not title:
+                    note("Wellcome photo", title, f"licence not open ({lic or 'none'}), or no picture")
+                    continue
+                subjects = [clean(t.get("label")) for t in src.get("subjects") or []]
+                genres = [clean(t.get("label")) for t in src.get("genres") or []]
+                why = nude_photo_left_out(title, " ".join(subjects), kind=" ".join(genres))
+                if why:
+                    note("Wellcome photo", title, why)
+                    continue
+                credit = f"Wellcome Collection, {OPEN_WELLCOME[lic]}: {title[:150]}, " \
+                         f"https://wellcomecollection.org/works/{src.get('id', '')}"
+                found.append((f"wellcome-{x['id']}.jpg",
+                              loc["url"].replace("info.json", "full/!1600,1600/0/default.jpg"),
+                              nude_photo_rows(title, credit, subjects)))
+            if (data.get("totalPages") or 1) <= page:
+                break
+            page += 1
+            time.sleep(0.5)
+        lists.append(found)
+    items = take_turns(lists)
+    say(f"Wellcome Collection nude photographs: {len(items)} usable")
+    return items[:want]
+
+
+def build_nude_photo_studies(limit):
+    """The nude_photo_studies pack (see wellcome_nude_photos)."""
+    return finish("nude_photo_studies", wellcome_nude_photos(int(limit * 1.3) + 2), limit, workers=3, pause=0.3)
+
+
 # ----------------------------------------------------------------- the packs
 
 # Each source's share of erotic_art (a source with fewer gives what it has).
@@ -806,6 +1127,9 @@ def build_erotic_art(limit):
             items += collect(max(2, round(limit * share * 1.3)))
         except Exception as error:  # noqa: BLE001 - one source down does not stop the pack
             say(f"{key}: left out ({error})")
+    if os.environ.get("ADULT_ART_REVIEW_LIST"):
+        write_review_list(os.environ["ADULT_ART_REVIEW_LIST"])
+    say(f"erotic_art: {len(REVIEW_ITEMS)} works for the team's review (only girl, boy, lad or lass named)")
     return finish("erotic_art", items, limit, workers=3, pause=0.3)
 
 
@@ -818,6 +1142,14 @@ def build_museum_art_nudes(limit):
             items += collect(max(2, round(limit * share * 1.3)), drop=nudes_left_out)
         except Exception as error:  # noqa: BLE001 - one museum down does not stop the pack
             say(f"{key}: left out ({error})")
+    # The non-sexual nudes the erotic searches found (route_to_nudes): about a tenth of the pack.
+    try:
+        ROUTED.clear()
+        for collect in (met_erotic, aic_erotic, cma_erotic):
+            collect(max(20, limit))
+        items += ROUTED[:max(2, round(limit * 0.1 * 1.3))]
+    except Exception as error:  # noqa: BLE001 - the routed works are a small extra
+        say(f"routed from the erotic searches: left out ({error})")
     marked = []
     for name, url, rows in items:
         child = any(r["answer"].startswith(t) for t in CHILD_TITLES for r in rows[:1])
@@ -840,12 +1172,18 @@ ADULT_ART_PACKS = {
                    "(CC0), Cleveland Museum of Art (CC0), Wellcome Collection (public domain, CC0 or CC BY 4.0), "
                    "Wikimedia Commons (each file CC0, public domain or CC BY). Any record whose words name or may name "
                    "a young person, violence, no consent or an animal was left out; no photographs of people."),
+    "nude_photo_studies": (build_nude_photo_studies,
+                           "Non-sexual nude photographs (studio, art-school, medical and anthropometric studies) "
+                           "from the Wellcome Collection, each with an open licence on its own record (public domain "
+                           "mark, CC0 or CC BY 4.0) and credited below. Only records that describe an adult; none "
+                           "naming a child or young person, a group or a family, or anything sexual."),
 }
 
 # The limits of the workflow (pack-build.yml), from the test builds of November 2026 (see the commit message).
 ADULT_ART_LIMITS = {
     "museum_art_nudes": 1500,
     "erotic_art": 1500,
+    "nude_photo_studies": 300,
 }
 
 
@@ -857,7 +1195,11 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="Try one adult art pack builder.")
     parser.add_argument("key", choices=sorted(ADULT_ART_PACKS))
     parser.add_argument("--limit", type=int, default=8)
+    parser.add_argument("--review-list", default="", help="erotic_art: write the review list to this file (on your "
+                                                          "own computer; never commit it)")
     args = parser.parse_args(argv)
+    if args.review_list:
+        os.environ["ADULT_ART_REVIEW_LIST"] = args.review_list
     entries = ADULT_ART_PACKS[args.key][0](args.limit)
     for name, data, row in entries:
         print(name, "(picture)" if data else "", json.dumps(row, ensure_ascii=False))

@@ -1,0 +1,5 @@
+# erotic_art allow-list: works the owner's sighted team approved after looking at the institution's own page.
+# Only works that the screen held for review because their ONLY young-person word is girl(s), boy(s), lad or lass
+# (older catalogue English for young women or men). A work with any clear minor word is never allowed.
+# One line per work: institution<TAB>id<TAB>reviewer note (the institution and id as in the review list).
+Wellcome Collection	rwtpkyxg	owner's decision: 'girls' here means young women (Two Chinese girls with bound feet are making love on a mattress. Lithograph by J.B. Mauzaisse, 1829)

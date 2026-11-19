@@ -2214,6 +2214,10 @@ SOURCES = [
            "Collection (public domain, CC0 or CC BY 4.0); Wikimedia Commons authors (CC0, public domain or CC BY); "
            "each item credited in CREDITS.txt", "permissive", 1500, 10, prepare_pack, "about 300 MB",
            content="sexual"),
+    Source("nude_photo_studies", "Non-sexual nude photographs: studio, art-school, medical and anthropometric studies of adults (Wellcome Collection, ready-made pack)",
+           "Public domain, CC0 or CC BY 4.0, item by item (Wellcome Collection; each credited in the pack's "
+           "CREDITS.txt)", "Wellcome Collection, credited in CREDITS.txt", "permissive", 300, 5, prepare_pack,
+           "about 60 MB", content="nudity"),
     Source("anatomy", "Anatomy figures: OpenStax Anatomy and Physiology and Gray's Anatomy plates (ready-made pack)",
            "OpenStax figures CC BY 4.0 (first edition); Gray's Anatomy (1918) plates public domain",
            "OpenStax, Anatomy and Physiology (2013, first edition), Rice University, CC BY 4.0, "
@@ -2346,7 +2350,7 @@ PEOPLE_AND_BODILY_PACK_KEYS = (
     # drug_firearm_packs.py: CBP seizure photos (officers) and CDC PHIL drug photos
     "commons_cbp_seizures", "cdc_phil_drugs",
     # adult_art_packs.py: nudes and erotic art (both of them)
-    "museum_art_nudes", "erotic_art",
+    "museum_art_nudes", "erotic_art", "nude_photo_studies",
 )
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + PEOPLE_AND_BODILY_PACK_KEYS
 # The drug and firearm packs (packs/drug_firearm_packs.py): describing only, never for picture-making, whether or not
@@ -2357,7 +2361,7 @@ NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + tuple(k for k in DRUG_FIREARM_
                                                         if k not in NOT_FOR_PICTURE_MAKING)
 # The nudes and erotic art packs (packs/adult_art_packs.py): describing only, never for picture-making (they are in
 # PEOPLE_AND_BODILY_PACK_KEYS too).
-ADULT_ART_PACK_KEYS = ("museum_art_nudes", "erotic_art")
+ADULT_ART_PACK_KEYS = ("museum_art_nudes", "erotic_art", "nude_photo_studies")
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + tuple(k for k in ADULT_ART_PACK_KEYS
                                                         if k not in NOT_FOR_PICTURE_MAKING)
 # The documented-adult photographs (adult_photo_review.py, gathered on the owner's own computer): review workspaces

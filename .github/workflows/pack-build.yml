@@ -333,6 +333,7 @@ jobs:
             wikidata_firearms) limit=500 ;;
             museum_art_nudes) limit=1500 ;;
             erotic_art) limit=1500 ;;
+            nude_photo_studies) limit=300 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in
