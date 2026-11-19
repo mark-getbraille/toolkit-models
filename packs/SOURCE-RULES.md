@@ -16,10 +16,15 @@ Safety rules apply to every category:
   2026): museum_art_nudes (fine-art nudity, content "nudity") and erotic_art (sexual acts between adults in ART and
   ILLUSTRATION only, content "sexual", which makes a trained add-on personal use only). Both are describing only,
   never for picture-making. Hard limits, never relaxed: no photograph of a nude child; no artwork of any period
-  showing a child in a sexual way; nothing sexual where any figure is or may be under 18 (in erotic_art ANY word
-  that names or may name a young person leaves the item out, "young woman" and "maiden" included; when in doubt,
-  out); no sexual violence, no consent problems, no animals; no photographs of sexual acts (there is no automatic
-  age check in this repository, so none is gathered);
+  showing a child in a sexual way (illegal in the UK, Canada and Australia whatever the medium); nothing sexual where
+  any figure is or may be under 18 (in erotic_art any clear minor word leaves the item out; the adult phrases "young
+  woman", "young man", "young couple", "maiden", "nymph" and "youthful" count as adult only outside Japanese works,
+  where they often stand for wakashu or musume); no animals; no killing, torture or execution. erotic_art KEEPS works
+  of sexual violence, no consent and restraint (the owner's decision, November 2026), said factually and tagged
+  "theme" so a training can leave them out (train.py --without-sexual-violence). Photographs of nudity or sex are
+  only in the kit's local, never-published training-kit/kit/adult_photo_review.py, and only when the institution's
+  record documents that every person is an adult. Descriptions follow training-kit/HOW TO DESCRIBE SEXUAL CONTENT,
+  NUDITY AND CONSENT.txt;
 - children only in everyday scenes, expressions, medical close-ups under the childhood-illness rules, the birth
   context, and plainly non-sexual works of art in museum_art_nudes (Madonna and Child, putti: never a photograph,
   never with a sexual or romantic word, rows marked "child"); never unclothed children elsewhere;

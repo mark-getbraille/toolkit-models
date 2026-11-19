@@ -141,6 +141,17 @@ def row_content(row):
     return tag if tag in CONTENTS else "unknown"
 
 
+# The themes of erotic_art rows (packs/adult_art_packs.py): works of sexual violence, no consent or restraint, said
+# plainly in their answers. A training can leave them out (train.py --without-sexual-violence).
+SEXUAL_VIOLENCE_THEMES = ("sexual violence (artwork)", "no consent (artwork)", "restraint (artwork)")
+
+
+def leave_out_themes(rows, themes):
+    """The rows whose "theme" is not in themes (all rows when themes is empty)."""
+    themes = set(themes or ())
+    return [r for r in rows if str(r.get("theme") or "") not in themes] if themes else list(rows)
+
+
 def keep_allowed(rows, allowed):
     """The rows whose own content tag (row_content: "content": "graphic" from any pack, for example) is in allowed
     (a set from allowed_contents); the others are left out. Rows without a tag are always kept."""
@@ -900,6 +911,8 @@ def prepare_pack(source, data_dir, work, cap):
                 base["child"] = True
             if row.get("content"):                   # a row's own content tag ("graphic"): used only when chosen
                 base["content"] = str(row["content"]).strip().lower()
+            if row.get("theme"):                     # erotic_art's theme (sexual violence ...): can be left out
+                base["theme"] = str(row["theme"]).strip().lower()
             base.update(place_fields(row) or known.get(row.get("file") or row.get("url"), {}))
             if row.get("file"):
                 path = os.path.join(folder, os.path.basename(row["file"]))

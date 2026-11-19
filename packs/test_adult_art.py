@@ -2,11 +2,11 @@
 downloaded from the internet (the museum and Commons readers are given made-up answers).
 
 It checks that:
-  - erotic_art leaves out ANY record whose words name or may name a young person (child, boy, girl, young, youth,
-    maiden, school, student, putto, cherub, Cupid, Eros, Ganymede, wakashu, furisode, 若衆 ...) or give an age under
-    18, also "young woman" and "young man" (the owner's hard limit: in the sexual-acts collections any minor-ish
-    word excludes the item); violence or no consent, the myths about rape or a minor, animals, photographs, and
-    records that are not artworks or not about sex; and keeps plain adult erotic art;
+  - erotic_art leaves out any artwork whose words name a child or young person (child, boy, girl, teen, school,
+    pupil, putto, Cupid, Eros, Ganymede, wakashu, furisode, 若衆 ...) or give an age under 18; adult phrases ("young
+    woman", "maiden", "nymph", "youthful") leave out only a Japanese work; harm, animals (Leda, Pasiphae), photographs
+    and non-art are left out; works of force, no consent and restraint are kept, said plainly and tagged "theme";
+  - answers follow the description guide: no judgement or titillating words;
   - museum_art_nudes takes only what art_nudes leaves out, never a photograph, a sexual act or sexual violence,
     keeps a child only as a sacred or winged figure (Madonna and Child, putti, Cupid, cherubs) in a plainly
     non-sexual work, never a real girl, boy or youth as the nude subject, and marks those rows "child";
@@ -34,35 +34,83 @@ REPO = os.path.dirname(HERE)
 
 
 def test_erotic_minor_words_exclude():
-    """Any minor-ish word, or an age under 18, leaves an erotic record out (also adult-sounding "young" phrases)."""
+    """Clear minor words, or an age under 18, leave an erotic artwork out; so do adult-sounding "young" phrases in a
+    Japanese work (where they often stand for wakashu or musume)."""
     for title in ("Lovers with a child nearby, shunga", "A boy and a woman, erotic print", "Girl and lover, erotic",
-                  "Young woman and her lover, shunga", "Young man with a courtesan, erotic", "Youthful lovers, erotic",
-                  "Erotic scene with a maiden", "Erotic scene with putti", "Cupid and Venus, erotic",
-                  "Eros watching lovers, erotic", "Schoolgirl, erotic", "Erotic print of students",
+                  "Young woman and her lover, shunga", "Young man with a courtesan, ukiyo-e erotic print",
+                  "Erotic scene with putti", "Cupid and Venus, erotic", "Eros watching lovers, erotic",
+                  "Schoolgirl, erotic", "Erotic print of students", "Erotic print of a pupil",
                   "Wakashu and a woman, shunga", "A courtesan in furisode with a lover, shunga", "Kagema, shunga",
                   "若衆と女 春画", "Erotic scene, she is aged 15", "Erotic scene with a 16-year-old",
                   "Teenage lovers, erotic", "Adolescent couple, erotic", "Infant and erotic couple",
-                  "Apprentice courtesan, shunga"):
+                  "Apprentice courtesan, shunga", "Underage lovers, erotic", "Ganymede, erotic"):
         why = a.erotic_left_out(kind="woodblock print", title=title)
         assert why.startswith("names or may name a young person"), (title, why)
 
 
+def test_erotic_adult_phrases_kept_in_non_japanese_art():
+    """The owner's decision: "young woman", "young man", "young couple", "maiden", "nymph" and "youthful" do not
+    leave a (non-Japanese) artwork out."""
+    for title in ("Young man and woman making love, erotic engraving", "A young couple, erotic etching",
+                  "Erotic scene with a maiden", "Youthful lovers, erotic print", "Nymph and satyr, erotic"):
+        assert a.erotic_left_out(kind="engraving", title=title) == "", title
+
+
 def test_erotic_other_rules_and_kept():
-    """Violence, myths, animals, photographs, non-art and off-topic records are left out; adult erotic art is kept."""
-    out = {"Rape of a woman, erotic": "print", "Erotic scene, the woman asleep": "print",
-           "Leda, erotic": "painting", "Satyr and lover, erotic": "engraving",
+    """Harm, animals, photographs, non-art and off-topic records are left out; adult erotic art is kept, and so are
+    works of force, no consent and restraint (with their theme)."""
+    out = {"Leda, erotic": "painting", "Pasiphae, erotic": "painting",
            "Dream of the fisherman's wife (octopus), shunga": "print", "Erotic scene": "gelatin silver print",
            "Erotic couple": "photograph", "Erotic catalogue": "", "Landscape with a river": "painting",
-           "Shiva linga, erotic": "sculpture", "Couple, erotic, bound with ropes": "print"}
+           "Shiva linga, erotic": "sculpture", "Erotic scene with a corpse": "print",
+           "The rape of Lucretia, her suicide": "engraving", "Europa and the bull": "painting"}
     for title, kind in out.items():
         assert a.erotic_left_out(kind=kind, title=title), title
     kept = {"Lovers, from an album of shunga": "woodblock print; ink and color on paper",
             "Couple engaged in sexual intercourse": "gouache painting",
             "Mithuna couple": "sandstone sculpture relief",
             "A couple making love on a terrace": "opaque watercolor",
-            "Kylix with an erotic scene": "terracotta"}
+            "Kylix with an erotic scene": "terracotta",
+            "The Rape of the Sabine Women": "engraving", "The Abduction of Proserpina": "bronze",
+            "Erotic scene, the woman asleep": "print", "Couple, erotic, bound with ropes": "print",
+            "Tarquin and Lucretia": "oil on canvas", "Europa": "oil on canvas"}
     for title, kind in kept.items():
         assert a.erotic_left_out(kind=kind, title=title) == "", title
+
+
+def test_themes_are_said_plainly_and_tagged():
+    """A work of force, no consent or restraint says so factually and carries its theme in every row."""
+    cases = {"The Abduction of Proserpina": (a.THEME_FORCE, "carried her off by force"),
+             "The Rape of the Sabine Women": (a.THEME_FORCE, "by force"),
+             "Erotic scene: a man forces a woman": (a.THEME_FORCE, "sexual violence, not consent"),
+             "Erotic scene, the woman asleep": (a.THEME_NO_CONSENT, "cannot consent"),
+             "Susanna and the Elders, erotic": (a.THEME_NO_CONSENT, "spied on"),
+             "Couple, erotic, bound with ropes": (a.THEME_RESTRAINT, "restraint")}
+    for title, (theme, words) in cases.items():
+        rows = a.erotic_rows("credit", title, "print", text="")
+        assert all(r["theme"] == theme and r["content"] == "sexual" for r in rows), title
+        assert words in rows[0]["answer"], (title, rows[0]["answer"])
+        assert "not consent" in rows[1]["answer"] or "consent" in rows[1]["answer"] or "restraint" in rows[1]["answer"]
+    plain_rows = a.erotic_rows("credit", "Lovers, shunga", "print")
+    assert all("theme" not in r for r in plain_rows)
+
+
+# Judgement and titillating words the answers never use (the guide's rule), and words that would eroticise force.
+JUDGEMENT = __import__("re").compile(r"\b(obscen\w*|lewd\w*|lascivious\w*|lustful|bawdy|sexy|smutty|dirty|filthy|"
+                                     r"naughty|pervert\w*|disgusting|shameful|steamy|seductive|tantaliz\w*|"
+                                     r"titillat\w*|hot)\b", __import__("re").I)
+
+
+def test_answers_follow_the_guide():
+    """The guide is there; answers turn judgement words into plain ones, and themed answers never eroticise."""
+    guide = os.path.join(REPO, "training-kit", "HOW TO DESCRIBE SEXUAL CONTENT, NUDITY AND CONSENT.txt")
+    assert os.path.exists(guide)
+    for title in ("An obscene print of lovers, erotic", "Lewd scene, erotic", "A lascivious couple, erotic",
+                  "Sexy courtesan, erotic", "The Rape of the Sabine Women"):
+        for r in a.erotic_rows("credit", title, "print"):
+            assert not JUDGEMENT.search(r["answer"]), (title, r["answer"])
+    for _, _, said in a.MYTH_FACTS:
+        assert not JUDGEMENT.search(said)
 
 
 def test_minor_word_ages():
@@ -119,7 +167,7 @@ def test_commons_licence_and_item():
     assert a.commons_item("File:Khajuraho temple erotic sculpture.jpg", info(""), "art") is None
     assert a.commons_item("File:Khajuraho erotic sculpture.jpg",
                           info("CC0", categories="Images with missing permission"), "art") is None
-    assert a.commons_item("File:Young couple, erotic sculpture.jpg", info("CC0"), "art") is None
+    assert a.commons_item("File:Girl and a man, erotic sculpture.jpg", info("CC0"), "art") is None
     assert a.commons_item("File:Couple on a bed.jpg", info("CC0", categories="Sex positions"), "drawn") is None
     assert a.commons_item("File:Sex position diagram.svg", info("CC0", categories="Sex positions",
                                                                 mime="image/svg+xml"), "drawn")
@@ -201,3 +249,7 @@ def test_wiring():
     import train
     assert train.personal_chosen({"sexual_used": True, "collections": ["erotic_art"]})
     assert train.personal_lines({"sexual_used": True, "collections": ["erotic_art"]})[0] == train.SEXUAL_WARNING
+    rows = [{"theme": "sexual violence (artwork)"}, {"theme": ""}, {}]
+    assert sources.leave_out_themes(rows, sources.SEXUAL_VIOLENCE_THEMES) == [{"theme": ""}, {}]
+    assert sources.leave_out_themes(rows, ()) == rows
+    assert a.THEME_FORCE in sources.SEXUAL_VIOLENCE_THEMES and a.THEME_NO_CONSENT in sources.SEXUAL_VIOLENCE_THEMES

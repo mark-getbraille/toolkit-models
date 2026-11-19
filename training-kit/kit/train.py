@@ -253,6 +253,10 @@ def open_library(work, library):
         shutil.move(old_hf, os.environ["HF_HOME"])
 
 
+# The row themes a training leaves out (train.py --without-sexual-violence sets it; sources.SEXUAL_VIOLENCE_THEMES).
+LEAVE_OUT_THEMES = set()
+
+
 def prepare_data(work, state, size, with_wikipedia, keys=None, with_nudity=False, with_medical=False,
                  with_noncommercial=False, with_research=False, with_sexual=False, with_graphic=False):
     """Prepare every chosen collection once (each one remembered as done in state, so a restarted kit skips it);
@@ -280,6 +284,9 @@ def prepare_data(work, state, size, with_wikipedia, keys=None, with_nudity=False
             continue
         state.mark(f"data-{source.key}-{size}", {"train": len(train), "test": len(test)})
         kept_train, kept_test = sources.keep_allowed(train, allowed), sources.keep_allowed(test, allowed)
+        # --without-sexual-violence: the erotic artworks of force, no consent or restraint (their "theme") go too.
+        kept_train = sources.leave_out_themes(kept_train, LEAVE_OUT_THEMES)
+        kept_test = sources.leave_out_themes(kept_test, LEAVE_OUT_THEMES)
         left = len(train) + len(test) - len(kept_train) - len(kept_test)
         train, test = kept_train, kept_test
         if left:                     # rows marked graphic (or another content) the choices do not allow
@@ -1025,6 +1032,9 @@ def main(argv=None):
     parser.add_argument("--with-sexual", action="store_true",
                         help="also learn from adult sexual content in reviewed collections (needs --with-nudity; "
                              "personal use only)")
+    parser.add_argument("--without-sexual-violence", action="store_true",
+                        help="with --with-sexual: leave out the erotic artworks that show sexual violence, no consent "
+                             "or restraint (rows with a \"theme\")")
     parser.add_argument("--review", action="append", default=[],
                         help="a review workspace (repeatable): only its checked pictures are used")
     parser.add_argument("--own", default="", help="a folder of your own described pictures (own_data.py)")
@@ -1038,6 +1048,8 @@ def main(argv=None):
                         help="you have read the research-only collections' terms and will use the result only for "
                              "personal, non-commercial purposes")
     args = parser.parse_args(argv)
+    global LEAVE_OUT_THEMES
+    LEAVE_OUT_THEMES = set(sources.SEXUAL_VIOLENCE_THEMES) if args.without_sexual_violence else set()
     sexual_without_nudity = args.with_sexual and not args.with_nudity
     args.with_sexual = args.with_sexual and args.with_nudity     # adult sexual content needs art with nudity
     content = {"with_nudity": args.with_nudity, "with_medical": args.with_medical,

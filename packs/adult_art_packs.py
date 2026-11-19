@@ -40,17 +40,28 @@ The packs (ADULT_ART_PACKS):
                     photographs OF ARTWORKS) and of drawings of sex positions, sex-education diagrams and Kama Sutra
                     illustrations (drawings only). Asked "Describe this picture." and "Is there sexual content in
                     this picture?".
-                    Left out (erotic_left_out), ADULTS ONLY and when in doubt, out: ANY word that names or may name a
-                    child or young person (MINOR_ANY: body_packs.MINOR, the kit's own lists, and the shunga words
-                    for youths and apprentices: wakashu, chigo, kagema, furisode, kamuro, shinzo, 若衆, 稚児 ...),
-                    so also every putto, cherub, Cupid, Eros, Ganymede, maiden, school, student and "young"; any age
-                    under 18; violence or no consent (rape, abduction, force, captives, sleep or drunkenness,
-                    voyeurs, whipping and bondage, incest); the myths about rape, abduction or a minor (MYTH); any
-                    animal or creature (no bestiality: the octopus print, Leda's swan, Pan's goat); records that are
-                    not an artwork; and every PHOTOGRAPH of people. Photographs of sexual acts are not in this pass
-                    at all: the owner's rule asks for an automatic age check of such photographs, and this repository
-                    has no age-estimating model (only a face finder, training-kit/kit/video_frames.py YuNet), so none
-                    is gathered (see the report in the commit message).
+                    Left out (erotic_left_out), ADULTS ONLY: ANY word that names or may name a child or young
+                    person (art_minor_word: body_packs.MINOR, the kit's own lists, and the shunga words for youths
+                    and apprentices: wakashu, chigo, kagema, furisode, kamuro, shinzo, 若衆, 稚児 ...), so also every
+                    putto, cherub, Cupid, Eros, Ganymede, school, student, son and daughter; any age under 18. The
+                    owner's decision (November 2026): the adult phrases "young woman", "young man", "young couple",
+                    "maiden", "nymph" and "youthful" do not leave an ARTWORK out, EXCEPT in a Japanese work, where
+                    catalogues often put wakashu and musume into English that way (JAPANESE). A sexual artwork
+                    showing a minor stays out without exception. Also left out: killing, death, torture, execution,
+                    suicide and private pictures (HARM); any animal or creature (no bestiality); records that are not
+                    an artwork; and every PHOTOGRAPH (photographs are training-kit/kit/adult_photo_review.py's, on
+                    the owner's own computer, documented adults only).
+                    KEPT AND SAID PLAINLY (the owner's decision): works of sexual violence and no consent (abduction
+                    and rape themes, the Sabine women, Persephone, Lucretia, coercion, sleep or drunkenness, voyeurs)
+                    and of restraint. theme_of adds a factual sentence ("It shows the abduction of Persephone
+                    (Proserpina) by Hades (Pluto), who carried her off by force."; "the work depicts sexual violence,
+                    not consent") and every row of such a work carries "theme": "sexual violence (artwork)", "no
+                    consent (artwork)" or "restraint (artwork)", so the kit can leave them out
+                    (train.py --without-sexual-violence).
+                    Answers follow training-kit/HOW TO DESCRIBE SEXUAL CONTENT, NUDITY AND CONSENT.txt: plain
+                    anatomical words, who does what, force or distress said factually, no judgement and no
+                    titillation (PLAIN turns "obscene", "lewd", "lascivious", "sexy" into "explicit" or "sexual"),
+                    and age said only when the record documents it.
 
 Licences (packs/SOURCE-RULES.md, "open"; each item's own record is checked): The Met isPublicDomain (Open Access,
 CC0); the Art Institute is_public_domain (its pictures of public-domain works and its data CC0); Cleveland
@@ -146,25 +157,8 @@ SEX_VIOLENCE = re.compile(
     r"\b(Leda|Europa|Sabines?|Lucretia|Lucrece|Tarquin\w*|Ganymede|Pasipha[eë]|Proserpin\w*|Persephone|"
     r"Orithyia|Deianira|Nessus|Philomela|Tereus|Callisto|Antiope|Aegina|Io|Daphne|Syrinx|Arethusa)\b")
 
-# The kit's adults-only screens for sexual content (training-kit/kit/adult_review_sources.py, kept the same here so
-# the open pack is never looser than the review collections): violence or no consent, the myths about rape,
-# abduction or a minor or a god's pursuit (case matters), and animals or creatures.
-VIOLENCE = re.compile(
-    r"\b(rap(e|ed|es|ing|ist|ists)|ravish\w*|abduct\w*|kidnap\w*|assault\w*|violen\w*|forc(ed|ibly|ing)|coerc\w*|"
-    r"captiv\w*|slave\w*|prisoners?|tortur\w*|murder\w*|kill\w*|death|dead|dying|corpses?|blood\w*|wound\w*|"
-    r"whip\w*|flagell\w*|beat(ing|en)|sadis\w*|masochis\w*|bdsm|bondage|shibari|bound|tied|ropes?|chain(ed|s)?|"
-    r"gag(ged|s)?|spank\w*|punish\w*|chastis\w*|humiliat\w*|wars?|battles?|executions?|sleep\w*|asleep|drunk\w*|"
-    r"intoxica\w*|unconscious|drugged|voyeur\w*|peep\w*|spy\w*|spying|surprised|hidden cameras?|leak\w*|revenge|"
-    r"stolen|non-?consensual|without (her|his|their) (consent|knowledge)|unaware|in public|public sex|"
-    r"exhibitionis\w*|incest\w*|martyr\w*|crucif\w*|sacrific\w*|suicide|severed|beheaded|weapons?|swords?|"
-    r"daggers?|guns?|verkracht\w*|ontvoer\w*|geweld\w*|viol|enlèvement|vergewaltig\w*|stupro|violación|seduc\w*|"
-    r"discipline|dominatri\w*|femdom)\b", re.I)
-MYTH = re.compile(
-    r"\b(Leda|Europa|Sabines?|Lucretia|Lucrece|Tarquin\w*|Danae|Danaë|Susann?ah?|Io|Antiope|Callisto|Proserpin\w*|"
-    r"Persephone|Pluto|Hades|Philomela|Tereus|Cassandra|Ajax|Dinah|Tamar|Bathsheba|Lot|Potiphar\w*|Pasipha[eë]|"
-    r"Daphne|Syrinx|Arethusa|Boreas|Orithyia|Deianira|Nessus|Lapiths?|Centaur\w*|Satyrs?|Pan|Fauns?|Silenus|"
-    r"Hermaphrodit\w*|Salmacis|Medusa|Thetis|Semele|Judith|Holofernes|Salome|Cleopatra|Sebastian|Andromeda|"
-    r"Eros|Angelica|Ruggiero|Rinaldo|Armida|Zeus|Jupiter|Jove|Apollo|Poseidon|Neptune|Triton\w*|Nereid\w*)\b")
+# Animals and creatures (the kit's adult_review_sources.ANIMAL, kept the same): never in erotic_art, so never
+# bestiality (the octopus print, Leda's swan, Pan's goat, Europa's bull).
 ANIMAL = re.compile(
     r"\b(animals?|beasts?|bestial\w*|zoophil\w*|horses?|stallions?|mares?|dogs?|swans?|bulls?|goats?|donkeys?|"
     r"octop\w*|tentacle\w*|monsters?|creatures?|demons?|kappa|foxe?s?|serpents?|snakes?|apes?|monkeys?|pigs?|"
@@ -250,16 +244,103 @@ def real_young_person(text):
     return minor_word(rest)
 
 
+# Works from Japan, where catalogues often put the shunga words for youths into English as "young man" (wakashu)
+# or "young woman" (musume): in them, adult-sounding "young" phrases still leave a work out.
+JAPANESE = re.compile(r"\b(shunga|ukiyo-?e|japan\w*|edo|meiji|makura-?e|higa|ehon|harunobu|utamaro|hokusai|"
+                      r"kuniyoshi|toyokuni|kunisada|moronobu|eisen|kory[uū]sai|kiyonaga|shunch[oō]|sukenobu|"
+                      r"shunsh[oō]|eishi|sugimura|okumura|torii)\b|[\u3040-\u30ff\u4e00-\u9fff]", re.I)
+# Adult phrases that do not leave an ARTWORK out (the owner's decision, November 2026): they mostly describe adults.
+ADULT_PHRASES = re.compile(r"\b(young (wom[ae]n|m[ae]n|couples?|lad(y|ies)|wi(fe|ves)|husbands?|lovers?)|"
+                           r"maidens?|nymphs?|youthful)\b", re.I)
+
+
+def art_minor_word(text):
+    """minor_word for an artwork of erotic_art: the adult phrases (ADULT_PHRASES: "young woman", "maiden", "nymph",
+    "youthful" ...) do not count, except in a Japanese work (JAPANESE); every other minor word still does (child,
+    boy, girl, infant, teen, adolescent, minor, school, pupil, ages under 18, wakashu, furisode, putto, Cupid,
+    Eros ...)."""
+    return minor_word(text if JAPANESE.search(text) else ADULT_PHRASES.sub(" ", text))
+
+
+# The myths whose art shows sex with an animal (Leda and the swan, Pasiphae and the bull): left out like ANIMAL.
+ANIMAL_MYTH = re.compile(r"\b(Leda|Pasipha[eë])\b")
+# Never shown, whatever the theme: killing, death, wounds, torture, execution and suicide (graphic harm), and
+# private or leaked pictures.
+HARM = re.compile(r"\b(murder\w*|kill\w*|death|dead|dying|corpses?|blood\w*|wound\w*|tortur\w*|executions?|"
+                  r"beheaded|severed|martyr\w*|crucif\w*|sacrific\w*|suicide|wars?|battles?|leak\w*|revenge|"
+                  r"stolen|hacked|hidden cameras?|upskirt\w*)\b", re.I)
+
+# The themes an erotic artwork may show, said plainly in its answer and kept in its rows' "theme" (the kit can leave
+# them out: train.py --without-sexual-violence). FORCE: sexual violence; NO_CONSENT: someone who cannot consent or
+# is watched in secret; RESTRAINT: restraint or striking.
+THEME_FORCE = "sexual violence (artwork)"
+THEME_NO_CONSENT = "no consent (artwork)"
+THEME_RESTRAINT = "restraint (artwork)"
+FORCE = re.compile(r"\b(rap(e|ed|es|ing|ist|ists)|ravish\w*|abduct\w*|kidnap\w*|assault\w*|violen\w*|"
+                   r"forc(es|ed|ibly|ing)|coerc\w*|captiv\w*|slave\w*|prisoners?|against (her|his|their) will|"
+                   r"resist\w*|struggl\w*|weapons?|swords?|daggers?|knife|verkracht\w*|ontvoer\w*|geweld\w*|"
+                   r"vergewaltig\w*|enlèvement|stupro|violación)\b", re.I)
+NO_CONSENT = re.compile(r"\b(sleep\w*|asleep|drunk\w*|intoxica\w*|unconscious|drugged|voyeur\w*|peep\w*|"
+                        r"spy\w*|spying|surprised|unaware|without (her|his|their) (consent|knowledge)|in public|"
+                        r"public sex|exhibitionis\w*)\b", re.I)
+RESTRAINT = re.compile(r"\b(whip\w*|flagell\w*|beat(ing|en)|sadis\w*|masochis\w*|bdsm|bondage|shibari|bound|"
+                       r"tied|ropes?|chain(ed|s)?|gag(ged|s)?|spank\w*|punish\w*|chastis\w*|humiliat\w*|"
+                       r"discipline|dominatri\w*|femdom)\b", re.I)
+# The stories of force or no consent that art tells, each said plainly (written for this pack; case matters).
+MYTH_FACTS = [
+    (r"Sabines?", THEME_FORCE, "It shows the abduction of the Sabine women, the Roman legend in which Roman men "
+                               "carried off women by force."),
+    (r"Proserpin\w*|Persephone|Pluto|Hades", THEME_FORCE, "It shows the abduction of Persephone (Proserpina) by "
+                                                         "Hades (Pluto), who carried her off by force."),
+    (r"Europa", THEME_FORCE, "It shows the abduction of Europa by Zeus (Jupiter)."),
+    (r"Lucretia|Lucrece|Tarquin\w*", THEME_FORCE, "It shows the story of Lucretia, who was raped by Tarquin."),
+    (r"Orithyia|Boreas", THEME_FORCE, "It shows the abduction of Orithyia by Boreas, the north wind."),
+    (r"Deianira|Nessus", THEME_FORCE, "It shows the centaur Nessus carrying off Deianira by force."),
+    (r"Philomela|Tereus", THEME_FORCE, "It shows the story of Philomela, who was raped by Tereus."),
+    (r"Callisto", THEME_FORCE, "It shows the story of Callisto, whom Zeus (Jupiter) forced himself on."),
+    (r"Cassandra|Ajax", THEME_FORCE, "It shows the rape of Cassandra by Ajax."),
+    (r"Lapiths?|Centaurs?", THEME_FORCE, "It shows the centaurs trying to carry off the Lapith women by force."),
+    (r"Potiphar\w*", THEME_FORCE, "It shows Potiphar's wife trying to force herself on Joseph."),
+    (r"Dinah", THEME_FORCE, "It shows the story of Dinah, who was raped by Shechem."),
+    (r"Daphne|Syrinx|Arethusa", THEME_FORCE, "It shows a nymph fleeing a god who pursues her."),
+    (r"Io|Aegina|Antiope", THEME_FORCE, "It shows a woman pursued by Zeus (Jupiter)."),
+    (r"Susann?ah?", THEME_NO_CONSENT, "It shows Susanna, spied on and threatened by two elders."),
+    (r"Bathsheba", THEME_NO_CONSENT, "It shows Bathsheba bathing, watched in secret by a king."),
+]
+MYTH_FACTS = [(re.compile(rf"\b({p})\b"), theme, said) for p, theme, said in MYTH_FACTS]
+
+
+def theme_of(text):
+    """(theme, plain sentence) of an erotic artwork's words, or ("", ""): a story of force or no consent
+    (MYTH_FACTS), else force, no consent or restraint words, said factually and without eroticising."""
+    for pattern, theme, said in MYTH_FACTS:
+        if pattern.search(text):
+            return theme, said
+    for pattern, theme, said in (
+            (FORCE, THEME_FORCE, "The record's words name force (\"{w}\"): the work depicts sexual violence, not "
+                                 "consent."),
+            (NO_CONSENT, THEME_NO_CONSENT, "The record's words say \"{w}\": a person in it cannot consent, or is "
+                                           "watched without consent."),
+            (RESTRAINT, THEME_RESTRAINT, "The record's words name restraint or striking (\"{w}\").")):
+        m = pattern.search(text)
+        if m:
+            return theme, said.format(w=m.group(0))
+    return "", ""
+
+
 def erotic_left_out(*texts, kind="", title="", need_topic=True, need_art=True):
-    """The reason an erotic_art record is left out, or "" when it may be used: any word that names or may name a
-    child or young person, or an age under 18; violence or no consent; a myth about rape, abduction or a minor;
-    an animal or creature; a photograph; not an artwork (need_art); not about sex or erotica (need_topic)."""
+    """The reason an erotic_art record is left out, or "" when it may be used: a word that names or may name a
+    child or young person, or an age under 18 (art_minor_word: the adult phrases do not count outside Japanese
+    works); killing, death, torture or private pictures (HARM); an animal or creature (no bestiality); a religious
+    symbol; a photograph; not an artwork (need_art); not about sex or erotica (need_topic). Force, no consent and
+    restraint do NOT leave a work out: theme_of names them in its answer."""
     text = " ".join(clean(t) for t in (title, *texts) if t)
-    minor = minor_word(text)
+    minor = art_minor_word(text)
     if minor:
         return f"names or may name a young person ({minor})"
-    for pattern, why in ((VIOLENCE, "violence or no consent"), (MYTH, "a story of rape, abduction or a minor"),
-                         (ANIMAL, "an animal or creature"), (SYMBOL, "a religious symbol, not people")):
+    for pattern, why in ((HARM, "killing, death, torture or a private picture"), (ANIMAL, "an animal or creature"),
+                         (ANIMAL_MYTH, "an animal or creature (a myth of sex with an animal)"),
+                         (SYMBOL, "a religious symbol, not people")):
         m = pattern.search(text)
         if m:
             return f"{why} ({m.group(0)})"
@@ -267,7 +348,7 @@ def erotic_left_out(*texts, kind="", title="", need_topic=True, need_art=True):
         return "a photograph (no photographs of sexual acts in this pass)"
     if need_art and not ART_KIND.search(clean(kind)):
         return "the record does not show an artwork"
-    if need_topic and not TOPIC.search(NOT_TOPIC.sub(" ", text)):
+    if need_topic and not TOPIC.search(NOT_TOPIC.sub(" ", text)) and not theme_of(text)[0]:
         return "not about sex or erotica"
     return ""
 
@@ -285,6 +366,7 @@ PLAIN = [(re.compile(p, re.I), w) for p, w in [
     (r"\bpuss(y|ies)\b", "vulva"), (r"\btits\b", "breasts"), (r"\bboobs?\b", "breasts"), (r"\bcum\b", "semen"),
     (r"\bfellatio\b", "oral sex on a penis (fellatio)"), (r"\bcunnilingus\b", "oral sex on a vulva (cunnilingus)"),
     (r"\bharigata\b", "harigata (a Japanese dildo)"), (r"\bnayika\b", "nayika (the heroine)"),
+    (r"\bobscen\w*\b", "explicit"), (r"\b(lewd\w*|lascivious\w*|lustful|bawdy|sexy|smutty|dirty)\b", "sexual"),
     (r"<[^>]+>", " ")]]
 
 
@@ -315,7 +397,24 @@ def erotic_rows(credit, title, kind="", artist="", date="", medium="", text="", 
         answer += f" The {owner} files it as erotic art."
     rows = [{"question": DESCRIBE, "answer": answer, "credit": credit, "content": CONTENT},
             {"question": IS_SEXUAL, "answer": SEXUAL_YES.format(owner=owner), "credit": credit, "content": CONTENT}]
+    rows = with_theme(rows, " ".join(clean(t) for t in (title, text, " ".join(tags)) if t))
     return made_in(rows, place_from_text(place)) if place else rows
+
+
+def with_theme(rows, words):
+    """Rows with the work's theme (theme_of): its plain sentence added to the description, the yes-answer saying it,
+    and "theme" in every row; rows unchanged when it has none."""
+    theme, said = theme_of(words)
+    if not theme:
+        return rows
+    yes = {THEME_FORCE: "Yes. It is erotic art that depicts sexual violence: force, not consent.",
+           THEME_NO_CONSENT: "Yes. It is erotic art in which a person cannot consent or is watched without consent.",
+           THEME_RESTRAINT: "Yes. It is erotic art that shows restraint or striking."}[theme]
+    out = []
+    for r in rows:
+        answer = (f"{r['answer']} {said}" if r["question"] == DESCRIBE else yes)
+        out.append(dict(r, answer=answer, theme=theme))
+    return out
 
 
 def get_json(s, url, params=None, method="get", body=None, tries=3):
@@ -657,6 +756,7 @@ def commons_item(title, info, group):
     rows = [{"question": DESCRIBE, "answer": answer, "credit": credit, "content": CONTENT},
             {"question": IS_SEXUAL, "answer": "Yes. It is erotic art: it is filed on Wikimedia Commons among erotic "
                                               "or sexual works.", "credit": credit, "content": CONTENT}]
+    rows = with_theme(rows, f"{text} {categories}")
     name = "commons-" + re.sub(r"[^\w.-]+", "_", stem)[:80] + ".jpg"
     url = info["thumburl"]
     return (name, url, rows)

@@ -1,0 +1,43 @@
+HOW TO DESCRIBE SEXUAL CONTENT, NUDITY AND CONSENT
+
+Who this is for
+Anyone writing or checking descriptions of nudity or sex for the picture describer: the people who describe pictures
+in the Describe pictures window, and the people who write the answers of the packs (packs/adult_art_packs.py, and
+training-kit/kit/adult_photo_review.py on the owner's computer). The describer is used by a blind adult who wants to
+know what a picture shows, as a sighted adult would see it.
+
+The rules
+1. Say what is there, plainly. Use plain anatomical words: penis, vulva, vagina, breasts, buttocks, anus, pubic
+   hair. Name the act plainly: sexual intercourse, oral sex, masturbation, kissing, touching. Do not use slang, and
+   do not hide behind vague words ("an intimate moment", "private parts") when the picture is clear.
+2. Say who does what. How many people there are, their position (lying, kneeling, seated, standing, from behind,
+   on top), who is touching whom and where, what each person's face and body show.
+3. Say what you can see about consent, plainly and as fact. Signs of willing participation (both reaching for each
+   other, smiling, embracing) and signs of distress, force or restraint (pushing away, struggling, crying out, being
+   held down, being tied, a weapon, being asleep or unconscious, being watched in secret). In a work of art that
+   shows sexual violence, say so: "It depicts an assault; the woman is pushing him away." Name the story when the
+   record names it ("the abduction of Persephone by Hades"). Never make force sound attractive.
+4. No judgement and no titillation. Do not call a picture obscene, lewd, dirty, shameful, sexy, steamy, hot or
+   seductive. Do not praise bodies or say what is arousing. Write as a museum guide would: calm, accurate, complete.
+5. Age: say it only when it is documented. Write "an adult" or an age only when the record documents it (a stated
+   age, a named person's birth date, "adult models"). Never guess an age from a body. Never describe anyone who is
+   or may be under 18 in a sexual way: such a picture is not used at all, and must be deleted if you find one.
+6. Art and photographs: say which it is ("a woodblock print", "an oil painting", "a photograph") and, for art, the
+   artist, date and medium when known.
+7. Nudity without sex: describe the pose, the setting and what is visible, plainly ("a standing nude woman, her
+   weight on one leg, seen from the front"), without comment on the body's attractiveness.
+
+Examples
+  Good: "A Japanese woodblock print (shunga). A man and a woman lie on a futon having sexual intercourse, the woman
+         on her back with her legs around him; both are smiling."
+  Good: "An engraving of the abduction of the Sabine women: a Roman soldier carries a struggling woman, who pushes
+         against his shoulders; it depicts force, not consent."
+  Bad:  "A sexy, steamy scene of two lovers in a passionate embrace."  (judgement, titillation, nothing exact)
+  Bad:  "A young girl ..." in any sexual picture.  (never: such a picture is deleted)
+
+How the packs follow it
+erotic_art answers come from the institution's own words, with crude and judgement words put plainly (PLAIN in
+packs/adult_art_packs.py), and works of force, no consent or restraint get a factual sentence and a "theme" (so a
+training can leave them out with --without-sexual-violence). The documented-adult photographs say how adulthood is
+documented. The tests (packs/test_adult_art.py, training-kit/tests/test_adult_photo_review.py) check that no
+judgement words are used.

@@ -282,9 +282,11 @@ def smaller_jpeg(data):
         return None
 
 
-def description_of(record):
-    """A plain description from the record's own words: "A photograph from <institution>, <year>. <title>.
-    <catalogue text>" and who is shown when the record names them."""
+def description_of(record, reason=""):
+    """A plain description from the record's own words, following the guide (HOW TO DESCRIBE SEXUAL CONTENT, NUDITY
+    AND CONSENT.txt): "A photograph from <institution>, <year>. <title>. <catalogue text>", crude and judgement
+    words put plainly (adult_review_sources.plain), and how the record documents that the people are adults (age is
+    said only as documented)."""
     parts = [f"A photograph from the {record['institution']}" + (f", {record['year']}" if record.get("year") else "")
              + "."]
     title = clean(record["title"]).rstrip(".")
@@ -293,7 +295,14 @@ def description_of(record):
     text = ars.rs.first_sentences(ars.plain(record.get("catalogue_text", "")), 80, 3)
     if text and text.lower() not in title.lower():
         parts.append(ars.sentence(text))
-    return " ".join(parts)
+    if reason:
+        parts.append(ars.sentence(f"The catalogue documents that the people shown are adults ({reason})"))
+    return " ".join(JUDGEMENT.sub(lambda m: "explicit" if m.group(0).lower().startswith("obscen") else "sexual",
+                                  p) for p in parts)
+
+
+# Judgement words a description never uses (the guide's rule 4): put plainly.
+JUDGEMENT = re.compile(r"\b(obscen\w*|lewd\w*|lascivious\w*|lustful|bawdy|sexy|smutty|dirty)\b", re.I)
 
 
 def approve(review, record, data, reason, content):
@@ -303,7 +312,7 @@ def approve(review, record, data, reason, content):
     name = dp.free_name(ws.folder, dp.safe_name(record["id"]) + ".jpg", ws.pictures)
     with open(ws.path(name), "wb") as f:
         f.write(data)
-    dp.write_file_text(dp.description_path(ws.folder, name), description_of(record))
+    dp.write_file_text(dp.description_path(ws.folder, name), description_of(record, reason))
     entry = ws.entry(name)
     by = f"documented adult ({reason})"
     entry.update(status=dp.CHECKED, described_by="catalogue record", described_at=now(), checked_by=by,
@@ -371,6 +380,13 @@ def session():
     return s
 
 
+def as_list(value):
+    """A loc.gov field as a list (it gives some fields as one text, others as a list)."""
+    if not value:
+        return []
+    return value if isinstance(value, list) else [value]
+
+
 LOC = "https://www.loc.gov/photos/"
 LOC_QUERIES = ("nude photograph", "nudes photographs", "sexual intercourse photograph", "erotic photographs",
                "nude studies photographs", "adult models nude")
@@ -400,13 +416,13 @@ def loc_records(s, most, pause=LOC_PAUSE):
                 item = (s.get(url, params={"fo": "json"}, timeout=90).json() or {}).get("item") or {}
             except Exception:  # noqa: BLE001 - the next record
                 continue
-            images = [i.split("#")[0] for i in (r.get("image_url") or []) if i]
+            images = [i.split("#")[0] for i in as_list(r.get("image_url")) if isinstance(i, str) and i]
             yield {"id": "loc-" + url.rstrip("/").rsplit("/", 1)[-1], "title": clean(item.get("title") or r.get("title")),
                    "institution": "Library of Congress", "page_url": url,
                    "image_url": images[-1] if images else "",
-                   "catalogue_text": clean(" ".join(clean(x) for x in (item.get("summary") or []) +
-                                                    (item.get("notes") or []) + (r.get("description") or []))),
-                   "names": [clean(n) for n in (item.get("subject_headings") or []) + (item.get("names") or [])
+                   "catalogue_text": clean(" ".join(clean(x) for x in as_list(item.get("summary")) +
+                                                    as_list(item.get("notes")) + as_list(r.get("description")))),
+                   "names": [clean(n) for n in as_list(item.get("subject_headings")) + as_list(item.get("names"))
                              if NAMED.match(clean(n).split("--")[0]) or NAME_ONLY.match(clean(n).split("--")[0])],
                    "dates": [clean(item.get("date")), clean(item.get("created_published"))],
                    "kind": [clean(r.get("original_format")), clean(item.get("medium")), clean(item.get("format"))],

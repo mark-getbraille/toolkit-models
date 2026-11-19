@@ -245,3 +245,12 @@ def test_the_window_is_accessible_and_its_keys_work(app, tmp_path, monkeypatch):
     press(window, wx.WXK_ESCAPE)
     assert ended
     window.Destroy()
+
+
+def test_descriptions_follow_the_guide():
+    """A description says how adulthood is documented and uses no judgement words."""
+    text = apr.description_of({"institution": "Library of Congress", "year": 1925, "title": "Obscene nude study",
+                               "catalogue_text": "A lewd photograph of a seated nude woman."},
+                              "named, photo year 1925: Doe, Jane, born 1890")
+    assert "documents that the people shown are adults (named, photo year 1925" in text
+    assert not apr.JUDGEMENT.search(text) and "explicit" in text
