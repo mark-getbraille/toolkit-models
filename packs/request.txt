@@ -9,4 +9,4 @@
 # again (they now keep what they found when Commons keeps refusing).
 # Evening of 19 November (2): the Getty museum pack, a top-up pass with its higher limit (8,000).
 # Evening of 19 November (3): the Newberry Library and the state digital libraries (Midwest, South, West).
-newberry_library,state_libraries_midwest,state_libraries_south,state_libraries_west
+newberry_library,state_libraries_midwest,state_libraries_south,state_libraries_west,getty_museum+
