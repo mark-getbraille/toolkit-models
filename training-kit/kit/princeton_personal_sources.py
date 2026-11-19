@@ -195,12 +195,118 @@ def prepare_princeton(source, data_dir, work, cap):
     return out
 
 
+# ----------------------------------------------------------------- any subject (princeton_general_personal)
+
+# The owner widened the scope (November 2026): any work with a good description, spread across subjects.
+GENERAL_QUERIES = ("landscape", "cityscape", "street", "still life", "flowers", "furniture", "chair", "vase", "bowl",
+                   "textile", "costume", "tool", "map", "architecture", "building", "bridge", "harbor", "river",
+                   "animal", "bird", "horse", "portrait", "photograph", "ceramic", "coin", "mask", "jewelry", "lamp",
+                   "box", "manuscript", "botanical", "insect", "boat", "farm", "market")
+MUSEUM_QUESTION = "Tell me about this museum object."
+MIN_WORDS = 8                      # a label text of fewer words is not a description
+
+
+LABEL_TEXT = re.compile(r"label|description|didactic|interpret|catalog(ue)? entry|wall text", re.I)
+
+
+def object_texts(record):
+    """The museum's own LABEL texts of an object record (its "texts" whose purpose is a gallery label, description
+    or didactic text; never provenance or credit), joined; "" when none."""
+    out = []
+    for t in record.get("texts") or []:
+        if not isinstance(t, dict) or not LABEL_TEXT.search(str(t.get("textpurpose") or "")):
+            continue
+        text = t.get("textentryhtml") or t.get("textentry") or t.get("text")
+        if text:
+            out.append(re.sub(r"<[^>]+>", " ", str(text)))
+    return " ".join(" ".join(out).split())
+
+
+def general_rows(a, r):
+    """(file name, picture address, rows) of one Princeton object for princeton_general_personal, or None: not a
+    nude or erotica (princeton_art_personal's), nothing the open packs leave out (archive_packs.not_shown), a label
+    text of MIN_WORDS or more (a record with a title only is left out), child rows marked."""
+    from archive_packs import not_shown, graphic_rows
+    title = a.clean(r.get("displaytitle"))
+    oid = str(r.get("objectid") or "")
+    picture = first(r.get("primaryimage"))
+    if not title or not oid or not picture.startswith("https://media.artmuseum.princeton.edu/iiif/") or \
+            str(r.get("nowebuse")).lower() == "true":
+        return None
+    text = object_texts(r)            # the label texts only: the "caption" repeats the maker, title and credit
+    kind, medium = a.clean(r.get("classification") or r.get("type")), a.clean(r.get("medium"))
+    words = f"{title} {text} {kind} {medium}"
+    if a.body_packs.NUDITY_WORDS.search(words) or a.SEX_ACT.search(words) or a.ACADEMY.search(words) or \
+            not_shown(title, text) or a.NUDE_HARM.search(words):
+        return None
+    if len(text.split()) < MIN_WORDS:
+        return None
+    maker = a.clean(r.get("displaymaker"))
+    maker = "" if maker in ("None", "none") else maker
+    answer = a.lead(title, a.singular_kind(kind), maker, a.clean(r.get("displaydate")),
+                    "" if medium.lower() in ("unknown", "none") else medium)
+    answer += " " + a.sentence(a.first_sentences(text, 90))
+    credit = f"Princeton University Art Museum, {LABEL}: {title}" + (f", {maker}" if maker else "") + \
+        f", https://artmuseum.princeton.edu/art/collection/object/{oid}"
+    rows = graphic_rows([{"question": MUSEUM_QUESTION, "answer": answer, "credit": credit, "licence": LABEL}])
+    if a.body_packs.MINOR.search(words):
+        rows = [dict(row, child=True) for row in rows]
+    return f"princeton-{re.sub(r'[^\w-]', '_', oid)}.jpg", f"{first(r.get('primaryimage'))}/full/!{SIDE},{SIDE}/0/default.jpg", rows
+
+
+def princeton_general_items(cap, s=None, a=None, pause=PAUSE):
+    """(file name, picture address, row) for up to cap Princeton objects of any subject (general_rows), the same
+    number from each query; each object's own record read (paced) for its label texts."""
+    import requests
+    a = a or pack_tools()
+    if a is None:
+        raise RuntimeError("this collection needs the packs folder of the toolkit-models repository beside the kit "
+                           "(or its folder in PICTURE_KIT_PACKS), for the same rules as the open packs")
+    if s is None:
+        s = requests.Session()
+        s.headers["User-Agent"] = USER_AGENT
+    per = max(2, cap // len(GENERAL_QUERIES) + 1)
+    items, seen = [], set()
+    for q in GENERAL_QUERIES:
+        found = 0
+        for r in search(s, q, most=per * 6, pause=pause):
+            oid = str(r.get("objectid") or "")
+            if found >= per or not oid or oid in seen:
+                continue
+            seen.add(oid)
+            got = general_rows(a, full_record(s, {**r, "classification": ""}, pause) if not r.get("texts") else r)
+            if got:
+                name, url, rows = got
+                items += [(name, url, row) for row in rows]
+                found += 1
+        if len({n for n, _, _ in items}) >= cap:
+            break
+    return items
+
+
+def prepare_princeton_general(source, data_dir, work, cap):
+    """The kit's prepare function for princeton_general_personal (as prepare_princeton)."""
+    items = princeton_general_items(cap)
+    say(f"    Princeton University Art Museum (any subject): {len({n for n, _, _ in items})} described works.")
+    folder = os.path.join(data_dir, source.key)
+    fetched = {r["picture"] for r in fetch_pictures([(n, u, dict(r, split="")) for n, u, r in items], folder,
+                                                    workers=2, pause=PAUSE)}
+    return [dict(row, picture=os.path.join(folder, name), split="") for name, url, row in items
+            if os.path.join(folder, name) in fetched]
+
+
 PRINCETON_SOURCES = [
     Source(KEY, "Princeton University Art Museum: nudes, figure studies and erotic art (personal use: no rights "
                 "statement)",
            "No rights statement on the museum's records: personal use only (the kit's research group)",
            f"Princeton University Art Museum, {LABEL}; each work credited in ATTRIBUTION.txt",
            "research", 600, 10, prepare_princeton, "about 150 MB", content="nudity", terms=TERMS,
+           terms_summary="Personal use only: the museum's records give no rights statement for their pictures."),
+    Source("princeton_general_personal", "Princeton University Art Museum: works of every kind with the museum's "
+                                         "label texts (personal use: no rights statement)",
+           "No rights statement on the museum's records: personal use only (the kit's research group)",
+           f"Princeton University Art Museum, {LABEL}; each work credited in ATTRIBUTION.txt",
+           "research", 1500, 15, prepare_princeton_general, "about 300 MB", terms=TERMS,
            terms_summary="Personal use only: the museum's records give no rights statement for their pictures."),
 ]
 # Never used for picture-making.

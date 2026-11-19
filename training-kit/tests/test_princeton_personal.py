@@ -90,3 +90,23 @@ def test_wired_as_personal_use_never_picture_making():
     assert pp.KEY in {s.key for s in sources.chosen(with_nudity=True, with_research=True)}
     with open(os.path.join(os.path.dirname(KIT), ".github", "workflows", "training-kit.yml"), encoding="utf-8") as f:
         assert f.read().count("--hidden-import princeton_personal_sources") == 2
+
+
+def test_general_rows(tools):
+    """Any subject with a label text of eight words or more; nudes, erotica and title-only records left out."""
+    base = {"objectid": "20", "displaytitle": "View of a Harbor", "classification": "Paintings", "medium": "Oil",
+            "displaymaker": "B. Painter", "displaydate": "1870", "primaryimage": [IIIF + "x20"],
+            "texts": [{"textpurpose": "Gallery Label",
+                       "textentryhtml": "<p>Fishing boats rest in a calm harbor at dawn, nets drying on the quay.</p>"},
+                      {"textpurpose": "Provenance", "textentryhtml": "Given to the museum by a long-standing donor."}]}
+    name, url, rows = pp.general_rows(tools, base)
+    assert rows[0]["question"] == pp.MUSEUM_QUESTION and "Fishing boats rest in a calm harbor" in rows[0]["answer"]
+    assert rows[0]["licence"] == pp.LABEL
+    assert "donor" not in rows[0]["answer"]                       # provenance is never a description
+    assert pp.general_rows(tools, dict(base, texts=[{"textpurpose": "Gallery Label", "textentryhtml": "A harbor."}])) \
+        is None
+    assert pp.general_rows(tools, dict(base, texts=[{"textpurpose": "Provenance",
+                                                     "textentryhtml": "Bought in Paris in 1925 from a dealer."}])) is None
+    assert pp.general_rows(tools, dict(base, displaytitle="Reclining Nude")) is None
+    assert pp.general_rows(tools, dict(base, displaytitle="Erotic scene")) is None
+    assert pp.general_rows(tools, dict(base, displaytitle="Madonna and Child"))[2][0]["child"] is True
