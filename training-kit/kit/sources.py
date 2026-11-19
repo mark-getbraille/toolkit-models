@@ -2119,6 +2119,29 @@ SOURCES = [
            "Public domain (CDC PHIL items marked 'Permission is not required for public domain images')",
            "Centers for Disease Control and Prevention, Public Health Image Library (public domain)", "permissive", 400, 10,
            prepare_pack, "about 150 MB"),
+    # Drugs, counterfeit pills and paraphernalia, and firearms and firearm accessories (packs/drug_firearm_packs.py).
+    # Drug answers end "Drugs cannot be identified for sure by how they look ..."; gun answers "Treat every gun as
+    # loaded ...". Never used for picture-making (DRUG_FIREARM_PACK_KEYS); the share-alike entry is in
+    # drug_firearm_sources.py.
+    Source("commons_drugs", "Drugs and counterfeit pills: cannabis, cocaine, heroin, meth, ecstasy tablets, fentanyl, seized drugs (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 800, 20, prepare_pack, "about 200 MB"),
+    Source("commons_drug_paraphernalia", "Bongs, pipes, hookahs, vapes, rolling papers, grinders and drug paraphernalia (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1000, 20, prepare_pack, "about 250 MB"),
+    Source("commons_cbp_seizures", "Drug seizures in US Customs and Border Protection photos (Wikimedia Commons copies, ready-made pack)",
+           "Public domain (works of the US government, 17 U.S.C. 105); each Commons file's licence checked",
+           "US Customs and Border Protection via Wikimedia Commons (credited in CREDITS.txt)", "permissive", 300, 10, prepare_pack, "about 80 MB"),
+    Source("cdc_phil_drugs", "Street drugs, paraphernalia and e-cigarettes in CDC photos (CDC Public Health Image Library, ready-made pack)",
+           "Public domain (CDC PHIL items marked 'Permission is not required for public domain images')",
+           "Centers for Disease Control and Prevention, Public Health Image Library (public domain)", "permissive", 60, 5,
+           prepare_pack, "about 15 MB"),
+    Source("commons_firearm_accessories", "Gun accessories: holsters, speedloaders, scopes, red dot sights, lights, lasers, slings, suppressors, cases, safes and trigger locks (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1500, 20, prepare_pack, "about 350 MB"),
+    Source("commons_firearm_kinds", "Kinds of guns and their makers: revolvers, pistols, shotguns, rifles, flintlocks, air guns (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 2000, 20, prepare_pack, "about 450 MB"),
+    Source("wikidata_firearms", "What make and model of gun is this? Firearm models from Wikidata (ready-made pack)",
+           "Data CC0 (Wikidata); captions CC0; pictures CC0, public domain or CC BY, each author credited",
+           "Wikimedia Commons authors, credited in CREDITS.txt; model facts from Wikidata (CC0)", "permissive", 500, 10,
+           prepare_pack, "about 120 MB"),
     Source('skin_lesion_photos', 'Skin spots photographed with a phone, adults (PAD-UFES-20, ready-made pack)',
            'CC BY 4.0 (Mendeley Data zr7vgbcyr2)',
            'PAD-UFES-20 (Pacheco et al., 2020), CC BY 4.0', "permissive", 2000, 20, prepare_pack, 'about 400 MB', content="medical"),
@@ -2287,8 +2310,16 @@ PEOPLE_AND_BODILY_PACK_KEYS = (
     "field_manual_figures",
     # civil_defense_packs.py: civil defense booklets and film stills (people, attack, schoolchildren)
     "cd_booklets", "cd_films",
+    # drug_firearm_packs.py: CBP seizure photos (officers) and CDC PHIL drug photos
+    "commons_cbp_seizures", "cdc_phil_drugs",
 )
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + PEOPLE_AND_BODILY_PACK_KEYS
+# The drug and firearm packs (packs/drug_firearm_packs.py): describing only, never for picture-making, whether or not
+# they show people (the two that do are in PEOPLE_AND_BODILY_PACK_KEYS too).
+DRUG_FIREARM_PACK_KEYS = ("commons_drugs", "commons_drug_paraphernalia", "commons_cbp_seizures", "cdc_phil_drugs",
+                          "commons_firearm_accessories", "commons_firearm_kinds", "wikidata_firearms")
+NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + tuple(k for k in DRUG_FIREARM_PACK_KEYS
+                                                        if k not in NOT_FOR_PICTURE_MAKING)
 
 
 def content_of(key):
@@ -2575,6 +2606,21 @@ PERSONAL_PICTURE_MAKING_OK |= _safety_rites_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(
     s.key for s in SAFETY_RITES_SOURCES if s.key not in _safety_rites_ok)
 _add_collections(SAFETY_RITES_SOURCES)
+
+# Drug and firearm collections that are not open (share-alike Commons drug, paraphernalia, accessory and gun-kind
+# files); the file may be missing. None is used for picture-making (DRUG_FIREARM_PICTURE_MAKING_OK is empty).
+try:
+    import drug_firearm_sources as _drug_firearm  # noqa: E402
+except ImportError as _e:
+    _drug_firearm = None
+    if getattr(_e, "name", None) != "drug_firearm_sources":
+        say(f"(The drug and firearm collections could not be loaded: {_e}. They are left out.)")
+DRUG_FIREARM_SOURCES = list(getattr(_drug_firearm, "DRUG_FIREARM_SOURCES", []) or [])
+_drug_firearm_ok = set(getattr(_drug_firearm, "DRUG_FIREARM_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _drug_firearm_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(
+    s.key for s in DRUG_FIREARM_SOURCES if s.key not in _drug_firearm_ok)
+_add_collections(DRUG_FIREARM_SOURCES)
 
 # Things and materials collections that are not open (EPIC-KITCHENS, Charades, PACO, MINC); the file may be missing.
 try:
