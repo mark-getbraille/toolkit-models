@@ -75,6 +75,16 @@ only on the collections that run did not have (or the ones named with --collecti
 earlier pictures (--replay, 0.25 by default: one earlier picture for every four new ones) so the model does not
 forget what it learned. Its "before" test is the earlier add-on, on every collection's test pictures, so the report
 shows whether anything got worse. It takes hours, not days.
+
+A topic add-on (--topic ID, topics.py; --topic list says the topics): one add-on for one subject (medicines, food,
+firearms ...), which the person chooses to load in the toolkit when they want more expertise; Qwen stays the general
+describer. It is always a new add-on on the model itself (never --continue). Only the topic's collections are
+gathered (topic_rows), with an everyday share (--topic-replay, 0.15 by default, 0 to 0.40) of pictures from a broad
+everyday mix (topics.EVERYDAY_KEYS) so ordinary description is not forgotten. The topic's test pictures, and up to
+100 everyday ones, are kept back; the report starts with a short plain-language score of both. The topic turns on
+the content choices it needs by itself (nudity, or nudity and sexual content). Your own pictures are not used; only
+the checked review pictures that fit the topic are. The add-on gets its label, addon-label.json (topics.make_label),
+in its folder and in the result zip (also in its toolkit/ folder). A topic add-on is never for picture-making.
 """
 
 
@@ -258,9 +268,10 @@ LEAVE_OUT_THEMES = set()
 
 
 def prepare_data(work, state, size, with_wikipedia, keys=None, with_nudity=False, with_medical=False,
-                 with_noncommercial=False, with_research=False, with_sexual=False, with_graphic=False):
+                 with_noncommercial=False, with_research=False, with_sexual=False, with_graphic=False, name=None):
     """Prepare every chosen collection once (each one remembered as done in state, so a restarted kit skips it);
-    writes data/train.jsonl (shuffled) and data/test.jsonl and returns (training rows, test rows). A collection that
+    writes data/train.jsonl (shuffled) and data/test.jsonl (data/train-<name>.jsonl when name is given, as for a
+    topic add-on; data/train-follow-up.jsonl when only keys are) and returns (training rows, test rows). A collection that
     cannot be downloaded now is said and left out, so one broken website never stops the training. with_nudity,
     with_medical, with_sexual and with_graphic: the content choices (rows tagged with a content they do not allow are
     left out: sources.keep_allowed); with_noncommercial and with_research: the personal-use choices (see
@@ -282,7 +293,10 @@ def prepare_data(work, state, size, with_wikipedia, keys=None, with_nudity=False
             say(f"    This collection could not be prepared now ({str(e).splitlines()[0][:200]}); it is left out. "
                 "Start the kit again later to try it again.")
             continue
-        state.mark(f"data-{source.key}-{size}", {"train": len(train), "test": len(test)})
+        # A topic add-on's collections are remembered under their own name, so a later follow-up of the general
+        # describer still counts them as new (prepared_collections reads only the "data-" marks).
+        state.mark(f"{name}-data-{source.key}-{size}" if name else f"data-{source.key}-{size}",
+                   {"train": len(train), "test": len(test)})
         kept_train, kept_test = sources.keep_allowed(train, allowed), sources.keep_allowed(test, allowed)
         # --without-sexual-violence: the erotic artworks of force, no consent or restraint (their "theme") go too.
         kept_train = sources.leave_out_themes(kept_train, LEAVE_OUT_THEMES)
@@ -296,7 +310,7 @@ def prepare_data(work, state, size, with_wikipedia, keys=None, with_nudity=False
         train_rows += train
         test_rows += test
     random.Random(5).shuffle(train_rows)
-    suffix = "-follow-up" if keys else ""
+    suffix = f"-{name}" if name else "-follow-up" if keys else ""
     for name, rows in (("train", train_rows), ("test", test_rows)):
         with open(os.path.join(data_dir, f"{name}{suffix}.jsonl"), "w", encoding="utf-8") as f:
             for row in rows:
@@ -869,6 +883,16 @@ def write_report(path, info, before, after, before_rows, after_rows):
         counts[row["source"]] = counts.get(row["source"], 0) + 1
     better, words = verdict(before, after, counts)
     block = personal_lines(info)                     # PERSONAL USE ONLY first, when chosen
+    if info.get("topic"):                            # a topic add-on: its short score, in plain words, comes next
+        import topics
+        topic = topics.find(info["topic"])
+        label = info.get("label") or {}
+        block = [*block, *([""] if block else []),
+                 *topics.score_lines(topic, topics.score_summary(before_rows, after_rows)),
+                 f"  Everyday share mixed in: {round(info.get('topic_replay', 0) * 100)} percent "
+                 f"({info.get('replay_pictures', 0)} everyday pictures).",
+                 f"  Licence: {label.get('licence_class', '')}; sensitive: {'yes' if label.get('sensitive') else 'no'}; "
+                 "never for picture-making. Its label is addon-label.json."]
     lines = [*block, *([""] if block else []), "Picture Model Training Kit: report", "",
              f"Finished: {datetime.datetime.now():%d %B %Y at %H:%M}",
              f"Model: {info['model']} (commit {info['revision'][:12]})",
@@ -911,8 +935,11 @@ def package(model_key, final, report, info, tag):
         z.write(report, "report.txt")
         z.writestr("scores.json", json.dumps(info, indent=1))
         z.writestr("ATTRIBUTION.txt", attribution(info["collections"], info["share_alike"], info))
-        if personal_chosen(info):
-            z.writestr("PERSONAL-USE-ONLY.txt", "\n".join(personal_lines(info)) + "\n")
+        if personal_chosen(info) or (info.get("label") or {}).get("licence_class") == "personal use only":
+            z.writestr("PERSONAL-USE-ONLY.txt", "\n".join(personal_lines(info) or [sources.PERSONAL_WARNING]) + "\n")
+        if info.get("label"):                          # a topic add-on's label (topics.py), at the top of the zip
+            import topics
+            z.writestr(topics.LABEL_FILE, topics.label_text(info["label"]))
         z.write(LOG, "training-log.txt")
     add_toolkit_version(path, final)
     return path
@@ -1011,6 +1038,41 @@ def follow_up_rows(work, state, plan, with_wikipedia, size, replay, with_nudity=
     return mixed, new_test + old_test
 
 
+# ----------------------------------------------------------------- a topic add-on
+
+def topic_rows(work, state, topic, size, with_wikipedia, replay, content):
+    """(training rows, test rows, everyday pictures added) of a topic add-on (topics.py): the topic's collections
+    that the choices allow, mixed with the everyday share replay (a fraction of the whole) from topics.EVERYDAY_KEYS;
+    the topic's test pictures marked "topic" and up to topics.EVERYDAY_TEST everyday ones marked "everyday".
+    content: the training's choices (with the topic's needs already turned on). Stops in plain words when none of
+    the topic's collections can be used."""
+    import topics
+    used, left_out, missing = topics.topic_sources(topic, sources, with_wikipedia, content)
+    say(f"  Topic add-on: {topic.title}. {len(used)} of its collections are used.")
+    if left_out:
+        say("    Left out, because their box is not ticked (Wikipedia for share-alike ones, or a personal-use box): "
+            + "; ".join(s.name.split(" (")[0] for s in left_out) + ".")
+    if missing:
+        say(f"    Not in this kit: {', '.join(missing)}.")
+    if not used:
+        stop(f"None of the collections of the topic {topic.title} can be used with these choices. Tick the boxes "
+             "for their collections, or choose another topic.")
+    topic_train, topic_test = prepare_data(work, state, size, with_wikipedia, keys={s.key for s in used},
+                                           name=f"topic-{topic.id}", **content)
+    everyday_train, everyday_test = [], []
+    everyday = topics.everyday_keys(topic, sources, with_wikipedia, content)
+    if replay > 0 and everyday:
+        say(f"  The everyday mix ({round(replay * 100)} percent of the training pictures, so the add-on does not "
+            f"forget how to describe ordinary pictures): {len(everyday)} collections.")
+        everyday_train, everyday_test = prepare_data(work, state, size, with_wikipedia, keys=set(everyday),
+                                                     name="everyday", **content)
+    rows, added = topics.mix(topic_train, everyday_train, replay)
+    say(f"  Topic add-on ready: {len(topic_train)} topic pictures and {added} everyday pictures for training; "
+        f"{len(topic_test)} topic test pictures kept back.")
+    test = topics.mark(topic_test, "topic") + topics.mark(topics.everyday_test(everyday_test), "everyday")
+    return rows, test, added
+
+
 # ----------------------------------------------------------------- all steps
 
 def main(argv=None):
@@ -1047,7 +1109,34 @@ def main(argv=None):
     parser.add_argument("--accept-research-terms", action="store_true",
                         help="you have read the research-only collections' terms and will use the result only for "
                              "personal, non-commercial purposes")
+    parser.add_argument("--topic", default="",
+                        help="train a topic add-on (topics.py: medicines, drugs, firearms, food, machines, art, "
+                             "documents, nature, nudity, sexual); --topic list says them")
+    parser.add_argument("--topic-replay", type=float, default=0.15,
+                        help="with --topic: the everyday share of the training pictures, 0 to 0.40 (or 0 to 40 "
+                             "percent)")
     args = parser.parse_args(argv)
+    topic = None
+    if args.topic:
+        import topics
+        if args.topic.strip().lower() == "list":
+            print(topics.topic_list_text())
+            return 0
+        topic = topics.find(args.topic)
+        if topic is None:
+            stop(f"There is no topic called {args.topic}. The topics are:\n" + topics.topic_list_text())
+        if args.follow_up:
+            stop("A topic add-on is always trained anew on the model itself, never as a follow-up. Leave out "
+                 "--continue (in the program: choose a quick try, normal or full in How much to train).")
+        try:
+            args.topic_replay = topics.check_replay(args.topic_replay)
+        except ValueError as e:
+            stop(str(e))
+        for tag in topic.needs:                     # the content choices the topic itself needs
+            setattr(args, f"with_{tag}", True)
+        if args.own:
+            say("Your own pictures are not used for a topic add-on; they are left out.")
+            args.own, args.own_only = "", False
     global LEAVE_OUT_THEMES
     LEAVE_OUT_THEMES = set(sources.SEXUAL_VIOLENCE_THEMES) if args.without_sexual_violence else set()
     sexual_without_nudity = args.with_sexual and not args.with_nudity
@@ -1086,12 +1175,22 @@ def main(argv=None):
         say(f"Reading the checked pictures of {len(args.review)} review collection"
             f"{'s' if len(args.review) != 1 else ''}.")
         review_train, review_test, review_used, review_code = review_rows(work, args.review, content)
+        if topic is not None:                    # only the checked review pictures that fit the topic
+            import topics
+            review_train = topics.review_fit(review_train, topic)
+            review_test = topics.mark(topics.review_fit(review_test, topic), "topic")
+            if not review_train and not review_test:
+                if review_used:
+                    say("  None of the checked review pictures fit this topic, so they are left out.")
+                review_used, review_code = [], ""
         if not review_used:
             say("  No checked pictures of the review collections can be used now; training goes on without them.")
     review_contents = {t for r in review_train + review_test for t in r.get("contents", [])}
     if review_used:
         personal = True                          # review pictures: personal use only, like personal collections
     tag = ("-wikipedia" if args.with_wikipedia else "") + ("" if args.size == "normal" else f"-{args.size}")
+    if topic is not None:
+        tag = f"-topic-{topic.id}" + tag        # each topic add-on is its own training
     run = f"{args.model}{tag}"                 # each kind of run keeps its own test results and add-on
     plan = None
     if args.follow_up:
@@ -1159,6 +1258,11 @@ def main(argv=None):
     say(f"Picture Model Training Kit started for the {args.model.upper()} model, size {args.size}"
         + (", with Wikipedia." if args.with_wikipedia else "."))
     say(sources.content_choices_text(args.with_nudity, args.with_medical, args.with_sexual, args.with_graphic))
+    if topic is not None:
+        say(f"Topic add-on: {topic.title}. It is trained on this topic's collections with "
+            f"{round(args.topic_replay * 100)} percent everyday pictures mixed in. You choose when to load it in the "
+            "toolkit." + (" This topic is sensitive." if topic.sensitive else "")
+            + (" It is for personal use only." if topic.personal_only else ""))
     if args.personal_noncommercial or args.personal_research:
         say("Personal-use collections: " + " and ".join(w for w, on in (
             ("non-commercial", args.personal_noncommercial), ("research-only", args.personal_research)) if on)
@@ -1187,8 +1291,12 @@ def main(argv=None):
     folder = download_model(args.model, work)
     say("Step 3 of 7: downloading the described pictures of each collection and making them smaller. A collection "
         "done before is not downloaded again.")
+    replay_pictures = 0
     if args.own_only:
         train_rows, test_rows = [], []
+    elif topic is not None:
+        train_rows, test_rows, replay_pictures = topic_rows(work, state, topic, args.size, args.with_wikipedia,
+                                                            args.topic_replay, content)
     elif plan:
         train_rows, test_rows = follow_up_rows(work, state, plan, args.with_wikipedia, args.size, args.replay,
                                                **content)
@@ -1298,8 +1406,20 @@ def main(argv=None):
             "collections": sorted({r["source"] for r in train_rows}),
             "seconds": state.data[f"train-{run}"]["seconds"], "before": before, "after": after,
             "continued_from": plan["from"] if plan else None,
+            "topic": topic.id if topic is not None else None,
+            "topic_replay": args.topic_replay if topic is not None else None, "replay_pictures": replay_pictures,
             "settings": {"lora_r": 16, "lora_alpha": 32, "rate": 1e-4, "accumulate": 8, "four_bit": True,
                          "long_side": sources.LONG_SIDE, "system": SYSTEM}}
+    if topic is not None:
+        # The label (topics.py), beside the add-on and in the zip: personal use only by the kit's usual rules.
+        import topics
+        licence = topics.licence_class(topic, info["collections"], sources, sexual_used="sexual" in used,
+                                       personal_choice=args.personal_noncommercial or args.personal_research,
+                                       review_used=bool(review_used), own_used="own" in used)
+        info["label"] = topics.make_label(topic, repo, revision, licence, topics.is_sensitive(topic, used))
+        topics.write_label(os.path.join(final, topics.LABEL_FILE), info["label"])
+        say(f"  The add-on's label: {topic.title}, {licence}" + (", sensitive." if info["label"]["sensitive"]
+                                                                 else "."))
     report = os.path.join(HERE, f"report-{run}.txt")
     _, words = write_report(report, info, before, after, read_rows(before_path), read_rows(after_path))
     path = package(args.model, final, report, info, tag)

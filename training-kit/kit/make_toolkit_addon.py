@@ -11,6 +11,8 @@ adds a folder "toolkit/" to the result zip:
     toolkit/describer-addon.gguf                   the add-on in llama.cpp's format (16-bit numbers, "f16")
     toolkit/addon.json                             what it is (the toolkit reads this; see addon_info)
     toolkit/HOW TO USE THIS IN THE TOOLKIT.txt     plain-language steps for the person
+    toolkit/addon-label.json                       only for a topic add-on: its label (kit/topics.py), copied from
+                                                   addon-label.json at the top of the zip
 
 How the converter is got: once, the source code zip of llama.cpp's release LLAMA_TAG is downloaded from GitHub, and
 only the files the converter needs are kept (NEEDED: the two convert scripts, the "conversion" folder, the gguf-py
@@ -71,6 +73,8 @@ ADDON_FILE = FOLDER + "describer-addon.gguf"
 INFO_FILE = FOLDER + "addon.json"
 HOW_TO_FILE = FOLDER + "HOW TO USE THIS IN THE TOOLKIT.txt"
 PERSONAL_MARK = "PERSONAL-USE-ONLY.txt"               # train.package puts it into a personal-use training's zip
+LABEL_NAME = "addon-label.json"                       # a topic add-on's label (topics.LABEL_FILE), at the zip's top
+LABEL_FILE = FOLDER + LABEL_NAME
 
 # The parts of each layer the add-on changes (train.load_model's target modules), by llama.cpp's names, with the
 # sizes going in and coming out, from the model's text settings (see expected_sizes).
@@ -491,6 +495,8 @@ def add_to_zip(zip_path, work, final=None, say=_say, python=None, source_zip=Non
             new.write(made, ADDON_FILE, compress_type=zipfile.ZIP_STORED)    # 16-bit numbers hardly shrink
             new.writestr(INFO_FILE, json.dumps(addon, indent=1) + "\n")
             new.writestr(HOW_TO_FILE, how_to_text(addon).replace("\n", "\r\n"))   # Windows line ends for Notepad
+            if LABEL_NAME in names:                    # a topic add-on: its label goes beside the toolkit file too
+                new.writestr(LABEL_FILE, old.read(LABEL_NAME))
         with zipfile.ZipFile(new_path) as check:
             if check.testzip() is not None or check.getinfo(ADDON_FILE).file_size != addon["size"]:
                 raise AddonError("the new zip could not be checked")

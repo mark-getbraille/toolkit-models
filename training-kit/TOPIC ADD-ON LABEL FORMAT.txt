@@ -1,0 +1,60 @@
+Topic add-on label format (addon-label.json), format 1
+
+Every topic add-on the Picture Model Training Kit makes has a small label file, addon-label.json, so the Digital
+Accessibility Toolkit can show the add-on's name and description, keep sensitive add-ons apart, and warn about
+personal-use ones. The kit writes it with kit/topics.py (make_label).
+
+Where it is
+- In the training's result zip (result\picture-training-4b-topic-<topic>-<date>.zip):
+  - addon-label.json at the top of the zip;
+  - toolkit/addon-label.json, beside toolkit/describer-addon.gguf and toolkit/addon.json;
+  - adapter/addon-label.json, beside the add-on as it was trained.
+- In the add-on's folder in the kit: work\adapter-<run>\final\addon-label.json.
+An add-on without this file is a general describer, not a topic add-on.
+
+The file
+UTF-8 JSON, one object, with exactly these fields in this order:
+
+  "format"              1 (a whole number). A reader should refuse a format it does not know.
+  "topic_id"            the topic's short name, lower case: one of
+                        "medicines", "drugs", "firearms", "food", "machines", "art", "documents", "nature",
+                        "nudity", "sexual". New topics may be added later.
+  "title"               the topic's name for people, for example "Food and packaged goods".
+  "description"         one or two plain sentences about what the add-on knows, to show the person.
+  "base_model"          the Hugging Face repository of the model it was trained on, for example
+                        "huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated". The add-on works only with this model.
+  "base_model_version"  the model's pinned commit (40 hexadecimal characters).
+  "licence_class"       "open" or "personal use only".
+                        "personal use only" when the add-on learned from any non-commercial or research-only
+                        collection, from checked review pictures, from the person's own pictures, or from adult
+                        sexual content (the "sexual" topic is always personal use only), or when a personal-use box
+                        was ticked. Such an add-on must never be published, shared, sold or put in a product.
+                        "open" otherwise (share-alike collections such as Wikipedia still count as open; the zip's
+                        toolkit/addon.json says "share_alike": true and ATTRIBUTION.txt gives the CC BY-SA terms).
+  "sensitive"           true or false. True for the topics "nudity" and "sexual", and for any add-on that learned
+                        from pictures marked nudity, intimate, sexual or graphic. A sensitive add-on should only be
+                        loaded when the person chooses it, never by itself.
+  "picture_making"      always false: a topic add-on describes pictures; it is never used for making pictures.
+  "kit_version"         the kit's version that made it (a date, for example "2026.11.20").
+  "trained"             the date the training finished, as YYYY-MM-DD.
+
+Example
+{
+ "format": 1,
+ "topic_id": "food",
+ "title": "Food and packaged goods",
+ "description": "Food on the plate and in the shop: fresh or spoiled meat, fish, eggs and fruit, groceries on shelves, packaged goods with their names and use-by dates, and the text on food packs.",
+ "base_model": "huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated",
+ "base_model_version": "ce72a7c22aacb493fb94478de3bfbe834c61844a",
+ "licence_class": "open",
+ "sensitive": false,
+ "picture_making": false,
+ "kit_version": "2026.11.20",
+ "trained": "2026-11-20"
+}
+
+How the toolkit should use it
+- Qwen stays the general describer. A topic add-on is loaded only when the person chooses it, one at a time.
+- Show "title" and "description" in the list of add-ons; say "personal use only" and "sensitive" when they apply.
+- Check that "base_model" (and, when it can, "base_model_version") matches the model in use before loading.
+- Unknown extra fields are to be ignored; a missing field or an unknown "format" means the label cannot be trusted.
