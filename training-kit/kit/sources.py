@@ -2201,6 +2201,19 @@ SOURCES = [
            "Data CC0 (Wikidata); captions CC0; pictures CC0, public domain or CC BY, each author credited",
            "Wikimedia Commons authors, credited in CREDITS.txt; model facts from Wikidata (CC0)", "permissive", 500, 10,
            prepare_pack, "about 120 MB"),
+    # US and Canadian street scenes (packs/street_scene_packs.py): what a pedestrian needs at a street. A traffic
+    # light's colour only from its Commons colour category, a pedestrian signal's state only where the file's own
+    # words say it. People walk through them: never used for picture-making (PEOPLE_AND_BODILY_PACK_KEYS). The
+    # share-alike and Bosch entries are in street_scene_sources.py.
+    Source("commons_crosswalks_signals", "Crosswalks, curb ramps, tactile paving, pedestrian signals and push buttons, and traffic lights by colour in the US and Canada (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 2500, 20, prepare_pack, "about 600 MB"),
+    Source("commons_streets_roads_na", "Street signs, roundabouts, interchanges, school zones, road works, bike lanes, bus stops and sidewalks in the US and Canada (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 3000, 20, prepare_pack, "about 700 MB"),
+    Source("commons_neighbourhoods_na", "Suburbs, residential streets, driveways and porches in the US and Canada (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1500, 15, prepare_pack, "about 350 MB"),
+    Source("us_dot_street_photos", "US interstates, interchanges and road scenes in Federal Highway Administration photos (Wikimedia Commons copies, ready-made pack)",
+           "Public domain (works of the US government, 17 U.S.C. 105); each Commons file's licence checked",
+           "Federal Highway Administration, US Department of Transportation, via Wikimedia Commons (credited in CREDITS.txt)", "permissive", 500, 10, prepare_pack, "about 120 MB"),
     Source('skin_lesion_photos', 'Skin spots photographed with a phone, adults (PAD-UFES-20, ready-made pack)',
            'CC BY 4.0 (Mendeley Data zr7vgbcyr2)',
            'PAD-UFES-20 (Pacheco et al., 2020), CC BY 4.0', "permissive", 2000, 20, prepare_pack, 'about 400 MB', content="medical"),
@@ -2402,6 +2415,8 @@ PEOPLE_AND_BODILY_PACK_KEYS = (
     "open_images_packaged_goods",
     # state_collections_packs.py: state digital libraries and the Newberry (people at work and in daily life)
     "newberry_library", "state_libraries_midwest", "state_libraries_south", "state_libraries_west",
+    # street_scene_packs.py: US and Canadian street scenes (people walk through them; all four)
+    "commons_crosswalks_signals", "commons_streets_roads_na", "commons_neighbourhoods_na", "us_dot_street_photos",
 )
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + PEOPLE_AND_BODILY_PACK_KEYS
 # The drug and firearm packs (packs/drug_firearm_packs.py): describing only, never for picture-making, whether or not
@@ -2978,3 +2993,19 @@ _cd_ok = set(getattr(_cd, "CIVIL_DEFENSE_PICTURE_MAKING_OK", ()) or ())
 PERSONAL_PICTURE_MAKING_OK |= _cd_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in CIVIL_DEFENSE_SOURCES if s.key not in _cd_ok)
 _add_collections(CIVIL_DEFENSE_SOURCES)
+
+# US and Canadian street scene collections that are not open (share-alike Commons files; the Bosch Small Traffic
+# Lights frames, non-commercial); the file may be missing. None is used for picture-making
+# (STREET_SCENE_PICTURE_MAKING_OK is empty).
+try:
+    import street_scene_sources as _street  # noqa: E402
+except ImportError as _e:
+    _street = None
+    if getattr(_e, "name", None) != "street_scene_sources":
+        say(f"(The street scene collections could not be loaded: {_e}. They are left out.)")
+STREET_SCENE_SOURCES = list(getattr(_street, "STREET_SCENE_SOURCES", []) or [])
+_street_ok = set(getattr(_street, "STREET_SCENE_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _street_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in STREET_SCENE_SOURCES
+                                                               if s.key not in _street_ok)
+_add_collections(STREET_SCENE_SOURCES)

@@ -108,7 +108,8 @@ jobs:
                    "museum_art_nudes", "erotic_art", "nude_photo_studies",
                    "abo_packaged_goods", "open_images_packaged_goods",
                    "met_collection",
-                   "newberry_library", "state_libraries_midwest", "state_libraries_south", "state_libraries_west"]
+                   "newberry_library", "state_libraries_midwest", "state_libraries_south", "state_libraries_west",
+                   "commons_crosswalks_signals", "commons_streets_roads_na", "commons_neighbourhoods_na", "us_dot_street_photos"]
           words = [w for w in sys.argv[1].split(",") if w]
           # "key+" is a top-up pass of key and "key?" a needs-only run (kept with the mark, which the build job reads);
           # "all?" asks for a needs-only run of every pack.

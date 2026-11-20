@@ -1620,6 +1620,13 @@ PACKS.update(PACKAGED_GOODS_PACKS)
 from state_collections_packs import STATE_COLLECTIONS_PACKS
 PACKS.update(STATE_COLLECTIONS_PACKS)
 
+# US and Canadian street scenes (packs/street_scene_packs.py): Commons crosswalks, curb cuts, tactile paving,
+# pedestrian signals and push buttons, traffic lights by colour, street signs, roundabouts, interchanges, school
+# zones, road works, bike lanes, bus stops, sidewalks and neighbourhoods, and FHWA's highway photos. People walk
+# through them, so none is used for picture-making (the kit's PEOPLE_AND_BODILY_PACK_KEYS).
+from street_scene_packs import STREET_SCENE_PACKS
+PACKS.update(STREET_SCENE_PACKS)
+
 
 # The packs whose builder reads the Wikimedia Commons API (commons_get, commons_members, commons_entries,
 # mechanical_packs.mech_entries, us_packs.us_commons, documentary_packs.commons_get or COMMONS_API itself). When many
@@ -1661,6 +1668,8 @@ COMMONS_KEYS = frozenset({
     "commons_firearm_kinds", "wikidata_firearms",
     # nudes and erotic art (adult_art_packs.py; museum_art_nudes reads only museum APIs)
     "erotic_art",
+    # US and Canadian street scenes (street_scene_packs.py; us_dot_street_photos reads FHWA's Commons copies)
+    "commons_crosswalks_signals", "commons_streets_roads_na", "commons_neighbourhoods_na", "us_dot_street_photos",
 })
 
 

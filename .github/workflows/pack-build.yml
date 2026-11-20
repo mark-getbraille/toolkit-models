@@ -341,6 +341,10 @@ jobs:
             state_libraries_midwest) limit=3000 ;;
             state_libraries_south) limit=3000 ;;
             state_libraries_west) limit=2500 ;;
+            commons_crosswalks_signals) limit=2500 ;;
+            commons_streets_roads_na) limit=3000 ;;
+            commons_neighbourhoods_na) limit=1500 ;;
+            us_dot_street_photos) limit=500 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in
