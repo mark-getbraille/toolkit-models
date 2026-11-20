@@ -68,6 +68,7 @@ import datetime
 import gzip
 import html
 import io
+import calendar
 import json
 import os
 import re
@@ -119,6 +120,9 @@ US_GOV, US_GOV_URL = sources.US_GOV, sources.US_GOV_URL
 VOA_NOTICE = ("All text, audio and video material produced exclusively by the Voice of America is in the public "
               "domain (VOA's copyright statement). Credit: voanews.com, Voice of America.")
 VOA_LICENCE_TEXT = r"produced exclusively by the Voice of America is in the public domain"
+
+# VOA radio scripts of the 1970s, one book per month: a single year ran past the 4-hour build job limit.
+VOA_HISTORY_MONTHS = [f"{y}-{m:02d}" for y in range(1970, 1980) for m in range(1, 13)]
 
 SOURCES = {
     "crs": dict(
@@ -272,13 +276,13 @@ SOURCES = {
         collection="voa-radio-scripts",
         description="Scripts of VOA's English radio reports (Backgrounders, This Week, Dateline, From the Bookshelf "
                     "and others), scanned by the Internet Archive from the Library of Congress's microfilm, as their "
-                    "machine-read text. One book per year (a whole decade did not fit in one build job); so far only the "
+                    "machine-read text. One book per month (a whole year did not fit in one build job); so far only the "
                     "1970s are online as text.",
         notice="Works of the Voice of America, a US government agency (public domain; the Internet Archive marks each "
                "with the Public Domain Mark). The machine-read text has the scanner's mistakes. VOA's older "
                "broadcasts survive mostly as sound recordings, which are not in these books.",
         changes="the machine-read text of each script, made into web pages", date_label="Broadcast",
-        pieces=lambda today: [str(y) for y in range(1970, 1980)], piece_rule=r"^19[4-9](0s|\d)$"),
+        pieces=lambda today: VOA_HISTORY_MONTHS, piece_rule=r"^19[4-9](0s|\d(-(0[1-9]|1[0-2]))?)$"),
     "uk_hansard": dict(
         group="news", driver="uk_hansard", series_title="Hansard, UK Parliament debates",
         subject="UK Parliament: debates (House of Commons and House of Lords)", publisher="UK Parliament",
@@ -594,7 +598,7 @@ def frus_volumes():
 # Every source's pieces back to its beginning, newest first (the backfill works through them; they can also be
 # built by key). The earliest years were checked on 2026-11-19.
 ALL_PIECES = {
-    "voa_history": lambda t: [str(y) for y in range(1970, 1980)] + ["1990s", "1980s", "1960s", "1950s", "1940s"],
+    "voa_history": lambda t: VOA_HISTORY_MONTHS + ["1990s", "1980s", "1960s", "1950s", "1940s"],
     "voa_learning": lambda t: _back(2001, t, True),
     "state_milestones": lambda t: ["all"],
     "frus": lambda t: frus_volumes(),
@@ -649,8 +653,8 @@ def next_backfill(catalogue, today=None, pieces=None):
     for name in BACKFILL_ORDER:
         for piece in pieces[name] if pieces is not None and name in pieces else ALL_PIECES[name](today):
             key = f"pub:{name}:{piece}"
-            if key not in done:
-                return key
+            if key not in done and not (len(piece) == 7 and f"pub:{name}:{piece[:4]}" in done):
+                return key                     # (a month whose whole year was already built counts as done)
     return ""
 
 
@@ -1519,8 +1523,13 @@ def voa_history_items(spec, piece, cache, left_out, today):
     Only items marked public domain and credited to the Voice of America are kept."""
     first = int(piece[:4])
     last = first + 9 if piece.endswith("s") else first
-    query = urllib.parse.urlencode({"q": f"collection:{spec['collection']} AND date:[{first}-01-01 TO "
-                                         f"{last}-12-31]", "fl[]": ["identifier", "date"], "rows": 20000,
+    start, end = f"{first}-01-01", f"{last}-12-31"
+    if len(piece) == 7:                                  # one month, "1976-03"
+        month = int(piece[5:])
+        start = f"{piece}-01"
+        end = f"{piece}-{calendar.monthrange(first, month)[1]:02d}"
+    query = urllib.parse.urlencode({"q": f"collection:{spec['collection']} AND date:[{start} TO "
+                                         f"{end}]", "fl[]": ["identifier", "date"], "rows": 20000,
                                     "output": "json"}, doseq=True)
     search = f"{IA}/advancedsearch.php?{query}"
     if not robots_ok(spec, search, cache):
