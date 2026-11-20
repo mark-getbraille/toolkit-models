@@ -553,8 +553,9 @@ def build_commons_neighbourhoods_na(limit):
 # ----------------------------------------------------------------- us_dot_street_photos (FHWA on Commons)
 
 FHWA_GALLERY = "Interstate Photo Gallery of the Federal Highway Administration"
-FHWA_STREAMS = ["Images from the Federal Highway Administration Flickr stream",
-                "U.S. Federal Highway Administration Flickr files uploaded by OptimusPrimeBot"]
+# (category, listing pages of 500 to sample: 1 reads a small category whole)
+FHWA_STREAMS = [("Images from the Federal Highway Administration Flickr stream", 3),
+                ("U.S. Federal Highway Administration Flickr files uploaded by OptimusPrimeBot", 1)]
 FHWA_CREDIT = "the Federal Highway Administration (FHWA), US Department of Transportation"
 # The words an FHWA Flickr caption must name to be a street or road scene (most of the stream is bridge parts, staff
 # events and history paintings).
@@ -599,11 +600,11 @@ def fhwa_row(title, caption, credit, place, gallery):
 def build_us_dot_street_photos(limit):
     """FHWA's Interstate Photo Gallery and the road scenes of its Flickr stream, from their Commons copies."""
     s, rng, items, seen = session(), pass_random(1956), [], set()
-    sources = [(FHWA_GALLERY, True)] + [(c, False) for c in FHWA_STREAMS]
-    for category, gallery in sources:
+    sources = [(FHWA_GALLERY, 1, True)] + [(c, pages, False) for c, pages in FHWA_STREAMS]
+    for category, pages, gallery in sources:
         if listing_out_of_time() or len(items) >= limit * 1.15:
             break
-        titles = [t for t in sample_members(s, category, 3, rng) if t not in seen and not NOT_A_PHOTO.search(t)]
+        titles = [t for t in sample_members(s, category, pages, rng) if t not in seen and not NOT_A_PHOTO.search(t)]
         rng.shuffle(titles)
         say(f"Commons {category}: {len(titles)} files")
         for start in range(0, len(titles), 50):
