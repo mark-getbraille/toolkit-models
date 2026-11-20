@@ -34,7 +34,16 @@ FIRST.txt; Enter presses only the focused button (no default button). Letters: f
 A (anatomy), Q (non-commercial collections, shown in brackets), Z (research-only collections, in brackets), O (own
 pictures folder), K (check my pictures), J (describe pictures), M (only my own), P, C, S, I and the labels T and H;
 second page R, G, E, F, U, N, D and the label V; X (Exit) on both. Every letter is then taken, so the
-"Personal use: everything allowed" box uses the digit: Alt+1 (shown in brackets).
+"Personal use: everything allowed" box uses the digit: Alt+1 (shown in brackets), and "Topic add-ons..." Alt+2.
+
+Topic add-ons (Alt+2, TopicAddonDialog): one add-on per topic (kit\\topics.py: medicines, drugs, firearms, food,
+machines, art, documents, nature, nudity, sexual content), which the person chooses to load in the toolkit when they
+want more expertise; Qwen stays the general describer. The window lists the topics, says about the chosen one (its
+description, how many of its collections the first page's Wikipedia and personal-use boxes allow, its licence),
+and takes the everyday share (0 to 40 percent, 15 at first). Start training this add-on starts the training with
+the first page's folders, model and size, adding --topic ID --topic-replay SHARE to kit\\train.py. Its letters:
+T (Topic), A (About this topic), E (Everyday share), S (Start), C (Cancel). Only for a picture describer, and not
+as a follow-up. The topic and share are remembered ("topic", "topic_replay" in settings.json).
 
 Personal-use collections: when either box is ticked the training is for personal use only (train.py and
 train_pictures.py get --personal-noncommercial and --personal-research --accept-research-terms), which the Check
@@ -181,7 +190,9 @@ SPOKEN = re.compile(r"^(Step \d+ of \d+:|\s*Collection \d+ of \d+:|\s*Ready:|\s+
                     r"\s*Score (before|after)|FINISHED|STOPPED|Getting ready|\s*This collection could not|"
                     # the toolkit version of the add-on (kit\\make_toolkit_addon.py): how to install it, or why not
                     r"To use it in the Digital Accessibility Toolkit|\s*The toolkit version of the add-on could not|"
-                    r"Making the toolkit version of your earlier)")
+                    r"Making the toolkit version of your earlier|"
+                    # a topic add-on (kit\\topics.py): which topic, what is ready, and its label
+                    r"Topic add-on|\s*Topic add-on ready|\s*The add-on's label)")
 
 
 def is_computer_line(line):
@@ -957,6 +968,144 @@ class SignupKeysDialog(wx.Dialog):
             event.Skip()
 
 
+# ----------------------------------------------------------------- topic add-ons
+
+TOPIC_ABOUT = ("A topic add-on gives the picture describer more expertise in one subject. Qwen stays your general "
+               "describer; in the Digital Accessibility Toolkit you choose which topic add-on to load, when you want "
+               "it. The kit trains one add-on per topic, on that topic's collections, with a share of everyday "
+               "pictures mixed in so it does not forget how to describe ordinary pictures.")
+
+
+def topics_module():
+    """The kit's topics.py (bundled into the program, or beside the wizard in the kit); None when it cannot be
+    loaded."""
+    folder = resource("kit")
+    if folder not in sys.path:
+        sys.path.insert(0, folder)
+    try:
+        import topics
+        return topics
+    except Exception:  # noqa: BLE001 - said by the caller
+        return None
+
+
+def topic_summary(topics, module, topic, boxes):
+    """The plain text shown for a topic in the Topic add-ons window: its description, whether it is sensitive, how
+    many of its collections the boxes of the first page allow (boxes: {"wikipedia", "noncommercial", "research":
+    ticked}) and which are left out, and the add-on's licence ("open" or "personal use only"). topics is the kit's
+    topics.py, module its sources.py."""
+    choices = {"with_noncommercial": boxes.get("noncommercial"), "with_research": boxes.get("research")}
+    parts = [f"{topic.title}. {topic.description}"]
+    if topic.sensitive:
+        parts.append("This topic is sensitive: load it in the toolkit only when you want it.")
+    if module is None:
+        parts.append("The list of collections cannot be read in this program.")
+        return "\n\n".join(parts)
+    used, left_out, _missing = topics.topic_sources(topic, module, bool(boxes.get("wikipedia")), choices)
+    parts.append(f"Collections used: {len(used)} of {len(topic.keys)}."
+                 + (" Left out until their box is ticked on the first page (Include Wikipedia for share-alike ones, "
+                    "the non-commercial or research-only box for personal-use ones): "
+                    + "; ".join(s.name.split(" (")[0] for s in left_out) + "." if left_out else ""))
+    licence = topics.licence_class(topic, [s.key for s in used], module,
+                                   personal_choice=bool(boxes.get("noncommercial") or boxes.get("research")))
+    parts.append(f"Licence of this add-on: {licence}."
+                 + (" Never publish, share or sell it." if licence == topics.LICENCE_PERSONAL else "")
+                 + (" Checked pictures of your review collections that fit this topic are used too, which makes it "
+                    "personal use only." if topic.review_contents else ""))
+    parts.append("It is a picture describer add-on only, never used for making pictures.")
+    return "\n\n".join(parts)
+
+
+def topic_args(topic_id, share):
+    """The training's command-line additions for a topic add-on (share: the everyday share, a fraction)."""
+    return ["--topic", topic_id, "--topic-replay", f"{share:.2f}"]
+
+
+class TopicAddonDialog(wx.Dialog):
+    """Topic add-ons: choose a topic (Topic:, a list of the ten topics), read about it (About this topic: its
+    description, how many of its collections are used with the first page's boxes, and its licence), set the
+    everyday share (0 to 40 percent, 15 at first), then Start training this add-on, or Cancel. Standard controls, a
+    label ending ":" before each field, Alt letters named in the tooltips (T, A, E, S, C), no default button, Escape
+    is Cancel and F1 opens READ ME FIRST.txt. Choosing a topic says its title and licence."""
+
+    def __init__(self, parent, topics, module, boxes, chosen_id="", share=None):
+        """The topic list, the explanation, the everyday share and the two buttons. topics: the kit's topics.py;
+        module: its sources.py; boxes: the first page's collection boxes (see topic_summary)."""
+        super().__init__(parent, title="Topic add-ons", size=(700, 600), style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+        self.topics, self.module, self.boxes = topics, module, boxes
+        self.mnemonics = {}
+        panel = wx.Panel(self)
+        s = wx.BoxSizer(wx.VERTICAL)
+        intro = wx.StaticText(panel, label=TOPIC_ABOUT)
+        intro.Wrap(660)
+        s.Add(intro, 0, wx.ALL, 8)
+        s.Add(wx.StaticText(panel, label="&Topic:"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 8)
+        self.topic = wx.Choice(panel, choices=[t.title + (" (sensitive)" if t.sensitive else "")
+                                               for t in topics.TOPICS])
+        self.topic.SetSelection(next((i for i, t in enumerate(topics.TOPICS) if t.id == chosen_id), 0))
+        self.topic.Bind(wx.EVT_CHOICE, self.on_topic)
+        s.Add(self.topic, 0, wx.EXPAND | wx.ALL, 8)
+        self.mnemonics["t"] = self.topic
+        s.Add(wx.StaticText(panel, label="&About this topic:"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 8)
+        self.about = wx.TextCtrl(panel, style=wx.TE_MULTILINE | wx.TE_READONLY)
+        s.Add(self.about, 1, wx.EXPAND | wx.ALL, 8)
+        self.mnemonics["a"] = self.about
+        s.Add(wx.StaticText(panel, label="&Everyday share, in percent (0 to 40):"), 0, wx.LEFT | wx.RIGHT | wx.TOP, 8)
+        start = round((topics.REPLAY_DEFAULT if share is None else share) * 100)
+        self.share = wx.SpinCtrl(panel, min=round(topics.REPLAY_MIN * 100), max=round(topics.REPLAY_MAX * 100),
+                                 initial=min(max(start, 0), 40))
+        self.share.SetToolTip("How much of the training is everyday pictures, so the add-on does not forget how to "
+                              "describe ordinary pictures. 15 is a good start.")
+        s.Add(self.share, 0, wx.ALL, 8)
+        self.mnemonics["e"] = self.share
+        row = wx.BoxSizer(wx.HORIZONTAL)
+        start_button = wx.Button(panel, label="&Start training this add-on")
+        start_button.SetToolTip("Train the add-on for this topic with the first page's folders and model (Alt+S)")
+        start_button.Bind(wx.EVT_BUTTON, lambda e: self.EndModal(wx.ID_OK))
+        cancel = wx.Button(panel, label="&Cancel")
+        cancel.SetToolTip("Close without training (Alt+C)")
+        cancel.Bind(wx.EVT_BUTTON, lambda e: self.EndModal(wx.ID_CANCEL))
+        for b in (start_button, cancel):
+            row.Add(b, 0, wx.ALL, 4)
+        s.Add(row, 0, wx.ALL, 4)
+        panel.SetSizer(s)
+        self.Bind(wx.EVT_CHAR_HOOK, self.on_key)
+        self.show_topic()
+        self.topic.SetFocus()
+
+    def chosen(self):
+        """The Topic chosen now."""
+        return self.topics.TOPICS[self.topic.GetSelection()]
+
+    def chosen_share(self):
+        """The everyday share chosen, as a fraction (0.15 for 15 percent)."""
+        return self.share.GetValue() / 100.0
+
+    def show_topic(self):
+        """Put the chosen topic's explanation in About this topic; returns it."""
+        text = topic_summary(self.topics, self.module, self.chosen(), self.boxes)
+        self.about.SetValue(text)
+        return text
+
+    def on_topic(self, _event):
+        """Another topic chosen: show it, and say its title and licence."""
+        text = self.show_topic()
+        licence = next((p for p in text.split("\n\n") if p.startswith("Licence of this add-on")), "")
+        speak(f"{self.chosen().title}. {licence} Alt+A reads about it.", True)
+
+    def on_key(self, event):
+        """Escape is Cancel; F1 opens READ ME FIRST.txt; Alt and a label's letter moves to its field."""
+        key = event.GetKeyCode()
+        if key == wx.WXK_ESCAPE:
+            self.EndModal(wx.ID_CANCEL)
+        elif key == wx.WXK_F1:
+            open_help(None)
+        elif event.AltDown() and not event.ControlDown() and 0 < key < 256 and chr(key).lower() in self.mnemonics:
+            self.mnemonics[chr(key).lower()].SetFocus()
+        else:
+            event.Skip()
+
+
 def open_help(kit):
     """Open READ ME FIRST.txt (the kit folder's copy when there is one, else the program's)."""
     path = os.path.join(kit, "READ ME FIRST.txt") if kit else resource("READ ME FIRST.txt")
@@ -1130,7 +1279,9 @@ class Wizard(wx.Frame):
                   self.button(page, "Chec&k my pictures", "Say what was found in your own pictures folder",
                               self.on_check_own),
                   self.button(page, "Describe pictures (&J)...", "Describe pictures with friends, and pass the work "
-                              "between you as packages", self.on_describe)):
+                              "between you as packages", self.on_describe),
+                  self.button(page, "Topic add-ons (&2)...", "Train an add-on for one topic, such as medicines or "
+                              "food, which you choose to load in the toolkit", self.on_topics)):
             own_row.Add(b, 0, wx.ALL, 4)
         s.Add(own_row, 0, wx.LEFT, 4)
         self.own_only = self.check(page, "Only &my own pictures",
@@ -1514,6 +1665,34 @@ class Wizard(wx.Frame):
         log(text)
         speak(text.replace("\n", " "), True)
 
+    def on_topics(self, _event):
+        """Open the Topic add-ons window; Start training this add-on there starts the training of that topic's
+        add-on (on_start with self.topic_run set)."""
+        if self.kind_key() != "describer":
+            self.show_result("Topic add-ons are for the picture describer only. Choose A picture describer in What "
+                             "to train first.")
+            return
+        topics = topics_module()
+        if topics is None:
+            self.show_result("The topic add-ons cannot be loaded in this program. Get the newest program.")
+            return
+        chosen = load_choices()
+        dialog = TopicAddonDialog(self, topics, sources_module(), self.boxes(), chosen.get("topic", ""),
+                                  chosen.get("topic_replay"))
+        try:
+            speak("Topic add-ons. Choose a topic with the arrow keys, then press Alt+S to start training it.", True)
+            if dialog.ShowModal() != wx.ID_OK:
+                return
+            topic, share = dialog.chosen(), dialog.chosen_share()
+        finally:
+            dialog.Destroy()
+        save_choices({**load_choices(), "topic": topic.id, "topic_replay": share})
+        self.topic_run = (topic, share)
+        try:
+            self.on_start(None)
+        finally:
+            self.topic_run = None
+
     def on_check(self, _event):
         """Check the card and the disk, show and say it."""
         lines, _ready = check_computer(self.folder.GetValue(), self.library.GetValue())
@@ -1537,7 +1716,11 @@ class Wizard(wx.Frame):
         size = SIZES[self.size.GetSelection()][0]
         own = self.own.GetValue().strip()
         problem = None
-        if kind == "pictures" and size == "continue":
+        topic_run = getattr(self, "topic_run", None)          # set by the Topic add-ons window (on_topics)
+        if topic_run and (kind != "describer" or size == "continue"):
+            problem = ("A topic add-on is always a new picture describer add-on. Choose A picture describer in What "
+                       "to train, and a quick try, normal or full in How much to train.")
+        elif kind == "pictures" and size == "continue":
             problem = ("A follow-up is only for the picture describer. Choose a quick try, normal or full in How much "
                        "to train.")
         elif self.own_only.GetValue() and not own:
@@ -1610,6 +1793,14 @@ class Wizard(wx.Frame):
         if self.research.GetValue():                 # only ticked after Agree in the terms window
             args += ["--personal-research", "--accept-research-terms"]
         self.personal_run = self.is_personal()
+        if topic_run:
+            topic, share = topic_run
+            args += topic_args(topic.id, share)
+            note = (f"Topic add-on: {topic.title}, with {round(share * 100)} percent everyday pictures."
+                    + (" This topic is sensitive." if topic.sensitive else ""))
+            self.lines.put(note)
+            speak(note)
+            self.personal_run = self.personal_run or topic.personal_only
         if self.personal_run:
             self.lines.put(PERSONAL_NOTE)            # into the Status field and Everything said
             speak(PERSONAL_NOTE)
@@ -1757,7 +1948,8 @@ def self_test():
                  os.path.join("kit", "describe_package.py"), os.path.join("kit", "run_video.cmd"),
                  os.path.join("kit", "run_review.cmd"), os.path.join("kit", "run_review.py"),
                  os.path.join("kit", "review_sources.py"), os.path.join("kit", "requirements.txt"),
-                 os.path.join("kit", "make_toolkit_addon.py"), "Make Toolkit Add-on.cmd"):
+                 os.path.join("kit", "make_toolkit_addon.py"), "Make Toolkit Add-on.cmd",
+                 os.path.join("kit", "topics.py"), "TOPIC ADD-ON LABEL FORMAT.txt"):
         if not os.path.exists(resource(name)):
             raise SystemExit(f"missing from the program: {name}")
     module = own_data_module()
@@ -1792,6 +1984,10 @@ def self_test():
     SexualDialog(window).Destroy()                                    # the adult sexual content question
     GraphicDialog(window).Destroy()                                   # the graphic scenes question
     EverythingDialog(window, everything_text(kit_sources, "describer", {""})).Destroy()   # the switch's window
+    kit_topics = topics_module()
+    if kit_topics is None or len(kit_topics.TOPICS) < 10:
+        raise SystemExit("topics.py cannot be loaded")
+    TopicAddonDialog(window, kit_topics, kit_sources, window.boxes()).Destroy()   # the topic add-ons window
     SignupKeysDialog(window).Destroy()                                # the sign-up keys window
     describe = describe_window.DescribeWindow(window, sys.modules[__name__], None, tempfile.gettempdir())
     describe_window.ReviewDialog(describe, sys.modules[__name__], tempfile.gettempdir()).Destroy()

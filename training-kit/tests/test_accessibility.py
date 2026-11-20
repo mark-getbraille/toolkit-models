@@ -346,3 +346,88 @@ def test_the_clean_up_removes_a_date_stamp_from_photos(tmp_path):
     after = np.asarray(Image.open(os.path.join(folder, "photo00.png")).convert("RGB"), dtype=float)
     assert np.abs(before - after)[205:235, 195:300].mean() > 20      # the stamp is gone ...
     assert np.abs(before - after)[:150, :150].mean() < 1             # ... and the rest of the photo is untouched
+
+
+# ----------------------------------------------------------------- topic add-ons
+
+def topic_window(wizard, boxes=None):
+    """The Topic add-ons window over the wizard, with the kit's own topics and collections."""
+    import training_wizard
+    return training_wizard.TopicAddonDialog(wizard, training_wizard.topics_module(), training_wizard.sources_module(),
+                                            boxes or wizard.boxes())
+
+
+def test_the_topic_window_is_accessible(app, wizard):
+    window = topic_window(wizard)
+    assert_accessible(window)
+    letters = {letter_of(c.GetLabel()) for c in walk(window)
+               if isinstance(c, (wx.Button, wx.CheckBox, wx.StaticText)) and letter_of(c.GetLabel())}
+    assert letters == {"t", "a", "e", "s", "c"}
+    assert window.topic.GetCount() == 10 and window.share.GetValue() == 15
+    assert (window.share.GetMin(), window.share.GetMax()) == (0, 40)
+
+
+def test_the_topic_window_keys(app, wizard, monkeypatch):
+    window = topic_window(wizard)
+    ended = []
+    monkeypatch.setattr(window, "EndModal", lambda code: ended.append(code))
+    assert_keys(window, monkeypatch, lambda w: bool(ended))
+    assert ended == [wx.ID_CANCEL]
+
+
+def test_the_wizard_has_a_topic_button(wizard):
+    """Every letter of the first page is taken, so Topic add-ons uses the digit 2, named in its tooltip."""
+    found = [c for c in walk(wizard) if isinstance(c, wx.Button) and c.GetLabel() == "Topic add-ons (&2)..."]
+    assert len(found) == 1 and "Alt+2" in found[0].GetToolTipText()
+
+
+def test_the_topic_window_says_the_licence(app, wizard, monkeypatch):
+    import training_wizard
+    said = []
+    monkeypatch.setattr(training_wizard, "speak", lambda text, *a, **k: said.append(text))
+    window = topic_window(wizard, {"wikipedia": False, "noncommercial": False, "research": False})
+    food = [t.id for t in training_wizard.topics_module().TOPICS].index("food")
+    window.topic.SetSelection(food)
+    window.on_topic(None)
+    text = window.about.GetValue()
+    assert text.startswith("Food and packaged goods.") and "Licence of this add-on: open." in text
+    assert "Left out until their box is ticked" in text and "never used for making pictures" in text
+    assert said and said[-1].startswith("Food and packaged goods. Licence of this add-on: open.")
+    window.Destroy()
+    window = topic_window(wizard, {"wikipedia": True, "noncommercial": True, "research": True})
+    window.topic.SetSelection(food)
+    assert "Licence of this add-on: personal use only." in window.show_topic()
+    window.topic.SetSelection(window.topic.GetCount() - 1)                  # sexual content
+    text = window.show_topic()
+    assert "sensitive" in text and "personal use only" in text
+    window.share.SetValue(25)
+    assert window.chosen().id == "sexual" and window.chosen_share() == 0.25
+
+
+def test_starting_a_topic_add_on_passes_the_topic(app, wizard, monkeypatch):
+    """Start training this add-on runs train.py with --topic and --topic-replay; a follow-up is refused."""
+    import training_wizard
+    monkeypatch.setattr(training_wizard, "check_computer", lambda *a, **k: (["Ready."], True))
+    started = []
+
+    class FakeThread:
+        """Records the training's arguments instead of starting it."""
+
+        def __init__(self, target=None, args=(), daemon=None):
+            started.append(args)
+
+        def start(self):
+            pass
+    monkeypatch.setattr(training_wizard.threading, "Thread", FakeThread)
+    monkeypatch.setattr(wizard, "review_folders", lambda: [])
+    topic = training_wizard.topics_module().find("food")
+    wizard.size.SetSelection([k for k, _w in training_wizard.SIZES].index("continue"))
+    wizard.topic_run = (topic, 0.2)
+    wizard.on_start(None)
+    assert not started and "always a new picture describer add-on" in wizard.check_result.GetValue()
+    wizard.size.SetSelection([k for k, _w in training_wizard.SIZES].index("quick"))
+    wizard.on_start(None)
+    args = started[-1][0]
+    assert args[args.index("--topic") + 1] == "food" and args[args.index("--topic-replay") + 1] == "0.20"
+    assert "--continue" not in args
+    assert training_wizard.topic_args("nature", 0.15) == ["--topic", "nature", "--topic-replay", "0.15"]
