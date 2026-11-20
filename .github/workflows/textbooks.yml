@@ -39,6 +39,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 # One run of each kind at a time (the daily, the backfill, the weekly check and manual runs do not wait for each other).
 concurrency:
@@ -213,3 +214,18 @@ jobs:
                   if a["name"].endswith(".zim") and a["name"] not in keep and a.get("createdAt", "9") < old:
                       subprocess.run(["gh", "release", "delete-asset", r, a["name"], "-y"])
           PY
+
+  # GitHub hardly ever starts the hourly backfill schedule here (it drops schedules on a busy repository), so each
+  # backfill run starts the next one when its catalogue is published, after a 10-minute pause that keeps the sources'
+  # load low. The chain stops by itself when nothing older is left (plan finds no key) or with "backfill: off" in
+  # textbooks/schedule.txt; textbooks-backfill.yml (hourly, or Run workflow) starts it again.
+  next-backfill:
+    needs: [plan, catalogue]
+    if: always() && needs.plan.outputs.mode == 'backfill' && needs.plan.outputs.keys != '[]'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - run: sleep 600
+      - run: gh workflow run textbooks.yml -f keys=all -f "schedule=17 * * * *"
