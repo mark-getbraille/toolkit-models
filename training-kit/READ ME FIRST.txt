@@ -224,6 +224,52 @@ without the toolkit version also gets it at the next start, once, as long as the
 it without starting a training, press Enter on "Make Toolkit Add-on.cmd" in the kit folder. Making it downloads
 llama.cpp's converter once (about 40 MB, from GitHub); nothing is sent anywhere.
 
+Topic add-ons
+A topic add-on gives the picture describer more expertise in one subject, such as medicines or food. Qwen stays
+your general describer for everything; you choose which topic add-on to load in the toolkit, when you want it, and
+you can train as many topics as you like, one at a time.
+The topics:
+- Medicines and medical supplies (medicines): pills and their imprints, blister packs, medicine labels, bandages,
+  syringes, inhalers, instruments, animal medicines.
+- Drugs and paraphernalia (drugs): street drugs, counterfeit pills, seizures, pipes, bongs, vapes.
+- Firearms and accessories (firearms): guns by kind, maker and model, cartridges, holsters, scopes, sights.
+- Food and packaged goods (food): fresh or spoiled food, groceries, packaged goods, use-by dates, text on packs.
+- Vehicles, machines and household equipment (machines): vehicle models, car and machine parts, dashboard symbols,
+  tools, appliances and their controls, plugs, clocks, displays.
+- Art and museum objects (art): museum descriptions written for blind visitors, famous works, instruments.
+- Documents, maps and signs (documents): letters, forms, receipts, tables, charts, maps, sheet music, road and
+  safety signs, phone screens.
+- Plants, animals and nature (nature): plants, animals and breeds, crops and their diseases, weather, landscapes.
+- Nudity in art and photography (nudity): sensitive. Nudes in art and non-sexual photographic studies of adults.
+- Sexual content (sexual): sensitive, and always for personal use only. Erotic art showing adults, and checked
+  pictures of your adult review collections.
+How to train one in the program:
+1. On the first page, choose the folders, the model and How much to train as usual (a quick try, normal or full;
+   not a follow-up). Leave What to train on A picture describer.
+2. Press "Topic add-ons" (Alt+2). A window opens.
+3. In Topic (Alt+T), choose a topic with the arrow keys. Its name and licence are said as you move.
+4. Read About this topic (Alt+A): what the add-on knows, how many of its collections are used, which are left out
+   until a box is ticked on the first page, and its licence.
+5. Everyday share (Alt+E) is how much of the training is ordinary pictures, so the add-on does not forget how to
+   describe everyday things. 15 percent is a good start; you can choose 0 to 40. If the report says everyday
+   description got worse, train again with a higher share.
+6. Press "Start training this add-on" (Alt+S). Cancel (Alt+C) or Escape closes the window without training.
+The training then runs like any other, saying each step. Some collections of a topic are share-alike,
+non-commercial or research-only: they are used only when Include Wikipedia, or the non-commercial or research-only
+box, is ticked on the first page. The nudity and sexual content topics tick the content choices they need by
+themselves. Your own pictures are not used for a topic add-on.
+The report starts with the topic's score in plain words: how the add-on did on the topic's own test pictures, which
+were kept back and never trained on, and on everyday test pictures, each before and after training (from 0 to 1;
+higher is closer to people's own descriptions).
+The result zip is named after the topic, for example picture-training-4b-topic-food-2026-11-20.zip. Install it in
+the toolkit the same way as any trained describer. Inside it, addon-label.json says which topic it is, which model
+it is for, whether it is sensitive, and its licence: "open", or "personal use only" when it learned from any
+non-commercial or research-only collection, review pictures or sexual content. A personal-use add-on must never be
+published, shared or sold. A topic add-on only describes pictures; it is never used for making pictures. The label
+is explained in "TOPIC ADD-ON LABEL FORMAT.txt".
+With the .cmd files: open a command prompt in the kit folder and type, for example, kit\run.cmd --model 4b --topic
+food (add --topic-replay 0.25 for a 25 percent everyday share; kit\run.cmd --topic list says the topics).
+
 The picture library
 The program keeps every picture for good in the picture library folder. It suggests "Picture Library" on the drive
 with the most free space on each computer, and you can choose any folder (Browse for the library folder, Alt+L),

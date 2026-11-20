@@ -305,3 +305,15 @@ def test_topic_list(capsys):
     assert train.main(["--topic", "list"]) == 0
     out = capsys.readouterr().out
     assert "food: Food and packaged goods" in out and "sexual: Sexual content (sensitive)" in out
+
+
+def test_the_guide_explains_every_topic():
+    """READ ME FIRST.txt (F1 in the program) has a Topic add-ons section naming every topic and the window's keys."""
+    with open(os.path.join(os.path.dirname(KIT), "READ ME FIRST.txt"), encoding="utf-8") as f:
+        text = f.read()
+    section = text[text.index("\nTopic add-ons\n"):text.index("\nThe picture library\n")]
+    for topic in topics.TOPICS:
+        assert f"{topic.title} ({topic.id})" in section, topic.id
+    for key in ("Alt+2", "Alt+T", "Alt+A", "Alt+E", "Alt+S", "Alt+C", "Escape", "addon-label.json",
+                "personal use only", "never used for making pictures"):
+        assert key in section, key
