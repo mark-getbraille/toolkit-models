@@ -151,8 +151,8 @@ def test_archive_found_by_halving(monkeypatch):
 
     def archive(url):
         n = int(url.rsplit("=", 1)[1])
-        if n >= 300:
-            return "<html>No more.</html>"
+        if n >= 300:                                         # past the end, EFF's site answers with its first page
+            n = 0
         return "".join(f'<article class="node node--teaser"><a href="/deeplinks/{month_of(n)}/post-{n}-{k}">x</a>'
                        f'<a href="/deeplinks/2026/11/popular">related</a></article>' for k in range(2))
 

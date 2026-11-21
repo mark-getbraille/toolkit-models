@@ -296,9 +296,12 @@ def archive_items(spec, piece, cache, left_out, today):
     pages = {}
 
     def listed(n):
-        """The posts on archive page n (each page read once in this build; fresh for the current year)."""
+        """The posts on archive page n (each page read once in this build; fresh for the current year). A number
+        past the last page brings back the first page on some sites (EFF's): that counts as past the end."""
         if n not in pages:
             pages[n] = archive_page(spec, n, cache, current and n < 60)
+            if n and pages[n] and pages[n] == listed(0):
+                pages[n] = []
         return pages[n]
     low, high = 0, spec.get("archive_pages", 4000)
     while low < high:                    # the first page whose oldest post is not newer than the piece's last month
@@ -309,14 +312,13 @@ def archive_items(spec, piece, cache, left_out, today):
         else:
             high = mid
     urls, n = [], max(0, low - 1)
-    while True:
+    for n in range(n, n + 400):                    # (a guard: no month or year spans 400 archive pages)
         posts = listed(n)
         if not posts:
             break
         urls += [u for ym, u in posts if first <= ym <= last]
         if max(p[0] for p in posts) < first:
             break
-        n += 1
     urls = list(dict.fromkeys(urls))[:spec.get("limit", P.MAX_ITEMS)]
     counts = {}
     out = page_items(spec, piece, urls, cache, left_out, counts)
