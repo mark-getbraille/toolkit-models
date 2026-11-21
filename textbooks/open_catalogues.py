@@ -167,7 +167,7 @@ _MEMO = {}
 
 THOTH_QUERY = ("{ works(limit: 2000, publishers: [\"%s\"], workTypes: [MONOGRAPH, EDITED_BOOK, TEXTBOOK], "
                "workStatuses: [ACTIVE]) { workId fullTitle workType license publicationDate updatedAt doi landingPage "
-               "longAbstract languages { languageCode mainLanguage } subjects { subjectType subjectCode "
+               "longAbstract languages { languageCode languageRelation } subjects { subjectType subjectCode "
                "subjectOrdinal } contributions { fullName "
                "contributionType contributionOrdinal } publications { publicationType locations { fullTextUrl "
                "landingPage locationPlatform } } } }" % OBP_PUBLISHER)
@@ -216,7 +216,8 @@ def obp_entry(work):
     name = "obp_" + re.sub(r"[^a-z0-9]+", "_", doi.lower().replace("obp.", "")) if doi else \
         "obp_" + work["workId"].replace("-", "")[:12]
     abstract = " ".join(html.unescape(re.sub(r"<[^>]+>", " ", work.get("longAbstract") or "")).split())
-    langs = [x["languageCode"].lower() for x in work.get("languages") or [] if x.get("mainLanguage")]
+    langs = [x["languageCode"].lower() for x in sorted(work.get("languages") or [], key=lambda x: x.get(
+        "languageRelation") != "TRANSLATED_INTO") if x.get("languageRelation") in ("ORIGINAL", "TRANSLATED_INTO")]
     return dict(name=name, language=langs[0] if langs else "eng",
                 title=work["fullTitle"] + (f" ({authors})" if authors and len(authors) < 80 else ""),
                 subject=(keywords[0].capitalize() if keywords else "Humanities and social sciences"),

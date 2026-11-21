@@ -57,7 +57,7 @@ def work(licence="https://creativecommons.org/licenses/by/4.0/", platform="INTER
     """A made-up Thoth work."""
     return {"workId": "11111111-2222-3333-4444-555555555555", "fullTitle": title, "license": licence,
             "publicationDate": "2024-05-01", "doi": "https://doi.org/10.11647/obp.0123", "landingPage": "https://x",
-            "longAbstract": "<p>What it is about.</p>", "languages": [{"languageCode": "SPA", "mainLanguage": True}],
+            "longAbstract": "<p>What it is about.</p>", "languages": [{"languageCode": "SPA", "languageRelation": "ORIGINAL"}],
             "subjects": [{"subjectType": "KEYWORD", "subjectCode": "history", "subjectOrdinal": 1}],
             "contributions": [{"fullName": "Ann Author", "contributionType": "AUTHOR", "contributionOrdinal": 1}],
             "publications": [{"publicationType": "PDF", "locations": [
