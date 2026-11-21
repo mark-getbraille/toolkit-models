@@ -129,6 +129,18 @@ PDFS = [
          notice="A work of the US government (public domain; the GSA repository adds the CC0 1.0 dedication "
                 "worldwide). The guidelines have been followed since 2011 by digital.gov's plain language guide, "
                 "also in this collection."),
+    _pdf("gpo_style_manual", "GPO Style Manual (2016)", "Style manual (US government publishing)",
+         "US Government Publishing Office (GPO)",
+         "The official guide to the form and style of US federal government publishing, the whole book: "
+         "capitalization, spelling and compound words, punctuation, abbreviations and letter symbols, signs and "
+         "symbols, italic, numerals, tabular work, leaderwork, footnotes and indexes, the Congressional Record, "
+         "and the useful tables (US states and their capitals, countries and their people, currency, the "
+         "Government's departments), with the GPO's word lists.", "2016", "2016 edition (31st edition)",
+         pdf="https://www.govinfo.gov/content/pkg/GPO-STYLEMANUAL-2016/pdf/GPO-STYLEMANUAL-2016.pdf",
+         page="https://www.govinfo.gov/app/details/GPO-STYLEMANUAL-2016",
+         notice="A work of the US Government Publishing Office (not under copyright in the United States). The "
+                "Superintendent of Documents asks that any reprinted edition be labeled clearly as a copy of the "
+                "authentic work: this is a copy, converted to an accessible format."),
 ]
 for _e in PDFS:
     if _e["publisher"] == OPM:
@@ -495,6 +507,10 @@ LICENCE_LINES = {
     "digital_gov_plain_language": "digital.gov (GSA): a work of the US government (17 U.S.C. 105; the line checked "
                                   "is govinfo.gov's quotation of it). robots.txt: \"User-agent: *\", Crawl-delay 10, "
                                   "only Drupal's system folders disallowed; no AI rules (checked 2026-11-21).",
+    "gpo_style_manual": "govinfo.gov/about/policies quotes 17 U.S.C. 105; the Internet Archive's record of the same "
+                        "book adds: \"The Superintendent of Documents of the U.S. Government Publishing Office "
+                        "requests that any reprinted edition be labeled clearly as a copy of the authentic work\" "
+                        "(said in the book's notice). govinfo's robots.txt allows /content/pkg/.",
 }
 
 NOT_INCLUDED = [
