@@ -14,4 +14,5 @@
 # 20 November (2): US and Canadian street scenes (crosswalks and signals, streets and roads, neighbourhoods, FHWA highway photos).
 # 21 November: North American animals by species and breed, animal signs, NOAA species photos, animal care products.
 # 21 November (2): hardware, tools, shop equipment and protective gear.
-commons_fasteners,commons_door_hardware,commons_building_hardware,commons_plumbing_electrical,commons_building_materials,commons_hand_tools_trades,commons_power_tools,commons_shop_machines,commons_ppe,commons_sewing_food_equipment,abo_hardware,nmah_hardware_tools
+# 21 November (3): with the hardware packs (one waiting run replaces another), money, mail, clothing, makeup, toys/sports/music, sky and weather, screens.
+commons_fasteners,commons_door_hardware,commons_building_hardware,commons_plumbing_electrical,commons_building_materials,commons_hand_tools_trades,commons_power_tools,commons_shop_machines,commons_ppe,commons_sewing_food_equipment,abo_hardware,nmah_hardware_tools,commons_money_sides,commons_mail_parcels,commons_clothing_patterns,commons_makeup_grooming,commons_toys_sports_music,commons_sky_weather,commons_screens
