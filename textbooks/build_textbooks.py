@@ -1007,16 +1007,24 @@ DROP_TAGS = {"script", "style", "button", "input", "form", "select", "textarea",
              "nav", "video", "audio", "object", "template"}
 
 
+def _latex_or_raw(source):
+    """The readable text of a LaTeX formula, or the formula itself when it cannot be read (a stray backslash)."""
+    try:
+        return mathtext.latex_text(source)
+    except (AttributeError, IndexError, ValueError, RecursionError):
+        return " ".join(source.split())
+
+
 def latex_spans(text):
     """\\( ... \\) and \\[ ... \\] formulas in HTML text replaced by their readable text (mathtext.latex_text)."""
     def inline(m):
         """One inline formula."""
-        t = mathtext.latex_text(html.unescape(m.group(1)))
+        t = _latex_or_raw(html.unescape(m.group(1)))
         return f'<span class="math" role="math" aria-label="{esc(t)}">{esc(t)}</span>'
 
     def block(m):
         """One displayed formula."""
-        t = mathtext.latex_text(html.unescape(m.group(1)))
+        t = _latex_or_raw(html.unescape(m.group(1)))
         return f'<div class="math" role="math" aria-label="{esc(t)}">{esc(t)}</div>'
     text = re.sub(r"\\\[(.+?)\\\]", block, text, flags=re.S)
     return re.sub(r"\\\((.+?)\\\)", inline, text, flags=re.S)

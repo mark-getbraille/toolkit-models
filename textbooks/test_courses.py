@@ -261,6 +261,8 @@ def test_mathml_as_text():
     out = B.mathml_spans('<p>Area <math xmlns="http://www.w3.org/1998/Math/MathML"><mn>5</mn><mo>×</mo>'
                          "<msup><mi>x</mi><mn>2</mn></msup></math></p>")
     assert 'aria-label="5 × x^2"' in out and "<math" not in out
+    # A formula LaTeX cannot read (a stray backslash, as in a CK-12 page) is kept as written, not a crash.
+    assert 'class="math"' in B.latex_spans("<p>\\(\\\\\\)</p>")
 
 
 # ---------------------------------------------------------------------- weekly check, catalogue
