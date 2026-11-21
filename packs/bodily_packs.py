@@ -31,8 +31,11 @@ The packs (BODILY_PACKS):
                        give the "No" answers.
   inat_droppings       iNaturalist observations marked "Evidence of presence: Scat" for dogs, cats, horses, farm
                        animals, birds and animals of yards and parks (fox, deer, rabbit, hedgehog, raccoon, Canada
-                       goose, pigeon), each photo's own licence CC0 or CC BY. "What is this?" -> "This is dog poop,
-                       left by a domestic dog (Canis familiaris)." and "What animal left these droppings?"
+                       goose, pigeon), each photo's own licence CC0 or CC BY. Research-grade observations only, read
+                       through GBIF (the annotation is on GBIF's records) with the photos from the iNaturalist Open
+                       Dataset, never from iNaturalist's website or API, so pets' droppings are fewer than before.
+                       "What is this?" -> "This is dog poop, left by a domestic dog (Canis familiaris)." and "What
+                       animal left these droppings?"
   open_images_bodily   Google Open Images V7 (labels CC BY 4.0; photos CC BY 2.0, checked photo by photo): photos whose
                        labels people checked by hand for blood, an injury, a bandage, a sticking plaster, poop, a cat
                        litter box or cat litter, or a stain: "Is there blood in this picture?" with "yes" from a label
@@ -71,7 +74,7 @@ import time
 import zipfile
 
 import build_packs  # noqa: F401 - loaded first: food_packs and build_packs import each other
-from build_packs import session, clean, smaller, fetch_all, say, article, inat_place, ALT_TEXT  # noqa: F401
+from build_packs import session, clean, smaller, fetch_all, say, article, ALT_TEXT  # noqa: F401
 from build_packs import pass_random  # shuffles differently on a top-up pass (see build_packs)
 from food_packs import (with_twins, listed, count_pictures, oi_lines, oi_licence_name, commons_members, commons_entries,
                         commons_place, OI_CLASSES, OI_PICTURE)
@@ -262,11 +265,10 @@ def _minutes(a, b):
 
 # ----------------------------------------------------------------- iNaturalist droppings ("Evidence of presence: Scat")
 
-INAT = "https://api.inaturalist.org/v1/"
-INAT_FREE = ("cc0", "cc-by")
-# The animals, by scientific name, with the plain words for their droppings, whether every observation counts (the
-# animal lives with people, so the observer's own name for it is used, "casual" ones too) or only research-grade ones,
-# and how many pictures each may give at most (a share of the limit).
+# The animals, by scientific name, with the plain words for their droppings, whether the animal lives with people
+# (domestic: the answer names it in plain words), and how many pictures each may give at most (a share of the limit).
+# Only research-grade observations are on GBIF, so pets' and farm animals' droppings come only from observations the
+# community agreed on (iNaturalist's casual ones, most of the pets', are not published there).
 INAT_ANIMALS = [
     ("Canis familiaris", "dog poop", "a domestic dog", True, 0.25),
     ("Felis catus", "cat poop", "a domestic cat", True, 0.08),
@@ -289,80 +291,66 @@ INAT_ANIMALS = [
 INAT_SINGULAR = {"dog poop", "cat poop", "horse manure (horse droppings)", "a cow pat (cow dung)"}
 WHAT_Q = "What is this?"
 WHO_Q = "What animal left these droppings?"
+# Dingoes are filed under Canis familiaris on iNaturalist; they are wild, not pets.
+DINGO = re.compile(r"\bdingo(es|s)?\b", re.I)
 
 
-def inat_taxon(s, name):
-    """The iNaturalist taxon id of a scientific name (exact match), or None."""
-    try:
-        for t in s.get(INAT + "taxa", params={"q": name, "per_page": 10}, timeout=60).json().get("results", []):
-            if t.get("name", "").lower() == name.lower():
-                return t["id"]
-    except Exception:  # noqa: BLE001 - left out
-        pass
-    return None
-
-
-def inat_scat(s, taxon, grades, want, licences=INAT_FREE):
-    """Observations of a taxon marked as scat whose first photo's own licence is one of licences, up to want."""
-    out, page = [], 1
-    while len(out) < want and page <= 20:
-        try:
-            data = s.get(INAT + "observations", timeout=60, params={
-                "taxon_id": taxon, "term_id": 22, "term_value_id": 25, "photo_license": ",".join(licences),
-                "quality_grade": grades, "per_page": 200, "page": page, "order_by": "votes"}).json()
-        except Exception:  # noqa: BLE001 - what was found
+def inat_scat(s, taxon, want, rng, licence=None):
+    """iNaturalist records of a taxon (GBIF search parameters from na_animal_packs.inat_taxon) on GBIF whose "Evidence of presence" annotation says scat, each
+    with its first photo in the iNaturalist Open Dataset whose own licence passes licence (na_animal_packs.inat_photo;
+    open licences by default): [(record, media, licence words)], up to want. GBIF's full-text search finds the word
+    "scat"; the annotation itself must say it."""
+    from na_animal_packs import inat_pages, inat_photo, evidence_of, INAT_OPEN
+    params = dict(taxon, q="scat")
+    if licence is None:
+        params["license"] = INAT_OPEN
+    out, seen = [], set()
+    for record in inat_pages(s, params, rng, pages=max(1, want // 150 + 1)):
+        media, words = inat_photo(record, licence)
+        if media and "scat" in evidence_of(record) and record.get("key") not in seen and not DINGO.search(
+                " ".join(clean(record.get(k)) for k in ("occurrenceRemarks", "identificationRemarks", "species"))):
+            seen.add(record.get("key"))
+            out.append((record, media, words))
+        if len(out) >= want:
             break
-        results = data.get("results") or []
-        for o in results:
-            photos = o.get("photos") or []
-            if photos and (photos[0].get("license_code") or "") in licences:
-                out.append(o)
-        if len(results) < 200:
-            break
-        page += 1
-        time.sleep(1.1)                      # iNaturalist asks for at most about one request a second
-    return out[:want]
+    return out
 
 
-def inat_rows(o, words, animal, licence_names=None):
-    """The rows for one scat observation: what it is, and (for research-grade or domestic ones) which animal, with
-    the species named for wild birds."""
-    taxon = o.get("taxon") or {}
-    common, latin = clean(taxon.get("preferred_common_name")), taxon.get("name", "")
-    if words == "bird droppings" and o.get("quality_grade") == "research" and common and latin != "Aves":
+def inat_rows(s, record, media, licence, words, animal, names, name=""):
+    """The rows for one scat record: what it is, and which animal (with name, the scientific name it was looked up
+    by, "Canis familiaris"), with the species named for wild birds."""
+    from na_animal_packs import inat_latin, inat_common, inat_credit, inat_country
+    latin = inat_latin(record)
+    common = inat_common(s, record, names) if words == "bird droppings" and latin else ""
+    if words == "bird droppings" and common:
         animal = f"{article(common)} {common} ({latin})"
-    elif latin and words != "bird droppings" and " " in latin:
-        animal = f"{animal} ({latin})"
-    photo = o["photos"][0]
-    login = (o.get("user") or {}).get("login", "an iNaturalist user")
-    licence = (licence_names or {}).get(photo["license_code"], photo["license_code"].upper())
-    credit = f"Photo by {login} on iNaturalist, {licence}, https://www.inaturalist.org/observations/{o['id']}"
+    elif words != "bird droppings" and " " in name:
+        animal = f"{animal} ({name})"
     lead = "This is" if words in INAT_SINGULAR else "These are"
     rows = [{"question": WHAT_Q, "answer": f"{lead} {words}, left by {animal}."},
             {"question": WHO_Q, "answer": f"They look like droppings left by {animal}."}]
-    return plain_rows(rows, credit=credit, **inat_place(o))
+    return plain_rows(rows, credit=inat_credit(record, media, licence), **inat_country(record))
 
 
 def build_inat_droppings(limit):
-    """The iNaturalist droppings pack: [(name, JPEG, row)] from scat observations of the animals in INAT_ANIMALS,
-    each observation's first photo (iNaturalist's "large" copy) under CC0 or CC BY."""
-    s, items = session(), []
+    """The iNaturalist droppings pack: [(name, JPEG, row)] from research-grade scat observations of the animals in
+    INAT_ANIMALS, each record's first photo under CC0, the Public Domain Mark or CC BY (its "large" copy). The
+    records come from GBIF (iNaturalist's research-grade dataset there, with iNaturalist's "Evidence of presence:
+    Scat" annotation) and the photos from the iNaturalist Open Dataset on Amazon's open-data programme
+    (na_animal_packs' shared reader); iNaturalist's website and API are never read."""
+    from na_animal_packs import inat_taxon, inat_photo_id, photo_url
+    s, items, names, rng = session(), [], {}, pass_random(62)
     for latin, words, animal, domestic, share in INAT_ANIMALS:
         taxon = inat_taxon(s, latin)
         if not taxon:
-            say(f"iNaturalist: {latin} not found")
+            say(f"GBIF: {latin} not found")
             continue
-        grades = "research,needs_id,casual" if domestic else "research"
-        found = inat_scat(s, taxon, grades, max(3, int(limit * share * 1.2)))
-        # Dingoes are filed under Canis familiaris on iNaturalist; they are wild, not pets.
-        found = [o for o in found if "dingo" not in ((o.get("taxon") or {}).get("name") or "").lower()]
-        for o in found:
-            photo = o["photos"][0]
-            items.append((f"inatscat-{photo['id']}.jpg", photo["url"].replace("/square.", "/large."),
-                          inat_rows(o, words, animal)))
-        say(f"iNaturalist droppings of {latin}: {len(found)}")
-        time.sleep(1.1)
-    pass_random(62).shuffle(items)
+        found = inat_scat(s, taxon, max(3, int(limit * share * 1.2)), rng)
+        for record, media, licence in found:
+            items.append((f"inatscat-{inat_photo_id(media)}.jpg", photo_url(media["identifier"]),
+                          inat_rows(s, record, media, licence, words, animal, names, latin)))
+        say(f"iNaturalist (on GBIF) droppings of {latin}: {len(found)}")
+    rng.shuffle(items)
     return with_twins(fetch_all(items[:int(limit * 1.1) + 2], workers=4, pause=0.3)[:limit])
 
 
@@ -911,7 +899,8 @@ BODILY_PACKS = {
     "inat_droppings": (build_inat_droppings,
                        "iNaturalist observations marked 'Evidence of presence: Scat', https://www.inaturalist.org: "
                        "photos CC0 or CC BY (each photo's own licence checked), each credited below with its "
-                       "photographer and observation."),
+                       "photographer and observation. Records via GBIF (https://www.gbif.org), photos from the "
+                       "iNaturalist Open Dataset."),
     "open_images_bodily": (build_open_images_bodily,
                            "Open Images V7 (Google): image-level labels verified by people, CC BY 4.0, "
                            "https://storage.googleapis.com/openimages/web/index.html. Each photo is CC BY 2.0 (checked "

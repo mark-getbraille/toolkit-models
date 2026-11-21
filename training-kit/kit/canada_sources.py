@@ -40,7 +40,8 @@ The collections (CANADA_SOURCES):
                            (languages_codes) says English and French (the food search service does not return it).
                            Supplements, vitamins, cough drops and throat lozenges are skipped (med_vet_sources.
                            openfacts_supplements takes them).
-    inaturalist_ca_sa      iNaturalist research-grade observations in each province and territory, photos CC BY-SA.
+    inaturalist_ca_sa      iNaturalist research-grade observations in each province and territory, photos CC BY-SA
+                           (through GBIF and the iNaturalist Open Dataset, inat_gbif.py; such photos are few).
   noncommercial
     inaturalist_ca_nc      The same, photos under CC BY-NC, BY-NC-SA or BY-NC-ND.
     montreal_archives      Archives de la Ville de Montréal, "Archives photographiques (sélection)" (donnees.montreal.ca,
@@ -95,7 +96,7 @@ from home_sources import commons_sa_items, facts_image, kind_rows, FACT_SITES, F
 from more_sources import fetch_shared
 from personal_sources import CHILD_WORDS
 from sources import Source, clean
-from us_sources import off_us_front, inat_json, INAT_GROUPS, INAT_LICENCES, a_or_an
+from us_sources import off_us_front, INAT_GROUPS, INAT_LICENCES
 
 WHAT_Q = "What is this?"
 HOUSE_Q = "What kind of house is this?"
@@ -311,59 +312,16 @@ def prepare_openfacts_ca(source, data_dir, work, cap):
 
 # ----------------------------------------------------------------- iNaturalist, provinces, other licences
 
-INAT_CANADA = 6712
-
-
-def inat_provinces():
-    """{province or territory: iNaturalist place id} for the 13 (looked up by name, a second apart)."""
-    out = {}
-    for name in PROVINCES:
-        for p in inat_json("places/autocomplete", {"q": name, "per_page": 20}).get("results") or []:
-            if p.get("admin_level") == 10 and INAT_CANADA in (p.get("ancestor_place_ids") or []) \
-                    and folded(clean(p.get("name"))) == folded(name):
-                out[name] = p["id"]
-                break
-        time.sleep(1.1)
-    return out
-
-
 def inat_ca_rows(source, data_dir, licences, prefix):
     """Rows for iNaturalist research-grade observations in each province and territory whose photo's own licence is
-    one of licences: the provinces and groups take turns, one page each. The province is the place."""
+    one of licences: the provinces and groups take turns, one page each. The province is the place. The records
+    come from GBIF and the photos from the iNaturalist Open Dataset (inat_gbif.py); iNaturalist's website and API are
+    never read."""
+    import inat_gbif
     want = int((source.cap + source.test) * 1.1)
-    provinces = inat_provinces()
-    rng = random.Random(prefix)
-    pairs = [(prov, g, q) for prov in provinces for g, q in INAT_GROUPS]
-    rng.shuffle(pairs)
-    per = max(2, -(-want // max(1, len(pairs))))
-    items, seen = [], set()
-    for prov, group, question in pairs:
-        if len(items) >= want * 2:
-            break
-        data = inat_json("observations", {"quality_grade": "research", "photo_license": ",".join(licences),
-                                          "iconic_taxa": group, "place_id": provinces[prov], "per_page": 50,
-                                          "page": rng.randint(1, 5), "order_by": "id"})
-        got = 0
-        for o in data.get("results") or []:
-            taxon, photos = o.get("taxon") or {}, o.get("photos") or []
-            photo = next((ph for ph in photos if ph.get("license_code") in licences), None)
-            if got >= per or not photo or not taxon.get("name") or o["id"] in seen:
-                continue
-            seen.add(o["id"])
-            latin, common = taxon["name"], clean(taxon.get("preferred_common_name"))
-            answer = f"This is {a_or_an(common)} {common} ({latin})." if common else f"This is {latin}."
-            login = (o.get("user") or {}).get("login", "an iNaturalist user")
-            credit = (f"Photo by {login} on iNaturalist, {INAT_LICENCES[photo['license_code']]}, "
-                      f"https://www.inaturalist.org/observations/{o['id']}")
-            name, url = f"{prefix}-{photo['id']}.jpg", photo["url"].replace("/square.", "/large.")
-            place = {"place": f"{prov}, Canada"}
-            items.append((name, url, {"question": question, "answer": answer, "split": "", "credit": credit,
-                                      **place}))
-            items.append((name, url, {"question": WHERE_Q, "answer": f"It was taken in {prov}, Canada.", "split": "",
-                                      "credit": credit, **place}))
-            got += 1
-        time.sleep(1.1)                    # iNaturalist asks for at most about one request a second
-    say(f"  iNaturalist (Canada, {', '.join(INAT_LICENCES[x] for x in licences)}): {len(items) // 2} photos")
+    provinces = inat_gbif.regions("CA", PROVINCES)
+    items = inat_gbif.region_items("CA", provinces, INAT_GROUPS, licences, want, prefix, lambda p: f"{p}, Canada")
+    say(f"  iNaturalist on GBIF (Canada, {', '.join(INAT_LICENCES[x] for x in licences)}): {len(items) // 2} photos")
     return fetch_shared(items, os.path.join(data_dir, source.key), workers=4)
 
 

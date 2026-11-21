@@ -105,8 +105,8 @@ from food_packs import with_twins, count_pictures, commons_members
 from home_packs import commons_fetch, file_name, NUDE, FIRST_PERSON, NOT_RESPECTFUL
 from expression_packs import mark_child, child_count
 from mechanical_packs import mech_entries, in_english, JUST_A_RECORD, NOT_A_PHOTO
-from everyday_packs import GBIF, GBIF_GROUPS, GBIF_NOT_A_NAME, gbif_licence, a_or_an, breed_name
-from places import where, place_name
+from everyday_packs import GBIF, GBIF_GROUPS, GBIF_INATURALIST, GBIF_NOT_A_NAME, gbif_licence, a_or_an, breed_name
+from places import where, place_name, country_at
 
 USA, CANADA = "USA", "Canada"
 COUNTRIES = {"US": USA, "CA": CANADA}
@@ -299,10 +299,12 @@ def record_problem(record, media, evidence=""):
 
 
 def free_media(record):
-    """The first photo of a record whose own licence is CC0, the Public Domain Mark or CC BY, or None."""
+    """The first photo of a record whose own licence is CC0, the Public Domain Mark or CC BY, or None. A photo kept
+    on iNaturalist's own website (static.inaturalist.org) rather than in its Open Dataset is never used."""
     for m in record.get("media") or []:
         url = m.get("identifier") or ""
-        if m.get("type") == "StillImage" and url.startswith("http") and gbif_licence(m.get("license")):
+        if m.get("type") == "StillImage" and url.startswith("http") and gbif_licence(m.get("license")) \
+                and not on_inaturalist_site(url):
             return m
     return None
 
@@ -310,9 +312,241 @@ def free_media(record):
 def photo_url(url):
     """The address to download: iNaturalist Open Dataset photos as their "large" copy (1,024 pixels), others as
     given."""
-    if "inaturalist-open-data" in url or "static.inaturalist.org" in url:
-        return re.sub(r"/original\.", "/large.", url)
-    return url
+    return open_data_photo(url) or url
+
+
+# ====================================================================== iNaturalist through GBIF (shared reader)
+#
+# The packs named after iNaturalist (inaturalist, inaturalist_us, inaturalist_ca, inat_droppings, inat_crops) read
+# iNaturalist's research-grade observations the same way as the wild packs above: the records from GBIF's occurrence
+# API (the dataset "iNaturalist Research-grade Observations", which iNaturalist publishes to GBIF), the photos from
+# the iNaturalist Open Dataset on Amazon's open-data programme. iNaturalist's website says "ai-train=no" and its
+# API's robots.txt turns every program away, so neither www.inaturalist.org nor api.inaturalist.org is ever read
+# (training-kit/tests/test_no_inaturalist_site.py checks this). Each builder imports these helpers inside its
+# function, because build_packs loads this file last.
+
+INAT_DATASET = GBIF_INATURALIST       # GBIF's key of "iNaturalist Research-grade Observations"
+OPEN_DATA_HOST = "inaturalist-open-data.s3.amazonaws.com"
+INAT_PHOTO = re.compile(r"/photos/(\d+)/[a-z]+\.(\w+)$")
+# iNaturalist's "iconic" groups (build_packs.INAT_GROUPS) as GBIF Backbone keys: GBIF has no class for reptiles or
+# ray-finned fish, so their orders are listed (as in the wild packs).
+INAT_GROUP_KEYS = {"Plantae": (6,), "Fungi": (5,), "Insecta": (216,), "Aves": (212,), "Mammalia": (359,),
+                   "Reptilia": REPTILE_ORDERS, "Amphibia": (131,), "Arachnida": (367,), "Mollusca": (52,),
+                   "Actinopterygii": FISH_ORDERS}
+# Record licences worth asking GBIF for when only open photos are wanted (each photo's own licence is still checked:
+# a CC BY record can carry a CC BY-NC photo).
+INAT_OPEN = ["CC0_1_0", "CC_BY_4_0"]
+
+
+def on_inaturalist_site(url):
+    """True when an address is on iNaturalist's own website (inaturalist.org or any part of it, such as
+    api.inaturalist.org or static.inaturalist.org): such addresses are never fetched."""
+    from urllib.parse import urlsplit
+    host = (urlsplit(url or "").hostname or "").lower()
+    return host == "inaturalist.org" or host.endswith(".inaturalist.org")
+
+
+def open_data_photo(url):
+    """The iNaturalist Open Dataset address of a photo's "large" copy (1,024 pixels) from the address GBIF lists
+    (https://inaturalist-open-data.s3.amazonaws.com/photos/123/original.jpg), or "" for any other address."""
+    from urllib.parse import urlsplit
+    parts = urlsplit(url or "")
+    m = INAT_PHOTO.search(parts.path)
+    if (parts.hostname or "").lower() != OPEN_DATA_HOST or not m:
+        return ""
+    return f"https://{OPEN_DATA_HOST}/photos/{m.group(1)}/large.{m.group(2)}"
+
+
+def inat_photo(record, licence=None):
+    """(GBIF media entry, licence in words) of a record's first photo that is in the iNaturalist Open Dataset and
+    whose OWN licence passes licence (a function from a licence address to its words, "" when refused; by default
+    gbif_licence: CC0, the Public Domain Mark or CC BY), or (None, "")."""
+    licence = licence or gbif_licence
+    for m in record.get("media") or []:
+        words = licence(m.get("license"))
+        if m.get("type") == "StillImage" and words and open_data_photo(m.get("identifier")):
+            return m, words
+    return None, ""
+
+
+def inat_photo_id(media):
+    """iNaturalist's number of a photo, from its Open Dataset address ("" when it has none)."""
+    m = INAT_PHOTO.search(media.get("identifier") or "")
+    return m.group(1) if m else ""
+
+
+def inat_params(params):
+    """GBIF search parameters for iNaturalist research-grade observations with a photo, plus params."""
+    return {"datasetKey": INAT_DATASET, "mediaType": "StillImage", "occurrenceStatus": "PRESENT", **params}
+
+
+def inat_count(s, params):
+    """How many iNaturalist records on GBIF match params (0 when GBIF does not answer)."""
+    try:
+        return int(s.get(f"{GBIF}occurrence/search", params=dict(inat_params(params), limit=0),
+                         timeout=60).json().get("count", 0))
+    except Exception:  # noqa: BLE001 - none
+        return 0
+
+
+def inat_search(s, params, offset=0, limit=300):
+    """One page of iNaturalist records on GBIF matching params ([] when GBIF does not answer). GBIF pages stop at
+    100,000 records, so the offset is kept below that."""
+    offset = max(0, min(offset, 100000 - limit))
+    try:
+        return s.get(f"{GBIF}occurrence/search", timeout=120,
+                     params=dict(inat_params(params), offset=offset, limit=limit)).json().get("results") or []
+    except Exception:  # noqa: BLE001 - none
+        return []
+
+
+def inat_pages(s, params, rng, pages, limit=300):
+    """Records from up to pages pages of iNaturalist records on GBIF matching params, each page at a random place
+    among them (so a build sees a spread, not only the newest), with a pause between pages."""
+    count = inat_count(s, params)
+    out = []
+    for _ in range(pages if count else 0):
+        out += inat_search(s, params, rng.randrange(0, max(1, min(count, 100000) - limit + 1)), limit)
+        time.sleep(0.3)                           # GBIF asks clients to pace their requests
+        if count <= limit:
+            break
+    return out
+
+
+def inat_regions(s, country, names, fold=lambda x: x.lower()):
+    """{name: GBIF stateProvince} for the states or provinces named, as iNaturalist's records on GBIF write them
+    ("Quebec" -> "Québec"), from GBIF's counts of records by state or province in the country (names compared with
+    fold)."""
+    data = {}
+    for wait in (20, 60, 0):                      # GBIF refuses bursts of counting requests for a while (429)
+        try:
+            data = s.get(f"{GBIF}occurrence/search", timeout=120, params=dict(
+                inat_params({"country": country}), limit=0, facet="stateProvince",
+                **{"stateProvince.facetLimit": 200})).json()
+        except Exception:  # noqa: BLE001 - tried again
+            data = {}
+        if isinstance(data, dict) and data.get("facets"):
+            break
+        time.sleep(wait)
+    if not isinstance(data, dict):                # GBIF's refusal ("too many requests") is a list of words
+        return {}
+    written = [c["name"] for c in ((data.get("facets") or [{}])[0].get("counts") or [])]
+    out = {}
+    for name in names:
+        match = next((w for w in written if fold(w) == fold(name)), None)
+        if match:
+            out[name] = match
+    return out
+
+
+def inat_taxon(s, name):
+    """GBIF search parameters for the records of a scientific name ("Felis catus", "Aves", "Musa"), or None when GBIF
+    does not know it: its GBIF key, or, when GBIF counts the name as a synonym of a wider species ("Canis familiaris"
+    under "Canis lupus", which takes in wolves), the name as iNaturalist wrote it (verbatimScientificName), falling
+    back to the accepted name only when no record is written that way."""
+    try:
+        m = s.get(f"{GBIF}species/match", params={"name": name, "strict": "true"}, timeout=60).json()
+    except Exception:  # noqa: BLE001 - left out
+        return None
+    if m.get("matchType") not in ("EXACT", "VARIANT") or not m.get("usageKey"):
+        return None
+    if m.get("status") == "SYNONYM" and m.get("acceptedUsageKey"):
+        if inat_count(s, {"verbatimScientificName": name}):
+            return {"verbatimScientificName": name}
+        return {"taxonKey": m["acceptedUsageKey"]}
+    return {"taxonKey": m["usageKey"]}
+
+
+def inat_latin(record):
+    """The species a record is identified as ("Gavia immer"), or "" when it is named only above species."""
+    if record.get("taxonRank") not in ("SPECIES", "SUBSPECIES", "VARIETY", "FORM"):
+        return ""
+    return clean(record.get("species"))
+
+
+def inat_common(s, record, cache):
+    """The English name of a record's species from GBIF's checklists (cached; "" when there is none)."""
+    key = record.get("speciesKey")
+    return gbif_name(s, key, cache) if key else ""
+
+
+def inat_who(record, media):
+    """The photographer of a record's photo as iNaturalist gives it (their user name), or a plain stand-in."""
+    who = clean(media.get("creator") or media.get("rightsHolder") or record.get("recordedBy"))
+    return who if re.search(r"[A-Za-z0-9]", who) else "an iNaturalist user"
+
+
+def inat_link(record):
+    """The observation's page on iNaturalist, as GBIF's record gives it (for the credit line only; never fetched)."""
+    link = clean(record.get("references") or record.get("occurrenceID"))
+    return link if link.startswith("http") else f"https://www.gbif.org/occurrence/{record.get('key')}"
+
+
+def inat_credit(record, media, licence):
+    """ "Photo by someone on iNaturalist, CC BY 4.0, https://www.inaturalist.org/observations/5 (via GBIF,
+    https://www.gbif.org/occurrence/11)"."""
+    return (f"Photo by {inat_who(record, media)} on iNaturalist, {licence}, {inat_link(record)} "
+            f"(via GBIF, https://www.gbif.org/occurrence/{record.get('key')})")
+
+
+def inat_region_item(s, record, question, place, prefix, names, licence=None):
+    """(file name, photo address, rows) of one iNaturalist record in a known state or province: the species row
+    ("This is a Common Loon (Gavia immer).") and where the photo was taken; None when the record has no usable photo
+    (licence as in inat_photo) or is named only above species."""
+    media, words = inat_photo(record, licence)
+    latin = inat_latin(record)
+    if not media or not latin:
+        return None
+    common = inat_common(s, record, names)
+    answer = f"This is {a_or_an(common)} {common} ({latin})." if common else f"This is {latin}."
+    credit = inat_credit(record, media, words)
+    facts = {"gbif": record.get("key"), "species_key": record.get("speciesKey"), "rank": record.get("taxonRank"),
+             "observed_on": clean(record.get("eventDate"))[:10]}
+    rows = [{"question": question, "answer": answer, "credit": credit, "facts": facts, **where(place)},
+            {"question": WHERE_Q, "answer": f"It was taken in {place}.", "credit": credit, **where(place)}]
+    return f"{prefix}-{inat_photo_id(media)}.jpg", photo_url(media["identifier"]), rows
+
+
+def inat_items(s, country, regions, groups, limit, prefix, rng, record_licences, place_of, licence=None):
+    """Items [(file name, photo address, rows)] of iNaturalist records in each state or province of a country
+    (regions: {name: its GBIF stateProvince, from inat_regions}) and each group of living things (groups: [(iconic
+    group, question)], build_packs.INAT_GROUPS): the pairs take turns in a shuffled order, one page of 50 records at
+    a random place among each pair's first 500, until about the limit is found. record_licences narrows GBIF's
+    search by the record's licence; each photo's own licence is checked by licence (inat_photo). place_of gives a
+    region's place in words ("Ontario" -> "Ontario, Canada")."""
+    pairs = [(region, group, question) for region in regions for group, question in groups]
+    rng.shuffle(pairs)
+    per_pair = max(2, math.ceil(limit * 1.15 / max(1, len(pairs))))
+    names, items, seen = {}, [], set()
+    for region, group, question in pairs:
+        if len(items) >= limit * 1.15:
+            break
+        if listing_out_of_time():
+            say("  iNaturalist on GBIF: stopped looking at half the time limit")
+            break
+        params = {"country": country, "stateProvince": regions[region], "taxonKey": list(INAT_GROUP_KEYS[group]),
+                  "license": list(record_licences)}
+        results = inat_search(s, params, rng.randrange(0, 10) * 50, 50) or inat_search(s, params, 0, 50)
+        got = 0
+        for record in results:
+            if got >= per_pair or record.get("key") in seen:
+                continue
+            item = inat_region_item(s, record, question, place_of(region), prefix, names, licence)
+            if item:
+                seen.add(record["key"])
+                items.append(item)
+                got += 1
+        time.sleep(0.3)                           # GBIF asks clients to pace their requests
+    rng.shuffle(items)
+    return items
+
+
+def inat_country(record):
+    """{"place": country} from a record's coordinates, or {} when they are hidden or blurred on purpose (GBIF then
+    says information is withheld, or the uncertainty is many kilometres)."""
+    if record.get("informationWithheld") or (record.get("coordinateUncertaintyInMeters") or 0) > 10000:
+        return {}
+    return where(country_at(record.get("decimalLatitude"), record.get("decimalLongitude")))
 
 
 def english_name(results):

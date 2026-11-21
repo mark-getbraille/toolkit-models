@@ -1004,52 +1004,40 @@ def article(word):
     return "an" if word[:1].lower() in "aeiou" else "a"
 
 
-def inat_place(observation):
-    """{"place": country} from an observation's coordinates, or {} when they are hidden or blurred on purpose."""
-    if observation.get("obscured") or observation.get("geoprivacy") in ("obscured", "private") \
-            or observation.get("taxon_geoprivacy") in ("obscured", "private"):
-        return {}
-    point = str(observation.get("location") or "").split(",")
-    return where(country_at(*point)) if len(point) == 2 else {}
-
-
 def build_inaturalist(limit):
-    """iNaturalist research-grade observations whose photo is CC0 or CC BY (credit kept): plants, fungi, insects,
-    birds and other animals, named by the community ("This is a Shaggy Mane (Coprinus comatus)")."""
-    s, items, seen = session(), [], set()
+    """iNaturalist research-grade observations whose photo is CC0, the Public Domain Mark or CC BY (credit kept):
+    plants, fungi, insects, birds and other animals, named ("This is a Shaggy Mane (Coprinus comatus)"). The
+    records come from GBIF (iNaturalist's research-grade dataset there) and the photos from the iNaturalist Open
+    Dataset on Amazon's open-data programme (na_animal_packs' shared reader); iNaturalist's website and API are
+    never read. Each group takes random pages of its records, at most three photos of a species."""
+    import collections
+    from na_animal_packs import (inat_pages, inat_photo, inat_photo_id, inat_latin, inat_common, inat_credit,
+                                 inat_country, photo_url, INAT_GROUP_KEYS, INAT_OPEN)
+    s, items, names, rng = session(), [], {}, pass_random(7)
+    per_species = collections.Counter()
     per_group = limit // len(INAT_GROUPS) + 20
     for group, question in INAT_GROUPS:
         found = 0
-        for page in range(1, 40):
-            try:
-                data = s.get("https://api.inaturalist.org/v1/observations", timeout=60, params={
-                    "quality_grade": "research", "photo_license": "cc0,cc-by", "iconic_taxa": group,
-                    "per_page": 200, "page": page, "order_by": "votes"}).json()
-            except Exception:  # noqa: BLE001 - next group
+        params = {"taxonKey": list(INAT_GROUP_KEYS[group]), "license": INAT_OPEN}
+        for record in inat_pages(s, params, rng, pages=per_group // 100 + 2):
+            if found >= per_group or listing_out_of_time():
                 break
-            results = data.get("results") or []
-            for o in results:
-                taxon, photos = o.get("taxon") or {}, o.get("photos") or []
-                photo = next((ph for ph in photos if (ph.get("license_code") or "") in ("cc0", "cc-by")), None)
-                if not photo or not taxon.get("name") or taxon["id"] in seen and found > per_group // 2:
-                    continue
-                if already_in_pack(f"inat-{photo['id']}.jpg", photo["url"].replace("/square.", "/large.")):
-                    continue                   # already in the published pack (a top-up pass)
-                seen.add(taxon["id"])
-                latin, common = taxon["name"], clean(taxon.get("preferred_common_name"))
-                answer = (f"This is {article(common)} {common} ({latin})." if common else f"This is {latin}.")
-                login = (o.get("user") or {}).get("login", "an iNaturalist user")
-                items.append((f"inat-{photo['id']}.jpg", photo["url"].replace("/square.", "/large."),
-                              {"question": question, "answer": answer, **inat_place(o),
-                               "credit": f"Photo by {login} on iNaturalist, {photo['license_code'].upper()}, "
-                                         f"https://www.inaturalist.org/observations/{o['id']}"}))
-                found += 1
-            if found >= per_group or len(results) < 200:
-                break
-            time.sleep(1.1)                    # iNaturalist asks for at most about one request a second
+            media, licence = inat_photo(record)
+            latin = inat_latin(record)
+            if not media or not latin or per_species[latin] >= 3:
+                continue
+            name, url = f"inat-{inat_photo_id(media)}.jpg", photo_url(media["identifier"])
+            if already_in_pack(name, url):
+                continue                       # already in the published pack (a top-up pass)
+            per_species[latin] += 1
+            common = inat_common(s, record, names)
+            answer = f"This is {article(common)} {common} ({latin})." if common else f"This is {latin}."
+            items.append((name, url, {"question": question, "answer": answer, **inat_country(record),
+                                      "credit": inat_credit(record, media, licence)}))
+            found += 1
         say(f"iNaturalist {group}: {found}")
     items = new_only(items)
-    pass_random(7).shuffle(items)
+    rng.shuffle(items)
     return fetch_all(items[:int(limit * 1.1)], workers=4, pause=0.3)[:limit]
 
 
@@ -1378,7 +1366,8 @@ PACKS = {
     "commons": (build_commons, "Wikimedia Commons: captions CC0; pictures CC0, public domain or CC BY, each with "
                                "its author below. https://commons.wikimedia.org"),
     "inaturalist": (build_inaturalist, "iNaturalist: research-grade observations; photos CC0 or CC BY, each with its "
-                                       "photographer below. https://www.inaturalist.org"),
+                                       "photographer below. https://www.inaturalist.org; records via GBIF "
+                                       "(https://www.gbif.org), photos from the iNaturalist Open Dataset."),
     "nutrition5k": (build_nutrition5k, "Nutrition5k (Thames et al., 2021), Google, CC BY 4.0. "
                                        "https://github.com/google-research-datasets/Nutrition5k"),
     "fresh_rotten": (build_fresh_rotten, "Fresh and rotten fruits (Sultana et al.), CC BY 4.0, via "

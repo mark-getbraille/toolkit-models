@@ -48,8 +48,10 @@ The packs (all open: public domain, CC0 or CC BY; checked at the source in Novem
   inaturalist_us        iNaturalist research-grade observations in each US state (photos CC0 or CC BY, each
                         photographer credited; https://www.inaturalist.org/pages/terms): plants, fungi, insects,
                         birds, mammals, reptiles, amphibians, spiders, molluscs and fish, the states taking turns, the
-                        state as the place. The global inaturalist pack takes the most-voted observations worldwide;
-                        this one takes ordinary observations state by state.
+                        state as the place. Read through GBIF (iNaturalist's research-grade dataset there, by its
+                        state field) with the photos from the iNaturalist Open Dataset on Amazon's open-data
+                        programme, never from iNaturalist's website or API (na_animal_packs' shared reader). The global
+                        inaturalist pack takes observations worldwide; this one takes them state by state.
   commons_us_money      Commons: US banknotes by denomination ($1 to $100, and the older large notes) and US coins by
                         name (cents, nickels, dimes, quarters, half dollars, dollar coins). US currency designs are US
                         government work; each photo's own licence is checked (CC0, PD or CC BY).
@@ -692,71 +694,18 @@ def build_commons_us_cars(limit):
 
 # ----------------------------------------------------------------- inaturalist_us
 
-INAT = "https://api.inaturalist.org/v1/"
-
-
-def inat_states(s):
-    """{state name: iNaturalist place id} for the 50 states (each looked up by name, one request a second)."""
-    out = {}
-    for state in STATES:
-        if listing_out_of_time():
-            break
-        try:
-            data = s.get(INAT + "places/autocomplete", params={"q": state, "per_page": 20}, timeout=60).json()
-        except Exception:  # noqa: BLE001 - that state is left out
-            continue
-        for p in data.get("results") or []:
-            if p.get("admin_level") == 10 and 1 in (p.get("ancestor_place_ids") or []) \
-                    and clean(p.get("name")).lower() == state.lower():
-                out[state] = p["id"]
-                break
-        time.sleep(1.1)
-    return out
-
-
 def build_inaturalist_us(limit):
-    """iNaturalist research-grade observations in each US state whose photo is CC0 or CC BY (credit kept): the
-    states and the groups of living things take turns, one page of observations each."""
-    s, items, seen = session(), [], set()
-    states = inat_states(s)
-    say(f"iNaturalist: {len(states)} states found")
-    rng = random.Random(1776)
-    pairs = [(state, group, question) for state in states for group, question in INAT_GROUPS]
-    rng.shuffle(pairs)
-    per_pair = max(2, math.ceil(limit * 1.15 / max(1, len(pairs))))
-    for state, group, question in pairs:
-        if len(items) >= limit * 1.15:
-            break
-        if listing_out_of_time():
-            say("  iNaturalist: stopped looking at half the time limit")
-            break
-        try:
-            data = s.get(INAT + "observations", timeout=60, params={
-                "quality_grade": "research", "photo_license": "cc0,cc-by", "iconic_taxa": group,
-                "place_id": states[state], "per_page": 50, "page": rng.randint(1, 10), "order_by": "id"}).json()
-        except Exception:  # noqa: BLE001 - next pair
-            continue
-        got = 0
-        for o in data.get("results") or []:
-            taxon, photos = o.get("taxon") or {}, o.get("photos") or []
-            photo = next((ph for ph in photos if (ph.get("license_code") or "") in ("cc0", "cc-by")), None)
-            if got >= per_pair or not photo or not taxon.get("name") or o["id"] in seen:
-                continue
-            seen.add(o["id"])
-            latin, common = taxon["name"], clean(taxon.get("preferred_common_name"))
-            answer = f"This is {article(common)} {common} ({latin})." if common else f"This is {latin}."
-            login = (o.get("user") or {}).get("login", "an iNaturalist user")
-            place = f"{state}, USA"
-            credit = (f"Photo by {login} on iNaturalist, {photo['license_code'].upper()}, "
-                      f"https://www.inaturalist.org/observations/{o['id']}")
-            facts = {"taxon_id": taxon.get("id"), "rank": taxon.get("rank"), "observed_on": o.get("observed_on")}
-            rows = [{"question": question, "answer": answer, "credit": credit, "facts": facts, **where(place)},
-                    {"question": "Where was this photo taken?", "answer": f"It was taken in {place}.",
-                     "credit": credit, **where(place)}]
-            items.append((f"inatus-{photo['id']}.jpg", photo["url"].replace("/square.", "/large."), rows))
-            got += 1
-        time.sleep(1.1)                    # iNaturalist asks for at most about one request a second
-    rng.shuffle(items)
+    """iNaturalist research-grade observations in each US state whose photo is CC0, the Public Domain Mark or CC BY
+    (credit kept): the states and the groups of living things take turns, one random page of records each. The
+    records come from GBIF (iNaturalist's research-grade dataset there, by its state field) and the photos from the
+    iNaturalist Open Dataset on Amazon's open-data programme (na_animal_packs' shared reader); iNaturalist's website
+    and API are never read."""
+    from na_animal_packs import inat_regions, inat_items, INAT_OPEN
+    s = session()
+    states = inat_regions(s, "US", STATES)
+    say(f"iNaturalist on GBIF: {len(states)} states found")
+    items = inat_items(s, "US", states, INAT_GROUPS, limit, "inatus", random.Random(1776), INAT_OPEN,
+                       lambda state: f"{state}, USA")
     fetched = fetch_all(items[:int(limit * 1.1) + 2], workers=4, pause=0.3)[:limit]
     say(f"inaturalist_us: {len(fetched)} pictures")
     return with_twins(fetched)
@@ -916,7 +865,8 @@ US_PACKS = {
              "sits in)")),
     "inaturalist_us": (build_inaturalist_us,
                        "iNaturalist (https://www.inaturalist.org) research-grade observations in each US state: "
-                       "photos CC0 or CC BY, each photographer credited below; names by the iNaturalist community."),
+                       "photos CC0 or CC BY, each photographer credited below; names by the iNaturalist community. "
+                       "Records via GBIF (https://www.gbif.org), photos from the iNaturalist Open Dataset."),
     "commons_us_money": (build_commons_us_money, COMMONS_CREDIT.format(
         what="categories of US banknotes by denomination and US coins (the designs are US government work)")),
     "us_road_signs": (build_us_road_signs,

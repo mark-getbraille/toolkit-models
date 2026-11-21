@@ -37,7 +37,8 @@ The collections (US_SOURCES):
                            10.8 oz." (the world-wide entries openfoodfacts, openbeautyfacts and openproductsfacts take
                            the most scanned products of every country; a product in both is saved once under the
                            same file name in each).
-    inaturalist_us_sa      iNaturalist research-grade observations in each US state whose photo is CC BY-SA.
+    inaturalist_us_sa      iNaturalist research-grade observations in each US state whose photo is CC BY-SA (through
+                           GBIF and the iNaturalist Open Dataset, inat_gbif.py; such photos are few).
   noncommercial
     inaturalist_us_nc      The same, photos under CC BY-NC, BY-NC-SA or BY-NC-ND (most of iNaturalist's photos).
   research
@@ -74,7 +75,7 @@ import random
 import re
 import time
 
-from extra_sources import (USER_AGENT, get_json, off_name, per_label, research, save, say, stream_tar,
+from extra_sources import (get_json, off_name, per_label, research, save, say, stream_tar,
                            OFF_SEARCH, OFF_IMAGES)
 from home_sources import commons_sa_items, facts_image, kind_rows, FACT_SITES, FACTS_FIELDS, FACTS_CREDIT
 from more_sources import fetch_shared
@@ -291,7 +292,6 @@ def prepare_openfacts_us(source, data_dir, work, cap):
 
 # ----------------------------------------------------------------- iNaturalist, US states, other licences
 
-INAT = "https://api.inaturalist.org/v1/"
 INAT_GROUPS = [("Plantae", "What plant is this?"), ("Fungi", "What mushroom or fungus is this?"),
                ("Insecta", "What insect is this?"), ("Aves", "What bird is this?"), ("Mammalia", "What animal is this?"),
                ("Reptilia", "What animal is this?"), ("Amphibia", "What animal is this?"),
@@ -301,70 +301,15 @@ INAT_LICENCES = {"cc-by-sa": "CC BY-SA", "cc-by-nc": "CC BY-NC", "cc-by-nc-sa": 
                  "cc-by-nc-nd": "CC BY-NC-ND"}
 
 
-def inat_json(path, params):
-    """One iNaturalist API answer (JSON), tried again after a pause; {} when it does not come."""
-    import requests
-    for attempt in range(3):
-        try:
-            r = requests.get(INAT + path, params=params, timeout=60, headers={"User-Agent": USER_AGENT})
-            if r.status_code == 200:
-                return r.json()
-        except Exception:  # noqa: BLE001 - tried again
-            pass
-        time.sleep(5 * (attempt + 1))
-    return {}
-
-
-def inat_states():
-    """{state name: iNaturalist place id} for the 50 states (looked up by name, a second apart)."""
-    out = {}
-    for state in STATES:
-        for p in inat_json("places/autocomplete", {"q": state, "per_page": 20}).get("results") or []:
-            if p.get("admin_level") == 10 and 1 in (p.get("ancestor_place_ids") or []) \
-                    and clean(p.get("name")).lower() == state.lower():
-                out[state] = p["id"]
-                break
-        time.sleep(1.1)
-    return out
-
-
 def inat_us_rows(source, data_dir, licences, prefix):
     """Rows for iNaturalist research-grade observations in each US state whose photo's own licence is one of
-    licences: the states and groups take turns, one page each. The state is the place."""
+    licences: the states and groups take turns, one page each. The state is the place. The records come from GBIF
+    and the photos from the iNaturalist Open Dataset (inat_gbif.py); iNaturalist's website and API are never read."""
+    import inat_gbif
     want = int((source.cap + source.test) * 1.1)
-    states = inat_states()
-    rng = random.Random(prefix)
-    pairs = [(state, g, q) for state in states for g, q in INAT_GROUPS]
-    rng.shuffle(pairs)
-    per = max(2, -(-want // max(1, len(pairs))))
-    items, seen = [], set()
-    for state, group, question in pairs:
-        if len(items) >= want * 2:
-            break
-        data = inat_json("observations", {"quality_grade": "research", "photo_license": ",".join(licences),
-                                          "iconic_taxa": group, "place_id": states[state], "per_page": 50,
-                                          "page": rng.randint(1, 10), "order_by": "id"})
-        got = 0
-        for o in data.get("results") or []:
-            taxon, photos = o.get("taxon") or {}, o.get("photos") or []
-            photo = next((ph for ph in photos if ph.get("license_code") in licences), None)
-            if got >= per or not photo or not taxon.get("name") or o["id"] in seen:
-                continue
-            seen.add(o["id"])
-            latin, common = taxon["name"], clean(taxon.get("preferred_common_name"))
-            answer = f"This is {a_or_an(common)} {common} ({latin})." if common else f"This is {latin}."
-            login = (o.get("user") or {}).get("login", "an iNaturalist user")
-            credit = (f"Photo by {login} on iNaturalist, {INAT_LICENCES[photo['license_code']]}, "
-                      f"https://www.inaturalist.org/observations/{o['id']}")
-            name, url = f"{prefix}-{photo['id']}.jpg", photo["url"].replace("/square.", "/large.")
-            place = {"place": f"{state}, USA"}
-            items.append((name, url, {"question": question, "answer": answer, "split": "", "credit": credit,
-                                      **place}))
-            items.append((name, url, {"question": "Where was this photo taken?", "answer": f"It was taken in "
-                                      f"{state}, USA.", "split": "", "credit": credit, **place}))
-            got += 1
-        time.sleep(1.1)                    # iNaturalist asks for at most about one request a second
-    say(f"  iNaturalist (USA, {', '.join(INAT_LICENCES[x] for x in licences)}): {len(items) // 2} photos")
+    states = inat_gbif.regions("US", STATES)
+    items = inat_gbif.region_items("US", states, INAT_GROUPS, licences, want, prefix, lambda s: f"{s}, USA")
+    say(f"  iNaturalist on GBIF (USA, {', '.join(INAT_LICENCES[x] for x in licences)}): {len(items) // 2} photos")
     return fetch_shared(items, os.path.join(data_dir, source.key), workers=4)
 
 

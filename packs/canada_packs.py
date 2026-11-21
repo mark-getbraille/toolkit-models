@@ -45,7 +45,9 @@ The packs (all open; checked at the source in November 2026):
   commons_ca_cars          Commons: "Automobiles in <province>" for the ten provinces, Toronto and Montreal; the model
                            from the model category each photo sits in, the colour from its colour category.
   inaturalist_ca           iNaturalist research-grade observations in each province and territory (photos CC0 or
-                           CC BY, each photographer credited; https://www.inaturalist.org/pages/terms).
+                           CC BY, each photographer credited; https://www.inaturalist.org/pages/terms), read through
+                           GBIF with the photos from the iNaturalist Open Dataset on Amazon's open-data programme,
+                           never from iNaturalist's website or API (na_animal_packs' shared reader).
   commons_ca_money         Commons: Canadian banknotes by face value and coins by denomination. Commons keeps only
                            the files it may (Commons:Currency says the Bank of Canada owns the design of Canadian
                            notes and the Royal Canadian Mint its coins, so modern ones are not there: what is there is
@@ -123,7 +125,7 @@ import unicodedata
 
 import build_packs  # noqa: F401 - loaded first: food_packs and build_packs import each other
 from build_packs import session, clean, say, considered, listing_out_of_time, fetch_all, needs_description
-from build_packs import INAT_GROUPS, article, pass_random
+from build_packs import INAT_GROUPS, pass_random
 from food_packs import with_twins, count_pictures, commons_get, commons_members
 from home_packs import commons_fetch, file_name, symbol_picture, NUDE, NOT_RESPECTFUL
 from expression_packs import mark_child, child_count, CHILD
@@ -264,91 +266,20 @@ def build_commons_ca_cars(limit):
 
 # ----------------------------------------------------------------- inaturalist_ca
 
-INAT = "https://api.inaturalist.org/v1/"
-INAT_CANADA = 6712          # iNaturalist's place id of Canada (its provinces are admin level 10 below it)
-
-
-def inat_provinces(s):
-    """{province or territory: iNaturalist place id} for the 13, each looked up by name (one request a second); the
-    names are compared without accents, as iNaturalist writes "Québec"."""
-    out = {}
-    for name in PROVINCES + TERRITORIES:
-        if listing_out_of_time():
-            break
-        try:
-            data = s.get(INAT + "places/autocomplete", params={"q": name, "per_page": 20}, timeout=60).json()
-        except Exception:  # noqa: BLE001 - that province is left out
-            continue
-        out.update(inat_match(name, data.get("results") or []))
-        time.sleep(1.1)
-    return out
-
-
-def inat_match(name, results):
-    """{name: place id} for the iNaturalist place of a province or territory among autocomplete results (admin
-    level 10, inside Canada, the same name without accents); {} when none."""
-    for p in results:
-        if p.get("admin_level") == 10 and INAT_CANADA in (p.get("ancestor_place_ids") or []) \
-                and folded(clean(p.get("name"))) == folded(name):
-            return {name: p["id"]}
-    return {}
-
-
 def build_inaturalist_ca(limit):
-    """iNaturalist research-grade observations in each province and territory whose photo is CC0 or CC BY (credit
-    kept): the provinces and the groups of living things take turns, one page of observations each."""
-    s, items, seen = session(), [], set()
-    provinces = inat_provinces(s)
-    say(f"iNaturalist: {len(provinces)} provinces and territories found")
-    rng = pass_random(1867)
-    pairs = [(prov, group, question) for prov in provinces for group, question in INAT_GROUPS]
-    rng.shuffle(pairs)
-    per_pair = max(2, math.ceil(limit * 1.15 / max(1, len(pairs))))
-    for prov, group, question in pairs:
-        if len(items) >= limit * 1.15:
-            break
-        if listing_out_of_time():
-            say("  iNaturalist: stopped looking at half the time limit")
-            break
-        try:
-            data = s.get(INAT + "observations", timeout=60, params={
-                "quality_grade": "research", "photo_license": "cc0,cc-by", "iconic_taxa": group,
-                "place_id": provinces[prov], "per_page": 50, "page": rng.randint(1, 5), "order_by": "id"}).json()
-        except Exception:  # noqa: BLE001 - next pair
-            continue
-        got = 0
-        for o in data.get("results") or []:
-            if got >= per_pair or o.get("id") in seen:
-                continue
-            item = inat_item(o, prov, question)
-            if item:
-                seen.add(o["id"])
-                items.append(item)
-                got += 1
-        time.sleep(1.1)                    # iNaturalist asks for at most about one request a second
-    rng.shuffle(items)
+    """iNaturalist research-grade observations in each province and territory whose photo is CC0, the Public Domain
+    Mark or CC BY (credit kept): the provinces and the groups of living things take turns, one random page of
+    records each. The records come from GBIF (iNaturalist's research-grade dataset there, by its province field,
+    matched without accents as iNaturalist writes "Québec") and the photos from the iNaturalist Open Dataset on
+    Amazon's open-data programme (na_animal_packs' shared reader); iNaturalist's website and API are never read."""
+    from na_animal_packs import inat_regions, inat_items, INAT_OPEN
+    s = session()
+    provinces = inat_regions(s, "CA", PROVINCES + TERRITORIES, folded)
+    say(f"iNaturalist on GBIF: {len(provinces)} provinces and territories found")
+    items = inat_items(s, "CA", provinces, INAT_GROUPS, limit, "inatca", pass_random(1867), INAT_OPEN, ca)
     fetched = fetch_all(items[:int(limit * 1.1) + 2], workers=4, pause=0.3)[:limit]
     say(f"inaturalist_ca: {len(fetched)} pictures")
     return with_twins(fetched)
-
-
-def inat_item(o, prov, question):
-    """(file name, photo address, rows) for one iNaturalist observation whose photo is CC0 or CC BY, or None."""
-    taxon, photos = o.get("taxon") or {}, o.get("photos") or []
-    photo = next((ph for ph in photos if (ph.get("license_code") or "") in ("cc0", "cc-by")), None)
-    if not photo or not taxon.get("name") or not photo.get("url"):
-        return None
-    latin, common = taxon["name"], clean(taxon.get("preferred_common_name"))
-    answer = f"This is {article(common)} {common} ({latin})." if common else f"This is {latin}."
-    login = (o.get("user") or {}).get("login", "an iNaturalist user")
-    place = ca(prov)
-    credit = (f"Photo by {login} on iNaturalist, {photo['license_code'].upper()}, "
-              f"https://www.inaturalist.org/observations/{o['id']}")
-    facts = {"taxon_id": taxon.get("id"), "rank": taxon.get("rank"), "observed_on": o.get("observed_on")}
-    rows = [{"question": question, "answer": answer, "credit": credit, "facts": facts, **where(place)},
-            {"question": "Where was this photo taken?", "answer": f"It was taken in {place}.", "credit": credit,
-             **where(place)}]
-    return f"inatca-{photo['id']}.jpg", photo["url"].replace("/square.", "/large."), rows
 
 
 # ----------------------------------------------------------------- commons_ca_money
@@ -955,7 +886,8 @@ CANADA_PACKS = {
     "inaturalist_ca": (build_inaturalist_ca,
                        "iNaturalist (https://www.inaturalist.org) research-grade observations in each Canadian "
                        "province and territory: photos CC0 or CC BY, each photographer credited below; names by the "
-                       "iNaturalist community."),
+                       "iNaturalist community. Records via GBIF (https://www.gbif.org), photos from the iNaturalist "
+                       "Open Dataset."),
     "commons_ca_money": (build_commons_ca_money, COMMONS_CREDIT.format(
         what="categories of Canadian banknotes by face value and coins by denomination (only files whose own licence "
              "is free: mostly old notes and coins whose Crown copyright has expired)")),

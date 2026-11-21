@@ -36,10 +36,12 @@ The packs (all open: CC0, public domain, CC BY, MIT or Apache):
   poultry_droppings  Poultry fecal images from farms in Arusha and Kilimanjaro, Tanzania (CC BY 4.0, Zenodo 4628934),
                      healthy, coccidiosis, salmonella or Newcastle disease, as farmers' phones photographed them.
                      "Do these chicken droppings show signs of disease?"
-  inat_crops         iNaturalist observations of cultivated crops and fruit trees (photos CC0 or CC BY only, the
-                     name agreed by at least two people): wheat, rice, maize, cassava, coffee, cacao, tea, bananas,
-                     apples on the tree and others. "What crop is this?" (with "with fruit" from the observer's
-                     fruiting annotation), and the country where the photo was taken.
+  inat_crops         iNaturalist research-grade observations of crop plants and fruit trees (photos CC0 or CC BY
+                     only): wheat, rice, maize, cassava, coffee, cacao, tea, bananas, apples on the tree and others.
+                     "What crop is this?" (with "with fruit" from the observer's fruiting annotation), and the
+                     country where the photo was taken. Read through GBIF with the photos from the iNaturalist Open
+                     Dataset, never from iNaturalist's website or API. GBIF has no observations marked cultivated
+                     (iNaturalist keeps those out of research grade), so the answer no longer says "grown as a crop".
   trashnet           TrashNet (Gary Thung and Mindy Yang, MIT licence): single pieces of rubbish photographed on a
                      white board, by recycling category (cardboard, glass, metal, paper, plastic, general rubbish).
                      "What kind of litter is this, and which bin does it go in?"
@@ -543,48 +545,50 @@ INAT_CROPS = [("Triticum aestivum", "wheat", False), ("Oryza sativa", "rice", Fa
               ("Cicer arietinum", "chickpea", False), ("Medicago sativa", "alfalfa (lucerne)", False),
               ("Ananas comosus", "a pineapple plant", True), ("Carica papaya", "a papaya tree", True),
               ("Fragaria × ananassa", "a strawberry plant", True)]
-INAT_FRUITING = {"term_id": 12, "term_value_id": 14}          # iNaturalist's "Plant Phenology: Fruiting" annotation
+def fruiting(record):
+    """True when a record's plant phenology annotation (GBIF's reproductiveCondition) says it is fruiting."""
+    return "fruit" in clean(record.get("reproductiveCondition")).lower()
 
 
-def inat_row(o, crop, fruit, fruiting):
-    """(picture address, row) of an iNaturalist observation of a cultivated crop, or None."""
-    from build_packs import inat_place
-    photo = next((ph for ph in o.get("photos") or [] if (ph.get("license_code") or "") in ("cc0", "cc-by")), None)
-    if not photo:
-        return None
-    latin = (o.get("taxon") or {}).get("name") or ""
-    answer = f"This is {crop} ({latin})" + (", with fruit" if fruit and fruiting else "") + ", grown as a crop."
-    login = (o.get("user") or {}).get("login", "an iNaturalist user")
-    credit = (f"Photo by {login} on iNaturalist, {photo['license_code'].upper()}, "
-              f"https://www.inaturalist.org/observations/{o['id']}")
-    return photo["url"].replace("/square.", "/large."), {"question": ASK_CROP, "answer": answer, "credit": credit,
-                                                          **inat_place(o)}
+def inat_row(record, media, licence, latin, crop, fruit):
+    """(picture address, row) of an iNaturalist record of a crop plant on GBIF (latin: the name it was looked up by):
+    "This is wheat (Triticum aestivum)." with ", with fruit" for a fruit tree or plant its observer marked as
+    fruiting."""
+    from na_animal_packs import inat_credit, inat_country, photo_url
+    answer = f"This is {crop} ({latin})" + (", with fruit" if fruit and fruiting(record) else "") + "."
+    return photo_url(media["identifier"]), {"question": ASK_CROP, "answer": answer,
+                                            "credit": inat_credit(record, media, licence), **inat_country(record)}
 
 
 def build_inat_crops(limit):
-    """The crops pack: for each crop in INAT_CROPS, observations marked cultivated whose photo is CC0 or CC BY and
-    whose name at least two people agreed on; for fruit trees, those the observer marked as fruiting first."""
-    s, items = session(), []
+    """The crops pack: for each crop in INAT_CROPS, research-grade iNaturalist records whose photo is CC0, the
+    Public Domain Mark or CC BY; for fruit trees, those the observer marked as fruiting first. The records come from
+    GBIF (iNaturalist's research-grade dataset there) and the photos from the iNaturalist Open Dataset on Amazon's
+    open-data programme (na_animal_packs' shared reader); iNaturalist's website and API are never read. GBIF has
+    only research-grade observations, which iNaturalist never gives to plants marked cultivated, so these are crop
+    plants growing outside a garden or farm record (self-sown, escaped or not marked cultivated), and the answer
+    names the crop without saying it is grown as one."""
+    from na_animal_packs import inat_taxon, inat_pages, inat_photo, inat_photo_id, INAT_OPEN
+    s, items, rng = session(), [], pass_random(506)
     per_crop = limit // len(INAT_CROPS) + 1
     for latin, crop, fruit in INAT_CROPS:
-        found = 0
-        for fruiting in ((True, False) if fruit else (False,)):
-            params = {"taxon_name": latin, "captive": "true", "photo_license": "cc0,cc-by", "per_page": 100,
-                      "identified": "true", "order_by": "votes", "photos": "true"}
-            if fruiting:
-                params.update(INAT_FRUITING)
-            data = get_json(s, "https://api.inaturalist.org/v1/observations", params) or {}
-            time.sleep(1.1)                    # iNaturalist asks for at most about one request a second
-            for o in data.get("results") or []:
-                if found >= per_crop or (o.get("num_identification_agreements") or 0) < 1:
-                    continue
-                got = inat_row(o, crop, fruit, fruiting)
-                if got and not any(i[0] == f"inat-crop-{o['id']}.jpg" for i in items):
-                    rows = [got[1]] + ([place_row(got[1], got[1]["place"])] if got[1].get("place") else [])
-                    items.append((f"inat-crop-{o['id']}.jpg", got[0], rows))
-                    found += 1
-        say(f"  iNaturalist {crop}: {found}")
-    pass_random(506).shuffle(items)
+        taxon = inat_taxon(s, latin)
+        if not taxon:
+            say(f"  GBIF: {latin} not found")
+            continue
+        found = []
+        for record in inat_pages(s, dict(taxon, license=INAT_OPEN), rng, pages=2):
+            media, licence = inat_photo(record)
+            if media:
+                found.append((record, media, licence))
+        if fruit:
+            found.sort(key=lambda f: not fruiting(f[0]))         # the fruiting ones first (a stable sort)
+        for record, media, licence in found[:per_crop]:
+            url, row = inat_row(record, media, licence, latin, crop, fruit)
+            rows = [row] + ([place_row(row, row["place"])] if row.get("place") else [])
+            items.append((f"inat-crop-{inat_photo_id(media)}.jpg", url, rows))
+        say(f"  iNaturalist (on GBIF) {crop}: {min(len(found), per_crop)}")
+    rng.shuffle(items)
     return with_twins(fetch_all(items[:int(limit * 1.1) + 2], workers=4, pause=0.3)[:limit])
 
 
@@ -1454,8 +1458,9 @@ LAND_PACKS = {
     "poultry_droppings": (build_poultry_droppings, "Machine Learning Dataset for Poultry Diseases Diagnostics "
                                                    "(Machuve et al.), CC BY 4.0, "
                                                    "https://doi.org/10.5281/zenodo.4628934"),
-    "inat_crops": (build_inat_crops, "iNaturalist observations of cultivated crops: photos CC0 or CC BY, each with its "
-                                     "photographer below. https://www.inaturalist.org"),
+    "inat_crops": (build_inat_crops, "iNaturalist research-grade observations of crop plants: photos CC0 or CC BY, "
+                                     "each with its photographer below. https://www.inaturalist.org; records via "
+                                     "GBIF (https://www.gbif.org), photos from the iNaturalist Open Dataset."),
     "trashnet": (build_trashnet, "TrashNet (Gary Thung and Mindy Yang), MIT licence, "
                                  "https://github.com/garythung/trashnet"),
     "taco_litter": (build_taco_litter, "TACO: Trash Annotations in Context (Proenca and Simoes), CC BY 4.0, "

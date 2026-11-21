@@ -105,19 +105,34 @@ def test_holidays_without_politics():
 
 
 def test_inaturalist():
-    """Québec is matched to Quebec inside Canada (not Lake Ontario, not a US place); only CC0 and CC BY photos."""
-    results = [{"id": 1, "name": "Québec", "admin_level": 20, "ancestor_place_ids": [6712]},
-               {"id": 13336, "name": "Québec", "admin_level": 10, "ancestor_place_ids": [97394, 6712, 13336]}]
-    assert c.inat_match("Quebec", results) == {"Quebec": 13336}
-    assert c.inat_match("Ontario", [{"id": 1840, "name": "Ontario", "admin_level": 10,
-                                     "ancestor_place_ids": [97394, 1, 48]}]) == {}
-    obs = {"id": 5, "taxon": {"name": "Gavia immer", "preferred_common_name": "Common Loon", "id": 4626},
-           "user": {"login": "someone"}, "photos": [{"id": 9, "license_code": "cc-by-nc", "url": "x/square.jpg"},
-                                                    {"id": 10, "license_code": "cc-by", "url": "y/square.jpg"}]}
-    name, url, rows = c.inat_item(obs, "Ontario", "What bird is this?")
-    assert name == "inatca-10.jpg" and url == "y/large.jpg"
-    assert rows[0]["answer"] == "This is a Common Loon (Gavia immer)." and rows[0]["place"] == "Ontario, Canada"
-    assert c.inat_item(dict(obs, photos=[obs["photos"][0]]), "Ontario", "What bird is this?") is None
+    """inaturalist_ca reads iNaturalist's records through GBIF (na_animal_packs' shared reader): Quebec is matched to
+    GBIF's "Québec"; only a photo in the iNaturalist Open Dataset whose own licence is open is used."""
+    import na_animal_packs as n
+
+    class Answer:
+        def __init__(self, data):
+            self.data = data
+
+        def json(self):
+            return self.data
+
+    class FakeGbif:
+        def get(self, url, params=None, timeout=None):
+            assert url.startswith("https://api.gbif.org/")
+            return Answer({"facets": [{"counts": [{"name": "Québec"}, {"name": "Ontario"}]}]})
+    assert n.inat_regions(FakeGbif(), "CA", c.PROVINCES, c.folded) == {"Quebec": "Québec", "Ontario": "Ontario"}
+    s3 = "https://inaturalist-open-data.s3.amazonaws.com/photos/"
+    rec = {"key": 5, "species": "Gavia immer", "taxonRank": "SPECIES", "recordedBy": "someone",
+           "references": "https://www.inaturalist.org/observations/5",
+           "media": [{"type": "StillImage", "identifier": s3 + "9/original.jpg", "creator": "someone",
+                      "license": "http://creativecommons.org/licenses/by-nc/4.0/"},
+                     {"type": "StillImage", "identifier": s3 + "10/original.jpg", "creator": "someone",
+                      "license": "http://creativecommons.org/licenses/by/4.0/"}]}
+    name, url, rows = n.inat_region_item(None, rec, "What bird is this?", c.ca("Ontario"), "inatca", {})
+    assert name == "inatca-10.jpg" and url == s3 + "10/large.jpg"
+    assert rows[0]["answer"] == "This is Gavia immer." and rows[0]["place"] == "Ontario, Canada"
+    assert n.inat_region_item(None, dict(rec, media=rec["media"][:1]), "What bird is this?", "Ontario, Canada",
+                              "inatca", {}) is None
 
 
 def test_specs_and_tables():

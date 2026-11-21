@@ -31,10 +31,11 @@ The collections (BODILY_SOURCES):
     commons_droppings_sa   Wikimedia Commons: dog, cat, horse and bird droppings and litter boxes, files under CC BY-SA
                            or GFDL.
     inat_droppings_sa      iNaturalist "Evidence of presence: Scat" observations of pets, farm animals, birds and yard
-                           animals whose photo is CC BY-SA.
+                           animals whose photo is CC BY-SA (research-grade only, through GBIF and the iNaturalist
+                           Open Dataset, inat_gbif.py; such photos are few).
   noncommercial
-    inat_droppings_nc      The same, photos under CC BY-NC, CC BY-NC-SA or CC BY-NC-ND (most of iNaturalist's dog, cat,
-                           horse and bird droppings: about 460 dog, 300 cat, 380 horse and 11,500 bird observations).
+    inat_droppings_nc      The same, photos under CC BY-NC, CC BY-NC-SA or CC BY-NC-ND (most of iNaturalist's
+                           research-grade droppings photos, through GBIF and the iNaturalist Open Dataset).
   research (rights not clear)
     bloodstain_patterns    Blood Stain Pattern Data Set (BSPDS; Mendeley Data 234yvmkcys): 24 high-speed laboratory
                            videos of blood dripping, swiped, wiped and transferred onto clear plastic, cardboard and
@@ -69,7 +70,8 @@ with your own descriptions, as the user guide says). Each is listed with what it
   AnimalClue feces_yolo (ICCV 2025)         https://huggingface.co/datasets/risashinoda/feces_yolo : animal droppings
                                             from iNaturalist with boxes; access must be requested on Hugging Face, and
                                             each photo keeps its own iNaturalist licence. The inat_droppings pack and
-                                            the two entries above read the same kind of iNaturalist photos directly.
+                                            the two entries above read the same kind of iNaturalist photos through
+                                            GBIF and the iNaturalist Open Dataset (inat_gbif.py).
   Human stool photo collections             No open set exists (checked November 2026 on Zenodo, Mendeley Data,
   (Bristol scale)                           figshare, Kaggle, GitHub and Hugging Face). The research sets are held by
                                             their authors: Hachuel et al., "Augmenting Gastrointestinal Health: A Deep
@@ -107,13 +109,12 @@ Looked at and not included (the reason of each is in BODILY_NOT_INCLUDED).
 import os
 import random
 import re
-import time
 
 import sources
 from extra_sources import (NUDE, commons_file_name, commons_members, commons_sa_entries, commons_session,
                            is_adult_text, video_still)
 from personal_sources import CHILD_WORDS, INTIMATE_SITE
-from sources import USER_AGENT, Source, download_file, fetch_pictures
+from sources import USER_AGENT, Source, clean, download_file, fetch_pictures
 
 # The fixed sentences said after a human medical answer (as packs/bodily_packs.py).
 STOOL_ADVICE = "Only a doctor can diagnose this; if a child has blood in their stool, a black stool, or seems " \
@@ -333,9 +334,8 @@ def prepare_commons_droppings_sa(source, data_dir, work, cap):
 
 # ----------------------------------------------------------------- iNaturalist droppings under other licences
 
-INAT = "https://api.inaturalist.org/v1/"
-# As packs/bodily_packs.INAT_ANIMALS: (scientific name, the droppings in plain words, the animal, every observation
-# counts (domestic) or only research-grade ones).
+# As packs/bodily_packs.INAT_ANIMALS: (scientific name, the droppings in plain words, the animal, whether it lives
+# with people). Only research-grade observations are on GBIF.
 INAT_ANIMALS = [
     ("Canis familiaris", "dog poop", "a domestic dog", True),
     ("Felis catus", "cat poop", "a domestic cat", True),
@@ -360,77 +360,41 @@ INAT_LICENCES = {"cc-by-sa": "CC BY-SA", "cc-by-nc": "CC BY-NC", "cc-by-nc-sa": 
                  "cc-by-nc-nd": "CC BY-NC-ND"}
 
 
-def inat_get(params):
-    """One iNaturalist API answer (JSON), tried again after a pause; {} when it does not come."""
-    import requests
-    for attempt in range(3):
-        try:
-            r = requests.get(INAT + "observations", params=params, timeout=60, headers={"User-Agent": USER_AGENT})
-            if r.status_code == 200:
-                return r.json()
-        except Exception:  # noqa: BLE001 - tried again
-            pass
-        time.sleep(5 * (attempt + 1))
-    return {}
-
-
-def inat_taxon(name):
-    """The iNaturalist taxon id of a scientific name (exact match), or None."""
-    import requests
-    try:
-        results = requests.get(INAT + "taxa", params={"q": name, "per_page": 10}, timeout=60,
-                               headers={"User-Agent": USER_AGENT}).json().get("results", [])
-    except Exception:  # noqa: BLE001 - left out
-        return None
-    return next((t["id"] for t in results if t.get("name", "").lower() == name.lower()), None)
-
-
 def inat_droppings_rows(source, data_dir, licences, prefix):
-    """Rows for iNaturalist "Evidence of presence: Scat" observations whose first photo's own licence is one of
-    licences, shared evenly over the animals: "What is this?" and "What animal left these droppings?"."""
+    """Rows for iNaturalist "Evidence of presence: Scat" observations whose first usable photo's own licence is one
+    of licences, shared evenly over the animals: "What is this?" and "What animal left these droppings?". The
+    records come from GBIF and the photos from the iNaturalist Open Dataset (inat_gbif.py); iNaturalist's website
+    and API are never read."""
+    import inat_gbif
     want = int((source.cap + source.test) * 1.1)
     per_animal = max(5, want // len(INAT_ANIMALS) * 2)
-    items = []
+    rng, items, names = random.Random(prefix), [], {}
     for latin, words, animal, domestic in INAT_ANIMALS:
-        taxon = inat_taxon(latin)
+        taxon = inat_gbif.taxon(latin)
         if not taxon:
             continue
-        found, page = 0, 1
-        while found < per_animal and page <= 10:
-            data = inat_get({"taxon_id": taxon, "term_id": 22, "term_value_id": 25,
-                             "photo_license": ",".join(licences), "per_page": 200, "page": page,
-                             "quality_grade": "research,needs_id,casual" if domestic else "research"})
-            results = data.get("results") or []
-            for o in results:
-                photos, t = o.get("photos") or [], o.get("taxon") or {}
-                if not photos or photos[0].get("license_code") not in licences or "dingo" in t.get("name", "").lower():
-                    continue
-                who = animal
-                if words == "bird droppings" and t.get("preferred_common_name") and t.get("name") != "Aves":
-                    who = f"{sources_article(t['preferred_common_name'])} {t['preferred_common_name']} ({t['name']})"
-                elif " " in t.get("name", "") and words != "bird droppings":
-                    who = f"{animal} ({t['name']})"
-                photo = photos[0]
-                login = (o.get("user") or {}).get("login", "an iNaturalist user")
-                credit = f"Photo by {login} on iNaturalist, {INAT_LICENCES[photo['license_code']]}, " \
-                         f"https://www.inaturalist.org/observations/{o['id']}"
-                lead = "This is" if words in INAT_SINGULAR else "These are"
-                name = f"{prefix}-{photo['id']}.jpg"
-                url = photo["url"].replace("/square.", "/large.")
-                items.append((name, url, {"question": "What is this?", "answer": f"{lead} {words}, left by {who}.",
-                                          "split": "", "credit": credit}))
-                items.append((name, url, {"question": "What animal left these droppings?", "split": "",
-                                          "answer": f"They look like droppings left by {who}.", "credit": credit}))
-                found += 1
-                if found >= per_animal:
-                    break
-            if len(results) < 200:
-                break
-            page += 1
-            time.sleep(1.1)                    # iNaturalist asks for at most about one request a second
-        say(f"  iNaturalist droppings of {latin}: {found}")
-        time.sleep(1.1)
-    random.Random(prefix).shuffle(items)
+        found = 0
+        for record, media, code, url in inat_gbif.scat_records(taxon, licences, per_animal, rng):
+            words_of = " ".join(clean(record.get(k)) for k in ("occurrenceRemarks", "identificationRemarks"))
+            if re.search(r"\bdingo", words_of, re.I):
+                continue                          # dingoes are filed under Canis familiaris; they are wild
+            species = inat_gbif.latin(record)
+            who = animal
+            common = inat_gbif.english_name(record, names) if words == "bird droppings" and species else ""
+            if words == "bird droppings" and common:
+                who = f"{sources_article(common)} {common} ({species})"
+            elif " " in latin and words != "bird droppings":
+                who = f"{animal} ({latin})"
+            credit = inat_gbif.credit(record, media, code)
+            lead = "This is" if words in INAT_SINGULAR else "These are"
+            name = f"{prefix}-{inat_gbif.photo_id(url)}.jpg"
+            items.append((name, url, {"question": "What is this?", "answer": f"{lead} {words}, left by {who}.",
+                                      "split": "", "credit": credit}))
+            items.append((name, url, {"question": "What animal left these droppings?", "split": "",
+                                      "answer": f"They look like droppings left by {who}.", "credit": credit}))
+            found += 1
+        say(f"  iNaturalist (on GBIF) droppings of {latin}: {found}")
+    rng.shuffle(items)
     return fetch_pictures(items[:want * 2], os.path.join(data_dir, source.key), workers=4, pause=0.3)
 
 

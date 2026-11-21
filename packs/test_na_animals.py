@@ -81,6 +81,43 @@ def test_only_open_photo_licences():
         "/9/large.jpg")
 
 
+def test_inaturalist_through_gbif():
+    """The shared iNaturalist reader takes photos only from the iNaturalist Open Dataset (never iNaturalist's own
+    website), as their "large" copy, each photo's own licence open; regions are matched without accents."""
+    static = media(url="https://static.inaturalist.org/photos/1/original.jpg")
+    assert n.free_media({"media": [static]}) is None
+    assert n.inat_photo({"media": [static]}) == (None, "")
+    s3 = dict(static, identifier="https://inaturalist-open-data.s3.amazonaws.com/photos/2/original.png")
+    nc = dict(s3, license=CC_BY_NC)
+    assert n.inat_photo({"media": [static, nc, s3]}) == (s3, "CC BY 4.0")
+    assert n.inat_photo_id(s3) == "2" and n.photo_url(s3["identifier"]).endswith("/photos/2/large.png")
+    assert n.on_inaturalist_site("https://api.inaturalist.org/v1/observations")
+    assert not n.on_inaturalist_site(s3["identifier"])
+    rec = record(media=[nc, s3], taxonRank="SPECIES", speciesKey=None)
+    name, url, rows = n.inat_region_item(None, rec, "What animal is this?", "Ontario, Canada", "inatca", {})
+    assert name == "inatca-2.jpg" and url.endswith("/photos/2/large.png")
+    assert rows[0]["answer"] == "This is Odocoileus virginianus." and rows[0]["place"] == "Ontario, Canada"
+    assert rows[0]["credit"].startswith("Photo by A. Person on iNaturalist, CC BY 4.0, "
+                                        "https://www.inaturalist.org/observations/1 (via GBIF")
+    assert rows[1]["answer"] == "It was taken in Ontario, Canada."
+    assert n.inat_region_item(None, record(media=[nc]), "Q?", "Ontario, Canada", "inatca", {}) is None
+    assert n.inat_region_item(None, record(taxonRank="GENUS"), "Q?", "Ontario, Canada", "inatca", {}) is None
+
+    class Answer:
+        def __init__(self, data):
+            self.data = data
+
+        def json(self):
+            return self.data
+
+    class FakeGbif:
+        def get(self, url, params=None, timeout=None):
+            assert "inaturalist.org" not in url
+            return Answer({"facets": [{"counts": [{"name": "Ontario"}, {"name": "Québec"}]}]})
+    from canada_packs import folded
+    assert n.inat_regions(FakeGbif(), "CA", ["Quebec", "Yukon"], folded) == {"Quebec": "Québec"}
+
+
 def test_sex_and_age_only_when_stated():
     """A doe, a buck, a fawn, a male bird, a caterpillar; nothing when nothing is stated."""
     assert n.wild_answer("White-tailed Deer", "Odocoileus virginianus", record(sex="Female")) == \
