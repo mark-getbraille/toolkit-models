@@ -106,10 +106,12 @@ HARDWARE_PICTURE_MAKING_OK = set()
 HARDWARE_SIGN_UP = {
     "Roboflow Universe fastener, screw, bolt and tool sets":
         "each needs a free account and API key; most are photos re-uploaded from elsewhere under a new licence, so "
-        "only a set whose page names its own photos and an open licence would do. Not built.",
+        "only a set whose page names its own photos and an open licence would do. Such a set, exported by folder, "
+        "can go in the local-file sign-up entry signup_sources.fastener_sets.",
     "Kaggle fastener and tool sets (\"Screws and bolts\", \"Mechanical tools classification\", \"Hand tools\")":
         "behind a free Kaggle login (KAGGLE_USERNAME and KAGGLE_KEY); their licences are often 'unknown' or "
-        "copied from web searches. Not built.",
+        "copied from web searches. Two checked in November 2026 ('The Fasteners', CC0; 'SortScrews', Apache 2.0, "
+        "its makers' own 560 photos) are named in the local-file sign-up entry signup_sources.fastener_sets.",
 }
 
 HARDWARE_NOT_INCLUDED = {

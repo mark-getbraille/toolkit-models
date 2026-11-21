@@ -37,6 +37,19 @@ The collections (SIGNUP_SOURCES), each checked at its source in November 2026:
                     these entries were made on (403), so it runs only on the owner's computer, slowly (one request
                     every three seconds), and says so clearly if it refuses him too.
 
+  local files (the owner downloads by hand and puts the files in Documents\\Picture Model Training sign-up files\\
+  <key>, as zips or unpacked; the kit reads the makers' own labels: LocalFiles, LOCAL_LABEL_FILES, local_ready)
+    lisa_traffic_lights  LISA Traffic Light (Kaggle, CC BY-NC-SA 4.0, noncommercial): each light's colour.
+    lisa_traffic_signs   LISA Traffic Sign (UC San Diego, academic licence, research): the US sign types marked.
+    bdd100k         BDD100K (Berkeley, educational and research use, research): weather, time of day, road users,
+                    traffic light colours.
+    mapillary_signs Mapillary Traffic Sign Dataset (CC BY-NC-SA 4.0, noncommercial): every sign named.
+    mapillary_vistas  Mapillary Vistas (CC BY-NC-SA 4.0, noncommercial): what is in a street scene.
+    deepfashion     DeepFashion Category and Attribute Prediction (research agreement): the kind of clothing.
+    fastener_sets   Kaggle "The Fasteners" (CC0) and "SortScrews" (Apache 2.0), or a Roboflow set exported by
+                    folder: bolts, screws, nuts and washers named by their folder.
+    mvtec_d2s       MVTec D2S (CC BY-NC-SA 4.0, noncommercial): supermarket products named.
+
 People: DVIDS and Flickr30k photos show people, and none of these collections is used for picture-making
 (SIGNUP_PICTURE_MAKING_OK is empty). Children: a row whose words name a child is marked "child": true (picture-making
 leaves it out, and it never is a picture-making collection anyway). Nothing sexual, no crime, prisoners, detainees,
@@ -242,6 +255,106 @@ SIGNUP_INFO = {
         "terms_url": "https://collections.museumsvictoria.com.au/about",
         "adds": "Household appliances, radios, televisions, telephones, cameras, tools and toys with the museum's "
                 "own descriptions.",
+    },
+    # The local-file entries: the owner downloads by hand and puts the files in the entry's sign-up folder.
+    "lisa_traffic_lights": {
+        "keys": [],
+        "where": "Sign in to Kaggle (a free account) and press Download on "
+                 "https://www.kaggle.com/datasets/mbornoe/lisa-traffic-light-dataset (archive.zip, about 5.2 GB). Put "
+                 "the zip, or what it unpacks to, in Documents\\Picture Model Training sign-up files\\"
+                 "lisa_traffic_lights.",
+        "terms": "The dataset's Kaggle page gives its licence as 'CC BY-NC-SA 4.0' (non-commercial, with credit, "
+                 "anything made from it under the same terms). Kaggle's own terms (https://www.kaggle.com/terms) "
+                 "come with your account.",
+        "terms_url": "https://www.kaggle.com/datasets/mbornoe/lisa-traffic-light-dataset",
+        "adds": "Street photos from San Diego, day and night, with every traffic light's colour (red, yellow, green, "
+                "left-turn arrows) as its makers marked it.",
+    },
+    "lisa_traffic_signs": {
+        "keys": [],
+        "where": "Open https://cvrr.ucsd.edu/lisa-traffic-signs-dataset , accept its academic licence agreement and "
+                 "download the dataset (signDatabasePublicFramesOnly.zip). Put the zip, or what it unpacks to, in "
+                 "Documents\\Picture Model Training sign-up files\\lisa_traffic_signs.",
+        "terms": "The page says the dataset is 'released under academic license agreement': research and personal "
+                 "use only.",
+        "terms_url": "https://cvrr.ucsd.edu/lisa-traffic-signs-dataset",
+        "adds": "US road signs in street photos (stop, yield, speed limits, pedestrian crossings, school zones and "
+                "about 40 more kinds), named as its makers marked them.",
+    },
+    "bdd100k": {
+        "keys": [],
+        "where": "Make a free account at https://bdd-data.berkeley.edu , accept its licence, and download '100K "
+                 "Images' (bdd100k_images_100k.zip) and the detection labels (bdd100k_labels_images_trainval.zip "
+                 "or bdd100k_det_20_labels_trainval.zip). Put the zips, or what they unpack to, in "
+                 "Documents\\Picture Model Training sign-up files\\bdd100k.",
+        "terms": "In short: BDD100K may be used for educational, research and not-for-profit purposes; commercial "
+                 "use is reserved for Berkeley DeepDrive's members. Read the licence on the download page before "
+                 "you accept it.",
+        "terms_url": "https://bdd-data.berkeley.edu",
+        "adds": "Driving photos from New York and the San Francisco Bay Area with the weather, the time of day, the "
+                "kind of road, the cars, people and bicycles marked, and the colour of each traffic light.",
+    },
+    "mapillary_signs": {
+        "keys": [],
+        "where": "Make a free Mapillary account, open https://www.mapillary.com/dataset/trafficsign , accept the "
+                 "terms and download the fully annotated set (the annotations zip and the images zips). Put the "
+                 "zips, or what they unpack to, in Documents\\Picture Model Training sign-up files\\"
+                 "mapillary_signs.",
+        "terms": "Released under CC BY-NC-SA 4.0 for research: non-commercial, with credit, anything made from it "
+                 "under the same terms.",
+        "terms_url": "https://www.mapillary.com/dataset/trafficsign",
+        "adds": "Street photos from around the world with every traffic sign named (stop, no entry, speed limits, "
+                "warnings and information signs).",
+    },
+    "mapillary_vistas": {
+        "keys": [],
+        "where": "Make a free Mapillary account, open https://www.mapillary.com/dataset/vistas , accept the terms "
+                 "and download the dataset (version 2.0). Put the zip, or what it unpacks to (with config_v2.0.json "
+                 "and the training and validation folders), in Documents\\Picture Model Training sign-up files\\"
+                 "mapillary_vistas.",
+        "terms": "Released under CC BY-NC-SA 4.0 for research: non-commercial, with credit, anything made from it "
+                 "under the same terms.",
+        "terms_url": "https://www.mapillary.com/dataset/vistas",
+        "adds": "Street scenes from around the world with what is in them as its makers outlined it: road, "
+                "sidewalk, crosswalk, curb, cars, poles, traffic lights and signs, people.",
+    },
+    "deepfashion": {
+        "keys": [],
+        "where": "Read https://mmlab.ie.cuhk.edu.hk/projects/DeepFashion.html , follow its link to the Category and "
+                 "Attribute Prediction Benchmark and download, from its Google Drive folder, img.zip (Img) and the "
+                 "Anno_coarse folder (list_category_cloth.txt and list_category_img.txt). Put them in "
+                 "Documents\\Picture Model Training sign-up files\\deepfashion.",
+        "terms": "DeepFashion is for non-commercial research only, under its makers' agreement (on its page).",
+        "terms_url": "https://mmlab.ie.cuhk.edu.hk/projects/DeepFashion.html",
+        "adds": "Clothing photos (shop and street) with each garment's kind: blouse, T-shirt, jeans, dress, "
+                "jacket and about 45 more.",
+    },
+    "fastener_sets": {
+        "keys": [],
+        "where": "Download fastener sets sorted into one folder per kind, and put each set in a folder of its own "
+                 "(named after the set) in Documents\\Picture Model Training sign-up files\\fastener_sets. Checked "
+                 "in November 2026: Kaggle 'The Fasteners' (https://www.kaggle.com/datasets/alexandrparkhomenko/"
+                 "the-fasteners, marked CC0) and 'SortScrews' (https://www.kaggle.com/datasets/terryfuatatc/"
+                 "sortscrews, Apache 2.0, 'We collected 560 images of 6 types of screws'), with a free Kaggle "
+                 "account. A Roboflow Universe set works too when exported in 'Folder Structure' format, but take "
+                 "only a set whose page says the photos are its makers' own and gives an open licence.",
+        "terms": "Each set's own licence on its page (CC0 and Apache 2.0 for the two Kaggle sets named); Kaggle's "
+                 "and Roboflow's own terms come with your account.",
+        "terms_url": "https://www.kaggle.com/datasets/terryfuatatc/sortscrews",
+        "adds": "Close photos of single bolts, screws, nuts and washers, each named by the folder its makers "
+                "sorted it into.",
+    },
+    "mvtec_d2s": {
+        "keys": [],
+        "where": "Open https://www.mvtec.com/company/research/datasets/mvtec-d2s , fill in the download form and "
+                 "download the images and the annotations. Unpack them (7-Zip opens .tar.xz files) into "
+                 "Documents\\Picture Model Training sign-up files\\mvtec_d2s, so that the D2S_*.json "
+                 "annotation files and the images folder are there.",
+        "terms": "'The data is released under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 "
+                 "International License' (CC BY-NC-SA 4.0).",
+        "terms_url": "https://www.mvtec.com/company/research/datasets/mvtec-d2s",
+        "adds": "Supermarket products photographed on a tray, each one named: fruit and vegetables, bottles, cans, "
+                "boxes and bags of 60 kinds.",
     },
 }
 
@@ -761,6 +874,529 @@ def prepare_museums_victoria(source, data_dir, work, cap):
     return sources.fetch_pictures(items, os.path.join(data_dir, source.key), workers=1, pause=3.0)
 
 
+# ----------------------------------------------------------------- local-file entries (the owner downloads by hand)
+
+# Each of these collections is behind an account, a licence the owner accepts himself, or a download form, so the
+# kit never downloads it. The owner downloads the files by hand (SIGNUP_INFO[key]["where"] says from where and
+# which files) and puts them, as they came (zip files) or unpacked, in Documents\Picture Model Training sign-up
+# files\<key>. The kit then reads the labels the makers wrote and turns them into answers; nothing is guessed from a
+# picture. A .tar, .tar.gz or .tar.xz archive must be unpacked first (7-Zip does it), because a tar cannot be read
+# piece by piece.
+
+class LocalFiles:
+    """The files in a sign-up folder: loose files anywhere under it, and the files inside every .zip there, each by
+    its path inside (with "/" between folders). read(name) gives a file's bytes. Zip files are read piece by piece,
+    so a large one is never unpacked."""
+
+    def __init__(self, folder):
+        """Index every file under folder (zip files are opened, not unpacked)."""
+        self.where, self.zips = {}, []
+        for root, _dirs, files in os.walk(folder):
+            for f in files:
+                path = os.path.join(root, f)
+                rel = os.path.relpath(path, folder).replace(os.sep, "/")
+                if f.lower().endswith(".zip"):
+                    try:
+                        z = zipfile.ZipFile(path)
+                    except (OSError, zipfile.BadZipFile):
+                        say(f"  {f} could not be read (is it a whole download?).")
+                        continue
+                    self.zips.append(z)
+                    for n in z.namelist():
+                        if not n.endswith("/"):
+                            self.where.setdefault(n, (z, n))
+                else:
+                    self.where.setdefault(rel, (None, path))
+        self.by_base = {}
+        for name in self.where:
+            self.by_base.setdefault(name.rsplit("/", 1)[-1], name)
+
+    def names(self):
+        """Every file's path, sorted."""
+        return sorted(self.where)
+
+    def find(self, pattern):
+        """The paths whose last part matches the regular expression pattern (case ignored), sorted."""
+        rx = re.compile(pattern, re.I)
+        return [n for n in self.names() if rx.search(n.rsplit("/", 1)[-1])]
+
+    def named(self, base):
+        """The path of a file by its last part ("frame_00001.jpg"), or None."""
+        return self.by_base.get(base)
+
+    def read(self, name):
+        """The bytes of a file by its path."""
+        z, inner = self.where[name]
+        if z is not None:
+            return z.read(inner)
+        with open(inner, "rb") as f:
+            return f.read()
+
+    def text(self, name):
+        """A text file's text (UTF-8, with any byte-order mark dropped)."""
+        return self.read(name).decode("utf-8-sig", "replace")
+
+
+def local_ready(key):
+    """True when the sign-up folder of a local-file entry holds the file its makers' labels come in
+    (LOCAL_LABEL_FILES), loose or inside a zip whose name says so, or any zip at all (its inside is read later)."""
+    home = os.environ.get("USERPROFILE") or os.path.expanduser("~")
+    folder = os.path.join(home, "Documents", DOCUMENTS_FOLDER, key)
+    rx = re.compile(LOCAL_LABEL_FILES[key], re.I)
+    return os.path.isdir(folder) and any(rx.search(f) or f.lower().endswith(".zip")
+                                         for _r, _d, files in os.walk(folder) for f in files)
+
+
+def local_files_or_skip(source, data_dir):
+    """Explain the entry the first time; then its LocalFiles, or None (said in one line) when its folder is empty."""
+    explain_once(source, data_dir)
+    folder = signup_folder(source.key)
+    files = LocalFiles(folder)
+    if not files.where:
+        say(f"  {source.key}: no files in {folder}, so it is left out. {SIGNUP_INFO[source.key]['where']}")
+        return None
+    return files
+
+
+def local_rows(source, data_dir, files, items, cap, seed):
+    """Kit rows from [(file path in files, [(question, answer)], credit)]: up to cap pictures, shuffled the same way
+    each time, each picture made smaller into the data folder once, a row marked "child" when its answer names a
+    child. Items whose picture is missing or unreadable are passed over."""
+    import archive_sources
+    items = list(items)
+    random.Random(seed).shuffle(items)
+    out_folder = os.path.join(data_dir, source.key)
+    os.makedirs(out_folder, exist_ok=True)
+    rows, used = [], 0
+    for name, qas, credit in items:
+        if used >= cap:
+            break
+        if name not in files.where or not qas:
+            continue
+        stem = re.sub(r"[^\w.-]+", "_", os.path.splitext(name)[0])[-120:]
+        target = os.path.join(out_folder, stem + ".jpg")
+        if not sources.have(target):
+            try:
+                if not sources.smaller(files.read(name), target):
+                    continue
+            except (OSError, zipfile.BadZipFile, KeyError):
+                continue
+        used += 1
+        for question, answer in qas:
+            child = bool(archive_sources.CHILD_WORDS.search(answer))
+            rows.append({"picture": target, "question": question, "answer": answer, "split": "", "credit": credit,
+                         "child": child})
+    if not rows:
+        say(f"  {source.key}: the files are there but no labelled pictures were found in them, so it is left out. "
+            f"{SIGNUP_INFO[source.key]['where']}")
+    return rows
+
+
+def counted(counts, order):
+    """ "2 red (stop) and 1 green (go)" from {label: count} in the given order of (label, words)."""
+    parts = [f"{counts[label]} {words}" for label, words in order if counts.get(label)]
+    if not parts:
+        return ""
+    return parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " and " + parts[-1]
+
+
+def a_sign(words):
+    """ "a stop sign", "an end of school zone sign" """
+    return ("an " if words[:1].lower() in "aeiou" else "a ") + words + " sign"
+
+
+def listed_with_and(parts):
+    """ "a, b and c" """
+    parts = list(parts)
+    return parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " and " + parts[-1]
+
+
+def camel_words(tag):
+    """A LISA sign tag in words: "speedLimit35" -> "speed limit 35", "pedestrianCrossing" -> "pedestrian crossing"."""
+    text = re.sub(r"(?<=[a-z])(?=[A-Z0-9])|(?<=[0-9])(?=[A-Za-z])", " ", tag)
+    return text.lower().strip()
+
+
+# LISA Traffic Light: the light states its makers marked, with what they mean.
+LIGHT_Q = "What colour are the traffic lights?"
+LIGHT_STATES = [("stop", "red (stop)"), ("stopLeft", "red left-turn arrow"), ("warning", "yellow (about to turn red)"),
+                ("warningLeft", "yellow left-turn arrow"), ("go", "green (go)"), ("goLeft", "green left-turn arrow"),
+                ("goForward", "green straight-ahead arrow")]
+LISA_LIGHTS_CREDIT = ("LISA Traffic Light Dataset (Jensen, Philipsen, Møgelmose, Moeslund and Trivedi), "
+                      "CC BY-NC-SA 4.0, https://www.kaggle.com/datasets/mbornoe/lisa-traffic-light-dataset")
+
+
+def lisa_csv(text):
+    """{picture file's last part: [annotation tag]} from a LISA annotation file ("Filename;Annotation tag;...")."""
+    out = {}
+    lines = text.splitlines()
+    if not lines or "annotation tag" not in lines[0].lower():
+        return out
+    for line in lines[1:]:
+        parts = line.split(";")
+        if len(parts) > 1 and parts[0].strip():
+            out.setdefault(parts[0].strip().rsplit("/", 1)[-1], []).append(parts[1].strip())
+    return out
+
+
+def light_answer(tags, night=False):
+    """ "The traffic lights marked in this photo: 1 red (stop) and 2 green (go)." (and " It is night." for a night
+    clip), or "" when no tag is a light state."""
+    from collections import Counter
+    text = counted(Counter(tags), LIGHT_STATES)
+    return f"The traffic lights marked in this photo: {text}." + (" It is night." if night else "") if text else ""
+
+
+def prepare_lisa_traffic_lights(source, data_dir, work, cap):
+    """LISA Traffic Light from the owner's Kaggle download: each frame with the light states its makers marked
+    (frameAnnotationsBOX.csv files)."""
+    files = local_files_or_skip(source, data_dir)
+    if files is None:
+        return []
+    items = []
+    for ann in files.find(r"^frameAnnotationsBOX\.csv$"):
+        night = "night" in ann.lower()
+        for base, tags in lisa_csv(files.text(ann)).items():
+            name = files.named(base)
+            answer = light_answer(tags, night)
+            if name and answer:
+                items.append((name, [(LIGHT_Q, answer)], LISA_LIGHTS_CREDIT))
+    return local_rows(source, data_dir, files, items, cap + source.test, 771)
+
+
+# LISA Traffic Sign: the US sign types its makers marked.
+SIGNS_Q = "What road signs are in this photo?"
+LISA_SIGNS_CREDIT = ("LISA Traffic Sign Dataset (Møgelmose, Trivedi and Moeslund, UC San Diego), academic licence, "
+                     "https://cvrr.ucsd.edu/lisa-traffic-signs-dataset")
+
+
+def sign_answer(tags):
+    """ "The road signs marked in this photo: a stop sign and a speed limit 35 sign." (each kind once, in the order
+    first marked), or ""."""
+    kinds = list(dict.fromkeys(camel_words(t) for t in tags if t))
+    return f"The road signs marked in this photo: {listed_with_and(a_sign(k) for k in kinds)}." if kinds else ""
+
+
+def prepare_lisa_traffic_signs(source, data_dir, work, cap):
+    """LISA Traffic Sign from the owner's download: each frame with the sign types its makers marked
+    (allAnnotations.csv, or the frameAnnotations.csv files)."""
+    files = local_files_or_skip(source, data_dir)
+    if files is None:
+        return []
+    tags = {}
+    for ann in files.find(r"^allAnnotations\.csv$") or files.find(r"^frameAnnotations\.csv$"):
+        for base, found in lisa_csv(files.text(ann)).items():
+            tags.setdefault(base, []).extend(found)
+    items = [(files.named(base), [(SIGNS_Q, sign_answer(found))], LISA_SIGNS_CREDIT)
+             for base, found in tags.items() if files.named(base) and sign_answer(found)]
+    return local_rows(source, data_dir, files, items, cap + source.test, 773)
+
+
+# BDD100K: the weather, scene and time of day its makers gave each frame, and the things they marked.
+BDD_SCENE_Q = "What is the weather and time of day, and where is this?"
+BDD_THINGS_Q = "What is on the road?"
+BDD_CREDIT = ("BDD100K (Yu et al., Berkeley DeepDrive), for educational, research and not-for-profit use, "
+              "https://bdd-data.berkeley.edu")
+BDD_TIMES = {"daytime": "Daytime", "night": "Night", "dawn/dusk": "Dawn or dusk"}
+BDD_PLACES = {"city street": "on a city street", "highway": "on a highway", "residential": "in a residential street",
+              "parking lot": "in a car park", "gas stations": "at a petrol (gas) station", "tunnel": "in a tunnel"}
+# (label, one, more than one): both label sets (the 2018 labels and det_20) say the same things.
+BDD_THINGS = [("car", "car", "cars"), ("bus", "bus", "buses"), ("truck", "lorry (truck)", "lorries (trucks)"),
+              ("person", "person on foot", "people on foot"), ("pedestrian", "person on foot", "people on foot"),
+              ("rider", "rider", "riders"), ("bike", "bicycle", "bicycles"), ("bicycle", "bicycle", "bicycles"),
+              ("motor", "motorbike", "motorbikes"), ("motorcycle", "motorbike", "motorbikes"),
+              ("train", "train", "trains"), ("traffic sign", "traffic sign", "traffic signs"),
+              ("traffic light", "traffic light", "traffic lights")]
+BDD_LIGHTS = [("red", "red"), ("yellow", "yellow"), ("green", "green")]
+
+
+def bdd_answers(frame):
+    """[(question, answer)] of one BDD100K frame record: its weather, scene and time of day (when given), the things
+    marked in it with their counts, and the colours of the traffic lights marked."""
+    from collections import Counter
+    out = []
+    a = frame.get("attributes") or {}
+    time_of_day = BDD_TIMES.get(str(a.get("timeofday") or ""))
+    weather = str(a.get("weather") or "")
+    place = BDD_PLACES.get(str(a.get("scene") or ""))
+    if time_of_day and weather and weather != "undefined":
+        out.append((BDD_SCENE_Q, f"{time_of_day}, {weather} weather" + (f", {place}" if place else "") + "."))
+    labels = [x for x in frame.get("labels") or [] if isinstance(x, dict)]
+    counts = Counter(x.get("category") for x in labels)
+    merged, one = Counter(), {}
+    for label, single, words in BDD_THINGS:
+        merged[words] += counts.get(label, 0)
+        one[words] = single
+    order = list(dict.fromkeys(words for _, _, words in BDD_THINGS))
+    things = [f"{merged[w]} {w if merged[w] > 1 else one[w]}" for w in order if merged[w]]
+    if things:
+        out.append((BDD_THINGS_Q, f"Marked in this photo: {listed_with_and(things)}."))
+    colours = Counter(str((x.get("attributes") or {}).get("trafficLightColor") or (x.get("attributes") or {}).get(
+        "trafficLightColour") or "") for x in labels if x.get("category") == "traffic light")
+    text = counted(colours, BDD_LIGHTS)
+    if text:
+        out.append((LIGHT_Q, f"The traffic lights marked in this photo: {text}."))
+    return out
+
+
+def prepare_bdd100k(source, data_dir, work, cap):
+    """BDD100K from the owner's download: the label file (bdd100k_labels_images_val.json or det_val.json; the
+    smallest one there is read, as it covers enough frames) and the 100K images zip."""
+    files = local_files_or_skip(source, data_dir)
+    if files is None:
+        return []
+    label_files = files.find(r"^(bdd100k_labels_images|det)_(val|train)\.json$")
+    if not label_files:
+        say(f"  bdd100k: no label file (bdd100k_labels_images_val.json or det_val.json) there, so it is left out. "
+            f"{SIGNUP_INFO['bdd100k']['where']}")
+        return []
+    label_files.sort(key=lambda n: (0 if "val" in n else 1, n))
+    try:
+        frames = json.loads(files.text(label_files[0]))
+    except ValueError:
+        say(f"  bdd100k: {label_files[0]} could not be read, so it is left out.")
+        return []
+    items = []
+    for frame in frames if isinstance(frames, list) else []:
+        name = files.named(str(frame.get("name") or ""))
+        answers = bdd_answers(frame)
+        if name and answers:
+            items.append((name, answers, BDD_CREDIT))
+    return local_rows(source, data_dir, files, items, cap + source.test, 777)
+
+
+# Mapillary: sign labels ("regulatory--stop--g1") and Vistas' readable label names.
+MAPILLARY_SIGNS_CREDIT = ("Mapillary Traffic Sign Dataset (Ertler et al., Mapillary), CC BY-NC-SA 4.0, "
+                          "https://www.mapillary.com/dataset/trafficsign")
+MAPILLARY_KINDS = {"regulatory": "a rule", "warning": "a warning", "information": "information",
+                   "complementary": "an extra plate under another sign"}
+
+
+def mapillary_sign(label):
+    """ "regulatory--maximum-speed-limit-50--g1" -> "maximum speed limit 50 sign (a rule)"; "" for "other-sign" or
+    a label not in that form."""
+    parts = label.split("--")
+    if len(parts) < 2 or parts[0] not in MAPILLARY_KINDS:
+        return ""
+    return f"{parts[1].replace('-', ' ')} sign ({MAPILLARY_KINDS[parts[0]]})"
+
+
+def prepare_mapillary_signs(source, data_dir, work, cap):
+    """Mapillary Traffic Sign Dataset from the owner's download: each photo with the signs its makers named
+    (annotations/<key>.json; the photos in the images zips)."""
+    files = local_files_or_skip(source, data_dir)
+    if files is None:
+        return []
+    items = []
+    for ann in files.find(r"\.json$"):
+        if "/annotations/" not in "/" + ann:
+            continue
+        try:
+            data = json.loads(files.text(ann))
+        except ValueError:
+            continue
+        signs = list(dict.fromkeys(filter(None, (mapillary_sign(str(o.get("label") or ""))
+                                                 for o in data.get("objects") or [] if isinstance(o, dict)))))
+        name = files.named(ann.rsplit("/", 1)[-1][:-5] + ".jpg")
+        if name and signs:
+            answer = f"The traffic signs marked in this photo: {listed_with_and(signs)}."
+            items.append((name, [(SIGNS_Q, answer)], MAPILLARY_SIGNS_CREDIT))
+    return local_rows(source, data_dir, files, items, cap + source.test, 779)
+
+
+VISTAS_Q = "What is in this street scene?"
+VISTAS_CREDIT = ("Mapillary Vistas Dataset (Neuhold et al., Mapillary), CC BY-NC-SA 4.0, "
+                 "https://www.mapillary.com/dataset/vistas")
+VISTAS_LEFT_OUT = re.compile(r"\b(unlabeled|ego vehicle|car mount|void)\b", re.I)
+
+
+def vistas_readable(config_text):
+    """{label name: its readable name} from Vistas' config file ("construction--flat--sidewalk" -> "Sidewalk")."""
+    try:
+        labels = json.loads(config_text).get("labels") or []
+    except (ValueError, AttributeError):
+        return {}
+    return {str(x.get("name")): str(x.get("readable") or "") for x in labels if isinstance(x, dict) and x.get("name")}
+
+
+def vistas_answer(labels, readable, most=12):
+    """ "Marked in this street photo: road, sidewalk, crosswalk, car and traffic light." The kinds marked most
+    often first (at most most of them), each once, in their readable names (the last part of the label when the
+    config has none), leaving out "unlabeled", the camera's own car and its mount."""
+    from collections import Counter
+    words = []
+    for label in labels:
+        word = readable.get(label) or label.split("--")[-1].replace("-", " ")
+        if word and not VISTAS_LEFT_OUT.search(word):
+            words.append(word.lower())
+    kinds = [w for w, _ in Counter(words).most_common(most)]
+    return f"Marked in this street photo: {listed_with_and(kinds)}." if kinds else ""
+
+
+def prepare_mapillary_vistas(source, data_dir, work, cap):
+    """Mapillary Vistas from the owner's download: each photo with the kinds of things its makers outlined
+    (v2.0 polygons, or v1.2 instance files are not read), in the config file's readable names."""
+    files = local_files_or_skip(source, data_dir)
+    if files is None:
+        return []
+    configs = files.find(r"^config_v2\.0\.json$") or files.find(r"^config.*\.json$")
+    readable = vistas_readable(files.text(configs[0])) if configs else {}
+    items = []
+    for ann in files.find(r"\.json$"):
+        if "/polygons/" not in "/" + ann:
+            continue
+        try:
+            data = json.loads(files.text(ann))
+        except ValueError:
+            continue
+        labels = [str(o.get("label") or "") for o in data.get("objects") or [] if isinstance(o, dict)]
+        name = files.named(ann.rsplit("/", 1)[-1][:-5] + ".jpg")
+        answer = vistas_answer(labels, readable)
+        if name and answer:
+            items.append((name, [(VISTAS_Q, answer)], VISTAS_CREDIT))
+    return local_rows(source, data_dir, files, items, cap + source.test, 781)
+
+
+# DeepFashion (Category and Attribute Prediction Benchmark): the clothing category its makers gave each photo.
+CLOTHES_Q = "What kind of clothing is this?"
+DEEPFASHION_CREDIT = ("DeepFashion (Liu, Luo, Qiu, Wang and Tang, CUHK), non-commercial research use, "
+                      "https://mmlab.ie.cuhk.edu.hk/projects/DeepFashion.html")
+CLOTHES_WORDS = {"tee": "T-shirt", "tank": "tank top", "henley": "Henley shirt", "jeggings": "jeggings",
+                 "joggers": "joggers", "romper": "romper (playsuit)", "kaftan": "kaftan", "coverup": "cover-up",
+                 "onesie": "onesie", "caftan": "kaftan", "chinos": "chinos", "culottes": "culottes"}
+PLURAL_CLOTHES = re.compile(r"(jeans|shorts|leggings|jeggings|joggers|sweatpants|chinos|culottes|trunks|jodhpurs|"
+                            r"capris|gauchos|sweatshorts)$", re.I)
+
+
+def clothing_answer(category):
+    """ "This is a blouse." / "These are jeans." from a DeepFashion category name ("Tee" -> "a T-shirt")."""
+    word = CLOTHES_WORDS.get(category.lower(), category.lower())
+    if PLURAL_CLOTHES.search(word):
+        return f"These are {word}."
+    return f"This is {'an' if word[:1] in 'aeiou' else 'a'} {word}."
+
+
+def deepfashion_categories(cloth_text, img_text):
+    """{image path ("img/Sheer_Blouse/img_00000001.jpg"): category name} from list_category_cloth.txt (a count,
+    a header, then "Anorak 1" lines, numbered from 1) and list_category_img.txt (a count, a header, then "<image>
+    <number>" lines)."""
+    names = [line.rsplit(None, 1)[0].strip() for line in cloth_text.splitlines()[2:] if line.strip()]
+    out = {}
+    for line in img_text.splitlines()[2:]:
+        parts = line.split()
+        if len(parts) == 2 and parts[1].isdigit() and 1 <= int(parts[1]) <= len(names):
+            out[parts[0]] = names[int(parts[1]) - 1]
+    return out
+
+
+def prepare_deepfashion(source, data_dir, work, cap):
+    """DeepFashion Category and Attribute Prediction from the owner's download: each photo with its clothing
+    category (Anno_coarse/list_category_cloth.txt and list_category_img.txt; the photos in img.zip)."""
+    files = local_files_or_skip(source, data_dir)
+    if files is None:
+        return []
+    cloth, img = files.find(r"^list_category_cloth\.txt$"), files.find(r"^list_category_img\.txt$")
+    if not cloth or not img:
+        say(f"  deepfashion: list_category_cloth.txt or list_category_img.txt is missing, so it is left out. "
+            f"{SIGNUP_INFO['deepfashion']['where']}")
+        return []
+    paths = set(files.where)
+    items = []
+    for path, category in deepfashion_categories(files.text(cloth[0]), files.text(img[0])).items():
+        name = path if path in paths else next((p for p in (f"img/{path}", path.split("/", 1)[-1]) if p in paths),
+                                               None)
+        if name:
+            items.append((name, [(CLOTHES_Q, clothing_answer(category))], DEEPFASHION_CREDIT))
+    return local_rows(source, data_dir, files, items, cap + source.test, 783)
+
+
+# Fastener sets sorted into one folder per kind (Kaggle "The Fasteners" and "SortScrews", or a Roboflow Universe set
+# exported in "Folder Structure"): the folder names the kind.
+FASTENER_Q = "What kind of fastener is this?"
+SPLIT_FOLDERS = re.compile(r"^(train|training|valid|validation|val|test|testing|images|data|dataset)$", re.I)
+PHOTO_FILE = re.compile(r"\.(jpe?g|png|bmp|webp)$", re.I)
+
+
+def folder_kind(path):
+    """The kind a picture's folder names ("The Fasteners/bolt/IMG_1.jpg" -> "bolt", "SortScrews/train/hex_nut/x.jpg"
+    -> "hex nut"): the nearest folder that is not a split folder ("train", "valid") nor the set's own top folder;
+    "" when there is none or it is only a number."""
+    parts = path.split("/")
+    for folder in reversed(parts[1:-1]):
+        if SPLIT_FOLDERS.match(folder):
+            continue
+        word = re.sub(r"[_-]+", " ", folder).strip()
+        return "" if not word or re.fullmatch(r"[\d\s]+", word) else word.lower()
+    return ""
+
+
+def prepare_fastener_sets(source, data_dir, work, cap):
+    """Fastener photos sorted by kind, one folder per kind, from the sets the owner downloaded into this entry's
+    folder (each set in a folder of its own, named after it, for the credit)."""
+    files = local_files_or_skip(source, data_dir)
+    if files is None:
+        return []
+    items = []
+    for name in files.names():
+        kind = folder_kind(name) if PHOTO_FILE.search(name) else ""
+        if kind and len(name.split("/")) >= 3:
+            set_name = name.split("/", 1)[0]
+            answer = f"This is {'an' if kind[:1] in 'aeiou' else 'a'} {kind}, as the set's makers sorted it."
+            items.append((name, [(FASTENER_Q, answer)], f"{set_name} (downloaded by you; its own licence)"))
+    return local_rows(source, data_dir, files, items, cap + source.test, 787)
+
+
+# MVTec D2S: supermarket products its makers outlined, in COCO files (D2S_training.json and the like).
+PRODUCTS_Q = "What products are in this photo?"
+D2S_CREDIT = ("MVTec D2S, Densely Segmented Supermarket Dataset (Follmann et al., MVTec Software), CC BY-NC-SA 4.0, "
+              "https://www.mvtec.com/company/research/datasets/mvtec-d2s")
+
+
+def coco_products(coco):
+    """{image file name: "The products marked in this photo: avocado (2) and coca cola bottle (1)."} from a COCO
+    annotation file's dict (its categories, images and annotations)."""
+    from collections import Counter
+    cats = {c.get("id"): str(c.get("name") or "").replace("_", " ") for c in coco.get("categories") or []}
+    files = {i.get("id"): str(i.get("file_name") or "") for i in coco.get("images") or []}
+    found = {}
+    for a in coco.get("annotations") or []:
+        if a.get("image_id") in files and cats.get(a.get("category_id")):
+            found.setdefault(files[a["image_id"]], Counter())[cats[a["category_id"]]] += 1
+    return {f: "The products marked in this photo: " + listed_with_and(f"{n} ({c})" for n, c in sorted(
+        counts.items(), key=lambda x: (-x[1], x[0]))) + "." for f, counts in found.items() if f}
+
+
+def prepare_mvtec_d2s(source, data_dir, work, cap):
+    """MVTec D2S from the owner's download (unpacked: the images folder and the annotations folder with its
+    D2S_*.json files): each photo with the products its makers outlined."""
+    files = local_files_or_skip(source, data_dir)
+    if files is None:
+        return []
+    answers = {}
+    for ann in files.find(r"^D2S_.*\.json$"):
+        try:
+            answers.update(coco_products(json.loads(files.text(ann))))
+        except (ValueError, AttributeError):
+            continue
+    items = [(files.named(f.rsplit("/", 1)[-1]), [(PRODUCTS_Q, a)], D2S_CREDIT) for f, a in answers.items()
+             if files.named(f.rsplit("/", 1)[-1])]
+    return local_rows(source, data_dir, files, items, cap + source.test, 789)
+
+
+# The file in each local-file entry's folder whose presence means the owner has put the download there
+# (local_ready; any zip counts too, as its inside is only read when the training runs).
+LOCAL_LABEL_FILES = {
+    "lisa_traffic_lights": r"^frameAnnotationsBOX\.csv$",
+    "lisa_traffic_signs": r"^(allAnnotations|frameAnnotations)\.csv$",
+    "bdd100k": r"^(bdd100k_labels_images|det)_(val|train)\.json$",
+    "mapillary_signs": r"\.json$",
+    "mapillary_vistas": r"\.json$",
+    "deepfashion": r"^list_category_img\.txt$",
+    "fastener_sets": r"\.(jpe?g|png)$",
+    "mvtec_d2s": r"^D2S_.*\.json$",
+}
+
+
 # ----------------------------------------------------------------- the collections
 
 SIGNUP_SOURCES = [
@@ -806,6 +1442,65 @@ SIGNUP_SOURCES = [
            terms="https://collections.museumsvictoria.com.au/about",
            terms_summary="Each picture's own licence (public domain or Creative Commons without NoDerivatives); its "
                          "site refused the machine these entries were made on, so it may refuse yours too."),
+    # The local-file entries (downloaded by you, put in the sign-up folder; LOCAL_LABEL_FILES, local_ready).
+    Source("lisa_traffic_lights", "Traffic light colours in San Diego street photos (LISA Traffic Light; your own "
+                                  "Kaggle download; personal use)",
+           "CC BY-NC-SA 4.0 as its Kaggle page states (https://www.kaggle.com/datasets/mbornoe/"
+           "lisa-traffic-light-dataset)", LISA_LIGHTS_CREDIT, "noncommercial", 2000, 20,
+           prepare_lisa_traffic_lights, "5.2 GB (downloaded by you from Kaggle)",
+           terms="https://www.kaggle.com/datasets/mbornoe/lisa-traffic-light-dataset",
+           terms_summary="Non-commercial use with credit; anything made from it keeps the same terms. You download "
+                         "it and put it in the sign-up folder."),
+    Source("lisa_traffic_signs", "US road signs in street photos (LISA Traffic Sign; academic licence; personal use)",
+           "'released under academic license agreement' (https://cvrr.ucsd.edu/lisa-traffic-signs-dataset)",
+           LISA_SIGNS_CREDIT, "research", 2000, 20, prepare_lisa_traffic_signs,
+           "several GB (downloaded by you after accepting the agreement)",
+           terms="https://cvrr.ucsd.edu/lisa-traffic-signs-dataset",
+           terms_summary="Academic (research) use only. You accept the agreement, download it and put it in the "
+                         "sign-up folder."),
+    Source("bdd100k", "Driving photos with weather, time of day, road users and traffic light colours (BDD100K; "
+                      "your own free account; personal use)",
+           "BDD100K licence: educational, research and not-for-profit use (https://bdd-data.berkeley.edu)",
+           BDD_CREDIT, "research", 3000, 30, prepare_bdd100k, "about 5.5 GB (downloaded by you after signing up)",
+           terms="https://bdd-data.berkeley.edu",
+           terms_summary="Educational, research and not-for-profit use only. You sign up, download it and put it "
+                         "in the sign-up folder."),
+    Source("mapillary_signs", "Traffic signs named in street photos from around the world (Mapillary Traffic Sign "
+                              "Dataset; your own free account; personal use)",
+           "CC BY-NC-SA 4.0 for research (https://www.mapillary.com/dataset/trafficsign)",
+           MAPILLARY_SIGNS_CREDIT, "noncommercial", 3000, 30, prepare_mapillary_signs,
+           "tens of GB (downloaded by you after signing up)", terms="https://www.mapillary.com/dataset/trafficsign",
+           terms_summary="Non-commercial use with credit; anything made from it keeps the same terms. You sign up, "
+                         "download it and put it in the sign-up folder."),
+    Source("mapillary_vistas", "What is in a street scene: road, sidewalk, crosswalk, cars, poles and signs "
+                               "(Mapillary Vistas; your own free account; personal use)",
+           "CC BY-NC-SA 4.0 for research (https://www.mapillary.com/dataset/vistas)",
+           VISTAS_CREDIT, "noncommercial", 3000, 30, prepare_mapillary_vistas,
+           "tens of GB (downloaded by you after signing up)", terms="https://www.mapillary.com/dataset/vistas",
+           terms_summary="Non-commercial use with credit; anything made from it keeps the same terms. You sign up, "
+                         "download it and put it in the sign-up folder."),
+    Source("deepfashion", "Kinds of clothing: blouses, T-shirts, jeans, dresses and more (DeepFashion; research "
+                          "agreement; personal use)",
+           "non-commercial research only (https://mmlab.ie.cuhk.edu.hk/projects/DeepFashion.html)",
+           DEEPFASHION_CREDIT, "research", 3000, 30, prepare_deepfashion,
+           "about 2 GB (downloaded by you from its Google Drive folder)",
+           terms="https://mmlab.ie.cuhk.edu.hk/projects/DeepFashion.html",
+           terms_summary="Non-commercial research use only. You download it and put it in the sign-up folder."),
+    Source("fastener_sets", "Bolts, screws, nuts and washers sorted by kind (Kaggle or Roboflow sets you download; "
+                            "personal use)",
+           "each set's own licence on its page (Kaggle 'The Fasteners': CC0; 'SortScrews': Apache 2.0)",
+           "Fastener sets downloaded by you from Kaggle or Roboflow Universe, each credited by its folder name",
+           "research", 1500, 15, prepare_fastener_sets, "under 1 GB (downloaded by you)",
+           terms="https://www.kaggle.com/datasets/terryfuatatc/sortscrews",
+           terms_summary="Each set's own licence; the Kaggle and Roboflow terms of your account. You download the "
+                         "sets and put each in its own folder in the sign-up folder."),
+    Source("mvtec_d2s", "Supermarket products named on a tray (MVTec D2S; download form; personal use)",
+           "'released under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License' "
+           "(https://www.mvtec.com/company/research/datasets/mvtec-d2s)",
+           D2S_CREDIT, "noncommercial", 2000, 20, prepare_mvtec_d2s, "several GB (downloaded by you after the form)",
+           terms="https://www.mvtec.com/company/research/datasets/mvtec-d2s",
+           terms_summary="Non-commercial use with credit; anything made from it keeps the same terms. You fill in "
+                         "the form, download and unpack it into the sign-up folder."),
 ]
 
 # People are in DVIDS and Flickr30k; the chess drawings are Chess.com's; Museums Victoria was never checked from here:
@@ -824,6 +1519,8 @@ def ready(source):
     key = getattr(source, "key", "")
     if key not in SIGNUP_INFO:
         return True
+    if key in LOCAL_LABEL_FILES:
+        return local_ready(key)
     if key == "flickr30k":
         home = os.environ.get("USERPROFILE") or os.path.expanduser("~")
         folder = os.path.join(home, "Documents", DOCUMENTS_FOLDER, "flickr30k")
@@ -880,7 +1577,15 @@ SIGNUP_NOT_INCLUDED = {
         "its request form is gone (the page at https://hockenmaier.cs.illinois.edu/8k-pictures.html points to a page "
         "with no form); Kaggle copies are re-uploads the makers never licensed.",
     "Products-10K, SKU-110K":
-        "product numbers or shelf boxes only, no names or descriptions to learn from (as personal_sources.REJECTED).",
+        "product numbers or shelf boxes only, no names or descriptions to learn from (as personal_sources.REJECTED). "
+        "Checked again in November 2026: Products-10K's labels are still product and group numbers, so a local-file "
+        "entry would have nothing to say.",
+    "Retail-786k (Lamm and Keuper; Zenodo 7970567, CC BY-NC-ND 4.0)":
+        "an open download, not a sign-up, but its 786,000 cut-out leaflet pictures are labelled only by product "
+        "number (no names), so it has nothing to teach a describer (packaged_goods_sources.py says the same).",
+    "Stanford Dogs":
+        "already a personal-use kit entry (personal_sources.stanford_dogs, downloaded by the kit itself): not "
+        "repeated here.",
     "Unitail, Locount, RP2K":
         "request forms or e-mail to the authors; Unitail's and Locount's labels are boxes, counts or text fragments, "
         "RP2K states no licence. Can be added once the owner receives the files and their layout is seen.",
@@ -988,7 +1693,8 @@ PERSONAL_REVIEW = {
         "AI-written or AI-made", "B", "the kit learns only from people's own words and real pictures."),
     ("land", "Agriculture-Vision"): ("terms forbid training beyond a 2020 challenge", "C", "stays out."),
     ("land", "MVTec AD, LOCO, D2S, Screws (CC BY-NC-SA)"): (
-        "download form", "A", "personal use allowed; the owner fills the form; a local-file entry can follow."),
+        "download form", "A", "personal use allowed; the owner fills the form. D2S is built as the local-file entry "
+        "mvtec_d2s; AD, LOCO and Screws can follow the same way."),
     ("mechanical", "CarDD (research, licence form)"): ("form", "A", "the owner sends the form himself; then a local "
                                                        "file entry can follow."),
     ("canada", "Bank of Canada bank-note gallery"): ("non-commercial, 'without alterations'", "B",

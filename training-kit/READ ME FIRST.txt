@@ -98,6 +98,13 @@ line of the terms you agree to, and what it adds; without its key it is left out
   Documents\Picture Model Training sign-up files\flickr30k.
 - Museums Victoria (household appliances, radios, tools): no key; it downloads slowly on your computer and says so
   plainly if the museum refuses your computer.
+- Collections you download by hand (no key): you get the files from the collection's own page, after signing up or
+  accepting its terms, and put them, as zip files or unpacked, in Documents\Picture Model Training sign-up
+  files\<name>. The first time each runs, it says which files and from where. They are: lisa_traffic_lights (traffic
+  light colours, Kaggle), lisa_traffic_signs (US road signs, UC San Diego), bdd100k (driving photos with weather and
+  traffic lights, Berkeley), mapillary_signs and mapillary_vistas (street signs and street scenes, Mapillary),
+  deepfashion (kinds of clothing), fastener_sets (bolts, screws, nuts and washers sorted by kind, from Kaggle or
+  Roboflow) and mvtec_d2s (supermarket products). A .tar or .tar.xz file must be unpacked first (7-Zip does it).
 - Keys the kit already uses: EUROPEANA_KEY (https://pro.europeana.eu/page/get-api), DPLA_API_KEY
   (https://pro.dp.la/developers/api-basics) and SI_API_KEY (https://api.data.gov/signup/).
 Two ways to give the program a key:

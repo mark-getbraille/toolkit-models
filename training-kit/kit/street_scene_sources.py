@@ -262,19 +262,22 @@ STREET_SCENE_SIGN_UP = {
     "LISA Traffic Light Dataset (UC San Diego, about 43,000 frames from San Diego with every light's state)":
         "https://www.kaggle.com/datasets/mbornoe/lisa-traffic-light-dataset : CC BY-NC-SA 4.0 (as its Kaggle page "
         "and mirrors state; the Kaggle page itself was not readable from this machine), behind a free Kaggle login "
-        "(KAGGLE_USERNAME and KAGGLE_KEY). Non-commercial: it would be a personal-use entry with the light states "
-        "as answers, like bosch_traffic_lights. Not built.",
+        "(KAGGLE_USERNAME and KAGGLE_KEY). Non-commercial. Built as the local-file sign-up entry "
+        "signup_sources.lisa_traffic_lights (the owner downloads it by hand).",
     "LISA Traffic Sign Dataset (UC San Diego, 6,610 frames, 47 US sign types)":
         "https://cvrr.ucsd.edu/lisa-traffic-signs-dataset : 'released under academic license agreement' (research "
-        "only; the agreement's text is not on the page), downloaded after accepting it. Not built.",
+        "only; the agreement's text is not on the page), downloaded after accepting it. Built as the local-file "
+        "sign-up entry signup_sources.lisa_traffic_signs.",
     "BDD100K (Berkeley DeepDrive, 100,000 driving videos and frames in New York and the San Francisco Bay Area, "
     "with traffic light colours and signs)":
         "https://bdd-data.berkeley.edu : an account and acceptance of its licence (educational, research and "
-        "not-for-profit use; commercial use reserved for its members), as university_sources.py notes. Not built.",
+        "not-for-profit use; commercial use reserved for its members), as university_sources.py notes. Built as the "
+        "local-file sign-up entry signup_sources.bdd100k.",
     "Mapillary Traffic Sign Dataset and Mapillary Vistas":
         "https://www.mapillary.com/dataset : an account; CC BY-NC-SA 4.0 for research (already listed in "
         "personal_sources.py). Mapillary's API (street-level photos, CC BY-SA 4.0) needs an access token; its "
-        "photos of Germany are already the share-alike StreetSurfaceVis entry (extra_sources.py).",
+        "photos of Germany are already the share-alike StreetSurfaceVis entry (extra_sources.py). Both datasets are "
+        "built as the local-file sign-up entries signup_sources.mapillary_signs and mapillary_vistas.",
     "KartaView (formerly OpenStreetCam) street-level photos":
         "https://kartaview.org : photos CC BY-SA 4.0 (OpenStreetMap wiki), but its API needs an account and key "
         "and has undocumented rate limits; the photos have no labels of crossings or signals, so answers would "

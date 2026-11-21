@@ -242,8 +242,8 @@ PACKAGED_GOODS_SIGN_UP = {
         "built.",
     "MVTec D2S (CC BY-NC-SA 4.0)":
         "https://www.mvtec.com/company/research/datasets/mvtec-d2s : a download form; supermarket products on a "
-        "turntable, labelled with 60 product classes. Personal use allowed once the owner fills the form "
-        "(signup_sources.PERSONAL_REVIEW lists it as A).",
+        "turntable, labelled with 60 product classes. Personal use allowed once the owner fills the form: built as "
+        "the local-file sign-up entry signup_sources.mvtec_d2s.",
     "Unitail, Locount, RP2K, Kaggle RPC": "request forms, e-mail or a Kaggle login; already in "
                                           "signup_sources.SIGNUP_NOT_INCLUDED.",
 }

@@ -63,7 +63,8 @@ folder with your own descriptions, as the user guide says):
   K-Hairstyle (Korean hairstyles)           https://psh01087.github.io/K-Hairstyle/ : through AI Hub Korea, which
                                             needs an account (and limits use outside Korea).
   DeepFashion and DeepFashion2              https://mmlab.ie.cuhk.edu.hk/projects/DeepFashion.html : a signed
-                                            agreement; non-commercial research only.
+                                            agreement; non-commercial research only. DeepFashion's category
+                                            set is the sign-up entry signup_sources.deepfashion.
   Kaggle sets (battery types, tools,        https://www.kaggle.com : a Kaggle account is needed; check each set's
   hairstyles, clothing tags)                licence and where its pictures came from.
 

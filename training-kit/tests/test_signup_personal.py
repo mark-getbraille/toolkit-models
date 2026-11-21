@@ -429,3 +429,165 @@ def test_museums_victoria_says_clearly_when_refused(tmp_path, private_home, monk
     monkeypatch.setattr(su, "victoria_items", refused)
     assert s.prepare(s, str(tmp_path / "data"), str(tmp_path / "work"), 10) == []
     assert any("refused this computer" in line for line in private_home)
+
+
+# ----------------------------------------------------------------- local-file entries (made-up downloads)
+
+LOCAL_KEYS = ["lisa_traffic_lights", "lisa_traffic_signs", "bdd100k", "mapillary_signs", "mapillary_vistas",
+              "deepfashion", "fastener_sets", "mvtec_d2s"]
+
+
+def put_zip(key, zip_name, files):
+    """A made-up download: a zip of {path: bytes or text} in the entry's sign-up folder."""
+    path = os.path.join(su.signup_folder(key), zip_name)
+    with zipfile.ZipFile(path, "w") as z:
+        for name, data in files.items():
+            z.writestr(name, data)
+    return path
+
+
+def put_loose(key, files):
+    """Made-up unpacked files {path: bytes or text} in the entry's sign-up folder."""
+    for name, data in files.items():
+        path = os.path.join(su.signup_folder(key), *name.split("/"))
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "wb") as f:
+            f.write(data.encode() if isinstance(data, str) else data)
+
+
+def run(key, tmp_path, cap=10):
+    """The entry's rows from the made-up files."""
+    s = source(key)
+    return s.prepare(s, str(tmp_path / "data"), str(tmp_path / "work"), cap)
+
+
+@pytest.mark.parametrize("key", LOCAL_KEYS)
+def test_local_entries_without_files_are_skipped_cleanly(key, tmp_path, private_home):
+    s = source(key)
+    assert not su.ready(s)
+    assert run(key, tmp_path) == []
+    assert any("left out" in line for line in private_home)
+    info = su.SIGNUP_INFO[key]
+    assert info["keys"] == [] and "sign-up files" in info["where"]
+
+
+def test_local_entries_are_personal_and_never_for_picture_making():
+    for key in LOCAL_KEYS:
+        s = source(key)
+        assert s.group in ("research", "noncommercial") and s.terms.startswith("https://")
+        assert key in sources.NOT_FOR_PICTURE_MAKING and key in su.LOCAL_LABEL_FILES
+
+
+def test_lisa_traffic_lights_from_the_kaggle_zip(tmp_path):
+    box = ("Filename;Annotation tag;Upper left corner X;Upper left corner Y;Lower right corner X;Lower right corner Y\n"
+           "dayTraining/dayClip1--00001.jpg;stop;1;2;3;4\n"
+           "dayTraining/dayClip1--00001.jpg;stop;5;6;7;8\n"
+           "dayTraining/dayClip1--00001.jpg;goLeft;5;6;7;8\n"
+           "dayTraining/dayClip1--00002.jpg;go;1;2;3;4\n")
+    night = ("Filename;Annotation tag;Upper left corner X\nnightTraining/nightClip1--00001.jpg;warning;1\n")
+    put_zip("lisa_traffic_lights", "archive.zip", {
+        "Annotations/Annotations/dayTrain/dayClip1/frameAnnotationsBOX.csv": box,
+        "Annotations/Annotations/nightTrain/nightClip1/frameAnnotationsBOX.csv": night,
+        "dayTrain/dayTrain/dayClip1/frames/dayClip1--00001.jpg": picture_bytes(),
+        "dayTrain/dayTrain/dayClip1/frames/dayClip1--00002.jpg": picture_bytes(),
+        "nightTrain/nightTrain/nightClip1/frames/nightClip1--00001.jpg": picture_bytes()})
+    assert su.ready(source("lisa_traffic_lights"))
+    answers = {r["answer"] for r in run("lisa_traffic_lights", tmp_path)}
+    assert answers == {"The traffic lights marked in this photo: 2 red (stop) and 1 green left-turn arrow.",
+                       "The traffic lights marked in this photo: 1 green (go).",
+                       "The traffic lights marked in this photo: 1 yellow (about to turn red). It is night."}
+
+
+def test_lisa_traffic_signs_unpacked(tmp_path):
+    put_loose("lisa_traffic_signs", {
+        "signDatabasePublicFramesOnly/allAnnotations.csv":
+            "Filename;Annotation tag;Upper left corner X\n"
+            "aiua120214-0/frameAnnotations-x/stop_1.png;stop;1\n"
+            "aiua120214-0/frameAnnotations-x/stop_1.png;speedLimit35;1\n"
+            "aiua120214-0/frameAnnotations-x/yield_2.png;yield;1\n",
+        "signDatabasePublicFramesOnly/aiua120214-0/frameAnnotations-x/stop_1.png": picture_bytes(),
+        "signDatabasePublicFramesOnly/aiua120214-0/frameAnnotations-x/yield_2.png": picture_bytes()})
+    answers = {r["answer"] for r in run("lisa_traffic_signs", tmp_path)}
+    assert answers == {"The road signs marked in this photo: a stop sign and a speed limit 35 sign.",
+                       "The road signs marked in this photo: a yield sign."}
+    assert su.camel_words("pedestrianCrossing") == "pedestrian crossing"
+
+
+def test_bdd100k_attributes_things_and_lights(tmp_path):
+    frames = [{"name": "b1.jpg", "attributes": {"weather": "rainy", "scene": "city street", "timeofday": "night"},
+               "labels": [{"category": "car"}, {"category": "car"}, {"category": "person"},
+                          {"category": "traffic light", "attributes": {"trafficLightColor": "red"}},
+                          {"category": "traffic light", "attributes": {"trafficLightColor": "none"}}]},
+              {"name": "b2.jpg", "attributes": {"weather": "undefined", "scene": "highway", "timeofday": "daytime"},
+               "labels": []}]
+    put_zip("bdd100k", "bdd100k_labels_images_trainval.zip",
+            {"bdd100k/labels/bdd100k_labels_images_val.json": json.dumps(frames)})
+    put_zip("bdd100k", "bdd100k_images_100k.zip", {"bdd100k/images/100k/val/b1.jpg": picture_bytes(),
+                                                     "bdd100k/images/100k/val/b2.jpg": picture_bytes()})
+    rows = run("bdd100k", tmp_path)
+    got = {r["question"]: r["answer"] for r in rows}
+    assert got[su.BDD_SCENE_Q] == "Night, rainy weather, on a city street."
+    assert got[su.BDD_THINGS_Q] == "Marked in this photo: 2 cars, 1 person on foot and 2 traffic lights."
+    assert got[su.LIGHT_Q] == "The traffic lights marked in this photo: 1 red."
+    assert len({r["picture"] for r in rows}) == 1          # b2 has nothing to say
+
+
+def test_mapillary_signs_and_vistas(tmp_path):
+    put_zip("mapillary_signs", "mtsd_v2_fully_annotated_annotation.zip", {
+        "mtsd_v2_fully_annotated/annotations/k1.json": json.dumps({"objects": [
+            {"label": "regulatory--stop--g1"}, {"label": "warning--pedestrians-crossing--g4"},
+            {"label": "other-sign"}]}),
+        "mtsd_v2_fully_annotated/annotations/k2.json": json.dumps({"objects": [{"label": "other-sign"}]})})
+    put_zip("mapillary_signs", "mtsd_v2_fully_annotated_images.train.0.zip",
+            {"images/k1.jpg": picture_bytes(), "images/k2.jpg": picture_bytes()})
+    answers = [r["answer"] for r in run("mapillary_signs", tmp_path)]
+    assert answers == ["The traffic signs marked in this photo: stop sign (a rule) and pedestrians crossing sign "
+                       "(a warning)."]
+    config = {"labels": [{"name": "construction--flat--sidewalk", "readable": "Sidewalk"},
+                         {"name": "object--vehicle--car", "readable": "Car"},
+                         {"name": "void--ego-vehicle", "readable": "Ego Vehicle"}]}
+    put_loose("mapillary_vistas", {
+        "config_v2.0.json": json.dumps(config),
+        "training/v2.0/polygons/v1.json": json.dumps({"objects": [
+            {"label": "object--vehicle--car"}, {"label": "object--vehicle--car"},
+            {"label": "construction--flat--sidewalk"}, {"label": "void--ego-vehicle"}]}),
+        "training/images/v1.jpg": picture_bytes()})
+    assert [r["answer"] for r in run("mapillary_vistas", tmp_path)] == [
+        "Marked in this street photo: car and sidewalk."]
+
+
+def test_deepfashion_categories(tmp_path):
+    put_loose("deepfashion", {
+        "Anno_coarse/list_category_cloth.txt": "3\ncategory_name  category_type\nBlouse 1\nTee 1\nJeans 2\n",
+        "Anno_coarse/list_category_img.txt": "3\nimage_name  category_label\n"
+                                             "img/Sheer_Blouse/img_00000001.jpg 1\n"
+                                             "img/Graphic_Tee/img_00000002.jpg 2\n"
+                                             "img/Skinny_Jeans/img_00000003.jpg 3\n"})
+    put_zip("deepfashion", "img.zip", {"img/Sheer_Blouse/img_00000001.jpg": picture_bytes(),
+                                       "img/Graphic_Tee/img_00000002.jpg": picture_bytes(),
+                                       "img/Skinny_Jeans/img_00000003.jpg": picture_bytes()})
+    assert {r["answer"] for r in run("deepfashion", tmp_path)} == {"This is a blouse.", "This is a T-shirt.",
+                                                                    "These are jeans."}
+
+
+def test_fastener_sets_by_folder(tmp_path):
+    put_loose("fastener_sets", {"The Fasteners/bolt/1.jpg": picture_bytes(),
+                                "The Fasteners/nut/2.jpg": picture_bytes(),
+                                "SortScrews/train/hex_screw/3.jpg": picture_bytes(),
+                                "SortScrews/train/4.jpg": picture_bytes(), "SortScrews/0/5.jpg": picture_bytes()})
+    rows = run("fastener_sets", tmp_path)
+    assert {r["answer"] for r in rows} == {"This is a bolt, as the set's makers sorted it.",
+                                           "This is a nut, as the set's makers sorted it.",
+                                           "This is a hex screw, as the set's makers sorted it."}
+    assert any(r["credit"].startswith("SortScrews") for r in rows)
+
+
+def test_mvtec_d2s_products(tmp_path):
+    coco = {"categories": [{"id": 1, "name": "avocado"}, {"id": 2, "name": "coca_cola_bottle"}],
+            "images": [{"id": 7, "file_name": "D2S_000200.jpg"}],
+            "annotations": [{"image_id": 7, "category_id": 1}, {"image_id": 7, "category_id": 1},
+                            {"image_id": 7, "category_id": 2}]}
+    put_loose("mvtec_d2s", {"annotations/D2S_training.json": json.dumps(coco),
+                            "images/D2S_000200.jpg": picture_bytes()})
+    assert [r["answer"] for r in run("mvtec_d2s", tmp_path)] == [
+        "The products marked in this photo: avocado (2) and coca cola bottle (1)."]
