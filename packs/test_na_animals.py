@@ -249,6 +249,38 @@ def test_breed_matching():
         "This is a Rhode Island Red, a breed of chicken."
 
 
+def test_direct_breed_lookup(monkeypatch):
+    """Breeds a Commons breed list lacks are looked up by their own category names, 50 to a request: a name with the
+    animal's word needs 3 files or a subcategory; a bare name also needs a parent naming the animal; breeds the list
+    gave are not looked up again; a soft redirect (no files, no subcategories) is passed over."""
+    import food_packs
+    pages = {
+        "Category:Boer goat": {"categoryinfo": {"files": 40, "subcats": 0}, "categories": []},
+        "Category:Saanen": {"categoryinfo": {"files": 1, "subcats": 2},
+                            "categories": [{"title": "Category:Goat breeds originating in Switzerland"}]},
+        "Category:Nubian goat": {"categoryinfo": {"files": 0, "subcats": 0}, "categories": []},
+        "Category:Nubian": {"categoryinfo": {"files": 90, "subcats": 3},
+                            "categories": [{"title": "Category:Nubia"}]},
+        "Category:Kiko goats": {"categoryinfo": {"files": 2, "subcats": 0}, "categories": []},
+    }
+    asked = []
+
+    def fake_get(s, params):
+        """The made-up Commons answer: the pages named, the others missing."""
+        titles = params["titles"].split("|")
+        asked.append(titles)
+        return {"query": {"pages": {str(i): dict(pages[t], title=t) if t in pages else {"title": t, "missing": ""}
+                                    for i, t in enumerate(titles)}}}
+    monkeypatch.setattr(food_packs, "commons_get", fake_get)
+    found = {"Category:Kinder goats": ("Kinder", "")}
+    got = n.direct_breeds(None, "goat", ("Kinder", "Boer", "Saanen", "Nubian", "Kiko"), found)
+    assert got == {"Category:Boer goat": ("Boer", ""), "Category:Saanen": ("Saanen", "")}
+    assert all(len(t) <= 50 for t in asked) and not any("Kinder" in x for t in asked for x in t)
+    assert n.direct_candidates("Pekin", "duck")[:3] == [("Pekin duck", False), ("Pekin ducks", False),
+                                                       ("Pekin (duck)", False)]
+    assert n.direct_candidates("Pekin", "duck")[-1] == ("Pekin", True)
+
+
 def test_domestic_rows_and_harm():
     """The young of animals are not children; a child named in the words is marked; butchery is left out."""
     rows = n.domestic_rows("File:Goat kids playing.jpg", "c", "Two goat kids playing in a field of goats.",

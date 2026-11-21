@@ -1252,6 +1252,87 @@ def wanted_breeds(categories, animal, breeds):
     return out
 
 
+# The Commons category names tried for a wanted breed that its breed list does not hold (direct_breeds), in order:
+# the name with the animal's word ("Nubian goat", "Pekin ducks", "Boer (goat)", "Silkie (chicken breed)"), then the
+# bare name ("Rhode Island Red"), which is taken only when one of its own parent categories names the animal.
+DIRECT_FORMS = ("{b} {a}", "{b} {p}", "{b} ({a})", "{b} ({a} breed)", "{b}")
+DIRECT_MIN_FILES = 3        # fewer files than this (and no subcategory): not worth a topic, or a soft redirect
+
+
+def direct_candidates(name, animal):
+    """[(category name, needs a parent naming the animal)] to try for one breed (DIRECT_FORMS); the animal's plural
+    from everyday_packs.plural."""
+    from everyday_packs import plural
+    out = []
+    for form in DIRECT_FORMS:
+        title = form.format(b=name, a=animal, p=plural(animal))
+        if title not in [t for t, _ in out]:
+            out.append((title, form == "{b}"))
+    return out
+
+
+def names_animal(parents, animal):
+    """True when one of a category's parent categories names the animal or its breeds ("Category:Chicken breeds by
+    name", "Category:Goats of Switzerland")."""
+    from everyday_packs import plural
+    pattern = re.compile(rf"\b({re.escape(animal)}|{re.escape(plural(animal))})\b", re.I)
+    return any(pattern.search(p.split(":", 1)[-1]) for p in parents)
+
+
+def direct_breeds(s, animal, breeds, found):
+    """{category: (breed name, kind)} for the wanted breeds that the Commons breed list did not give (found: what
+    wanted_breeds gave), looked up by their own category names (direct_candidates), 50 names to a request: a name
+    with the animal's word needs DIRECT_MIN_FILES files; a bare name needs those and a parent category naming the
+    animal (so "Category:New Hampshire" the state is never taken for the chicken). Commons' breed lists hold only
+    some breeds by name ("Goat breeds by name" has 16 subcategories, none of them Nubian, Boer or Saanen), which is
+    why this lookup exists."""
+    from food_packs import commons_get
+    have = {breed_key(name, animal) for name, _ in found.values()}
+    wanted = []
+    for b in breeds:
+        name, kind = b if isinstance(b, tuple) else (b, "")
+        if breed_key(name, animal) not in have and breed_key(name, animal) not in {breed_key(n, animal)
+                                                                                    for n, _ in wanted}:
+            wanted.append((name, kind))
+    tries = [(f"Category:{title}", bare, name, kind) for name, kind in wanted
+             for title, bare in direct_candidates(name, animal)]
+    info = {}
+    for start in range(0, len(tries), 50):
+        if listing_out_of_time():
+            break
+        titles = [t for t, _, _, _ in tries[start:start + 50]]
+        try:
+            data = commons_get(s, {"action": "query", "titles": "|".join(titles), "prop": "categoryinfo|categories",
+                                   "clshow": "!hidden", "cllimit": "max"})
+        except RuntimeError as e:
+            say(f"  Commons {animal} breeds by name: {e}")
+            break
+        query = data.get("query") or {}
+        names = {n["from"]: n["to"] for n in query.get("normalized", [])}
+        for page in (query.get("pages") or {}).values():
+            if "missing" in page:
+                continue
+            ci = page.get("categoryinfo") or {}
+            # Files directly in it, or subcategories (the topic walks one level down); a soft redirect has neither.
+            size = ci.get("files", 0) if ci.get("files", 0) >= DIRECT_MIN_FILES else \
+                (DIRECT_MIN_FILES if ci.get("subcats", 0) else ci.get("files", 0))
+            info[page["title"]] = (size, [c["title"] for c in page.get("categories", [])])
+        for raw, normal in names.items():
+            if normal in info:
+                info[raw] = info[normal]
+    out, taken = {}, set()
+    for title, bare, name, kind in tries:
+        key = breed_key(name, animal)
+        if key in taken or title not in info:
+            continue
+        files, parents = info[title]
+        if files < DIRECT_MIN_FILES or (bare and not names_animal(parents, animal)):
+            continue
+        taken.add(key)
+        out[title] = (name, kind)
+    return out
+
+
 def breed_answer(breed, kind, animal_words):
     """ "This is a Labrador Retriever, a breed of dog." ("of dairy cattle" for cattle with a kind)."""
     return f"This is {a_or_an(breed)} {breed}, a breed of {kind or animal_words}."
@@ -1264,16 +1345,19 @@ def domestic_topics(s):
     for animal, parent, words, breeds in BREED_LISTS:
         if listing_out_of_time():
             break
+        categories = []
         try:
-            categories = commons_members(s, parent, "subcat")
+            categories += commons_members(s, parent, "subcat")
             # Lists filed one level deeper ("Chicken breeds by name", "Goat breeds by country").
             for sub in [c for c in categories if re.search(r"\bbreeds\b", c.split(":", 1)[-1], re.I)][:12]:
                 categories += commons_members(s, sub.split(":", 1)[-1], "subcat")
-        except RuntimeError as e:
+        except RuntimeError as e:          # keep what was listed; the breeds are still looked up by name below
             say(f"  Commons {parent}: {e}")
-            continue
         found = wanted_breeds(categories, animal, breeds)
-        say(f"Commons {parent}: {len(found)} of {len(breeds)} wanted breeds found")
+        listed = len(found)
+        found.update(direct_breeds(s, animal, breeds, found))
+        say(f"Commons {parent}: {listed} wanted breeds in the list, {len(found) - listed} more by their own names, "
+            f"of {len(breeds)}")
         question = BREED_Q.format(animal="cattle" if animal == "cattle" else animal)
         topics += [(c.split(":", 1)[-1], 1, question, breed_answer(name, kind, words))
                    for c, (name, kind) in found.items()]
