@@ -88,6 +88,7 @@ DONE_Q = "How well cooked is this meat?"
 TEMP_Q = "What temperature does the thermometer show?"
 BRAILLE_Q = "Is there braille here?"
 SIGN_Q = "What does this sign tell me?"
+BUS_STOP_Q = "Is there a bus stop here?"
 USA, CANADA = "USA", "Canada"
 
 # Questions whose answer is one state: when a photo's categories or words give two different answers, none is used.
@@ -216,15 +217,15 @@ RULES = [
                                               "to check it is cooked.", TEMP_NOTE)),
     # commons_access_features
     (r"\bbraille signage\b|\bbraille signs?\b|\bsigns? with braille\b|\btactile signs?\b", BRAILLE_Q,
-     "Yes: this sign has braille, raised dots usually placed under raised print letters, so it can be read by "
-     "touch. In the US, room signs with braille are on the wall beside the door, on the latch side, about 4 to 5 "
+     "Yes: there is a sign with braille here, raised dots usually placed under raised print letters, so it can "
+     "be read by touch. In the US, room signs with braille are on the wall beside the door, on the latch side, about 4 to 5 "
      "feet (1.2 to 1.5 m) from the floor."),
     (r"\bbraille in elevators\b|\belevator buttons with braille\b", BRAILLE_Q,
      "Yes: the lift buttons have braille beside them, and usually raised numbers and symbols."),
     (r"\belevator buttons\b|\blift buttons\b", WHAT_Q, "These are the buttons of a lift (elevator). In the US the "
                                                        "main entrance floor is often marked with a raised star."),
-    (r"\bbus stop signs?\b|\bbus stop flags?\b", SIGN_Q,
-     "It is a bus stop sign: it marks where the bus stops. Many list the route numbers, and some give a stop number "
+    (r"\bbus stop signs?\b|\bbus stop flags?\b", BUS_STOP_Q,
+     "Yes: there is a bus stop sign here, marking where the bus stops. Many list the route numbers, and some give a stop number "
      "for phoning or texting for the next bus."),
     (r"\bticket machines\b|\bfare (machines|vending machines)\b|\bticket vending machines\b", WHAT_Q,
      "This is a ticket machine (fare machine): choose a ticket on its screen or buttons and pay. Many US transit "
@@ -600,8 +601,8 @@ FOOD_TOPICS = [
 ]
 ACCESS_TOPICS = [
     topic("Braille signage", 1, BRAILLE_Q),
-    topic("Bus stop signs", 1, SIGN_Q),
-    topic("Bus stop signs in the United States", 1, SIGN_Q),
+    topic("Bus stop signs", 1, BUS_STOP_Q),
+    topic("Bus stop signs in the United States", 1, BUS_STOP_Q),
     topic("Ticket machines in the United States", 1, WHAT_Q),
     topic("Elevator buttons", 1, BRAILLE_Q, True, ("braille",)),
 ]

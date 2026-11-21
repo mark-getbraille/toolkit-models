@@ -45,7 +45,7 @@ def test_rule_rows():
     kinds = d.rule_rows(["Carbon dioxide fire extinguishers"], prefer=d.KIND_Q)
     assert kinds[0]["question"] == d.KIND_Q and "CO2" in kinds[0]["answer"]
     assert d.rule_rows(["Braille signage"])[0]["question"] == d.BRAILLE_Q
-    assert d.rule_rows(["Bus stop signs in Ohio"])[0]["question"] == d.SIGN_Q
+    assert d.rule_rows(["Bus stop signs in Ohio"])[0]["question"] == d.BUS_STOP_Q
     assert d.rule_rows(["Fire extinguisher signs"]) == []
     assert "EPA" in d.rule_rows(["Mold on buildings"])[0]["answer"]
     assert "kilowatt-hours" in d.rule_rows(["Electronic electricity meters"])[0]["answer"]

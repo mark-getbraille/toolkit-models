@@ -70,10 +70,10 @@ HOME_SAFETY_SA = [
                                            "few days, turning yellow."),
     spec("Unripe tomatoes", "Is this ripe?", "No: this tomato is not ripe yet. It ripens on the counter, out of the "
                                              "fridge.", False),
-    spec("Braille signage", "Is there braille here?", "Yes: this sign has braille, raised dots usually under raised "
-                                                      "print letters, so it can be read by touch."),
-    spec("Bus stop signs", "What does this sign tell me?", "It is a bus stop sign: it marks where the bus stops; many "
-                                                           "list the route numbers."),
+    spec("Braille signage", "Is there braille here?", "Yes: there is a sign with braille here, raised dots usually "
+                                                      "under raised print letters, read by touch."),
+    spec("Bus stop signs", "Is there a bus stop here?", "Yes: there is a bus stop sign here, marking where the bus "
+                                                        "stops; many list the route numbers."),
     spec("Ticket machines in the United States", "What is this?", "This is a ticket machine (fare machine): choose a "
                                                                   "ticket on its screen or buttons and pay."),
 ]
