@@ -1627,6 +1627,13 @@ PACKS.update(STATE_COLLECTIONS_PACKS)
 from street_scene_packs import STREET_SCENE_PACKS
 PACKS.update(STREET_SCENE_PACKS)
 
+# Hardware, tools and shop equipment (packs/hardware_packs.py): Commons fasteners (with head, drive, thread, material
+# and finish from their categories), door, cabinet and window hardware, building hardware, plumbing and electrical
+# parts, building materials, hand and trade tools, power tools, shop machines and welding, protective equipment,
+# sewing and food equipment; ABO's hardware listings and the Smithsonian's historic locks, hinges and tools.
+from hardware_packs import HARDWARE_PACKS
+PACKS.update(HARDWARE_PACKS)
+
 
 # The packs whose builder reads the Wikimedia Commons API (commons_get, commons_members, commons_entries,
 # mechanical_packs.mech_entries, us_packs.us_commons, documentary_packs.commons_get or COMMONS_API itself). When many
@@ -1670,6 +1677,10 @@ COMMONS_KEYS = frozenset({
     "erotic_art",
     # US and Canadian street scenes (street_scene_packs.py; us_dot_street_photos reads FHWA's Commons copies)
     "commons_crosswalks_signals", "commons_streets_roads_na", "commons_neighbourhoods_na", "us_dot_street_photos",
+    # hardware, tools and shop equipment (hardware_packs.py; abo_hardware and nmah_hardware_tools do not read Commons)
+    "commons_fasteners", "commons_door_hardware", "commons_building_hardware", "commons_plumbing_electrical",
+    "commons_building_materials", "commons_hand_tools_trades", "commons_power_tools", "commons_shop_machines",
+    "commons_ppe", "commons_sewing_food_equipment",
 })
 
 

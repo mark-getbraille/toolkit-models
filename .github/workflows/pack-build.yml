@@ -345,6 +345,18 @@ jobs:
             commons_streets_roads_na) limit=3000 ;;
             commons_neighbourhoods_na) limit=1500 ;;
             us_dot_street_photos) limit=500 ;;
+            commons_fasteners) limit=1500 ;;
+            commons_door_hardware) limit=1500 ;;
+            commons_building_hardware) limit=1500 ;;
+            commons_plumbing_electrical) limit=1200 ;;
+            commons_building_materials) limit=800 ;;
+            commons_hand_tools_trades) limit=2000 ;;
+            commons_power_tools) limit=1500 ;;
+            commons_shop_machines) limit=1500 ;;
+            commons_ppe) limit=800 ;;
+            commons_sewing_food_equipment) limit=800 ;;
+            abo_hardware) limit=1000 ;;
+            nmah_hardware_tools) limit=800 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in

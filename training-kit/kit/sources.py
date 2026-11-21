@@ -2214,6 +2214,34 @@ SOURCES = [
     Source("us_dot_street_photos", "US interstates, interchanges and road scenes in Federal Highway Administration photos (Wikimedia Commons copies, ready-made pack)",
            "Public domain (works of the US government, 17 U.S.C. 105); each Commons file's licence checked",
            "Federal Highway Administration, US Department of Transportation, via Wikimedia Commons (credited in CREDITS.txt)", "permissive", 500, 10, prepare_pack, "about 120 MB"),
+    # Hardware, tools and shop equipment (packs/hardware_packs.py): each part named from its Commons category, with its
+    # head, drive, thread, material and finish where its categories or title say, and a size only where its title
+    # states one. Workshop, trade and protective-equipment photos show people: those packs are never used for
+    # picture-making (PEOPLE_AND_BODILY_PACK_KEYS). The share-alike entry is in hardware_sources.py.
+    Source("commons_fasteners", "Nails, screws by kind, head and drive, bolts, nuts, washers, anchors, rivets, pins, clamps, cable ties and thread gauges (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1500, 15, prepare_pack, "about 300 MB"),
+    Source("commons_door_hardware", "Hinges, locks, keys, door handles and knobs, deadbolts, closers, latches, cabinet and furniture hardware and window hardware (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1500, 15, prepare_pack, "about 350 MB"),
+    Source("commons_building_hardware", "Brackets, joist hangers, shelf and wall hardware, hooks, chain, rope and knots, pulleys, casters, springs, fence, gate and garage door hardware, mailboxes and house numbers (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1500, 15, prepare_pack, "about 350 MB"),
+    Source("commons_plumbing_electrical", "Pipe fittings, valves, P-traps, faucets, toilet parts, outlets, switches, wire nuts, electrical boxes, breakers, cables and NEMA plug types (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1200, 12, prepare_pack, "about 280 MB"),
+    Source("commons_building_materials", "Lumber, plywood, OSB, MDF, drywall, pipe materials, tapes, sandpaper, glues and caulk (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 800, 10, prepare_pack, "about 180 MB"),
+    Source("commons_hand_tools_trades", "Hand tools by type, automotive, HVAC, plumbing and electrical trade tools, masonry, painting and drywall tools, ladders, scaffolding and material handling (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 2000, 20, prepare_pack, "about 450 MB"),
+    Source("commons_power_tools", "Drills, saws, sanders, routers, grinders, nail guns, air tools, blades and bits, pressure washers and outdoor power equipment (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1500, 15, prepare_pack, "about 350 MB"),
+    Source("commons_shop_machines", "Woodshop and metal shop machines, lathes and mills and their tooling, welders, plasma cutters, anvils and forges, taps and dies, dial indicators (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1500, 15, prepare_pack, "about 350 MB"),
+    Source("commons_ppe", "Respirators by class, hearing protection, safety glasses and goggles, face shields, hard hats, gloves by type, high-visibility clothing, safety boots and fall protection harnesses (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 800, 10, prepare_pack, "about 180 MB"),
+    Source("commons_sewing_food_equipment", "Sewing machines, sergers and sewing tools, and food equipment: meat slicers, stand and commercial mixers, sous-vide cookers, grinders and vacuum sealers (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 800, 10, prepare_pack, "about 180 MB"),
+    Source("abo_hardware", "Door, cabinet and bathroom hardware, locks, hooks, tools, ladders and protective equipment from Amazon listings, with finish and size (Amazon Berkeley Objects, ready-made pack)",
+           "CC BY 4.0 (Amazon Berkeley Objects)", "Amazon Berkeley Objects (Amazon.com and UC Berkeley), CC BY 4.0, https://amazon-berkeley-objects.s3.amazonaws.com/index.html", "permissive", 1000, 10, prepare_pack, "about 250 MB"),
+    Source("nmah_hardware_tools", "Historic locks, keys, hinges, door hardware and hand tools (Smithsonian National Museum of American History, ready-made pack)",
+           "CC0 (Smithsonian Open Access)", "National Museum of American History, Smithsonian Institution, CC0, https://www.si.edu/openaccess", "permissive", 800, 10, prepare_pack, "about 200 MB"),
     Source('skin_lesion_photos', 'Skin spots photographed with a phone, adults (PAD-UFES-20, ready-made pack)',
            'CC BY 4.0 (Mendeley Data zr7vgbcyr2)',
            'PAD-UFES-20 (Pacheco et al., 2020), CC BY 4.0', "permissive", 2000, 20, prepare_pack, 'about 400 MB', content="medical"),
@@ -2417,6 +2445,9 @@ PEOPLE_AND_BODILY_PACK_KEYS = (
     "newberry_library", "state_libraries_midwest", "state_libraries_south", "state_libraries_west",
     # street_scene_packs.py: US and Canadian street scenes (people walk through them; all four)
     "commons_crosswalks_signals", "commons_streets_roads_na", "commons_neighbourhoods_na", "us_dot_street_photos",
+    # hardware_packs.py: workshop, trade, protective-equipment and kitchen photos show people at work
+    "commons_hand_tools_trades", "commons_power_tools", "commons_shop_machines", "commons_ppe",
+    "commons_sewing_food_equipment",
 )
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + PEOPLE_AND_BODILY_PACK_KEYS
 # The drug and firearm packs (packs/drug_firearm_packs.py): describing only, never for picture-making, whether or not
@@ -3009,3 +3040,18 @@ PERSONAL_PICTURE_MAKING_OK |= _street_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in STREET_SCENE_SOURCES
                                                                if s.key not in _street_ok)
 _add_collections(STREET_SCENE_SOURCES)
+
+# Hardware, tools and shop equipment collections that are not open (share-alike Commons files); the file may be
+# missing. None is used for picture-making (HARDWARE_PICTURE_MAKING_OK is empty).
+try:
+    import hardware_sources as _hardware  # noqa: E402
+except ImportError as _e:
+    _hardware = None
+    if getattr(_e, "name", None) != "hardware_sources":
+        say(f"(The hardware collections could not be loaded: {_e}. They are left out.)")
+HARDWARE_SOURCES = list(getattr(_hardware, "HARDWARE_SOURCES", []) or [])
+_hardware_ok = set(getattr(_hardware, "HARDWARE_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _hardware_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in HARDWARE_SOURCES
+                                                               if s.key not in _hardware_ok)
+_add_collections(HARDWARE_SOURCES)
