@@ -514,8 +514,10 @@ NOT_INCLUDED = [
      "\"government-produced materials appearing on this site are not copyright protected\"), but whitehouse.gov's "
      "API and state.gov and defense.gov refuse automated requests (403)."),
     ("Hansard of the Parliament of Canada and Government of Canada news releases", "Canada's House of Commons asks "
-     "for the Speaker's permission to reproduce its proceedings (parliamentary privilege); canada.ca allows only "
-     "non-commercial reproduction. Not built (a personal-use group would be needed)."),
+     "for the Speaker's permission to reproduce its proceedings (parliamentary privilege); the canada.ca web pages "
+     "(news releases among them) allow only non-commercial reproduction. Not built (a personal-use group would be "
+     "needed). The publications deposited on open.canada.ca under the Open Government Licence - Canada are "
+     "different (commercial use allowed): they are built as pub:canada_ogl."),
     ("CBC/Radio-Canada, BBC, ABC (Australia), RTÉ", "Copyright of each broadcaster; not openly licensed (abc.net.au "
      "and rte.ie also refuse automated requests to their terms pages)."),
     ("Hansard of the Parliament of Australia and Australian government media releases", "aph.gov.au blocks automated "
@@ -550,8 +552,13 @@ NOT_INCLUDED = [
      "automated requests (403, robots.txt included)."),
     ("Dictionary of Irish Biography", "\"Copyright Dictionary of Irish Biography\"; no open licence was found (and "
      "Crawl-delay 30)."),
-    ("UK National Archives education resources", "Open Government Licence, but its robots.txt says \"Content-Signal: "
-     "ai-train=no, search=yes, ai-input=no\": the Assistant would use the text as AI input, so it is left out."),
+    ("UK National Archives education resources (the old /education/resources/ pages)", "Re-checked 2026-11-21: its "
+     "robots.txt now says \"Content-Signal: ai-train=no, search=yes, ai-input=yes\" (it said ai-input=no before). "
+     "An offline reference book that the person reads and the Assistant searches to answer them is AI input "
+     "(allowed); it never trains or fine-tunes a model (ai-train=no obeyed). So the CURRENT teaching resources are "
+     "built (guide:uk_national_archives_teaching_resources, Open Government Licence, one page every 10 seconds as "
+     "its Crawl-delay asks; reasoning in reference_more.py). The old pages listed here are gone from the site (410, or "
+     "moved to the new resources), so they are not built."),
     ("Dictionary of Canadian Biography and Australian Dictionary of Biography", "Copyright of their publishers "
      "(University of Toronto/Université Laval; Australian National University): not openly licensed."),
     ("Wikisource and Project Gutenberg history books", "Already in the Kiwix library."),
@@ -2258,3 +2265,8 @@ def main(argv=None):
 
 if __name__ == "__main__":
     sys.exit(main())
+
+# More sources from the reference inventory of 2026-11-21 (Canada's Open Government Licence publications, GAO
+# reports, the US Government Manual, ERIC open full texts, GOV.UK guides, UK safety alerts, USDA Farmers' Bulletins):
+# publications_more.py adds them to SOURCES, DRIVERS, ALL_PIECES, LICENCE_LINES and NOT_INCLUDED when imported.
+import publications_more  # noqa: E402,F401

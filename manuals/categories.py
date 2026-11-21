@@ -596,3 +596,16 @@ for _key, _more in _HARDWARE_EXTEND.items():
 from chemicals import CHEMICAL_CATEGORIES as _CHEMICALS  # noqa: E402
 
 CATEGORIES.update(_CHEMICALS)
+
+# More collections from the reference inventory of 2026-11-21 (baby gear and toys, home medical and mobility
+# equipment, amateur radio, musical instruments, video games, motorcycles and outboards, marine electronics, farm
+# tractors, camping gear, software, vintage computers) and the Internet Archive collections no category reached:
+# manuals/more_categories.py. The firearms category also lists the Internet Archive's firearms collection, without
+# anything FIREARMS_EXCLUDE forbids, sales papers, or any military manual (those come only through PUBLIC_MANUALS).
+from more_categories import CATEGORIES as _MORE, EXTEND as _MORE_EXTEND, MILITARY as _MILITARY  # noqa: E402
+
+CATEGORIES.update(_MORE)
+for _key, _more in _MORE_EXTEND.items():
+    _cat = CATEGORIES[_key]
+    _cat["ia_whole"] = dict(_cat.get("ia_whole") or {}, **_more.get("ia_whole", {}))
+CATEGORIES["firearms"]["ia_exclude"] = f"{FIREARMS_EXCLUDE}|{NOT_A_MANUAL}|{_MILITARY}"

@@ -106,6 +106,11 @@ class FakeFetch:
         self.asked.append(url)
         return 0
 
+    def json(self, url, headers=None, cache=True):
+        # The Internet Archive (chemical_safety also lists the Lanco safety data sheets collection): not answered.
+        self.asked.append(url)
+        raise RuntimeError(f"{url}: HTTP 404")
+
 
 def test_epa_files_are_read_right():
     """Active products only; the label's own number; the newest label; restricted use; registrant names."""

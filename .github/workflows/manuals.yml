@@ -97,6 +97,8 @@ jobs:
             cars) limit=600 ;;
             # The big household collections: products from about 1990 to today.
             computers|tv_audio_video|older_electronics|lawn_garden|home_systems|home_appliances|small_kitchen) limit=4000 ;;
+            # Collections built from many Internet Archive collections (each console, synthesizer maker, radio library).
+            video_games|musical_instruments|ham_radio|vintage_computers|farm_equipment|home_medical) limit=4000 ;;
             # Every registered pesticide product of the US (about 19,000 active) and Canada (about 7,800 current).
             pesticide_labels) limit=30000 ;;
             *) limit=1500 ;;

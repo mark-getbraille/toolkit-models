@@ -514,8 +514,10 @@ COURSES_AND_FORCES_NOT_INCLUDED = [
      "few non-combat training documents there (most are policy). Two are built; more can be added to PDF_DOCS."),
     ("RNLI (charity)", "Its website refuses automated requests (403); its guides are its own copyright."),
     ("Canadian Armed Forces and Canadian Coast Guard manuals; Transport Canada's Safe Boating Guide", "Crown "
-     "copyright under the canada.ca terms (non-commercial reproduction only, not an open licence): personal use at "
-     "most, so not built. The Safe Boating Guide's page was not found at its old address (404)."),
+     "copyright under the terms of the canada.ca web pages (non-commercial reproduction only, not an open licence): "
+     "personal use at most, so not built. The Safe Boating Guide's page was not found at its old address (404). The "
+     "publications deposited on open.canada.ca under the Open Government Licence - Canada are different: commercial "
+     "use allowed (Transport Canada's are built as pub:canada_ogl:transport-...)."),
     ("Australian Department of Defence and Australian Maritime Safety Authority", "amsa.gov.au refuses automated "
      "requests (403), its copyright page included, so its CC BY statement could not be checked."),
     ("New Zealand Defence Force and Maritime New Zealand", "maritimenz.govt.nz refuses automated requests (403) to "
@@ -951,7 +953,7 @@ GOV_GUIDES = [
          start=["https://www.gov.uk/browse/disabilities"], units=r"^https://www\.gov\.uk/browse/disabilities/[a-z-]+$",
          pages=r"^https://www\.gov\.uk/(?!search|help|contact|cymraeg|government|browse|world|cookies|privacy|"
                r"accessibility|sign-in|account)[a-z0-9-]+$",
-         fetch_as=(r"$", "/print"), sitemap="", unit_rules=[], content=(r"<main\b[^>]*>", r"</main>"),
+         sitemap="", unit_rules=[], content=(r"<main\b[^>]*>", r"</main>"),
          drop=[r'<div class="gem-c-contextual-sidebar.*?</div>', r"<nav\b.*?</nav>"], limit=300),
     dict(name="govuk_benefits", title="GOV.UK: benefits", subject="Benefits", group="consumer",
          publisher="UK Government (GOV.UK)", country="United Kingdom", licence="OGL-UK-3.0",
@@ -964,7 +966,7 @@ GOV_GUIDES = [
          start=["https://www.gov.uk/browse/benefits"], units=r"^https://www\.gov\.uk/browse/benefits/[a-z-]+$",
          pages=r"^https://www\.gov\.uk/(?!search|help|contact|cymraeg|government|browse|world|cookies|privacy|"
                r"accessibility|sign-in|account)[a-z0-9-]+$",
-         fetch_as=(r"$", "/print"), sitemap="", unit_rules=[], content=(r"<main\b[^>]*>", r"</main>"),
+         sitemap="", unit_rules=[], content=(r"<main\b[^>]*>", r"</main>"),
          drop=[r'<div class="gem-c-contextual-sidebar.*?</div>', r"<nav\b.*?</nav>"], limit=300),
     dict(name="uk_highway_code", title="The Highway Code (Great Britain)", subject="Driving and road safety",
          group="government", publisher="Department for Transport and Driver and Vehicle Standards Agency (GOV.UK)",
@@ -1146,8 +1148,10 @@ REFERENCE_NOT_INCLUDED = [
      "its materials are \"owned by the Government of Alberta and protected by law\". (open.alberta.ca's OGL "
      "publications are built.)"),
     ("Nova Scotia legislation", "nslegislature.ca closed the connection to automated requests."),
-    ("canada.ca guidance on the Accessible Canada Act", "canada.ca terms allow non-commercial reproduction only, "
-     "not an open licence; the Act and its regulations are built from Justice Laws instead."),
+    ("canada.ca guidance on the Accessible Canada Act", "The terms of the canada.ca web pages allow non-commercial "
+     "reproduction only, not an open licence; the Act and its regulations are built from Justice Laws instead. (The "
+     "publications deposited on open.canada.ca under the Open Government Licence - Canada allow commercial use: "
+     "pub:canada_ogl.)"),
     ("New Zealand legislation (legislation.govt.nz) and govt.nz", "Answer automated requests with a bot challenge "
      "(202, empty page)."),
     ("Australia: legislation.gov.au, Services Australia, ACCC, healthdirect", "legislation.gov.au's PDFs can be "
@@ -1285,7 +1289,8 @@ ANIMALS_NOT_INCLUDED = [
      "pages were not found among them, so they are not built."),
     ("Wikipedia and Wikispecies", "Already in the Kiwix library (CC BY-SA)."),
     ("Hinterland Who's Who, Canadian Wildlife Service, Parks Canada and the Species at Risk Public Registry",
-     "canada.ca terms allow non-commercial reproduction only, not an open licence; Hinterland Who's Who is copyright "
+     "The terms of the canada.ca web pages allow non-commercial reproduction only, not an open licence (unlike the "
+     "open.canada.ca publications under the Open Government Licence - Canada); Hinterland Who's Who is copyright "
      "of Environment and Climate Change Canada and the Canadian Wildlife Federation."),
     ("State and provincial wildlife agency species guides", "Not checked one by one in this pass; state agency sites "
      "usually carry \"Copyright © State of ...\" footers without an open licence, and Ontario's and British "
@@ -1357,6 +1362,24 @@ def practice_note(country, subject, title=""):
     words = f"{subject} {title}".lower()
     what = next(text for pattern, text in PRACTICE_SUBJECTS if re.search(pattern, words))
     return f"{who} source: {what} may differ from US practice."
+
+
+# ====================================================================== more reference books (added 2026-11-21)
+# FAA handbooks, more Navy rate training manuals and Army field manuals, NIST handbooks, more CFR parts and the UK
+# National Archives' teaching resources: their entries, checks and reasons are in reference_more.py.
+import reference_more as _more  # noqa: E402
+
+PDF_DOCS += _more.PDF_DOCS
+LAWS += [dict(_cfr(*row[:7]), **({"cfr": [dict(title=row[3], volume=row[4], part=row[5])] +
+                                         [dict(title=t, volume=v, part=p) for t, v, p in row[7]]}
+                                        if len(row) > 7 else {})) for row in _more.CFR_LAWS]
+LAWS_MORE += [dict(_cfr(*row[:7]), **({"cfr": [dict(title=row[3], volume=row[4], part=row[5])] +
+                                              [dict(title=t, volume=v, part=p) for t, v, p in row[7]]}
+                                             if len(row) > 7 else {})) for row in _more.CFR_LAWS_MORE]
+GOV_GUIDES += _more.GOV_GUIDES
+LICENCE_LINES.update(_more.LICENCE_LINES)
+NOT_INCLUDED = NOT_INCLUDED + _more.NOT_INCLUDED
+PRACTICE_SUBJECTS[:0] = _more.PRACTICE_SUBJECTS
 
 
 # ====================================================================== open courses: candidates (step 5, 2026-11-21)

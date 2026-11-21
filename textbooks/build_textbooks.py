@@ -1478,6 +1478,7 @@ def _licence_address(short):
 # ====================================================================== non-profit web guides (sources.NONPROFIT)
 
 _robots = {}
+_robot_patterns = {}       # {site: [regular expressions of Disallow rules with * or $]} (wildcard_rules)
 
 
 def allowed_by_robots(url, cache=None):
@@ -1488,20 +1489,82 @@ def allowed_by_robots(url, cache=None):
     site = f"{parts.scheme}://{parts.netloc}"
     if site not in _robots:
         rp = urllib.robotparser.RobotFileParser()
+        text = ""
         try:
-            rp.parse(fetch(site + "/robots.txt", cache).splitlines())
+            text = fetch(site + "/robots.txt", cache)
+            rp.parse(text.splitlines())
         except urllib.error.HTTPError as e:
             rp.parse([] if e.code in (404, 410) else ["User-agent: *", "Disallow: /"])
         except (urllib.error.URLError, OSError):
             rp.parse(["User-agent: *", "Disallow: /"])
         _robots[site] = rp
+        _robot_patterns[site] = wildcard_rules(text)
         try:
             delay = float(rp.crawl_delay(USER_AGENT) or 0)
         except (TypeError, ValueError):
             delay = 0
+        if not delay:                  # "Crawl-delay: 10 seconds" (Python's parser reads only a bare number)
+            m = re.search(r"(?im)^\s*crawl-delay\s*:\s*(\d+(?:\.\d+)?)", text)
+            delay = float(m.group(1)) if m else 0
         if delay:
             CRAWL_DELAY[parts.hostname] = min(delay, 60.0)
+    path = parts.path or "/"
+    if parts.query:
+        path += "?" + parts.query
+    if any(rule.refuses(path) for rule in _robot_patterns.get(site, [])):
+        return False                   # a Disallow rule with "*" or "$" (Python's parser takes those literally)
     return _robots[site].can_fetch(USER_AGENT, url)
+
+
+def _rule_regex(value):
+    """A robots.txt path rule as a regular expression ("*" any characters, "$" the end)."""
+    pattern = re.escape(value).replace(r"\*", ".*")
+    return pattern[:-2] + "$" if pattern.endswith(r"\$") else pattern
+
+
+def wildcard_rules(text):
+    """The Disallow rules of robots.txt's "User-agent: *" group (or of a group naming this builder) that use "*"
+    or "$" (as Google and the robots.txt standard, RFC 9309, read them), as regular expressions of a path:
+    "Disallow: /*/print$" refuses "/browse/benefits/print". A path that an Allow rule of the same group matches
+    with a longer rule stays allowed, as the standard says (each returned rule carries those Allow rules)."""
+    groups, agents, rules, in_rules = [], [], [], False
+    for raw in text.splitlines():
+        line = raw.split("#", 1)[0].strip()
+        if ":" not in line:
+            continue
+        field, value = (x.strip() for x in line.split(":", 1))
+        field = field.lower()
+        if field == "user-agent":
+            if in_rules:
+                groups.append((agents, rules))
+                agents, rules, in_rules = [], [], False
+            agents.append(value.lower())
+        elif field in ("allow", "disallow"):
+            in_rules = True
+            rules.append((field, value))
+    groups.append((agents, rules))
+    me = USER_AGENT.split("/")[0].lower()
+    chosen = [r for a, r in groups if any(x != "*" and x in me for x in a)] or [r for a, r in groups if "*" in a]
+    out = []
+    for rules in chosen:
+        for field, value in rules:
+            if field == "disallow" and value and ("*" in value or value.endswith("$")):
+                longer = [_rule_regex(v) for f, v in rules if f == "allow" and len(v) > len(value)]
+                out.append(WildcardRule(_rule_regex(value), longer))
+    return out
+
+
+class WildcardRule(str):
+    """A Disallow rule's regular expression (a str, for re.match) with the longer Allow rules that override it."""
+
+    def __new__(cls, pattern, allows=()):
+        rule = super().__new__(cls, pattern)
+        rule.allows = list(allows)
+        return rule
+
+    def refuses(self, path):
+        """True when this rule refuses path and no longer Allow rule lets it through."""
+        return bool(re.match(self, path)) and not any(re.match(a, path) for a in self.allows)
 
 
 def page_links(page_html_text, base):
