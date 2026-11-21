@@ -1403,6 +1403,20 @@ LICENCE_LINES.update(_more.LICENCE_LINES)
 NOT_INCLUDED = NOT_INCLUDED + _more.NOT_INCLUDED
 PRACTICE_SUBJECTS[:0] = _more.PRACTICE_SUBJECTS
 
+# ====================================================================== more WCAG and accessibility guides (2026-11-21)
+# W3C's WCAG 2.1, Techniques, ARIA APG, Quick Reference, Easy Checks, Fundamentals, Policies, ATAG, UAAG, EPUB
+# Accessibility and WCAG2ICT; the US Access Board's standards and guides, the ICT Testing Baseline and the NLS
+# reference guides; the GOV.UK Service Manual's accessibility pages; the A11y Project: entries and reasons are in
+# accessibility_guides.py.
+import accessibility_guides as _a11y  # noqa: E402
+
+NONPROFIT += _a11y.w3c_entries(W3C)
+GOV_GUIDES += _a11y.GOV_GUIDES
+ALLOWED.update(_a11y.ALLOWED)
+LICENCE_LINES.update(_a11y.LICENCE_LINES)
+NOT_INCLUDED = NOT_INCLUDED + _a11y.NOT_INCLUDED
+PRACTICE_SUBJECTS[:0] = _a11y.PRACTICE_SUBJECTS
+
 
 # ====================================================================== open courses: candidates (step 5, 2026-11-21)
 #
