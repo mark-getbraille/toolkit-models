@@ -1409,7 +1409,8 @@ PERSONAL = [
     ("Developmental Disabilities Network Journal", "DOAJ", "Not built: its bepress PDFs answer programs with a bot "
      "check (403), although its OAI-PMH feed answers."),
     ("Disability, CBR and Inclusive Development", "DOAJ", "Built: pub:dcidj:<year> (OJS OAI-PMH; CC BY-NC-ND 4.0, "
-     "whole and unchanged)."),
+     "whole and unchanged; its host answered very slowly in the test of 2026-11-21, which did not finish in 10 "
+     "minutes)."),
     ("Indian Journal of Ophthalmology", "DOAJ", "Built: pub:jnl_indian_journal_ophthalmology:<piece> (Europe PMC; "
      "CC BY-NC-SA)."),
     ("NLM Digital Collections", "US agencies", "Not built: AI-reader block (as above)."),
