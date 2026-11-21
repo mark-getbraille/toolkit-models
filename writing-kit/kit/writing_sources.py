@@ -520,6 +520,14 @@ NOT_USED = [
 ]
 
 
+# The sources added in November 2026 (agency blogs, letters and diaries, student writing, developer writing, reviews,
+# procurement notices, speeches, travel and quotations) are kept in sources_more.py, to ease merging.
+import sources_more  # noqa: E402
+
+SOURCES += sources_more.sources(Source, OPEN, SHARE_ALIKE, PERSONAL)
+NOT_USED += sources_more.NOT_USED
+
+
 def by_key():
     """{key: Source}."""
     return {s.key: s for s in SOURCES}
