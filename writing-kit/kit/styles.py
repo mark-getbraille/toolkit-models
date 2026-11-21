@@ -50,6 +50,13 @@ FORMAL_STYLES = {"letter_formal", "press_release", "report", "minutes", "transcr
 CASUAL_STYLES = {"text_message", "chat", "forum_post", "social_post", "review", "transcript_conversation",
                  "dialogue", "humour", "email_personal", "fan_fiction"}
 
+# The styles added with the sources in sources_more.py (essays, diaries, travel, quotations, bug reports,
+# procurement notices and recipes).
+import sources_more as _more  # noqa: E402
+STYLES.update(_more.STYLES)
+FORMAL_STYLES |= _more.FORMAL
+CASUAL_STYLES |= _more.CASUAL
+
 BY_SOURCE = {
     "enron": "email_business", "idl": "email_business", "doj_google": "email_business", "w3c": "email_business",
     "debian": "forum_post", "usenet": "forum_post", "irc": "chat", "sms": "text_message", "taskmaster": "chat",

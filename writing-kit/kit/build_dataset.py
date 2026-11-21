@@ -68,11 +68,13 @@ import readers_creative  # noqa: E402
 import attachments  # noqa: E402
 import ocr  # noqa: E402
 import readers_scanned  # noqa: E402
+import sources_more  # noqa: E402
 
 READER_MODULES = (readers, readers_more, readers_meetings, readers_business, readers_litigation, readers_creative,
-                  readers_scanned)
+                  readers_scanned, sources_more)
 GROUPED = {"enron", "w3c", "usenet", "irc", "debian", "scotus", "hearings", "hansard", "idl", "scanned_federal",
            "scanned_state", "govinfo_exhibits"}   # sources read mailbox by mailbox or list by list
+GROUPED |= sources_more.GROUPED
 
 VALIDATION_SHARE = 20          # one example in twenty goes to validation.jsonl
 
@@ -468,6 +470,9 @@ def main(argv=None):
                                                          "computer (then nothing is downloaded for Enron)")
     parser.add_argument("--oanc-file", default="", help="OANC-1.0.1-UTF8.zip downloaded in a browser from anc.org "
                                                         "(GitHub's robots.txt keeps programs from downloading it)")
+    parser.add_argument("--local-file", action="append", default=[], metavar="KEY=PATH",
+                        help="a file you downloaded in a browser for a source that programs may not download, for "
+                             "example --local-file persuade=persuade.zip (persuade, bawe, yelp); may be repeated")
     parser.add_argument("--w3c-lists", default="", help="W3C list names separated by commas")
     parser.add_argument("--w3c-periods", type=int, default=3, help="how many archive periods (three months each) "
                                                                     "to read from each W3C list")
@@ -525,6 +530,9 @@ def main(argv=None):
             options["local_file"] = args.enron_file
         if source.key == "oanc" and args.oanc_file:
             options["local_file"] = args.oanc_file
+        local = dict(x.split("=", 1) for x in args.local_file if "=" in x)
+        if source.key in local:
+            options["local_file"] = local[source.key]
         if source.key == "w3c":
             options["periods_per_list"], options["pages_per_period"] = args.w3c_periods, args.w3c_pages
             if args.w3c_lists:

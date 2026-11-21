@@ -226,6 +226,64 @@ domain government sites with no bulk download (plain language examples, press re
 not built yet.
 Machine-written email sets on Hugging Face, and sets that are non-commercial or have no licence.
 
+More sources (added late November 2026)
+These are kept in their own file, kit\sources_more.py. They are used like the others: by name with --sources, and
+the personal-use ones only with --personal.
+New styles for them: essay (student essays), diary, travel, quotation, bug_report (software issues),
+procurement (contract notices and requests for information) and recipe.
+One more setting:
+  SAM_GOV_API_KEY: the free "Public API Key" from your account on SAM.gov, for contract notices. A personal key
+    allows only about ten requests a day, so each build reads a few notices and keeps them in the cache folder.
+Three sources are read from files you download in your web browser, because their sites do not let programs
+download them. Add --local-file, the source's name, an equals sign and where you saved the file, for example
+  python kit\build_dataset.py --out out --cache cache --personal --local-file persuade="C:\Users\You\Downloads\persuade.zip"
+  persuade: the PERSUADE 2.0 essays. Download the training CSV from the links on
+    github.com/scrosseye/persuade_corpus_2.0 (they go to Google Drive).
+  bawe: the British Academic Written English corpus. Download the zip of plain text files from the Oxford Text
+    Archive, after accepting its licence.
+  yelp: the Yelp Open Dataset, from yelp.com/dataset, after accepting Yelp's Dataset Terms of Use. Use it only if
+    you agree that those terms allow your use (personal, educational and academic use; no commercial use, no sharing).
+Open (public domain or free licences):
+  govblogs: US agency blogs and articles: NASA, VA VAntage Point, FDA Consumer Updates, National Park Service
+    articles (labelled travel) and Energy.gov articles. Guest posts by people outside government keep their writers'
+    copyright. FDA's site asks for 30 seconds between pages, so this one is slow.
+  obama_social: the Obama White House's archived tweets (@POTUS44, @ObamaWhiteHouse, @FLOTUS44), from the zip files
+    the Obama Presidential Library offers. Retweets are left out.
+  loc_letters: Library of Congress "By the People" transcriptions of 19th-century letters and diaries (Susan B.
+    Anthony, Elizabeth Cady Stanton, Frederick Douglass, Christian Fleetwood, Anna Dickinson, Civil War soldiers and
+    women, James Garfield's diaries, Abraham Lincoln and others). The volunteers' text has no known copyright, and the
+    letters are old enough to be in the public domain. They keep the writers' own spelling.
+  persuade: US students' argumentative essays, grades 6 to 12, CC BY 4.0 (from your downloaded file).
+  sam: SAM.gov contract notices and requests for proposals (needs SAM_GOV_API_KEY).
+  fedreg_rfi: requests for information and requests for comments in the Federal Register (text from GovInfo).
+  fed_speeches: speeches by the Federal Reserve Board's chair and governors.
+  crec: floor speeches, debates and Extensions of Remarks from the Congressional Record, a few days from each of
+    2023, 2018 and 2013 (from GovInfo; congress.gov blocks AI training). Debates are kept whole in the transcripts
+    folder.
+  recipes_nhlbi: the NHLBI's heart-healthy recipes, and recipes_nhs: the NHS Healthier Families recipes (Open
+    Government Licence; British English and metric measures). Both are read with the reference library's own
+    cookbook reader (textbooks\cookbooks.py), so they need the whole toolkit-models folder, not the writing kit alone.
+Share-alike (CC BY-SA):
+  wikivoyage: sections of travel guides (Understand, Get in, See, Eat, Sleep and so on) from Wikivoyage's dump.
+  wikiquote: quotations of people who died by 1955, and proverbs, from Wikiquote's dump. Living people, films and
+    television are left out, because those words still belong to their authors.
+Personal use only:
+  bawe: British university students' assignments (CC BY-NC-SA; from your downloaded file). British English.
+  imdb: the Large Movie Review Dataset from Stanford: movie reviews with the viewer's rating.
+  yelp: Yelp reviews (from your downloaded file).
+  python_lists: the Python tutor and python-list mailing lists, through the archive's own interface.
+  gharchive: GitHub issues and replies from GH Archive. GitHub's rules allow public information to be used for
+    research and archiving, not for spam or selling people's details: keep it to your own model and do not share it.
+Checked and not used (the reasons are in sources-not-used.txt): the NIH Director's blog (does not answer), CDC
+blogs (retired), the USDA, Labor Department and NOAA sites (they refuse programs), agency email newsletters (no
+archive), the Trump and Biden archived social media (no download files; the National Archives catalogue refuses
+programs), Founders Online (a browser check stops programs; non-commercial terms), the By the People website
+(refuses programs; its datasets on loc.gov are used instead), 20th-century letters at the Library of Congress
+(may still be under copyright), MICUSP (no download; its site does not answer), the ASAP essays (Kaggle's rules),
+Mozilla's Bugzilla and mailing lists (closed to programs), the CFPB complaint stories (no longer published), USPTO
+patent texts (needs an identity-checked key and gigabyte files; not built yet) and the Kiwix copies (refuse
+programs; Wikimedia's own dumps are used).
+
 Privacy: your rule
 You asked to keep everything: the full text of every message, people's names, signatures, the earlier messages
 quoted in a thread, personal and sensitive subjects, and attachments. The kit does that.
