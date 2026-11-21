@@ -145,6 +145,10 @@ class Book:
     grades: str = ""             # the school grades it is for, where known ("9-12", "K-5"; "" when not stated)
     redirects: list = field(default_factory=list)  # [(path, title, target path)]: more titles that lead to a page
                                  # (a medicine's brand names, medications.py), found by the title search
+    personal_use: bool = False   # "personal use only": a non-commercial (or no-derivatives) source the owner allows
+                                 # for personal use only (sources.PERSONAL_USE); shown with the licence
+    version: str = ""            # the publisher's own version or edition of what was read ("channel version 27",
+                                 # "updated 2026-03-07"), "" when the source gives none
 
 
 def licence_short(text, url=""):
@@ -194,12 +198,14 @@ def licence_kind(short, whole=False):
     return sources.ALLOWED.get(base, "")
 
 
-def licence_words(short, whole=False):
+def licence_words(short, whole=False, personal=False):
     """The licence as the toolkit shows it: "CC BY-NC-SA 4.0, not for commercial use" for the non-commercial
-    ones, "CC BY-ND 4.0, no changes allowed" for a whole and unchanged work under a no-changes licence."""
+    ones, "CC BY-ND 4.0, no changes allowed" for a whole and unchanged work under a no-changes licence, and
+    "..., personal use only" for a book marked personal use only (Book.personal_use)."""
     kind = licence_kind(short, whole)
     return short + (", not for commercial use" if kind.startswith("non-commercial") else "") + \
-        (", no changes allowed" if kind.endswith("no-changes") else "")
+        (", no changes allowed" if kind.endswith("no-changes") else "") + \
+        (f", {sources.PERSONAL_USE}" if personal else "")
 
 
 def slug(text, limit=60):
@@ -315,10 +321,11 @@ def practice_note_of(book):
 def credit_line(book):
     """"From Physics by OpenStax, Rice University, CC BY 4.0 (https://...). Original: https://openstax.org/..."."""
     if book.unchanged:
-        return (f"From {book.title} by {book.publisher}, {licence_words(book.licence, True)} ({book.licence_url}). "
-                f"Original: {book.source}. {UNCHANGED}")
+        return (f"From {book.title} by {book.publisher}, {licence_words(book.licence, True, book.personal_use)} "
+                f"({book.licence_url}). Original: {book.source}. {UNCHANGED}")
     changes = book.changes or "made into web pages, with the formulas written as text"
-    return (f"From {book.title} by {book.publisher}, {licence_words(book.licence)} ({book.licence_url}). "
+    return (f"From {book.title} by {book.publisher}, {licence_words(book.licence, False, book.personal_use)} "
+            f"({book.licence_url}). "
             f"Original: {book.source}. Changed: {changes}.")
 
 
@@ -326,11 +333,19 @@ def index_page(book):
     """The welcome page: what the book is, its credit and licence, the original PDF, and the contents."""
     out = [f"<p>{esc(book.description)}</p>" if book.description else ""]
     out.append(f"<p>Publisher: {esc(book.publisher)}. {('Authors: ' + esc(book.authors) + '. ') if book.authors else ''}"
-               f"Licence: {esc(licence_words(book.licence))} "
+               f"Licence: {esc(licence_words(book.licence, book.unchanged, book.personal_use))} "
                f'(<a href="{esc(book.licence_url)}">{esc(book.licence_url)}</a>). '
                f'Original: <a href="{esc(book.source)}">{esc(book.source)}</a>.</p>')
+    if book.personal_use:
+        out.append("<p>Personal use only: the publisher's licence does not allow commercial use, so this book is "
+                   "for your own reading and study; do not sell it, publish it or share it outside personal use.</p>")
+    if book.grades:
+        out.append(f"<p>Grade level: {esc(book.grades)}.</p>")
     if book.published:
-        out.append(f"<p>Published (or last revised): {esc(book.published)}.</p>")
+        out.append(f"<p>Published (or last revised): {esc(book.published)}"
+                   f"{('; version: ' + esc(book.version)) if book.version else ''}.</p>")
+    elif book.version:
+        out.append(f"<p>Version: {esc(book.version)}.</p>")
     if book.notice:
         out.append(f"<p>{esc(book.notice)}</p>")
     if practice_note_of(book):
@@ -436,14 +451,15 @@ def manifest_entry(book, file_id, path, count, date):
     publisher published or last revised the work: "YYYY-MM-DD", "YYYY-MM" or "YYYY", "" when unknown), region (state
     or province, "" for a whole country), size, sha256, article_count, file, url, description, source, original_pdf and
     original_epub ({url, size, sha256} or {}), unchanged (true for a work kept whole with its text unchanged),
-    practice_note (where a non-US work may differ from US practice, "" for a US work) and grades (school grades,
-    "" when not known)."""
+    practice_note (where a non-US work may differ from US practice, "" for a US work), grades (school grades,
+    "" when not known), personal_use (true: "personal use only") and version (the publisher's own version)."""
     return {
         "id": file_id, "name": book.name, "title": book.title, "subject": book.subject, "level": book.level,
         "group": book.group, "publisher": book.publisher, "credit": book.publisher, "country": book.country,
         "licence": book.licence, "licence_url": book.licence_url,
         "licence_kind": licence_kind(book.licence, book.unchanged),
-        "licence_text": licence_words(book.licence, book.unchanged), "unchanged": book.unchanged,
+        "licence_text": licence_words(book.licence, book.unchanged, book.personal_use), "unchanged": book.unchanged,
+        "personal_use": book.personal_use, "version": book.version,
         "language": book.language, "flavour": book.flavour,
         "date": date.isoformat(), "published": book.published, "region": book.region,
         "size": os.path.getsize(path), "sha256": file_sha256(path),
@@ -964,10 +980,12 @@ def osbooks_books(repo, pictures=False, catalogue=None, left_out=None):
         pdf = cms.get("high_resolution_pdf_url") or cms.get("pdf_url") or ""
         authors = ", ".join(a.get("value", {}).get("name", "") for a in cms.get("authors", [])
                             if a.get("value", {}).get("senior_author")) if cms else ob.authors
+        high_school = ob.slug in sources.OPENSTAX_HIGH_SCHOOL
         book = Book(
             name=f"openstax_{ob.slug.replace('-', '_')}", title=f"OpenStax {ob.title}",
             subject=subjects[0] if subjects else "General", level="school" if k12 else "college",
-            group="textbooks", publisher="OpenStax, Rice University", country="United States", licence=licence,
+            group="k12" if high_school else "textbooks",
+            grades="9-12 (high school)" if high_school else ("High school and college" if k12 else ""), publisher="OpenStax, Rice University", country="United States", licence=licence,
             licence_url=ob.licence_url or (cms.get("license_url") or ""),
             source=f"https://openstax.org/details/books/{ob.slug}", language="eng",
             description=plain(cms.get("description", ""))[:600] if cms else "", authors=authors or ob.authors,
@@ -1002,6 +1020,24 @@ def latex_spans(text):
         return f'<div class="math" role="math" aria-label="{esc(t)}">{esc(t)}</div>'
     text = re.sub(r"\\\[(.+?)\\\]", block, text, flags=re.S)
     return re.sub(r"\\\((.+?)\\\)", inline, text, flags=re.S)
+
+
+def mathml_spans(text):
+    """<math> ... </math> formulas (MathML) in HTML replaced by their readable text (mathtext.mathml_text); a formula
+    that cannot be read is left as it was."""
+    def one(m):
+        """One formula."""
+        source = re.sub(r"\s(xmlns(:\w+)?)=\"[^\"]*\"", "", m.group(0))
+        source = re.sub(r"<(/?)\w+:", r"<\1", source)                      # m:math -> math
+        try:
+            el = ET.fromstring(source.replace("&nbsp;", "\u00a0"))
+            t = mathtext.mathml_text(el)
+        except (ET.ParseError, ValueError, KeyError, IndexError):
+            return m.group(0)
+        display = 'display="block"' in m.group(0)
+        tag = "div" if display else "span"
+        return f'<{tag} class="math" role="math" aria-label="{esc(t)}">{esc(t)}</{tag}>'
+    return re.sub(r"<(?:\w+:)?math\b.*?</(?:\w+:)?math>", one, text, flags=re.S)
 
 
 class _Cleaner:
@@ -1108,9 +1144,9 @@ def siyavula_book(subject, grade, title, subject_words, cache=None, left_out=Non
     pdf = re.search(r'href="(/downloads/books/[^"]+CC-BY[^"]*\.pdf)"', toc) or \
         re.search(r'href="(/downloads/books/[^"]+\.pdf)"', toc)
     book = Book(name=f"siyavula_{slug(subject).replace('-', '_')}_grade_{grade}", title=f"Siyavula {title}",
-                subject=subject_words, level="school", group="textbooks", publisher="Siyavula Education",
+                subject=subject_words, level="school", publisher="Siyavula Education",
                 country="South Africa", licence="CC BY 4.0", licence_url="https://creativecommons.org/licenses/by/4.0/",
-                source=toc_url, grades=f"Grade {grade} (South Africa)",
+                source=toc_url, grades=f"Grade {grade} (South Africa)", group="k12",
                 description=f"{title}, a South African school textbook (CAPS curriculum) by Siyavula "
                 "Education, with worked examples and exercises.")
     if pdf:
@@ -1374,10 +1410,16 @@ def webguide_plan(entry, cache=None):
     pages = re.compile(entry["pages"])
 
     def add(url, unit):
-        """Add one article once."""
+        """Add one article once, then the pages entry["extra_pages"] makes from its address (a lesson's practice
+        problems: [(regular expression, replacement)])."""
         if pages.match(url) and url not in seen:
             seen.add(url)
             plan.append((url, unit))
+            for pattern, replacement in entry.get("extra_pages", []):
+                extra = re.sub(pattern, replacement, url)
+                if extra != url and extra not in seen:
+                    seen.add(extra)
+                    plan.append((extra, unit))
     for start in entry.get("start", []):
         text = fetch(start, cache)
         links = page_links(text, start)
@@ -1416,7 +1458,14 @@ def webguide_book(entry, cache=None, left_out=None):
     Optional entry fields: group (default "nonprofit"), region, notice (a statement the licence asks to show),
     changes (for the credit line), published (else the newest "last reviewed" date of its pages), fetch_as
     ((regular expression, replacement): the address actually read for an article, such as a guide's one-page
-    "/print" version)."""
+    "/print" version); for school books and courses (sources.K12_GUIDES): level ("school", "college"), grades,
+    personal_use (True: "personal use only"), latex (True: \\( \\) formulas written as text), mathml (True: MathML
+    formulas written as text), title_from (a regular
+    expression whose groups, joined by ": ", are a page's title, such as "Lesson 1: Tiling the Plane"),
+    extra_titles ([(regular expression of an address, words added to its title)]), titles ([(regular expression
+    of an address, its title)]), path_from_url (True: a page's
+    path made from its whole address, for sites whose pages are all "index.html") and fix ([(regular expression,
+    replacement)] applied to the page's HTML first, such as picture descriptions written as escaped HTML)."""
     left_out = left_out if left_out is not None else []
     title = entry["title"]
     licence_html = fetch(entry["licence_page"], cache) if allowed_by_robots(entry["licence_page"], cache) else ""
@@ -1430,9 +1479,10 @@ def webguide_book(entry, cache=None, left_out=None):
     if not licence_kind(licence, whole):
         left_out.append({"title": title, "reason": f"Its licence ({licence}) is not one the toolkit may repackage."})
         return None
-    book = Book(name=entry["name"], title=title, subject=entry["subject"], level="reference",
+    book = Book(name=entry["name"], title=title, subject=entry["subject"], level=entry.get("level", "reference"),
                 group=entry.get("group", "nonprofit"), publisher=entry["publisher"], country=entry["country"],
                 licence=licence, licence_url=entry["licence_url"], source=entry["source"], unchanged=whole,
+                grades=entry.get("grades", ""), personal_use=bool(entry.get("personal_use")),
                 description=entry["description"], region=entry.get("region", ""), notice=entry.get("notice", ""),
                 changes=entry.get("changes") or "made into web pages with the site's menus and pictures left out "
                                                  "(their descriptions kept)")
@@ -1440,7 +1490,13 @@ def webguide_book(entry, cache=None, left_out=None):
     plan = webguide_plan(entry, cache)
     paths, skipped = {}, 0
     for url, _unit in plan:
-        path = slug(urllib.parse.urlsplit(url).path.strip("/").rsplit("/", 1)[-1] or "page", 50)
+        if entry.get("path_from_url"):          # the address below the folder of the guide's first contents page
+            base = urllib.parse.urlsplit(entry["start"][0]).path.rsplit("/", 1)[0] + "/"
+            own = urllib.parse.urlsplit(url).path
+            own = own[len(base):] if own.lower().startswith(base.lower()) else own
+            path = slug(re.sub(r"(index)?\.html?$", "", own.strip("/")) or "contents", 50)
+        else:
+            path = slug(urllib.parse.urlsplit(url).path.strip("/").rsplit("/", 1)[-1] or "page", 50)
         while path in paths.values() or path in ("index", "style-css"):
             path += "-2"
         paths[url] = path
@@ -1464,13 +1520,29 @@ def webguide_book(entry, cache=None, left_out=None):
                              "line."})
             continue
         dates.append(page_date(text))
-        body = _Cleaner(paths, url).clean(article_content(text, entry))
+        for pattern, replacement in entry.get("fix", []):
+            text = re.sub(pattern, replacement, text)
+        content = article_content(text, entry)
+        if entry.get("mathml"):
+            content = mathml_spans(content)
+        body = _Cleaner(paths, url).clean(latex_spans(content) if entry.get("latex") else content)
         body = re.sub(r'<a href="[^"]*#top">.*?</a>', "", body, flags=re.S)        # "Back to Top" links
         body = re.sub(r'<a href="[^"]*">\s*</a>', "", body)                        # links without words
         if whole:                                 # the licence asks for each document's address and notice
             body += (f'<p class="original">Original: <a href="{esc(url)}">{esc(url)}</a>. '
                      f'{esc(entry.get("notice", ""))} {UNCHANGED}</p>')
-        book.pages.append(Page(paths[url], first_heading(text) or paths[url], body, 0, unit))
+        page_title = first_heading(text) or paths[url]
+        m = re.search(entry["title_from"], text, re.S) if entry.get("title_from") else None
+        if m:
+            page_title = ": ".join(" ".join(html.unescape(re.sub(r"<[^>]+>", " ", g)).split())
+                                   for g in m.groups() if g and g.strip())
+        for pattern, words in entry.get("titles", []):    # a page whose own heading is only the site's name
+            if re.search(pattern, url):
+                page_title = words
+        for pattern, words in entry.get("extra_titles", []):
+            if re.search(pattern, url):
+                page_title += f" ({words})"
+        book.pages.append(Page(paths[url], page_title, body, 0, unit))
     if skipped:
         left_out.append({"title": title, "reason": f"{skipped} pages could not be read or are not allowed by the "
                          "site's robots.txt."})
@@ -1844,7 +1916,8 @@ def pdfdoc_book(entry, work, cache=None, left_out=None):
     if not licence_kind(licence_short(licence), whole) and not licence_kind(licence, whole):
         left_out.append({"title": title, "reason": f"Its licence ({licence}) is not one the toolkit may repackage."})
         return None
-    book = Book(name=entry["name"], title=title, subject=entry["subject"], level="reference", group=entry["group"],
+    book = Book(name=entry["name"], title=title, subject=entry["subject"], level=entry.get("level", "reference"),
+                group=entry["group"], grades=entry.get("grades", ""), personal_use=bool(entry.get("personal_use")),
                 publisher=entry["publisher"], country=entry["country"], licence=licence,
                 licence_url=entry["licence_url"], source=page, description=entry["description"],
                 original_pdf={"url": pdf_url, "size": os.path.getsize(local), "sha256": file_sha256(local)},
@@ -2188,8 +2261,8 @@ def build(keys, out_dir, cache=None, pictures=False, local_osbooks=None, date=No
                     b = None
                 if b is not None:
                     books.append(b)
-            elif key.startswith("nonprofit:") or key.startswith("guide:"):
-                entry = next((e for e in sources.NONPROFIT + sources.GOV_GUIDES
+            elif key.startswith("nonprofit:") or key.startswith("guide:") or key.startswith("k12:"):
+                entry = next((e for e in sources.NONPROFIT + sources.GOV_GUIDES + sources.K12_GUIDES
                               if e["name"] == key.split(":", 1)[1]), None)
                 if entry is None:
                     print(f"Unknown key {key}; skipped.")

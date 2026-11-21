@@ -177,7 +177,9 @@ def test_reference_sources():
         if e.get("unchanged"):
             assert B.licence_kind(e["licence"], True).endswith("no-changes") and e.get("pdf_licence_text")
             continue
-        assert B.licence_kind(e["licence"]) == "open"
+        # Open, or non-commercial and marked personal use only (the K-12 PDFs of 2026-11-21: Utah's science books)
+        assert B.licence_kind(e["licence"]) == "open" or (
+            B.licence_kind(B.licence_short(e["licence"])) == "non-commercial" and e.get("personal_use"))
         assert e.get("archive") or (e.get("page") and e.get("licence_text"))
         if e.get("archive") and e.get("old_public_domain"):
             assert e["licence"] == "Public domain (published before 1931)" and int(e["published"]) < 1931
