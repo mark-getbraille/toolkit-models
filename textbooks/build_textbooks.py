@@ -10,6 +10,7 @@ What is built (sources.py lists every book, the licence lines checked by hand, a
   siyavula   Siyavula's South African school textbooks (mathematics, physical and natural sciences), from its
              online reader
   dspace     reference works of international bodies (WHO, World Bank, FAO) from their open repositories (PDF)
+  sounds     animal sounds of US national parks as text and links (animal_sounds.py: the NPS Sound Gallery)
   pdf        official PDF documents (sources.PDF_DOCS): US military field manuals with Distribution Statement A
              (survival, first aid, map reading, knots, hygiene, cold weather, mountaineering; key fieldmanuals) and
              Alberta's publications under its Open Government Licence (key government), US Navy nonresident
@@ -2155,6 +2156,11 @@ def build(keys, out_dir, cache=None, pictures=False, local_osbooks=None, date=No
                         b = None
                     if b is not None:
                         books.append(b)
+            elif key == "sounds":            # animal sounds as text and links (animal_sounds.py)
+                import animal_sounds             # here, not at the top: animal_sounds imports this module
+                b = animal_sounds.nps_book(cache, left_out)
+                if b is not None:
+                    books.append(b)
             elif key == "dspace":
                 for entry in sources.DSPACE:
                     try:
@@ -2251,11 +2257,14 @@ def merge(manifest_paths, existing=None):
     left = [x for x in left if not (x["title"] in seen or seen.add(x["title"]))]
     import periodicals                           # here, not at the top: periodicals imports this module
     import medications                           # (the same)
+    import animal_sounds                         # (the same)
     return {"built": datetime.date.today().isoformat(), "release": RELEASE,
             "books": sorted(books.values(), key=lambda b: (b["group"], b["title"].casefold())),
             "left_out": left, "not_included": [{"title": t, "reason": r} for t, r in sources.NOT_INCLUDED +
-                                               periodicals.NOT_INCLUDED + medications.NOT_INCLUDED],
-            "licence_lines": {**sources.LICENCE_LINES, **periodicals.LICENCE_LINES, **medications.LICENCE_LINES},
+                                               periodicals.NOT_INCLUDED + medications.NOT_INCLUDED +
+                                               animal_sounds.NOT_INCLUDED],
+            "licence_lines": {**sources.LICENCE_LINES, **periodicals.LICENCE_LINES, **medications.LICENCE_LINES,
+                              "nps_sounds": animal_sounds.LICENCE_LINE},
             "groups": sources.GROUPS, "group_notes": {**periodicals.GROUP_NOTES, **medications.GROUP_NOTES},
             "pieces_done": sorted(done),
             "pieces_failed": {k: n for k, n in sorted(failed.items()) if k not in done}}

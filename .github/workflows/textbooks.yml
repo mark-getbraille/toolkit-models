@@ -30,7 +30,7 @@ on:
   workflow_dispatch:
     inputs:
       keys:
-        description: "Keys separated by commas (osbooks, osbooks:<repository>, siyavula, dspace, nonprofit, fieldmanuals, government, courses, guides, laws, laws-more, group:<group>, guide:<name>, law:<name>, pdf:<name>, publications, pub:<group>, pub:<source>, pub:<source>:<piece>, medicines, med:rx, med:otc, med:rx:<letters>, med:otc:<letters>, med:animal, pictures), or all"
+        description: "Keys separated by commas (osbooks, osbooks:<repository>, siyavula, dspace, nonprofit, fieldmanuals, government, courses, guides, laws, laws-more, group:<group>, guide:<name>, law:<name>, pdf:<name>, publications, pub:<group>, pub:<source>, pub:<source>:<piece>, medicines, med:rx, med:otc, med:rx:<letters>, med:otc:<letters>, med:animal, sounds, pictures), or all"
         required: true
         default: "all"
       schedule:
