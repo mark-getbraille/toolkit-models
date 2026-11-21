@@ -210,3 +210,30 @@ def test_speech_records_save_the_whole_transcript(tmp_path, monkeypatch):
 def test_wikinews_link_templates_keep_their_words():
     assert readers_more.wiki_plain("Talks with {{w|Iran}} on {{w|Uranium enrichment|enrichment}} ended.") == \
         "Talks with Iran on enrichment ended."
+
+
+# ----------------------------------------------------------------- creative writing (kit/readers_creative.py)
+
+import readers_creative  # noqa: E402
+
+
+def test_story_continuations_give_the_passage_before():
+    story = "\n\n".join(f"Paragraph {i}. " + "The fox ran on through the snowy wood. " * 15 for i in range(12))
+    pairs = readers_creative.continuation_pairs(story, "The Fox", "Ann Writer", "fiction_prose", max_pairs=3,
+                                                chunk=100, context=20)
+    assert 1 <= len(pairs) <= 3
+    instruction, answer = pairs[0]
+    assert instruction.startswith('Continue this story in the same style ("The Fox" by Ann Writer)')
+    assert answer.startswith("Paragraph")
+
+
+def test_poems_are_found_by_their_short_lines():
+    text = ("THE BROOK\n\nI come from haunts of coot and hern,\nI make a sudden sally,\nAnd sparkle out among the fern,"
+            "\nTo bicker down a valley.\n\n\n\n" + "This is a long prose paragraph that runs on and on. " * 10)
+    found = readers_creative.poems(text)
+    assert found and found[0][0] == "THE BROOK" and found[0][1].startswith("I come from haunts")
+
+
+def test_tables_of_contents_are_not_poems():
+    text = "CONTENTS\n\nI. The Peace-Pipe\nII. The Four Winds\nIII. Childhood\nIV. Fasting\nV. Friends\n"
+    assert readers_creative.poems(text) == []

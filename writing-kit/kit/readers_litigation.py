@@ -31,11 +31,20 @@ def idl_query(q, fq, rows, start, fields=IDL_FIELDS):
 def email_parts(text):
     """(subject, body, header text) of an email printed as text with Subject:, From:, Date: and To: lines at the top."""
     text = (text or "").replace("﻿", "").replace("\r\n", "\n").strip()
-    m = re.match(r"((?:[ \t]*(?:Subject|From|Date|Sent|To|Cc|CC|Bcc|Attachments?|Importance)\s*:.*\n(?:[ \t]+.*\n)*)+)",
-                 text + "\n")
+    keys = r"(?:Subject|From|Date|Sent|To|Cc|CC|Bcc|Attachments?|Importance)[ \t]*:"
+    m = re.match(r"((?:[ \t]*" + keys + r".*\n(?:[ \t]+\S.*\n|[ \t]*\n(?=[ \t]*" + keys + r"))*)+)", text + "\n")
     header = m.group(1) if m else ""
     subject = (re.search(r"(?im)^\s*Subject\s*:\s*(.*)$", header) or [None, ""])[1].strip()
     return subject, text[len(header):].strip() if header else text, header
+
+
+def readable(text):
+    """True when text reads as words (not a badly scanned page): most of its words are ordinary English words."""
+    from names import COMMON_WORDS
+    words = re.findall(r"[A-Za-z']+", text)
+    if len(words) < 5:
+        return False
+    return sum(w.lower() in COMMON_WORDS for w in words) / len(words) >= 0.6
 
 
 def read_idl(fetcher, say=print, per_industry=60, since="2010-01-01", **_):
@@ -55,7 +64,7 @@ def read_idl(fetcher, say=print, per_industry=60, since="2010-01-01", **_):
             start += len(docs)
             for doc in docs:
                 subject, body, header = email_parts(doc.get("ot", ""))
-                if len(body.split()) < 5:
+                if len(body.split()) < 5 or not readable(body):
                     continue
                 files = []
                 numbers = doc.get("attachment") or []

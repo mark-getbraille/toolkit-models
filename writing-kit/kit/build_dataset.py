@@ -58,9 +58,10 @@ import readers_meetings  # noqa: E402
 import readers_business  # noqa: E402
 import readers_litigation  # noqa: E402
 import styles  # noqa: E402
+import readers_creative  # noqa: E402
 import attachments  # noqa: E402
 
-READER_MODULES = (readers, readers_more, readers_meetings, readers_business, readers_litigation)
+READER_MODULES = (readers, readers_more, readers_meetings, readers_business, readers_litigation, readers_creative)
 GROUPED = {"enron", "w3c", "usenet", "irc", "debian", "scotus", "hearings", "hansard", "idl"}   # sources read mailbox by mailbox or list by list
 
 VALIDATION_SHARE = 20          # one example in twenty goes to validation.jsonl

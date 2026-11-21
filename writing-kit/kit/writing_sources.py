@@ -292,6 +292,22 @@ SOURCES = [
         reader="read_doj_google",
         notes="About 2,000 exhibit PDFs (mostly 2010s to 2020s); only those that are emails are used, read with "
               "pdftotext; each PDF is saved beside its email."),
+    Source(
+        key="gutenberg_creative", name="Public-domain fiction, poetry, plays and humour (Project Gutenberg)",
+        licence="Public domain in the United States", licence_class=OPEN,
+        licence_url="https://www.gutenberg.org/policy/license.html",
+        credit="Project Gutenberg volunteers (https://www.gutenberg.org/)", home="https://www.gutenberg.org/",
+        reader="read_gutenberg_creative",
+        notes="Books found in Gutenberg's catalogue by subject (short stories, fiction, juvenile fiction and fairy "
+              "tales, poetry, drama, humour), from the official mirror; labelled fiction_prose, children_story, "
+              "poetry, screenplay_drama or humour."),
+    Source(
+        key="doctorow", name="Cory Doctorow's Creative Commons novels",
+        licence="CC BY-NC-SA (each book states its version)", licence_class=PERSONAL,
+        licence_url="https://creativecommons.org/licenses/by-nc-sa/3.0/", credit="Cory Doctorow (craphound.com)",
+        home="https://craphound.com/", reader="read_doctorow",
+        notes="The plain-text editions on his site's download pages; a book whose file does not state a Creative "
+              "Commons licence is skipped. Non-commercial, so personal use only."),
 ]
 
 NOT_USED = [
@@ -473,6 +489,34 @@ NOT_USED = [
     ("Climate Investigations Center",
      "Its robots.txt allows programs, but its documents are PDFs that mostly come from the Industry Documents "
      "Library's fossil fuel collection, which the kit reads directly."),
+    ("Archive of Our Own (AO3)",
+     "Its terms forbid scraping and AI training, its robots.txt blocks AI crawlers (GPTBot, CCBot), and its authors "
+     "have objected. Excluded."),
+    ("FanFiction.Net", "Its robots.txt says 'Content-Signal: ai-train=no'. Excluded."),
+    ("Wattpad", "Its robots.txt blocks AI-training crawlers (GPTBot), and its terms forbid scraping. Excluded."),
+    ("Openly licensed fan fiction",
+     "No collection of fan works released under an open licence with a bulk download was found (single works on "
+     "the Internet Archive carry mixed or no licences, and fan works also depend on the original's copyright). "
+     "Not used."),
+    ("Reddit WritingPrompts (and the Hugging Face copies of it)",
+     "Reddit's robots.txt closes the site to programs and its terms forbid AI training without an agreement; the "
+     "dataset copies carry Reddit's terms. Excluded."),
+    ("TinyStories and other machine-written story sets on Hugging Face",
+     "Written by AI models; left out like the other machine-written sets."),
+    ("Pluralistic's serialised fiction",
+     "Published inside Pluralistic's posts under the same CC BY 4.0 licence, so it arrives with the blogs source "
+     "rather than separately."),
+    ("Free Culture fiction collections, Feedbooks originals, Smashwords and Lulu free books",
+     "Licences differ book by book (many 'free' books are not openly licensed) and there is no bulk route with "
+     "licence data; not built in this round. Doctorow's novels are used."),
+    ("StoryWeaver and the Global Digital Library children's stories, Wikibooks creative writing",
+     "CC BY and CC BY-SA, and StoryWeaver's robots.txt allows programs, but the children's stories are already in "
+     "the reference library and were not re-read here; Wikibooks' creative writing books are guides rather than "
+     "stories. Not built in this round."),
+    ("Wikisource poetry, plays and fiction; the Library of Congress poetry collections; public-domain screenplays "
+     "on the Internet Archive",
+     "Mostly the same public-domain works as Project Gutenberg (which the kit reads), or scanned items without "
+     "text and clear licence data. Not built in this round."),
 ]
 
 
