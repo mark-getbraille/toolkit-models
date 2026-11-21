@@ -158,3 +158,49 @@ def test_comment_instructions():
     instruction, details = instructions.make_comment_instruction("I oppose this rule, it is unfair to small farms.",
                                                                  "USDA", "Organic labeling")
     assert "USDA" in instruction and "Organic labeling" in instruction and details["kind"] == "complaint"
+
+
+# ----------------------------------------------------------------- public meetings (kit/readers_meetings.py)
+
+import readers_meetings  # noqa: E402
+
+
+def test_supreme_court_transcripts_become_turns():
+    text = ("1 P R O C E E D I N G S\n2 CHIEF JUSTICE ROBERTS: We'll hear argument\n3 first this morning in Case "
+            "24-1, Doe versus Roe.\nHeritage Reporting Corporation\n4 MS. QUILL: Mr. Chief Justice, and may it\n"
+            "5 please the Court: the statute is plain.\n6 JUSTICE KAGAN: Well, is it?\n7 (Whereupon, at 11:02 a.m., "
+            "the case was submitted.)\n")
+    turns = readers_meetings.scotus_turns(text)
+    assert turns == [("CHIEF JUSTICE ROBERTS", "We'll hear argument first this morning in Case 24-1, Doe versus Roe."),
+                     ("MS. QUILL", "Mr. Chief Justice, and may it please the Court: the statute is plain."),
+                     ("JUSTICE KAGAN", "Well, is it?")]
+
+
+def test_hearing_transcripts_become_turns():
+    text = ("    The CHAIRMAN. The committee will come to order. Thank\nyou all for coming.\n"
+            "    [Applause.]\n    Ms. Quill. Thank you, Mr. Chairman. I'm glad to be\nhere.\n")
+    assert readers_meetings.hearing_turns(text) == [("The CHAIRMAN", "The committee will come to order. Thank you "
+                                                     "all for coming."), ("Ms. Quill", "Thank you, Mr. Chairman. I'm "
+                                                     "glad to be here.")]
+
+
+def test_hansard_interventions_become_turns():
+    xml = ("<Intervention><PersonSpeaking><Affiliation>Mr. Tam Quill (Somewhere, Lib.)</Affiliation>"
+           "</PersonSpeaking><Content><ParaText>Mr. Speaker, the colour of the centre is fine.</ParaText>"
+           "</Content></Intervention><Intervention><PersonSpeaking><Affiliation>The Speaker</Affiliation>"
+           "</PersonSpeaking><Content><ParaText>Order, please.</ParaText></Content></Intervention>")
+    assert readers_meetings.hansard_turns(xml) == [("Mr. Tam Quill (Somewhere, Lib.)", "Mr. Speaker, the colour "
+                                                    "of the centre is fine."), ("The Speaker", "Order, please.")]
+    assert "Canadian English" in readers_meetings.CANADA_NOTE
+
+
+def test_speech_records_save_the_whole_transcript(tmp_path, monkeypatch):
+    def fake(fetcher, say=print, **_):
+        yield {"type": "chat", "turns": [("A", "Good morning everyone, shall we begin?"),
+                                         ("B", "Yes, thank you, let's get started then.")],
+               "setting": "a US Congress committee hearing", "group": "2023", "style": "speech",
+               "raw": "whole transcript text", "raw_name": "CHRG-1.txt"}
+    monkeypatch.setattr(readers_meetings, "read_hearings", fake)
+    assert build_dataset.main(["--out", str(tmp_path), "--sources", "hearings"]) == 0
+    assert (tmp_path / "transcripts" / "hearings" / "CHRG-1.txt").read_text(encoding="utf-8") == \
+        "whole transcript text"

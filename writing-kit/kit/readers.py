@@ -130,7 +130,8 @@ def _strip_tags(text):
 
 def w3c_message(page):
     """An email record from one hypermail page of lists.w3.org, or None."""
-    m = re.search(r'<pre id="start" class="body">(.*?)</pre>', page, re.S)
+    m = re.search(r'<pre[^>]*class="body"[^>]*>(.*?)</pre>', page, re.S) or \
+        re.search(r'<div[^>]*class="body"[^>]*>(.*?)</div>\s*(?:<!-- body="end" -->|<h2|<ul class="links)', page, re.S)
     if not m:
         return None
     if re.search(r'class="attachment"|<span class="heading">attachment', page, re.I):

@@ -181,6 +181,33 @@ SOURCES = [
         reader="read_regulations",
         notes="Needs a free API key from api.data.gov in the setting REGULATIONS_GOV_API_KEY; without one it is "
               "skipped. Comments with only an attachment are left out."),
+    Source(
+        key="scotus", name="US Supreme Court oral argument transcripts", licence="Public domain (US government work)",
+        licence_class=OPEN, licence_url="https://www.supremecourt.gov/oral_arguments/argument_transcript.aspx",
+        credit="Supreme Court of the United States", home="https://www.supremecourt.gov/oral_arguments/",
+        reader="read_scotus",
+        notes="The official PDF transcripts (read with pdftotext); the whole transcript is also saved as plain text."),
+    Source(
+        key="hearings", name="US Congress committee hearings (GovInfo, CHRG)",
+        licence="Public domain (US government work, 17 U.S.C. 105)", licence_class=OPEN,
+        licence_url="https://www.govinfo.gov/about/policies", credit="US Government Publishing Office, GovInfo",
+        home="https://www.govinfo.gov/app/collection/chrg", reader="read_hearings",
+        notes="Packages found through GovInfo's own sitemaps (which its robots.txt lists); witnesses' prepared "
+              "statements are part of the record too."),
+    Source(
+        key="fedreg", name="Federal Register public meeting notices", licence="Public domain (US government work)",
+        licence_class=OPEN, licence_url="https://www.federalregister.gov/reader-aids/developer-resources",
+        credit="Office of the Federal Register, National Archives", home="https://www.federalregister.gov/",
+        reader="read_fedreg", notes="The free official API (no key); each notice's own summary is the answer."),
+    Source(
+        key="hansard", name="Canada House of Commons debates (Hansard)",
+        licence="Reproduction permitted if accurate and not presented as official, but not for commercial purposes "
+                "(House of Commons important notices)",
+        licence_class=PERSONAL, licence_url="https://www.ourcommons.ca/en/important-notices",
+        credit="House of Commons of Canada, Debates (Hansard)", home="https://www.ourcommons.ca/en/parliamentary-business",
+        reader="read_hansard",
+        notes="The official English XML of each sitting. Canadian English spelling and Canadian parliamentary "
+              "procedure; every instruction says so."),
 ]
 
 NOT_USED = [
@@ -257,6 +284,41 @@ NOT_USED = [
     ("HuggingFaceH4/no_robots",
      "Human-written and good, but CC BY-NC 4.0 (non-commercial); kept out so the default build stays open or "
      "share-alike."),
+    ("Legistar (webapi.legistar.com) city and county councils: Seattle, Boston, Denver, Oakland and others",
+     "The Web API has no robots.txt and needs no key, but it gives only agenda item titles, actions and votes; the "
+     "minutes, agendas and video transcripts are files on legistar1.com, legistar2.granicus.com and Granicus "
+     "hosts whose robots.txt says 'Disallow: /' to all programs. Not used."),
+    ("Granicus video transcripts and CivicPlus AgendaCenter and BoardDocs sites (including school boards)",
+     "Each council or school district has its own site and terms; the files are PDFs on hosts that are either "
+     "closed to programs (Granicus) or have no bulk download, and no licence beyond each body's own. Not used."),
+    ("Council Data Project (Seattle, Portland, Boston, Denver, Oakland and other instances)",
+     "The project's software is open source, but its transcripts are machine speech recognition (not people's own "
+     "writing) and no licence for the data is stated. Not used."),
+    ("DocumentCloud public documents",
+     "DocumentCloud's robots.txt says 'Content-Signal: search=yes, ai-train=no, use=reference' and blocks AI "
+     "crawlers. Not used."),
+    ("OpenStates (state legislatures)",
+     "Its API needs a key (it would go in the computer's settings, never in the files), but it carries bills, "
+     "votes and events, not hearing transcripts or committee minutes. Not used."),
+    ("FCC ECFS public comments, FERC eLibrary and NTSB public hearings",
+     "ECFS needs an api.data.gov key and most comment text is inside attached files; FERC eLibrary holds formal "
+     "filings rather than conversation; NTSB hearing transcripts are PDFs inside individual dockets with no bulk "
+     "route. Not used in this round (the regulations.gov reader shows how a keyed comment source works)."),
+    ("CRTC public process submissions (crtc.gc.ca)",
+     "Its robots.txt says 'Content-Signal: search=yes, ai-train=no, use=reference' and blocks AI crawlers. Not used."),
+    ("Ontario Hansard (ola.org)",
+     "The site answers 'Access Denied' to programs, even for robots.txt, so it is treated as closed. Not used."),
+    ("Senate of Canada debates, and the British Columbia, Alberta and Nova Scotia Hansards",
+     "Their robots.txt files allow programs (Nova Scotia asks for 10 seconds between requests), but their "
+     "reproduction terms are each legislature's own (none uses the Open Government Licence) and they were not "
+     "built in this round; the House of Commons reader shows the pattern. Not used yet."),
+    ("Toronto (TMMIS) and other Canadian city council minutes (Vancouver, Ottawa, Calgary, Edmonton, Winnipeg, "
+     "Halifax)",
+     "Toronto's open data under its Open Government Licence has only meeting statistics, votes and attendance, not "
+     "minutes; the minutes system (secure.toronto.ca) refuses programs. The other cities publish minutes as PDFs on "
+     "their own sites, not as open data. Not used."),
+    ("MuckRock released documents (again, for meeting records)",
+     "Still 'ai-train=no' in its robots.txt. Not used."),
 ]
 
 

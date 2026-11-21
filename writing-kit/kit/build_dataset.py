@@ -1,22 +1,28 @@
 """Build the Writing Kit's training files: instruction and answer pairs that teach Qwen to write emails, replies,
-thank-you notes, requests, follow-ups, scheduling messages, short announcements, text messages and memos.
+thank-you notes, requests, follow-ups, scheduling messages, announcements, text messages, memos, chat messages,
+comments and letters, plus whole transcripts of real speech as colloquial English.
 
 What it does, step by step:
-  1. for each chosen source (writing_sources.py), downloads only its official file or pages (readers.py, fetch.py:
-     robots.txt obeyed, AI-training refusals obeyed, requests paced);
-  2. passes every message through the privacy scrubbing (scrub.py, explained in SCRUBBING.txt): the writer's own
-     words only, sensitive messages dropped, personal details and names replaced with placeholders, only short
-     workaday messages kept;
-  3. writes an instruction for each real email by simple rules (instructions.py); OASST2 and Dolly keep the
-     request their writer wrote, scrubbed the same way;
-  4. leaves out repeats, spreads the examples over many mailboxes or lists, and puts about one in twenty into the
-     validation file (the same one every time, chosen from the text);
-  5. writes, in the output folder:
+  1. for each chosen source (writing_sources.py), downloads only its official files, pages or interface
+     (readers.py, readers_more.py, readers_meetings.py, fetch.py: robots.txt obeyed, AI-training refusals obeyed,
+     requests paced, API keys only from the computer's settings);
+  2. applies the privacy setting (scrub.py, explained in SCRUBBING.txt): by default the owner's rule, which keeps
+     everything and masks only Social Security, card, bank and account numbers and passwords; with --privacy strict
+     the careful scrubbing (names and details replaced, sensitive messages dropped);
+  3. writes an instruction for each piece by simple rules (instructions.py): emails (with the message being
+     answered), chats ("write the next message"), texts, letters, public comments and notices;
+  4. saves each email's attachments beside it and turns the text of document attachments into more examples
+     (attachments.py), and saves whole speech transcripts as text files;
+  5. leaves out repeats, spreads the examples over many mailboxes, lists and channels, and puts about one in twenty
+     into the validation file (the same one every time, chosen from the text);
+  6. writes, in the output folder:
        train.jsonl, validation.jsonl   one example per line (fields below);
        samples.txt                     the first examples of each source, to read and check;
-       build-report.txt                what was kept and dropped, and why, per source;
+       build-report.txt                what was read, kept and not used, and why, per source;
        ATTRIBUTION.txt                 the credits and licences of the sources used;
-       sources-not-used.txt            the sources that were checked and cannot be used, with the reason.
+       sources-not-used.txt            the sources that were checked and cannot be used, with the reason;
+       messages/<source>/<message>/    message.txt and its attachments;
+       transcripts/<source>/           whole transcripts of real speech.
 
 Each line of train.jsonl and validation.jsonl has:
   id, instruction, response, messages (the same pair as a chat: user then assistant), kind, form, tone, audience,
@@ -47,9 +53,10 @@ import readers  # noqa: E402
 import scrub  # noqa: E402
 import writing_sources  # noqa: E402
 import readers_more  # noqa: E402
+import readers_meetings  # noqa: E402
 import attachments  # noqa: E402
 
-GROUPED = {"enron", "w3c", "usenet", "irc", "debian"}   # sources read mailbox by mailbox or list by list
+GROUPED = {"enron", "w3c", "usenet", "irc", "debian", "scotus", "hearings", "hansard"}   # sources read mailbox by mailbox or list by list
 
 VALIDATION_SHARE = 20          # one example in twenty goes to validation.jsonl
 
@@ -124,8 +131,8 @@ def examples_from_chat(record, source, privacy=OWNER, per_chat=3, context_size=6
     context_size earlier messages. Replies of fewer than three words, and the first message, are not used."""
     turns = [(who, protect(text, privacy, signature=False)) for who, text in record.get("turns", [])
              if text and text.strip()]
-    candidates = [i for i in range(1, len(turns)) if len(turns[i][1].split()) >= 3 and turns[i][0] != turns[i - 1][0]
-                  or (record.get("style") == "talk" and i >= 1)]
+    candidates = [i for i in range(1, len(turns)) if (len(turns[i][1].split()) >= 3 and turns[i][0] != turns[i - 1][0]
+                  or (record.get("style") == "talk" and i >= 1)) and len(turns[i][1].split()) <= 600]
     if record.get("style") == "irc":     # a reply that names the person it answers is the best pair in a busy channel
         named = [i for i in candidates if re.match(r"^\S+[:,]", turns[i][1])]
         candidates = named or candidates
@@ -233,13 +240,13 @@ def is_validation(row):
 def build_source(source, fetcher, per_source, say, seen, reader_options, privacy=OWNER, attach_dir=None):
     """(rows, counts) for one source: up to per_source examples, no more than a tenth from one mailbox, list or
     channel when the source has several (at least 15)."""
-    module = readers if hasattr(readers, source.reader) else readers_more
+    module = next(m for m in (readers, readers_more, readers_meetings) if hasattr(m, source.reader))
     reader = getattr(module, source.reader)
     counts = Counter()
     rows = []
     per_group = defaultdict(int)
     group_cap = max(15, per_source // 10)
-    if source.key in ("w3c", "usenet", "irc", "debian"):
+    if source.key in ("w3c", "usenet", "irc", "debian", "scotus", "hearings", "hansard"):
         group_cap = max(group_cap, per_source // 2 + 1)
     try:
         for record in reader(fetcher, say=say, **reader_options):
@@ -249,6 +256,13 @@ def build_source(source, fetcher, per_source, say, seen, reader_options, privacy
                 counts["skipped: enough from this mailbox, list or channel"] += 1
                 continue
             made = examples_from_record(record, source, privacy)
+            if record.get("raw") and attach_dir:              # keep the whole transcript as spoken-English text
+                folder = os.path.join(os.path.dirname(attach_dir), "transcripts", source.key)
+                os.makedirs(folder, exist_ok=True)
+                with open(os.path.join(folder, attachments.safe_name(record.get("raw_name"), "transcript.txt")),
+                          "w", encoding="utf-8") as f:
+                    f.write(protect(record["raw"], OWNER))
+                counts["transcripts saved"] += 1
             if record.get("type", "email") == "email":
                 for row in attachment_examples(record, source, attach_dir, privacy):
                     made.append((row, ""))
@@ -318,11 +332,11 @@ def write_outputs(out, rows, counts_by_source, used, fetcher, started, privacy=O
             f.write(f"{source.name} ({source.licence_class}, {source.licence.split('. ')[0]}):\n")
             f.write(f"  read {c['read']} records, kept {c['kept']} examples, from {c['groups']} groups (mailboxes, "
                     f"lists, channels or files).\n")
-            for label in ("attachments saved", "attachment texts"):
+            for label in ("attachments saved", "attachment texts", "transcripts saved"):
                 if c[label]:
                     f.write(f"  {label}: {c[label]}\n")
             for why, n in sorted(c.items(), key=lambda kv: -kv[1]):
-                if why not in ("read", "kept", "groups", "attachments saved", "attachment texts"):
+                if why not in ("read", "kept", "groups", "attachments saved", "attachment texts", "transcripts saved"):
                     f.write(f"  not used, {why}: {n}\n")
             for w in source.warnings:
                 f.write(f"  Warning: {w}\n")

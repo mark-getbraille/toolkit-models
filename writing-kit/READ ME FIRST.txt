@@ -1,101 +1,150 @@
 Writing Kit
 
 What it is
-This kit gathers examples of short, everyday writing to teach Qwen, your own model, to write emails and other
-informal messages: replies, requests, thank-you notes, follow-ups, scheduling, complaints, short announcements,
-text messages and memos. It makes training files of pairs: an instruction, such as "Write a short, polite email to
-a colleague declining the meeting", and the message that answers it.
-It is separate from the picture training kit. It needs no graphics card and nothing to install except Python.
+This kit gathers real, everyday English to teach Qwen, your own model, to write emails and other informal writing:
+replies, requests, thank-you notes, follow-ups, scheduling, complaints, short announcements, text messages, memos,
+chat messages, forum and talk-page comments, letters and public comments. It also keeps whole transcripts of real
+speech (court arguments, hearings, parliament, everyday conversations) as colloquial English to learn from.
+It makes training files of pairs: an instruction, such as "Write a short, polite email to a colleague declining
+the meeting", and the writing that answers it.
+It is separate from the picture training kit. It needs no graphics card and nothing to install except Python
+(and, to read PDF files, the free pdftotext program from Xpdf or Poppler).
 
 How to run it on Windows
 1. Install Python 3 from python.org if you do not have it. Tick "Add Python to PATH" in the installer.
 2. Open the writing-kit folder and press Enter on "Build Writing Data.cmd".
-   This uses only the open and share-alike sources. It takes a minute or two.
+   This uses only the open and share-alike sources. It takes about 10 minutes.
 3. Or press Enter on "Build Writing Data with Personal Sources.cmd".
-   This also uses the Enron emails and the W3C mailing lists, which are personal use only (see Licences below).
-   It takes longer: about 40 minutes, because the W3C site is asked for one page every few seconds.
+   This also uses the personal-use-only sources (see Licences below). It takes about an hour the first time,
+   because some sites are asked for one page every few seconds. A second build is quicker: downloads are kept
+   in the "cache" folder.
 4. When it says "Done", open the folder "output" in the writing-kit folder.
 Each window says what it is doing, one line at a time, so your screen reader can follow it. Close the window to stop.
 
 How to run it from a command prompt
 Go to the writing-kit folder, then type one of these:
-  python kit\build_dataset.py --out output
-  python kit\build_dataset.py --out output --personal
-  python kit\build_dataset.py --out output --personal --per-source 1000 --cache cache
+  python kit\build_dataset.py --out output --cache cache
+  python kit\build_dataset.py --out output --cache cache --personal
+  python kit\build_dataset.py --out output --cache cache --personal --per-source 1000
 --per-source sets how many examples to keep from each source (300 if you leave it out).
---cache keeps every downloaded page in a folder, so building again does not download it again.
---sources picks sources by name, separated by commas: oasst2, dolly, enron, w3c.
+--sources picks sources by name, separated by commas (the names are in the list of sources below).
+--privacy strict uses the old, careful scrubbing instead of your rule (see Privacy below).
 --enron-file uses a copy of the Enron file you already have instead of downloading it.
+
+A key for one source
+One source needs a free key: regulations.gov public comments (key from api.data.gov). The key never goes in these
+files. Put it in your computer's settings as an environment variable named REGULATIONS_GOV_API_KEY: press the
+Windows key, type "environment variables", choose "Edit environment variables for your account", choose New, and
+type the name and the key. Without a key, that source is skipped and the build says so.
 
 What you get, in the output folder
 train.jsonl: the training examples, one per line.
 validation.jsonl: about one example in twenty, kept back to check the training.
 samples.txt: the first ten examples from each source, in plain text. Read this first.
-build-report.txt: how many messages were read, kept and dropped, and why, for each source.
+build-report.txt: how many records were read and kept for each source, attachments and transcripts saved, and
+  anything not used, with the reason.
 ATTRIBUTION.txt: the credits and licences. Keep it with anything you make from the files.
 sources-not-used.txt: the sources that were checked and cannot be used, and why.
+messages folder: one folder per email that came with attachments, holding message.txt and the attachment files.
+transcripts folder: whole transcripts of real speech, one plain text file each, by source.
 
 What is in each example
-instruction: what to write, with the tone and the audience, for example "Write a very short, friendly and casual
-  reply to a colleague thanking them for the quick turnaround."
-response: the message itself, scrubbed of personal details.
+instruction: what to write, with the tone and the audience. For a reply, the message being answered is included.
+  For a chat, the conversation so far is included and it asks for the next message.
+response: the writing itself.
 messages: the same pair as a chat, user then assistant, the way most training programs want it.
 kind, form, tone, audience, length: what the rules found, for example kind "declining", form "email".
 source, licence, licence_class, credit: where the example came from and under what licence.
-For real emails the instruction is made from the message itself by simple rules, with no AI and nothing online.
-For the OpenAssistant and Dolly examples, the instruction is the request a person wrote.
+The instructions are made from the writing itself by simple rules, with no AI and nothing online. For the
+OpenAssistant and Dolly examples, the instruction is the request a person wrote.
 
 Licences
 Every source has one of three classes, the same as in the picture kit:
-open: may be used and shared for any purpose, with credit.
+open: may be used and shared for any purpose, with credit. US federal government records are public domain.
 share-alike: may be used for any purpose with credit, but anything made from it that you share must have the same
   licence.
 personal use only: no licence lets others re-use it. Use it only to train your own model on your own computer, and
-  do not share the files or the trained add-on.
+  do not share the files or the trained add-on. Corpora that are public but whose writers never gave up their
+  copyright (the Enron emails, mailing lists, Usenet, IRC, public comments) are personal use only, even though
+  anyone can read them, unless the source's own terms say otherwise.
 Without the personal choice, the files have only open and share-alike examples.
 
-The sources used
-OpenAssistant Conversations, OASST2: open, Apache License 2.0. Requests people wrote for an email, letter, note or
-  message, with the best answer a person wrote. Machine-written answers are left out.
-databricks-dolly-15k: share-alike, CC BY-SA 3.0. Requests and answers written by Databricks employees; only the ones
-  asking for an email, letter, note or message.
-Enron emails: personal use only. Real office email from about 2000 and 2001, made public by the US energy regulator
-  FERC during its investigation and shared by Carnegie Mellon University for research. Only each person's own sent
-  mail is used, never attachments. One thing for you to decide: the university's robots.txt blocks two companies'
-  AI crawlers, Meta's and ByteDance's, along with some search engines. It does not block AI crawlers in general and
-  allows this kit, but if you would rather not use it, leave out the personal choice or use --sources.
-W3C mailing lists: personal use only. Public messages on the W3C web accessibility lists (w3c-wai-ig, w3c-wai-gl,
-  public-aria). People who post there let W3C publish their messages, not others, so this is personal use only.
+The sources used, by name
+Open:
+  oasst2: OpenAssistant Conversations, Apache 2.0. Requests people wrote for an email, letter or message, with the
+    best answer a person wrote.
+  sms: SMS Spam Collection, CC BY 4.0. Real text messages; only the ordinary ones, never the spam.
+  taskmaster: Taskmaster-1 from Google, CC BY 4.0. Spoken-style conversations, one person playing an assistant.
+  multiwoz: MultiWOZ 2.2, MIT licence. Chats between a visitor and a tourist information clerk.
+  gutenberg: letters from public-domain books of letters, from Project Gutenberg's official mirror.
+  scotus: US Supreme Court oral argument transcripts, public domain. Very conversational.
+  hearings: US Congress committee hearing transcripts from GovInfo, public domain.
+  fedreg: public meeting notices from the Federal Register, public domain. Teaches short announcements.
+Share-alike:
+  dolly: databricks-dolly-15k, CC BY-SA 3.0. Requests and answers written by Databricks employees.
+  sgd: Schema-Guided Dialogue from Google, CC BY-SA 4.0. Chats with a virtual assistant.
+  topical: Topical-Chat from Amazon, Community Data License Agreement Sharing 1.0. Friendly chats about a topic.
+  wikitalk: Simple English Wikipedia talk pages, CC BY-SA 4.0. Wikimedia offers this dump only from the 1st to
+    the 14th of each month at the moment, so build it then.
+Personal use only:
+  enron: the Enron emails, made public by the US energy regulator FERC in 2003 and shared by Carnegie Mellon
+    University. Office email from 2000 and 2001, each person's own sent mail. The university's robots.txt blocks
+    two companies' AI crawlers (Meta's and ByteDance's) but not AI crawlers in general, and allows this kit; leave
+    it out with --sources if you would rather not use it.
+  w3c: the W3C web accessibility mailing lists.
+  usenet: old Usenet newsgroups from the Internet Archive.
+  debian: the debian-user mailing list.
+  irc: Ubuntu's public IRC help channels.
+  sbcsae: the Santa Barbara Corpus of Spoken American English, transcripts of real everyday conversations. Its
+    licence (CC BY-ND) allows no changes, so each transcript is used whole and unchanged.
+  hansard: Canada's House of Commons debates. Reproduction is allowed but not for commercial purposes.
+    These are in Canadian English (colour, centre) and follow Canadian parliamentary procedure (members speak
+    through the Speaker); every instruction from them says so.
+  regulations: public comments people sent to US federal agencies (needs the key described above).
 
 Sources that cannot be used, in short (the full reasons are in sources-not-used.txt)
 Hillary Clinton's State Department emails: the site's robots.txt turns all programs away, and they are scanned pages.
-Jeb Bush's Florida emails: the release site is gone, and the release exposed people's Social Security numbers.
+Jeb Bush's Florida emails: the release site is gone.
 Sarah Palin's Alaska emails, Michigan's Flint emails and other state releases: only scanned pages, no text download.
 National Archives email records: the catalogue's robots.txt turns all programs away.
-MuckRock: its robots.txt says no AI training.
-Apache mailing lists: their robots.txt turns programs away unless the Apache Foundation allows them.
-IETF mailing lists: the posts are licensed only to the IETF Trust, and the bulk download is closed to programs.
+MuckRock, DocumentCloud and the CRTC: their robots.txt says no AI training.
+Apache mailing lists and the Linux kernel lists: their robots.txt turns programs away.
+IETF lists: licensed only to the IETF Trust, and the bulk download is closed to programs.
 Stack Exchange: the official download's terms now forbid AI training.
+DailyDialog: its official download is down. PersonaChat: no licence stated for the data. CoQA: mixed licences.
+Switchboard and CALLHOME: sold by the LDC, not free.
+City councils through Legistar and Granicus: the minutes files are closed to programs. Toronto's open data has no
+minutes. Ontario's Hansard refuses programs. Other provincial Hansards and the Senate were not built yet.
 Machine-written email sets on Hugging Face, and sets that are non-commercial or have no licence.
 
-Privacy
-Real emails carry real people's details, so every message is scrubbed before it can become an example, and most are
-dropped. SCRUBBING.txt explains every rule in plain words. In short:
-- only the writer's own words are kept: earlier messages quoted below, forwards and footers are cut off;
-- messages about health, family, money trouble, jobs and HR, sex, children, passwords, legal matters, crime,
-  gambling and drinking, or with swearing, are dropped whole;
-- email addresses, phone numbers, street addresses, ID, card and account numbers, dates of birth and web addresses
-  are replaced with words in square brackets, such as [phone number];
-- people's names are replaced with [Name], [Name 2] and so on, and the writer's own name with [Your name];
-- only short, ordinary messages that read well are kept;
-- attachments are never downloaded or used.
-No method is perfect. Read samples.txt, and if you find a name or detail that got through, tell the kit's maker so
-the rules can be improved.
+Privacy: your rule
+You asked to keep everything: the full text of every message, people's names, signatures, the earlier messages
+quoted in a thread, personal and sensitive subjects, and attachments. The kit does that.
+There is one exception, and it is narrow. The kit still masks these, and nothing else:
+- Social Security numbers, shown as [SSN];
+- card numbers, shown as [card number];
+- bank, account, routing and IBAN numbers, shown as [account number];
+- passwords, PINs and login names written in a message, shown as [password] or [login].
+Why: these add nothing to how someone writes, but a model can learn text by heart and repeat it later, and these
+are exactly what someone needs to steal an identity or break into an account. Everything else stays as released.
+A note about where the emails come from: the government email releases (Clinton, Bush, Palin and the like) were
+reviewed and redacted by the agency that released them before they were published. The Enron emails were not:
+FERC published them without redacting, so they contain private details of ordinary employees. That is one more
+reason the Enron examples are personal use only and should not be shared.
+SCRUBBING.txt explains both settings in detail. If you ever want the careful setting back (names replaced,
+sensitive messages dropped), add --privacy strict.
+
+Attachments
+Attachments are kept. For each email that had attachments, the kit saves the email as message.txt and every
+attached file beside it, in output\messages\<source>\<message>\. Attachments that are written documents (plain
+text, web pages, Word .docx, RTF, and PDF when pdftotext is installed) are also read, and their text becomes extra
+examples, such as "Write the memo that was attached to this email". Old Word .doc files are saved but not read.
+The Enron copy from Carnegie Mellon has no attachments: they were taken out before it was published.
 
 Being a good guest on other people's sites
 The kit reads each site's robots.txt and obeys it, leaves out any site that says no to AI training, waits between
-requests (10 seconds where a site asks for it, otherwise 3), and downloads only official files and pages. It never
-logs in and sends no personal details.
+requests (as long as a site asks, otherwise 3 seconds), and downloads only official files, pages and interfaces.
+It never logs in and sends no personal details. API keys stay in your computer's settings, never in the files.
 
 Checking the kit
 The tests use only made-up messages. From the writing-kit folder: python -m pytest tests

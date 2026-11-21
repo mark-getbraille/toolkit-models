@@ -14,7 +14,7 @@ if not defined PY (
   goto :end
 )
 echo Writing Kit: building the training files from every source, including the personal-use-only ones.
-echo This takes about 40 minutes, because the W3C site is asked for one page every few seconds.
+echo This takes about an hour the first time, because some sites are asked for one page every few seconds.
 %PY% kit\build_dataset.py --out output --cache cache --personal %*
 :end
 echo.

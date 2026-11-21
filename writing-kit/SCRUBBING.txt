@@ -1,77 +1,41 @@
-How the Writing Kit protects people's privacy
+How the Writing Kit handles private details
 
-Email collections hold the details of ordinary people who never expected their messages to be read by a computer
-program. So every message goes through these steps, in this order, before it can become a training example. The
-rules are in kit\scrub.py, and the tests in tests\test_scrub.py try each rule on made-up messages.
+The kit has two privacy settings. Your rule is the default.
 
-Step 1. Only the writer's own words
-Everything below the writer's own text is cut off: earlier messages quoted in a reply (lines that start with ">",
-"-----Original Message-----", "On Monday ... wrote:", copied From and To lines), forwarded messages, and footers
-such as "Sent from my iPhone" or confidentiality notices. Date and time stamps left by mail programs are removed,
-and lines broken at about 75 characters are joined back into paragraphs.
+Setting 1: your rule (the default)
+Every message, post, chat line, letter, comment and transcript is kept as it was released: the full text, people's
+names, signatures, the earlier messages quoted in a reply, personal and sensitive subjects, and attachments.
+Only these are masked, wherever they appear (in messages, attachments and transcripts):
+- Social Security numbers (written like 123-45-6789, or 9 digits after "SSN" or "social security number"): [SSN]
+- card numbers (13 to 19 digits in groups, or digits after the word "card"): [card number]
+- bank, checking, savings, account, routing, IBAN, policy and member numbers named as such: [account number]
+- passwords, passcodes, PINs and security codes given in the text ("password: tulip42!", "PIN 4471"): [password]
+- login names and user IDs given in the text ("login: jsmith"): [login]
+The word before the value stays, so the sentence still reads naturally: "my password is [password]".
+Phone numbers, addresses, email addresses and names are not masked under this setting.
+Why only these: they add nothing to how someone writes, but a model can learn text by heart and repeat it, and these
+are what someone needs to steal an identity or get into an account.
+How the government releases differ: email releases by government agencies (such as the State Department's Clinton
+emails, or the Bush and Palin governor emails) were reviewed and redacted by the releasing agency before they were
+published. The Enron emails were not redacted: FERC published them as they were. They are personal use only.
+Two small things are still left out under this setting, because they are not writing: messages that are empty or
+only a web link, and old Usenet binary files written into a post as text (uuencoded files).
+A reply that quotes the message it answers is split: the quoted message goes into the instruction ("The message you
+are answering: ...") and the writer's own words are the answer, so nothing is lost.
 
-Step 2. Sensitive messages are dropped whole
-A message is not used at all if it, or its subject line, touches any of these:
-- health and medical matters: doctors, hospitals, illness, medicines, therapy, pregnancy, injuries;
-- family and personal life: husbands, wives, children, parents, weddings, divorce, funerals, adoption, romance;
-- money trouble and personal banking: debt, loans, mortgages, salaries, pay, bank and card accounts, taxes;
-- jobs and HR: performance reviews, firing, lay-offs, resignations, discipline, bonuses, hiring, interviews,
-  recruiting, visas, pay stubs;
-- anything sexual;
-- children: kids, sons, daughters, babies, school, homework;
-- passwords, confidential and legal matters: passwords, "confidential", "privileged", lawyers, courts, lawsuits;
-- crime and police, weapons;
-- gambling, drinking and partying;
-- swearing and insults.
-These lists are wide on purpose: it is better to lose a harmless message than to keep a private one.
+Setting 2: strict (add --privacy strict)
+This is the careful scrubbing the kit started with. Every message goes through these steps:
+1. Only the writer's own words are kept: quoted earlier messages, forwards and footers are cut off.
+2. Messages about health, family and personal life, money trouble and banking, jobs and HR, anything sexual,
+   children, passwords and legal matters, crime and police, gambling and drinking, or with swearing are dropped.
+3. Email addresses, web addresses, phone numbers, ID, card and account numbers, dates of birth, street addresses,
+   postcodes, IP addresses and long numbers are replaced: [email address], [phone number] and so on.
+4. People's names become [Name], [Name 2] and so on, and the writer's own name [Your name]. Names are found from the
+   message's own From, To and Cc lines, greetings, titles (Mr, Dr), introductions ("I am ..."), signatures, lists
+   of common first names and surnames, and any capitalised word that is not an ordinary English word or a
+   well-known place.
+5. Only short, ordinary messages that read well are kept (about 12 to 200 words, not automatic, not a table).
 
-Step 3. Personal details are replaced
-Each of these is replaced with a word in square brackets:
-- email addresses, including old Lotus Notes addresses: [email address]
-- web addresses: [link]
-- phone numbers in any common form, and extensions: [phone number]
-- Social Security numbers and similar: [ID number]
-- card numbers: [card number]
-- account, order, invoice, ticket, policy and reference numbers: [account number]
-- dates of birth: [date of birth]
-- street addresses and post office boxes: [street address]
-- ZIP codes and postcodes: [postcode]
-- computer IP addresses: [IP address]
-- any other number of six digits or more: [number]
-
-Step 4. Names are replaced
-Every person's name becomes [Name], then [Name 2], [Name 3] and so on; the same person keeps the same placeholder
-all through the message. The writer's own name at the end becomes [Your name], and the job title, company and phone
-lines under it are cut off. Public officials are not treated differently: everyone gets a placeholder.
-Names are found in several ways at once:
-- the names and addresses in the message's own From, To and Cc lines;
-- the word after a greeting such as "Hi", "Dear" or "Good morning";
-- the word after a title such as Mr, Ms, Dr or Senator;
-- a list of common first names and surnames;
-- any capitalised word that is not an ordinary English word and not a well-known place or company. This also
-  replaces some company and place names. That is on purpose: losing a place name is better than keeping a surname.
-Some first names are also ordinary words (Will, May, Bill, Mark, Dawn). These count as a name only where a name
-fits: in the middle of a sentence, before a comma at the start of a line, or before words like "said" or "has".
-
-Step 5. Only good, short, ordinary messages are kept
-A message is dropped if it is:
-- shorter than about 12 words or longer than about 200;
-- an automatic message, newsletter, out-of-office reply or forward;
-- mostly numbers, a table or a list;
-- mostly capital letters, or written without capital letters at the start of sentences;
-- not ordinary English sentences;
-- so full of placeholders (more than about one word in eight) that it no longer reads as a message;
-- only a note that sends an attachment;
-- the same as a message already kept.
-
-Attachments
-Attachments are never downloaded, read or kept. The Enron file has none, multi-part messages are skipped, and on
-the W3C pages only the message text is read, never the attachment links.
-
-The writing datasets (OpenAssistant and Dolly)
-These requests and answers were written for sharing, but the same steps 2 to 5 are applied to them, and to the
-request as well as the answer.
-
-What to do if something gets through
-No method catches everything. Read samples.txt after a build. If you find a real name, address or private detail,
-note the example and tell the kit's maker, so the rule that missed it can be fixed and a test added.
+The rules are in kit\scrub.py. The tests in tests\test_scrub.py and tests\test_more_sources.py try every rule on
+made-up messages. No method catches everything: if you find a card number, password or Social Security number that
+got through, tell the kit's maker so the rule can be fixed and a test added.
