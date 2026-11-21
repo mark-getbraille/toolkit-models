@@ -161,6 +161,29 @@ GUIDES = [
          start=["https://www.nsf.gov/policies/pappg/24-1"],
          pages=r"^https://www\.nsf\.gov/policies/pappg/24-1/[a-z0-9-]+$",
          published="2024-05-20", version="PAPPG 24-1 (NSF 24-1), effective 20 May 2024", limit=30),
+    dict(WEB, name="govuk_writing_standards", title="Writing to GOV.UK standards: style guide and content design "
+         "(Government Digital Service)", subject="Writing for government (GOV.UK style guide and content design)",
+         group=GROUP, level="reference", country="United Kingdom",
+         publisher="Government Digital Service (GDS), UK Government", licence="OGL-UK-3.0", licence_url=OGL_UK_URL,
+         source="https://guidance.publishing.service.gov.uk/writing-to-gov-uk-standards/",
+         licence_page="https://guidance.publishing.service.gov.uk/writing-to-gov-uk-standards/",
+         licence_text=r"All content is available under the Open Government Licence v3\.0",
+         description="GOV.UK's content and publishing guidance on writing, every page: the A to Z style guide "
+                     "(abbreviations, capitals, dates, numbers, punctuation and hundreds of words), the technical "
+                     "style guide, how to use the style guides, writing guidelines (plain English, writing for the "
+                     "web, titles and summaries, accessible writing), planning and managing content, helping users "
+                     "prepare for change, and tools and resources.",
+         notice="Contains public sector information licensed under the Open Government Licence v3.0 (© Crown "
+                "copyright). It follows UK spelling and style: see the note on this book's welcome page.",
+         drop=DROP + [r'<a[^>]*href="#[^"]*"[^>]*>\s*Skip past section navigation\s*</a>'],
+         crawl=[("https://guidance.publishing.service.gov.uk/writing-to-gov-uk-standards/", 2)],
+         follow=r"^https://guidance\.publishing\.service\.gov\.uk/writing-to-gov-uk-standards/[a-z0-9-]+/$",
+         pages=r"^https://guidance\.publishing\.service\.gov\.uk/writing-to-gov-uk-standards/([a-z0-9-]+/)*$",
+         unit_rules=[(r"/style-guides/", "Style guides"), (r"/writing-guidelines/", "Writing guidelines"),
+                     (r"/plan-manage-content/", "Planning and managing content"),
+                     (r"/help-users-prepare-change/", "Helping users prepare for change"),
+                     (r"/find-tools-resources/", "Tools and resources"), (r".", "Writing to GOV.UK standards")],
+         version="GOV.UK publishing guidance as published", limit=120),
 ]
 
 
@@ -637,7 +660,11 @@ def build_writing(keys, out_dir, cache=None, date=None, limit=None):
 # ====================================================================== what was checked, and what was not built
 
 # Where a UK book's practice differs (sources.practice_note; put first, so it wins for these subjects only).
-PRACTICE_SUBJECTS = []
+PRACTICE_SUBJECTS = [
+    (r"gov\.uk style|content design|writing for government", "spelling (British: organise, colour, centre, "
+     "licence as a noun), punctuation and style (single quotation marks, no full stops in abbreviations, dates "
+     "written \"21 November 2026\"), and UK government terms and law"),
+]
 
 LICENCE_LINES = {
     "plainlanguage_gov_repository": "github.com/GSA/plainlanguage.gov LICENSE.md (read 2026-11-21, checked again at "
@@ -669,6 +696,10 @@ LICENCE_LINES = {
                              "Archive has no public-release line and is not used.)",
     "opm_handbooks": "www.opm.gov: works of the US government (17 U.S.C. 105). robots.txt disallows only searches, "
                      "logins and print pages (checked 2026-11-21).",
+    "govuk_writing_standards": "guidance.publishing.service.gov.uk footer (checked at every build): \"All content is "
+                               "available under the Open Government Licence v3.0, except where otherwise stated\", "
+                               "© Crown copyright. The site has no robots.txt (none to obey; no AI rules); "
+                               "www.gov.uk/guidance/style-guide and /guidance/content-design forward to it.",
 }
 
 NOT_INCLUDED = [

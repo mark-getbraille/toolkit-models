@@ -159,3 +159,11 @@ def test_public_release_line():
                   "Approved for public release: distribution is unlimited"):
         assert re.search(W.PUBLIC_RELEASE, words), words
     assert not re.search(W.PUBLIC_RELEASE, "Distribution authorized to U.S. Government agencies only")
+
+
+def test_uk_spelling_note():
+    uk = next(g for g in W.GUIDES if g["country"] == "United Kingdom")
+    note = sources.practice_note(uk["country"], uk["subject"], uk["title"])
+    assert note.startswith("UK source: spelling (British: organise, colour") and "single quotation marks" in note
+    assert not sources.practice_note("United States", uk["subject"])
+    assert sources.practice_note("United Kingdom", "Web accessibility").startswith("UK source: accessibility laws")
