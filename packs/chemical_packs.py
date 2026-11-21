@@ -494,10 +494,17 @@ def brand_rows(categories, rows):
     return []
 
 
+# A caption that is the upload form's leftovers, not a description ("Description NFPA 704 F4 Author ... Programs
+# ISIS/Draw", "Original file description is/was here").
+CAPTION_JUNK = re.compile(r"^\s*description\b|\bauthor\b|\bprograms?\b.*\b(draw|paint|inkscape|illustrator)\b|"
+                          r"original (file )?description|is/was here|\bown work\b|\bsource\s*:", re.I)
+
+
 def caption_row(text):
     """"Describe this picture." with the file's own English caption, when it is a real, respectful description
     (this is where label text appears, when the uploader wrote it)."""
-    text = "" if JUST_A_RECORD.search(text or "") or not in_english(text) else (text or "")
+    text = "" if JUST_A_RECORD.search(text or "") or CAPTION_JUNK.search(text or "") or not in_english(text) \
+        else (text or "")
     if text and not NOT_RESPECTFUL.search(text) and not FIRST_PERSON.search(text):
         return [{"question": DESCRIBE_Q, "answer": text}]
     return []
@@ -637,6 +644,51 @@ DOT_CLASSES = {
     "7": "hazard class 7, radioactive material", "8": "hazard class 8, corrosive substances",
     "9": "hazard class 9, miscellaneous dangerous goods (such as lithium batteries or dry ice)",
 }
+# A WHMIS 1988 symbol's class from the words of its title, when no class letter is written ("Dangerously Reactive").
+WHMIS_NAMES = [(r"\bcompressed gas", "A"), (r"\bflammable|\bcombustible", "B"), (r"\boxidi[sz]ing", "C"),
+               (r"\bbiohazard\w*|\binfectious", "D3"), (r"\bcorrosive", "E"), (r"\bdangerously reactive", "F")]
+RATING_Q = "What do the numbers in this hazard diamond say?"
+# The NFPA 704 ratings, by square: (name and colour, {number: meaning}).
+NFPA_SQUARES = {
+    "h": ("health (blue)", {"0": "no hazard beyond ordinary materials", "1": "it can cause irritation or minor injury",
+                            "2": "it can cause temporary harm or injury without quick treatment",
+                            "3": "it can cause serious or lasting injury", "4": "it can kill or badly injure on brief "
+                                                                                "exposure"}),
+    "f": ("flammability (red)", {"0": "it will not burn", "1": "it must be heated before it can catch fire",
+                                 "2": "it catches fire if moderately heated",
+                                 "3": "it catches fire at ordinary temperatures",
+                                 "4": "it catches fire very easily and burns fiercely"}),
+    "r": ("instability (yellow)", {"0": "it is stable", "1": "it can become unstable if heated",
+                                   "2": "it can change violently at high temperature or pressure",
+                                   "3": "it can explode with a strong shock or heat",
+                                   "4": "it can explode at ordinary temperatures"}),
+}
+NFPA_SPECIAL = {"w": "the white square shows W crossed out: it reacts dangerously with water",
+                "ox": "the white square shows OX: it is an oxidizer", "sa": "the white square shows SA: a gas that "
+                                                                           "can cause suffocation"}
+
+
+def nfpa_rating(title):
+    """What an NFPA 704 file's own name says of its ratings ("Nfpa_f4_none" -> the red flammability square shows 4),
+    or "" when the name gives none (a name like "NFPA 704" or "diamonds comparison"). Only the numbers and special
+    marks written in the name are said."""
+    m = re.match(r"^nfpa[ _-]?(704[ _-]?)?((?:[_ -]?(?:[hfr][0-4]|w|ox|sa|none|[hfrs]none))+)$", title.strip(), re.I)
+    if not m:
+        return ""
+    tokens = [x.lower() for x in re.findall(r"[hfr][0-4]|ox|sa|w(?![a-z])", m.group(2), re.I)]
+    parts = []
+    for tok in tokens:
+        if tok[0] in NFPA_SQUARES and tok[1:].isdigit():
+            name, meanings = NFPA_SQUARES[tok[0]]
+            parts.append(f"the {name} square shows {tok[1:]}: {meanings[tok[1:]]}")
+        elif tok in NFPA_SPECIAL:
+            parts.append(NFPA_SPECIAL[tok])
+    if not parts:
+        return ""
+    text = "; ".join(parts)
+    return text[0].upper() + text[1:] + "."
+
+
 # The GHS pictograms by number, as safety_signs says them (events_safety_packs.GHS).
 GHS_MEANINGS = {code[-1]: (code, meaning) for code, meaning in GHS.values()}
 NFPA = ("This is an NFPA 704 hazard diamond (\"fire diamond\"), used in the US on buildings and tanks that hold "
@@ -668,6 +720,9 @@ def symbol_rows(f, found_in, rules=None):
     two = bool(TWO_CLASSES.search(title))          # "Class A and B": two classes named, so no meaning is said
     if two:
         whmis = []
+    if not whmis and re.search(r"whmis|simdut", words, re.I):
+        named = {cls for pattern, cls in WHMIS_NAMES if re.search(pattern, title, re.I)}
+        whmis = sorted(named)
     if len(whmis) == 1 and whmis[0] in WHMIS_1988:
         rows.append({"question": SYMBOL_Q, "answer": f"This is the WHMIS 1988 symbol for {WHMIS_1988[whmis[0]]}"})
     dot = set(re.findall(r"\b(?:hazard |dot |un |division |hazmat )?class[ _-]?([1-9])(?:\.\d)?\b|\bdangclass[ _-]?"
@@ -687,6 +742,9 @@ def symbol_rows(f, found_in, rules=None):
                                                      f"pictograms are used on chemical labels, in red diamonds."})
     if re.search(r"\bNFPA[ _-]?704\b|fire diamond", words, re.I):
         rows.append({"question": SYMBOL_Q if not rows else SYMBOL_KIND_Q, "answer": NFPA})
+        rating = nfpa_rating(title)
+        if rating:
+            rows.append({"question": RATING_Q, "answer": rating})
     if re.search(r"\bWHMIS\b|\bSIMDUT\b", words, re.I):
         rows.append({"question": SYMBOL_KIND_Q, "answer": WHMIS_KIND})
     elif re.search(r"placard|hazmat|hazardous materials (label|sign)", words, re.I):

@@ -102,6 +102,9 @@ def test_caption_row():
     assert answers(rows)[c.DESCRIBE_Q] == "A plastic jug of bleach on a laundry room shelf."
     assert c.caption_row("I bought this at my local store.") == []
     assert c.caption_row("IMG1234 camera model Canon") == []
+    assert c.caption_row("Description NFPA 704 F4 S_none Author Borislav Mitev Programs ISIS/Draw 2.5 and MS Paint.") \
+        == []
+    assert c.caption_row("Original file description is/was here .") == []
 
 
 def test_symbols():
@@ -127,6 +130,16 @@ def test_symbols():
     assert rows[c.SYMBOL_Q].startswith("This is the GHS hazard pictogram GHS05: corrosive.")
     assert c.symbol_rows(made_up("File:GHS02 and GHS07 label.jpg", ["GHS pictograms"]), "GHS pictograms") == []
     assert c.SYMBOL_SKIP.search("GHS pictograms (Vector drawings)")
+    # NFPA ratings only from the numbers in the file's own name; WHMIS classes from the words of the name.
+    assert c.nfpa_rating("Nfpa_f4_none") == ("The flammability (red) square shows 4: it catches fire very easily and "
+                                             "burns fiercely.")
+    assert c.nfpa_rating("Nfpa_f0_w").endswith("it reacts dangerously with water.")
+    assert c.nfpa_rating("NFPA diamonds comparison") == "" and c.nfpa_rating("NFPA 704") == ""
+    rows = answers(c.symbol_rows(made_up("File:Nfpa_h2.svg", ["NFPA 704 images"]), "NFPA 704 images"))
+    assert "health (blue) square shows 2" in rows[c.RATING_Q] and "fire diamond" in rows[c.SYMBOL_Q]
+    rows = answers(c.symbol_rows(made_up("File:Dangerously Reactive 4585453038 .jpg", ["WHMIS hazard symbols"]),
+                                 "WHMIS hazard symbols"))
+    assert "Class F, dangerously reactive" in rows[c.SYMBOL_Q]
 
 
 def test_harm_and_nudity_leave_a_file_out():
