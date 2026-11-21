@@ -15,6 +15,10 @@ What is published, and what is not (the owner's copyright rule; this repository 
   - the full text of openly licensed instructions (Open Food Facts' and its sister databases' photos and fields,
     CC BY-SA; the Picture Describers volunteers' instructions, as licensed in their export), each with its credit;
   - NEVER the manuals themselves: the toolkit fetches each from its official address for the owner's own use.
+  - every entry's "originals" (entry_originals): each manual file or page, its text file, the product's page and its
+    thumbnail's source, with its rights and "may_download" (true only when the rights allow copying, such as a US
+    government work or an open licence, and the site's robots.txt allows programs; a maker's manual is always
+    false: the owner opens its link). The owner's Program Downloader downloads those marked true (see README).
 
 Sources, and why each may be used by a program:
   Open Food Facts, Open Beauty Facts, Open Products Facts   documented APIs for programs (search.openfoodfacts.org,
@@ -1472,7 +1476,7 @@ def build(key, out_dir, limit, fetch):
     if manual_entries:
         say(f"{key}: the files of {filled} Internet Archive manuals found")
     entries += manual_entries
-    return write(key, entries, out_dir, notes, fetch.requests if fetch else 0)
+    return write(key, entries, out_dir, notes, fetch.requests if fetch else 0, robots_for_originals(fetch))
 
 
 _EPA = {}            # the EPA data, read once per build and shared by the categories (chemical_labels.EpaData)
@@ -1512,11 +1516,99 @@ def chemical_entries(fetch, key, cat, limit):
     return out
 
 
-def write(key, entries, out_dir, notes=(), requests_made=0):
-    """Write manuals-<key>.json.gz and manifest-<key>.json; return the manifest."""
+# ------------------------------------------------------------------------------------------------ originals
+
+# Rights in words that allow copying the original as it is: public domain, US government works, CC0, any Creative
+# Commons licence (a non-commercial one for personal use only; a no-derivatives one allows unchanged copies), the
+# Open Government Licences, and Open Food Facts' ODbL and CC BY-SA.
+OPEN_RIGHTS = re.compile(r"public domain|government work|\bcc0\b|creativecommons\.org/(?:licenses|publicdomain)|"
+                         r"\bcc[ -]by\b|open government licen[cs]e|\bodbl\b", re.I)
+NON_COMMERCIAL = re.compile(r"\bnc\b|non-?commercial|by-nc", re.I)
+ORIGINAL_KINDS = {"pdf": "pdf", "txt": "txt", "jpg": "jpg", "jpeg": "jpg", "png": "png", "gif": "gif",
+                  "svg": "svg", "webp": "webp", "zip": "zip", "csv": "csv", "json": "json", "xml": "xml",
+                  "epub": "epub", "doc": "doc", "docx": "docx"}
+# Hosts whose terms forbid or limit downloads by programs even where robots.txt would allow them (with the reason).
+NO_AUTOMATED_DOWNLOAD = {}
+
+
+def original_kind(url, kind=""):
+    """The kind of an original: "pdf", "txt", "jpg" ... from its address, else "html" (a web page)."""
+    if kind == "pdf":
+        return "pdf"
+    ext = os.path.splitext(urllib.parse.urlsplit(url).path.lower())[1].lstrip(".")
+    return ORIGINAL_KINDS.get(ext, "html")
+
+
+def download_permission(url, rights, robots=None):
+    """(may_download, why) of one original: true only when its rights allow copying (OPEN_RIGHTS), the host's terms
+    do not forbid programs (NO_AUTOMATED_DOWNLOAD) and robots(url) is True (its robots.txt allows programs; None: not
+    checked). The owner can always open the link in a browser."""
+    host = (urllib.parse.urlsplit(url).hostname or "").lower()
+    if not OPEN_RIGHTS.search(rights or ""):
+        return False, f"Its rights ({rights or 'not stated'}) do not allow copying; open the link in a browser."
+    if host in NO_AUTOMATED_DOWNLOAD:
+        return False, NO_AUTOMATED_DOWNLOAD[host] + " Open the link in a browser."
+    allowed = robots(url) if robots is not None else None
+    if allowed is None:
+        return False, ("The site's robots.txt was not checked when this index was made; open the link in a browser "
+                       "(the next build checks it).")
+    if not allowed:
+        return False, f"The robots.txt of {host} does not allow programs to download it; open the link in a browser."
+    personal = " for personal use only" if NON_COMMERCIAL.search(rights) else ""
+    return True, f"Its rights ({rights}) allow copying{personal}, and the robots.txt of {host} allows programs."
+
+
+def entry_originals(entry, robots=None):
+    """The "originals" of one index entry: each manual's file (or page) and its text file, the product's page and its
+    thumbnail's source, each {url, kind, size, sha256 (""), licence, may_download, why} (download_permission);
+    an address is listed once."""
+    candidates = []
+    for m in entry.get("manuals") or []:
+        rights = m.get("rights", "")
+        url = m.get("url") or m.get("page") or ""
+        candidates.append((url, original_kind(url, m.get("kind", "")), int(m.get("size") or 0), rights))
+        if m.get("text_url"):
+            candidates.append((m["text_url"], "txt", 0, rights))
+    page_rights = entry.get("licence") or ("CC0 (Wikidata)" if "CC0" in str(entry.get("source", "")) else "") or \
+        next((m.get("rights", "") for m in entry.get("manuals") or []), "")
+    if entry.get("page"):
+        candidates.append((entry["page"], original_kind(entry["page"]), 0, page_rights))
+    thumb = entry.get("thumb") or {}
+    if str(thumb.get("source", "")).startswith("http"):
+        candidates.append((thumb["source"], original_kind(thumb["source"]), 0, thumb.get("licence", "")))
+    out, seen = [], set()
+    for url, kind, size, rights in candidates:
+        if not url.startswith(("http://", "https://")) or url in seen:
+            continue
+        seen.add(url)
+        may, why = download_permission(url, rights, robots)
+        out.append({"url": url, "kind": kind, "size": size, "sha256": "", "licence": rights or "not stated",
+                    "may_download": may, "why": why})
+    return out
+
+
+def robots_for_originals(fetch):
+    """robots(url) for entry_originals: True or False from the site's robots.txt (robots_allows), None when it
+    cannot be checked now (no fetcher, out of time, an error)."""
+    def robots(url):
+        if fetch is None or out_of_time():
+            return None
+        try:
+            return bool(robots_allows(fetch, url))
+        except Exception:  # noqa: BLE001 - not checked: said in "why"
+            return None
+    return robots
+
+
+def write(key, entries, out_dir, notes=(), requests_made=0, robots=None):
+    """Write manuals-<key>.json.gz and manifest-<key>.json; return the manifest. Every entry gets its "originals"
+    (entry_originals; robots(url) answers for robots.txt, None: not checked, so may_download is false)."""
     cat = C.CATEGORIES[key]
     built = time.strftime("%Y-%m-%d")
     entries = without_copy_sites(entries)      # never an Internet Archive copy of a manual-copying site
+    for e in entries:
+        if "originals" not in e:
+            e["originals"] = entry_originals(e, robots)
     index = {"key": key, "name": cat["name"], "description": cat["description"], "kind": cat["kind"],
              "licence": cat["licence"], "built": built,
              "credit": "Open Food Facts, Open Beauty Facts and Open Products Facts contributors; the Internet "
@@ -1559,6 +1651,8 @@ def write(key, entries, out_dir, notes=(), requests_made=0):
                 "thumbnails": sum(1 for e in entries if e.get("thumb")),
                 "file": name, "size": len(raw), "sha256": hashlib.sha256(raw).hexdigest(),
                 "manual_count": len(manuals), "manuals_size": sum(int(m.get("size") or 0) for m in manuals),
+                "original_count": sum(len(e["originals"]) for e in entries),
+                "downloadable_count": sum(1 for e in entries for o in e["originals"] if o["may_download"]),
                 "built": built, "requests": requests_made, "files": [name], "content_sha256": content}
     with open(os.path.join(out_dir, f"manifest-{key}.json"), "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=1)
