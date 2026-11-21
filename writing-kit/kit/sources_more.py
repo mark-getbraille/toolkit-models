@@ -116,6 +116,16 @@ def article_text(page):
     return page_title(page), paragraphs_of(region or page)
 
 
+def trim_menu(text):
+    """text without the menu words at its start: short lines (fewer than eight words, such as "Español", "Archive"
+    or "Search") are dropped until the first real sentence."""
+    text = re.sub(r"(?m)^(?:Energy\.gov|Español|Share|Print)\s*\n?", "", text)       # site names and buttons
+    lines = text.split("\n")
+    while lines and words(lines[0]) < 8:
+        lines.pop(0)
+    return "\n".join(lines).strip()
+
+
 def feed_entries(xml):
     """[(title, link, full content as HTML or "")] from an RSS feed."""
     out = []
@@ -192,8 +202,8 @@ def read_govblogs(fetcher, say=print, per_site=40, feed_pages=4, fda_pages=12, *
             except urllib.error.HTTPError:
                 break
             for title, _, content in feed_entries(xml):
-                text = html_text(content)
-                if words(text) < 120 or got >= per_site:
+                text = trim_menu(html_text(content))
+                if words(text) < 120 or got >= per_site or title.startswith("APOD"):
                     continue
                 got += 1
                 yield text_record(group, style, "blog post", "blog post", "friendly and plain", "the public",
@@ -208,7 +218,7 @@ def read_govblogs(fetcher, say=print, per_site=40, feed_pages=4, fda_pages=12, *
             _, text = article_text(fetcher.get(link.replace("http://", "https://")).decode("utf-8", "replace"))
         except urllib.error.HTTPError:
             continue
-        text = re.split(r"\n\n(?:Back to Top|Related Information|Content current as of)", text)[0]
+        text = trim_menu(re.split(r"\n\n(?:Back to Top|Related Information|Content current as of)", text)[0])
         if words(text) >= 120:
             yield text_record("FDA", "plain_language_gov", "consumer article", "article", "plain and helpful",
                               "the public", f'Write a plain-language consumer article for the US Food and Drug '
@@ -228,6 +238,7 @@ def read_govblogs(fetcher, say=print, per_site=40, feed_pages=4, fda_pages=12, *
                 title, text = article_text(fetcher.get(link).decode("utf-8", "replace"))
             except urllib.error.HTTPError:
                 continue
+            text = trim_menu(text)
             if words(text) < 150 or not title:
                 continue
             got += 1
