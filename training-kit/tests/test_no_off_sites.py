@@ -14,13 +14,16 @@ It checks that:
     docstrings may name them, to explain why they are not used), except the ones shown to people and never fetched:
     a site's home page and terms page and a product's page ("https://world.openfoodfacts.org/product/{code}") in a
     credit line. A bare host name in a sentence ("search.openfoodfacts.org disallows every robot") is not an address.
-    Test files (test_*.py) are not looked at: they hold made-up records. The manuals folder is not looked at either:
-    manuals/build_manuals.py has its own Open Food Facts reader, outside the packs and the kit (the owner was told it
-    reads the same blocked hosts);
+    Test files (test_*.py) are not looked at: they hold made-up records. The manuals folder is looked at too:
+    manuals/build_manuals.py no longer reads Open Food Facts (the dump has no directions field, so its two
+    instruction collections say "not built" for it);
   - no workflow, command or shell script has an address on those sites;
   - the kit's reader builds photo addresses on AWS only, keeps the photo licence (share-alike) and the data's ODbL
     credit, and the code kept for the blocked sites stops before it reads anything;
   - the Open Beauty, Products and Pet Food Facts entries are not offered by the kit, and say why.
+
+  - the manuals builder has no Open Food Facts reader left, and its two instruction collections say why that part
+    is not built.
 
 Run it from the training-kit folder:   xvfb-run -a python3 -m pytest -q tests/test_no_off_sites.py
 """
@@ -47,7 +50,7 @@ ADDRESS = re.compile(r"(https?://)?(?:[a-z0-9-]+\.)*open(?:food|beauty|products|
 SHOWN = re.compile(r"^(https://)?world\.open(food|beauty|products|petfood)facts\.org(/terms-of-use|/product/(\{code\})?)?/?$",
                    re.I)
 # Folders not looked at (see the module docstring).
-SKIP_DIRS = {".git", "__pycache__", "node_modules", "manuals"}
+SKIP_DIRS = {".git", "__pycache__", "node_modules"}
 
 
 def python_files():
@@ -224,3 +227,21 @@ def test_blocked_sites_are_not_built():
         us_sources.us_site_items("beauty", 5)
     with pytest.raises(RuntimeError, match="blocks AI crawlers"):
         canada_sources.ca_site_items("products", 5)
+
+
+def test_the_manuals_builder_reads_no_off_site():
+    """manuals/: no Python file has a fetchable Open ... Facts address (python_files covers the folder), the builder
+    has no Open Food Facts reader or pause left, and frozen_meals and product_directions say "not built" and why."""
+    manuals = os.path.join(REPO, "manuals")
+    assert any(p.startswith(manuals + os.sep) for p in python_files())
+    sys.path.insert(0, manuals)
+    import build_manuals
+    import categories
+    assert not [h for h in build_manuals.GAPS if re.search(r"open(food|beauty|products|petfood)facts", h)]
+    for gone in ("off_products", "off_entry", "off_image_base", "OFF_SITES"):
+        assert not hasattr(build_manuals, gone), gone
+    assert not [k for k, c in categories.CATEGORIES.items() if c.get("off")]
+    for key in ("frozen_meals", "product_directions"):
+        notes = build_manuals.off_notes(categories.CATEGORIES[key])
+        assert notes and all(": not built: the source blocks AI crawlers" in n for n in notes), key
+    assert "Open Food Facts" not in categories.CATEGORIES["frozen_meals"]["licence"]

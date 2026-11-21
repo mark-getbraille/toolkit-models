@@ -1,7 +1,8 @@
 """A copy of the Digital Accessibility Toolkit's app/toolkit/manuals/instructions.py (keep the two alike): plain-text
 instructions, the shared record format (format 1, also the Picture Describers website's export) and tidying OCR text
-into numbered steps. The builder (build_manuals.py) uses extract() on Open Food Facts' texts and to_record() to
-write the index; the toolkit reads the same records.
+into numbered steps. The builder (build_manuals.py) once used extract() on Open Food Facts' texts; it no longer
+reads Open Food Facts (its websites block AI crawlers), and its collections hold the volunteers' records in this
+format; the toolkit reads the same records.
 
 The toolkit's own description follows.
 

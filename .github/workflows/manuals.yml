@@ -61,7 +61,7 @@ jobs:
     timeout-minutes: 350
     strategy:
       fail-fast: false
-      # Few at a time: Open Food Facts allows 10 searches a minute from one address, and the categories share sites.
+      # Few at a time: the categories share sites (the Internet Archive, Wikidata), each asked one request at a time.
       max-parallel: 3
       matrix:
         key: ${{ fromJSON(needs.plan.outputs.keys) }}
@@ -76,12 +76,9 @@ jobs:
           python-version: "3.12"
       - name: Install what the builder needs
         run: |
+          # No pyarrow: the builder no longer reads Open Food Facts (its websites block AI crawlers and its open
+          # dump on Hugging Face has no directions field; manuals/build_manuals.py OFF_NOT_BUILT).
           python -m pip install requests pillow
-          case "${{ matrix.key }}" in
-            # Back-of-pack photos that Open Food Facts has no OCR text for are read with tesseract.
-            frozen_meals|product_directions)
-              sudo apt-get update && sudo apt-get install -y tesseract-ocr tesseract-ocr-eng ;;
-          esac
       - name: Keep the answers between runs
         uses: actions/cache@v4
         with:

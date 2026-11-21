@@ -3,10 +3,10 @@ from (manuals/build_manuals.py builds them; the Digital Accessibility Toolkit do
 window, category "Manual collections").
 
 Two kinds:
-  instructions  plain-text instructions published IN FULL, because their text is openly licensed: cooking
-                instructions read from Open Food Facts' back-of-pack photos and its "preparation" field (CC BY-SA),
-                and the instructions written and checked by the Picture Describers website's volunteers (their
-                licence as given, CC BY-SA 4.0). Each record keeps its credit.
+  instructions  plain-text instructions published IN FULL, because their text is openly licensed: the
+                instructions written and checked by the Picture Describers website's volunteers (their licence as
+                given, CC BY-SA 4.0). Each record keeps its credit. (Open Food Facts' back-of-pack photos were read
+                before; no longer: see off_blocked.)
   manuals       an INDEX only: products (brand, model, name, barcodes, FCC IDs) with the addresses of their manuals
                 at official sources whose terms allow automated use (the Internet Archive's documented search
                 interface; Wikidata's "user manual URL" property, P2078, which points to makers' own sites; openFDA's
@@ -15,8 +15,9 @@ Two kinds:
                 Thumbnails only when their licence allows passing them on (Wikimedia Commons CC0, CC BY, CC BY-SA).
 
 Each category: name, description, kind, licence (of the index), and its sources:
-  off         Open Food Facts (or a sister database) searches: [(database, query)] for search.openfoodfacts.org /
-              the database's own v2 search
+  off_blocked the Open Food Facts databases this collection took products from before 2026-11-21 and no longer
+              reads (their websites block AI crawlers, and the open dump has no directions field): the index's
+              notes say "not built" and why (build_manuals.OFF_NOT_BUILT)
   ia          words searched in the titles of the Internet Archive's manual collections
   wikidata    True: the product models on Wikidata that have a user manual URL (P2078) and whose kind ("instance
               of" label) has one of the category's words (ia, plus WIKIDATA_WORDS)
@@ -33,7 +34,6 @@ Each category: name, description, kind, licence (of the index), and its sources:
   guidance    general guidance pages linked from the collection (title, address, who publishes it)
 """
 
-OFF_US = 'countries_tags:"en:united-states"'
 # More words for Wikidata's kinds ("instance of" labels such as "laptop model", "car model").
 WIKIDATA_WORDS = {"personal_electronics": ["laptop", "computer", "keyboard", "monitor", "mobile phone", "camera",
                                            "smartwatch", "tablet computer", "headphone"],
@@ -402,19 +402,15 @@ CATEGORIES = {
         name="Frozen and microwave meals (cooking instructions)",
         description="Cooking instructions of frozen pizzas, frozen meals and microwave meals sold in the United "
                     "States, as plain text in numbered steps, found by barcode or photo.",
-        kind="instructions", licence="CC BY-SA 4.0 (Open Food Facts contributors; Picture Describers volunteers)",
-        off=[("food", f'categories_tags:"{tag}" AND {OFF_US}') for tag in
-             ("en:frozen-pizzas", "en:frozen-ready-made-meals", "en:microwave-meals", "en:frozen-meals",
-              "en:frozen-foods", "en:pizzas", "en:instant-noodles", "en:frozen-appetizers", "en:pot-pies",
-              "en:frozen-entrees", "en:frozen-breakfasts", "en:frozen-vegetables")],
+        kind="instructions", licence="CC BY-SA 4.0 (Picture Describers volunteers)",
+        off_blocked=("Open Food Facts",),
         volunteers=("cooking",)),
     "product_directions": dict(
         name="Product directions (beauty, cleaning and household)",
         description="Directions for use and warnings printed on beauty, cleaning and household products, as plain "
                     "text, found by barcode or photo.",
-        kind="instructions", licence="CC BY-SA 4.0 (Open Beauty Facts and Open Products Facts contributors; "
-                                     "Picture Describers volunteers)",
-        off=[("beauty", "countries_tags_en=united-states"), ("products", "countries_tags_en=united-states")],
+        kind="instructions", licence="CC BY-SA 4.0 (Picture Describers volunteers)",
+        off_blocked=("Open Beauty Facts", "Open Products Facts"),
         volunteers=("directions", "warnings", "storage")),
     "small_kitchen": dict(
         name="Small kitchen appliances (manuals)",

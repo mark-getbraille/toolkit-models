@@ -10,10 +10,10 @@ What is published, and what is not (the owner's copyright rule; this repository 
   - facts and links: brand, model, product name, barcodes, FCC IDs, Canadian certification numbers ("ic_ids", from
     Internet Archive items whose title or description prints "IC: 4492A-XYZ123"; empty for every other source,
     EnerGuide included, which prints none), the official addresses of manuals and their
-    rights, and small thumbnails only when their licence allows passing them on (Open Food Facts photos, CC BY-SA;
-    Wikimedia Commons files under CC0, public domain, CC BY or CC BY-SA);
-  - the full text of openly licensed instructions (Open Food Facts' and its sister databases' photos and fields,
-    CC BY-SA; the Picture Describers volunteers' instructions, as licensed in their export), each with its credit;
+    rights, and small thumbnails only when their licence allows passing them on (Wikimedia Commons files under CC0,
+    public domain, CC BY or CC BY-SA; volunteer photos under an open licence);
+  - the full text of openly licensed instructions (the Picture Describers volunteers' instructions, as licensed in
+    their export), each with its credit;
   - NEVER the manuals themselves: the toolkit fetches each from its official address for the owner's own use.
   - every entry's "originals" (entry_originals): each manual file or page, its text file, the product's page and its
     thumbnail's source, with its rights and "may_download" (true only when the rights allow copying, such as a US
@@ -21,10 +21,6 @@ What is published, and what is not (the owner's copyright rule; this repository 
     false: the owner opens its link). The owner's Program Downloader downloads those marked true (see README).
 
 Sources, and why each may be used by a program:
-  Open Food Facts, Open Beauty Facts, Open Products Facts   documented APIs for programs (search.openfoodfacts.org,
-      /api/v2/product, /api/v2/search), the OCR text they publish for every photo (images.*.org/.../<n>.json) and
-      the photos; data ODbL, photos CC BY-SA 3.0; they ask for a User-Agent naming the program, at most 100 product
-      reads and 10 searches a minute.
   The Internet Archive   advancedsearch.php and metadata/ are its documented interfaces; robots.txt allows them;
       its terms: scholarship and research, not infringing copyright. Only the items' facts and addresses are kept.
   Wikidata (query.wikidata.org) and Wikimedia Commons (its API)   CC0 data; Commons files keep their own licence,
@@ -90,6 +86,10 @@ Sources, and why each may be used by a program:
       decision); other Archive items (scans people uploaded, makers' manuals) stay, each with its rights. The FCC's
       equipment pages
       (its Akamai protection refuses programs from cloud machines; the toolkit reads them on the owner's computer).
+      Open Food Facts, Open Beauty Facts and Open Products Facts (not read since 2026-11-21): their websites'
+      robots.txt shut out AI crawlers by name and their search site every robot, and the open dump of Open Food
+      Facts on Hugging Face has no directions field; Products Facts has no dump (OFF_NOT_BUILT says it in the
+      indexes of frozen_meals and product_directions).
 
 Politeness: one request at a time, a pause for each site (GAPS), the builder's User-Agent, answers kept in a cache
 folder (the workflow keeps it between runs), up to four tries when a server is busy (429, 5xx). Time: the workflow
@@ -107,10 +107,7 @@ import io
 import json
 import os
 import re
-import shutil
-import subprocess
 import sys
-import tempfile
 import time
 import urllib.parse
 
@@ -118,13 +115,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import categories as C  # noqa: E402
 import chemical_labels as L  # noqa: E402
-import instructions as I  # noqa: E402
 
 USER_AGENT = ("DigitalAccessibilityToolkit-ManualsBuilder/1.0 (github.com/mark-getbraille/toolkit-models; "
               "one request at a time)")
-GAPS = {"search.openfoodfacts.org": 6.5, "world.openfoodfacts.org": 0.7, "world.openbeautyfacts.org": 6.5,
-        "world.openproductsfacts.org": 6.5, "images.openfoodfacts.org": 0.2, "images.openbeautyfacts.org": 0.2,
-        "images.openproductsfacts.org": 0.2, "static.openfoodfacts.org": 0.2, "archive.org": 1.0,
+GAPS = {"archive.org": 1.0,
         "query.wikidata.org": 2.0, "commons.wikimedia.org": 0.5, "upload.wikimedia.org": 0.2,
         "api.fda.gov": 0.5, "describe.getbraille.com": 1.0, "data.energystar.gov": 1.0,
         "open.canada.ca": 1.0, "natural-resources.canada.ca": 1.0, "www.nrcan.gc.ca": 1.0,
@@ -136,11 +130,6 @@ TIMEOUT = 40
 STARTED = time.time()
 TIME_LIMIT = float(os.environ.get("MANUALS_TIME_LIMIT_MINUTES", "0") or 0) * 60
 LISTING_SHARE = 0.5
-OFF_SITES = {"food": "openfoodfacts", "beauty": "openbeautyfacts", "products": "openproductsfacts"}
-OFF_NAMES = {"food": "Open Food Facts", "beauty": "Open Beauty Facts", "products": "Open Products Facts"}
-OFF_IMAGE_LICENCE = "CC BY-SA 3.0"
-MAX_RAW_IMAGES = 12          # photos of one product whose OCR text is read (the newest first)
-MAX_TESSERACT = 2            # photos of one product read with tesseract when the site has no OCR text
 THUMB_SIDE = 128
 OPEN_THUMB_LICENCES = re.compile(r"^(cc0|public domain|pd|cc[ -]by(?:-sa)?(?:[ -][\d.]+)?)", re.I)
 DESCRIBE_EXPORT = "https://describe.getbraille.com/export/instructions.json"
@@ -304,166 +293,32 @@ def clean_title(title):
 
 # --------------------------------------------------------------------------------- Open Food Facts and family
 
-def off_image_base(code, site):
-    """The folder of a product's photos on the database's image server."""
-    code = re.sub(r"\D", "", str(code))
-    if len(code) > 8:
-        code = code.zfill(13)
-        folder = f"{code[:3]}/{code[3:6]}/{code[6:9]}/{code[9:]}"
-    else:
-        folder = code
-    return f"https://images.{site}.org/images/products/{folder}"
+# Why nothing here reads Open Food Facts any more (changed 2026-11-21): the Open Food Facts family of websites
+# (world.openfoodfacts.org and its search, static and image hosts, Open Beauty Facts and Open Products Facts) shut out
+# AI crawlers by name in their robots.txt (GPTBot, anthropic-ai, ClaudeBot), and the search site shuts out every
+# robot. The owner's rule is that such blocks are obeyed. Open Food Facts publishes its database for bulk reuse on
+# Hugging Face (openfoodfacts/product-database, ODbL; food.parquet and beauty.parquet; the training kit reads it in
+# training-kit/kit/off_dump.py), but that dataset has no preparation, directions or instructions field (checked
+# 2026-11-21: its columns are names, brands, ingredients, nutrition, categories, photos and the like), and the
+# directions were read before from the blocked sites' back-of-pack photos. Products Facts has no dump at all. So the
+# Open Food Facts part of the two instruction collections (frozen_meals, product_directions: categories "off_blocked")
+# is not built, and each of their indexes says why in its notes; their volunteer records are still built.
+
+OFF_NOT_BUILT = {
+    "Open Food Facts": "not built: the source blocks AI crawlers (the robots.txt of its websites shuts out GPTBot, "
+                       "anthropic-ai and ClaudeBot), and its open product database on Hugging Face "
+                       "(openfoodfacts/product-database, ODbL) has no preparation or directions field",
+    "Open Beauty Facts": "not built: the source blocks AI crawlers (the robots.txt of its websites shuts out GPTBot, "
+                         "anthropic-ai and ClaudeBot), and its open product database on Hugging Face "
+                         "(openfoodfacts/product-database, beauty.parquet, ODbL) has no directions field",
+    "Open Products Facts": "not built: the source blocks AI crawlers (the robots.txt of its websites shuts out "
+                           "GPTBot, anthropic-ai and ClaudeBot), and it publishes no open dump",
+}
 
 
-def off_products(fetch, db, query, limit):
-    """Product codes of one search (search.openfoodfacts.org for food; the database's v2 search for the others),
-    at most limit."""
-    codes, page = [], 1
-    while len(codes) < limit and not listing_out_of_time():
-        if db == "food":
-            url = "https://search.openfoodfacts.org/search?" + urllib.parse.urlencode(
-                {"q": query, "page_size": 100, "page": page, "fields": "code"})
-            answer = fetch.json(url)
-            hits = answer.get("hits") or []
-            pages = int(answer.get("page_count") or 1)
-        else:
-            url = f"https://world.{OFF_SITES[db]}.org/api/v2/search?{query}&" + urllib.parse.urlencode(
-                {"fields": "code", "page_size": 100, "page": page})
-            answer = fetch.json(url)
-            hits = answer.get("products") or []
-            pages = int((answer.get("count") or 0) // 100 + 1)
-        codes += [str(h.get("code")) for h in hits if h.get("code")]
-        if page >= pages or not hits:
-            break
-        page += 1
-    return codes[:limit]
-
-
-def ocr_blocks(answer):
-    """The text of each block of an OCR answer (Google Cloud Vision's fullTextAnnotation: pages, blocks,
-    paragraphs, words, symbols), one paragraph a line. A block is one region of the package (a column, a panel),
-    so instructions are not mixed with the nutrition table beside them, as the answer's whole text is."""
-    blocks = []
-    for r in (answer or {}).get("responses") or []:
-        for page in (r.get("fullTextAnnotation") or {}).get("pages") or []:
-            for block in page.get("blocks") or []:
-                lines = []
-                for para in block.get("paragraphs") or []:
-                    words = ["".join(s.get("text", "") for s in w.get("symbols") or []) for w in para.get("words") or []]
-                    line = " ".join(w for w in words if w)
-                    line = re.sub(r"\s+([.,:;!?%)])", r"\1", line)
-                    line = re.sub(r"([(])\s+", r"\1", line)
-                    if line:
-                        lines.append(line)
-                if lines:
-                    blocks.append("\n".join(lines))
-    return blocks
-
-
-def instruction_text(blocks):
-    """The blocks that hold instructions, in order: each block that reads like instructions (instructions.looks_like)
-    and the blocks right after it that do too or that start a method (Microwave, Conventional oven ...)."""
-    keep = []
-    for i, b in enumerate(blocks):
-        if I.looks_like(b) or I.START.search(b[:60]) and i + 1 < len(blocks) and I.looks_like(blocks[i + 1]):
-            if not I.NOISE.search(b[:40]):
-                keep.append(b)
-    return "\n".join(keep)
-
-
-def ocr_text_of(fetch, base, key):
-    """The instruction blocks of the OCR text the database published for one photo (<base>/<key>.json, Google
-    Cloud Vision's answer), or ""."""
-    try:
-        answer = fetch.json(f"{base}/{key}.json")
-    except (RuntimeError, ValueError):
-        return ""
-    return instruction_text(ocr_blocks(answer))
-
-
-def tesseract_text(fetch, url):
-    """The text of a photo read with tesseract on this machine ("" when tesseract is not installed)."""
-    if not shutil.which("tesseract"):
-        return ""
-    try:
-        data = fetch.raw(url, cache=False, max_bytes=8_000_000)
-    except (RuntimeError, OutOfTime):
-        return ""
-    with tempfile.TemporaryDirectory() as tmp:
-        path = os.path.join(tmp, "photo.jpg")
-        with open(path, "wb") as f:
-            f.write(data)
-        try:
-            done = subprocess.run(["tesseract", path, "stdout", "-l", "eng", "--psm", "3"], capture_output=True,
-                                  text=True, timeout=120)
-            return done.stdout
-        except (OSError, subprocess.SubprocessError):
-            return ""
-
-
-def score(ins):
-    """How complete extracted instructions are: their steps, more for a temperature or a time in them."""
-    steps = [st for m in ins.methods for st in m.steps]
-    return len(steps) + sum(2 for m in ins.methods if m.temperature or m.time) + len(ins.safety) * 0.5
-
-
-def off_entry(fetch, db, code):
-    """The index entry of one product (with its instructions when its texts have any), or None."""
-    site = OFF_SITES[db]
-    fields = "code,product_name,product_name_en,brands,quantity,categories_tags,preparation,preparation_en,images," \
-             "image_front_thumb_url,image_front_small_url,lang"
-    answer = fetch.json(f"https://world.{site}.org/api/v2/product/{code}?fields={fields}")
-    p = answer.get("product") if isinstance(answer, dict) else None
-    if not isinstance(p, dict):
-        return None
-    name = str(p.get("product_name_en") or p.get("product_name") or "").strip()
-    brand = str(p.get("brands") or "").split(",")[0].strip()
-    if not name and not brand:
-        return None
-    source = OFF_NAMES[db]
-    page = f"https://world.{site}.org/product/{code}"
-    common = dict(barcode=code, product=name, brand=brand, source=source, source_url=page,
-                  licence="CC BY-SA 4.0" if db == "food" else "CC BY-SA 4.0",
-                  credit=f"{source} contributors")
-    records = []
-    prep = p.get("preparation_en") or p.get("preparation")
-    if prep:
-        found = I.extract(prep, name, brand, code, source, common["licence"], common["credit"], page)
-        if found is not None:
-            rec = I.to_record(found)
-            rec["from"] = "preparation"
-            records.append(rec)
-    if not records:
-        base = off_image_base(code, site)
-        raw = sorted((k for k in (p.get("images") or {}) if str(k).isdigit()), key=int, reverse=True)
-        tried_tesseract, best = 0, None
-        for key in raw[:MAX_RAW_IMAGES]:
-            text = ocr_text_of(fetch, base, key)
-            if not text and tried_tesseract < MAX_TESSERACT:
-                tried_tesseract += 1
-                text = tesseract_text(fetch, f"{base}/{key}.jpg")
-            found = I.extract(text, name, brand, code, source, common["licence"], common["credit"],
-                              f"{base}/{key}.jpg") if text else None
-            if found is not None and (best is None or score(found) > score(best[0])):
-                best = (found, key)       # several photos may show the instructions: the most complete wins
-        if best is not None:
-            rec = I.to_record(best[0])
-            rec.update({"from": "photo", "image_url": f"{base}/{best[1]}.jpg", "image_licence": OFF_IMAGE_LICENCE})
-            records.append(rec)
-    entry = {"id": f"{db}-{code}", "brand": brand, "name": name, "quantity": str(p.get("quantity") or ""),
-             "category": ", ".join(t.split(":", 1)[-1].replace("-", " ") for t in (p.get("categories_tags") or [])[-3:]),
-             "barcodes": [code], "instructions": records, "page": page,
-             "source": source, "licence": "ODbL (facts); CC BY-SA (texts and photos)"}
-    thumb_url = p.get("image_front_thumb_url") or p.get("image_front_small_url")
-    if thumb_url:
-        try:
-            data = thumbnail(fetch.raw(thumb_url))
-            if data:
-                entry["thumb"] = {"data": data, "licence": OFF_IMAGE_LICENCE, "credit": f"{source} contributors",
-                                  "source": thumb_url}
-        except (RuntimeError, OutOfTime):
-            pass
-    return entry
+def off_notes(cat):
+    """The notes said in a category's index for the Open Food Facts databases it no longer reads ("off_blocked")."""
+    return [f"{name}: {OFF_NOT_BUILT[name]}." for name in cat.get("off_blocked") or ()]
 
 
 # ------------------------------------------------------------------------------- the Picture Describers export
@@ -1373,34 +1228,10 @@ def build(key, out_dir, limit, fetch):
     """Build the category key: its entries, then its index file and manifest. Returns the manifest."""
     cat = C.CATEGORIES[key]
     entries, notes = [], []
-    if cat.get("off"):
-        per_query = max(1, limit // len(cat["off"]))
-        seen = set()
-        for db, query in cat["off"]:
-            if listing_out_of_time():
-                notes.append("Listing stopped at half the time limit.")
-                break
-            try:
-                codes = off_products(fetch, db, query, per_query)
-            except (RuntimeError, OutOfTime, ValueError) as e:
-                notes.append(f"{OFF_NAMES[db]} search {query!r} failed: {e}")
-                continue
-            for code in codes:
-                if code in seen:
-                    continue
-                seen.add(code)
-                try:
-                    e = off_entry(fetch, db, code)
-                except OutOfTime:
-                    break
-                except (RuntimeError, ValueError) as err:
-                    notes.append(f"{code}: {err}")
-                    continue
-                if e is not None and (e.get("instructions") or e.get("thumb")):
-                    entries.append(e)
-            say(f"{key}: {len(entries)} products after {query}")
-        if cat.get("volunteers"):
-            add_volunteers(entries, volunteer_records(fetch, cat["volunteers"]), fetch)
+    if cat.get("off_blocked"):
+        notes += off_notes(cat)
+    if cat.get("volunteers"):
+        add_volunteers(entries, volunteer_records(fetch, cat["volunteers"]), fetch)
         entries = [e for e in entries if e.get("instructions")]
     manual_entries = []
     if cat.get("ia"):
@@ -1673,8 +1504,7 @@ def write(key, entries, out_dir, notes=(), requests_made=0, robots=None):
             e["originals"] = entry_originals(e, robots)
     index = {"key": key, "name": cat["name"], "description": cat["description"], "kind": cat["kind"],
              "licence": cat["licence"], "built": built,
-             "credit": "Open Food Facts, Open Beauty Facts and Open Products Facts contributors; the Internet "
-                       "Archive; Wikidata; Wikimedia Commons authors; the US FDA; Picture Describers volunteers"
+             "credit": "The Internet Archive; Wikidata; Wikimedia Commons authors; the US FDA; Picture Describers volunteers"
                        + ("; Natural Resources Canada (EnerGuide): contains information licensed under the Open "
                           "Government Licence - Canada" if cat.get("energuide") else "")
                        + ("; the US EPA (Pesticide Product Information System and Label System, public domain)"
