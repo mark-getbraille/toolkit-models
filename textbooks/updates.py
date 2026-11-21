@@ -151,6 +151,8 @@ def pub_sign(key):
         return _sha(*sorted(found))
     if driver in ("europepmc", "elife"):
         return datetime.date.today().strftime("%Y-%m")          # a monthly refresh is enough for these lists
+    if driver in getattr(P, "EXTRA_SIGNS", {}):                 # sources added by directory_pubs.py
+        return P.EXTRA_SIGNS[driver](spec, piece)
     return ""
 
 
@@ -182,6 +184,9 @@ def fingerprint(key):
         if kind == "cook":
             import cookbooks                     # here, not at the top: cookbooks imports the builder
             return cookbooks.sign(key)
+        if kind == "dir":
+            import directory_sources             # here, not at the top: directory_sources imports the builder
+            return directory_sources.sign(key)
         if kind == "med":
             import medications                   # here, not at the top: medications imports the builder
             return medications.sign(key)
