@@ -7,7 +7,7 @@ It checks that:
     for; only a photo whose OWN licence is open is used;
   - sex and age are said only when the record states them ("a doe", "a fawn", "a caterpillar"), never guessed;
   - venomous and dangerous animals get their safety note, and signs get their own sentence;
-  - English names come from ITIS first, then the name most checklists agree on;
+  - English names: the preferred name most checklists give, then ITIS, then the commonest;
   - the species are visited commonest first, with priority species every third place, and caps shrink together;
   - a whole wild pack runs on a made-up GBIF (the photos are not fetched);
   - Commons breed categories are matched to the wanted breeds by name; domestic rows mark children but not the young
@@ -118,7 +118,7 @@ def test_safety_notes_and_signs():
 
 
 def test_english_names():
-    """ITIS first; else the name most checklists agree on; diseases are not names."""
+    """The preferred name most checklists give; else ITIS; else the commonest; diseases are not names."""
     itis = n.ITIS + " (ITIS)"
     assert n.english_name([{"language": "eng", "vernacularName": "American Deer", "source": "Catalogue of Life"},
                            {"language": "eng", "vernacularName": "White-tailed Deer", "source": itis}]) == \
@@ -128,6 +128,10 @@ def test_english_names():
                            {"language": "eng", "vernacularName": "Eastern gray squirrel", "source": "c"},
                            {"language": "fra", "vernacularName": "Écureuil gris", "source": "d"}]) == \
         "Eastern Gray Squirrel"
+    assert n.english_name([{"language": "eng", "vernacularName": "firefish", "source": itis},
+                           {"language": "eng", "vernacularName": "Red Lionfish", "source": "a", "preferred": True},
+                           {"language": "eng", "vernacularName": "Red lionfish", "source": "b", "preferred": True}]) \
+        == "Red Lionfish"
     assert n.english_name([{"language": "eng", "vernacularName": "Leaf spot", "source": itis}]) == ""
     assert n.english_name([]) == ""
 

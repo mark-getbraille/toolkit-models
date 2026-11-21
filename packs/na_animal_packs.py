@@ -42,8 +42,9 @@ November 2026):
     from the iNaturalist Open Dataset on Amazon's open-data programme (inaturalist-open-data.s3.amazonaws.com,
     published by iNaturalist for reuse under each photo's own licence). Neither www.inaturalist.org (whose
     robots.txt says "ai-train=no") nor api.inaturalist.org (whose robots.txt disallows every robot) is read here.
-    English names: the name ITIS gives (the Integrated Taxonomic Information System of the US, Canadian and Mexican
-    governments), else the name GBIF's checklists agree on most; the scientific name always.
+    English names: the name most of GBIF's checklists mark as preferred (IUCN, national species lists), else the
+    name ITIS gives (the Integrated Taxonomic Information System of the US, Canadian and Mexican governments), else
+    the commonest; the scientific name always.
     VENOMOUS AND DANGEROUS ANIMALS get a safety note after the name (SAFETY: rattlesnakes, copperheads, cottonmouths,
     coral snakes, the Gila monster, alligators and crocodiles, widow spiders, brown recluses, bark scorpions, ticks,
     fire ants, wasps and hornets, stinging caterpillars, bears, moose and bison, mountain lions, lionfish, stinging
@@ -315,18 +316,20 @@ def photo_url(url):
 
 
 def english_name(results):
-    """A species' English name from GBIF's vernacular names: ITIS's first, else the one most checklists mark
-    preferred, else the commonest; "" when there is none or it names a disease (GBIF_NOT_A_NAME)."""
+    """A species' English name from GBIF's vernacular names: the one most checklists mark preferred, else ITIS's
+    first, else the commonest; "" when there is none or it names a disease (GBIF_NOT_A_NAME)."""
     eng = [r for r in results if r.get("language") == "eng" and clean(r.get("vernacularName"))]
-    pick = next((clean(r["vernacularName"]) for r in eng if ITIS in (r.get("source") or "")), "")
-    if not pick:
-        for pool in ([r for r in eng if r.get("preferred")], eng):
-            counts = collections.Counter(clean(r["vernacularName"]).lower().replace("-", " ") for r in pool)
-            if counts:
-                top = counts.most_common(1)[0][0]
-                pick = next(clean(r["vernacularName"]) for r in pool
-                            if clean(r["vernacularName"]).lower().replace("-", " ") == top)
-                break
+
+    def commonest(pool):
+        """The name most entries of pool give (ignoring case and hyphens), as first written; "" for none."""
+        counts = collections.Counter(clean(r["vernacularName"]).lower().replace("-", " ") for r in pool)
+        if not counts:
+            return ""
+        top = counts.most_common(1)[0][0]
+        return next(clean(r["vernacularName"]) for r in pool
+                    if clean(r["vernacularName"]).lower().replace("-", " ") == top)
+    pick = commonest([r for r in eng if r.get("preferred")]) or \
+        next((clean(r["vernacularName"]) for r in eng if ITIS in (r.get("source") or "")), "") or commonest(eng)
     return "" if GBIF_NOT_A_NAME.search(pick) or len(pick) > 60 else pick
 
 
@@ -1130,7 +1133,7 @@ GBIF_CREDIT = ("GBIF (Global Biodiversity Information Facility), https://www.gbi
                "(checked photo by photo), each with its photographer, source dataset and GBIF record below. Most "
                "are iNaturalist research-grade observations (https://www.inaturalist.org), their photos from the "
                "iNaturalist Open Dataset (https://registry.opendata.aws/inaturalist-open-data/). English names from "
-               "ITIS (https://www.itis.gov) through the GBIF Backbone Taxonomy.")
+               "the GBIF Backbone Taxonomy's checklists (preferred names, then ITIS, https://www.itis.gov).")
 NA_ANIMAL_PACKS = {
     "na_wild_mammals": (build_na_wild_mammals, GBIF_CREDIT.format(what="wild mammals")),
     "na_birds": (build_na_birds, GBIF_CREDIT.format(what="wild birds")),
