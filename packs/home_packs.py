@@ -75,9 +75,9 @@ The packs (all open: CC0, public domain, CC BY, MIT or Apache, checked at the so
                        burner on?" -> "Yes: there is a flame ..."), gas and induction cookers, boiling water, table
                        settings, kitchen utensils and cookware. "What is this?"
 
-Share-alike, non-commercial and research collections on the same subjects (Open Beauty Facts, Open Products Facts,
-Open Pet Food Facts, Commons BY-SA files, DTD patterns ...) are kit download entries in
-training-kit/kit/home_sources.py, with the sign-up and left-out collections listed there.
+Share-alike, non-commercial and research collections on the same subjects (Commons BY-SA files, DTD patterns ...)
+are kit download entries in training-kit/kit/home_sources.py, with the sign-up and left-out collections listed there
+(Open Beauty, Products and Pet Food Facts are not built there: those sites block AI crawlers).
 
     python packs/home_packs.py clock_times --limit 8      (prints a few rows: a quick check)
 """

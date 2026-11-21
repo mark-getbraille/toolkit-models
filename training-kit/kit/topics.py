@@ -102,7 +102,6 @@ TOPICS = [
            "packeat", "cerrado_fruits", "commons_soft_drinks", "open_images_soft_drinks",
            # share-alike
            "drinks_soft_commons_sa", "openfoodfacts", "openfoodfacts_labels", "commons_food_sa", "openfacts_us", "openfacts_ca",
-           "openpetfoodfacts", "openpetfoodfacts_labels",
            # research-only (personal use)
            "fda_recall_photos", "freiburg_groceries", "food101", "uecfoodpix", "gothenburg_price_tags")),
     Topic("machines", "Vehicles, machines and household equipment",

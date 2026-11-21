@@ -38,7 +38,9 @@ The collections (MED_VET_SOURCES):
     openfacts_supplements  Open Food Facts: dietary supplements, vitamins, cough drops and throat lozenges sold in the
                            USA or Canada (a North American barcode), their name, brand and size; protein powders and
                            sports nutrition left out. Photos CC BY-SA 3.0, data ODbL 1.0
-                           (https://world.openfoodfacts.org/terms-of-use). Not in canada_sources.openfacts_ca or
+                           (https://world.openfoodfacts.org/terms-of-use). Read through off_dump.py (the product
+                           database on Hugging Face, the photos on AWS Open Data), never the websites, which block
+                           AI crawlers. Not in canada_sources.openfacts_ca or
                            us_sources (neither reads these categories; see the filter proposed in the report).
   research
     dailymed_human_labels  DailyMed (US National Library of Medicine): the package and label pictures of human
@@ -69,7 +71,7 @@ import random
 import re
 import time
 
-from extra_sources import get_json, off_name, per_label, research, say, OFF_SEARCH
+from extra_sources import get_json, off_name, per_label, research, say
 from home_sources import commons_sa_items
 from more_sources import fetch_shared
 from personal_sources import CHILD_WORDS
@@ -214,32 +216,29 @@ def supplement_rows(hit, kind, country):
 
 def prepare_openfacts_supplements(source, data_dir, work, cap):
     """Open Food Facts supplements, vitamins, cough drops and lozenges sold in the USA and in Canada, the most
-    scanned first, an even share of each kind and country."""
+    scanned first, an even share of each kind and country. Read from the product database's slim copy (off_dump:
+    the database on Hugging Face, the photos on AWS Open Data), never from Open Food Facts' websites, which block AI
+    crawlers. A product is taken once, for the first kind and country it is picked for."""
+    import off_dump
     per = per_label(int((cap + source.test) * 1.2), len(SUPPLEMENT_KINDS) * len(COUNTRIES))
+
+    def labels(hit):
+        """The (kind, country) pairs a product counts for: its supplement categories and its countries of sale,
+        when supplement_rows takes it."""
+        tags, countries = set(hit["categories_tags"]), set(hit["countries_tags"])
+        return [(tag, country) for tag, kind in SUPPLEMENT_KINDS for country_tag, country in COUNTRIES
+                if f"en:{tag}" in tags and f"en:{country_tag}" in countries and supplement_rows(hit, kind, country)]
+
+    best = off_dump.top_by_label(work, labels, per * 2)
     items, seen = [], set()
     for tag, kind in SUPPLEMENT_KINDS:
-        for country_tag, country in COUNTRIES:
-            got, page = 0, 1
-            while got < per and page <= 5:
-                try:
-                    data = get_json(OFF_SEARCH, {"q": f'countries_tags:"en:{country_tag}" AND '
-                                                      f'categories_tags:"en:{tag}"', "page_size": 100, "page": page,
-                                                 "sort_by": "-unique_scans_n",
-                                                 "fields": "code,product_name,product_name_en,brands,quantity,images,"
-                                                           "categories_tags"})
-                except RuntimeError:
-                    break
-                batch = data.get("hits") or []
-                for hit in batch:
-                    rows = supplement_rows(hit, kind, country) if hit.get("code") not in seen else []
-                    if rows and got < per:
-                        seen.add(hit["code"])
-                        items += rows
-                        got += 1
-                if len(batch) < 100:
-                    break
-                page += 1
-                time.sleep(1)
+        for _, country in COUNTRIES:
+            got = 0
+            for hit in best.get((tag, country), []):
+                if got < per and hit["code"] not in seen:
+                    seen.add(hit["code"])
+                    items += supplement_rows(hit, kind, country)
+                    got += 1
             say(f"  Open Food Facts {tag} ({country}): {got} products")
     return fetch_shared(items, os.path.join(data_dir, source.key), workers=4)
 
@@ -413,7 +412,7 @@ MED_VET_SOURCES = [
            "Photos CC BY-SA 3.0, database ODbL 1.0 (https://world.openfoodfacts.org/terms-of-use)",
            "Open Food Facts contributors, photos CC BY-SA 3.0, data ODbL 1.0, each product credited in its row, "
            "https://world.openfoodfacts.org", "share-alike", 1200, 20, prepare_openfacts_supplements,
-           "about 400 MB of photos", terms="https://world.openfoodfacts.org/terms-of-use",
+           "about 450 MB of product records (read once, shared by the Open Food Facts entries) and 500 MB of photos", terms="https://world.openfoodfacts.org/terms-of-use",
            terms_summary="Photos CC BY-SA 3.0 and data ODbL 1.0: use with credit; anything made from them keeps the "
                          "same licence."),
     # ---- research

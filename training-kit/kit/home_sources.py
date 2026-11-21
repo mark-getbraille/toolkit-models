@@ -1,6 +1,7 @@
 """Practical home-life picture collections for the Picture Model Training Kit that cannot be ready-made packs because
-of their licence (share-alike, research-only, or no terms written at all): household products (which bottle is
-shampoo and which is conditioner, which box is cat food), Commons home pictures under CC BY-SA, and fabric patterns.
+of their licence (share-alike, research-only, or no terms written at all): Commons home pictures under CC BY-SA and
+fabric patterns. The household products of Open Beauty, Products and Pet Food Facts (which bottle is shampoo and
+which is conditioner, which box is cat food) are not built: those sites block AI crawlers (see "Not built" below).
 The open ones (clock times, seven-segment displays, the Open Images home labels, and the Commons pests, appliances,
 plugs, laundry symbols, tools, personal care, hairstyles and kitchen packs) are in packs/home_packs.py.
 
@@ -16,21 +17,6 @@ ingredient list people typed in; a Commons category; a texture class), never wri
 
 The collections (HOME_SOURCES):
   share-alike
-    openbeautyfacts            Open Beauty Facts: front photos of toiletries and cosmetics (shampoo, conditioner,
-                               shower gel, toothpaste, deodorant, sunscreen, creams, soap, mouthwash, make-up, hair
-                               dye, perfume ...). "What product is this?", "What kind of product is this?" and
-                               "Is this shampoo or conditioner?"-style questions where the product's categories say so.
-    openbeautyfacts_labels     Open Beauty Facts: ingredient-list photos, read out ("Read the ingredients on this
-                               label.").
-    openproductsfacts          Open Products Facts: household goods (laundry detergent, fabric softener, washing-up
-                               liquid, dishwasher tablets, cleaners, air fresheners, toilet paper, bin bags,
-                               batteries, nappies, sanitary pads, toothbrushes). "Is this laundry detergent or fabric
-                               softener?" ...
-    openproductsfacts_labels   Open Products Facts: ingredient-list photos, read out (few household goods have their
-                               ingredients typed in English or INCI: about 1 in 80, so this one is small).
-    openpetfoodfacts           Open Pet Food Facts: cat, dog, bird, rodent, rabbit and fish food. "Is this cat food or
-                               dog food?" and "Is this dry food or wet food?"
-    openpetfoodfacts_labels    Open Pet Food Facts: ingredient-list photos, read out.
     commons_home_sa            Wikimedia Commons home categories (pests and mould, appliance displays, plugs by
                                country, connectors and batteries, laundry tags, tools and hardware, toiletries and
                                jewellery, the kitchen): files under CC BY-SA or GFDL.
@@ -40,11 +26,19 @@ The collections (HOME_SOURCES):
                                textures of fabrics and surfaces (striped, chequered, polka-dotted, paisley, knitted,
                                lace-like ...) ("made available ... for research purposes").
 
-All three Open ... Facts sites run on the Open Food Facts software, and are read here the way extra_sources.py reads
-Open Food Facts (openfoodfacts and openfoodfacts_labels), with its helpers (get_json, off_name, looks_english,
-per_label): the most scanned products of each category, an equal share per category and, within a category, the
-countries of sale in turn, so that no single country fills it. Each row's "place" is the country of sale it was picked
-for (the product's record lists where it is sold; the photo was taken there by a shopper).
+Not built (HOME_BLOCKED_SOURCES; the code is kept): the Open Beauty Facts, Open Products Facts and Open Pet Food
+Facts entries (openbeautyfacts, openbeautyfacts_labels, openproductsfacts, openproductsfacts_labels,
+openpetfoodfacts, openpetfoodfacts_labels): front photos and ingredient-list photos of toiletries and cosmetics,
+household goods and pet food, with "What product is this?", "What kind of product is this?", "Is this shampoo or
+conditioner?", "Is this cat food or dog food?" and "Read the ingredients on this label." The source blocks AI
+crawlers: the three sites run on the Open Food Facts software and share its robots.txt, which shuts out GPTBot,
+anthropic-ai and ClaudeBot on every host (their image servers included; checked 2026-11-21). Their product records
+are on Hugging Face (openfoodfacts/product-database: beauty.parquet and petfood.parquet; nothing for Open Products
+Facts), but the photos are not: the Open Food Facts Images dataset on AWS Open Data holds Open Food Facts photos
+only. So these entries are "not built: the source blocks AI crawlers" (off_dump.NOT_BUILT), the functions that read
+the sites stop at once (off_dump.refuse), and HOME_NOT_INCLUDED says why. They were read the way extra_sources.py
+read Open Food Facts: the most scanned products of each category, an equal share per category and, within a
+category, the countries of sale in turn.
 
 Needing sign-up (cannot be downloaded automatically; get them yourself, then put the pictures in the own-pictures
 folder with your own descriptions, as the user guide says):
@@ -91,13 +85,12 @@ ALT_TEXT = sources.ALT_TEXT
 
 # ----------------------------------------------------------------- share-alike: the Open ... Facts sites
 
+# NOT BUILT (off_dump.NOT_BUILT): these sites block AI crawlers. Each site: (its home page, shown in credits only;
+# its photo server, removed, as it is never read; its name; its domain). The code below is kept, but stops at once.
 FACT_SITES = {
-    "beauty": ("https://world.openbeautyfacts.org", "https://images.openbeautyfacts.org/images/products/",
-               "Open Beauty Facts", "openbeautyfacts.org"),
-    "products": ("https://world.openproductsfacts.org", "https://images.openproductsfacts.org/images/products/",
-                 "Open Products Facts", "openproductsfacts.org"),
-    "petfood": ("https://world.openpetfoodfacts.org", "https://images.openpetfoodfacts.org/images/products/",
-                "Open Pet Food Facts", "openpetfoodfacts.org"),
+    "beauty": ("https://world.openbeautyfacts.org", None, "Open Beauty Facts", "openbeautyfacts.org"),
+    "products": ("https://world.openproductsfacts.org", None, "Open Products Facts", "openproductsfacts.org"),
+    "petfood": ("https://world.openpetfoodfacts.org", None, "Open Pet Food Facts", "openpetfoodfacts.org"),
 }
 FACTS_CREDIT = "{site} contributors, product {code}: photos CC BY-SA 3.0, data ODbL 1.0, {base}/product/{code}"
 FACTS_FIELDS = "code,product_name,product_name_en,brands,quantity,lang,images,countries_tags,categories_tags," \
@@ -164,7 +157,10 @@ def country_name(tag):
 
 
 def facts_image(site, code, images, kind, lang):
-    """The full-size address of a product's chosen photo of a kind ("front", "ingredients") in a language, or ""."""
+    """The full-size address of a product's chosen photo of a kind ("front", "ingredients") in a language, or "".
+    Not used: the site blocks AI crawlers, so this stops at once (off_dump.refuse); the code is kept."""
+    import off_dump
+    off_dump.refuse(FACT_SITES[site][2])
     chosen = images.get(f"{kind}_{lang}") or {}
     if not chosen.get("rev"):
         return ""
@@ -184,7 +180,10 @@ def front_image(site, hit):
 
 def facts_products(site, category, want):
     """Up to want products of a category on a site, the most scanned first, the countries of sale taking turns:
-    [(country, hit)]. Reads at most five pages of 100, a second apart (the sites ask for gentle use)."""
+    [(country, hit)]. Reads at most five pages of 100, a second apart (the sites ask for gentle use). Not used: the
+    sites block AI crawlers, so this stops at once (off_dump.refuse); the code is kept."""
+    import off_dump
+    off_dump.refuse(FACT_SITES[site][2])
     base = FACT_SITES[site][0]
     hits = []
     for page in range(1, 6):
@@ -233,7 +232,10 @@ def kind_rows(site, hit):
 
 def prepare_facts_fronts(site, source, data_dir, cap):
     """Front photos of a site's products: "What product is this?" (the name, brand and size people typed in), "What
-    kind of product is this?" and the "Is this A or B?" questions its categories answer; place = country of sale."""
+    kind of product is this?" and the "Is this A or B?" questions its categories answer; place = country of sale.
+    Not built: the site blocks AI crawlers (off_dump.refuse stops it at once)."""
+    import off_dump
+    off_dump.refuse(FACT_SITES[site][2])
     name, base = FACT_SITES[site][2], FACT_SITES[site][0]
     kinds = SITE_KINDS[site]
     items = []
@@ -269,7 +271,10 @@ def ingredients_text(site, hit):
 
 def prepare_facts_labels(site, source, data_dir, cap):
     """Ingredient-list photos of a site's products, with the list people typed from them: "Read the ingredients on
-    this label." Only lists in English, or cosmetics' INCI names (the same in every language)."""
+    this label." Only lists in English, or cosmetics' INCI names (the same in every language). Not built: the site
+    blocks AI crawlers (off_dump.refuse stops it at once)."""
+    import off_dump
+    off_dump.refuse(FACT_SITES[site][2])
     name, base = FACT_SITES[site][2], FACT_SITES[site][0]
     kinds = SITE_KINDS[site]
     items = []
@@ -493,6 +498,30 @@ FACTS_LICENCE = "Photos CC BY-SA 3.0, database ODbL 1.0, contents DbCL 1.0 ({sit
 FACTS_CREDIT_LINE = "{name} contributors, photos CC BY-SA 3.0, data ODbL 1.0, {site}"
 HOME_SOURCES = [
     # ---- share-alike
+    Source("commons_home_sa", "Wikimedia Commons: home life (pests, appliances, plugs, tools, toiletries, kitchen), "
+                              "files under CC BY-SA or GFDL (share-alike)",
+           "Each file CC BY-SA or GFDL (its Commons page); captions CC0",
+           "Wikimedia Commons authors, CC BY-SA or GFDL, each credited in its row, https://commons.wikimedia.org",
+           "share-alike", 1500, 20, prepare_commons_home_sa, "about 150 MB"),
+    Source("commons_hairstyles_sa", "Wikimedia Commons: hairstyles of adults, files under CC BY-SA or GFDL "
+                                    "(share-alike)",
+           "Each file CC BY-SA or GFDL (its Commons page); captions CC0",
+           "Wikimedia Commons authors, CC BY-SA or GFDL, each credited in its row, https://commons.wikimedia.org",
+           "share-alike", 600, 10, prepare_commons_hairstyles_sa, "about 60 MB"),
+    # ---- research
+    Source("dtd_patterns", "Describable Textures Dataset: fabric and surface patterns (research only; personal use)",
+           "Made available for research purposes (robots.ox.ac.uk/~vgg/data/dtd); no licence named",
+           "Describable Textures Dataset (Mircea Cimpoi, Subhransu Maji, Iasonas Kokkinos, Sammy Mohamed and Andrea "
+           "Vedaldi, CVPR 2014), https://www.robots.ox.ac.uk/~vgg/data/dtd/", "research", 1500, 20,
+           prepare_dtd_patterns, "up to 625 MB, read once",
+           terms="https://www.robots.ox.ac.uk/~vgg/data/dtd/",
+           terms_summary="Made available to the computer vision community for research purposes; no licence is "
+                         "named, so personal, non-commercial use only. Photos are from Flickr."),
+]
+
+# NOT BUILT: the source blocks AI crawlers (off_dump.NOT_BUILT). The Open Beauty, Products and Pet Food Facts
+# entries, kept as they were but left out of HOME_SOURCES, so the kit never offers or downloads them.
+HOME_BLOCKED_SOURCES = [
     Source("openbeautyfacts", "Open Beauty Facts: toiletries and cosmetics, which product and what kind "
                               "(share-alike)",
            FACTS_LICENCE.format(site="world.openbeautyfacts.org"),
@@ -519,33 +548,26 @@ HOME_SOURCES = [
            FACTS_LICENCE.format(site="world.openpetfoodfacts.org"),
            FACTS_CREDIT_LINE.format(name="Open Pet Food Facts", site="https://world.openpetfoodfacts.org"),
            "share-alike", 500, 10, prepare_openpetfoodfacts_labels, "about 250 MB of photos"),
-    Source("commons_home_sa", "Wikimedia Commons: home life (pests, appliances, plugs, tools, toiletries, kitchen), "
-                              "files under CC BY-SA or GFDL (share-alike)",
-           "Each file CC BY-SA or GFDL (its Commons page); captions CC0",
-           "Wikimedia Commons authors, CC BY-SA or GFDL, each credited in its row, https://commons.wikimedia.org",
-           "share-alike", 1500, 20, prepare_commons_home_sa, "about 150 MB"),
-    Source("commons_hairstyles_sa", "Wikimedia Commons: hairstyles of adults, files under CC BY-SA or GFDL "
-                                    "(share-alike)",
-           "Each file CC BY-SA or GFDL (its Commons page); captions CC0",
-           "Wikimedia Commons authors, CC BY-SA or GFDL, each credited in its row, https://commons.wikimedia.org",
-           "share-alike", 600, 10, prepare_commons_hairstyles_sa, "about 60 MB"),
-    # ---- research
-    Source("dtd_patterns", "Describable Textures Dataset: fabric and surface patterns (research only; personal use)",
-           "Made available for research purposes (robots.ox.ac.uk/~vgg/data/dtd); no licence named",
-           "Describable Textures Dataset (Mircea Cimpoi, Subhransu Maji, Iasonas Kokkinos, Sammy Mohamed and Andrea "
-           "Vedaldi, CVPR 2014), https://www.robots.ox.ac.uk/~vgg/data/dtd/", "research", 1500, 20,
-           prepare_dtd_patterns, "up to 625 MB, read once",
-           terms="https://www.robots.ox.ac.uk/~vgg/data/dtd/",
-           terms_summary="Made available to the computer vision community for research purposes; no licence is "
-                         "named, so personal, non-commercial use only. Photos are from Flickr."),
 ]
 
-# The collections a picture-making model may learn from: objects without people (products, pet food and patterns).
-# Never the hairstyles, nor the Commons home files (some show people using the things).
-HOME_PICTURE_MAKING_OK = {"openbeautyfacts", "openbeautyfacts_labels", "openproductsfacts",
-                          "openproductsfacts_labels", "openpetfoodfacts", "openpetfoodfacts_labels", "dtd_patterns"}
+# The collections a picture-making model may learn from: objects without people (patterns). Never the hairstyles,
+# nor the Commons home files (some show people using the things).
+HOME_PICTURE_MAKING_OK = {"dtd_patterns"}
 
 HOME_NOT_INCLUDED = {
+    "Open Beauty Facts (openbeautyfacts, openbeautyfacts_labels)":
+        "Not built: the source blocks AI crawlers. world, static and images.openbeautyfacts.org share the Open Food "
+        "Facts robots.txt (GPTBot, anthropic-ai, ClaudeBot: 'Disallow: /'; checked 2026-11-21). Its records are on "
+        "Hugging Face (openfoodfacts/product-database, beauty.parquet), but its photos are only on its own blocked "
+        "image server (the AWS Open Data images are Open Food Facts' only). The code is kept (HOME_BLOCKED_SOURCES).",
+    "Open Products Facts (openproductsfacts, openproductsfacts_labels)":
+        "Not built: the source blocks AI crawlers (the same robots.txt on every host, checked 2026-11-21), and it has "
+        "no open bulk route for its records or photos (not in the Hugging Face dataset nor on AWS Open Data). The "
+        "code is kept (HOME_BLOCKED_SOURCES).",
+    "Open Pet Food Facts (openpetfoodfacts, openpetfoodfacts_labels)":
+        "Not built: the source blocks AI crawlers (the same robots.txt on every host, checked 2026-11-21). Its "
+        "records are on Hugging Face (petfood.parquet), but its photos are only on its own blocked image server. The "
+        "code is kept (HOME_BLOCKED_SOURCES).",
     "Blood-glucose and blood-pressure monitor photos (Finnegan et al., Oxford, 2019)":
         "the download (cameralab.eng.ox.ac.uk/data/bp_bg_meters.zip) now only leads back to the lab's home page; "
         "no licence was ever stated (only 'please cite'). Ask the authors (eng.ox.ac.uk/lcmt).",

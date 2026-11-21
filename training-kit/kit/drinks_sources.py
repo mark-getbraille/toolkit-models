@@ -118,10 +118,11 @@ DRINKS_NOT_INCLUDED = {
         "its photos are CC BY-SA and its data ODbL, but its robots.txt (world, static and images.openfoodfacts.org, "
         "checked 2026-11-21) shuts out AI crawlers by name (GPTBot, anthropic-ai, ClaudeBot: 'Disallow: /'), "
         "disallows /api to every robot, and search.openfoodfacts.org disallows every robot. Under the owner's rule "
-        "(AI-crawler blocks are obeyed) it is not read for the drinks collections. NOTE for the owner: the kit's "
-        "older Open Food Facts collections (openfoodfacts, openfoodfacts_labels, openfacts_us, openfacts_ca, "
-        "openfacts_supplements, the Open Pet Food, Beauty and Products Facts ones) read the same hosts and may need "
-        "the same decision.",
+        "(AI-crawler blocks are obeyed) its websites are not read. Its bulk-reuse routes (the product database on "
+        "Hugging Face and the photos on AWS Open Data, off_dump.py) are not blocked and now feed the kit's Open Food "
+        "Facts entries (openfoodfacts, openfoodfacts_labels, openfacts_us, openfacts_ca, openfacts_supplements); a "
+        "drinks entry could be added the same way later. The Open Beauty, Products and Pet Food Facts entries are "
+        "not built (no open route for their photos).",
     "US TTB COLAs Online public registry (approved label images)":
         "ttbonline.gov refused this machine's connections on 2026-11-21, so its robots.txt and terms could not be "
         "checked; it has no official API or bulk download, and the label images are the companies' own artwork "

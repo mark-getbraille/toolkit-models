@@ -66,7 +66,7 @@ The packs (all open: public domain, CC0 or CC BY; checked at the source in Novem
                         kind of place is this?").
 
 Share-alike, non-commercial and research collections on the same subjects (Commons BY-SA files of these categories,
-Open Food/Beauty/Products Facts products sold in the USA, iNaturalist CC BY-NC photos in the USA, CPSC recall
+Open Food Facts products sold in the USA, iNaturalist CC BY-NC photos in the USA, CPSC recall
 photos), the sign-up collections, the ones looked at and left out (with Walmart, Target and Zillow: their terms
 forbid copying) and the owners to ask for permission are in training-kit/kit/us_sources.py.
 

@@ -204,7 +204,7 @@ def test_kit_supplements_and_sa(monkeypatch):
     assert k.north_american_barcode("012345678905") and k.north_american_barcode("0754000000001")
     assert not k.north_american_barcode("3017620422003")
     hit = {"code": "012345678905", "product_name": "Vitamin D3 1000 IU", "brands": "Brand", "quantity": "100 tablets",
-           "images": {"front_en": {"rev": "3"}}, "categories_tags": ["en:dietary-supplements"]}
+           "images": {"front_en": {"imgid": 3, "rev": 5}}, "categories_tags": ["en:dietary-supplements"]}
     rows = k.supplement_rows(hit, "a dietary supplement", "Canada")
     assert [r[2]["question"] for r in rows] == [k.PRODUCT_Q, k.KIND_Q] and rows[0][2]["place"] == "Canada"
     assert k.supplement_rows(dict(hit, product_name="Whey protein"), "a dietary supplement", "USA") == []

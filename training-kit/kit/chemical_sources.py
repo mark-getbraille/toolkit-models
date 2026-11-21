@@ -130,8 +130,9 @@ CHEMICAL_PICTURE_MAKING_OK = set()
 CHEMICAL_NOT_INCLUDED = {
     "Open Products Facts household chemicals (paints, glues, lubricants, pesticides, fertilisers)":
         "Its category counts in November 2026 were tiny (paints 3, adhesives 7, lubricants 8, fertilizers 5, "
-        "insecticides 2, motor oils, antifreeze, varnishes and wood stains 0). Its cleaners and detergents are "
-        "already the share-alike openproductsfacts entry (home_sources.py).",
+        "insecticides 2, motor oils, antifreeze, varnishes and wood stains 0). Its cleaners and detergents were "
+        "the share-alike openproductsfacts entry (home_sources.py), now not built: the source blocks AI crawlers "
+        "(its robots.txt shuts out GPTBot, anthropic-ai and ClaudeBot).",
     "Open Images V7 classes for household chemicals":
         "Open Images has no class for a paint can, a chemical bottle, a spray can or a fuel can that people checked "
         "by hand (its packaging classes are open_images_packaged_goods'); nothing to add.",
