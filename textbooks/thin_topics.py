@@ -303,7 +303,8 @@ BRAILLE = [
          "disability", "American Braille Press", "braillemusicnota00unse", 1930,
          "An explanation of the braille music code of 1930: notes and their values, rests, octave marks, "
          "intervals and chords, and the other signs, with examples.",
-         note=" Published in {year}: an old book, out of date: braille music signs have been revised since (the current code is "
+         note=" Published in {year}: an old book, out of date: braille music signs have been revised since (the "
+              "current code is "
               "the Music Braille Code 2015 and the New International Manual of Braille Music Notation), so check "
               "every sign against the current code; the machine-read text has the scanner's mistakes and its "
               "braille examples may be pictures."),

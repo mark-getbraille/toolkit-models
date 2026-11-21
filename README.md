@@ -181,6 +181,16 @@ and why):
   source has its own release (`libretexts-<library>`, `courses-bccampus`, `personal-...`). What was looked at and
   not built (SkillsCommons, the BCcampus and eCampusOntario sites, Open Course Library, OER Commons, Saylor,
   TED-Ed, OpenLearn ...) is in `courses.NOT_INCLUDED`, with the reason.
+- **Thin topics** (`textbooks/thin_topics.py`, keys `thin` and `thin:<topic>`): more open and public-domain books for
+  the topics that had only one to three books and no Kiwix book of their own (birds, mammals, reptiles and
+  amphibians, insects and spiders, maps and navigation, boating, sewing and needlework, taxes, braille).
+- **Whole open catalogues** (`textbooks/open_catalogues.py`, keys `catalogues`, `cat:<source>` and
+  `cat:<source>:<piece>`): every Open Book Publishers book (from Thoth, read from the Internet Archive copies it
+  deposited; non-commercial ones personal use only), the Open Textbook Library's books whose own PDF its host lets us
+  read (from the snapshot `textbooks/catalogues/otl.json`, made by `tools/snapshot_otl.py` at its two-minute pace),
+  and the Internet Archive's openly licensed, pre-1931 and US government texts on each of the library's topics. Each
+  book is deduplicated against the library and across editions. Pressbooks Directory, eCampusOntario, Saylor and the
+  GPO bookstore could not be read (`open_catalogues.NOT_INCLUDED` says why).
 
 How the books are made accessible: one page per chapter and section with headings; an index page listing every unit,
 chapter and section; every figure's number, the publisher's description of the picture and its caption as text

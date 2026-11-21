@@ -2437,6 +2437,10 @@ def build(keys, out_dir, cache=None, pictures=False, local_osbooks=None, date=No
             import cookbooks                     # here, not at the top: cookbooks imports this module
             manifests.update(cookbooks.build_cookbooks([key], out_dir, cache, date))
             continue
+        if key.startswith("cat:"):               # whole open catalogues: OBP, Open Textbook Library, IA (open_catalogues.py)
+            import open_catalogues               # here, not at the top: open_catalogues imports this module
+            manifests.update(open_catalogues.build_catalogues([key], out_dir, cache, date))
+            continue
         if key.startswith("pub:"):               # periodicals, journals, reports, news, history (periodicals.py)
             import periodicals                   # here, not at the top: periodicals imports this module
             # "pub:voa:recent+pub:voa:2026": pieces built one after another in this one job
@@ -2575,15 +2579,18 @@ def merge(manifest_paths, existing=None, robots=None):
     import courses                               # (the same)
     import cookbooks                             # (the same)
     import drinks_reference                      # (the same)
+    import open_catalogues                       # (the same)
     return {"built": datetime.date.today().isoformat(), "release": RELEASE,
             "books": sorted(books.values(), key=lambda b: (b["group"], b["title"].casefold())),
             "left_out": left, "not_included": [{"title": t, "reason": r} for t, r in sources.NOT_INCLUDED +
                                                periodicals.NOT_INCLUDED + medications.NOT_INCLUDED +
                                                animal_sounds.NOT_INCLUDED + courses.NOT_INCLUDED +
-                                               cookbooks.NOT_INCLUDED + drinks_reference.NOT_INCLUDED],
+                                               cookbooks.NOT_INCLUDED + drinks_reference.NOT_INCLUDED +
+                                               open_catalogues.NOT_INCLUDED],
             "licence_lines": {**sources.LICENCE_LINES, **periodicals.LICENCE_LINES, **medications.LICENCE_LINES,
                               "nps_sounds": animal_sounds.LICENCE_LINE, **courses.LICENCE_LINES,
-                              **cookbooks.LICENCE_LINES, "drinks_guide": drinks_reference.LICENCE_LINE},
+                              **cookbooks.LICENCE_LINES, "drinks_guide": drinks_reference.LICENCE_LINE,
+                              **open_catalogues.LICENCE_LINES},
             "groups": sources.GROUPS, "group_notes": {**periodicals.GROUP_NOTES, **medications.GROUP_NOTES,
                                                       **courses.GROUP_NOTES, **cookbooks.GROUP_NOTES},
             "kiwix_labels": {**courses.KIWIX_LABELS, **cookbooks.KIWIX_LABELS},

@@ -1093,6 +1093,11 @@ def expand_keys(words):
             # More books for the thin topics (thin_topics.py), 2026-11-21: thin, or thin:<topic> such as thin:birds
             import thin_topics                    # (already imported at the end of this module)
             keys += thin_topics.expand_keys([w])
+        elif w == "catalogues" or w.startswith("cat:"):
+            # Whole open catalogues (open_catalogues.py), 2026-11-21: Open Book Publishers, the Open Textbook
+            # Library and the Internet Archive by topic; catalogues, cat:<source> or cat:<source>:<piece>
+            import open_catalogues                # here, not at the top: open_catalogues imports the builder
+            keys += open_catalogues.expand_keys([w])
         elif w == "cookbooks" or w.startswith("cook:"):
             import cookbooks                      # here, not at the top: cookbooks imports the builder
             keys += cookbooks.expand_keys([w])

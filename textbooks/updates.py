@@ -182,6 +182,9 @@ def fingerprint(key):
         if kind == "cook":
             import cookbooks                     # here, not at the top: cookbooks imports the builder
             return cookbooks.sign(key)
+        if kind == "cat":                        # whole open catalogues (open_catalogues.py)
+            import open_catalogues               # here, not at the top: open_catalogues imports the builder
+            return open_catalogues.sign(key)
         if kind == "med":
             import medications                   # here, not at the top: medications imports the builder
             return medications.sign(key)
