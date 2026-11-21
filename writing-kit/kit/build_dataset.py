@@ -46,41 +46,70 @@ import instructions  # noqa: E402
 import readers  # noqa: E402
 import scrub  # noqa: E402
 import writing_sources  # noqa: E402
+import readers_more  # noqa: E402
+import attachments  # noqa: E402
+
+GROUPED = {"enron", "w3c", "usenet", "irc", "debian"}   # sources read mailbox by mailbox or list by list
 
 VALIDATION_SHARE = 20          # one example in twenty goes to validation.jsonl
 
 
-def example_from_email(record, source, min_words=12, max_words=200):
-    """(example, reason) for one email record: the cleaned message as the response and a rule-made instruction,
-    or (None, why it was dropped)."""
-    cleaned, why = scrub.clean_message(record.get("subject", ""), record.get("body", ""),
-                                       scrub.names_from_headers(*record.get("known_names", [])),
-                                       scrub.names_from_headers(*record.get("writer_names", [])),
-                                       min_words, max_words)
-    if not cleaned:
+OWNER, STRICT = "owner", "strict"        # the two privacy settings (see READ ME FIRST.txt and SCRUBBING.txt)
+
+
+def protect(text, privacy, names=None, signature=True):
+    """text as it goes into an example: under the owner's rule only the identity-theft identifiers are masked; under
+    the strict setting personal details and names are replaced as well."""
+    if privacy == OWNER:
+        return scrub.mask_identifiers(text)
+    names = names or scrub.NameScrubber()
+    return names.scrub(scrub.scrub_details(text), signature=signature)
+
+
+def example_from_email(record, source, privacy=OWNER, min_words=12, max_words=200):
+    """(example, reason) for one email record. Owner's rule: the whole message is kept (names, signature, sensitive
+    topics), identifiers masked; when it quotes the message it answers, that message goes into the instruction and
+    the writer's own words are the answer. Strict setting: the cleaned own words only (scrub.clean_message)."""
+    audience, is_reply = record.get("audience", "a colleague"), record.get("is_reply", False)
+    if privacy == STRICT:
+        cleaned, why = scrub.clean_message(record.get("subject", ""), record.get("body", ""),
+                                           scrub.names_from_headers(*record.get("known_names", [])),
+                                           scrub.names_from_headers(*record.get("writer_names", [])),
+                                           min_words, max_words)
+        if not cleaned:
+            return None, why
+        instruction, details = instructions.make_instruction(cleaned["subject"], cleaned["body"], audience, is_reply)
+        return make_row(instruction, cleaned["body"], details, source), ""
+    full, why = scrub.full_message(record.get("subject", ""), record.get("body", ""))
+    if not full:
         return None, why
-    instruction, details = instructions.make_instruction(cleaned["subject"], cleaned["body"],
-                                                         record.get("audience", "a colleague"),
-                                                         record.get("is_reply", False))
-    return make_row(instruction, cleaned["body"], details, source), ""
+    own, quoted = full["own"], full["quoted"]
+    subject = re.sub(r"^\s*((re|fw|fwd|aw)\s*:\s*)+", "", full["subject"], flags=re.I)
+    instruction, details = instructions.make_instruction(subject, own, audience, is_reply or bool(quoted))
+    if quoted:
+        words = quoted.split()
+        shown = " ".join(words[:600]) + (" [...]" if len(words) > 600 else "")
+        shown = quoted if len(words) <= 600 else shown
+        instruction += "\n\nThe message you are answering:\n" + shown
+    return make_row(instruction, own, details, source), ""
 
 
-def example_from_writing(record, source, max_words=300):
-    """(example, reason) for one writing record (a person's request and a person's answer), scrubbed the same way
-    as emails; the request keeps its own words."""
+def example_from_writing(record, source, privacy=OWNER, max_words=300):
+    """(example, reason) for one writing record (a person's request and a person's answer); the request keeps its
+    own words."""
     prompt, answer = record.get("instruction", ""), record.get("response", "")
-    for part, label in ((prompt, "request"), (answer, "answer")):
-        why = scrub.sensitive_reason(part)
-        if why:
-            return None, "sensitive: " + why
+    if privacy == STRICT:
+        for part in (prompt, answer):
+            why = scrub.sensitive_reason(part)
+            if why:
+                return None, "sensitive: " + why
     names = scrub.NameScrubber()
-    answer_clean = names.scrub(scrub.scrub_details(answer))
-    prompt_clean = names.scrub(scrub.scrub_details(prompt), signature=False)
-    why = scrub.quality_reason(answer_clean, 12, max_words)
+    answer_clean = protect(answer, privacy, names)
+    prompt_clean = protect(prompt, privacy, names, signature=False)
+    why = scrub.quality_reason(answer_clean, 12, max_words) if privacy == STRICT else \
+        ("too short" if len(answer_clean.split()) < 5 else "")
     if why and why not in ("too many removed details",):
         return None, "quality: " + why
-    if len(re.findall(r"\[[^\]]+\]", answer_clean)) > 12:
-        return None, "quality: too many removed details"
     kind = instructions.classify_kind("", prompt_clean)          # what was asked for, first
     if kind == "update":
         kind = instructions.classify_kind("", answer_clean)
@@ -88,6 +117,89 @@ def example_from_writing(record, source, max_words=300):
                "tone": instructions.guess_tone(answer_clean, kind), "audience": "",
                "length": instructions.length_word(answer_clean)}
     return make_row(prompt_clean, answer_clean, details, source), ""
+
+
+def examples_from_chat(record, source, privacy=OWNER, per_chat=3, context_size=6):
+    """[(example, reason)] for a conversation: up to per_chat "write the next message" pairs, each with up to
+    context_size earlier messages. Replies of fewer than three words, and the first message, are not used."""
+    turns = [(who, protect(text, privacy, signature=False)) for who, text in record.get("turns", [])
+             if text and text.strip()]
+    candidates = [i for i in range(1, len(turns)) if len(turns[i][1].split()) >= 3 and turns[i][0] != turns[i - 1][0]
+                  or (record.get("style") == "talk" and i >= 1)]
+    if record.get("style") == "irc":     # a reply that names the person it answers is the best pair in a busy channel
+        named = [i for i in candidates if re.match(r"^\S+[:,]", turns[i][1])]
+        candidates = named or candidates
+    if not candidates:
+        return [(None, "conversation too short")]
+    step = max(1, len(candidates) // per_chat)
+    out = []
+    for i in candidates[::step][:per_chat]:
+        context = turns[max(0, i - context_size):i]
+        speaker, reply = turns[i]
+        instruction, details = instructions.make_chat_instruction(record.get("setting", "a chat"), context, speaker,
+                                                                  reply, record.get("style", ""))
+        out.append((make_row(instruction, reply, details, source), ""))
+    return out
+
+
+def examples_from_record(record, source, privacy=OWNER):
+    """[(example, reason)] for any record a reader yields (see readers_more.py for the kinds)."""
+    kind = record.get("type", "email")
+    if kind == "email":
+        return [example_from_email(record, source, privacy)]
+    if kind == "writing":
+        return [example_from_writing(record, source, privacy)]
+    if kind == "chat":
+        return examples_from_chat(record, source, privacy)
+    if kind == "text":
+        text = record["response"] if record.get("unchanged") else protect(record["response"], privacy)
+        details = {k: record.get(k, "") for k in ("kind", "form", "tone", "audience")}
+        details["length"] = instructions.length_word(text)
+        return [(make_row(record["instruction"], text, details, source), "")]
+    text = protect(record.get("text", ""), privacy)
+    if privacy == STRICT and scrub.sensitive_reason(text):
+        return [(None, "sensitive: " + scrub.sensitive_reason(text))]
+    if kind == "sms":
+        instruction, details = instructions.make_sms_instruction(text)
+    elif kind == "letter":
+        instruction, details = instructions.make_letter_instruction(text, record.get("title", ""))
+    elif kind == "comment":
+        instruction, details = instructions.make_comment_instruction(text, record.get("agency", ""),
+                                                                     record.get("title", ""))
+    else:
+        return [(None, "unknown record")]
+    return [(make_row(instruction, text, details, source), "")]
+
+
+def attachment_examples(record, source, attach_dir, privacy=OWNER):
+    """Save an email's attachments beside its text (attach_dir/<source>/<message>/) and return examples made from
+    the text of the ones that are written documents (memos, letters, notes): "Write a document like the one
+    attached to this message"."""
+    files = record.get("attachments") or []
+    if not files or not attach_dir:
+        return []
+    msg_key = hashlib.sha1((record.get("msg_id") or record.get("body", "")).encode("utf-8")).hexdigest()[:16]
+    folder = os.path.join(attach_dir, source.key, msg_key)
+    header = f"Subject: {record.get('subject', '')}\n\n"
+    attachments.save_message(folder, protect(header + record.get("body", ""), OWNER),
+                             [(name, data) for name, data, _ in files])
+    out = []
+    for name, data, ctype in files:
+        text = attachments.extract_text(name, data, ctype)
+        if len(text.split()) < 20:
+            continue
+        text = protect(text, privacy)
+        words = text.split()
+        if len(words) > 3000:
+            text = " ".join(words[:3000])
+        about = re.sub(r"^\s*((re|fw|fwd)\s*:\s*)+", "", record.get("subject", ""), flags=re.I).strip()
+        instruction = (f"Write the document \"{attachments.safe_name(name)}\" that was attached to an email"
+                       + (f" about \"{about}\"" if about else "") + ". Write it in full, in the same plain, everyday "
+                       "style as the original.")
+        details = {"kind": "attachment", "form": "document", "tone": instructions.guess_tone(text, "update"),
+                   "audience": record.get("audience", ""), "length": instructions.length_word(text)}
+        out.append(make_row(instruction, text, details, source))
+    return out
 
 
 def make_row(instruction, response, details, source):
@@ -118,39 +230,42 @@ def is_validation(row):
     return int(hashlib.sha1(row["response"].encode("utf-8")).hexdigest(), 16) % VALIDATION_SHARE == 0
 
 
-def build_source(source, fetcher, per_source, say, seen, reader_options):
-    """(rows, counts) for one source: up to per_source examples, no more than a tenth from one mailbox or list
-    when the source has groups (at least 15)."""
-    reader = getattr(readers, source.reader)
+def build_source(source, fetcher, per_source, say, seen, reader_options, privacy=OWNER, attach_dir=None):
+    """(rows, counts) for one source: up to per_source examples, no more than a tenth from one mailbox, list or
+    channel when the source has several (at least 15)."""
+    module = readers if hasattr(readers, source.reader) else readers_more
+    reader = getattr(module, source.reader)
     counts = Counter()
     rows = []
     per_group = defaultdict(int)
     group_cap = max(15, per_source // 10)
-    is_email = source.key in ("enron", "w3c")
-    if source.key == "w3c":
-        group_cap = max(group_cap, per_source // max(1, len(reader_options.get("lists") or readers.W3C_LISTS)) + 1)
+    if source.key in ("w3c", "usenet", "irc", "debian"):
+        group_cap = max(group_cap, per_source // 2 + 1)
     try:
         for record in reader(fetcher, say=say, **reader_options):
             counts["read"] += 1
             group = record.get("group", "")
-            if is_email and per_group[group] >= group_cap:
-                counts["skipped: enough from this mailbox or list"] += 1
+            if per_group[group] >= group_cap and len(per_group) > 0 and source.key in GROUPED:
+                counts["skipped: enough from this mailbox, list or channel"] += 1
                 continue
-            if is_email:
-                row, why = example_from_email(record, source)
-            else:
-                row, why = example_from_writing(record, source)
-            if not row:
-                counts[why] += 1
-                continue
-            key = normalise(row["response"])
-            if key in seen:
-                counts["repeat"] += 1
-                continue
-            seen.add(key)
-            rows.append(row)
-            per_group[group] += 1
-            counts["kept"] += 1
+            made = examples_from_record(record, source, privacy)
+            if record.get("type", "email") == "email":
+                for row in attachment_examples(record, source, attach_dir, privacy):
+                    made.append((row, ""))
+                    counts["attachment texts"] += 1
+                counts["attachments saved"] += len(record.get("attachments") or [])
+            for row, why in made:
+                if not row:
+                    counts[why] += 1
+                    continue
+                key = normalise(row["response"]) + "|" + normalise(row["instruction"][:200])
+                if key in seen:
+                    counts["repeat"] += 1
+                    continue
+                seen.add(key)
+                rows.append(row)
+                per_group[group] += 1
+                counts["kept"] += 1
             if counts["read"] % 200 == 0:
                 say(f"  {source.key}: {counts['read']} read, {counts['kept']} kept")
             if len(rows) >= per_source:
@@ -158,11 +273,19 @@ def build_source(source, fetcher, per_source, say, seen, reader_options):
     except fetch.RobotsRefusal as err:
         counts["refused by robots.txt: " + str(err)] += 1
         say(f"{source.name}: not used, because {err}.")
+    except (OSError, ValueError) as err:
+        counts["stopped by an error: " + str(err)[:120]] += 1
+        say(f"{source.name}: stopped early because of an error: {err}")
     counts["groups"] = len(per_group)
-    return rows, counts
+    return rows[:per_source], counts
 
 
-def write_outputs(out, rows, counts_by_source, used, fetcher, started):
+CHANGES = {OWNER: "Social Security, card, bank and account numbers and passwords masked; nothing else changed",
+           STRICT: "personal details and names replaced with placeholders, sensitive messages left out, messages "
+                   "shortened to the writer's own words"}
+
+
+def write_outputs(out, rows, counts_by_source, used, fetcher, started, privacy=OWNER):
     """Write every output file into out (see the module notes)."""
     os.makedirs(out, exist_ok=True)
     train = [r for r in rows if not is_validation(r)]
@@ -175,7 +298,7 @@ def write_outputs(out, rows, counts_by_source, used, fetcher, started):
                 f.write(json.dumps(r, ensure_ascii=False) + "\n")
 
     with open(os.path.join(out, "samples.txt"), "w", encoding="utf-8") as f:
-        f.write("Samples to read and check: the first ten examples of each source, after scrubbing.\n"
+        f.write(f"Samples to read and check: the first ten examples of each source (privacy setting: {privacy}).\n"
                 "Each one starts with a line 'Example', then the instruction, then the answer.\n\n")
         for source in used:
             mine = [r for r in rows if r["source"] == source.key][:10]
@@ -185,17 +308,22 @@ def write_outputs(out, rows, counts_by_source, used, fetcher, started):
                         f"Answer:\n{r['response']}\n\n")
 
     with open(os.path.join(out, "build-report.txt"), "w", encoding="utf-8") as f:
-        f.write(f"Writing Kit build report, {time.strftime('%Y-%m-%d %H:%M')}\n\n")
+        f.write(f"Writing Kit build report, {time.strftime('%Y-%m-%d %H:%M')}. Privacy setting: {privacy} "
+                f"({'whole messages; only SSN, card, bank and account numbers and passwords masked' if privacy == OWNER else 'names and personal details replaced, sensitive messages dropped'}).\n\n")
         f.write(f"Examples in all: {len(rows)} ({len(train)} for training, {len(valid)} for validation).\n\n")
         kinds = Counter(r["kind"] for r in rows)
         f.write("Kinds of message: " + ", ".join(f"{k} {v}" for k, v in kinds.most_common()) + ".\n\n")
         for source in used:
             c = counts_by_source.get(source.key, Counter())
             f.write(f"{source.name} ({source.licence_class}, {source.licence.split('. ')[0]}):\n")
-            f.write(f"  read {c['read']}, kept {c['kept']}, from {c['groups']} mailboxes or lists.\n")
+            f.write(f"  read {c['read']} records, kept {c['kept']} examples, from {c['groups']} groups (mailboxes, "
+                    f"lists, channels or files).\n")
+            for label in ("attachments saved", "attachment texts"):
+                if c[label]:
+                    f.write(f"  {label}: {c[label]}\n")
             for why, n in sorted(c.items(), key=lambda kv: -kv[1]):
-                if why not in ("read", "kept", "groups"):
-                    f.write(f"  dropped, {why}: {n}\n")
+                if why not in ("read", "kept", "groups", "attachments saved", "attachment texts"):
+                    f.write(f"  not used, {why}: {n}\n")
             for w in source.warnings:
                 f.write(f"  Warning: {w}\n")
             f.write("\n")
@@ -216,8 +344,8 @@ def write_outputs(out, rows, counts_by_source, used, fetcher, started):
             n = sum(1 for r in rows if r["source"] == source.key)
             f.write(f"{source.name}: {n} examples\n  Credit: {source.credit}\n  Licence: {source.licence} "
                     f"({source.licence_class}) {source.licence_url}\n  Where: {source.home}\n"
-                    f"  Changes: messages scrubbed of personal details and names, shortened to the writer's own "
-                    f"words; instructions written by rules.\n\n")
+                    f"  Changes: {CHANGES[privacy] if source.key != 'sbcsae' else 'none (whole and unchanged)'}; "
+                    f"instructions written by rules.\n\n")
 
     with open(os.path.join(out, "sources-not-used.txt"), "w", encoding="utf-8") as f:
         f.write("Sources that were checked and cannot be used, with the reason (checked November 2026).\n\n")
@@ -240,6 +368,10 @@ def main(argv=None):
     parser.add_argument("--w3c-pages", type=int, default=30, help="at most this many messages per W3C period")
     parser.add_argument("--cache", default="", help="a folder to keep downloaded pages and files in, so a rebuild "
                                                     "does not download them again")
+    parser.add_argument("--privacy", choices=[OWNER, STRICT], default=OWNER,
+                        help="owner (the default): keep every message whole and mask only Social Security, card, "
+                             "bank and account numbers and passwords; strict: also replace names and personal "
+                             "details and drop sensitive messages")
     args = parser.parse_args(argv)
 
     started = time.time()
@@ -269,10 +401,11 @@ def main(argv=None):
             options["periods_per_list"], options["pages_per_period"] = args.w3c_periods, args.w3c_pages
             if args.w3c_lists:
                 options["lists"] = [x.strip() for x in args.w3c_lists.split(",") if x.strip()]
-        got, counts[source.key] = build_source(source, fetcher, args.per_source, say, seen, options)
+        got, counts[source.key] = build_source(source, fetcher, args.per_source, say, seen, options, args.privacy,
+                                               os.path.join(args.out, "messages"))
         say(f"{source.name}: {len(got)} examples kept.")
         rows += got
-    train, valid = write_outputs(args.out, rows, counts, used, fetcher, started)
+    train, valid = write_outputs(args.out, rows, counts, used, fetcher, started, args.privacy)
     say(f"Done: {len(train)} training and {len(valid)} validation examples in {os.path.abspath(args.out)}. "
         "Read samples.txt and build-report.txt there.")
     return 0

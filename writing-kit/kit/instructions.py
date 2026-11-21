@@ -210,3 +210,79 @@ def make_instruction(subject, text, audience="a colleague", is_reply=False):
         sentence += " It answers a message they sent."
     instruction = sentence + subject_hint(subject)
     return instruction, {"kind": kind, "form": form, "tone": tone, "audience": audience, "length": length}
+
+
+# ----------------------------------------------------------------- chats, texts, letters and public comments
+
+CHAT_TEMPLATES = [
+    "Here is part of {setting}. Write {speaker}'s next message, in the same casual style.\n\n{context}",
+    "Continue this conversation ({setting}). Reply as {speaker}, briefly and naturally.\n\n{context}",
+    "Read the conversation below ({setting}) and write what {speaker} says next.\n\n{context}",
+]
+TALK_TEMPLATES = [
+    "Here is a discussion on {setting}. Write {speaker}'s reply, as a comment on the talk page.\n\n{context}",
+    "Reply to the last comment in this discussion ({setting}) as {speaker}.\n\n{context}",
+]
+
+
+def pick(templates, text):
+    """One of templates, always the same one for the same text."""
+    return templates[int(hashlib.sha1(text.encode("utf-8")).hexdigest(), 16) % len(templates)]
+
+
+def make_chat_instruction(setting, context, speaker, reply, style=""):
+    """(instruction, details) for "write the next message" in a conversation. context is [(speaker, text)]."""
+    lines = "\n".join(f"{who}: {text}" for who, text in context)
+    templates = TALK_TEMPLATES if style == "talk" else CHAT_TEMPLATES
+    instruction = pick(templates, reply).format(setting=setting, speaker=speaker, context=lines)
+    kind = classify_kind("", reply, is_reply=True)
+    return instruction, {"kind": kind, "form": "chat message" if style != "talk" else "comment",
+                         "tone": guess_tone(reply, kind), "audience": setting, "length": length_word(reply)}
+
+
+SMS_TEMPLATES = [
+    "Write a {length} text message to a friend{point}. Keep it {tone}, the way people really text.",
+    "Text a friend{point}. Make it {length} and {tone}.",
+    "Send a {length}, {tone} text message{point}.",
+]
+
+
+def make_sms_instruction(text):
+    """(instruction, details) for a real text message (SMS)."""
+    kind = classify_kind("", text)
+    point = main_point(kind, text)
+    tone = guess_tone(text, kind)
+    if not point:
+        point = {"thank-you note": " to say thanks", "apology": " to say sorry", "declining": " to say you can't make "
+                 "it", "scheduling": " to sort out when to meet", "request": " asking for something",
+                 "follow-up": " to check in", "confirmation": " to confirm", "invitation": " inviting them"}.get(kind, "")
+    instruction = pick(SMS_TEMPLATES, text).format(length=length_word(text), tone=tone, point=point)
+    return re.sub(r"\s+", " ", instruction), {"kind": kind, "form": "text message", "tone": tone,
+                                              "audience": "a friend", "length": length_word(text)}
+
+
+def make_letter_instruction(text, title):
+    """(instruction, details) for a public-domain personal letter (written before about 1930)."""
+    kind = classify_kind("", text)
+    tone = "warm and old-fashioned"
+    to = "a friend or relative"
+    m = re.match(r"\s*(?:my )?(?:dear|dearest)\s+([^,\n:]{1,30})", text, re.I)
+    if m and re.match(r"(?i)(mother|father|sister|brother|aunt|uncle|son|daughter|wife|husband)", m.group(1)):
+        to = "your " + m.group(1).split()[0].lower()
+    what = {"thank-you note": "thanking them", "apology": "apologising", "invitation": "with an invitation",
+            "declining": "declining something", "request": "asking a favour"}.get(kind, "with your news")
+    instruction = (f"Write a personal letter to {to} {what}, in the style of a letter written before 1930 "
+                   f"(from \"{title.strip()}\").")
+    return instruction, {"kind": kind, "form": "letter", "tone": tone, "audience": to, "length": length_word(text)}
+
+
+def make_comment_instruction(text, agency, title):
+    """(instruction, details) for a public comment sent to a US federal agency."""
+    kind = "complaint" if re.search(r"\b(oppose|against|disagree|unfair|terrible|outrage\w*)\b", text, re.I) \
+        else "public comment"
+    tone = guess_tone(text, "update")
+    about = f' about "{title.strip()}"' if title else ""
+    instruction = (f"Write a public comment to the US agency {agency or 'in charge'}{about}, in your own words, as "
+                   f"an ordinary member of the public. Make it {length_word(text)} and {tone}.")
+    return instruction, {"kind": kind, "form": "public comment", "tone": tone, "audience": agency,
+                         "length": length_word(text)}

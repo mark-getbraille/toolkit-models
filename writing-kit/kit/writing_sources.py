@@ -8,7 +8,9 @@ Licence classes (the same words as the Picture Model Training Kit):
                      same licence (CC BY-SA);
   personal use only  no licence lets others re-use the text; it is used only on the owner's own computer to train
                      the owner's own model, and neither the data nor the trained add-on is shared.
-By default the builder uses only open and share-alike sources; --personal adds the personal-use ones.
+By default the builder uses only open and share-alike sources; --personal adds the personal-use ones. Corpora that
+are public but whose writers never gave up their copyright (Enron, mailing lists, Usenet, IRC, public comments) are
+personal use only unless the source's own terms say otherwise.
 """
 
 from dataclasses import dataclass, field
@@ -70,9 +72,10 @@ SOURCES = [
         home="https://www.cs.cmu.edu/~enron/",
         reader="read_enron",
         notes="The kit reads the one official file (enron_mail_20150507.tar.gz, 1.7 GB) as it arrives and stops "
-              "once it has enough; it uses only each person's own sent mail, never attachments (the file has none). "
-              "The emails were written by Enron employees, so they are not US government works; with no licence "
-              "they are personal use only. Every message is scrubbed and most are dropped (see SCRUBBING.txt).",
+              "once it has enough; it uses each person's own sent mail, whole, with its quoted thread. This copy has "
+              "no attachments (they were taken out before it was published). The corpus was NOT redacted by anyone "
+              "before release (unlike the government email releases, which the agencies reviewed and redacted). The "
+              "emails were written by Enron employees, who keep their copyright, so it is personal use only.",
         warnings=["The robots.txt of www.cs.cmu.edu blocks two single companies' AI crawlers (Meta's "
                   "meta-externalagent and ByteDance's Bytespider) along with some search crawlers. It does not "
                   "block AI-training crawlers in general (GPTBot, ClaudeBot, CCBot and Google-Extended are allowed) "
@@ -90,8 +93,94 @@ SOURCES = [
         reader="read_w3c",
         notes="The kit reads the public HTML archive pages of a few W3C lists (by default the accessibility lists "
               "w3c-wai-ig, w3c-wai-gl and public-aria), one page every 3 seconds. robots.txt closes the raw "
-              "'mboxes' downloads and the member-only archives, and the kit never reads them. Only the message "
-              "text is used; attachments are never downloaded."),
+              "'mboxes' downloads and the member-only archives, and the kit never reads them. Attachments linked from "
+              "a message page are downloaded too and saved beside the message."),
+    Source(
+        key="usenet", name="Usenet newsgroups (Giganews collection on the Internet Archive)",
+        licence="No licence. Old public Usenet posts kept by the Internet Archive; the writers keep their copyright",
+        licence_class=PERSONAL, licence_url="https://archive.org/details/giganews",
+        credit="Usenet posts from the Giganews collection, Internet Archive", home="https://archive.org/details/giganews",
+        reader="read_usenet",
+        notes="One official mbox file per newsgroup (alt.vacation, misc.writing.moderated, misc.writing by default), "
+              "read as it arrives. Posts keep their quoted text; old uuencoded files are left out of the text."),
+    Source(
+        key="debian", name="Debian mailing lists (lists.debian.org)",
+        licence="No licence. Public list archives; the writers keep their copyright",
+        licence_class=PERSONAL, licence_url="https://www.debian.org/MailingLists/",
+        credit="Messages from the Debian mailing list archives (https://lists.debian.org/)",
+        home="https://lists.debian.org/", reader="read_debian",
+        notes="The public HTML archive of debian-user, one page at a time; attachment links are downloaded too."),
+    Source(
+        key="irc", name="Ubuntu IRC logs (irclogs.ubuntu.com)",
+        licence="No licence. Ubuntu publishes the logs of its public IRC channels; the writers keep their copyright",
+        licence_class=PERSONAL, licence_url="https://irclogs.ubuntu.com/",
+        credit="Ubuntu IRC logs (https://irclogs.ubuntu.com/)", home="https://irclogs.ubuntu.com/",
+        reader="read_irc", notes="Plain-text daily logs of #ubuntu and #ubuntu-offtopic on a few days."),
+    Source(
+        key="sms", name="SMS Spam Collection (UCI Machine Learning Repository)",
+        licence="CC BY 4.0", licence_class=OPEN, licence_url="https://creativecommons.org/licenses/by/4.0/",
+        credit="Tiago A. Almeida and Jose Maria Gomez Hidalgo, SMS Spam Collection, UCI Machine Learning Repository",
+        home="https://archive.ics.uci.edu/dataset/228/sms+spam+collection", reader="read_sms",
+        notes="Real text messages. Only the ordinary ones (marked 'ham') are used, never the spam."),
+    Source(
+        key="taskmaster", name="Taskmaster-1 (Google)", licence="CC BY 4.0", licence_class=OPEN,
+        licence_url="https://creativecommons.org/licenses/by/4.0/",
+        credit="Bill Byrne, Karthik Krishnamoorthi, Chinnadhurai Sankar, Arvind Neelakantan, Amit Dubey, Kyu-Young "
+               "Kim and Andy Cedilnik, Google LLC (Taskmaster-1)",
+        home="https://github.com/google-research-datasets/Taskmaster", reader="read_taskmaster",
+        notes="Spoken-style conversations between two people, one playing an assistant (the WOZ part)."),
+    Source(
+        key="sgd", name="Schema-Guided Dialogue (Google)", licence="CC BY-SA 4.0", licence_class=SHARE_ALIKE,
+        licence_url="https://creativecommons.org/licenses/by-sa/4.0/",
+        credit="Rastogi et al., Google Research, Schema-Guided Dialogue dataset",
+        home="https://github.com/google-research-datasets/dstc8-schema-guided-dialogue", reader="read_sgd",
+        notes="Chats between a customer and a virtual assistant (first training file)."),
+    Source(
+        key="multiwoz", name="MultiWOZ 2.2", licence="MIT License", licence_class=OPEN,
+        licence_url="https://github.com/budzianowski/multiwoz/blob/master/LICENSE",
+        credit="Pawel Budzianowski and the MultiWOZ authors", home="https://github.com/budzianowski/multiwoz",
+        reader="read_multiwoz", notes="Chats between a visitor and a tourist information clerk (first training file)."),
+    Source(
+        key="topical", name="Topical-Chat (Amazon)", licence="Community Data License Agreement - Sharing 1.0",
+        licence_class=SHARE_ALIKE, licence_url="https://cdla.dev/sharing-1-0/",
+        credit="Amazon.com, Inc. or its affiliates (Topical-Chat)", home="https://github.com/alexa/Topical-Chat",
+        reader="read_topical", notes="Friendly chats between two strangers about a topic (one official file)."),
+    Source(
+        key="wikitalk", name="Wikipedia talk pages (Simple English Wikipedia dump)",
+        licence="CC BY-SA 4.0 (and GFDL)", licence_class=SHARE_ALIKE,
+        licence_url="https://creativecommons.org/licenses/by-sa/4.0/",
+        credit="Simple English Wikipedia contributors", home="https://dumps.wikimedia.org/simplewiki/",
+        reader="read_wikitalk",
+        notes="Discussion pages from the official dump, read as it arrives; each comment ends with its signature. "
+              "While Wikimedia moves to new dumps, this file is offered only from the 1st to the 14th of each "
+              "month (it was not offered on the day of the test build, 21 November 2026)."),
+    Source(
+        key="gutenberg", name="Letters in the public domain (Project Gutenberg)",
+        licence="Public domain in the United States (published before 1930)", licence_class=OPEN,
+        licence_url="https://www.gutenberg.org/policy/license.html",
+        credit="Project Gutenberg volunteers (https://www.gutenberg.org/)", home="https://www.gutenberg.org/",
+        reader="read_gutenberg",
+        notes="Books of letters found in Gutenberg's catalogue, from its official mirror gutenberg.pglaf.org (the "
+              "main site asks programs to use mirrors). Gutenberg's header and licence text are taken off, as its "
+              "licence allows for public-domain books."),
+    Source(
+        key="sbcsae", name="Santa Barbara Corpus of Spoken American English (transcripts)",
+        licence="CC BY-ND 3.0 US (no changes allowed)", licence_class=PERSONAL,
+        licence_url="https://creativecommons.org/licenses/by-nd/3.0/us/",
+        credit="John W. Du Bois, Wallace L. Chafe, Charles Meyer, Sandra A. Thompson, Robert Englebretson and "
+               "Nii Martey, Santa Barbara Corpus of Spoken American English, UC Santa Barbara",
+        home="https://www.linguistics.ucsb.edu/research/santa-barbara-corpus-spoken-american-english",
+        reader="read_sbcsae",
+        notes="Each transcript is used whole and unchanged (the licence allows no changes), so it is personal use "
+              "only: a trained model could count as a changed version."),
+    Source(
+        key="regulations", name="Public comments to US federal agencies (regulations.gov)",
+        licence="Public records, but each comment's writer keeps the copyright", licence_class=PERSONAL,
+        licence_url="https://www.regulations.gov/user-notice",
+        credit="Public comments from regulations.gov", home="https://www.regulations.gov/",
+        reader="read_regulations",
+        notes="Needs a free API key from api.data.gov in the setting REGULATIONS_GOV_API_KEY; without one it is "
+              "skipped. Comments with only an attachment are left out."),
 ]
 
 NOT_USED = [
@@ -121,13 +210,42 @@ NOT_USED = [
     ("Apache Software Foundation mailing lists (lists.apache.org, mail-archives.apache.org)",
      "The robots.txt of mail-archives.apache.org closes the whole site to all programs and says bot operators must "
      "contact the ASF to be allowed; mailing list posts have no public licence. Not used."),
-    ("IETF mailing lists (mailarchive.ietf.org)",
+    ("IETF mailing lists (mailarchive.ietf.org, www.ietf.org/mail-archive)",
      "Under the IETF's rules (BCP 78, the 'Note Well') posts are Contributions licensed to the IETF Trust, not to "
-     "the public, and robots.txt closes the bulk export (/arch/export/). The W3C lists give the same kind of "
-     "technical-list mail, so the IETF lists were left out."),
+     "the public; robots.txt closes the bulk export (/arch/export/), the old text archive address now leads to the "
+     "home page, and the anonymous IMAP access is not a web address this kit can use. Not used."),
+    ("Linux kernel mailing lists (lore.kernel.org)",
+     "Its robots.txt closes the whole site to every program ('User-agent: * / Disallow: /') and names AI crawlers "
+     "(GPTBot, ClaudeBot, CCBot, Google-Extended and many more) separately. Not used."),
     ("Stack Exchange data dump",
      "The posts are CC BY-SA, but since 2024 the official dump needs a login and terms that forbid using it to "
-     "train AI models; the archive.org copies of newer dumps are community re-uploads, not official. Not used."),
+     "train AI models; the archive.org copies of newer dumps are community re-uploads, not official, and Stack "
+     "Exchange's API terms likewise restrict AI training. Comments and posts are therefore not used."),
+    ("DailyDialog",
+     "CC BY-NC-SA 4.0 (would be personal use), but its official download (yanran.li) answers 'Service "
+     "Unavailable' and the Hugging Face copy is only a loading script pointing there; unofficial copies are not "
+     "used."),
+    ("PersonaChat (ConvAI2)",
+     "The MIT licence on ParlAI covers its program code; the conversations themselves have no stated licence from "
+     "their publisher, and the Hugging Face copies are unofficial with 'unknown' licences. Synthetic-Persona-Chat "
+     "is machine-written. Not used."),
+    ("CoQA",
+     "Its passages carry several different licences (some for research only), and its answers are short "
+     "question-answering, not conversation. Not used."),
+    ("Switchboard and CALLHOME transcripts",
+     "Licensed by the Linguistic Data Consortium (LDC) to members and buyers only; not freely downloadable. Not "
+     "used."),
+    ("Wikisource letters and the Kiwix copies of Gutenberg",
+     "Wikisource's letters are mostly the same public-domain books as Project Gutenberg's, which the kit reads "
+     "from Gutenberg's official mirror; the Kiwix ZIM copies are whole libraries of many gigabytes, so they were "
+     "not needed."),
+    ("Open-licence forum archives",
+     "No forum was found that offers an official bulk download under an open licence other than Wikipedia's talk "
+     "pages (used) and Stack Exchange (terms forbid AI training). Not used."),
+    ("City council minutes and meeting transcripts",
+     "Each city publishes its own, on its own site and terms, mostly as PDF minutes rather than transcripts, and "
+     "whether they are public domain depends on the state. No single official bulk source was found; the Council "
+     "Data Project's transcripts are machine-made speech recognition. Not used for now."),
     ("stindardlogic/email-writing-sft-100k (Hugging Face, Apache 2.0)",
      "Machine-written ('synthetic') emails whose card does not say how or with which model they were made. "
      "Machine-written emails would teach the model a machine's style, so it was left out."),

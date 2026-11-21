@@ -8,7 +8,9 @@ Two kinds of record:
                    (OASST2, Dolly), which is scrubbed the same way and keeps its own instruction.
 "group" lets the builder spread examples over many mailboxes or lists instead of taking them all from one.
 
-Attachments are never read: the Enron file has none, and for W3C pages only the message text is taken.
+Attachments are kept (the owner's rule): the W3C pages' attachment links are downloaded (robots.txt allows them),
+and any attachment inside a message is kept. The CMU copy of the Enron emails has no attachments: they were taken
+out before it was published.
 """
 
 import email
@@ -72,17 +74,14 @@ def enron_records(fileobj, say=print):
 
 
 def enron_record(data, user):
-    """One email record from the bytes of one Enron message file, or None when it cannot be read."""
+    """One email record from the bytes of one Enron message file (with any attachments it carries), or None."""
+    import readers_more
     try:
-        msg = email.message_from_bytes(data, policy=email.policy.compat32)
+        msg, body, files = readers_more.parse_mail(data)
     except Exception:
         return None
-    if msg.is_multipart():
-        return None                                   # never attachments
-    body = msg.get_payload(decode=True)
-    if not body:
+    if not body.strip():
         return None
-    body = body.decode("latin-1", "replace")
     header = lambda k: str(msg.get(k, "") or "")
     recipients = ",".join([header("To"), header("Cc"), header("Bcc")])
     addresses = re.findall(r"[\w.\-]+@[\w.\-]+", recipients)
@@ -95,6 +94,7 @@ def enron_record(data, user):
         audience = "an outside contact"
     surname = user.split("-")[0]
     return {
+        "type": "email",
         "subject": header("Subject"),
         "body": body,
         "known_names": [header("X-To"), header("X-cc"), header("X-bcc"), header("To"), header("Cc")],
@@ -102,6 +102,8 @@ def enron_record(data, user):
         "audience": audience,
         "is_reply": bool(re.match(r"\s*re\s*:", header("Subject"), re.I)),
         "group": user,
+        "attachments": files,
+        "msg_id": header("Message-ID"),
     }
 
 
@@ -139,7 +141,10 @@ def w3c_message(page):
     to = _strip_tags((re.search(r'<span class="to">(.*?)</span></li>', page, re.S) or [None, ""])[1])
     cc = _strip_tags((re.search(r'<span class="cc">(.*?)</span></li>', page, re.S) or [None, ""])[1])
     to_list = "w3.org" in to.split(":", 1)[-1] and "@" in to
+    links = re.findall(r'<a href="(att-\d+/[^"]+)"', page)
     return {
+        "type": "email",
+        "attachment_links": links,
         "subject": subject,
         "body": body,
         "known_names": [to, cc],
@@ -166,7 +171,15 @@ def read_w3c(fetcher, say=print, lists=None, periods_per_list=3, pages_per_perio
                 raw = fetcher.get(W3C_BASE + name + "/" + period + page_name)
                 record = w3c_message(raw.decode("iso-8859-1", "replace"))
                 if record:
-                    record["group"] = name
+                    files = []
+                    for link in record.pop("attachment_links"):
+                        try:
+                            files.append((link.split("/")[-1], fetcher.get(W3C_BASE + name + "/" + period + link),
+                                          ""))
+                        except Exception as err:
+                            if "robots" in str(err):
+                                raise
+                    record.update(group=name, attachments=files, msg_id=W3C_BASE + name + "/" + period + page_name)
                     yield record
 
 
@@ -197,7 +210,7 @@ def oasst_records(lines):
                    and not r.get("deleted") and r.get("review_result", True) is not False]
         answers.sort(key=lambda r: (r.get("rank") is None, r.get("rank") if r.get("rank") is not None else 0))
         if answers and not NOT_AN_ANSWER.search(answers[0]["text"]):
-            yield {"instruction": root["text"].strip(), "response": clean_answer(answers[0]["text"]),
+            yield {"type": "writing", "instruction": root["text"].strip(), "response": clean_answer(answers[0]["text"]),
                    "group": "oasst2"}
 
 
@@ -216,7 +229,8 @@ def dolly_records(lines):
             continue
         prompt = (rec.get("instruction", "") + ("\n\n" + rec["context"] if rec.get("context") else "")).strip()
         if is_writing_request(rec.get("instruction", "")) and not NOT_AN_ANSWER.search(rec.get("response", "")):
-            yield {"instruction": prompt, "response": clean_answer(rec.get("response", "")), "group": "dolly"}
+            yield {"type": "writing", "instruction": prompt, "response": clean_answer(rec.get("response", "")),
+                   "group": "dolly"}
 
 
 def read_dolly(fetcher, say=print, **_):

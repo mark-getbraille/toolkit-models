@@ -11,6 +11,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), "kit"))
 import build_dataset  # noqa: E402
 import readers  # noqa: E402
+import readers_more  # noqa: E402
 import writing_sources  # noqa: E402
 
 MAIL = """Message-ID: <1.JavaMail.evans@thyme>
@@ -113,7 +114,7 @@ def test_dolly_reader_picks_writing_requests():
     assert len(list(readers.dolly_records(lines))) == 1
 
 
-def test_whole_build_writes_scrubbed_files(tmp_path, monkeypatch):
+def test_strict_build_writes_scrubbed_files(tmp_path, monkeypatch):
     def fake_enron(fetcher, say=print, **_):
         yield from readers.enron_records(make_tar({"maildir/calloway-w/sent/1.": MAIL,
                                                    "maildir/calloway-w/sent/2.": SICK}), say)
@@ -124,7 +125,8 @@ def test_whole_build_writes_scrubbed_files(tmp_path, monkeypatch):
     monkeypatch.setattr(readers, "read_enron", fake_enron)
     monkeypatch.setattr(readers, "read_oasst2", fake_oasst)
     out = tmp_path / "out"
-    assert build_dataset.main(["--out", str(out), "--sources", "enron,oasst2", "--personal"]) == 0
+    assert build_dataset.main(["--out", str(out), "--sources", "enron,oasst2", "--personal",
+                               "--privacy", "strict"]) == 0
     rows = [json.loads(line) for name in ("train.jsonl", "validation.jsonl")
             for line in open(out / name, encoding="utf-8")]
     assert len(rows) == 2                                 # the sick-day message was dropped
@@ -157,5 +159,57 @@ def test_every_source_is_recorded_with_a_licence_class():
     for s in writing_sources.SOURCES:
         assert s.licence_class in writing_sources.CLASSES
         assert s.licence and s.credit and s.home.startswith("https://")
-        assert hasattr(readers, s.reader)
+        assert hasattr(readers, s.reader) or hasattr(readers_more, s.reader)
     assert len(writing_sources.NOT_USED) >= 8
+
+
+ATTACHED = """From: wren.calloway@example.com
+To: idris.mavros@example.com
+Subject: Re: Thursday review
+Message-ID: <42@example.com>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="XX"
+
+--XX
+Content-Type: text/plain
+
+Idris, I'm off sick today, so the review can wait. My SSN for the form is 123-45-6789 and the
+door code password: blue42!
+
+Wren
+
+On Monday Idris Mavros wrote:
+> Can we do the review on Thursday?
+--XX
+Content-Type: text/plain; name="memo.txt"
+Content-Disposition: attachment; filename="memo.txt"
+
+MEMO. To all staff: the kitchen will be closed on Friday for cleaning. Please take your mugs home
+on Thursday evening and do not leave food in the fridge over the weekend. Thank you all.
+--XX--
+"""
+
+
+def test_owner_build_keeps_whole_messages_and_attachments(tmp_path, monkeypatch):
+    def fake_enron(fetcher, say=print, **_):
+        yield readers.enron_record(ATTACHED.encode(), "calloway-w")
+
+    monkeypatch.setattr(readers, "read_enron", fake_enron)
+    out = tmp_path / "out"
+    assert build_dataset.main(["--out", str(out), "--sources", "enron", "--personal"]) == 0
+    rows = [json.loads(line) for name in ("train.jsonl", "validation.jsonl")
+            for line in open(out / name, encoding="utf-8")]
+    mail = [r for r in rows if r["kind"] != "attachment"][0]
+    memo = [r for r in rows if r["kind"] == "attachment"][0]
+    assert "Idris, I'm off sick today" in mail["response"]          # sensitive topics and names are kept
+    assert mail["response"].rstrip().endswith("Wren")
+    assert "123-45-6789" not in json.dumps(rows) and "[SSN]" in mail["response"]
+    assert "blue42" not in json.dumps(rows) and "password: [password]" in mail["response"]
+    assert "The message you are answering:" in mail["instruction"]
+    assert "Can we do the review on Thursday?" in mail["instruction"]
+    assert "kitchen will be closed" in memo["response"] and "memo.txt" in memo["instruction"]
+    folders = list((out / "messages" / "enron").iterdir())
+    assert len(folders) == 1
+    assert sorted(p.name for p in folders[0].iterdir()) == ["memo.txt", "message.txt"]
+    report = (out / "build-report.txt").read_text(encoding="utf-8")
+    assert "attachments saved: 1" in report and "Privacy setting: owner" in report

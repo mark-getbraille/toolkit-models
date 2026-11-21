@@ -37,6 +37,7 @@ QUOTE_MARKERS = [
     r"^On .{4,200}wrote:\s*$",
     r"^On .{4,120}$\n^.{0,120}wrote:\s*$",
     r"^.{1,80} wrote:\s*$",
+    r"^.{1,160} wrote in message( news:)?",
     r"^From:\s.*$\n^(Sent|Date|To):",
     r"^\s*From:\s.*\n\s*To:",
     r"^_{8,}\s*$",
@@ -505,3 +506,90 @@ def clean_message(subject, body, known_names=(), writer_names=(), min_words=12, 
     if why:
         return None, "quality: " + why
     return {"subject": subj, "body": text}, ""
+
+
+# ----------------------------------------------------------------- the owner's rule (the default): keep everything,
+# mask only the identity-theft identifiers
+#
+# The owner asked to keep every message as it was released: full text, names, signatures, quoted threads, personal
+# and sensitive topics. The one exception: identifiers that add nothing to writing style but would let someone steal
+# an identity if the model learned them by heart and repeated them. These are masked, and nothing else:
+#   Social Security numbers (and similar national ID numbers written the same way)      -> [SSN]
+#   card numbers (13 to 19 digits, with or without spaces or dashes)                     -> [card number]
+#   bank, account, routing, IBAN and similar numbers named as such                       -> [account number]
+#   passwords, PINs, passcodes and login names given in the text                         -> [password] / [login]
+
+IDENTIFIER_PATTERNS = [
+    # (placeholder, pattern); only the part named "v" is replaced, so labels such as "password:" stay.
+    ("[SSN]", re.compile(r"\b(?P<v>(?!000|666|9\d\d)\d{3}-(?!00)\d{2}-(?!0000)\d{4})\b")),
+    ("[SSN]", re.compile(r"(?i)\b(?:SSN|social security (?:no\.?|number|#)|soc\.? sec\.?(?: no\.?)?)\s*[:#]?\s*"
+                         r"(?P<v>\d{9})\b")),
+    ("[account number]", re.compile(r"\b(?P<v>[A-Z]{2}\d{2}(?: ?[A-Z0-9]{4}){3,7}(?: ?[A-Z0-9]{1,3})?)\b")),  # IBAN
+    ("[card number]", re.compile(r"\b(?P<v>(?:\d{4}[ -]){3}\d{1,7}|3[47]\d{2}[ -]?\d{6}[ -]?\d{5})\b")),
+    ("[card number]", re.compile(r"(?i)\bcard\s*(?:no\.?|number|#)?\s*[:#]?\s*(?P<v>\d{13,19})\b")),
+    ("[account number]", re.compile(
+        r"(?i)\b(?:bank|checking|savings|account|acct|a/c|routing|aba|sort code|swift|iban|member|policy|"
+        r"brokerage)\b(?:\s*(?:no\.?|number|num\.?|#|code))?(?:\s+is)?\s*[:#]?\s*"
+        r"(?P<v>(?=[\dA-Z\-]*\d{4})[\dA-Z][\dA-Z\-]{5,})")),
+    ("[password]", re.compile(
+        r"(?i)\b(?:password|passwd|pwd|passcode|pass code|pin(?: number| code)?|security code|access code)\b"
+        r"\s*[:=]\s*[\"']?(?P<v>(?!\[)[^\s\"']{2,40}?)(?=[\"']?(?:[.,;)]?\s|[.,;)]?$))")),
+    ("[password]", re.compile(
+        r"(?i)\b(?:password|passwd|pwd|passcode|pass code|pin(?: number| code)?|security code|access code)\b"
+        r"\s+(?:is|was|will be|=)\s+[\"']?(?P<v>(?!\[)(?=[^\s\"']*[\d!@#$%^&*])[^\s\"']{3,40}?)"
+        r"(?=[\"']?(?:[.,;)]?\s|[.,;)]?$))")),
+    ("[password]", re.compile(r"(?i)\b(?:pin|pin number|pin code)\s+(?P<v>\d{4,8})\b")),
+    ("[login]", re.compile(r"(?i)\b(?:user ?name|user ?id|login(?: id| name)?)\b(?:\s+(?:is|=))?\s*[:=]\s*[\"']?"
+                           r"(?P<v>(?!\[)[^\s\"']{2,40})")),
+]
+
+
+def mask_identifiers(text):
+    """text with only the identity-theft identifiers masked (see the notes above). The label before a masked value
+    is kept ("password: [password]") so the sentence still reads naturally."""
+    for placeholder, pattern in IDENTIFIER_PATTERNS:
+        text = pattern.sub(lambda m: m.group(0)[:m.start("v") - m.start(0)] + placeholder
+                           + m.group(0)[m.end("v") - m.start(0):], text)
+    return text
+
+
+def split_thread(body):
+    """(own, quoted): the writer's own words and the earlier messages quoted below them (or "" when none), with
+    nothing removed or changed. own is the text before the first quote marker (see QUOTE_MARKERS)."""
+    text = (body or "").replace("\r\n", "\n").replace("\r", "\n")
+    cut = len(text)
+    for pattern in QUOTE_MARKERS:
+        if pattern.startswith("^"):
+            pattern = "^[ \t]*" + pattern[1:]
+        m = re.search(pattern, text, re.M | re.I)
+        if m and m.start() < cut:
+            cut = m.start()
+    first_quote = re.search(r"^[ \t]*>", text, re.M)
+    if first_quote and first_quote.start() < cut and text[first_quote.start():].count("\n>") >= 0:
+        # a reply written above ">" quoted lines: own words are the lines before the first quoted line, plus any
+        # unquoted lines between quotes (inline replies are kept in own)
+        own_lines, quoted_lines = [], []
+        for line in text[:cut].split("\n"):
+            (quoted_lines if line.lstrip().startswith(">") else own_lines).append(line)
+        own = "\n".join(own_lines)
+        quoted = "\n".join(quoted_lines) + ("\n" + text[cut:] if cut < len(text) else "")
+        return own.strip(), quoted.strip()
+    return text[:cut].strip(), text[cut:].strip()
+
+
+def full_message(subject, body, max_words=3000):
+    """(prepared, reason) under the owner's rule: {"subject", "body", "own", "quoted"} with only identifiers masked,
+    or None and the reason when there is nothing usable (empty, or longer than max_words)."""
+    body = (body or "").replace("\r\n", "\n").replace("\r", "\n").strip()
+    if len(re.findall(r"\w+", body)) < 3:
+        return None, "empty"
+    if len(body.split()) > max_words:
+        return None, "too long for one example"
+    body = mask_identifiers(body)
+    subject = mask_identifiers(re.sub(r"\s+", " ", subject or "").strip())
+    own, quoted = split_thread(body)
+    if len(re.findall(r"\w+", own)) < 2:
+        own, quoted = body, ""
+    if len(re.findall(r"[A-Za-z']+", re.sub(r"(https?://|www\.)\S+", " ", own))) < 3:
+        return None, "only a link"
+    return {"subject": subject, "body": body, "own": own, "quoted": quoted}, ""
