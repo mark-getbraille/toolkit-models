@@ -161,7 +161,7 @@ def test_every_source_is_recorded_with_a_licence_class():
     for s in writing_sources.SOURCES:
         assert s.licence_class in writing_sources.CLASSES
         assert s.licence and s.credit and s.home.startswith("https://")
-        assert any(hasattr(m, s.reader) for m in (readers, readers_more, readers_meetings, readers_business))
+        assert any(hasattr(m, s.reader) for m in build_dataset.READER_MODULES)
     assert len(writing_sources.NOT_USED) >= 8
 
 

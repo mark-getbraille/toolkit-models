@@ -271,6 +271,27 @@ SOURCES = [
         home="https://huggingface.co/datasets/HuggingFaceFW/fineweb", reader="read_fineweb",
         notes="A modest sample read through the official dataset viewer interface: only pages whose address "
               "suggests a forum, review or questions page."),
+    Source(
+        key="idl", name="UCSF Industry Documents Library: company emails released in litigation (2010 on)",
+        licence="Made public by court order and settlements; UCSF offers them for research, teaching and other fair "
+                "use; the companies' writers keep their copyright", licence_class=PERSONAL,
+        licence_url="https://www.industrydocuments.ucsf.edu/help/copyright/",
+        credit="UCSF Industry Documents Library (Opioids, Drug, Food, Chemical, Fossil Fuel and Tobacco collections)",
+        home="https://www.industrydocuments.ucsf.edu/", reader="read_idl",
+        notes="About 3.8 million public opioid-industry emails alone (2000s to 2020s); the kit reads the newest "
+              "public emails from 2010 on in each industry through the library's search interface (Solr), which "
+              "gives each document's text, and the attachments listed with each email. Its download server refused "
+              "this kit, so PDFs are not fetched; the text comes from the search interface."),
+    Source(
+        key="doj_google", name="US v. Google (2023 search trial) exhibits that are emails (Department of Justice)",
+        licence="Published by the US Department of Justice as trial exhibits; the emails' writers (Google, Apple, "
+                "Samsung and others) keep their copyright", licence_class=PERSONAL,
+        licence_url="https://www.justice.gov/atr/us-and-plaintiff-states-v-google-llc-2020-trial-exhibits",
+        credit="US Department of Justice, Antitrust Division", home=
+        "https://www.justice.gov/atr/us-and-plaintiff-states-v-google-llc-2020-trial-exhibits",
+        reader="read_doj_google",
+        notes="About 2,000 exhibit PDFs (mostly 2010s to 2020s); only those that are emails are used, read with "
+              "pdftotext; each PDF is saved beside its email."),
 ]
 
 NOT_USED = [
@@ -432,6 +453,26 @@ NOT_USED = [
     ("Amazon Reviews 2023 (McAuley Lab)",
      "Its Hugging Face page states no licence, and the reviews belong to their writers and Amazon; it is offered "
      "for research. Not used."),
+    ("Congressional investigation exhibits on congress.gov",
+     "congress.gov's robots.txt blocks AI-training crawlers (GPTBot, ClaudeBot, CCBot, Google-Extended and others). "
+     "Not used."),
+    ("House Oversight, Senate Commerce and PSI, House Judiciary (2020 tech antitrust), Boeing 737 MAX and January 6 "
+     "committee document releases",
+     "Committee sites allow programs, but the email exhibits are scanned PDF appendices, one report at a time, with "
+     "no bulk text route; not built in this round (hearing records on GovInfo come in through the hearings "
+     "source)."),
+    ("FTC v. Meta, Epic v. Apple, Oracle v. Google, Waymo v. Uber and Theranos trial exhibits",
+     "Published as PDFs on court and agency pages or on CourtListener, which refused this kit (403) and whose API "
+     "needs a token; not built in this round. US v. Google's DOJ exhibits are used."),
+    ("FBI Vault and agency FOIA reading rooms (DHS, HHS, EPA), NIH and Fauci FOIA emails, congressional releases "
+     "about Hunter Biden",
+     "Federal records, but released as scanned PDF pages (with the agency's redactions) one release at a time; no "
+     "bulk text route was found. Not built in this round."),
+    ("State Department FOIA reading room (again)",
+     "robots.txt still closes foia.state.gov to all programs. Not used."),
+    ("Climate Investigations Center",
+     "Its robots.txt allows programs, but its documents are PDFs that mostly come from the Industry Documents "
+     "Library's fossil fuel collection, which the kit reads directly."),
 ]
 
 

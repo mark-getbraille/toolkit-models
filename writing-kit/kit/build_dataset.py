@@ -55,9 +55,11 @@ import writing_sources  # noqa: E402
 import readers_more  # noqa: E402
 import readers_meetings  # noqa: E402
 import readers_business  # noqa: E402
+import readers_litigation  # noqa: E402
 import attachments  # noqa: E402
 
-GROUPED = {"enron", "w3c", "usenet", "irc", "debian", "scotus", "hearings", "hansard"}   # sources read mailbox by mailbox or list by list
+READER_MODULES = (readers, readers_more, readers_meetings, readers_business, readers_litigation)
+GROUPED = {"enron", "w3c", "usenet", "irc", "debian", "scotus", "hearings", "hansard", "idl"}   # sources read mailbox by mailbox or list by list
 
 VALIDATION_SHARE = 20          # one example in twenty goes to validation.jsonl
 
@@ -188,11 +190,11 @@ def attachment_examples(record, source, attach_dir, privacy=OWNER):
         return []
     msg_key = hashlib.sha1((record.get("msg_id") or record.get("body", "")).encode("utf-8")).hexdigest()[:16]
     folder = os.path.join(attach_dir, source.key, msg_key)
-    header = f"Subject: {record.get('subject', '')}\n\n"
+    header = (record.get("header") or f"Subject: {record.get('subject', '')}\n") + "\n"
     attachments.save_message(folder, protect(header + record.get("body", ""), OWNER),
                              [(name, data) for name, data, _ in files])
     out = []
-    for name, data, ctype in files:
+    for name, data, ctype in ([] if record.get("no_attachment_text") else files):
         text = attachments.extract_text(name, data, ctype)
         if len(text.split()) < 20:
             continue
@@ -241,12 +243,14 @@ def is_validation(row):
 def build_source(source, fetcher, per_source, say, seen, reader_options, privacy=OWNER, attach_dir=None):
     """(rows, counts) for one source: up to per_source examples, no more than a tenth from one mailbox, list or
     channel when the source has several (at least 15)."""
-    module = next(m for m in (readers, readers_more, readers_meetings, readers_business) if hasattr(m, source.reader))
+    module = next(m for m in READER_MODULES if hasattr(m, source.reader))
     reader = getattr(module, source.reader)
     counts = Counter()
     rows = []
     per_group = defaultdict(int)
     group_cap = max(15, per_source // 10)
+    if source.key in ("w3c", "usenet", "irc", "debian", "scotus", "hearings", "hansard", "idl"):
+        group_cap = max(group_cap, per_source // 6 + 1)
     if source.key in ("w3c", "usenet", "irc", "debian", "scotus", "hearings", "hansard"):
         group_cap = max(group_cap, per_source // 2 + 1)
     try:

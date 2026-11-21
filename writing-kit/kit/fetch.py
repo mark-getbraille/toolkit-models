@@ -155,17 +155,17 @@ class Fetcher:
         return f"{parts.scheme}://{parts.netloc}"
 
     def robots_for(self, url):
-        """The Robots of url's site, reading robots.txt the first time (a site with no robots.txt allows all; a site
-        whose robots.txt cannot be read at all is treated as closed, to be safe)."""
+        """The Robots of url's site, reading robots.txt the first time. As RFC 9309 says, a robots.txt that answers
+        with a 4xx error (not found, forbidden) sets no rules; one that cannot be reached, or answers with a server
+        error, closes the site."""
         site = self._site(url)
         if site not in self.robots:
             try:
                 text = self._get(site + "/robots.txt", site, check=False).decode("utf-8", "replace")
             except urllib.error.HTTPError as err:
-                if err.code in (404, 410):
-                    text = ""
-                else:
-                    text = "User-agent: *\nDisallow: /\n"
+                # RFC 9309: a robots.txt that is "unavailable" (4xx) means no rules; an unreachable one (5xx)
+                # means stay away.
+                text = "" if 400 <= err.code < 500 else "User-agent: *\nDisallow: /\n"
             except (urllib.error.URLError, OSError):
                 text = "User-agent: *\nDisallow: /\n"
             self.robots[site] = Robots(site, text)

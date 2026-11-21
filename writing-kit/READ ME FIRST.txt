@@ -13,9 +13,9 @@ It is separate from the picture training kit. It needs no graphics card and noth
 How to run it on Windows
 1. Install Python 3 from python.org if you do not have it. Tick "Add Python to PATH" in the installer.
 2. Open the writing-kit folder and press Enter on "Build Writing Data.cmd".
-   This uses only the open and share-alike sources. It takes about 10 minutes.
+   This uses only the open and share-alike sources. It takes about 30 minutes the first time.
 3. Or press Enter on "Build Writing Data with Personal Sources.cmd".
-   This also uses the personal-use-only sources (see Licences below). It takes about an hour the first time,
+   This also uses the personal-use-only sources (see Licences below). It takes one to two hours the first time,
    because some sites are asked for one page every few seconds. A second build is quicker: downloads are kept
    in the "cache" folder.
 4. When it says "Done", open the folder "output" in the writing-kit folder.
@@ -30,12 +30,19 @@ Go to the writing-kit folder, then type one of these:
 --sources picks sources by name, separated by commas (the names are in the list of sources below).
 --privacy strict uses the old, careful scrubbing instead of your rule (see Privacy below).
 --enron-file uses a copy of the Enron file you already have instead of downloading it.
+--oanc-file uses the Open American National Corpus file you downloaded in your browser (see below).
 
-A key for one source
-One source needs a free key: regulations.gov public comments (key from api.data.gov). The key never goes in these
-files. Put it in your computer's settings as an environment variable named REGULATIONS_GOV_API_KEY: press the
-Windows key, type "environment variables", choose "Edit environment variables for your account", choose New, and
-type the name and the key. Without a key, that source is skipped and the build says so.
+Settings for three sources (they stay in your computer, never in these files)
+To add a setting: press the Windows key, type "environment variables", choose "Edit environment variables for your
+account", choose New, and type the name and the value. Without a setting, that source is skipped and the build
+says so.
+REGULATIONS_GOV_API_KEY: a free key from api.data.gov, for the regulations.gov public comments.
+SEC_USER_AGENT: your name and email address, for example "Your Name you@example.com". The SEC's EDGAR system
+  asks every program to say who is asking, and refuses programs that do not. It is used only in requests to EDGAR.
+The Open American National Corpus: its official download is on GitHub, and GitHub's robots.txt does not let
+  programs download release files. So download OANC-1.0.1-UTF8.zip once in your web browser from
+  anc.org/data/oanc/download/ (330 MB), and add --oanc-file followed by where you saved it, for example
+  --oanc-file "C:\Users\You\Downloads\OANC-1.0.1-UTF8.zip".
 
 What you get, in the output folder
 train.jsonl: the training examples, one per line.
@@ -70,6 +77,23 @@ personal use only: no licence lets others re-use it. Use it only to train your o
 Without the personal choice, the files have only open and share-alike examples.
 
 The sources used, by name
+Business writing comes first (you asked for it especially):
+  edgar: SEC EDGAR, open (public records). Company press releases, formal letters to the SEC staff, and letters to
+    shareholders. Needs the SEC_USER_AGENT setting.
+  abcd: ABCD customer service chats, MIT licence, open.
+  openstax_business: the business communication, management and ethics chapters of OpenStax's business books,
+    CC BY 4.0, open.
+  enron, w3c, debian (below) are real organisational email; taskmaster, sgd and multiwoz are customer service
+  conversations; fedreg, hearings and presidential are formal American writing; regulations are public comments.
+Modern American English:
+  oanc: the Open American National Corpus, free for any use, open. Phone and face-to-face conversations (kept whole
+    in the transcripts folder too), fundraising letters, Slate magazine articles, government reports, travel guides.
+  wikinews: English Wikinews news reports, CC BY 2.5, open.
+  nsf: National Science Foundation grant summaries, public domain, open.
+  presidential: presidential remarks, statements and letters from GovInfo, public domain, open.
+  blogs: Pluralistic (CC BY 4.0) and Global Voices (CC BY 3.0) blog posts, open.
+  fineweb: a small sample of conversational web pages (forums, reviews, questions) from FineWeb, personal use only
+    (each page keeps its writer's copyright).
 Open:
   oasst2: OpenAssistant Conversations, Apache 2.0. Requests people wrote for an email, letter or message, with the
     best answer a person wrote.
@@ -115,6 +139,13 @@ DailyDialog: its official download is down. PersonaChat: no licence stated for t
 Switchboard and CALLHOME: sold by the LDC, not free.
 City councils through Legistar and Granicus: the minutes files are closed to programs. Toronto's open data has no
 minutes. Ontario's Hansard refuses programs. Other provincial Hansards and the Senate were not built yet.
+Business: the Avocado email collection (sold by the LDC), TweetSumm (its tweets need a Kaggle login), the Bitext
+support set (machine-written), earnings call transcripts (copyrighted), USAJOBS (needs a key and email, not built
+yet), court and investigation exhibits (scanned PDFs inside dockets).
+Modern writing: The Conversation and NPR (their robots.txt blocks AI training), Stack Exchange (terms), YouTube
+captions (terms), Amazon Reviews 2023 (no licence stated), CourtListener (refused this kit), and several public
+domain government sites with no bulk download (plain language examples, press releases, sample letters), which were
+not built yet.
 Machine-written email sets on Hugging Face, and sets that are non-commercial or have no licence.
 
 Privacy: your rule
