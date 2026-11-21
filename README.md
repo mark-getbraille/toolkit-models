@@ -138,6 +138,15 @@ and why):
   (years, decades, topics, editions, volumes, or state and decade), every item with its date, in its own release
   (`publications-<source>`), listed in `textbooks.json` with `complete` (false while a piece is still being
   collected) and `pieces_done`.
+- **Medicines** (`textbooks/medications.py`, keys `medicines` and `med:...`): the official US labels of medicines,
+  read from DailyMed (National Library of Medicine) through its web services: 14 books of prescription medicines
+  and 7 of over-the-counter medicines (by first letter), and two of animal medicines (pets and horses; farm
+  animals). One page per medicine by its generic name, brand names (US, and Canadian from Health Canada's Drug
+  Product Database) leading to it, and each label in the same plain order: what it is for, how to take it,
+  warnings (the boxed warning first), side effects, interactions, storage, pregnancy and breastfeeding, the patient
+  leaflet (Medication Guide), then the rest of the label, in the label's own words. Every page says "Information,
+  not medical advice: ask a pharmacist or doctor" (animals: "ask a veterinarian"). In their own release
+  (`medicines`), rebuilt each month after DailyMed's monthly release, old versions kept.
 
 How the books are made accessible: one page per chapter and section with headings; an index page listing every unit,
 chapter and section; every figure's number, the publisher's description of the picture and its caption as text

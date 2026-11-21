@@ -3,7 +3,8 @@
 # works from their open repositories, non-profit guides (EFF, People's Law School, W3C WAI Curricula), US military
 # field manuals and Navy courses with Distribution Statement A, UK MCA and MOD guidance under the OGL, and Alberta's
 # open-licence publications; government guides, laws and regulations in the public domain or under open
-# government licences, in the groups law, consumer, health, disability and science) and publish them in the
+# government licences, in the groups law, consumer, health, disability and science; the official labels of human and
+# animal medicines from DailyMed, textbooks/medications.py) and publish them in the
 # release "textbooks", with textbooks.json listing each book's id, title, subject, level, licence, credit, language,
 # size, SHA-256, article count, date, "published" (when the publisher published or last revised it), region (state
 # or province) and the official address of the publisher's original PDF (never a copy of it). The toolkit's Offline
@@ -29,7 +30,7 @@ on:
   workflow_dispatch:
     inputs:
       keys:
-        description: "Keys separated by commas (osbooks, osbooks:<repository>, siyavula, dspace, nonprofit, fieldmanuals, government, courses, guides, laws, laws-more, group:<group>, guide:<name>, law:<name>, pdf:<name>, publications, pub:<group>, pub:<source>, pub:<source>:<piece>, pictures), or all"
+        description: "Keys separated by commas (osbooks, osbooks:<repository>, siyavula, dspace, nonprofit, fieldmanuals, government, courses, guides, laws, laws-more, group:<group>, guide:<name>, law:<name>, pdf:<name>, publications, pub:<group>, pub:<source>, pub:<source>:<piece>, medicines, med:rx, med:otc, med:rx:<letters>, med:otc:<letters>, med:animal, pictures), or all"
         required: true
         default: "all"
       schedule:
@@ -139,6 +140,10 @@ jobs:
           }
           for manifest in build/textbooks/manifest-*.json; do
             release=$(python -c "import json,sys;print(json.load(open(sys.argv[1])).get('release','textbooks'))" "$manifest")
+            if [ "$release" = "medicines" ]; then
+              gh release view medicines > /dev/null 2>&1 || gh release create medicines --title "Medicines: official drug labels" \
+                --notes "The official US labels of human and animal medicines (DailyMed), one ZIM book per group, for the Digital Accessibility Toolkit (textbooks/medications.py). Information, not medical advice: ask a pharmacist, doctor or veterinarian. Listed in the textbooks release's textbooks.json."
+            fi
             gh release view "$release" > /dev/null 2>&1 || gh release create "$release" --title "Publications: $release" \
               --notes "Periodicals, journals, reports, news and history for the Digital Accessibility Toolkit (textbooks/periodicals.py); listed in the textbooks release's textbooks.json."
             files=$(python -c "import json,sys;print(' '.join(json.load(open(sys.argv[1]))['files']))" "$manifest")
