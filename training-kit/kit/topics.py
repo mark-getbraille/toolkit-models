@@ -99,9 +99,9 @@ TOPICS = [
            "open_images_food", "open_images_food_more", "grocery_store", "fish_eyes", "commons_food",
            "meatscan", "eggs", "beef", "abo_packaged_goods", "abo_pet_supplies", "open_images_packaged_goods", "commons_packaging",
            "locbeef", "fish_freshness", "horse_mackerel", "fish_eyes_stages", "chicken_breast", "food_packaging",
-           "packeat", "cerrado_fruits",
+           "packeat", "cerrado_fruits", "commons_soft_drinks", "open_images_soft_drinks",
            # share-alike
-           "openfoodfacts", "openfoodfacts_labels", "commons_food_sa", "openfacts_us", "openfacts_ca",
+           "drinks_soft_commons_sa", "openfoodfacts", "openfoodfacts_labels", "commons_food_sa", "openfacts_us", "openfacts_ca",
            "openpetfoodfacts", "openpetfoodfacts_labels",
            # research-only (personal use)
            "fda_recall_photos", "freiburg_groceries", "food101", "uecfoodpix", "gothenburg_price_tags")),
