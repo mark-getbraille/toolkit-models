@@ -1627,6 +1627,14 @@ PACKS.update(STATE_COLLECTIONS_PACKS)
 from street_scene_packs import STREET_SCENE_PACKS
 PACKS.update(STREET_SCENE_PACKS)
 
+# North American animals (packs/na_animal_packs.py): wild mammals, birds, reptiles, amphibians, fish, insects and
+# other invertebrates, and animal signs and young, by species (GBIF: open photos recorded in the US and Canada,
+# common species first, a balanced cap per species, venomous and dangerous ones with a safety note); NOAA
+# Fisheries' species photos; domestic animals by breed or kind, working dogs, equipment and farm scenes (Commons).
+# na_domestic_animals, na_herps_fish and noaa_fisheries_species show people too: never used for picture-making.
+from na_animal_packs import NA_ANIMAL_PACKS
+PACKS.update(NA_ANIMAL_PACKS)
+
 
 # The packs whose builder reads the Wikimedia Commons API (commons_get, commons_members, commons_entries,
 # mechanical_packs.mech_entries, us_packs.us_commons, documentary_packs.commons_get or COMMONS_API itself). When many
@@ -1670,6 +1678,8 @@ COMMONS_KEYS = frozenset({
     "erotic_art",
     # US and Canadian street scenes (street_scene_packs.py; us_dot_street_photos reads FHWA's Commons copies)
     "commons_crosswalks_signals", "commons_streets_roads_na", "commons_neighbourhoods_na", "us_dot_street_photos",
+    # North American animals (na_animal_packs.py; the GBIF and NOAA packs do not read Commons)
+    "na_domestic_animals",
 })
 
 

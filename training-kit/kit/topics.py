@@ -96,7 +96,7 @@ TOPICS = [
           "Food on the plate and in the shop: fresh or spoiled meat, fish, eggs and fruit, groceries on shelves, "
           "packaged goods with their names and use-by dates, and the text on food packs.",
           ("nutrition5k", "fresh_rotten", "open_images_food", "grocery_store", "fish_eyes", "commons_food",
-           "meatscan", "eggs", "beef", "abo_packaged_goods", "open_images_packaged_goods", "commons_packaging",
+           "meatscan", "eggs", "beef", "abo_packaged_goods", "abo_pet_supplies", "open_images_packaged_goods", "commons_packaging",
            "locbeef", "fish_freshness", "horse_mackerel", "fish_eyes_stages", "chicken_breast", "food_packaging",
            "packeat", "cerrado_fruits",
            # share-alike
@@ -149,7 +149,8 @@ TOPICS = [
           ("inaturalist", "lila_camera_traps", "gbif_species", "commons_breeds", "cattle_health",
            "agml_plant_health", "agml_weeds", "agml_harvest", "gwhd_wheat", "inat_crops", "ccsn_clouds",
            "weather_images", "eurosat", "inaturalist_us", "inaturalist_ca", "earth_observatory", "usgs",
-           "npgallery",
+           "npgallery", "na_wild_mammals", "na_birds", "na_herps_fish", "na_insects", "na_invertebrates",
+           "na_animal_signs", "noaa_fisheries_species", "na_domestic_animals",
            # share-alike
            "oxford_pets", "plantvillage", "plantnet_sa", "commons_breeds_sa", "inaturalist_us_sa",
            "inaturalist_ca_sa", "plant_seedlings_sa",

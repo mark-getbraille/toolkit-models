@@ -32,6 +32,17 @@ The packs (both open, checked at the source in November 2026):
                              people checked a child are marked "child"; the kit never uses this pack for
                              picture-making (its photos often show people).
 
+  abo_pet_supplies           Amazon Berkeley Objects again: the ANIMAL CARE PRODUCTS abo_packaged_goods leaves out
+                             (it takes pet food, treats, litter and care products in packages): leashes, collars,
+                             harnesses and muzzles, crates and carriers, beds, bowls, feeders and fountains, toys,
+                             grooming brushes, clippers and nail trimmers, litter boxes and scoops, flea and tick
+                             collars, spot-ons and chewables, dewormers and pill pockets, aquarium filters, heaters,
+                             water conditioners and tanks, terrariums and UVB lamps, bird cages and perches,
+                             small-animal cages, bedding and hay, pet doors, waste bags and training pads, horse
+                             tack, incubators and livestock supplies, and pet first aid kits. "What is this?" ->
+                             "This is an animal care product: a harness by PetSafe. The name on its listing: ..."
+                             The kinds take turns; listings in the USA and Canada first.
+
 Looked at and not built here (the reasons are in training-kit/kit/packaged_goods_sources.py, with the personal-use
 FDA recall photos): recall photos of the CPSC, FDA, USDA FSIS and Health Canada (the recalling firms' own photos, so
 not public domain), Smithsonian NMAH (its CC0 pictures hold almost no modern packaging), Te Papa (packaging pictures
@@ -141,7 +152,8 @@ PG_NEEDS_PACKAGE = {"personal", "household", "pet", "first aid"}
 PG_PET_GOODS = re.compile(r"\b(food|treats?|chews?|biscuits?|kibble|jerky|litter|shampoo|wipes|spray|supplements?|"
                           r"dental sticks?|pads)\b", re.I)
 PG_PET_NOT_GOODS = re.compile(r"\b(lids?|covers?|bowls?|scoops?|mats?|feeders?|dispensers?|containers?|storage|"
-                              r"beds?|toys?|crates?|carriers?|leash\w*|collars?|harness\w*)\b", re.I)
+                              r"beds?|toys?|crates?|carriers?|leash\w*|collars?|harness\w*|litter (box|pan|tray)\w*)\b",
+                              re.I)
 # Devices and tools filed under the general types (an essential-oil diffuser with "100ml" in its name): left out.
 PG_DEVICES = re.compile(r"\b(diffusers?|humidifiers?|machines?|scales?|thermometers?|massagers?|devices?|monitors?|"
                         r"tweezers?|clippers?|trimmers?|shavers?|dryers?|straighteners?|curling|lamps?|lights?|"
@@ -348,6 +360,18 @@ def abo_place(listing):
     return where(country_named("GB" if country == "UK" else country), "market")
 
 
+def abo_listings(s):
+    """Every listing of ABO's 16 listing files (about 85 MB), one dict at a time."""
+    for part in "0123456789abcdef":
+        r = s.get(ABO_LISTINGS.format(part), timeout=600)
+        r.raise_for_status()
+        for line in gzip.decompress(r.content).decode("utf-8").splitlines():
+            try:
+                yield json.loads(line)
+            except ValueError:
+                continue
+
+
 def build_abo_packaged_goods(limit):
     """The ABO packaged-goods pack: reads the 16 listing files (about 85 MB) and the image list (6 MB), keeps the
     packaged-goods types above that have an English name and a main photo, sets aside those whose only name is in
@@ -355,26 +379,19 @@ def build_abo_packaged_goods(limit):
     the catalogue photos."""
     s, rng = session(), pass_random(97)
     candidates, foreign, seen_images = [], [], set()
-    for part in "0123456789abcdef":
-        r = s.get(ABO_LISTINGS.format(part), timeout=600)
-        r.raise_for_status()
-        for line in gzip.decompress(r.content).decode("utf-8").splitlines():
-            try:
-                listing = json.loads(line)
-            except ValueError:
-                continue
-            image = listing.get("main_image_id")
-            if not image or image in seen_images:           # the same product in several shops: once only
-                continue
-            rows = pg_rows(listing)
-            if rows:
-                seen_images.add(image)
-                candidates.append((listing, rows))
-                continue
-            other = pg_foreign(listing)
-            if other:
-                seen_images.add(image)
-                foreign.append((listing, other))
+    for listing in abo_listings(s):
+        image = listing.get("main_image_id")
+        if not image or image in seen_images:           # the same product in several shops: once only
+            continue
+        rows = pg_rows(listing)
+        if rows:
+            seen_images.add(image)
+            candidates.append((listing, rows))
+            continue
+        other = pg_foreign(listing)
+        if other:
+            seen_images.add(image)
+            foreign.append((listing, other))
     say(f"ABO packaged goods: {len(candidates)} usable listings, {len(foreign)} with no English name")
     paths = {}
     r = s.get(ABO_IMAGES, timeout=600)
@@ -516,6 +533,135 @@ def build_open_images_packaged_goods(limit):
     return fetch_all(items[:int(limit * 1.1) + 2], workers=8)[:limit]
 
 
+# ----------------------------------------------------------------- abo_pet_supplies (animal care products)
+
+# What an animal care product is, from the words of its listing's name, most specific first: (pattern, the kind said
+# in the answer). The flea, tick and worm treatments, pet food, treats and litter in packages are
+# abo_packaged_goods'; this pack takes the supplies that pack leaves out (PG_PET_NOT_GOODS) and the care products
+# whose name says no package or size.
+PET_SUPPLY_KINDS = [
+    (r"\bflea (and|&) tick collar|\b(flea|tick) collar", "a flea and tick collar"),
+    (r"\b(flea|tick)\b.*\b(spot[- ]on|topical|drops)\b|\bspot[- ]on\b", "a spot-on flea and tick treatment"),
+    (r"\b(flea|tick)\b.*\bshampoo\b", "a flea and tick shampoo"),
+    (r"\b(flea|tick)\b.*\b(chewables?|tablets?)\b", "a chewable flea and tick treatment"),
+    (r"\b(de-?wormer|worm(er|ing))\b", "a dewormer"),
+    (r"\bpill pockets?\b|\bpill (wrap|treat)s?\b", "pill pockets (treats to hide a pill in)"),
+    (r"\bfirst aid kit\b", "a pet first aid kit"),
+    (r"\b(poop|waste) bags?\b", "dog waste bags"), (r"\b(training|pee|puppy) pads?\b", "training pads"),
+    (r"\bmuzzles?\b", "a muzzle"),
+    (r"\bharness\w*", "a harness"), (r"\bleash\w*|\blead\b", "a leash"), (r"\bcollars?\b", "a collar"),
+    (r"\bcrates?\b|\bkennels?\b", "a crate"), (r"\bcarriers?\b", "a pet carrier"),
+    (r"\bbeds?\b", "a pet bed"), (r"\bcat trees?\b|\bscratch\w* posts?\b|\bscratchers?\b", "a cat tree or scratcher"),
+    (r"\blitter (box|pan|tray)\w*", "a litter box"), (r"\blitter scoops?\b|\bscoops?\b", "a litter scoop"),
+    (r"\b(water )?fountains?\b", "a pet water fountain"), (r"\bautomatic feeders?\b|\bfeeders?\b", "a pet feeder"),
+    (r"\bbowls?\b|\bdish(es)?\b", "a pet bowl"), (r"\btoys?\b|\bballs?\b|\bchew toys?\b", "a pet toy"),
+    (r"\bnail (clippers?|trimmers?|grinders?)\b", "a pet nail trimmer"),
+    (r"\bclippers?\b|\btrimmers?\b", "pet clippers"), (r"\bbrush(es)?\b|\bcombs?\b|\bdeshedd\w*", "a grooming brush"),
+    (r"\baquarium filters?\b|\bfilter cartridges?\b|\bcanister filters?\b", "an aquarium filter"),
+    (r"\baquarium heaters?\b|\bheaters?\b", "an aquarium or terrarium heater"),
+    (r"\buvb\b|\breptile (lamp|bulb|light)s?\b|\bbasking (lamp|bulb)s?\b", "a UVB or basking lamp for reptiles"),
+    (r"\bwater conditioner\b|\bdechlorinator\b", "an aquarium water conditioner"),
+    (r"\baquariums?\b|\bfish tanks?\b", "an aquarium"), (r"\bterrariums?\b|\bvivariums?\b", "a terrarium"),
+    (r"\bbird ?cages?\b|\bperch(es)?\b", "a bird cage or perch"),
+    (r"\b(hamster|small animal|rabbit|guinea pig) (cage|hutch|habitat)s?\b|\bhutch(es)?\b", "a small-animal cage"),
+    (r"\btimothy hay\b|\bhay\b", "hay for rabbits and small animals"),
+    (r"\bbedding\b", "small-animal bedding"),
+    (r"\bpet (doors?|gates?)\b|\bdog doors?\b", "a pet door or gate"),
+    (r"\b(pet|dog) (ramps?|stairs|steps)\b", "pet stairs or a ramp"),
+    (r"\bsaddles?\b|\bbridles?\b|\bhalters?\b|\bhorse (blankets?|sheets?)\b|\bhoof\b", "horse tack or care"),
+    (r"\b(incubators?|brooders?)\b", "an egg incubator or brooder"),
+    (r"\b(waterers?|mineral blocks?|salt licks?|ear tags?)\b", "a livestock supply"),
+]
+PET_SUPPLY_KINDS = [(re.compile(p, re.I), kind) for p, kind in PET_SUPPLY_KINDS]
+# Names that say the product is for an animal (a "collar" or "bed" alone could be anything in a general type).
+FOR_AN_ANIMAL = re.compile(r"\b(pets?|dogs?|puppy|puppies|cats?|kittens?|kitty|birds?|parrots?|fish|aquarium|"
+                           r"reptiles?|turtles?|rabbits?|bunny|hamsters?|guinea pigs?|ferrets?|horses?|equine|"
+                           r"chickens?|poultry|livestock|cattle|goats?|sheep|terrarium|litter|flea|tick)\b", re.I)
+PET_SUPPLY_Q = "What is this?"
+# Things with an animal on them that are not for an animal (wall art, clothes for people, mugs ...).
+NOT_A_PET_SUPPLY = re.compile(r"\b(wall art|art print|prints?|posters?|frames?|framed|canvas|t-?shirts?|shirts?|"
+                              r"hoodies?|sweatshirts?|mugs?|stickers?|decals?|figurines?|ornaments?|pillow covers?|"
+                              r"throw pillows?|signs?|necklaces?|earrings?|jewel\w*|socks|pajamas|phone cases?|"
+                              r"wallpaper|calendars?|books?|puzzles?|bird feeders?|birdhouses?)\b", re.I)
+
+
+def ps_kind(name):
+    """The kind of animal care product a listing's name says ("a dog leash" -> "a leash"), or ""."""
+    return next((kind for pattern, kind in PET_SUPPLY_KINDS if pattern.search(name)), "")
+
+
+def ps_rows(listing):
+    """The rows of one ABO listing of an animal care product: a PET_ type, or another type whose name says it is for
+    an animal, with a kind PET_SUPPLY_KINDS can name; [] for everything else and for what abo_packaged_goods already
+    takes (pg_rows)."""
+    code = ((listing.get("product_type") or [{}])[0] or {}).get("value", "")
+    country = listing.get("country") or ""
+    name = abo_value(listing.get("item_name"), country)
+    if not name or not listing.get("main_image_id") or NOT_SHOWN.search(name) or pg_rows(listing) \
+            or NOT_A_PET_SUPPLY.search(name):
+        return []
+    if not (code.startswith(("PET_", "ANIMAL_")) or FOR_AN_ANIMAL.search(name)):
+        return []
+    if not FOR_AN_ANIMAL.search(name) and code not in ("PET_SUPPLIES", "PET_PEST_CONTROL", "ANIMAL_LITTER"):
+        return []
+    kind = ps_kind(name)
+    if not kind:
+        return []
+    brand = pg_brand(listing, country)
+    by = f" by {brand}" if brand and not brand_in_name(brand, name) else ""
+    answer = f"This is an animal care product: {kind}{by}. The name on its listing: {sentence_end(name)}"
+    rows = [{"question": PET_SUPPLY_Q, "answer": answer}]
+    if brand:
+        rows.append({"question": BRAND_Q, "answer": f"The brand is {brand}."})
+    return [mark_child(r, name) for r in rows]
+
+
+def build_abo_pet_supplies(limit):
+    """The ABO animal care pack: pet and livestock supplies (leashes, collars, harnesses, muzzles, crates, carriers,
+    beds, bowls, feeders, fountains, toys, grooming tools, litter boxes, flea and tick collars and spot-ons,
+    dewormers, pill pockets, aquarium and terrarium supplies, bird cages, small-animal bedding and hay, horse tack,
+    incubators and first aid kits), the kinds taken in turn, the USA and Canada first."""
+    s, rng = session(), pass_random(98)
+    by_kind, seen_images = collections.defaultdict(list), set()
+    for listing in abo_listings(s):
+        image = listing.get("main_image_id")
+        if not image or image in seen_images:
+            continue
+        rows = ps_rows(listing)
+        if rows:
+            seen_images.add(image)
+            by_kind[ps_kind(abo_value(listing.get("item_name"), listing.get("country") or ""))].append(
+                (listing, rows))
+    say("ABO animal care: " + ", ".join(f"{k} {len(v)}" for k, v in sorted(by_kind.items())))
+    paths = {}
+    r = s.get(ABO_IMAGES, timeout=600)
+    r.raise_for_status()
+    for row in csv.DictReader(io.StringIO(gzip.decompress(r.content).decode("utf-8"))):
+        if row["image_id"] in seen_images:
+            paths[row["image_id"]] = row["path"]
+    lists = []
+    for kind in sorted(by_kind):
+        group = sorted(by_kind[kind], key=lambda c: (c[0].get("country") or "") not in PG_NORTH_AMERICA)
+        head = [c for c in group if (c[0].get("country") or "") in PG_NORTH_AMERICA]
+        tail = group[len(head):]
+        rng.shuffle(head)
+        rng.shuffle(tail)
+        lists.append(head + tail)
+    items = []
+    while any(lists) and len(items) < limit * 1.15:
+        for group in lists:
+            if group and len(items) < limit * 1.15:
+                listing, rows = group.pop(0)
+                path = paths.get(listing["main_image_id"])
+                if not path:
+                    continue
+                credit = ABO_CREDIT.format(item=listing.get("item_id", ""), domain=listing.get("domain_name", ""))
+                items.append((f"abo-ps-{listing['main_image_id']}.jpg".replace("+", "_"), ABO_PICTURE.format(path),
+                              [dict(row, credit=credit, **abo_place(listing)) for row in rows]))
+    say(f"ABO animal care: {len(items)} listings queued")
+    return with_twins(fetch_all(items[:int(limit * 1.1) + 2], workers=8)[:limit])
+
+
 # ----------------------------------------------------------------- the table
 
 ABO_PG_CREDIT = ("Amazon Berkeley Objects (Amazon.com and UC Berkeley), CC BY 4.0: data and catalogue images by "
@@ -524,6 +670,7 @@ ABO_PG_CREDIT = ("Amazon Berkeley Objects (Amazon.com and UC Berkeley), CC BY 4.
                  "listing credited below)")
 PACKAGED_GOODS_PACKS = {
     "abo_packaged_goods": (build_abo_packaged_goods, ABO_PG_CREDIT),
+    "abo_pet_supplies": (build_abo_pet_supplies, ABO_PG_CREDIT),
     "open_images_packaged_goods": (build_open_images_packaged_goods,
                                    "Google Open Images V7: labels CC BY 4.0 (https://storage.googleapis.com/"
                                    "openimages/web/index.html); each photo CC BY 2.0, its photographer credited "
@@ -534,6 +681,7 @@ PACKAGED_GOODS_PACKS = {
 PACKAGED_GOODS_LIMITS = {
     "abo_packaged_goods": 6000,           # about 9,200 usable listings (7,350 of them in the USA and Canada)
     "open_images_packaged_goods": 500,    # 443 validation and test photos with a packaging label (before licences)
+    "abo_pet_supplies": 400,              # about 350 ABO pet and animal care listings beyond packaged goods
 }
 
 

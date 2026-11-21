@@ -336,6 +336,7 @@ jobs:
             nude_photo_studies) limit=300 ;;
             met_collection) limit=6000 ;;
             abo_packaged_goods) limit=6000 ;;
+            abo_pet_supplies) limit=400 ;;
             open_images_packaged_goods) limit=500 ;;
             newberry_library) limit=4000 ;;
             state_libraries_midwest) limit=3000 ;;
@@ -345,6 +346,14 @@ jobs:
             commons_streets_roads_na) limit=3000 ;;
             commons_neighbourhoods_na) limit=1500 ;;
             us_dot_street_photos) limit=500 ;;
+            na_wild_mammals) limit=7000 ;;
+            na_birds) limit=12000 ;;
+            na_herps_fish) limit=10000 ;;
+            na_insects) limit=12000 ;;
+            na_invertebrates) limit=5000 ;;
+            na_animal_signs) limit=5000 ;;
+            na_domestic_animals) limit=8000 ;;
+            noaa_fisheries_species) limit=800 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in

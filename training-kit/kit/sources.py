@@ -1882,6 +1882,13 @@ SOURCES = [
            'Amazon Berkeley Objects: data and images by Amazon.com; dataset by Matthieu Guillaumin, Thomas '
            'Dideriksen, Kenan Deng, Himanshu Arora, Jasmine Collins and Jitendra Malik, CC BY 4.0', "permissive",
            6000, 30, prepare_pack, 'about 2.7 GB'),
+    Source('abo_pet_supplies', 'What is this? Animal care products: leashes, collars, harnesses, crates, carriers, '
+           'beds, bowls, feeders, toys, grooming tools, litter boxes, flea and tick products, aquarium and reptile '
+           'supplies (Amazon Berkeley Objects, ready-made pack)',
+           'CC BY 4.0 (Amazon Berkeley Objects)',
+           'Amazon Berkeley Objects: data and images by Amazon.com; dataset by Matthieu Guillaumin, Thomas '
+           'Dideriksen, Kenan Deng, Himanshu Arora, Jasmine Collins and Jitendra Malik, CC BY 4.0', "permissive",
+           400, 10, prepare_pack, 'about 180 MB'),
     Source('open_images_packaged_goods', 'What packaged goods are in this picture? Cans, bottles, cardboard packaging '
            'and ready meals in everyday photos (Open Images V7, ready-made pack)',
            'Labels CC BY 4.0 (Google Open Images); photos CC BY 2.0, each author credited',
@@ -2214,6 +2221,28 @@ SOURCES = [
     Source("us_dot_street_photos", "US interstates, interchanges and road scenes in Federal Highway Administration photos (Wikimedia Commons copies, ready-made pack)",
            "Public domain (works of the US government, 17 U.S.C. 105); each Commons file's licence checked",
            "Federal Highway Administration, US Department of Transportation, via Wikimedia Commons (credited in CREDITS.txt)", "permissive", 500, 10, prepare_pack, "about 120 MB"),
+    # North American animals (packs/na_animal_packs.py): wild animals by species from GBIF (open photos recorded in
+    # the US and Canada, common species first, a balanced cap per species; sex or age only when the record states it;
+    # venomous and dangerous animals with a safety note), NOAA Fisheries' species photos, and domestic animals by
+    # breed or kind from Commons. na_herps_fish, noaa_fisheries_species and na_domestic_animals show people too:
+    # never used for picture-making (PEOPLE_AND_BODILY_PACK_KEYS).
+    Source("na_wild_mammals", "Wild mammals of the US and Canada by species, marine mammals included (GBIF and iNaturalist, ready-made pack)",
+           "Photos CC0, Public Domain Mark or CC BY, each photo's own licence checked (credited in CREDITS.txt)", "Photographers on iNaturalist and other GBIF datasets (credited in CREDITS.txt), via GBIF, https://www.gbif.org", "permissive", 7000, 40, prepare_pack, "about 1.2 GB"),
+    Source("na_birds", "Wild birds of the US and Canada by species (GBIF and iNaturalist, ready-made pack)",
+           "Photos CC0, Public Domain Mark or CC BY, each photo's own licence checked (credited in CREDITS.txt)", "Photographers on iNaturalist and other GBIF datasets (credited in CREDITS.txt), via GBIF, https://www.gbif.org", "permissive", 12000, 60, prepare_pack, "about 2 GB"),
+    Source("na_herps_fish", "Reptiles, amphibians and fish of the US and Canada by species, venomous snakes flagged (GBIF and iNaturalist, ready-made pack)",
+           "Photos CC0, Public Domain Mark or CC BY, each photo's own licence checked (credited in CREDITS.txt)", "Photographers on iNaturalist and other GBIF datasets (credited in CREDITS.txt), via GBIF, https://www.gbif.org", "permissive", 10000, 50, prepare_pack, "about 1.7 GB"),
+    Source("na_insects", "Insects, spiders and ticks of the US and Canada by species, household pests flagged (GBIF and iNaturalist, ready-made pack)",
+           "Photos CC0, Public Domain Mark or CC BY, each photo's own licence checked (credited in CREDITS.txt)", "Photographers on iNaturalist and other GBIF datasets (credited in CREDITS.txt), via GBIF, https://www.gbif.org", "permissive", 12000, 60, prepare_pack, "about 2 GB"),
+    Source("na_invertebrates", "Snails, crabs, crayfish, millipedes, worms, sea stars, jellyfish and other invertebrates of the US and Canada (GBIF and iNaturalist, ready-made pack)",
+           "Photos CC0, Public Domain Mark or CC BY, each photo's own licence checked (credited in CREDITS.txt)", "Photographers on iNaturalist and other GBIF datasets (credited in CREDITS.txt), via GBIF, https://www.gbif.org", "permissive", 5000, 30, prepare_pack, "about 850 MB"),
+    Source("na_animal_signs", "Animal tracks, scat, nests, eggs, shed skins, feathers and young animals in the US and Canada (GBIF and iNaturalist, ready-made pack)",
+           "Photos CC0, Public Domain Mark or CC BY, each photo's own licence checked (credited in CREDITS.txt)", "Photographers on iNaturalist and other GBIF datasets (credited in CREDITS.txt), via GBIF, https://www.gbif.org", "permissive", 5000, 30, prepare_pack, "about 850 MB"),
+    Source("noaa_fisheries_species", "Whales, seals, sea turtles, fish and shellfish in NOAA Fisheries species photos and drawings (ready-made pack)",
+           "Public domain (works of the US government, 17 U.S.C. 105); only photos credited to NOAA",
+           "NOAA Fisheries (Courtesy: National Oceanic and Atmospheric Administration), https://www.fisheries.noaa.gov", "permissive", 800, 10, prepare_pack, "about 80 MB"),
+    Source("na_domestic_animals", "Dog, cat, horse, cattle, pig, sheep, goat, poultry and rabbit breeds, pets, working and service dogs, animal equipment and farm scenes (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 8000, 40, prepare_pack, "about 1.6 GB"),
     Source('skin_lesion_photos', 'Skin spots photographed with a phone, adults (PAD-UFES-20, ready-made pack)',
            'CC BY 4.0 (Mendeley Data zr7vgbcyr2)',
            'PAD-UFES-20 (Pacheco et al., 2020), CC BY 4.0', "permissive", 2000, 20, prepare_pack, 'about 400 MB', content="medical"),
@@ -2417,6 +2446,9 @@ PEOPLE_AND_BODILY_PACK_KEYS = (
     "newberry_library", "state_libraries_midwest", "state_libraries_south", "state_libraries_west",
     # street_scene_packs.py: US and Canadian street scenes (people walk through them; all four)
     "commons_crosswalks_signals", "commons_streets_roads_na", "commons_neighbourhoods_na", "us_dot_street_photos",
+    # na_animal_packs.py: people hold the fish, frogs and snakes, work beside NOAA's animals, ride, lead and handle
+    # the domestic animals
+    "na_herps_fish", "noaa_fisheries_species", "na_domestic_animals",
 )
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + PEOPLE_AND_BODILY_PACK_KEYS
 # The drug and firearm packs (packs/drug_firearm_packs.py): describing only, never for picture-making, whether or not

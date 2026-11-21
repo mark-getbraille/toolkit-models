@@ -260,3 +260,19 @@ def test_wiring():
     assert "abo_packaged_goods" not in sources.NOT_FOR_PICTURE_MAKING
     assert k.PACKAGED_GOODS_PICTURE_MAKING_OK == set()
     assert next(s for s in sources.SOURCES if s.key == "fda_recall_photos").group == "research"
+
+
+def test_pet_supplies_kinds():
+    """Animal care products are named by the words of their listing; wall art and packaged goods are not taken."""
+    assert p.ps_kind("AmazonBasics Unscented Dog Poop Bags with Dispenser and Leash Clip") == "dog waste bags"
+    assert p.ps_kind("Seresto Flea and Tick Collar for Dogs") == "a flea and tick collar"
+    assert p.ps_kind("Umi Lightweight No-Pull Dog Harness") == "a harness"
+    assert p.ps_kind("Zoo Med ReptiSun T5 HO UVB Lamp") == "a UVB or basking lamp for reptiles"
+    listing = {"product_type": [{"value": "PET_SUPPLIES"}], "country": "US", "main_image_id": "x",
+               "item_name": [{"language_tag": "en_US", "value": "AmazonBasics Cat Litter Box, Open Top"}],
+               "brand": [{"language_tag": "en_US", "value": "AmazonBasics"}]}
+    rows = p.ps_rows(listing)
+    assert rows[0]["answer"].startswith("This is an animal care product: a litter box.")
+    art = dict(listing, product_type=[{"value": "HOME"}],
+               item_name=[{"language_tag": "en_US", "value": "Rivet Puppy Dog Collar Print Wall Art in Black Frame"}])
+    assert p.ps_rows(art) == []
