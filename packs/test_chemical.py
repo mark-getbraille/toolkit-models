@@ -158,6 +158,39 @@ def test_symbols():
     assert "Class F, dangerously reactive" in rows[c.SYMBOL_Q]
 
 
+def test_dot_placards_and_markings():
+    """US DOT placards: the division's meaning from the file's own name ("class 2.3", "Dangclass1 1A"), the class's
+    when only the class is named, named markings (DANGEROUS, ORM-D, fumigant), UN numbers as written, pipeline
+    markers, the Canadian kind for Canadian placards; never two classes."""
+    def said(title, cat="SVG diagrams of US DOT hazmat symbols"):
+        return answers(c.symbol_rows(made_up(title, [cat]), cat))
+    assert said("File:DOT hazmat class 2.3.svg")[c.SYMBOL_Q] == ("This is the hazardous materials placard for "
+                                                                 "division 2.3, poisonous gas (toxic if breathed in).")
+    assert "division 1.1, explosives with a mass explosion" in said("File:Dangclass1 1A.svg")[c.SYMBOL_Q]
+    assert "division 1.4" in said("File:Dangclass1 4.svg")[c.SYMBOL_Q]
+    assert "hazard class 9" in said("File:Dangclass9A.svg")[c.SYMBOL_Q]
+    assert "hazard class 3, flammable liquids" in said("File:DOT hazmat class 3 (alt 2).svg")[c.SYMBOL_Q]
+    assert "division 5.1, oxidizer" in said("File:US DOT placard oxidizer 5.1.svg")[c.SYMBOL_Q]
+    assert "division 6.1" in said("File:DOT hazmat class 6.1b.svg")[c.SYMBOL_Q]
+    assert "hazard class 6," in said("File:DOT hazmat Class 6 - PG III.svg")[c.SYMBOL_Q]
+    assert "US Department of Transportation" in said("File:DOT hazmat class 8.svg")[c.SYMBOL_KIND_Q]
+    assert "mixed load" in said("File:DOT hazmat - Dangerous.svg")[c.SYMBOL_Q]
+    assert "COMBUSTIBLE" in said("File:DOT Hazmat 3 - Combustable Liquid.svg")[c.SYMBOL_Q]
+    assert "ORM-D" in said("File:ORM-D-AIR - Label.svg")[c.SYMBOL_Q]
+    assert "fumigated" in said("File:USDOT Fumigant Marking - Red.svg")[c.SYMBOL_Q]
+    assert "1977" in said("File:UN 1977 hazard label.svg")[c.UN_Q]
+    erg = "Emergency Response Guidebook hazmat marking diagrams"
+    rows = said("File:Canadian Class 6.2 Placard.svg", erg)
+    assert "division 6.2, infectious" in rows[c.SYMBOL_Q] and "Canadian" in rows[c.SYMBOL_KIND_Q]
+    rows = said("File:USDOT - Natural Gas Pipeline Marker Sign.svg", "Emergency Response Guidebook diagrams")
+    assert "buried natural gas pipeline" in rows[c.SYMBOL_Q] and c.SYMBOL_KIND_Q not in rows
+    assert c.SYMBOL_Q not in said("File:DOT hazmat class 3 and class 8.svg")
+    assert said("File:ERG 2024 - Protective Action Zone Diagram.svg", "Emergency Response Guidebook diagrams") == {}
+    assert c.dot_meaning("Dangclass1 2H") == "1.2" and c.dot_meaning("Some drawing") is None
+    roots = {t["root"] for t in c.SYMBOL_TOPICS}
+    assert {"Emergency Response Guidebook diagrams", "SVG diagrams of US DOT hazmat symbols"} <= roots
+
+
 def test_harm_and_nudity_leave_a_file_out():
     """Everyday packs: no poisonings, drug labs, explosives, weapons or nudity."""
     assert c.refused("Meth lab chemicals seized") and c.refused("Fertilizer bomb")

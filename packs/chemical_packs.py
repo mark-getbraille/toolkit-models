@@ -32,8 +32,9 @@ The packs (all open: CC0, public domain or CC BY, checked file by file at the so
                          applied. (Commons' "Mildew" is plant fungi, so it is not read.)
   commons_hazard_symbols   Commons drawings and photos of the symbols on chemical packages: the Canadian WHMIS
                          hazard symbols, the NFPA 704 "fire diamond", and GHS pictograms other than safety_signs'
-                         nine drawings (photos of labels, variants), plus any US DOT hazardous materials placard
-                         filed there. Each symbol's meaning comes from its own file title or category ("WHMIS Class
+                         nine drawings (photos of labels, variants), and US DOT hazardous materials placards and
+                         markings (the Emergency Response Guidebook's diagrams and Commons' DOT hazmat drawings, with
+                         the guidebook's division names). Each symbol's meaning comes from its own file title or category ("WHMIS Class
                          B", "GHS05", "Hazard class 3"): no title, no meaning. The nine GHS pictogram drawings are
                          NOT repeated: safety_signs has them (events_safety_packs.ghs_items).
 
@@ -413,7 +414,7 @@ def topic(root, depth=1):
 
 # The topics: Commons categories checked to exist on 2026-11-21 (with the number of files directly in each). Many
 # subjects asked for have no Commons category of their own (pool chemicals, laundry detergents, wood stains, paint
-# sheens, mould on walls, grout, oil stains, pool algae, anodising, DOT placards, among others checked): their
+# sheens, mould on walls, grout, oil stains, pool algae, anodising, among others checked): their
 # pictures come only from the subcategories walked here, or not at all.
 PACKAGING_TOPICS = [topic(c, d) for c, d in [
     # household cleaners
@@ -675,6 +676,81 @@ DOT_CLASSES = {
     "7": "hazard class 7, radioactive material", "8": "hazard class 8, corrosive substances",
     "9": "hazard class 9, miscellaneous dangerous goods (such as lithium batteries or dry ice)",
 }
+# The divisions of the US DOT hazard classes, in the class names of 49 CFR 173.2 and the Emergency Response Guidebook
+# (US government works, public domain), said in plain words. A file title naming a division ("DOT hazmat class 2.3",
+# "Dangclass1 1A") gets the division's meaning; one naming only the class gets DOT_CLASSES.
+DOT_DIVISIONS = {
+    "1.1": "division 1.1, explosives with a mass explosion hazard (the whole load can explode at once)",
+    "1.2": "division 1.2, explosives with a projection hazard (pieces can be thrown out)",
+    "1.3": "division 1.3, explosives that are mainly a fire hazard",
+    "1.4": "division 1.4, explosives with no significant blast hazard (such as small arms cartridges)",
+    "1.5": "division 1.5, very insensitive explosives (blasting agents)",
+    "1.6": "division 1.6, extremely insensitive explosive articles",
+    "2.1": "division 2.1, flammable gas",
+    "2.2": "division 2.2, non-flammable, non-poisonous compressed gas",
+    "2.3": "division 2.3, poisonous gas (toxic if breathed in)",
+    "4.1": "division 4.1, flammable solid",
+    "4.2": "division 4.2, spontaneously combustible material (it can catch fire by itself)",
+    "4.3": "division 4.3, dangerous when wet (it gives off flammable gas in contact with water)",
+    "5.1": "division 5.1, oxidizer (it can make other things burn more fiercely)",
+    "5.2": "division 5.2, organic peroxide (it can burn fiercely or explode when heated)",
+    "6.1": "division 6.1, poisonous (toxic) material",
+    "6.2": "division 6.2, infectious substance (germs that can cause disease)",
+}
+# Other US DOT hazmat markings, from the words of a file's own name: (pattern, what the marking is). The words are the
+# marking's own (its printed word or the ERG's name for it); the explanation is the ERG's public-domain one.
+DOT_MARKINGS = [
+    (r"combust[ai]ble liquid", "This is the US DOT COMBUSTIBLE placard: the vehicle carries a combustible liquid, one "
+                               "that burns but is harder to set alight than a flammable liquid."),
+    (r"\bdangerous$|^canada - danger placard$",
+     "This is the DANGEROUS placard: the vehicle carries a mixed load of hazardous materials of different classes."),
+    (r"inhalation hazard", "This is the INHALATION HAZARD marking: the material is poisonous if breathed in."),
+    (r"marine pollutant", "This is the MARINE POLLUTANT mark: the material is harmful to sea life if spilled."),
+    (r"keep away from heat", "This is the KEEP AWAY FROM HEAT mark: the package must be kept away from heat."),
+    (r"\bORM-?D\b", "This is the ORM-D mark (\"Other Regulated Material\"): a consumer commodity, such as an aerosol "
+                    "can or small arms cartridges, shipped in small amounts under lighter rules."),
+    (r"limited quantity", "This is the LIMITED QUANTITY mark: the package holds a small amount of a hazardous "
+                          "material, shipped under lighter rules."),
+    (r"fumiga(?:nt|tion)", "This is the fumigant warning: the closed truck, rail car or container has been fumigated "
+                           "with a poisonous gas. Do not enter it."),
+    (r"lithium batter", "This is the lithium battery mark: the package holds lithium batteries, which can catch fire "
+                        "if damaged."),
+    (r"regulated medical waste", "This is the biohazard label for regulated medical waste: used needles, blood or "
+                                 "other waste that can spread infection."),
+]
+# A UN identification number written in a file's own name ("UN 1977 hazard label", "Numbered Placard - UN 1219").
+UN_NUMBER = re.compile(r"\bUN[ _-]?(\d{4})\b")
+UN_Q = "What number is shown on this placard?"
+PIPELINE = re.compile(r"\bpipeline marker", re.I)
+PIPELINE_ANSWER = ("This is a pipeline marker sign: it shows that a buried {what} pipeline runs here, and gives the "
+                   "operator's emergency telephone number. Do not dig near it; if you smell gas or see a leak, leave "
+                   "the area and call 911 and the number on the sign.")
+TDG_KIND = ("It is a Canadian Transportation of Dangerous Goods (TDG) placard, a diamond shown on trucks and rail cars "
+            "to tell what danger they carry. Its classes are the same as the US DOT's.")
+
+
+def dot_meaning(title):
+    """(class or division, answer key) of a hazmat placard's file name, or None: "DOT hazmat class 2.3" -> "2.3",
+    "Dangclass1 1A" -> "1.1" (A is the compatibility group), "Dangclass9A" -> "9", "US DOT placard oxidizer 5.1" ->
+    "5.1". A name with two classes gives None (TWO_CLASSES)."""
+    if TWO_CLASSES.search(title):
+        return None
+    found = set()
+    for m in re.finditer(r"\b(?:hazard |dot |un |division |hazmat )?class(?:es)?[ _-]*([1-9])(?:[ ._]([1-6]))?(?![0-9])"
+                         r"|\bdangclass[ _-]?([1-9])(?:[ _]([1-6]))?[A-L]?(?:-[a-z]{2})?$"
+                         r"|transport pictogram\s*-\s*([1-9])\b"
+                         r"|\bplacard\b.*?\b([1-9])\.([1-6])\b|\bhazmat ([1-9])\b", title, re.I):
+        g = m.groups()
+        cls, div = next(((a, b) for a, b in ((g[0], g[1]), (g[2], g[3]), (g[4], None), (g[5], g[6]), (g[7], None))
+                         if a), (None, None))
+        if cls:
+            found.add(f"{cls}.{div}" if div and f"{cls}.{div}" in DOT_DIVISIONS else cls)
+    classes = {f.split(".")[0] for f in found}
+    if len(classes) != 1:
+        return None
+    return max(found, key=len)
+
+
 # A WHMIS 1988 symbol's class from the words of its title, when no class letter is written ("Dangerously Reactive").
 WHMIS_NAMES = [(r"\bcompressed gas", "A"), (r"\bflammable|\bcombustible", "B"), (r"\boxidi[sz]ing", "C"),
                (r"\bbiohazard\w*|\binfectious", "D3"), (r"\bcorrosive", "E"), (r"\bdangerously reactive", "F")]
@@ -756,18 +832,27 @@ def symbol_rows(f, found_in, rules=None):
         whmis = sorted(named)
     if len(whmis) == 1 and whmis[0] in WHMIS_1988:
         rows.append({"question": SYMBOL_Q, "answer": f"This is the WHMIS 1988 symbol for {WHMIS_1988[whmis[0]]}"})
-    dot = set(re.findall(r"\b(?:hazard |dot |un |division |hazmat )?class[ _-]?([1-9])(?:\.\d)?\b|\bdangclass[ _-]?"
-                         r"([1-9])|transport pictogram\s*-\s*([1-9])\b", title, re.I)) \
-        if re.search(r"placard|hazmat|dangerous goods|hazardous materials|transport pictogram|dangclass|\bDOT\b",
-                     words, re.I) else set()
-    dot = {d for group in dot for d in group if d}
-    if two:
-        dot = set()
-    if len(dot) == 1 and not whmis:
-        rows.append({"question": SYMBOL_Q, "answer": f"This is the hazardous materials placard for "
-                                                     f"{DOT_CLASSES[dot.pop()]}."})
+    placard_words = re.search(r"placard|hazmat|dangerous goods|hazardous materials|transport pictogram|dangclass|"
+                              r"\bDOT\b|danger-class", words, re.I)
+    marking = next((answer for pattern, answer in DOT_MARKINGS if re.search(pattern, title, re.I)), "") \
+        if placard_words else ""
+    dot = None if (two or whmis or not placard_words) else dot_meaning(title)
+    if marking:
+        rows.append({"question": SYMBOL_Q, "answer": marking})
+    elif dot:
+        meaning = DOT_DIVISIONS.get(dot) or DOT_CLASSES[dot]
+        rows.append({"question": SYMBOL_Q, "answer": f"This is the hazardous materials placard for {meaning}."})
+    un = UN_NUMBER.findall(title) if placard_words or re.search(r"hazard label|placard", title, re.I) else []
+    if len(set(un)) == 1:
+        rows.append({"question": UN_Q, "answer": f"It shows the UN identification number {un[0]}: the number of the "
+                                                 f"material carried, which responders look up in the Emergency "
+                                                 f"Response Guidebook."})
+    if PIPELINE.search(title):
+        what = ("natural gas" if re.search(r"natural gas", title, re.I) else
+                "petroleum" if re.search(r"petroleum", title, re.I) else "gas or hazardous liquid")
+        rows.append({"question": SYMBOL_Q, "answer": PIPELINE_ANSWER.format(what=what)})
     ghs = sorted(set(re.findall(r"\bGHS[ _-]?0?([1-9])\b", title, re.I)))
-    if len(ghs) == 1 and not (whmis or dot or two):
+    if len(ghs) == 1 and not (whmis or dot or marking or two):
         code, meaning = GHS_MEANINGS[ghs[0]]
         rows.append({"question": SYMBOL_Q, "answer": f"This is the GHS hazard pictogram {code}: {meaning}. GHS "
                                                      f"pictograms are used on chemical labels, in red diamonds."})
@@ -778,7 +863,10 @@ def symbol_rows(f, found_in, rules=None):
             rows.append({"question": RATING_Q, "answer": rating})
     if re.search(r"\bWHMIS\b|\bSIMDUT\b", words, re.I):
         rows.append({"question": SYMBOL_KIND_Q, "answer": WHMIS_KIND})
-    elif re.search(r"placard|hazmat|hazardous materials (label|sign)", words, re.I):
+    elif re.search(r"\bcanad", title, re.I) and placard_words:
+        rows.append({"question": SYMBOL_KIND_Q, "answer": TDG_KIND})
+    elif re.search(r"placard|hazmat|hazardous materials (label|sign)|US DOT hazmat|dangclass", words, re.I) \
+            and not PIPELINE.search(title):
         rows.append({"question": SYMBOL_KIND_Q, "answer": DOT_KIND})
     seen, out = set(), []
     for r in rows:
@@ -792,6 +880,11 @@ def symbol_rows(f, found_in, rules=None):
 
 SYMBOL_TOPICS = [topic(c, d) for c, d in [
     ("WHMIS hazard symbols", 0), ("NFPA 704 images", 1), ("GHS pictograms", 1),
+    # US DOT hazmat placards and labels (checked 2026-11-21): the Emergency Response Guidebook's diagrams (12 files:
+    # pipeline markers, isolation zones, GHS label examples) and its hazmat marking diagrams (43 placards, among
+    # them Canadian ones), and Commons' set of US DOT hazmat symbol drawings (93 files). Meanings come only from each
+    # file's own name, in the guidebook's public-domain class names (DOT_DIVISIONS, DOT_MARKINGS).
+    ("Emergency Response Guidebook diagrams", 1), ("SVG diagrams of US DOT hazmat symbols", 0),
 ]]
 GHS_DRAWINGS = re.compile(r"^File:GHS-pictogram-", re.I)       # safety_signs' nine drawings: not repeated
 
@@ -821,15 +914,16 @@ CHEMICAL_PACKS = {
              "chrome and brushed metal, wood finishes, peeling paint, efflorescence, spalling, mortar joints, "
              "and pesticides being applied")),
     "commons_hazard_symbols": (build_commons_hazard_symbols, COMMONS_CREDIT.format(
-        what="categories of WHMIS hazard symbols, NFPA 704 images and GHS pictograms (not safety_signs' nine "
-             "drawings); each meaning from the file's own title or category")),
+        what="categories of WHMIS hazard symbols, NFPA 704 images, GHS pictograms (not safety_signs' nine "
+             "drawings), the Emergency Response Guidebook's diagrams and US DOT hazmat placard drawings; each meaning "
+             "from the file's own title or category, in the guidebook's public-domain class names")),
 }
 
 # How many pictures a full build takes from each (Commons answers about one picture a second).
 CHEMICAL_LIMITS = {
     "commons_household_chemicals": 2500,  # 59 topics: about 3,900 files directly in them, more in subcategories
     "commons_finishes_in_use": 2000,      # 18 topics: about 1,750 files directly in them (Rust alone about 770)
-    "commons_hazard_symbols": 300,        # 3 topics of drawings and photos
+    "commons_hazard_symbols": 450,        # 5 topics of drawings and photos (about 150 placard drawings)
 }
 
 
