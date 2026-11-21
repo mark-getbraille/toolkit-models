@@ -2450,6 +2450,10 @@ def build(keys, out_dir, cache=None, pictures=False, local_osbooks=None, date=No
             import directory_sources             # here, not at the top: directory_sources imports this module
             manifests.update(directory_sources.build_directory([key], out_dir, cache, date))
             continue
+        if key.startswith("wb:"):                # writing and business communication guides (writing_business.py)
+            import writing_business              # here, not at the top: writing_business imports this module
+            manifests.update(writing_business.build_writing([key], out_dir, cache, date))
+            continue
         if key.startswith("pub:"):               # periodicals, journals, reports, news, history (periodicals.py)
             import periodicals                   # here, not at the top: periodicals imports this module
             # "pub:voa:recent+pub:voa:2026": pieces built one after another in this one job

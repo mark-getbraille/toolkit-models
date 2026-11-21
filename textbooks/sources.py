@@ -1082,6 +1082,10 @@ def expand_keys(words):
             keys += ["drinks:guide", "drinks:ttb_wine_bam"] + expand_keys(["group:drinks"]) + \
                 [f"nonprofit:{e['name']}" for e in NONPROFIT if e.get("group") == "drinks"] + \
                 ["law:cfr_21_101_food_labeling"]
+        elif w in ("writing", "group:writing") or w.startswith("wb:"):
+            # Writing and business communication guides (writing_business.py), 2026-11-21: writing or wb:<name>
+            import writing_business               # (already imported at the end of this module)
+            keys += writing_business.expand_keys([w])
         elif w.startswith("group:"):
             g = w[6:]
             keys += pdfs(g) + [f"guide:{e['name']}" for e in GOV_GUIDES if e["group"] == g] + \
@@ -2017,3 +2021,15 @@ import thin_topics as _thin  # noqa: E402
 PDF_DOCS += _thin.PDF_DOCS
 LICENCE_LINES.update(_thin.LICENCE_LINES)
 NOT_INCLUDED = NOT_INCLUDED + _thin.NOT_INCLUDED
+
+
+# ====================================================================== writing and business guides (added 2026-11-21)
+# Plain language, style and correspondence manuals, the SBA's business guide, NIH and NSF grant writing, OPM's
+# handbooks and GOV.UK's writing standards, in the group "writing": entries, checks and reasons are in
+# writing_business.py (keys writing, wb:<name>; it builds them itself, so only the records are added here).
+import writing_business as _wb  # noqa: E402
+
+GROUPS.update(_wb.GROUPS)
+LICENCE_LINES.update(_wb.LICENCE_LINES)
+NOT_INCLUDED = NOT_INCLUDED + _wb.NOT_INCLUDED
+PRACTICE_SUBJECTS[:0] = _wb.PRACTICE_SUBJECTS

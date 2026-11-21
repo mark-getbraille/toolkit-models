@@ -190,6 +190,9 @@ def fingerprint(key):
         if kind == "dir":
             import directory_sources             # here, not at the top: directory_sources imports the builder
             return directory_sources.sign(key)
+        if kind == "wb":                         # writing and business guides (writing_business.py)
+            import writing_business              # here, not at the top: writing_business imports the builder
+            return writing_business.sign(key)
         if kind == "med":
             import medications                   # here, not at the top: medications imports the builder
             return medications.sign(key)
