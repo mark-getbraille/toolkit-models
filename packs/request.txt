@@ -12,4 +12,5 @@
 # 20 November: commons_disasters again (Commons refused every request for four hours on 19 November), and a top-up
 # of museum_art_nudes to take in the Newberry Library's nude prints and drawings.
 # 20 November (2): US and Canadian street scenes (crosswalks and signals, streets and roads, neighbourhoods, FHWA highway photos).
-commons_crosswalks_signals,commons_streets_roads_na,commons_neighbourhoods_na,us_dot_street_photos
+# 21 November: North American animals by species and breed, animal signs, NOAA species photos, animal care products.
+na_wild_mammals,na_birds,na_herps_fish,na_insects,na_invertebrates,na_animal_signs,noaa_fisheries_species,na_domestic_animals,abo_pet_supplies

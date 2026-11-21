@@ -4,4 +4,5 @@
 # Add "pictures" as a key to put the pictures into the books (much larger files); without it the books keep every
 # picture's description and caption as text.
 # Again: the three books whose build failed (a key with no book now writes its manifest and its reason).
-osbooks:life-liberty-pursuit-happiness,nonprofit:w3c_wcag22,pdf:navy_neets_module_01
+# 21 November: North American animals (NOAA species directory and eight public-domain field guides).
+guide:noaa_fisheries_species_directory,pdf:reed_bird_guide_land_birds_1909,pdf:chapman_handbook_birds_eastern_na_1895,pdf:anthony_field_book_na_mammals_1928,pdf:ditmars_reptile_book_1907,pdf:dickerson_frog_book_1906,pdf:holland_butterfly_book_1902,pdf:jordan_evermann_food_game_fishes_1902,pdf:hornaday_american_natural_history_1904

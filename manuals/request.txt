@@ -2,4 +2,4 @@
 # main): category keys from manuals/categories.py, separated by commas, or all.
 # Again with the new household categories (computers, TV and audio, older electronics, lawn and garden, around the
 # house), products from about 1990 on, and without the copies of manual-copying sites.
-all
+firearms,smoking_vaping,pet_livestock_supplies
