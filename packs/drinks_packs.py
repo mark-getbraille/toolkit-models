@@ -132,6 +132,7 @@ ALCOHOLIC_DRINKS = [
     drink("Pilsner", "pilsner, a pale golden lager"),
     drink("Stout", "stout, a very dark, almost black beer"),
     drink("Wheat beers", "wheat beer, often pale and cloudy"),
+    drink("Pale ales", "pale ale, a golden to amber, hoppy beer"),
     drink("Draught beer", "draught beer, poured from a tap"),
     drink("Whisky", "whisky, a spirit distilled from grain"),
     drink("Whisky bottles", "a bottle of whisky"),
@@ -183,6 +184,8 @@ BAR_GLASSWARE = [
     thing("Growlers", "a growler, a jug for carrying draught beer"),
     thing("Bag-in-box", "a bag-in-box container (boxed wine and other drinks come in these)"),
     thing("Wine barrels", "a wine barrel"),
+    thing("Whisky barrels", "a whisky barrel, where whisky is aged"),
+    thing("Bartending equipment", "bartending equipment"),
     thing("Wine cellars", "a wine cellar"),
     thing("Wine tasting", "a wine tasting", ALCOHOL_NOTE),
 ]
@@ -195,6 +198,8 @@ BREWING_WINEMAKING = [
     thing("Homebrewing", "home brewing: making beer at home", HOME_LEGAL),
     thing("Brew kettles", "a brew kettle, where the wort is boiled with hops"),
     thing("Fermenters", "a fermenter, where yeast turns wort into beer"),
+    thing("Mash tun", "a mash tun, where crushed malt soaks in hot water to make wort"),
+    thing("Hop gardens", "a hop garden, where hops are grown on tall poles and wires"),
     thing("Fermentation tanks", "a fermentation tank"),
     thing("Airlocks", "an airlock (fermentation lock), which lets gas out of a fermenter and keeps air out"),
     thing("Fermentation locks", "a fermentation lock (airlock)"),
@@ -224,6 +229,8 @@ DISTILLING = [
     # Laboratory and industrial stills are in this category too: only files whose own words name a drink.
     still("Distillation apparatus", "distillation apparatus for making spirits") + (SPIRIT_WORDS,),
     thing("Distilleries", "a distillery", DISTILLERY_NOTE),
+    thing("Spirit safe", "a spirit safe, a locked glass box where the distiller watches and divides the spirit", DISTILLERY_NOTE),
+    thing("Bonded warehouses", "a bonded warehouse, where spirits age in barrels before tax is paid", DISTILLERY_NOTE),
 ]
 
 # ----------------------------------------------------------------- Commons: soft drinks and other drinks
