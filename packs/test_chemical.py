@@ -94,7 +94,7 @@ def test_finishes():
 
 def test_brand_only_from_its_category_and_with_a_product():
     """A brand needs its own category and a product rule; a brand category alone (a logo, a shop) gives nothing."""
-    rows = c.file_rows(made_up(cats=["WD-40"]), "WD-40", c.RULES)
+    rows = c.file_rows(made_up("File:WD-40 spray can.jpg", cats=["WD-40"]), "WD-40", c.RULES)
     got = answers(rows)
     assert got[c.BRAND_Q] == "The brand is WD-40." and "spray lubricant" in got[c.WHAT_Q]
     assert all(r["credit"] == CREDIT and r["facts"]["commons_category"] == "WD-40" for r in rows)
@@ -102,6 +102,14 @@ def test_brand_only_from_its_category_and_with_a_product():
     assert answers(c.file_rows(made_up(cats=["Clorox", "Bleach bottles"]), "Bleach bottles", c.RULES))[c.BRAND_Q] \
         == "The brand is Clorox."
     assert c.file_rows(made_up(cats=["Clorox"]), "Clorox", c.RULES) == []
+    assert c.rule_rows(["Clorox"], c.RULES) == []
+    # In the brand's own category, only a picture of the container counts (a sponsored rally car does not).
+    assert c.file_rows(made_up("File:Ford Fiesta R5 34879865964 .jpg", ["WD-40"], "Goodwood Festival of Speed 2017."),
+                       "WD-40", c.RULES) is None
+    assert c.file_rows(made_up("File:Can of WD-40 100ml.jpg", ["WD-40"]), "WD-40", c.RULES)
+    # A caption alone is not a picture this pack knows.
+    assert c.file_rows(made_up(cats=["Things"], text="A motorcycle repair shop with banners on the wall and the bikes parked outside it."), "Things", c.RULES) is None
+    assert c.file_rows(made_up(cats=["Things"]), "Things", c.RULES) == []          # no words at all: set aside
 
 
 def test_caption_row():

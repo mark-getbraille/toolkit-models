@@ -26,7 +26,7 @@ The packs (all open: CC0, public domain or CC BY, checked file by file at the so
                          jerrycans, charcoal and kerosene, fire extinguishers by type (CO2, water, foam), cement bags,
                          mineral wool insulation and photographic chemicals.
   commons_finishes_in_use  Commons categories of what these look like applied or in use: rust, corrosion and
-                         verdigris, against galvanised, powder-coated, chrome-plated and brushed metal; varnish,
+                         verdigris, against hot-dip galvanised, powder-coated, chrome-plated and brushed metal; varnish,
                          shellac, lacquer and linseed and tung oil on wood; peeling paint and house painting;
                          efflorescence and spalling on walls and concrete; mortar joints; and pesticides being
                          applied. (Commons' "Mildew" is plant fungi, so it is not read.)
@@ -381,6 +381,10 @@ BRANDS = {r"^WD-40\b": "WD-40", r"^Roundup\b": "Roundup", r"^Clorox\b": "Clorox"
           r"^Kingsford\b": "Kingsford", r"^Miracle-Gro\b": "Miracle-Gro", r"^Raid \(": "Raid",
           r"^Brasso\b": "Brasso", r"^Pledge \(": "Pledge", r"^OxiClean\b": "OxiClean"}
 BRANDS = {re.compile(p): b for p, b in BRANDS.items()}
+# The words that show a file of a brand's own category is the product in its container ("Can of WD-40 100ml",
+# "Envase WD-40", "WD-40 Smart Straw").
+CONTAINER = re.compile(r"\b(cans?|bottles?|spray|sprayer|tins?|jugs?|straw|aerosol|envase|dose|bombe|packs?|tubes?|"
+                       r"containers?|vessels?|jerrycans?|canisters?|lata|flasche|dose)\b", re.I)
 
 # Subcategories that are not photos of the product or surface: drawings, molecules and structures, chemistry,
 # history and art, factories and companies, people, events, and places.
@@ -391,7 +395,7 @@ SKIP = re.compile(r"\b(diagrams?|drawings?|structural formulae?|skeletal formula
                   r"companies|factories|plants|headquarters|buildings by|shops?|stores?|stations?|vehicles?|ships?|"
                   r"aircraft|cars|trucks|warfare|weapons?|military|accidents?|disasters?|spills?|pollution|"
                   r"protests?|by country|by year|quality images|in literature|music|films?|fung(i|us)|plant "
-                  r"diseases?|pathogens?)\b", re.I)
+                  r"diseases?|pathogens?|lincrusta|linoleum)\b", re.I)
 # For the symbols pack: drawings and placards on vehicles are wanted; only these subcategories are left out.
 SYMBOL_SKIP = re.compile(r"\b(by country|quality images|people|persons|companies|history|museums?)\b|"
                          + re.escape(GHS_CATEGORY), re.I)       # safety_signs' nine drawings: not repeated
@@ -439,7 +443,7 @@ PACKAGING_TOPICS = [topic(c, d) for c, d in [
     ("Cement bags", 1), ("Mineral wool", 1), ("Photographic chemicals", 1),
 ]]
 FINISH_TOPICS = [topic(c, d) for c, d in [
-    ("Rust", 1), ("Corrosion", 1), ("Verdigris", 1), ("Galvanization", 1), ("Hot-dip galvanizing", 1),
+    ("Rust", 1), ("Corrosion", 1), ("Verdigris", 1), ("Hot-dip galvanizing", 1),
     ("Powder coating", 1), ("Chrome plating", 1), ("Brushed metal", 1),
     ("Varnish", 1), ("Shellac", 1), ("Lacquer", 1), ("Linseed oil", 1), ("Tung oil", 0),
     ("Peeling paint", 1), ("House painting", 1), ("Efflorescence", 1), ("Spalling", 1),
@@ -528,10 +532,16 @@ def caption_row(text):
 def file_rows(f, found_in, rules):
     """The rows of one Commons file (from commons_files): the rules' rows from the category it was found in and
     its other categories, the brand where its brand category says it, and its English caption; each with the
-    credit and facts."""
+    credit and facts. None when no rule fits but the file's own caption says what it is (another subject)."""
     cats = [found_in] + [c for c in f["categories"] if c != found_in]
     title = f["title"].split(":", 1)[-1].rsplit(".", 1)[0]
     rows = rule_rows(cats, rules)
+    if rows and any(p.search(found_in) for p in BRANDS) and not CONTAINER.search(f"{title} {f.get('text', '')}"):
+        rows = []          # found in a brand's own category (sponsored cars, buildings): only a container counts
+    if not rows:
+        # No rule: a file with a real caption is about something else (a rally car, a shop), so it is left out
+        # (None); one with no words at all is set aside for a description ([]).
+        return None if caption_row(f.get("text", "")) else []
     rows += brand_rows(cats, rows)
     rows += caption_row(f.get("text", ""))
     facts = {"commons_category": found_in, "commons_title": title}
@@ -610,6 +620,9 @@ def chem_commons(topics, rules, limit, prefix, key, row_maker=file_rows, mimes=(
                     continue
                 seen.add(title)
                 rows = row_maker(f, found_in.get(title, t["root"]), rules)
+                if rows is None:
+                    considered(title, f["url"], "its own caption shows another subject")
+                    continue
                 if photos and (NOT_PRODUCT.search(title.split(":", 1)[-1].replace("_", " "))
                                or NOT_PRODUCT_CAPTION.search(f.get("text", ""))):
                     rows = []                  # not a picture of the product or finish: set aside, its category kept
@@ -815,7 +828,7 @@ CHEMICAL_PACKS = {
 # How many pictures a full build takes from each (Commons answers about one picture a second).
 CHEMICAL_LIMITS = {
     "commons_household_chemicals": 2500,  # 59 topics: about 3,900 files directly in them, more in subcategories
-    "commons_finishes_in_use": 2000,      # 19 topics: about 1,800 files directly in them (Rust alone about 770)
+    "commons_finishes_in_use": 2000,      # 18 topics: about 1,750 files directly in them (Rust alone about 770)
     "commons_hazard_symbols": 300,        # 3 topics of drawings and photos
 }
 
