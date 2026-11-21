@@ -6,10 +6,11 @@ Two jobs, in plain words:
    OpenStax or Office of the Historian repository (git ls-remote), a DSpace record's "lastModified", the address and
    size of an official PDF (the Internet Archive's file checksum; a web server's ETag, Last-Modified and size), the
    newest govinfo edition of a law, the list of articles of a web guide or the newest "lastmod" of its sitemap, the
-   newest report of a CRS year, and so on. Every book's catalogue entry keeps the key it was built from and the
-   fingerprint at that time; changed_keys() compares them with today's and lists the keys to build again. News
-   pieces (the daily refresh) and the VOA years (the backfill) are left to their own schedules; books whose entry has
-   no fingerprint yet (built before this check existed) are rebuilt a few at a time, oldest first.
+   newest report of a CRS year, DailyMed's newest monthly release for the medicine books, and so on. Every book's
+   catalogue entry keeps the key it was built from and the fingerprint at that time; changed_keys() compares them
+   with today's and lists the keys to build again. News pieces (the daily refresh) and the VOA years (the backfill)
+   are left to their own schedules; books whose entry has no fingerprint yet (built before this check existed) are
+   rebuilt a few at a time, oldest first.
 
 2. Keep every version. A book built again is written under a new file name (<name>.<YYYY-MM-DD>.zim, the day it was
    built) and the old file stays in the release. merge_versions() keeps, for every book in textbooks.json, a list
@@ -174,6 +175,9 @@ def fingerprint(key):
             return law_sign(next(e for e in sources.LAWS + sources.LAWS_MORE if e["name"] == name))
         if kind == "pub":
             return pub_sign(key)
+        if kind == "med":
+            import medications                   # here, not at the top: medications imports the builder
+            return medications.sign(key)
     except (urllib.error.URLError, OSError, ValueError, LookupError, StopIteration, KeyError):
         return ""
     return ""
