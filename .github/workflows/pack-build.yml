@@ -377,6 +377,9 @@ jobs:
             commons_food_state) limit=400 ;;
             usda_food_safety_photos) limit=400 ;;
             commons_access_features) limit=500 ;;
+            commons_household_chemicals) limit=2500 ;;
+            commons_finishes_in_use) limit=2000 ;;
+            commons_hazard_symbols) limit=300 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in

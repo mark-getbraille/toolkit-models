@@ -1644,6 +1644,11 @@ PACKS.update(EVERYDAY_EXTRAS_PACKS)
 # ticket machines. A reading or light state only where the file's own words say it, with short safety notes.
 from home_safety_packs import HOME_SAFETY_PACKS
 PACKS.update(HOME_SAFETY_PACKS)
+# Household and garage products and chemicals (packs/chemical_packs.py): Commons products in their containers with
+# safety notes, finishes and corrosion as they look applied or in use, and WHMIS, DOT and NFPA hazard symbols. The two
+# photo packs show people at work, so they are never used for picture-making (the kit's PEOPLE_AND_BODILY_PACK_KEYS).
+from chemical_packs import CHEMICAL_PACKS
+PACKS.update(CHEMICAL_PACKS)
 
 
 # The packs whose builder reads the Wikimedia Commons API (commons_get, commons_members, commons_entries,
@@ -1700,6 +1705,8 @@ COMMONS_KEYS = frozenset({
     # home safety, food state and accessibility features (home_safety_packs.py; usda_food_safety_photos reads USDA's
     # Commons copies through Commons search)
     "commons_home_safety", "commons_food_state", "usda_food_safety_photos", "commons_access_features",
+    # household and garage products and chemicals (chemical_packs.py)
+    "commons_household_chemicals", "commons_finishes_in_use", "commons_hazard_symbols",
 })
 
 

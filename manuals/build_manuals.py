@@ -68,6 +68,14 @@ Sources, and why each may be used by a program:
       Vaporesso's terms could not be read by a program). Never anything for making, extracting or growing drugs,
       pill presses, or the steam "vaporizers" that are humidifiers (smoking_vaping.SMOKING_EXCLUDE). Its entries
       carry their own category and kinds (vaporizer, e-rig, water pipe, hookah, rolling, grinder, e-cigarette).
+  Household and garage chemicals (manuals/chemicals.py: cleaners, pool, garden, paint, oils, wood finishes,
+      automotive fluids, glues, solvents, pest control, batteries, fuels, extinguishers and more)   makers' own
+      safety data sheet and product information pages, LINKED only (as the firearms cleaning-chemical makers are:
+      none is read); the US EPA's official pesticide labels (PPIS bulk files and the label PDFs listed in the
+      www3.epa.gov sitemaps: chemical_labels.EpaData); Health Canada's Pesticide Product Information Database
+      (its open CSV extract, Open Government Licence - Canada); and the NIOSH Pocket Guide to Chemical Hazards
+      (its CAS index), each chemical also linked to NOAA's CAMEO Chemicals and to PubChem, which are never read
+      (chemical_labels.py says why).
   US military manuals of automatic firearms (category firearms, categories.PUBLIC_MANUALS)   the Internet Archive's
       copies of Army training circulars, each put in the index only when the front of its own text says "Approved
       for public release; distribution is unlimited" (Distribution Statement A) and shows no restricted marking
@@ -105,6 +113,7 @@ import urllib.parse
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import categories as C  # noqa: E402
+import chemical_labels as L  # noqa: E402
 import instructions as I  # noqa: E402
 
 USER_AGENT = ("DigitalAccessibilityToolkit-ManualsBuilder/1.0 (github.com/mark-getbraille/toolkit-models; "
@@ -115,7 +124,9 @@ GAPS = {"search.openfoodfacts.org": 6.5, "world.openfoodfacts.org": 0.7, "world.
         "query.wikidata.org": 2.0, "commons.wikimedia.org": 0.5, "upload.wikimedia.org": 0.2,
         "api.fda.gov": 0.5, "describe.getbraille.com": 1.0, "data.energystar.gov": 1.0,
         "open.canada.ca": 1.0, "natural-resources.canada.ca": 1.0, "www.nrcan.gc.ca": 1.0,
-        "www.henryusa.com": 10.0}           # Henry's robots.txt asks for a crawl delay of 10 seconds
+        "www.henryusa.com": 10.0,           # Henry's robots.txt asks for a crawl delay of 10 seconds
+        "www3.epa.gov": 1.0,                # its robots.txt asks for a crawl delay of 1 second
+        "pest-control.canada.ca": 1.0, "www.cdc.gov": 1.0}
 DEFAULT_GAP = 1.0
 TIMEOUT = 40
 STARTED = time.time()
@@ -1413,6 +1424,9 @@ def build(key, out_dir, limit, fetch):
         got, why = maker_entries(fetch, cat["makers"], cat.get("exclude"))
         manual_entries += got
         notes += why
+    for label_entries, why in chemical_entries(fetch, key, cat, limit):
+        manual_entries += label_entries
+        notes += why
     if cat.get("public_manuals"):
         got, why = public_manual_entries(fetch, cat["public_manuals"])
         manual_entries += got
@@ -1461,6 +1475,43 @@ def build(key, out_dir, limit, fetch):
     return write(key, entries, out_dir, notes, fetch.requests if fetch else 0)
 
 
+_EPA = {}            # the EPA data, read once per build and shared by the categories (chemical_labels.EpaData)
+_PMRA = {}           # the Health Canada products, read once per build
+
+
+def chemical_entries(fetch, key, cat, limit):
+    """[(entries, notes)] of a chemical category's official sources: the EPA's pesticide labels (cat["epa"], a
+    chemical_labels.epa_selected spec), Health Canada's (cat["pmra"], a pmra_selected spec) and the NIOSH Pocket
+    Guide (cat["niosh"]). Each source fails on its own: its note says why, the others go on."""
+    out = []
+    if cat.get("epa") and not listing_out_of_time():
+        try:
+            if "data" not in _EPA:
+                _EPA["data"] = L.EpaData(fetch, say)
+            got = _EPA["data"].entries(cat["epa"], key, limit)
+            say(f"{key}: {len(got)} EPA pesticide labels")
+            out.append((got, []))
+        except (RuntimeError, OutOfTime, ValueError, KeyError, OSError) as e:
+            out.append(([], [f"EPA pesticide labels failed: {e}"]))
+    if cat.get("pmra") and not listing_out_of_time():
+        try:
+            if "products" not in _PMRA:
+                _PMRA["products"] = L.parse_pmra(fetch.text(L.PMRA_CSV))
+            got = L.pmra_entries(_PMRA["products"], cat["pmra"], key, limit)
+            say(f"{key}: {len(got)} Health Canada pesticide products")
+            out.append((got, []))
+        except (RuntimeError, OutOfTime, ValueError, KeyError) as e:
+            out.append(([], [f"Health Canada pesticide labels failed: {e}"]))
+    if cat.get("niosh") and not listing_out_of_time():
+        try:
+            got = L.niosh_entries(fetch.text(L.NIOSH_INDEX), key, limit)
+            say(f"{key}: {len(got)} NIOSH Pocket Guide chemicals")
+            out.append((got, []))
+        except (RuntimeError, OutOfTime, ValueError) as e:
+            out.append(([], [f"NIOSH Pocket Guide failed: {e}"]))
+    return out
+
+
 def write(key, entries, out_dir, notes=(), requests_made=0):
     """Write manuals-<key>.json.gz and manifest-<key>.json; return the manifest."""
     cat = C.CATEGORIES[key]
@@ -1471,7 +1522,13 @@ def write(key, entries, out_dir, notes=(), requests_made=0):
              "credit": "Open Food Facts, Open Beauty Facts and Open Products Facts contributors; the Internet "
                        "Archive; Wikidata; Wikimedia Commons authors; the US FDA; Picture Describers volunteers"
                        + ("; Natural Resources Canada (EnerGuide): contains information licensed under the Open "
-                          "Government Licence - Canada" if cat.get("energuide") else ""),
+                          "Government Licence - Canada" if cat.get("energuide") else "")
+                       + ("; the US EPA (Pesticide Product Information System and Label System, public domain)"
+                          if cat.get("epa") else "")
+                       + ("; Health Canada (Pesticide Product Information Database): contains information licensed "
+                          "under the Open Government Licence - Canada" if cat.get("pmra") else "")
+                       + ("; NIOSH Pocket Guide to Chemical Hazards (public domain), with links to NOAA CAMEO "
+                          "Chemicals and PubChem" if cat.get("niosh") else ""),
              "copyright": "Facts and links only: the manuals belong to their makers and are not published here.",
              "notes": list(notes)[:50], "entries": entries}
     if cat.get("guidance"):

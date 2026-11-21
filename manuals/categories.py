@@ -589,3 +589,10 @@ for _key, _more in _HARDWARE_EXTEND.items():
             _cat[_field] = list(_cat.get(_field) or []) + list(_more[_field])
     if _more.get("notice"):
         _cat["notice"] = _more["notice"]
+
+# The household and garage chemical collections (cleaners, pool, garden, paints, oils, wood finishes, automotive
+# fluids, glues, solvents, pest control, batteries, fuels, extinguishers and more, the official pesticide labels and
+# the chemical safety guides): their makers, sources and guidance are in manuals/chemicals.py.
+from chemicals import CHEMICAL_CATEGORIES as _CHEMICALS  # noqa: E402
+
+CATEGORIES.update(_CHEMICALS)

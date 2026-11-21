@@ -115,10 +115,10 @@ TOPICS = [
            "laundry_symbols", "commons_tools", "commons_kitchen", "clock_times", "seven_segment", "abo_products",
            "commons_things", "open_images_tech", "commons_us_controls", "wikidata_devices", "commons_devices",
            "nmah_devices", "farm_commons_equipment", "mech_commons_building", "open_images_objects", "core50",
-           "gso_objects",
+           "gso_objects", "commons_household_chemicals", "commons_finishes_in_use",
            # share-alike
            "commons_mechanical_sa", "dashboard_symbols_sa", "device_models_sa", "farm_mech_commons_sa",
-           "commons_airplanes_sa",
+           "commons_airplanes_sa", "chemical_commons_sa",
            # non-commercial and research-only (personal use)
            "autovi", "dashboard_warning_icons", "car_parts_damage", "car_parts_dsmlr", "car_damage_views",
            "mechanical_parts_2022", "co3d_devices", "stanford_cars", "fgvc_aircraft", "museums_victoria",
@@ -136,7 +136,8 @@ TOPICS = [
           "Reading text and making sense of pages: letters, forms, receipts, tables and charts, maps, sheet "
           "music, road and safety signs, and phone screens.",
           ("textvqa", "textocr", "coco_text", "cord", "doclaynet", "plotqa", "loc_letters", "owid_charts",
-           "pubtabnet_tables", "us_federal_forms", "safety_signs", "us_road_signs", "ca_road_signs",
+           "pubtabnet_tables", "us_federal_forms", "safety_signs", "commons_hazard_symbols", "us_road_signs",
+           "ca_road_signs",
            "deepscores_sheet_music", "field_manual_figures",
            # share-alike
            "hiertext", "mapqa",
