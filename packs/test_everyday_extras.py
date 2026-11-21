@@ -141,9 +141,17 @@ def test_fixed_packs(monkeypatch):
     assert got["Envelope with return address"] == [] and got["Brown envelope"][0]["answer"] == "It is an envelope."
     tee = e.CLOTHING_SPECS[0]
     rows = answers(e.clothing_rows("x", "", ["Red T-shirts", "Striped T-shirts", "Men wearing T-shirts"], tee, ""))
-    assert rows == {e.CLOTHING_Q: "It is a T-shirt.", e.COLOUR_Q: "It is red.", e.PATTERN_Q: "It has stripes."}
-    assert answers(e.clothing_rows("x", "", ["Red T-shirts", "Blue T-shirts"], tee, "")) == {e.CLOTHING_Q:
-                                                                                              "It is a T-shirt."}
+    assert rows == {e.CLOTHING_Q: "There is a T-shirt in this picture.",
+                    e.COLOUR_Q: "There is red clothing in this picture.", e.PATTERN_Q: "It has stripes."}
+    assert answers(e.clothing_rows("x", "", ["Red T-shirts", "Blue T-shirts"], tee, "")) == {
+        e.CLOTHING_Q: "There is a T-shirt in this picture."}
+    # Commons files a photo under "Basketballs" when a ball is merely in it: say what is in the picture
+    said = {one["category"]: one["info"][0] for one in e.TOYS_SPORTS_MUSIC_SPECS + e.GROOMING_SPECS}
+    assert said["Basketballs"] == (e.IN_PICTURE_Q, "There is a basketball in this picture.")
+    assert said["Dice"] == (e.IN_PICTURE_Q, "There are dice in this picture.")
+    assert said["Lego"][1] == "There is LEGO in this picture: toy plastic bricks that fit together."
+    assert said["Violins"] == (e.INSTRUMENT_Q, "There is a violin in this picture.")
+    assert said["Curling irons"][1] == "There is a curling iron in this picture: it curls hair and gets very hot."
     assert e.instrument_name("Violins") == "a violin" and e.instrument_name("Grand pianos") == "a grand piano"
     for specs in (e.MAIL_SPECS, e.CLOTHING_SPECS, e.GROOMING_SPECS, e.TOYS_SPORTS_MUSIC_SPECS, e.SKY_SPECS,
                   e.SCREEN_SPECS):

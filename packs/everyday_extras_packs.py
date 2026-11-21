@@ -55,8 +55,9 @@ section 2.1), so none of theirs are used. So banknote files showing both sides a
 banknote picture is made at most NOTE_SIDE pixels long (at a screen's 96 dots an inch a $20 bill then shows at under
 three-quarters of its 6.14 inches). Coins have no such rule.
 
-Not repeated (they exist): commons_us_money and commons_ca_money (the same Commons categories by value only, every file; this pack
-takes the ones whose title names the side and adds the design and touch facts), banknotes, bd_taka, ghana_money.
+Not repeated (they exist): commons_us_money and commons_ca_money (the same Commons categories by value only, every
+file; this pack takes the ones whose title names the side and adds the design and touch facts), banknotes, bd_taka,
+ghana_money.
 The Smithsonian's National Numismatic Collection (CC0) was looked at: in the open-access bulk files only 2 of 5,434
 of its records carry a picture, and api.si.edu refused automated requests (service_packs.py notes), so it is not used.
 Forms and receipts: us_federal_forms, cord, and the kit's funsd, sroie, wildreceipt, xfund and cra_forms. Clothing:
@@ -518,10 +519,11 @@ def build_commons_money_sides(limit):
 # ----------------------------------------------------------------- fixed-answer packs
 
 WHAT_Q = "What is this?"
-CLOTHING_Q = "What clothing is this?"
+CLOTHING_Q = "What clothing is in this picture?"
 PATTERN_Q = "What pattern is this?"
 FABRIC_Q = "What fabric is this?"
-COLOUR_Q = "What colour is it?"
+COLOUR_Q = "What colour is the clothing?"
+IN_PICTURE_Q = "What is in this picture?"
 INSTRUMENT_Q = "What musical instrument is this?"
 CLOUD_Q = "What kind of clouds are these?"
 SKY_Q = "What is in the sky?"
@@ -532,6 +534,23 @@ SCREEN_Q = "What is on this screen?"
 def fixed(category, answer, question=WHAT_Q, depth=0, place="", more=()):
     """A spec whose rows are fixed sentences: (question, answer) and any more (question, answer) pairs."""
     return spec(category, ((question, answer),) + tuple(more), depth, place)
+
+
+def in_picture(specs, question=IN_PICTURE_Q):
+    """The specs with "What is this?"-style answers made into what is IN the picture ("It is a basketball." -> "There
+    is a basketball in this picture."): Commons files a photo under "Basketballs" or "Dresses" when one is merely in
+    it, held, worn or played, so "This is a basketball" would often be wrong."""
+    def turn(a):
+        m = re.match(r"(It is|They are) (.+?)([.:])(.*)$", a)
+        if not m:
+            return a
+        verb = "There is" if m.group(1) == "It is" else "There are"
+        return f"{verb} {m.group(2)} in this picture{m.group(3)}{m.group(4)}"
+    out = []
+    for one in specs:
+        first, *rest = one["info"]
+        out.append(dict(one, info=((question, turn(first[1])),) + tuple(rest)))
+    return out
 
 
 def fixed_rows(title, caption, categories, one, sub):
@@ -613,9 +632,10 @@ GARMENTS = [("T-shirts", "It is a T-shirt."), ("Hoodies", "It is a hoodie (a hoo
             ("Sandals", "They are sandals."), ("Polo shirts", "It is a polo shirt."),
             ("Dress shirts", "It is a dress shirt (a button-up shirt with a collar)."), ("Shorts", "They are shorts."),
             ("Leggings", "They are leggings.")]
-CLOTHING_SPECS = [fixed(c, a, CLOTHING_Q) for c, a in GARMENTS] + [
+CLOTHING_SPECS = in_picture([fixed(c, a, CLOTHING_Q) for c, a in GARMENTS], CLOTHING_Q) + [
     fixed("Striped clothing", "It has stripes.", PATTERN_Q, depth=1),
-    fixed("Striped shirts", "It is a striped shirt.", CLOTHING_Q, more=((PATTERN_Q, "It has stripes."),)),
+    fixed("Striped shirts", "There is a striped shirt in this picture.", CLOTHING_Q,
+          more=((PATTERN_Q, "It has stripes."),)),
     fixed("Gingham", "It is gingham: a checked pattern of small, even squares, usually white and one colour.",
           PATTERN_Q, depth=1),
     fixed("Polka dots", "It has polka dots: round dots spaced evenly.", PATTERN_Q, depth=1),
@@ -629,7 +649,7 @@ CLOTHING_SPECS = [fixed(c, a, CLOTHING_Q) for c, a in GARMENTS] + [
     fixed("Flannel", "It is flannel: a soft, slightly fuzzy woven fabric.", FABRIC_Q, depth=1),
     fixed("Lace", "It is lace: an open, web-like fabric with patterns of holes.", FABRIC_Q),
     fixed("Clothing labels", "It is a label sewn into clothing.", WHAT_Q),
-] + [fixed(f"{c.capitalize()} clothing", f"It is {c}.", COLOUR_Q, depth=1)
+] + [fixed(f"{c.capitalize()} clothing", f"There is {c} clothing in this picture.", COLOUR_Q, depth=1)
      for c in ("red", "blue", "black", "white", "green", "yellow", "pink")]
 
 
@@ -641,7 +661,7 @@ def clothing_rows(title, caption, categories, one, sub):
     colours = {CATEGORY_COLOUR.match(c).group(1).lower().replace("gray", "grey") for c in categories
                if CATEGORY_COLOUR.match(c)}
     if COLOUR_Q not in asked and len(colours) == 1:
-        rows.append({"question": COLOUR_Q, "answer": f"It is {colours.pop()}."})
+        rows.append({"question": COLOUR_Q, "answer": f"There is {colours.pop()} clothing in this picture."})
     patterns = {said for c in categories for pattern, said in CATEGORY_PATTERN if pattern.search(c)}
     if PATTERN_Q not in asked and len(patterns) == 1:
         rows.append({"question": PATTERN_Q, "answer": patterns.pop()})
@@ -655,7 +675,7 @@ def build_commons_clothing_patterns(limit):
 
 # ----------------------------------------------------------------- commons_makeup_grooming
 
-GROOMING_SPECS = [
+GROOMING_SPECS = in_picture([
     fixed("Cosmetics", "It is makeup (cosmetics)."),
     fixed("Eye shadow", "It is eye shadow (makeup for the eyelids).", depth=1),
     fixed("Foundation (cosmetics)", "It is foundation: skin-coloured makeup for the face."),
@@ -663,7 +683,7 @@ GROOMING_SPECS = [
     fixed("Lip gloss", "It is lip gloss."), fixed("Lip balm", "It is lip balm.", depth=1),
     fixed("Makeup brushes", "They are makeup brushes.", depth=1),
     fixed("Nail files", "It is a nail file.", depth=1), fixed("Combs", "It is a comb.", depth=1),
-    fixed("Curling irons", "It is a curling iron, for curling hair; it gets very hot."),
+    fixed("Curling irons", "It is a curling iron: it curls hair and gets very hot."),
     fixed("Electric shavers", "It is an electric shaver.", depth=1),
     fixed("Shaving cream", "It is shaving cream (or foam).", depth=1),
     fixed("Safety razors", "It is a safety razor.", depth=1), fixed("Tweezers", "They are tweezers.", depth=1),
@@ -671,7 +691,7 @@ GROOMING_SPECS = [
     fixed("Hair clips", "It is a hair clip.", depth=1), fixed("Toothbrushes", "It is a toothbrush.", depth=1),
     fixed("Electric toothbrushes", "It is an electric toothbrush.", depth=1),
     fixed("Dental floss", "It is dental floss.", depth=1), fixed("Mouthwash", "It is mouthwash.", depth=1),
-]
+])
 
 
 def build_commons_makeup_grooming(limit):
@@ -695,7 +715,8 @@ TOY_SPECS = [
     fixed("Dice", "They are dice."), fixed("Dominoes", "They are dominoes."),
 ]
 BALLS = [("Basketballs", "It is a basketball."), ("American footballs", "It is an American football."),
-         ("Baseballs", "It is a baseball."), ("Softballs", "It is a softball."), ("Tennis balls", "It is a tennis ball."),
+         ("Baseballs", "It is a baseball."), ("Softballs", "It is a softball."),
+         ("Tennis balls", "It is a tennis ball."),
          ("Golf balls", "It is a golf ball."), ("Volleyballs", "It is a volleyball."),
          ("Bowling balls", "It is a bowling ball."), ("Table tennis balls", "It is a table tennis (ping-pong) ball."),
          ("Ice hockey pucks", "It is an ice hockey puck."), ("Beach balls", "It is a beach ball."),
@@ -723,9 +744,9 @@ def instrument_name(category):
     return "a " + category[:-1].lower()
 
 
-TOYS_SPORTS_MUSIC_SPECS = TOY_SPECS + [fixed(c, a, depth=1 if c != "Skis" and c != "Skateboards" else 0)
-                                       for c, a in BALLS] + \
-    [fixed(c, f"It is {instrument_name(c)}.", INSTRUMENT_Q) for c in INSTRUMENTS]
+TOYS_SPORTS_MUSIC_SPECS = in_picture(TOY_SPECS + [fixed(c, a, depth=1 if c not in ("Skis", "Skateboards") else 0)
+                                                  for c, a in BALLS]) + \
+    in_picture([fixed(c, f"It is {instrument_name(c)}.", INSTRUMENT_Q) for c in INSTRUMENTS], INSTRUMENT_Q)
 
 
 def build_commons_toys_sports_music(limit):
