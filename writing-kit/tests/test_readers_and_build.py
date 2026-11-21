@@ -1,0 +1,161 @@
+"""Tests of the readers (kit/readers.py) and the whole build (kit/build_dataset.py) with made-up data: a tiny
+Enron-style tar.gz made here, a made-up W3C archive page, and made-up OASST and Dolly lines. No network is used."""
+
+import io
+import json
+import os
+import sys
+import tarfile
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(os.path.dirname(HERE), "kit"))
+import build_dataset  # noqa: E402
+import readers  # noqa: E402
+import writing_sources  # noqa: E402
+
+MAIL = """Message-ID: <1.JavaMail.evans@thyme>
+Date: Mon, 14 May 2001 16:39:00 -0700 (PDT)
+From: wren.calloway@enron.com
+To: idris.mavros@enron.com
+Subject: Re: Thursday review
+X-From: Wren Calloway
+X-To: Idris Mavros
+X-cc:
+X-bcc:
+
+Idris,
+
+Thanks for pulling the numbers together so fast. Could you send me the final version
+by Wednesday afternoon so I can read it before the review?
+
+Wren
+
+ -----Original Message-----
+From: Mavros, Idris
+Private earlier text with 713-555-0142
+"""
+
+SICK = MAIL.replace("Thanks for pulling the numbers together so fast.", "I am off sick with the flu today.")
+
+
+def make_tar(files):
+    data = io.BytesIO()
+    with tarfile.open(fileobj=data, mode="w:gz") as tar:
+        for name, text in files.items():
+            raw = text.encode()
+            info = tarfile.TarInfo(name)
+            info.size = len(raw)
+            tar.addfile(info, io.BytesIO(raw))
+    data.seek(0)
+    return data
+
+
+def test_enron_reader_takes_only_sent_mail_and_never_attachments():
+    tar = make_tar({"maildir/calloway-w/sent/1.": MAIL,
+                    "maildir/calloway-w/inbox/1.": MAIL.replace("Thursday", "Inbox"),
+                    "maildir/calloway-w/_sent_mail/2.": "Content-Type: multipart/mixed; boundary=x\n\n--x\n"})
+    records = list(readers.enron_records(tar, say=lambda t: None))
+    assert len(records) == 1
+    r = records[0]
+    assert r["subject"] == "Re: Thursday review" and r["is_reply"]
+    assert r["audience"] == "a colleague"
+    assert "calloway" in r["writer_names"]
+
+
+W3C_PAGE = """<html><head>
+<meta name="Author" content="Peregrine Oduya (p.oduya&#x40;example.org)" />
+<meta name="Subject" content="Re: Agenda for Thursday's call" />
+</head><body>
+<!-- inreplyto="abc&#64;example.org" -->
+<li><span class="to"><span class="heading">To</span>: list@w3.org</span></li>
+<pre id="start" class="body">
+Hi all,
+
+Regrets for Thursday's call, I will be travelling. I will read the minutes afterwards and send any comments by Friday.
+
+Peregrine
+</pre>
+<a href="att-0001/diagram.png">attachment</a>
+</body></html>"""
+
+
+def test_w3c_page_reader_takes_the_text_only():
+    r = readers.w3c_message(W3C_PAGE)
+    assert r["subject"] == "Re: Agenda for Thursday's call"
+    assert r["is_reply"] and r["audience"] == "the members of a mailing list"
+    assert "Regrets for Thursday's call" in r["body"] and "diagram" not in r["body"]
+
+
+OASST = {"prompt": {"text": "Write a short email to my landlord asking when the boiler will be fixed.",
+                    "role": "prompter", "lang": "en", "synthetic": False, "replies": [
+                        {"role": "assistant", "rank": 1, "synthetic": False, "text": "Second best answer."},
+                        {"role": "assistant", "rank": 0, "synthetic": False,
+                         "text": "Sure! Here's an email:\n\nDear Mr. Haldane,\n\nI hope you are well. Could you let "
+                                 "me know when the boiler will be repaired? It has not worked since Monday.\n\n"
+                                 "Kind regards,\n[Your Name]"}]}}
+OASST_POEM = {"prompt": {"text": "Write a poem about email.", "lang": "en", "replies": []}}
+
+
+def test_oasst_reader_picks_writing_requests_and_the_best_answer():
+    lines = [json.dumps(OASST), json.dumps(OASST_POEM)]
+    records = list(readers.oasst_records(lines))
+    assert len(records) == 1
+    assert records[0]["response"].startswith("Dear Mr. Haldane,")
+    assert records[0]["response"].endswith("[Your name]")
+
+
+def test_dolly_reader_picks_writing_requests():
+    lines = [json.dumps({"instruction": "Write a thank-you note to a colleague who covered for me.",
+                         "context": "", "response": "Thanks so much for covering for me on Friday.",
+                         "category": "creative_writing"}),
+             json.dumps({"instruction": "What is email?", "context": "", "response": "A way to send messages.",
+                         "category": "open_qa"})]
+    assert len(list(readers.dolly_records(lines))) == 1
+
+
+def test_whole_build_writes_scrubbed_files(tmp_path, monkeypatch):
+    def fake_enron(fetcher, say=print, **_):
+        yield from readers.enron_records(make_tar({"maildir/calloway-w/sent/1.": MAIL,
+                                                   "maildir/calloway-w/sent/2.": SICK}), say)
+
+    def fake_oasst(fetcher, say=print, **_):
+        yield from readers.oasst_records([json.dumps(OASST)])
+
+    monkeypatch.setattr(readers, "read_enron", fake_enron)
+    monkeypatch.setattr(readers, "read_oasst2", fake_oasst)
+    out = tmp_path / "out"
+    assert build_dataset.main(["--out", str(out), "--sources", "enron,oasst2", "--personal"]) == 0
+    rows = [json.loads(line) for name in ("train.jsonl", "validation.jsonl")
+            for line in open(out / name, encoding="utf-8")]
+    assert len(rows) == 2                                 # the sick-day message was dropped
+    text = json.dumps(rows)
+    for private in ["Wren", "Calloway", "Idris", "Mavros", "Haldane", "555", "enron.com", "Private earlier"]:
+        assert private not in text, private
+    enron = [r for r in rows if r["source"] == "enron"][0]
+    assert enron["licence_class"] == writing_sources.PERSONAL
+    assert enron["instruction"].startswith(("Write", "Draft", "Reply", "Thank"))
+    assert enron["messages"][0] == {"role": "user", "content": enron["instruction"]}
+    assert enron["messages"][1]["content"] == enron["response"]
+    for key in ["instruction", "response", "source", "licence", "licence_class", "kind", "tone", "audience"]:
+        assert key in enron
+    report = (out / "build-report.txt").read_text(encoding="utf-8")
+    assert "sensitive: health or medical: 1" in report
+    assert "PERSONAL USE ONLY" in (out / "ATTRIBUTION.txt").read_text(encoding="utf-8")
+    assert "foia.state.gov" in (out / "sources-not-used.txt").read_text(encoding="utf-8")
+    assert (out / "samples.txt").exists()
+
+
+def test_personal_sources_need_the_choice(tmp_path, monkeypatch):
+    called = []
+    monkeypatch.setattr(readers, "read_enron", lambda *a, **k: called.append(1) or iter(()))
+    monkeypatch.setattr(readers, "read_dolly", lambda *a, **k: iter(()))
+    build_dataset.main(["--out", str(tmp_path), "--sources", "enron,dolly"])
+    assert not called
+
+
+def test_every_source_is_recorded_with_a_licence_class():
+    for s in writing_sources.SOURCES:
+        assert s.licence_class in writing_sources.CLASSES
+        assert s.licence and s.credit and s.home.startswith("https://")
+        assert hasattr(readers, s.reader)
+    assert len(writing_sources.NOT_USED) >= 8
