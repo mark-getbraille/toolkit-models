@@ -205,3 +205,8 @@ def test_speech_records_save_the_whole_transcript(tmp_path, monkeypatch):
     assert build_dataset.main(["--out", str(tmp_path), "--sources", "hearings"]) == 0
     assert (tmp_path / "transcripts" / "hearings" / "CHRG-1.txt").read_text(encoding="utf-8") == \
         "whole transcript text"
+
+
+def test_wikinews_link_templates_keep_their_words():
+    assert readers_more.wiki_plain("Talks with {{w|Iran}} on {{w|Uranium enrichment|enrichment}} ended.") == \
+        "Talks with Iran on enrichment ended."

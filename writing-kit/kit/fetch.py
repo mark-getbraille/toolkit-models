@@ -17,6 +17,7 @@ Nothing here keeps cookies, logs in, or uses keys. Only official addresses are e
 
 import hashlib
 import os
+import re
 import time
 import urllib.error
 import urllib.parse
@@ -63,6 +64,47 @@ def parse_content_signals(text):
     return signals
 
 
+def group_rules(text, agent):
+    """[(allow, pattern)] of the robots.txt group that applies to agent (its own group if it has one, otherwise the
+    "*" group)."""
+    groups, agents, rules, in_rules = [], [], [], False
+    for raw in text.splitlines():
+        line = raw.split("#", 1)[0].strip()
+        if ":" not in line:
+            continue
+        field, value = (part.strip() for part in line.split(":", 1))
+        field = field.lower()
+        if field == "user-agent":
+            if in_rules:
+                groups.append((agents, rules))
+                agents, rules, in_rules = [], [], False
+            agents.append(value.lower())
+        elif field in ("allow", "disallow"):
+            in_rules = True
+            if value or field == "allow":
+                rules.append((field == "allow", value))
+    if agents:
+        groups.append((agents, rules))
+    name = agent.split("/")[0].lower()
+    mine = [r for a, r in groups if any(x != "*" and x in agent.lower() for x in a) or name in a]
+    if mine:
+        return [rule for r in mine for rule in r]
+    return [rule for a, r in groups if "*" in a for rule in r]
+
+
+def wildcard_allowed(rules, path):
+    """RFC 9309 matching with "*" and "$": the longest matching rule wins; Allow wins a tie; no match allows."""
+    best = None
+    for allow, pattern in rules:
+        regex = "^" + re.escape(pattern).replace(r"\*", ".*")
+        regex = regex[:-2] + "$" if regex.endswith(r"\$") else regex
+        if re.match(regex, path):
+            key = (len(pattern), allow)
+            if best is None or key > best:
+                best = key
+    return True if best is None else best[1]
+
+
 class Robots:
     """One site's robots.txt: whether an address may be fetched, the wait between requests, and the AI signals."""
 
@@ -80,7 +122,10 @@ class Robots:
         ai-train=no, or closes url to a general AI-training crawler. warnings lists company-crawler blocks."""
         if self.signals.get("ai-train") == "no":
             return False, f"{self.site}/robots.txt says 'Content-Signal: ai-train=no'", []
-        if not self.parser.can_fetch(USER_AGENT, url):
+        parts = urllib.parse.urlsplit(url)
+        path = (parts.path or "/") + ("?" + parts.query if parts.query else "")
+        if not self.parser.can_fetch(USER_AGENT, url) or \
+                not wildcard_allowed(group_rules(self.text, USER_AGENT), path):
             return False, f"{self.site}/robots.txt does not allow programs to read {url}", []
         blocked = [a for a in AI_TRAINING_AGENTS if not self.parser.can_fetch(a, url)]
         if blocked:
@@ -102,6 +147,7 @@ class Fetcher:
         self.robots = {}
         self.last = {}
         self.warnings = []
+        self.extra_headers = {}          # for example EDGAR's declared user agent, from the computer's settings
         self.opener = opener or urllib.request.build_opener()
 
     def _site(self, url):
@@ -146,7 +192,7 @@ class Fetcher:
         for attempt in range(tries):
             self._wait(site, delay)
             try:
-                req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+                req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, **self.extra_headers})
                 resp = self.opener.open(req, timeout=60)
                 return resp if stream else resp.read()
             except urllib.error.HTTPError as err:

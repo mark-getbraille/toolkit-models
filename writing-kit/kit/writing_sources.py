@@ -208,6 +208,69 @@ SOURCES = [
         reader="read_hansard",
         notes="The official English XML of each sitting. Canadian English spelling and Canadian parliamentary "
               "procedure; every instruction says so."),
+    Source(
+        key="edgar", name="SEC EDGAR business writing (press releases, letters to the SEC, shareholder letters)",
+        licence="Public records filed with the SEC (US government database; the companies' own writing is public "
+                "record and freely reused)", licence_class=OPEN,
+        licence_url="https://www.sec.gov/privacy#dissemination", credit="Companies' filings on SEC EDGAR",
+        home="https://www.sec.gov/edgar", reader="read_edgar",
+        notes="Uses EDGAR full-text search and the filing archive, paced well under EDGAR's 10 requests a second. "
+              "EDGAR requires each program to give a contact name and email in its user agent: the kit takes it "
+              "from the computer setting SEC_USER_AGENT and skips EDGAR without it."),
+    Source(
+        key="abcd", name="ABCD: Action-Based Conversations Dataset (ASAPP)", licence="MIT License",
+        licence_class=OPEN, licence_url="https://github.com/asappresearch/abcd/blob/master/LICENSE",
+        credit="ASAPP Research (Chen et al., 2021)", home="https://github.com/asappresearch/abcd",
+        reader="read_abcd", notes="Customer service chats between people playing an agent and a customer."),
+    Source(
+        key="openstax_business", name="OpenStax business books (communication, management and ethics chapters)",
+        licence="CC BY 4.0", licence_class=OPEN, licence_url="https://creativecommons.org/licenses/by/4.0/",
+        credit="OpenStax, Rice University: Introduction to Business 2e, Business Ethics, Principles of Management, "
+               "Organizational Behavior", home="https://openstax.org/subjects/business",
+        reader="read_openstax_business",
+        notes="Sections whose titles are about communication, meetings, negotiation, writing, teams and the like, "
+              "from OpenStax's own GitHub repositories."),
+    Source(
+        key="oanc", name="Open American National Corpus (OANC)",
+        licence="Free for any use, including commercial, without restriction (American National Corpus project)",
+        licence_class=OPEN, licence_url="https://anc.org/data/oanc/",
+        credit="American National Corpus project (Nancy Ide and colleagues), Open ANC",
+        home="https://anc.org/data/oanc/", reader="read_oanc",
+        notes="The official download (330 MB) is a GitHub release file, which GitHub's robots.txt closes to "
+              "programs ('Disallow: /*/*/download/*'), so the owner downloads it once in a browser from "
+              "anc.org/data/oanc/download/ and gives it with --oanc-file. Telephone conversations (its free part of Switchboard) and "
+              "face-to-face conversations are kept as transcripts and chats; fundraising letters, Slate articles, "
+              "government reports and travel guides become writing pairs."),
+    Source(
+        key="wikinews", name="English Wikinews", licence="CC BY 2.5", licence_class=OPEN,
+        licence_url="https://creativecommons.org/licenses/by/2.5/", credit="Wikinews contributors",
+        home="https://en.wikinews.org/", reader="read_wikinews",
+        notes="News articles from the official dump (pages-articles, which Wikimedia offers all month)."),
+    Source(
+        key="nsf", name="NSF award abstracts", licence="Public domain (US government work)", licence_class=OPEN,
+        licence_url="https://www.nsf.gov/policies/site-policies", credit="US National Science Foundation",
+        home="https://www.research.gov/common/webapi/awardapisearch-v1.htm", reader="read_nsf",
+        notes="Project summaries of funded grants, from NSF's free award API (no key)."),
+    Source(
+        key="presidential", name="Compilation of Presidential Documents (GovInfo)",
+        licence="Public domain (US government work)", licence_class=OPEN,
+        licence_url="https://www.govinfo.gov/about/policies", credit="Office of the Federal Register, GovInfo",
+        home="https://www.govinfo.gov/app/collection/cpd", reader="read_presidential",
+        notes="Remarks, speeches, statements and letters, found through GovInfo's sitemaps; whole texts saved too."),
+    Source(
+        key="blogs", name="Open-licence blogs and citizen news (Pluralistic, Global Voices)",
+        licence="CC BY 4.0 (Pluralistic) and CC BY 3.0 (Global Voices)", licence_class=OPEN,
+        licence_url="https://creativecommons.org/licenses/by/4.0/",
+        credit="Cory Doctorow, Pluralistic (pluralistic.net); Global Voices authors (globalvoices.org)",
+        home="https://pluralistic.net/", reader="read_blog_feeds",
+        notes="The full posts in each site's own feed (Global Voices asks for 10 seconds between requests)."),
+    Source(
+        key="fineweb", name="FineWeb sample: conversational web pages (Hugging Face)",
+        licence="ODC-By 1.0 for the collection; each page keeps its own copyright", licence_class=PERSONAL,
+        licence_url="https://opendatacommons.org/licenses/by/1-0/", credit="Hugging Face, FineWeb (sample-10BT)",
+        home="https://huggingface.co/datasets/HuggingFaceFW/fineweb", reader="read_fineweb",
+        notes="A modest sample read through the official dataset viewer interface: only pages whose address "
+              "suggests a forum, review or questions page."),
 ]
 
 NOT_USED = [
@@ -319,6 +382,56 @@ NOT_USED = [
      "their own sites, not as open data. Not used."),
     ("MuckRock released documents (again, for meeting records)",
      "Still 'ai-train=no' in its robots.txt. Not used."),
+    ("Avocado Research Email Collection",
+     "Real business email from a defunct company, but licensed by the Linguistic Data Consortium to members only. "
+     "Not used."),
+    ("Corporate emails in court and government records (FTC and SEC exhibits, congressional investigation "
+     "document dumps)",
+     "They are scanned exhibit PDFs inside individual dockets with no bulk text route; the congressional ones that "
+     "are printed in hearing records come in through the GovInfo hearings source. Not used separately."),
+    ("TweetSumm (customer service on Twitter)",
+     "CDLA-Sharing, but it publishes only tweet IDs and summaries; the tweets themselves come from a Kaggle copy that "
+     "needs a login and Kaggle's terms. Not used."),
+    ("Bitext customer support set (Hugging Face)",
+     "CDLA-Sharing, but machine-generated by Bitext's own language generation; left out like the other "
+     "machine-written sets."),
+    ("Business Communication for Success, Business Writing for Everyone, BCcampus, Lumen and LibreTexts "
+     "business communication books",
+     "CC BY books that are already in the reference library (textbooks/); this kit reads the OpenStax business "
+     "books directly. Reading the others here was not built in this round."),
+    ("Small Business Administration guides, USAJOBS postings and federal HR letters",
+     "Public domain, but SBA's guides are web pages without a bulk route and USAJOBS needs an API key plus an email "
+     "address as the user agent (it would go in the computer's settings). Not built in this round."),
+    ("Earnings call transcripts",
+     "Not on EDGAR; the services that publish them (Seeking Alpha, Motley Fool and others) are copyrighted. Not used."),
+    ("plainlanguage.gov examples, agency press releases, SSA, IRS and VA sample letters, State Department "
+     "statements, military writing guides, GAO and CRS reports",
+     "Public domain, but spread over many agency web pages without bulk routes (several guides and reports are "
+     "already in the reference library); not built in this round. The Federal Register, presidential documents, "
+     "hearings and EDGAR sources cover formal American writing."),
+    ("CourtListener bulk data and Supreme Court opinions",
+     "Court opinions are public domain, but courtlistener.com refused this kit's requests (403), its API needs a "
+     "token and its bulk files are many gigabytes; Supreme Court opinions were not built in this round (its oral "
+     "arguments are used)."),
+    ("Wikipedia featured articles",
+     "CC BY-SA, but they need the full English Wikipedia dump (over 20 GB) or page-by-page requests; not built in "
+     "this round."),
+    ("The Conversation and NPR transcripts",
+     "Their robots.txt files block AI-training crawlers (GPTBot, ClaudeBot, CCBot, Google-Extended and others). "
+     "Not used."),
+    ("KFF Health News and ProPublica",
+     "CC BY-NC-ND (personal use, whole and unchanged); their feeds are open to programs, but they were not built in "
+     "this round."),
+    ("NASA and other US government podcasts, Public Radio Exchange",
+     "NASA transcripts are public domain but are separate web pages without a bulk route; PRX content is each "
+     "producer's own. Not built in this round."),
+    ("YouTube automatic captions",
+     "YouTube's terms forbid automated downloading. Not used."),
+    ("Common Crawl and C4",
+     "Huge; the FineWeb sample (taken from Common Crawl and filtered) stands in for them. Not used separately."),
+    ("Amazon Reviews 2023 (McAuley Lab)",
+     "Its Hugging Face page states no licence, and the reviews belong to their writers and Amazon; it is offered "
+     "for research. Not used."),
 ]
 
 

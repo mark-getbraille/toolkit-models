@@ -99,3 +99,18 @@ def test_cache_means_a_page_is_only_downloaded_once(tmp_path):
 
 def test_the_user_agent_names_no_person():
     assert "WritingKit" in fetch.USER_AGENT and "@" not in fetch.USER_AGENT
+
+
+def test_wildcard_rules_are_obeyed():
+    r = robots("User-agent: *\nDisallow: /*/*/download/*\nDisallow: /*.atom$\nAllow: /open/*.atom$\n")
+    assert not r.check("https://example.com/owner/repo/releases/download/v1/file.zip")[0]
+    assert not r.check("https://example.com/feed.atom")[0]
+    assert r.check("https://example.com/feed.atom?x=1")[0]
+    assert r.check("https://example.com/open/feed.atom")[0]
+    assert r.check("https://example.com/owner/repo")[0]
+
+
+def test_a_group_for_this_kit_replaces_the_star_group():
+    r = robots("User-agent: *\nAllow: /\n\nUser-agent: WritingKit\nDisallow: /private/*\n")
+    assert r.check("https://example.com/page")[0]
+    assert not r.check("https://example.com/private/page")[0]

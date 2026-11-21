@@ -246,6 +246,7 @@ def read_topical(fetcher, say=print, **_):
 
 def wiki_plain(text):
     """Wiki markup made plain: links to their words, templates and tables removed, bold and italics marks removed."""
+    text = re.sub(r"\{\{w\|(?:[^{}|]*\|)?([^{}|]*)\}\}", r"\1", text)     # Wikinews' {{w|link|words}}
     text = re.sub(r"\{\{[^{}]*\}\}", "", text)
     text = re.sub(r"\{\{[^{}]*\}\}", "", text)
     text = re.sub(r"\[\[(?:[^\]|]*\|)?([^\]]*)\]\]", r"\1", text)
