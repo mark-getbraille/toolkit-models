@@ -429,16 +429,19 @@ GOVINFO_PDF = "https://www.govinfo.gov/content/pkg/{pkg}/pdf/{pkg}.pdf"
 
 
 def exhibit_hint(page_text):
-    """True when a hearing record's text shows scanned exhibits (graphics) placed near the words email or e-mail,
-    so its PDF is worth reading with OCR."""
-    for m in re.finditer(r"\[GRAPHICS?(?:\(S\))? NOT AVAILABLE IN TIFF FORMAT\]|\[GRAPHIC\] \[TIFF OMITTED\]",
-                         page_text):
-        if re.search(r"(?i)\be-?mails?\b", page_text[max(0, m.start() - 600): m.start()]):
+    """True when a hearing record's text shows scanned pictures that are really in its PDF ("[GRAPHIC] [TIFF
+    OMITTED]"; "GRAPHICS NOT AVAILABLE IN TIFF FORMAT" means the picture was left out of the record) placed near
+    words about emails ("e-mails", "e-mail exchange", "the following email") in the 3,000 characters before, so its
+    PDF is worth reading. Few hearings have them: in November 2026 none of the first 60 hearings of 2013 or 2016 did,
+    so this source is slow and finds little; it is kept for the hearings that do."""
+    for m in re.finditer(r"\[GRAPHIC\]\s*\[TIFF OMITTED\]", page_text):
+        if re.search(r"(?i)\be-?mails\b|\be-?mail (?:exchange|correspondence|messages?|from|to|dated|sent)\b|"
+                     r"\bfollowing e-?mail\b", page_text[max(0, m.start() - 3000): m.start()]):
             return True
     return False
 
 
-def read_govinfo_exhibits(fetcher, say=print, page_log=None, years=("2016", "2015", "2017"), per_year=40,
+def read_govinfo_exhibits(fetcher, say=print, page_log=None, years=("2012", "2013", "2014"), per_year=60,
                           max_pdfs=6, scanned_max_mb=80, **_):
     """Email records from scanned exhibits in House and Senate hearing records: the hearings whose text shows
     graphics next to the word email; only the pages with pictures are read."""

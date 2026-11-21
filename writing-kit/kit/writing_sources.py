@@ -350,9 +350,11 @@ SOURCES = [
         licence_class=OPEN, licence_url="https://www.govinfo.gov/about/policies",
         credit="US Government Publishing Office, GovInfo (Congressional Hearings collection)",
         home="https://www.govinfo.gov/app/collection/chrg", reader="read_govinfo_exhibits",
-        notes="Hearing records print submitted documents as scanned pictures ('[GRAPHICS NOT AVAILABLE IN TIFF "
-              "FORMAT]' in their text). The kit reads only the hearings whose text shows such pictures next to the "
-              "word email, downloads the official PDF, and reads only its picture pages with OCR."),
+        notes="Hearing records print some submitted documents as scanned pictures ('[GRAPHIC] [TIFF OMITTED]' in "
+              "their text). The kit reads only the hearings whose text shows such pictures after words about "
+              "emails, downloads the official PDF, and reads only its picture pages with OCR. Few hearings have "
+              "them (none in the first 60 of 2013 or 2016 when checked in November 2026), so this source is slow "
+              "and finds little."),
 ]
 
 # Used only with --scanned-folder: PDFs the owner downloaded himself. Each PDF is personal use only unless it is a

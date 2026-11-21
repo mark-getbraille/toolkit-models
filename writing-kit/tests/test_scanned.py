@@ -155,8 +155,9 @@ def test_ia_items_are_checked(monkeypatch):
 
 
 def test_govinfo_hint():
-    assert rs.exhibit_hint("the emails we received follow:\n\n[GRAPHICS NOT AVAILABLE IN TIFF FORMAT]")
-    assert not rs.exhibit_hint("[GRAPHIC(S) NOT AVAILABLE IN TIFF FORMAT] a chart of costs")
+    assert rs.exhibit_hint("the e-mails we received follow:\n\n[GRAPHIC] [TIFF OMITTED] T1234.001")
+    assert not rs.exhibit_hint("the e-mails we received follow:\n\n[GRAPHICS NOT AVAILABLE IN TIFF FORMAT]")
+    assert not rs.exhibit_hint("[GRAPHIC] [TIFF OMITTED] a chart of costs; email us at info@example.org")
 
 
 real_ocr = pytest.mark.skipif(not ocr.available()[0], reason="RapidOCR is not installed")

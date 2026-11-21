@@ -188,7 +188,8 @@ Scanned email releases (read with OCR; see "Scanned email releases" below):
   scanned_state: Internet Archive copies of Sarah Palin's Alaska governor emails (scanned by the Anchorage Daily
     News) and Governor Snyder's Flint emails. Personal use only.
   govinfo_exhibits: scanned emails printed as pictures inside US Congress hearing records on GovInfo. Open, with
-    the same exception for writers outside the government.
+    the same exception for writers outside the government. Few hearings have them, so it is slow and finds little;
+    leave it out with --sources if you like.
 
 Sources that cannot be used, in short (the full reasons are in sources-not-used.txt)
 The State Department's own reading room (foia.state.gov): its robots.txt turns all programs away, so the Clinton
