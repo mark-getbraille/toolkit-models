@@ -366,6 +366,8 @@ ALLOWED = {
     "Public domain (published before 1931)": "open",
     # UK Parliament's licence for Hansard and other Parliamentary copyright material (like the OGL).
     "Open Parliament Licence v3.0": "open",
+    # US drug labels as published by DailyMed (NLM) and openFDA (public domain, CC0): see medications.LICENCE_LINES.
+    "Public domain (US drug labeling)": "open",
 }
 
 # The whole-and-unchanged rule (the owner's decision of 2026-11-18). A NoDerivatives licence (CC BY-ND, CC BY-NC-ND)
@@ -502,6 +504,8 @@ GROUPS = {
     # Publications that come out again and again (periodicals.py; keys pub:...), and history:
     "reports": "Reference, government reports", "journals": "Articles, open-access journals",
     "news": "News, open-licensed", "periodicals": "Magazines and newsletters", "history": "Reference, history",
+    # The official labels of medicines (medications.py; keys medicines, med:...):
+    "medicines": "Reference, medicines", "vet_medicines": "Reference, animal medicines",
 }
 
 # W3C WAI documents under the W3C Document License, kept whole and unchanged (WHOLE_AND_UNCHANGED). Checked by hand
@@ -994,7 +998,9 @@ def expand_keys(words):
     """The build keys a request asks for: "all" (every book except "laws-more"), osbooks, nonprofit, fieldmanuals,
     government (Alberta's PDFs), courses, laws (sources.LAWS), laws-more (sources.LAWS_MORE), guides
     (sources.GOV_GUIDES), group:<group> (every web guide, PDF and law of that group, such as group:health), or one
-    key: osbooks:<repository>, siyavula, dspace, nonprofit:<name>, pdf:<name>, guide:<name>, law:<name>."""
+    key: osbooks:<repository>, siyavula, dspace, nonprofit:<name>, pdf:<name>, guide:<name>, law:<name>; medicines
+    (every medicine book, medications.py) or med:<piece>; publications or pub:<piece> (periodicals.py). "all" does
+    not include the medicines or the publications: ask for them by name."""
     pdfs = lambda g: [f"pdf:{e['name']}" for e in PDF_DOCS if e["group"] == g]   # noqa: E731
     every = [f"osbooks:{r}" for r in OSBOOKS] + ["siyavula", "dspace"] + \
         [f"nonprofit:{e['name']}" for e in NONPROFIT] + [f"pdf:{e['name']}" for e in PDF_DOCS] + \
@@ -1019,6 +1025,9 @@ def expand_keys(words):
             g = w[6:]
             keys += pdfs(g) + [f"guide:{e['name']}" for e in GOV_GUIDES if e["group"] == g] + \
                 [f"law:{e['name']}" for e in LAWS + LAWS_MORE if e.get("group", "law") == g]
+        elif w == "medicines" or w.startswith("med:"):
+            import medications                    # here, not at the top: medications imports the builder
+            keys += medications.expand_keys([w])
         elif w == "publications" or w.startswith("pub:"):
             import periodicals                    # here, not at the top: periodicals imports the builder
             keys += periodicals.expand_keys(["pub:all" if w == "publications" else w])
