@@ -429,3 +429,13 @@ def test_practice_notes():
     assert B.practice_note_of(book) in B.index_page(book)
     assert all(len(c) == 6 for c in sources.OPEN_COURSE_CANDIDATES)
     assert all(len(c) == 7 for c in sources.K12_CANDIDATES)
+
+
+def test_personal_use_labels():
+    """Every non-commercial or no-derivatives candidate is labelled personal use only; Khan Academy is never reached
+    through its website."""
+    for name, licence, route, label, _ in sources.PERSONAL_USE_CANDIDATES:
+        if "NC" in licence or "ND" in licence:
+            assert label == sources.PERSONAL_USE, name
+    khan = next(c for c in sources.PERSONAL_USE_CANDIDATES if c[0].startswith("Khan"))
+    assert "khanacademy.org" not in khan[2]

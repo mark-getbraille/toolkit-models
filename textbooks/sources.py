@@ -1357,7 +1357,7 @@ OPEN_COURSE_CANDIDATES = [
 # found, country, grades, what was checked, what to do next). Grades are US grades ("K-5", "6-8", "9-12") or the
 # country's own years. Already recorded above and not repeated: CK-12 (its own licence, not a standard open one;
 # not CC BY-NC as sometimes said), Siyavula (built: grades 7 to 12), Oak National Academy (API key needed), Khan
-# Academy (not openly licensed: skipped; already in the Kiwix library). OpenStax's high school titles come with the
+# Academy (see PERSONAL_USE_CANDIDATES: offline routes only, never the website). OpenStax's high school titles come with the
 # OpenStax repositories (OSBOOKS) when a "high-school" repository is listed there.
 K12_CANDIDATES = [
     ("OpenStax high school titles (Physics, Biology, Statistics for high school)", "https://openstax.org",
@@ -1384,4 +1384,34 @@ K12_CANDIDATES = [
      "government material", "Australia", "Foundation-Year 12", "not checked", "Check each state's licence page."),
     ("OER Commons K-12 (CC BY or CC0 only)", "https://www.oercommons.org", "per item", "United States", "K-12",
      "robots.txt refuses automated requests (403)", "Not fetched; use each item's own host."),
+]
+
+# Personal-use and open sources reached only through OFFLINE packages made for that purpose (the owner's request,
+# 2026-11-21): (name, licence as stated, route, label, what to do next). khanacademy.org itself is NEVER fetched (its
+# website terms limit automated access); its content comes only from Kiwix ZIM files (the toolkit's library already
+# reads the Kiwix catalogue, and the Kiwix library lists Khan Academy and PhET, see NONPROFIT_NOT_INCLUDED's note) or
+# from Learning Equality's Kolibri Studio public channels, which are packaged for offline use with the publishers'
+# permission. Every non-commercial or no-derivatives one is labelled "personal use only".
+PERSONAL_USE = "personal use only"
+PERSONAL_USE_CANDIDATES = [
+    ("Khan Academy (English)", "CC BY-NC-SA (most content)", "Kiwix ZIM (library.kiwix.org) or Kolibri Studio "
+     "public channel \"Khan Academy (English)\"", PERSONAL_USE, "Check the Kiwix catalogue entry first (the toolkit "
+     "reads it already); the Kolibri channel needs a Kolibri export reader."),
+    ("PhET Interactive Simulations", "CC BY 4.0", "Kiwix ZIM or Kolibri public channel", "open",
+     "Already in the Kiwix library; nothing to build here."),
+    ("CK-12", "CK-12's own licence (described elsewhere as CC BY-NC)", "Kolibri public channel \"CK-12\"",
+     PERSONAL_USE, "Check the channel's licence field; NOT_INCLUDED notes CK-12's own terms."),
+    ("TED-Ed", "CC BY-NC-ND 4.0", "Kiwix ZIM (TED and TED-Ed) or Kolibri channel", PERSONAL_USE,
+     "No-derivatives: only whole and unchanged (WHOLE_AND_UNCHANGED)."),
+    ("Crash Course", "CC BY-NC-ND on some videos only; check each", "Kiwix ZIM if listed", PERSONAL_USE,
+     "Check the licence per video; leave out any all-rights-reserved."),
+    ("African Storybook", "CC BY (most stories)", "Kolibri public channel", "open", "Check each story's licence."),
+    ("OpenStax (Kolibri channel)", "CC BY 4.0", "Kolibri public channel", "open",
+     "Already built from GitHub (OSBOOKS): not repeated."),
+    ("Ciencia NASA", "public domain (NASA) and CC BY", "Kolibri public channel", "open",
+     "Spanish; check the language rule before adding."),
+    ("MIT OpenCourseWare", "CC BY-NC-SA 4.0", "Kiwix ZIM if listed, else ocw.mit.edu (robots.txt allows)",
+     PERSONAL_USE, "See OPEN_COURSE_CANDIDATES."),
+    ("OpenLearn (The Open University)", "CC BY-NC-SA 4.0 (most courses)", "Kiwix ZIM if listed (www.open.edu "
+     "refuses automated requests)", PERSONAL_USE, "Only through an offline package."),
 ]
