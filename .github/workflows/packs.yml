@@ -119,7 +119,11 @@ jobs:
                    "commons_money_sides", "commons_mail_parcels", "commons_clothing_patterns", "commons_makeup_grooming",
                    "commons_toys_sports_music", "commons_sky_weather", "commons_screens",
                    "commons_home_safety", "commons_food_state", "usda_food_safety_photos", "commons_access_features",
-                   "commons_household_chemicals", "commons_finishes_in_use", "commons_hazard_symbols"]
+                   "commons_household_chemicals", "commons_finishes_in_use", "commons_hazard_symbols",
+                   "open_images_public_home", "open_images_outings", "open_images_food_more",
+                   "open_images_cards_documents", "aic_collection", "cleveland_collection", "wordpress_photos",
+                   "loc_maps", "europeana_fashion_archaeology", "cdc_phil_health_behaviour", "cdc_phil_algae",
+                   "commons_rocks_fossils", "commons_nara_aerial"]
           words = [w for w in sys.argv[1].split(",") if w]
           # "key+" is a top-up pass of key and "key?" a needs-only run (kept with the mark, which the build job reads);
           # "all?" asks for a needs-only run of every pack.

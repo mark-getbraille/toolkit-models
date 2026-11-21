@@ -1654,6 +1654,18 @@ PACKS.update(HOME_SAFETY_PACKS)
 # photo packs show people at work, so they are never used for picture-making (the kit's PEOPLE_AND_BODILY_PACK_KEYS).
 from chemical_packs import CHEMICAL_PACKS
 PACKS.update(CHEMICAL_PACKS)
+# The gaps the picture category inventory found (November 2026). Open Images (packs/gaps_oi_packs.py): washroom
+# fixtures, baby furniture, luggage, carts and bins, pools, office and exercise things, outings, celebrations and
+# rides, more foods and drinks (seafood with an allergy note), and cards and papers answered only with what kind they
+# are. Collections (packs/gaps_collection_packs.py): the Art Institute of Chicago and Cleveland museums (CC0, every
+# department), WordPress Photo Directory photos with their contributors' alt text (CC0), Library of Congress maps,
+# Europeana fashion and archaeology, CDC PHIL health behaviours and algae blooms, and Commons rocks, minerals, fossils
+# and NARA aerial photographs. Packs with people in them are never used for picture-making (the kit's
+# PEOPLE_AND_BODILY_PACK_KEYS).
+from gaps_oi_packs import OI_GAPS_PACKS
+PACKS.update(OI_GAPS_PACKS)
+from gaps_collection_packs import GAP_COLLECTION_PACKS
+PACKS.update(GAP_COLLECTION_PACKS)
 
 
 # The packs whose builder reads the Wikimedia Commons API (commons_get, commons_members, commons_entries,
@@ -1712,6 +1724,8 @@ COMMONS_KEYS = frozenset({
     "commons_home_safety", "commons_food_state", "usda_food_safety_photos", "commons_access_features",
     # household and garage products and chemicals (chemical_packs.py)
     "commons_household_chemicals", "commons_finishes_in_use", "commons_hazard_symbols",
+    # the gaps' Commons packs (gaps_collection_packs.py; the other gap packs do not read Commons)
+    "commons_rocks_fossils", "commons_nara_aerial",
 })
 
 

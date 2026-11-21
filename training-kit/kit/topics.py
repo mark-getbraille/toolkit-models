@@ -96,7 +96,7 @@ TOPICS = [
           "Food on the plate and in the shop: fresh or spoiled meat, fish, eggs and fruit, groceries on shelves, "
           "packaged goods with their names and use-by dates, and the text on food packs.",
           ("nutrition5k", "fresh_rotten", "avocado_ripeness", "banana_ripeness", "fruitnet_quality",
-           "open_images_food", "grocery_store", "fish_eyes", "commons_food",
+           "open_images_food", "open_images_food_more", "grocery_store", "fish_eyes", "commons_food",
            "meatscan", "eggs", "beef", "abo_packaged_goods", "abo_pet_supplies", "open_images_packaged_goods", "commons_packaging",
            "locbeef", "fish_freshness", "horse_mackerel", "fish_eyes_stages", "chicken_breast", "food_packaging",
            "packeat", "cerrado_fruits",
@@ -127,7 +127,8 @@ TOPICS = [
     Topic("art", "Art and museum objects",
           "Paintings, prints, sculpture, design and museum objects, described the way museums write for blind "
           "visitors, with famous works by name and musical instruments of every culture.",
-          ("cooper_hewitt", "art_institute", "met", "met_collection", "europeana", "canterbury", "auckland",
+          ("cooper_hewitt", "art_institute", "met", "met_collection", "aic_collection", "cleveland_collection",
+           "europeana_fashion_archaeology", "europeana", "canterbury", "auckland",
            "wellcome", "smithsonian", "tepapa", "japan_search", "ksamsok", "rijksmuseum", "getty_museum", "smk",
            "nypl", "europeana_fi", "europeana_cs", "europeana_hu", "europeana_el", "europeana_no", "europeana_pl",
            "met_instruments", "wikidata_instruments",
@@ -137,7 +138,7 @@ TOPICS = [
           "Reading text and making sense of pages: letters, forms, receipts, tables and charts, maps, sheet "
           "music, road and safety signs, and phone screens.",
           ("textvqa", "textocr", "coco_text", "cord", "doclaynet", "plotqa", "loc_letters", "owid_charts",
-           "pubtabnet_tables", "us_federal_forms", "safety_signs", "commons_hazard_symbols", "us_road_signs",
+           "pubtabnet_tables", "us_federal_forms", "open_images_cards_documents", "loc_maps", "safety_signs", "commons_hazard_symbols", "us_road_signs",
            "ca_road_signs",
            "deepscores_sheet_music", "field_manual_figures",
            # share-alike
@@ -154,9 +155,10 @@ TOPICS = [
            "weather_images", "eurosat", "inaturalist_us", "inaturalist_ca", "earth_observatory", "usgs",
            "npgallery", "na_wild_mammals", "na_birds", "na_herps_fish", "na_insects", "na_invertebrates",
            "na_animal_signs", "noaa_fisheries_species", "na_domestic_animals", "commons_sky_weather",
+           "commons_rocks_fossils", "commons_nara_aerial", "cdc_phil_algae",
            # share-alike
            "oxford_pets", "plantvillage", "plantnet_sa", "commons_breeds_sa", "inaturalist_us_sa",
-           "inaturalist_ca_sa", "plant_seedlings_sa",
+           "inaturalist_ca_sa", "plant_seedlings_sa", "gaps_rocks_commons_sa",
            # non-commercial and research-only (personal use)
            "inaturalist_us_nc", "inaturalist_ca_nc", "plantnet_nc", "cub200", "plantdoc", "stanford_dogs",
            "soybean_weeds_nc", "weed_growth_stage_nc", "cropandweed_nc")),

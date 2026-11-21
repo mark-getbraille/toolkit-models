@@ -2327,6 +2327,35 @@ SOURCES = [
            "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 2000, 20, prepare_pack, "about 500 MB"),
     Source("commons_hazard_symbols", "Hazard symbols on chemical packages and what they mean: WHMIS symbols, the NFPA 704 diamond, GHS pictograms on labels (Wikimedia Commons, ready-made pack)",
            "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 300, 10, prepare_pack, "about 30 MB"),
+    # The gaps the picture category inventory found (packs/gaps_oi_packs.py, packs/gaps_collection_packs.py). Answers
+    # say only what the labels or records say. The packs with people in them are never used for picture-making
+    # (PEOPLE_AND_BODILY_PACK_KEYS); what was looked at and left out is in gaps_sources.py.
+    Source("open_images_public_home", "Washroom fixtures, baby furniture, sofas and nightstands, office and school supplies, exercise equipment, luggage, shopping carts and bins, pools, billboards, pet furniture and lighting (Open Images, ready-made pack)",
+           "Labels CC BY 4.0 (Open Images V7); each photo CC BY, CC0 or Public Domain Mark (credited in CREDITS.txt)", "Google Open Images V7 (labels CC BY 4.0) and the photographers credited in CREDITS.txt, https://storage.googleapis.com/openimages/web/index.html", "permissive", 4000, 30, prepare_pack, "about 800 MB"),
+    Source("open_images_outings", "Celebrations, outdoor and hiking gear, hats and coats, trophies and medals, fairground and playground rides, and cemeteries (Open Images, ready-made pack)",
+           "Labels CC BY 4.0 (Open Images V7); each photo CC BY, CC0 or Public Domain Mark (credited in CREDITS.txt)", "Google Open Images V7 (labels CC BY 4.0) and the photographers credited in CREDITS.txt, https://storage.googleapis.com/openimages/web/index.html", "permissive", 3000, 20, prepare_pack, "about 600 MB"),
+    Source("open_images_food_more", "Baked goods, sauces, meats, seafood (with an allergy note), drinks, Mexican dishes, serving dishes and kitchen tools (Open Images, ready-made pack)",
+           "Labels CC BY 4.0 (Open Images V7); each photo CC BY, CC0 or Public Domain Mark (credited in CREDITS.txt)", "Google Open Images V7 (labels CC BY 4.0) and the photographers credited in CREDITS.txt, https://storage.googleapis.com/openimages/web/index.html", "permissive", 4000, 30, prepare_pack, "about 800 MB"),
+    Source("open_images_cards_documents", "What kind of card or paper this is: business and greeting cards, postcards, tickets, receipts, menus, calendars, badges; never what is written on it (Open Images, ready-made pack)",
+           "Labels CC BY 4.0 (Open Images V7); each photo CC BY, CC0 or Public Domain Mark (credited in CREDITS.txt)", "Google Open Images V7 (labels CC BY 4.0) and the photographers credited in CREDITS.txt, https://storage.googleapis.com/openimages/web/index.html", "permissive", 800, 10, prepare_pack, "about 160 MB"),
+    Source("aic_collection", "Art Institute of Chicago: public-domain works of every department, with their record and subjects (ready-made pack)",
+           "CC0 (Art Institute of Chicago API)", "Art Institute of Chicago, CC0, https://api.artic.edu", "permissive", 4000, 20, prepare_pack, "about 900 MB"),
+    Source("cleveland_collection", "Cleveland Museum of Art: CC0 works of every department, with the curators' descriptions (ready-made pack)",
+           "CC0 (Cleveland Museum of Art Open Access)", "Cleveland Museum of Art, CC0, https://openaccess-api.clevelandart.org", "permissive", 4000, 20, prepare_pack, "about 900 MB"),
+    Source("wordpress_photos", "WordPress Photo Directory: everyday photos with the alt text their contributors wrote (ready-made pack)",
+           "CC0 (WordPress Photo Directory)", "WordPress Photo Directory contributors, CC0, https://wordpress.org/photos/", "permissive", 6000, 30, prepare_pack, "about 1.2 GB"),
+    Source("loc_maps", "Library of Congress maps from 1930 or before or by the US government: what each map is, its date and publisher (ready-made pack)",
+           "Public domain in the US (published 1930 or before, or a US government work)", "Library of Congress, Geography and Map Division, https://www.loc.gov/maps/", "permissive", 1400, 10, prepare_pack, "about 300 MB"),
+    Source("europeana_fashion_archaeology", "Dated clothing, fashion drawings and archaeological finds and sites, English records (Europeana, ready-made pack)",
+           "Each record CC0, Public Domain Mark or CC BY (credited in CREDITS.txt)", "Europeana and its providers (credited in CREDITS.txt), https://www.europeana.eu", "permissive", 1500, 10, prepare_pack, "about 300 MB"),
+    Source("cdc_phil_health_behaviour", "Health behaviours: hand washing, masks, smoking, exercise, seat belts, helmets, sunscreen (CDC Public Health Image Library, ready-made pack)",
+           "Public domain (CDC PHIL, each item's own field checked)", "CDC Public Health Image Library, https://phil.cdc.gov", "permissive", 300, 5, prepare_pack, "about 60 MB"),
+    Source("cdc_phil_algae", "Harmful algal blooms in lakes and rivers, with a safety note (CDC Public Health Image Library, ready-made pack)",
+           "Public domain (CDC PHIL, each item's own field checked)", "CDC Public Health Image Library, https://phil.cdc.gov", "permissive", 60, 5, prepare_pack, "about 12 MB"),
+    Source("commons_rocks_fossils", "Minerals, gemstones, meteorites, rocks and fossils by name (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1500, 15, prepare_pack, "about 350 MB"),
+    Source("commons_nara_aerial", "Aerial photographs of towns, farms and coasts from the US National Archives, USDA and USGS (Wikimedia Commons copies, ready-made pack)",
+           "Public domain (works of the US government); each Commons file's licence checked", "US National Archives, USDA and USGS, via Wikimedia Commons (credited in CREDITS.txt)", "permissive", 800, 10, prepare_pack, "about 200 MB"),
     Source('skin_lesion_photos', 'Skin spots photographed with a phone, adults (PAD-UFES-20, ready-made pack)',
            'CC BY 4.0 (Mendeley Data zr7vgbcyr2)',
            'PAD-UFES-20 (Pacheco et al., 2020), CC BY 4.0', "permissive", 2000, 20, prepare_pack, 'about 400 MB', content="medical"),
@@ -2543,6 +2572,12 @@ PEOPLE_AND_BODILY_PACK_KEYS = (
     "commons_access_features", "usda_food_safety_photos",
     # chemical_packs.py: household products and finishes (people at work in some photos; not the symbols pack)
     "commons_household_chemicals", "commons_finishes_in_use",
+    # gaps_oi_packs.py and gaps_collection_packs.py: Open Images scenes (people eat the food, hold the cards, ride the
+    # rides), museum works with people in them, WordPress photos of people, dated fashion, health behaviours (maps,
+    # algae, rocks and fossils and aerial photos are used)
+    "open_images_public_home", "open_images_outings", "open_images_food_more", "open_images_cards_documents",
+    "aic_collection", "cleveland_collection", "wordpress_photos", "europeana_fashion_archaeology",
+    "cdc_phil_health_behaviour",
 )
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + PEOPLE_AND_BODILY_PACK_KEYS
 # The drug and firearm packs (packs/drug_firearm_packs.py): describing only, never for picture-making, whether or not
@@ -3177,3 +3212,17 @@ _chem_ok = set(getattr(_chem, "CHEMICAL_PICTURE_MAKING_OK", ()) or ())
 PERSONAL_PICTURE_MAKING_OK |= _chem_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in CHEMICAL_SOURCES if s.key not in _chem_ok)
 _add_collections(CHEMICAL_SOURCES)
+# The picture category gaps' share-alike collection (Commons rocks, minerals and fossils under CC BY-SA or GFDL) and
+# the sources looked at and left out; the file may be missing. The rocks and fossils may be used for picture-making
+# (GAPS_PICTURE_MAKING_OK).
+try:
+    import gaps_sources as _gaps  # noqa: E402
+except ImportError as _e:
+    _gaps = None
+    if getattr(_e, "name", None) != "gaps_sources":
+        say(f"(The picture category gap collections could not be loaded: {_e}. They are left out.)")
+GAPS_SOURCES = list(getattr(_gaps, "GAPS_SOURCES", []) or [])
+_gaps_ok = set(getattr(_gaps, "GAPS_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _gaps_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in GAPS_SOURCES if s.key not in _gaps_ok)
+_add_collections(GAPS_SOURCES)
