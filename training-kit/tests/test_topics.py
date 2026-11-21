@@ -26,8 +26,8 @@ KNOWN = {s.key: s for s in sources.SOURCES}
 
 # ----------------------------------------------------------------- the topics and their collections
 
-def test_the_owners_ten_topics_are_there():
-    assert [t.id for t in topics.TOPICS] == ["medicines", "drugs", "firearms", "food", "machines", "art",
+def test_the_owners_topics_are_there():
+    assert [t.id for t in topics.TOPICS] == ["medicines", "drugs", "firearms", "food", "drinks", "alcohol", "machines", "art",
                                              "documents", "nature", "nudity", "sexual"]
     for topic in topics.TOPICS:
         assert topic.title and topic.description.endswith(".") and len(topic.description) < 300

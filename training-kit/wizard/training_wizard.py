@@ -1022,7 +1022,7 @@ def topic_args(topic_id, share):
 
 
 class TopicAddonDialog(wx.Dialog):
-    """Topic add-ons: choose a topic (Topic:, a list of the ten topics), read about it (About this topic: its
+    """Topic add-ons: choose a topic (Topic:, a list of the topics), read about it (About this topic: its
     description, how many of its collections are used with the first page's boxes, and its licence), set the
     everyday share (0 to 40 percent, 15 at first), then Start training this add-on, or Cancel. Standard controls, a
     label ending ":" before each field, Alt letters named in the tooltips (T, A, E, S, C), no default button, Escape

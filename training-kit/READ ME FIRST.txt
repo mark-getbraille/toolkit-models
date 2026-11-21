@@ -241,6 +241,9 @@ The topics:
 - Drugs and paraphernalia (drugs): street drugs, counterfeit pills, seizures, pipes, bongs, vapes.
 - Firearms and accessories (firearms): guns by kind, maker and model, cartridges, holsters, scopes, sights.
 - Food and packaged goods (food): fresh or spoiled food, groceries, packaged goods, use-by dates, text on packs.
+- Drinks (no alcohol) (drinks): soft drinks, energy drinks, juices, water, iced tea and coffee drinks, plant milks.
+- Alcoholic drinks, brewing and distilling (alcohol): wine, beer, spirits, cocktails, glassware and bar tools, and
+  brewing, winemaking and distilling (with the legal and safety notes).
 - Vehicles, machines and household equipment (machines): vehicle models, car and machine parts, dashboard symbols,
   tools, appliances and their controls, plugs, clocks, displays.
 - Art and museum objects (art): museum descriptions written for blind visitors, famous works, instruments.

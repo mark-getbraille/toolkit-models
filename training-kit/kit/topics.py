@@ -99,11 +99,24 @@ TOPICS = [
            "open_images_food", "open_images_food_more", "grocery_store", "fish_eyes", "commons_food",
            "meatscan", "eggs", "beef", "abo_packaged_goods", "abo_pet_supplies", "open_images_packaged_goods", "commons_packaging",
            "locbeef", "fish_freshness", "horse_mackerel", "fish_eyes_stages", "chicken_breast", "food_packaging",
-           "packeat", "cerrado_fruits", "commons_soft_drinks", "open_images_soft_drinks",
+           "packeat", "cerrado_fruits",
            # share-alike
-           "drinks_soft_commons_sa", "openfoodfacts", "openfoodfacts_labels", "commons_food_sa", "openfacts_us", "openfacts_ca",
+           "openfoodfacts", "openfoodfacts_labels", "commons_food_sa", "openfacts_us", "openfacts_ca",
            # research-only (personal use)
            "fda_recall_photos", "freiburg_groceries", "food101", "uecfoodpix", "gothenburg_price_tags")),
+    Topic("drinks", "Drinks (no alcohol)",
+          "Soft drinks, energy drinks, juices, sports drinks, water, iced tea and coffee drinks, plant milks and drink "
+          "mixes, in the can or bottle and in the glass.",
+          ("commons_soft_drinks", "open_images_soft_drinks",
+           # share-alike
+           "drinks_soft_commons_sa")),
+    Topic("alcohol", "Alcoholic drinks, brewing and distilling",
+          "Wine, beer, spirits, cider and cocktails, bottles and labels, glassware and bar tools, and brewing, "
+          "winemaking and distilling, with the legal and safety notes.",
+          ("commons_alcoholic_drinks", "commons_bar_glassware", "commons_brewing_winemaking", "commons_distilling",
+           "open_images_bar_drinks", "europeana_drinks_history",
+           # share-alike
+           "drinks_alcohol_commons_sa")),
     Topic("machines", "Vehicles, machines and household equipment",
           "Cars, bikes, aircraft and other vehicles by model, car and machine parts, engine bays and dashboard "
           "symbols, tools, appliances and their controls, plugs, clocks and displays, and everyday household "
