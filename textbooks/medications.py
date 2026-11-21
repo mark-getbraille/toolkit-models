@@ -43,8 +43,10 @@ description ("Picture: Chemical structure") or are left out when they have none.
 
 Which label is chosen when many companies sell the same medicine (metformin has about 500 labels, most of them from
 repackagers): for each generic medicine and each form, the label of a brand when there is one, else not a
-repackager's, then the newest (DailyMed's upload date) and most revised (its version number). Homeopathic products
-are left out (their "ingredients" are dilutions, not medicines).
+repackager's, then one by a company that holds an FDA application (Drugs@FDA: the maker, not a pharmacy), then one
+with a name of its own, then the newest year (DailyMed's upload date) and the most revised (its version number).
+Homeopathic products are left out (their "ingredients" are dilutions, not medicines), and so are kits of unrelated
+medicines (first-aid kits).
 
 Versions: every build is a new file (<name>.<YYYY-MM-DD>.zim) and the old ones stay (updates.py keeps them in
 textbooks.json "versions"); a rebuild whose text did not change adds no version. The weekly check (updates.py)
@@ -280,8 +282,9 @@ def form_family(form):
              (r"topical|transdermal|patch|\bpad\b|soap|shampoo|cream|ointment|lotion|foam|stick|\bgel\b|\boil\b|"
               r"cloth|swab|spray|tape|dressing|\bpaste\b|\bbar\b|powder(?! for)", "on the skin"),
              (r"extended release", "by mouth, extended release"),
-             (r"oral|tablet|capsule|chewable|lozenge|sublingual|buccal|granule|pellet|syrup|elixir|suspension|"
-              r"solution|gum|film|strip|wafer", "by mouth")]
+             (r"syrup|elixir|suspension|solution|oral liquid|drops", "by mouth, liquid"),
+             (r"oral|tablet|capsule|chewable|lozenge|sublingual|buccal|granule|pellet|gum|film|strip|wafer",
+              "by mouth")]
     for pattern, family in rules:
         if re.search(pattern, f):
             return family
@@ -294,6 +297,10 @@ ANIMAL_FORM = re.compile(r"\b(TABLET|CAPSULE|INJECTION|INJECTABLE|SOLUTION|SUSPE
                          r"FOAM|WIPES?|GAS|SUPPOSITORY|INSERT|DIP|POUR-ON|PELLETED|TOPICAL)\b")
 
 
+TITLE_FORM = re.compile(r"\b(soft chewables?|chewables?|soft chews?|chews?|tablets?|caplets?|capsules?|injection|"
+                        r"injectable|sterile|flavou?red|oral|topical)\b", re.I)
+
+
 def parse_title(title):
     """(brand, generic names, form, company) of a DailyMed listing title: "QUELLIN (CARPROFEN) TABLET, CHEWABLE
     [ELANCO US INC.]" -> ("QUELLIN", ["CARPROFEN"], "TABLET, CHEWABLE", "ELANCO US INC."); "CARPROFEN TABLET
@@ -302,11 +309,12 @@ def parse_title(title):
     m = re.search(r"\s*\[([^\]]*)\]\s*$", t)
     company = m.group(1) if m else ""
     t = t[:m.start()] if m else t
-    m = re.match(r"^(.*?)\s*\((.*)\)\s*(.*)$", t)
+    m = re.match(r"^(.*?)\s*\(((?:[^()]|\([^()]*\))*)\)\s*(.*)$", t)   # the first product of the title
     if m and m.group(2).strip():
         brand, inner, form = m.group(1).strip(), m.group(2), m.group(3).strip()
-        generics = [g.strip() for g in re.split(r",\s*(?![^()]*\))", inner) if g.strip()]
-        if base_name(brand) == combo_key(generics):
+        generics = [TITLE_FORM.sub(" ", g).strip() for g in re.split(r",\s*(?![^()]*\))", inner)]
+        generics = [" ".join(g.split()) for g in generics if g]
+        if not brand_words(brand, combo_key(generics)):     # "AMOXICILLIN CAPSULES (AMOXICILLIN)": no brand
             brand = ""
         return brand, generics, form, company
     m = ANIMAL_FORM.search(t)
@@ -323,10 +331,25 @@ REPACKAGERS = re.compile(r"REPACK|PREPACK|MEDICATION SOLUTIONS|PD-RX|PROFICIENT 
 
 
 def rank(candidate):
-    """How good a label is as the one shown for its medicine and form (higher first): a brand's label, not a
-    repackager's, the newest upload, the most revised."""
-    return (bool(candidate.get("brand")), not REPACKAGERS.search(candidate.get("company", "")),
-            candidate.get("date", ""), int(candidate.get("version") or 0))
+    """How good a label is as the one shown for its medicine and form (higher first): a brand's label that RxNorm
+    knows, then not a repackager's, by a company that holds an FDA application (the maker), with a name of its own
+    in its title (a brand, or a shop's own brand), uploaded in the newest year, the most revised (a label kept up to
+    date for years), the newest."""
+    return (bool(candidate.get("sbd")), not REPACKAGERS.search(candidate.get("company", "")),
+            bool(candidate.get("maker")), bool(candidate.get("brand")), candidate.get("date", "")[:4],
+            int(candidate.get("version") or 0), candidate.get("date", ""))
+
+
+def first_word(company):
+    """The first real word of a company's name, for matching ("AUROBINDO PHARMA LTD" -> "aurobindo")."""
+    words = [w for w in re.findall(r"[a-z0-9]+", (company or "").lower()) if len(w) > 2 and w != "the"]
+    return words[0] if words else ""
+
+
+def makers(fda):
+    """The first words of the companies that hold an FDA application (Drugs@FDA): a label by one of them is the
+    maker's own, not a repackager's or a pharmacy's."""
+    return {first_word(v.get("sponsor", "")) for v in (fda or {}).values()} - {""}
 
 
 # ====================================================================== downloads (DailyMed, Drugs@FDA, Health Canada)
@@ -334,10 +357,33 @@ def rank(candidate):
 _READ = {}                       # what was read fresh in this run (the listings and mapping files), by address
 
 
+def _fresh(url, cache=None, binary=False):
+    """The body of url read fresh today: kept in the cache folder for the rest of the day only (the listings and
+    mapping files change every day; a test build run twice in one day reads them once)."""
+    if not cache:
+        return B.fetch(url, None, binary=binary)
+    return _day_cached(url, cache, binary)
+
+
+def _day_cached(url, cache, binary):
+    """The body of url, from today's copy in the cache folder or read now (see _fresh)."""
+    import hashlib
+    path = os.path.join(cache, "dailymed-today", datetime.date.today().isoformat(),
+                        hashlib.sha256(url.encode()).hexdigest()[:40])
+    if not os.path.exists(path):
+        data = B.fetch(url, None, binary=True)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "wb") as f:
+            f.write(data if isinstance(data, bytes) else data.encode("utf-8"))
+    with open(path, "rb") as f:
+        data = f.read()
+    return data if binary else data.decode("utf-8", "replace")
+
+
 def _zip_text(url, suffix, cache=None):
-    """The text of the member ending with `suffix` of the zip file at url (read once per run)."""
+    """The text of the member ending with `suffix` of the zip file at url (read once per run, fresh each day)."""
     if (url, suffix) not in _READ:
-        data = B.fetch(url, cache, binary=True)
+        data = _fresh(url, cache, binary=True)
         with zipfile.ZipFile(io.BytesIO(data)) as z:
             name = next(n for n in z.namelist() if n.lower().endswith(suffix.lower()))
             _READ[(url, suffix)] = z.read(name).decode("utf-8", "replace")
@@ -350,25 +396,50 @@ def _dm_date(text):
     return f"{m.group(3)}-{m.group(1)}-{m.group(2)}" if m else B.iso_date(text or "")
 
 
-def rxnorm_records(text):
+PREP = {"isopropyl alcohol", "povidone-iodine", "ethanol", "benzalkonium", "chlorhexidine", "inert ingredients",
+        "sodium"}                # the swabs and placebo tablets that come with a medicine in a kit or pack
+
+
+def rxnorm_records(text, kits=None):
     """{setid: {"names": [ingredient names], "forms": {family: dose form}, "brands": {brand names}, "version"}} from
     DailyMed's rxnorm_mappings.txt (SETID|SPL_VERSION|RXCUI|RXSTRING|RXTTY): its clinical drugs (SCD) give the
-    ingredients and forms, its branded drugs (SBD, BPCK) the brand names in brackets."""
-    out = {}
+    ingredients and forms, its branded drugs (SBD, BPCK) the brand names in brackets. A label for several products:
+    a pack (a birth control pack with its placebo tablets, an injection kit with its alcohol swab) counts as its
+    medicine; a pack of several medicines (an H. pylori pack) as their combination; a kit of unrelated medicines (a
+    first-aid kit, an allergen mixture without a pack) is left out, and its set id added to kits."""
+    found = {}
     for line in text.splitlines()[1:]:
         p = line.split("|")
         if len(p) < 5:
             continue
         setid, version, _cui, name, tty = p[:5]
-        rec = out.setdefault(setid, {"names": set(), "forms": {}, "brands": set(), "version": version})
+        rec = found.setdefault(setid, {"combos": {}, "forms": {}, "brands": set(), "version": version, "pack": False})
         if tty == "SCD":
             names, form = parse_rxnorm(name)
             if names:
-                rec["names"].update(names)
-                rec["forms"].setdefault(form_family(form), form)
+                rec["combos"].setdefault(combo_key(names), set()).update(names)
+                rec["forms"].setdefault(combo_key(names), {}).setdefault(form_family(form), form)
         elif tty in ("SBD", "BPCK"):
             rec["brands"].update(b.strip() for b in re.findall(r"\[([^\]]+)\]\s*(?:Pack)?$", name))
-    return {k: v for k, v in out.items() if v["names"]}
+        if tty in ("GPCK", "BPCK"):
+            rec["pack"] = True
+    out = {}
+    for setid, rec in found.items():
+        combos = rec["combos"]
+        real = [k for k in combos if k not in PREP] or list(combos)
+        if not real:
+            continue
+        if len(real) > 1 and not rec["pack"]:
+            if kits is not None:
+                kits.add(setid)
+            continue
+        names = set().union(*(combos[k] for k in real))
+        forms = {}
+        for k in real:
+            for family, form in rec["forms"][k].items():
+                forms.setdefault(family, form)
+        out[setid] = {"names": names, "forms": forms, "brands": rec["brands"], "version": rec["version"]}
+    return out
 
 
 def meta_records(text):
@@ -382,16 +453,16 @@ def meta_records(text):
     return out
 
 
-def dailymed_listing(doctypes):
+def dailymed_listing(doctypes, cache=None):
     """{setid: {"title", "version", "date"}} of every label of these DailyMed document types (its web service
-    spls.json, 100 a page), read fresh once per run (labels change)."""
+    spls.json, 100 a page), read fresh once per run and each day (labels change)."""
     if ("listing", tuple(doctypes)) in _READ:
         return _READ[("listing", tuple(doctypes))]
     out = {}
     for doctype in doctypes:
         page = 1
         while True:
-            data = json.loads(B.fetch(f"{DM_SERVICES}/spls.json?doctype={doctype}&pagesize=100&page={page}", None))
+            data = json.loads(_fresh(f"{DM_SERVICES}/spls.json?doctype={doctype}&pagesize=100&page={page}", cache))
             for row in data.get("data", []):
                 out[row["setid"]] = {"title": row.get("title", ""), "version": row.get("spl_version", 0),
                                      "date": _dm_date(row.get("published_date", "")), "doctype": doctype}
@@ -423,14 +494,17 @@ def spl_xml(setid, version, cache=None):
 def drugs_at_fda(cache=None):
     """{"NDA020402": {"sponsor", "approved"}} from the Drugs@FDA data file: each application's company and the date
     it was first approved; {} when FDA's policy page no longer says its contents are public domain, or the file
-    cannot be read."""
+    cannot be read. Read once per run."""
+    if "drugs@fda" in _READ:
+        return _READ["drugs@fda"]
+    _READ["drugs@fda"] = {}
     try:
         if not (B.allowed_by_robots(FDA_POLICY, cache) and B.allowed_by_robots(DRUGS_AT_FDA, cache)):
             return {}
-        words = " ".join(html.unescape(re.sub(r"<[^>]+>", " ", B.fetch(FDA_POLICY, cache))).split())
+        words = " ".join(html.unescape(re.sub(r"<[^>]+>", " ", B.fetch(FDA_POLICY, None))).split())
         if not re.search(FDA_POLICY_TEXT, words):
             return {}
-        data = B.fetch(DRUGS_AT_FDA, cache, binary=True)
+        data = B.fetch(DRUGS_AT_FDA, None, binary=True)                 # read fresh: it changes weekly
     except (urllib.error.URLError, OSError, ValueError):
         return {}
     out = {}
@@ -452,30 +526,74 @@ def drugs_at_fda(cache=None):
                 key = by_no.get(r.get("ApplNo", "").strip().zfill(6))
                 if key:
                     out[key]["approved"] = B.iso_date(r.get("SubmissionStatusDate", ""))
+    _READ["drugs@fda"] = out
     return out
 
 
+GENERIC_WORDS = re.compile(r"\b(tablets?|tabs?|caplets?|capsules?|caps|liquid|gels?|gel caps|liqui-gels|mini|"
+                           r"suspension|"
+                           r"oral|solution|syrup|drops|injection|cream|ointment|extra|strength|regular|er|xr|sr|cr|"
+                           r"dr|fc|bp|usp|film coated|chewables?|soft|chews?|sterile|injectable|flavou?red|"
+                           r"for|and|with|mg|ml|mcg|g|%|"
+                           r"\d[\d.,/]*\s*(mg|ml|mcg|g)?)\b",
+                           re.I)
+
+
+def brand_words(brand, key):
+    """A brand name as shown ("CHILDREN'S MOTRIN" -> "Children's Motrin"), or "" when it is only the generic name
+    with forms and strengths ("IBUPROFEN TABLETS 200 MG", "Metformin ER"): that is no brand to look up."""
+    brand = re.sub(r"(^|[\s\-/(&+])([a-z])", lambda m: m.group(1) + m.group(2).upper(),
+                   " ".join((brand or "").split()).lower())
+    rest = brand.lower()
+    for name in key.split(" + "):
+        rest = re.sub(rf"\b{re.escape(name)}\w*", " ", rest)
+    rest = " ".join(w for w in rest.split() if w not in SALTS)
+    rest = GENERIC_WORDS.sub(" ", rest)
+    return brand if re.search(r"[a-z]{2,}", re.sub(r"[^a-z' ]", " ", rest)) else ""
+
+
+CANADA_KIND = {"NON-PRESCRIPTION DRUGS": "otc", "ETHICAL": "otc", "HOMEOPATHIC": ""}
+
+
 def canadian_brands(cache=None):
-    """{(class, combo key): {brand names}} of the products marketed in Canada (Health Canada's Drug Product
-    Database API; class "Human" or "Veterinary"); {} when the dataset's licence is no longer the Open Government
-    Licence - Canada or the API cannot be read."""
+    """{(kind, combo key): {brand names}} of the products marketed in Canada (Health Canada's Drug Product
+    Database API): kind "rx" for prescription (and narcotic and controlled) products, "otc" for non-prescription
+    ones, "animal" for veterinary ones; homeopathic products and names that are only the generic name are left
+    out. {} when the dataset's licence is no longer the Open Government Licence - Canada or the API cannot be read.
+    Read once per run."""
+    if "dpd" in _READ:
+        return _READ["dpd"]
+    _READ["dpd"] = {}
     try:
         if B.allowed_by_robots(DPD_DATASET, cache):
             meta = json.loads(B.fetch(DPD_DATASET, None))
             if "open government licence - canada" not in (meta.get("result", {}).get("license_title") or "").lower():
                 return {}
-        products = json.loads(B.fetch(f"{DPD_API}/drugproduct/?lang=en&type=json&status=2", cache))
-        ingredients = json.loads(B.fetch(f"{DPD_API}/activeingredient/?lang=en&type=json", cache))
+        products = json.loads(B.fetch(f"{DPD_API}/drugproduct/?lang=en&type=json&status=2", None))
+        ingredients = json.loads(B.fetch(f"{DPD_API}/activeingredient/?lang=en&type=json", None))
+        schedules = json.loads(B.fetch(f"{DPD_API}/schedule/?lang=en&type=json", None))
     except (urllib.error.URLError, OSError, ValueError):
         return {}
-    names = {}
+    names, kinds = {}, {}
     for i in ingredients:
         names.setdefault(i.get("drug_code"), []).append(i.get("ingredient_name", ""))
+    for sch in schedules:
+        kinds.setdefault(sch.get("drug_code"), set()).add(CANADA_KIND.get(sch.get("schedule_name", ""), "rx"))
     out = {}
     for p in products:
         key = combo_key(names.get(p.get("drug_code"), []))
-        if key and p.get("brand_name"):
-            out.setdefault((p.get("class_name", ""), key), set()).add(" ".join(p["brand_name"].split()).title())
+        if p.get("class_name") == "Veterinary":
+            found = {"animal"}
+        elif p.get("class_name") == "Human":
+            found = kinds.get(p.get("drug_code"), {"rx"})
+            found = {"rx"} if "rx" in found else found - {""}
+        else:
+            continue
+        brand = brand_words(p.get("brand_name", ""), key)
+        for kind in found:
+            if key and brand:
+                out.setdefault((kind, key), set()).add(brand)
+    _READ["dpd"] = out
     return out
 
 
@@ -789,10 +907,14 @@ SECTION_NAMES = {"34066-1": "Boxed warning", "34067-9": "Uses", "34068-7": "Dire
 def first_sentence(sections_html, limit=320):
     """The first sentence of some HTML (for "what it is for" in the label's own words), at most `limit` letters."""
     words = " ".join(html.unescape(re.sub(r"<[^>]+>", " ", sections_html)).split())
-    words = re.sub(r"^\s*\d+(\.\d+)*\s+INDICATIONS? (AND|&) USAGE\s*", "", words, flags=re.I)
+    words = re.sub(r"^\s*(\d+(\.\d+)*\s+)?INDICATIONS?\s*(AND|&)\s*USAGE\s*:?\s*", "", words, flags=re.I)
     words = re.sub(r"^(INDICATIONS?|USES?)\s*:?\s*", "", words, flags=re.I)
-    m = re.match(r"(.{20,}?[.;])(\s|$)", words)
-    text = m.group(1) if m else words
+    sentences = [m.group(1) for m in re.finditer(r"(.{20,}?[.;])(?=\s|$)", words)] or [words]
+    # The label's own words on what it treats, not the class's opening caution ("Carefully consider the
+    # potential benefits and risks ...").
+    text = next((x.strip() for x in sentences if re.search(r"\b(indicated|used|treat\w*|reliev\w*|relief|"
+                                                             r"prevent\w*|control\w*|reduc\w*)\b", x, re.I)
+                 and not re.match(r"\s*carefully consider", x, re.I)), sentences[0].strip())
     return text if len(text) <= limit else text[:limit].rsplit(" ", 1)[0] + "…"
 
 
@@ -815,7 +937,8 @@ def ingredients_html(label):
 
 
 def approval_words(label, fda):
-    """"FDA application: NDA 020402 (Pfizer), first approved 1995-04-20." from the label's approval and Drugs@FDA;
+    """"FDA application: NDA 020402, held by PFIZER, first approved 1995-04-20." from the label's approval and
+    Drugs@FDA (the company that holds the application now);
     "OTC monograph M013" for an over-the-counter monograph product; "" when the label names none."""
     a = label.approval
     if not a:
@@ -827,9 +950,8 @@ def approval_words(label, fda):
     words = f"FDA application: {m.group(1)} {m.group(2)}"
     info = fda.get(a) or fda.get(f"{m.group(1)}{m.group(2).zfill(6)}")
     if info:
-        extra = [x for x in (info.get("sponsor"), f"first approved {info['approved']}" if info.get("approved") else "")
-                 if x]
-        words += f" ({', '.join(extra)})" if extra else ""
+        words += f", held by {info['sponsor']}" if info.get("sponsor") else ""
+        words += f", first approved {info['approved']}" if info.get("approved") else ""
     return words + "."
 
 
@@ -985,7 +1107,9 @@ def medicine_page(med, fda):
     """(page path, title, body HTML) of one medicine: the notice, its quick facts, then each of its labels."""
     vet = med.kind == "animal"
     name = display_name(med.names)
-    facts = [f"<li>Kind: {html.escape({'rx': 'prescription medicine (US)', 'otc': 'over-the-counter medicine (US)'}.get(med.kind, 'animal medicine (US)'))}.</li>"]
+    kind = {"rx": "prescription medicine (US)", "otc": "over-the-counter medicine (US)"}.get(med.kind,
+                                                                                         "animal medicine (US)")
+    facts = [f"<li>Kind: {kind}.</li>"]
     brands = sorted(med.brands, key=str.casefold)
     if brands:
         shown = ", ".join(brands[:80]) + (f", and {len(brands) - 80} more" if len(brands) > 80 else "")
@@ -1006,8 +1130,8 @@ def medicine_page(med, fda):
     out = [f"<p><strong>{VET_NOTICE if vet else HUMAN_NOTICE}</strong></p>", "<h2>Quick facts</h2>",
            f"<ul>{''.join(facts)}</ul>"]
     for form, lab in med.labels:
-        brand = lab.brand or next((p["name"] for p in lab.products if p["name"]), "")
-        heading = f"{name}, {form}: label of {brand.strip().title() or lab.title}"
+        brand = brand_words(lab.brand, med.key) or lab.company or lab.title
+        heading = f"{name}, {form}: label of {brand}"
         out.append(label_html(lab, heading, fda))
     return B.slug(name, 80), name, "\n".join(out)
 
@@ -1068,17 +1192,18 @@ def _only_match(only, key, names, brands):
     if not only:
         return True
     words = {base_name(o) for o in only} | {o.lower() for o in only}
-    return key in words or any(b.lower() in words for b in brands) or any(n.lower() in words for n in names)
+    return key in words or any(b.lower() in words for b in brands)
 
 
-def human_medicines(kind, piece, cache=None, left_out=None, only=None):
+def human_medicines(kind, piece, cache=None, left_out=None, only=None, fda=None):
     """The Medicines of one human piece ("rx" or "otc", letters "a" or "e-f"): DailyMed's mapping files group the
     labels by generic medicine and form; the prescription listing says which are prescription; the best label of
     each medicine and form is read (another one when it turns out to be of another kind or homeopathic)."""
     left_out = left_out if left_out is not None else []
-    rx = dailymed_listing(list(RX_TYPES))
-    records = rxnorm_records(_zip_text(f"{DM_DATA}/rxnorm_mappings.zip", "rxnorm_mappings.txt"))
-    meta = meta_records(_zip_text(f"{DM_DATA}/dm_spl_zip_files_meta_data.zip", "meta_data.txt"))
+    rx = dailymed_listing(list(RX_TYPES), cache)
+    kits, maker_words = set(), makers(fda)
+    records = rxnorm_records(_zip_text(f"{DM_DATA}/rxnorm_mappings.zip", "rxnorm_mappings.txt", cache), kits)
+    meta = meta_records(_zip_text(f"{DM_DATA}/dm_spl_zip_files_meta_data.zip", "meta_data.txt", cache))
     groups = {}
     for setid, rec in records.items():
         is_rx = setid in rx
@@ -1092,7 +1217,8 @@ def human_medicines(kind, piece, cache=None, left_out=None, only=None):
             g["names"][n.lower()] = g["names"].get(n.lower(), 0) + 1
         g["brands"] |= rec["brands"]
         for family in rec["forms"]:
-            g["forms"].setdefault(family, []).append({"setid": setid, "brand": bool(rec["brands"]) or bool(brand),
+            g["forms"].setdefault(family, []).append({"setid": setid, "sbd": bool(rec["brands"]), "brand": bool(brand),
+                                                      "maker": first_word(company) in maker_words,
                                                       "company": company, "date": date, "version": version})
     medicines = []
     for key, g in groups.items():
@@ -1101,7 +1227,8 @@ def human_medicines(kind, piece, cache=None, left_out=None, only=None):
             continue
         if not _only_match(only, key, names, g["brands"]):
             continue
-        med = Medicine(key=key, names=set(names), kind=kind, brands=set(g["brands"]))
+        med = Medicine(key=key, names=set(names), kind=kind,
+                       brands={b for b in (brand_words(x, key) for x in g["brands"]) if b})
         for family in sorted(g["forms"], key=lambda f: (-len(g["forms"][f]), f))[:MAX_FORMS]:
             for cand in sorted(g["forms"][family], key=rank, reverse=True)[:MAX_TRIES]:
                 try:
@@ -1117,6 +1244,10 @@ def human_medicines(kind, piece, cache=None, left_out=None, only=None):
                 break
         if med.labels:
             medicines.append(med)
+    if kits and not only:
+        left_out.append({"title": "Kits of several medicines", "reason": f"{len(kits)} labels of kits (first-aid kits, "
+                         "allergen mixtures, kits of unrelated medicines) left out; each medicine is in the books from "
+                         "its own label."})
     return medicines
 
 
@@ -1135,7 +1266,7 @@ def animal_medicines(cache=None, left_out=None, only=None):
     """The Medicines of the animal books: DailyMed's listing of animal labels, grouped by the generic names and form
     of their titles; the best label of each medicine and form is read; homeopathic products are left out."""
     left_out = left_out if left_out is not None else []
-    listing = dailymed_listing(list(ANIMAL_TYPES))
+    listing = dailymed_listing(list(ANIMAL_TYPES), cache)
     groups, homeopathic = {}, 0
     for setid, row in listing.items():
         brand, generics, form, company = parse_title(row["title"])
@@ -1148,8 +1279,8 @@ def animal_medicines(cache=None, left_out=None, only=None):
         g = groups.setdefault(key, {"brands": set(), "forms": {}, "names": {}})
         for n in generics:
             g["names"][n.lower()] = g["names"].get(n.lower(), 0) + 1
-        if brand:
-            g["brands"].add(brand.title())
+        if brand_words(brand, key):
+            g["brands"].add(brand_words(brand, key))
         family = (form.split(",")[0].strip().lower() or "other forms")
         g["forms"].setdefault(family, []).append({"setid": setid, "brand": bool(brand), "company": company,
                                                   "date": row["date"], "version": row["version"]})
@@ -1196,9 +1327,9 @@ def books_for_key(key, cache=None, left_out=None, only=None):
     canada = canadian_brands(cache)
     parts = key.split(":")
     if parts[1] in ("rx", "otc"):
-        meds = human_medicines(parts[1], parts[2], cache, left_out, only)
+        meds = human_medicines(parts[1], parts[2], cache, left_out, only, fda)
         for m in meds:
-            m.canada = canada.get(("Human", m.key), set())
+            m.canada = canada.get((parts[1], m.key), set())
         return [make_book(parts[1], parts[2], meds, fda, bool(only))]
     meds = animal_medicines(cache, left_out, only)
     books = []
@@ -1208,7 +1339,7 @@ def books_for_key(key, cache=None, left_out=None, only=None):
             labels = [(f, lab) for f, lab in m.labels if kind in species(lab)]
             if labels:
                 chosen.append(Medicine(key=m.key, names=m.names, kind="animal", brands=m.brands,
-                                       canada=canada.get(("Veterinary", m.key), set()), labels=labels))
+                                       canada=canada.get(("animal", m.key), set()), labels=labels))
         books.append(make_book(kind, "", chosen, fda, bool(only)))
     return books
 

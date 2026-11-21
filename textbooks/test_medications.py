@@ -66,7 +66,8 @@ RX_SECTIONS = (
     + sec("43684-0", "8 USE IN SPECIFIC POPULATIONS", "",
           sec("42228-7", "8.1 Pregnancy", "<paragraph>Not studied in made-up pregnancies.</paragraph>")
           + sec("34081-0", "8.4 Pediatric Use", "<paragraph>Not for made-up children.</paragraph>"))
-    + sec("34089-3", "11 DESCRIPTION", '<paragraph>A white tablet.</paragraph><renderMultiMedia referencedObject="MM1"/>')
+    + sec("34089-3", "11 DESCRIPTION",
+          '<paragraph>A white tablet.</paragraph><renderMultiMedia referencedObject="MM1"/>')
     + sec("42231-1", "MEDICATION GUIDE", "<paragraph>Read this before you take Examplofen.</paragraph>")
     + sec("51945-4", "PACKAGE LABEL", "<paragraph>NDC 0000-0000 Examplofen 200 mg</paragraph>"))
 OTC_SECTIONS = (
@@ -129,7 +130,8 @@ def fda_zip():
     """A made-up Drugs@FDA data file."""
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w") as z:
-        z.writestr("Applications.txt", "ApplNo\tApplType\tApplPublicNotes\tSponsorName\n099999\tNDA\t\tEXAMPLE PHARMA\n")
+        z.writestr("Applications.txt",
+                   "ApplNo\tApplType\tApplPublicNotes\tSponsorName\n099999\tNDA\t\tEXAMPLE PHARMA\n")
         z.writestr("Submissions.txt", "ApplNo\tSubmissionClassCodeID\tSubmissionType\tSubmissionNo\tSubmissionStatus\t"
                                       "SubmissionStatusDate\n099999\t7\tORIG\t1\tAP\t1999-04-20 00:00:00\n")
     return buf.getvalue()
@@ -152,9 +154,17 @@ def answer(url, cache=None, binary=False, tries=4):
         ("www.fda.gov/media/89850", fda_zip()),
         ("package_show", json.dumps({"result": {"license_title": "Open Government Licence - Canada"}})),
         ("drugproduct", json.dumps([{"drug_code": 1, "class_name": "Human", "brand_name": "EXAMPLO-CAN"},
-                                    {"drug_code": 2, "class_name": "Veterinary", "brand_name": "ZAPCAN"}])),
+                                    {"drug_code": 2, "class_name": "Veterinary", "brand_name": "ZAPCAN"},
+                                    {"drug_code": 3, "class_name": "Human", "brand_name": "PAINAWAY CANADA"},
+                                    {"drug_code": 4, "class_name": "Human", "brand_name": "EXAMPLOFEN TABLETS 200 MG"}
+                                    ])),
         ("activeingredient", json.dumps([{"drug_code": 1, "ingredient_name": "EXAMPLOFEN"},
-                                         {"drug_code": 2, "ingredient_name": "ZAPICITINIB"}])),
+                                         {"drug_code": 2, "ingredient_name": "ZAPICITINIB"},
+                                         {"drug_code": 3, "ingredient_name": "EXAMPLOFEN (EXAMPLOFEN SODIUM)"},
+                                         {"drug_code": 4, "ingredient_name": "EXAMPLOFEN"}])),
+        ("drug/schedule/", json.dumps([{"drug_code": 1, "schedule_name": "PRESCRIPTION"},
+                                       {"drug_code": 3, "schedule_name": "NON-PRESCRIPTION DRUGS"},
+                                       {"drug_code": 4, "schedule_name": "PRESCRIPTION"}])),
         ("spl-resources-all-drug-labels", '<a href="x/dm_spl_monthly_update_sep2026.zip">'
                                           '<a href="x/dm_spl_monthly_update_oct2026.zip">'),
     ]
@@ -201,6 +211,37 @@ def test_names_and_forms():
         ("QUELLIN", ["CARPROFEN"], "TABLET, CHEWABLE", "ELANCO US INC.")
     assert M.parse_title("CARPROFEN TABLET, CHEWABLE [ZYVET]") == ("", ["CARPROFEN"], "TABLET, CHEWABLE", "ZYVET")
     assert M.parse_title("IBUPROFEN (IBUPROFEN) TABLET [X]")[0] == ""      # the generic name is not a brand
+    assert M.parse_title("AMOXICILLIN (AMOXICILLIN) CAPSULE AMOXICILLIN (AMOXICILLIN) TABLET [X]")[:2] == \
+        ("", ["AMOXICILLIN"])                                                 # a label of several products
+    brand, generics, _form, _company = M.parse_title("ZINGO (EXAMPLOFEN (AS SODIUM)) TABLET [X]")
+    assert brand == "ZINGO" and M.combo_key(generics) == "examplofen"
+    assert M.brand_words("CHILDREN'S MOTRIN", "ibuprofen") == "Children's Motrin"
+    assert M.brand_words("APO-METFORMIN ER", "metformin") == "Apo-Metformin Er"
+    assert M.brand_words("IBUPROFEN TABLETS 200 MG", "ibuprofen") == ""
+    assert M.brand_words("Metformin ER", "metformin") == ""
+    assert M.first_sentence("<p>INDICATIONS AND USAGE Carefully consider the risks of examplofen. Examplofen is "
+                            "indicated for relief of pretend pain. More.</p>") == \
+        "Examplofen is indicated for relief of pretend pain."
+
+
+def test_kits_and_packs():
+    """A pack counts as its medicine (placebo tablets and swabs aside); a pack of several medicines as their
+    combination; a kit of unrelated medicines without a pack is left out."""
+    text = "\n".join(["SETID|SPL_VERSION|RXCUI|RXSTRING|RXTTY",
+                      "pill|1|1|levonorgestrel 0.1 MG / ethinyl estradiol 0.02 MG Oral Tablet|SCD",
+                      "pill|1|2|inert ingredients 1 MG Oral Tablet|SCD", "pill|1|3|{21 (x) / 7 (y) } Pack|GPCK",
+                      "shot|1|1|1 ML examplomab 10 MG/ML Injection|SCD",
+                      "shot|1|2|isopropyl alcohol 0.7 ML/ML Medicated Pad|SCD",
+                      "hp|1|1|amoxicillin 500 MG Oral Capsule|SCD", "hp|1|2|clarithromycin 500 MG Oral Tablet|SCD",
+                      "hp|1|3|{x} Pack [Examplopak]|BPCK",
+                      "kit|1|1|acetaminophen 325 MG Oral Tablet|SCD",
+                      "kit|1|2|bacitracin 500 UNT/GM Topical Ointment|SCD"])
+    kits = set()
+    recs = M.rxnorm_records(text, kits)
+    assert M.combo_key(recs["pill"]["names"]) == "ethinyl estradiol + levonorgestrel"
+    assert recs["shot"]["names"] == {"examplomab"} and list(recs["shot"]["forms"]) == ["injection"]
+    assert M.combo_key(recs["hp"]["names"]) == "amoxicillin + clarithromycin" and recs["hp"]["brands"] == {"Examplopak"}
+    assert "kit" not in recs and kits == {"kit"}
 
 
 def test_keys_and_pieces():
@@ -231,7 +272,7 @@ def test_label_in_plain_order():
                                      "Information for patients MEDICATION GUIDE", "Other parts of the label",
                                      "8.4 Pediatric Use", "Picture: Chemical structure", "PACKAGE LABEL")]
     assert order == sorted(order)
-    assert "FDA application: NDA 099999 (EXAMPLE PHARMA, first approved 1999-04-20)" in text
+    assert "FDA application: NDA 099999, held by EXAMPLE PHARMA, first approved 1999-04-20." in text
     assert "<ol><li>Take one tablet.</li>" in html and "<strong>water</strong>" in html
     assert "<caption>Table 1</caption>" in html
     assert "Active: EXAMPLOFEN 200 mg. Inactive: corn starch" in text
@@ -247,11 +288,16 @@ def test_label_in_plain_order():
 
 
 def test_choice_of_label():
-    """A brand's label is preferred, then not a repackager's, then the newest."""
+    """A brand's label is preferred, then not a repackager's, then the newest year, then the most revised."""
     a = {"brand": False, "company": "SOME REPACK LLC", "date": "2026-11-01", "version": 9}
     b = {"brand": False, "company": "MAKER INC", "date": "2026-01-01", "version": 1}
-    c = {"brand": True, "company": "BRAND INC", "date": "2020-01-01", "version": 1}
+    c = {"sbd": True, "brand": True, "company": "BRAND INC", "date": "2020-01-01", "version": 1}
     assert sorted([a, b, c], key=M.rank, reverse=True) == [c, b, a]
+    old = dict(b, date="2025-03-01", version=30)
+    assert sorted([old, b, dict(b, version=7)], key=M.rank, reverse=True) == [dict(b, version=7), b, old]
+    pharmacy = {"brand": False, "company": "STATE HEALTH DEPARTMENT", "date": "2026-11-01", "version": 1}
+    maker = dict(b, maker=M.first_word(b["company"]) in M.makers({"NDA1": {"sponsor": "MAKER INC"}}))
+    assert sorted([pharmacy, maker], key=M.rank, reverse=True) == [maker, pharmacy]
 
 
 def test_species():
@@ -270,14 +316,15 @@ def test_build_books(monkeypatch, tmp_path):
     page = rx.pages[2].body
     text = words(page)
     assert M.HUMAN_NOTICE in text and "Brand names (US): Zingo" in text
-    assert "Brand names in Canada (Health Canada): Examplo-Can" in text
+    assert "Brand names in Canada (Health Canada): Examplo-Can." in text      # not the generic name, not the OTC one
     assert "Boxed warning (the FDA's strongest warning): yes" in text
     assert "label of Zingo" in text and "Example Pharma Inc." in text            # the brand, not the repackager
     assert ("brand/zingo", "Zingo (Examplofen)", "examplofen") in rx.redirects
     assert rx.licence == M.LICENCE and M.HUMAN_NOTICE in rx.notice and rx.group == "medicines"
     otc = M.books_for_key("med:otc:d-h")[0]
     assert [p.title for p in otc.pages][2:] == ["Examplofen sodium"]
-    assert "Painaway" in words(otc.pages[2].body)
+    assert "Brand names (US): Painaway." in words(otc.pages[2].body)
+    assert "Brand names in Canada (Health Canada): Painaway Canada." in words(otc.pages[2].body)
     assert M.books_for_key("med:rx:a")[0].pages == []                           # no medicine starts with a
     left = []
     pets, farm = M.books_for_key("med:animal", left_out=left)
