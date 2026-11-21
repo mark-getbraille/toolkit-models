@@ -48,6 +48,7 @@ def test_kinds_are_the_most_specific():
     assert kind_of(h.FASTENER_KINDS, "Confirmat") == "a confirmat screw"
     assert kind_of(h.FASTENER_KINDS, "Toggle bolts") == "a toggle bolt"
     assert kind_of(h.FASTENER_KINDS, "Thread pitch gauges", ["Screws"]) == "a thread pitch gauge"
+    assert kind_of(h.FASTENER_KINDS, "Thread gauges") == "a thread gauge"
     assert kind_of(h.FASTENER_KINDS, "Countersunk screws") == "screws"
     assert kind_of(h.DOOR_KINDS, "Concealed hinges", ["Hinges"]) == "a concealed (European) cabinet hinge"
     assert kind_of(h.DOOR_KINDS, "Padlocks", ["Locks (security devices)"]) == "a padlock"

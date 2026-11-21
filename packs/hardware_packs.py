@@ -524,9 +524,11 @@ FASTENER_TOPICS = [
 ]
 FASTENER_KINDS = [
     # gauges and threads (asked first: a gauge photo also sits in screw categories)
-    kind(r"\bthread (pitch )?gauges?\b|\bscrew pitch gauges?\b|\bpitch gauges?\b", "a thread pitch gauge",
-         "a set of toothed metal blades: the blade whose teeth fit a screw's thread exactly gives its pitch.",
-         TOOL_Q),
+    kind(r"\bthread pitch gauges?\b|\bscrew pitch gauges?\b|\bpitch gauges?\b", "a thread pitch gauge",
+         "a set of toothed metal blades; the blade whose teeth fit a screw's thread exactly gives its pitch.", TOOL_Q),
+    kind(r"\bthread gauges?\b|\bring gauges?\b|\bplug gauges?\b", "a thread gauge",
+         "it checks that a screw thread is the right size and pitch (a ring gauge for bolts, a plug gauge for "
+         "threaded holes).", TOOL_Q),
     kind(r"\bbolt gauges?\b|\bscrew gauges?\b|\bthread checkers?\b", "a bolt and screw gauge",
          "a plate with threaded holes and studs that tells a bolt's diameter and thread.", TOOL_Q),
     kind(r"\bscrew thread pitch\b|\bthread forms?\b|\bexternal threads\b", "a screw thread",
