@@ -17,9 +17,9 @@ What this module builds (each source checked by hand on 2026-11-21; the lines qu
   Children's stories, CC BY 4.0, from Learning Equality's Kolibri Studio public channels (the official offline
   packages): Pratham Books' StoryWeaver and the Global Digital Library, one book per language and reading level,
   with the reading level as the grade level.
-  Open textbooks and courses: GALILEO Open Learning Materials (CC BY and CC BY-SA only, read through its OAI-PMH
-  feed), Lumen Learning's CC BY courses (Pressbooks' own API), Raspberry Pi Projects (CC BY-SA 4.0), Sickle Cell
-  Open Education.
+  Open courses: Lumen Learning's CC BY and CC BY-SA courses (Pressbooks' own API) and Raspberry Pi Projects (CC
+  BY-SA 4.0, each project's steps from the Foundation's public repositories, found from its sitemap). Personal use
+  only: Open Yale Courses (CC BY-NC-SA 3.0, each lecture's transcript).
   Reference data: the Encyclopaedia Britannica's 1st to 8th editions from the National Library of Scotland's Data
   Foundry (bulk downloads; public domain, marked old, with the non-US note), and the OEIS (CC BY-SA 4.0, its bulk
   files).
@@ -440,8 +440,9 @@ def guide_sign(entry):
 def all_keys(personal=False):
     """Every build key of this module's own books (personal=True: the personal-use ones)."""
     if personal:
-        return [f"dir:{name}" for name in PERSONAL_BOOKS]
-    return [f"dir:{g['name']}" for g in GUIDES] + [k for name in PIECED for k in PIECED[name]["keys"]()]
+        return [k for src in PERSONAL_BOOKS.values() for k in src["keys"]()]
+    return [f"dir:{g['name']}" for g in GUIDES] + \
+        [k for name, src in PIECED.items() for k in (src["default"]() if "default" in src else src["keys"]())]
 
 
 def expand_keys(words):
@@ -458,6 +459,8 @@ def expand_keys(words):
             keys += all_keys(True) + directory_pubs.default_keys(personal=True)
         elif w.startswith("dir:") and w.count(":") == 1 and w[4:] in PIECED:
             keys += PIECED[w[4:]]["keys"]()
+        elif w.startswith("dir:") and w.count(":") == 1 and w[4:] in PERSONAL_BOOKS:
+            keys += PERSONAL_BOOKS[w[4:]]["keys"]()
         else:
             keys.append(w)
     return list(dict.fromkeys(keys))
@@ -539,10 +542,900 @@ def build_directory(keys, out_dir, cache=None, date=None, limit=None):
 
 
 # Sources of this module that come in pieces or as several books: name -> {keys(), books(piece, work, cache,
-# left_out, limit), sign(piece)}; filled in below, source by source.
-PIECED = {}
-# The personal-use books of this module: name -> the same fields.
-PERSONAL_BOOKS = {}
+# left_out, limit), sign(piece)} (PIECED_SOURCES, below, source by source).
+PERSONAL_BOOKS = {}              # the personal-use books of this module: name -> the same fields
+
+
+# ====================================================================== children's stories (Kolibri Studio)
+
+STUDIO = "https://studio.learningequality.org"
+# Learning Equality's Kolibri Studio public channels (studio.learningequality.org/api/public/v1/channels): each one
+# is a SQLite file of topics and resources with each resource's licence and files. Both channels below are CC BY
+# throughout (checked 2026-11-21: every resource's license_name is "CC BY").
+STORY_CHANNELS = {
+    "storyweaver": dict(id="131e543dbecf5776bb13cfcfddf05605", title="Pratham Books' StoryWeaver",
+                        publisher="Pratham Books' StoryWeaver and its partner publishers (from Learning Equality's "
+                                  "Kolibri Studio channel)", country="India", source="https://storyweaver.org.in/",
+                        kind="document"),
+    "gdl": dict(id="0e173fca6e9052f8a474a2fb84055faf", title="Global Digital Library", country="International",
+                publisher="Global Digital Library (Norad) and its partner publishers (from Learning Equality's Kolibri "
+                          "Studio channel)", source="https://digitallibrary.io/", kind="h5p"),
+}
+# Reading levels of both libraries (StoryWeaver's own names for its four levels; the Global Digital Library uses the
+# same four), given as the book's grade level.
+LEVEL_WORDS = {"1": "Level 1: beginning to read (StoryWeaver's and the Global Digital Library's reading level; about "
+                    "preschool to grade 1)",
+               "2": "Level 2: learning to read (about grades 1 to 2)",
+               "3": "Level 3: reading independently (about grades 2 to 4)",
+               "4": "Level 4: reading proficiently (about grades 3 to 5)"}
+
+
+def story_db(name, work):
+    """An open connection to a story channel's SQLite file (downloaded into work once a day)."""
+    import courses                               # here, not at the top: courses imports the builder
+    spec = STORY_CHANNELS[name]
+    return courses.kolibri_db(spec, work, str(courses.kolibri_channel_info(spec).get("version") or ""))
+
+
+def story_tree(db):
+    """[(node id, title, kind, description, author, licence, owner, language, level, category)] of every story:
+    StoryWeaver's tree is category / publisher / language / level / story, the Global Digital Library's language /
+    level / story."""
+    nodes = {r[0]: r[1:] for r in db.execute("select id, title, parent_id, kind, description, author, license_name, "
+                                             "license_owner from content_contentnode")}
+    out = []
+    for node_id, (title, parent, kind, desc, author, lic, owner) in nodes.items():
+        if kind == "topic":
+            continue
+        chain, q = [], parent
+        while q:
+            chain.append(nodes[q][0])
+            q = nodes[q][1]
+        level = next((re.sub(r"\D", "", c) for c in chain if re.fullmatch(r"Level \d", c or "")), "")
+        if len(chain) >= 5:                      # StoryWeaver
+            language, category = chain[1], chain[3]
+        else:                                    # the Global Digital Library
+            language, category = (chain[1] if len(chain) > 1 else ""), ""
+        out.append((node_id, title, kind, desc or "", author or "", lic or "", owner or "", language, level, category))
+    return out
+
+
+def story_pieces(name, work=None):
+    """Every piece ("english-1": a language and a reading level) of a story channel, from its tree; the English
+    pieces first."""
+    work = work or os.path.join("build", "textbooks-cache", "work")
+    rows = story_tree(story_db(name, work))
+    pieces = sorted({(B.slug(r[7]), r[8] or "0") for r in rows if r[7]}, key=lambda p: (p[0] != "english", p))
+    return [f"{lang}-{level}" for lang, level in pieces]
+
+
+def h5p_text(data):
+    """[(page title, HTML)] of an H5P interactive book (the Global Digital Library's stories): each chapter's texts
+    (H5P.AdvancedText) in order; pictures are left out (their alt text kept when they have one)."""
+    import io
+    import zipfile
+    try:
+        content = json.loads(zipfile.ZipFile(io.BytesIO(data)).read("content/content.json"))
+    except (zipfile.BadZipFile, KeyError, ValueError):
+        return []
+    pages = []
+    for n, chapter in enumerate(content.get("chapters") or [], 1):
+        parts = []
+
+        def walk(x):
+            if isinstance(x, dict):
+                if isinstance(x.get("text"), str):
+                    parts.append(x["text"])
+                if x.get("alt"):
+                    parts.append(f"<p>Picture: {B.esc(x['alt'])}</p>")
+                for v in x.values():
+                    if isinstance(v, (dict, list)):
+                        walk(v)
+            elif isinstance(x, list):
+                for v in x:
+                    walk(v)
+        walk(chapter.get("params") or {})
+        body = B._Cleaner({}, "").clean("".join(p if "<" in p else f"<p>{B.esc(p)}</p>" for p in parts))
+        if re.sub(r"<[^>]+>", "", body).strip():
+            pages.append((((chapter.get("metadata") or {}).get("title") or f"Page {n}"), body))
+    return pages
+
+
+def story_books(name, piece, work, cache=None, left_out=None, limit=None):
+    """[Book] of one piece of a story channel: every story of one language at one reading level, one page per story
+    (a StoryWeaver PDF's text, page by page; a Global Digital Library H5P book's pages), with its author, publisher,
+    licence and description; stories that appear in several categories once. limit: only so many stories."""
+    import courses                               # here, not at the top: courses imports the builder
+    spec = STORY_CHANNELS[name]
+    left_out = left_out if left_out is not None else []
+    url = f"{STUDIO}/content/databases/{spec['id']}.sqlite3"
+    if not readable(url, cache):
+        left_out.append({"title": spec["title"], "reason": "robots.txt does not allow Kolibri Studio's channel file."})
+        return []
+    db = story_db(name, work)
+    info = courses.kolibri_channel_info(spec)
+    meta = db.execute("select version, last_updated from content_channelmetadata").fetchone() or (None, None)
+    lang_slug, _, level = piece.rpartition("-")
+    rows = [r for r in story_tree(db) if B.slug(r[7]) == lang_slug and (r[8] or "0") == level]
+    if not rows:
+        left_out.append({"title": f"{spec['title']}: {piece}", "reason": "The channel has no stories for this piece."})
+        return []
+    language = rows[0][7]
+    seen, pages, owners, counts, originals = set(), [], set(), {}, []
+    start = time.monotonic()
+    for node_id, title, kind, desc, author, lic, owner, _lang, _lvl, category in sorted(rows, key=lambda r: r[1]):
+        if (title, author) in seen or (limit and len(seen) >= limit):
+            continue
+        if time.monotonic() - start > TIME_BUDGET:
+            counts["stories not read this time (the time for one build ran out)"] = \
+                counts.get("stories not read this time (the time for one build ran out)", 0) + 1
+            continue
+        seen.add((title, author))
+        if lic != "CC BY":
+            counts[f"stories under \"{lic or 'no licence'}\""] = counts.get(f"stories under \"{lic or 'no licence'}\"",
+                                                                             0) + 1
+            continue
+        files = courses.kolibri_files(db, node_id)
+        credit = " ".join(x for x in (f"By {author}." if author else "", f"Published by {owner}." if owner else "",
+                                      "Licence: CC BY 4.0.") if x)
+        intro = (f"<p>{B.esc(' '.join(desc.split()))}</p>" if desc else "") + f"<p>{B.esc(credit)}</p>"
+        path = f"s-{node_id[:12]}"
+        got = []
+        if kind == "document":
+            for checksum, ext, _l in files.get("document", []):
+                if ext != "pdf":
+                    continue
+                local = courses.download(courses.kolibri_file_url(checksum, ext),
+                                         os.path.join(work, "kolibri", "files", f"{checksum}.pdf"))
+                got = courses.pdf_pages_as_pages(local, path, title, 0, category or "Stories")
+                os.remove(local)
+                originals.append({"url": courses.kolibri_file_url(checksum, ext), "kind": "pdf"})
+                break
+        else:
+            for checksum, ext, _l in files.get("h5p", []):
+                data = B.fetch(courses.kolibri_file_url(checksum, ext), None, binary=True)
+                parts = h5p_text(data)
+                if parts:
+                    body = "".join(f"<h2>{B.esc(t)}</h2>{b}" for t, b in parts)
+                    got = [B.Page(path, title, body, 0, category or "Stories")]
+                originals.append({"url": courses.kolibri_file_url(checksum, ext), "kind": "h5p"})
+                break
+        if not got:
+            counts["stories without readable text"] = counts.get("stories without readable text", 0) + 1
+            continue
+        got[0].body = intro + got[0].body
+        pages += got
+        if owner:
+            owners.add(owner)
+    if not pages:
+        return []
+    level_words = LEVEL_WORDS.get(level, "")
+    published = B.iso_date(info.get("last_published") or str(meta[1] or ""))
+    book = B.Book(
+        name=f"{name}_{B.slug(piece, 50).replace('-', '_')}",
+        title=f"{spec['title']}: stories in {language}" + (f", level {level}" if level in LEVEL_WORDS else ""),
+        subject="Children's stories and early reading", level="school", group="k12", publisher=spec["publisher"],
+        country=spec["country"], licence="CC BY 4.0", licence_url=CC_BY_4, source=spec["source"],
+        language=two_to_three(language), grades=level_words, published=published,
+        version=f"Kolibri Studio channel \"{spec['title']}\" version {info.get('version') or meta[0]}",
+        description=f"Children's picture stories in {language} from {spec['title']}" +
+                    (f", {level_words.split(' (')[0]}" if level_words else "") + ": every story of the channel at "
+                    "this level, one page each, with its words, author and publisher (the pictures are left out). "
+                    "Good for early reading and for braille reading and transcription practice." +
+                    (" Left out: " + "; ".join(f"{n} {what}" for what, n in sorted(counts.items())) + "." if counts
+                     else ""),
+        notice=("Publishers named in the channel: " + ", ".join(sorted(owners)) + ". " if owners else "") +
+               "Each story is under the Creative Commons Attribution 4.0 licence; its own credits are on its page.",
+        changes="each story's PDF or interactive book made into a web page of its words (pictures left out)")
+    book.pages = pages
+    book.originals = [{"url": f"{STUDIO}/content/databases/{spec['id']}.sqlite3", "kind": "sqlite"}] + originals[:200]
+    return [book]
+
+
+LANGUAGE_CODES = {"english": "eng", "hindi": "hin", "marathi": "mar", "kannada": "kan", "french": "fra", "tamil": "tam",
+                  "telugu": "tel", "spanish": "spa", "korean": "kor", "urdu": "urd", "portuguese": "por",
+                  "bengali": "ben", "gujarati": "guj", "punjabi": "pan", "odia": "ori", "malayalam": "mal",
+                  "german": "deu", "italian": "ita", "thai": "tha", "vietnamese": "vie", "nepali": "nep",
+                  "afrikaans": "afr", "amharic": "amh", "arabic": "ara", "kiswahili": "swa", "swahili": "swa"}
+
+
+def two_to_three(language):
+    """The three-letter code of a language name ("English" -> "eng"; "mul" when not known)."""
+    return next((code for word, code in LANGUAGE_CODES.items() if word in language.lower()), "mul")
+
+
+def _story_source(name):
+    """The PIECED entry of a story channel."""
+    return {"keys": lambda: [f"dir:{name}:{p}" for p in story_pieces(name)],
+            "books": lambda piece, work, cache, left_out, limit: story_books(name, piece, work, cache, left_out,
+                                                                             limit),
+            "sign": lambda piece: str(__import__("courses").kolibri_channel_info(STORY_CHANNELS[name]).get("version")
+                                      or "")}
+
+
+PIECED_SOURCES = {"storyweaver": _story_source("storyweaver"), "gdl": _story_source("gdl")}
+# The pieces built by default (the "directory" word): English at every level; other languages by key
+# (dir:storyweaver lists every language and level from the channel).
+for _name in ("storyweaver", "gdl"):
+    PIECED_SOURCES[_name]["default"] = (lambda n=_name: [f"dir:{n}:english-{level}" for level in "1234"])
+
+
+# ====================================================================== Encyclopaedia Britannica, 1st to 8th editions
+
+NLS_EB_ZIP = "https://nlsfoundry.s3.amazonaws.com/text/nls-text-encyclopaediaBritannica.zip"
+NLS_EB_PAGE = "https://data.nls.uk/data/digitised-collections/encyclopaedia-britannica/"
+NLS_EB_TEXT = r"free of known copyright restrictions"
+EB_EDITIONS = {"EB.1": "First edition, 1771", "EB.3": "First edition, 1773 printing", "EB.4": "Second edition",
+               "EB.5": "Third edition", "EB.6": "Supplement to the third edition", "EB.7": "Fourth edition",
+               "EB.8": "Fifth edition", "EB.9": "Supplement to the fourth, fifth and sixth editions",
+               "EB.10": "Sixth edition", "EB.11": "Seventh edition", "EB.12": "Eighth edition"}
+EB_NOTE = ("An old encyclopaedia (published 1768 to 1860), kept for its history and its words: its science, "
+           "medicine, geography, law and its descriptions of peoples are out of date, and some of its language is "
+           "offensive today. Never take its medical, legal or safety advice. The text was read by a scanner (OCR) "
+           "without correction and has its mistakes (the long s is often read as f).")
+EB_CHUNK = 60000                 # characters of a volume per book page
+
+
+def eb_zip(work):
+    """The path of the Data Foundry's text download (downloaded into work once per job)."""
+    path = os.path.join(work, "nls", os.path.basename(NLS_EB_ZIP))
+    if not os.path.exists(path):
+        import courses                           # here, not at the top: courses imports the builder
+        courses.download(NLS_EB_ZIP, path)
+    return path
+
+
+def eb_inventory(zf):
+    """[(file name, title, edition code)] of the volumes, from the dataset's inventory CSV, in its order."""
+    import csv
+    name = next(n for n in zf.namelist() if n.endswith("inventory.csv"))
+    rows = csv.reader(zf.read(name).decode("utf-8-sig").splitlines())
+    out = []
+    for row in rows:
+        if len(row) >= 2:
+            code = (re.search(r"- (EB\.\d+)\s*$", row[1]) or re.search(r"()", "")).group(1)
+            out.append((row[0], row[1], code))
+    return out
+
+
+def eb_volume_pages(text, volume, number, unit):
+    """[B.Page] of one volume's OCR text, in pieces of about EB_CHUNK characters cut at paragraph ends, each titled
+    with the volume and the first headword in capitals it holds."""
+    paras = [" ".join(p.split()) for p in re.split(r"\n\s*\n|\n(?=[A-Z][A-Z]{2,}[ ,.])", text) if p.strip()]
+    pages, chunk, size, part = [], [], 0, 1
+
+    def flush():
+        nonlocal chunk, size, part
+        if not chunk:
+            return
+        head = next((m.group(0) for p in chunk for m in [re.match(r"[A-Z][A-Z'-]{2,}", p)] if m), "")
+        title = f"{volume}, part {part}" + (f" (from {head.title()})" if head else "")
+        pages.append(B.Page(f"v{number}-{part}", title, "".join(f"<p>{B.esc(p)}</p>" for p in chunk), number, unit))
+        chunk, size, part = [], 0, part + 1
+    for p in paras:
+        chunk.append(p)
+        size += len(p)
+        if size >= EB_CHUNK:
+            flush()
+    flush()
+    return pages
+
+
+def eb_books(piece, work, cache=None, left_out=None, limit=None):
+    """[Book] of one edition (piece "eb-1", "eb-12": the dataset's edition codes EB.1 to EB.12): every volume's
+    whole OCR text, in pages of about EB_CHUNK characters, the volumes as the parts."""
+    import zipfile
+    left_out = left_out if left_out is not None else []
+    code = "EB." + piece.split("-", 1)[1]
+    if not readable(NLS_EB_PAGE, cache) or not re.search(NLS_EB_TEXT, B.fetch(NLS_EB_PAGE, None)):
+        left_out.append({"title": f"Encyclopaedia Britannica {piece}", "reason": "The Data Foundry's page no longer "
+                         "states that the collection is free of known copyright restrictions."})
+        return []
+    zf = zipfile.ZipFile(eb_zip(work))
+    vols = [v for v in eb_inventory(zf) if v[2] == code]
+    if limit:
+        vols = vols[:1]
+    pages, years = [], []
+    for number, (fname, title, _code) in enumerate(vols, 1):
+        member = next((n for n in zf.namelist() if n.endswith("/" + fname) or n == fname), "")
+        if not member:
+            continue
+        text = zf.read(member).decode("utf-8", "replace")
+        volume = re.sub(r"^.*?\b(Volume|Supplement)\b", r"\1", title.split(" - ")[-2] if " - " in title else title)
+        years += re.findall(r"\b1[78]\d\d\b", title)
+        got = eb_volume_pages(text, volume, number, volume)
+        pages += got[:limit] if limit else got
+    if not pages:
+        left_out.append({"title": f"Encyclopaedia Britannica {piece}", "reason": "No volume of this edition is in the "
+                         "dataset."})
+        return []
+    edition = EB_EDITIONS.get(code, code)
+    book = B.Book(
+        name=f"encyclopaedia_britannica_{piece.replace('-', '_')}", title=f"Encyclopaedia Britannica, {edition} "
+        "(National Library of Scotland)", subject="Encyclopaedia (historical)", level="reference", group="history",
+        publisher="Encyclopaedia Britannica (Edinburgh, 1768-1860); digitised by the National Library of Scotland "
+                  "(Data Foundry)", country="United Kingdom", licence="Public domain (published before 1931)",
+        licence_url="https://rightsstatements.org/page/NKC/1.0/", source=NLS_EB_PAGE,
+        published=min(years) if years else "", version="Data Foundry text dataset (DOI 10.34812/cb5h-qf89)",
+        description=f"The {edition} of the Encyclopaedia Britannica, every volume's whole text as the National "
+                    f"Library of Scotland's Data Foundry gives it ({len(vols)} volumes), in pages of about ten "
+                    "thousand words, each named by its volume and its first headword.",
+        notice=EB_NOTE + " Rights: the National Library of Scotland says items up to 1853 are free of known copyright "
+                         "and in the public domain, and items from 1854 to 1860 likely to be free of known copyright "
+                         "restrictions (No Known Copyright); all were published before 1931, so they are in the US "
+                         "public domain.",
+        practice_note="Scottish source of the 18th and 19th centuries: its laws, money (pounds, shillings and "
+                      "pence), weights and measures, place names and medicine are those of Britain at the time and "
+                      "differ from present US practice.",
+        changes="each volume's OCR text cut into pages of about ten thousand words (words unchanged)")
+    book.pages = pages
+    book.originals = [{"url": NLS_EB_ZIP, "kind": "zip"}]
+    return [book]
+
+
+EB_PIECES = [f"eb-{c.split('.')[1]}" for c in EB_EDITIONS]
+PIECED_SOURCES["encyclopaedia_britannica"] = {
+    "keys": lambda: [f"dir:encyclopaedia_britannica:{p}" for p in EB_PIECES],
+    "books": eb_books, "sign": lambda piece: sha(__import__("updates").head_signs(NLS_EB_ZIP))}
+
+
+# ====================================================================== OEIS (its bulk files)
+
+OEIS = "https://oeis.org"
+OEIS_FILES = {"names": OEIS + "/names.gz", "stripped": OEIS + "/stripped.gz"}
+OEIS_LICENCE_PAGE = OEIS + "/wiki/The_OEIS_End-User_License_Agreement"
+OEIS_TEXT = r"Creative Commons Attribution Share-Alike 4\.0 license"
+OEIS_PIECE = 10000               # sequences in one book
+OEIS_PAGE = 100                  # sequences on one page
+
+
+def oeis_data(work, cache=None):
+    """{A-number: [name, terms]} from the OEIS's bulk files (names.gz and stripped.gz), read once per job."""
+    import gzip
+    if "_oeis" in globals() and _oeis:
+        return _oeis
+    out = {}
+    for kind, url in OEIS_FILES.items():
+        if not readable(url, cache):
+            raise LookupError(f"robots.txt does not allow {url}")
+        text = gzip.decompress(B.fetch(url, None, binary=True)).decode("utf-8", "replace")
+        for line in text.splitlines():
+            if not line.startswith("A"):
+                continue
+            number, _, rest = line.partition(" ")
+            row = out.setdefault(number, ["", ""])
+            row[0 if kind == "names" else 1] = rest.strip().strip(",") if kind == "stripped" else rest.strip()
+    globals()["_oeis"] = out
+    return out
+
+
+_oeis = {}
+
+
+def oeis_books(piece, work, cache=None, left_out=None, limit=None):
+    """[Book] of one block of 10,000 sequences (piece "0" is A000001 to A010000, "1" is A010001 to A020000 ...): each
+    sequence's number, name and first terms, 100 to a page."""
+    left_out = left_out if left_out is not None else []
+    if ai_refused(OEIS + "/", cache):
+        left_out.append({"title": "OEIS", "reason": "The site shuts out AI companies' readers."})
+        return []
+    if not readable(OEIS_LICENCE_PAGE, cache) or not re.search(OEIS_TEXT, B.fetch(OEIS_LICENCE_PAGE, None)):
+        left_out.append({"title": "OEIS", "reason": "Its licence page no longer states CC BY-SA 4.0."})
+        return []
+    data = oeis_data(work, cache)
+    first = int(piece) * OEIS_PIECE + 1
+    numbers = [f"A{n:06d}" for n in range(first, first + OEIS_PIECE) if f"A{n:06d}" in data]
+    if limit:
+        numbers = numbers[:limit * OEIS_PAGE]
+    pages = []
+    for i in range(0, len(numbers), OEIS_PAGE):
+        block = numbers[i:i + OEIS_PAGE]
+        items = "".join(f"<li><strong>{n}</strong>: {B.esc(data[n][0].rstrip('.'))}. Terms: "
+                        f"{B.esc(data[n][1].replace(',', ', '))}"
+                        f" (<a href=\"{OEIS}/{n}\">{OEIS}/{n}</a>)</li>" for n in block)
+        pages.append(B.Page(f"{block[0].lower()}-{block[-1].lower()}", f"{block[0]} to {block[-1]}",
+                            f"<ul>{items}</ul>", 0, f"{numbers[0]} to {numbers[-1]}"))
+    if not pages:
+        return []
+    book = B.Book(
+        name=f"oeis_{numbers[0].lower()}_{numbers[-1].lower()}", title=f"OEIS: integer sequences {numbers[0]} to "
+        f"{numbers[-1]}", subject="Mathematics (integer sequences)", level="reference", group="science",
+        publisher="The OEIS Foundation (The On-Line Encyclopedia of Integer Sequences)", country="International",
+        licence="CC BY-SA 4.0", licence_url=CC_BY_SA_4, source=OEIS + "/",
+        published=datetime.date.today().isoformat(), version=f"OEIS bulk files of {datetime.date.today().isoformat()}",
+        description=f"The On-Line Encyclopedia of Integer Sequences, sequences {numbers[0]} to {numbers[-1]}: each "
+                    "one's number, name and first terms, as the OEIS's bulk files give them (the comments, formulas "
+                    "and references are on each sequence's page at oeis.org).",
+        notice="The OEIS is made available under the Creative Commons Attribution Share-Alike 4.0 license; credit: The "
+               "On-Line Encyclopedia of Integer Sequences, published electronically at https://oeis.org.",
+        changes="the bulk files' lines made into web pages, 100 sequences to a page")
+    book.pages = pages
+    book.originals = [{"url": u, "kind": "gz"} for u in OEIS_FILES.values()]
+    return [book]
+
+
+PIECED_SOURCES["oeis"] = {"keys": lambda: [f"dir:oeis:{n}" for n in range(40)], "books": oeis_books,
+                          "sign": lambda piece: month_token()}
+
+
+# ====================================================================== buckets
+
+def bucket_of(text, n):
+    """A stable bucket number (0 to n-1) of a text."""
+    return int(hashlib.sha256(text.encode("utf-8")).hexdigest(), 16) % n
+
+
+# ====================================================================== Lumen Learning (Pressbooks' API)
+
+LUMEN = "https://courses.lumenlearning.com"
+LUMEN_BUCKETS = 8
+
+
+def lumen_catalogue(cache=None):
+    """Every Lumen Learning Pressbooks book with a CC BY or CC BY-SA licence in its metadata (the network's
+    /wp-json/pressbooks/v2/books list, 10 a page): [(address, name, licence, licence address, authors, updated)].
+    Lumen's main site asks 3 seconds between requests (lumenlearning.com/robots.txt), kept here for its courses too."""
+    B.CRAWL_DELAY["courses.lumenlearning.com"] = max(3.0, B.CRAWL_DELAY.get("courses.lumenlearning.com", 0))
+    out, page = [], 1
+    while page < 400:
+        try:
+            data = json.loads(B.fetch(f"{LUMEN}/wp-json/pressbooks/v2/books?per_page=10&page={page}", None))
+        except urllib.error.HTTPError:
+            break
+        if not data:
+            break
+        for b in data:
+            m = b.get("metadata") or {}
+            lic = m.get("license") or {}
+            short = B.licence_short(str(lic.get("name") or lic.get("code") or ""), str(lic.get("url") or ""))
+            if B.licence_kind(short) in ("open", "share-alike") and m.get("inCatalog", True) is not False:
+                authors = ", ".join(a.get("name", "") for a in m.get("author") or [] if isinstance(a, dict))
+                out.append((b.get("link", ""), m.get("name", ""), short, str(lic.get("url") or ""), authors,
+                            B.iso_date(str(m.get("lastUpdated") or ""))))
+        page += 1
+    return out
+
+
+def lumen_book(link, title, licence, licence_url, authors, updated, cache=None, left_out=None, limit=None):
+    """The Book of one Lumen course: its table of contents (Pressbooks' /wp-json/pressbooks/v2/toc) and each
+    chapter's content from /wp-json/pressbooks/v2/chapters/<id>, in order, the parts as the units."""
+    toc = json.loads(B.fetch(f"{link.rstrip('/')}/wp-json/pressbooks/v2/toc", None))
+    entries = []
+    for kind in ("front-matter", "parts", "back-matter"):
+        for item in toc.get(kind) or []:
+            if kind == "parts":
+                for ch in item.get("chapters") or []:
+                    entries.append(("chapters", ch, item.get("title", "")))
+            else:
+                entries.append((kind, item, ""))
+    pages = []
+    for kind, ch, unit in entries[:limit] if limit else entries:
+        api = f"{link.rstrip('/')}/wp-json/pressbooks/v2/{kind}/{ch.get('id')}"
+        if not readable(api, cache):
+            continue
+        try:
+            data = json.loads(B.fetch(api, cache))
+        except (urllib.error.URLError, OSError, ValueError):
+            continue
+        body = B._Cleaner({}, link).clean((data.get("content") or {}).get("rendered", ""))
+        if re.sub(r"<[^>]+>", "", body).strip():
+            pages.append(B.Page(B.slug(ch.get("slug") or ch.get("title", ""), 50) or f"p{len(pages)}",
+                                html.unescape(ch.get("title", "")), body, 0, html.unescape(unit)))
+    if not pages:
+        return None
+    book = B.Book(name=f"lumen_{B.slug(urllib.parse.urlsplit(link).path.strip('/'), 50).replace('-', '_')}",
+                  title=f"{html.unescape(title)} (Lumen Learning)", subject=html.unescape(title), level="college",
+                  group="course", publisher="Lumen Learning and the course's authors", country="United States",
+                  licence=licence, licence_url=licence_url or B._licence_address(licence), source=link,
+                  authors=authors, published=updated, version=f"Pressbooks, updated {updated}" if updated else "",
+                  description=f"{html.unescape(title)}: a Lumen Learning open course, every chapter, from Pressbooks' "
+                              "own API.", changes="each chapter made into a web page (pictures left out, their "
+                                                   "descriptions kept)")
+    book.pages = pages
+    return book
+
+
+def lumen_books(piece, work, cache=None, left_out=None, limit=None):
+    """[Book] of one bucket of Lumen Learning's CC BY and CC BY-SA courses (piece "0" to "7")."""
+    left_out = left_out if left_out is not None else []
+    if ai_refused(LUMEN + "/", cache):
+        left_out.append({"title": "Lumen Learning", "reason": "The site shuts out AI companies' readers."})
+        return []
+    out, start = [], time.monotonic()
+    for row in lumen_catalogue(cache):
+        if bucket_of(row[0], LUMEN_BUCKETS) != int(piece) or (limit and len(out) >= 1):
+            continue
+        if time.monotonic() - start > TIME_BUDGET:
+            left_out.append({"title": row[1], "reason": "The time for one build ran out; built next time."})
+            continue
+        try:
+            book = lumen_book(*row, cache=cache, left_out=left_out, limit=limit)
+        except Exception as e:  # noqa: BLE001 - one book's failure does not stop the others
+            left_out.append({"title": row[1], "reason": f"It could not be read ({e})."})
+            book = None
+        if book is not None:
+            out.append(book)
+    return out
+
+
+PIECED_SOURCES["lumen"] = {"keys": lambda: [f"dir:lumen:{n}" for n in range(LUMEN_BUCKETS)], "books": lumen_books,
+                           "sign": lambda piece: sha(sorted((r[0], r[5]) for r in lumen_catalogue()
+                                                            if bucket_of(r[0], LUMEN_BUCKETS) == int(piece)))}
+
+
+# ====================================================================== Raspberry Pi Projects (CC BY-SA 4.0)
+
+RPI_SITEMAP = "https://projects-static.raspberrypi.org/sitemaps/sitemap.xml.gz"
+RPI_RAW = "https://raw.githubusercontent.com/raspberrypilearning"
+RPI_BUCKETS = 6
+
+
+def rpi_projects(cache=None):
+    """The slugs of every English project of projects.raspberrypi.org, from its sitemap (gzipped, listed in its
+    robots.txt); each project's text is in the Raspberry Pi Foundation's public repository of the same name."""
+    import gzip
+    root = gzip.decompress(B.fetch(RPI_SITEMAP, None, binary=True)).decode("utf-8", "replace")
+    urls = re.findall(r"<loc>\s*([^<\s]+)\s*</loc>", root)
+    subs = [u for u in urls if u.endswith(".xml.gz") or u.endswith(".xml")]
+    for sub in subs[:20]:
+        data = B.fetch(sub, None, binary=True)
+        urls += re.findall(r"<loc>\s*([^<\s]+)\s*</loc>", (gzip.decompress(data) if sub.endswith(".gz") else data)
+                           .decode("utf-8", "replace"))
+    not_projects = {"projects", "codeclub", "pathways", "collections", "jam", "en"}
+    return sorted({m.group(1) for u in urls for m in [re.search(r"projects\.raspberrypi\.org/en/(?:projects/)?"
+                                                                r"([a-z0-9-]+)/?$", u)]
+                   if m and m.group(1) not in not_projects})
+
+
+def md_inline(text):
+    """Markdown inline marks as HTML: pictures as "Picture: " and their description, links, bold, italics, code;
+    kramdown attribute lists ({:target="_blank"}) left out."""
+    text = re.sub(r"\{:[^}]*\}", "", text)
+    text = re.sub(r"</?[a-zA-Z][^>]*>", "", text)           # raw HTML in the Markdown (a video player) left out
+    out = B.esc(text)
+    out = re.sub(r"!\[([^\]]*)\]\([^)]*\)", lambda m: f"(Picture: {m.group(1)})" if m.group(1).strip() else "", out)
+    out = re.sub(r"\[([^\]]+)\]\((https?://[^)\s]+)[^)]*\)", r'<a href="\2">\1</a>', out)
+    out = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", out)
+    out = re.sub(r"\*\*(.+?)\*\*|__(.+?)__", lambda m: f"<strong>{m.group(1) or m.group(2)}</strong>", out)
+    out = re.sub(r"(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?!\w)", r"<em>\1</em>", out)
+    return re.sub(r"`([^`]+)`", r"<code>\1</code>", out)
+
+
+def markdown_html(text):
+    """A Raspberry Pi project step (Markdown with the Foundation's "--- task ---", "--- collapse ---", "--- code ---"
+    and "--- hint ---" blocks) as HTML: headings, paragraphs, lists, code as preformatted text, each block said in
+    words ("Task:", "More:", "Hint:")."""
+    out, para, items, code, in_code, front = [], [], [], [], False, False
+    labels = {"task": "Task", "collapse": "More", "hint": "Hint", "hints": "Hints", "challenge": "Challenge",
+              "no-print": "", "print-only": "", "save": "Save your project"}
+
+    def flush():
+        if para:
+            out.append(f"<p>{md_inline(' '.join(para))}</p>")
+            para.clear()
+        if items:
+            out.append("<ul>" + "".join(f"<li>{md_inline(x)}</li>" for x in items) + "</ul>")
+            items.clear()
+    for line in text.replace("\r", "").split("\n"):
+        block = re.match(r"^\s*---\s*(/?)([a-z-]+)\s*---\s*$", line)
+        if in_code:
+            if line.strip().startswith("```") or (block and block.group(2) == "code" and block.group(1)):
+                out.append("<pre>" + B.esc("\n".join(code)) + "</pre>")
+                code, in_code = [], False
+            elif front:                              # the block's own settings between two "---" lines
+                if line.strip() == "---":
+                    front = 1 if front is True else False
+                elif front is True:                  # no settings: this is code already
+                    front = False
+                    code.append(line)
+            else:
+                code.append(line)
+            continue
+        if line.strip().startswith("```"):
+            flush()
+            in_code = True
+            continue
+        if block:
+            flush()
+            name = block.group(2)
+            if name == "code" and not block.group(1):
+                in_code, front = True, True
+            elif not block.group(1) and labels.get(name):
+                out.append(f"<p><strong>{labels[name]}:</strong></p>")
+            continue
+        if line.strip() == "---":                   # a block's own title lines follow ("title: ...")
+            continue
+        m = re.match(r"^\s*title:\s*(.+)$", line)
+        if m and not para:
+            out.append(f"<h3>{md_inline(m.group(1))}</h3>")
+            continue
+        h = re.match(r"^(#{1,6})\s+(.*)$", line)
+        if h:
+            flush()
+            level = min(len(h.group(1)) + 1, 6)
+            out.append(f"<h{level}>{md_inline(h.group(2))}</h{level}>")
+        elif re.match(r"^\s*([-*+]|\d+\.)\s+", line):
+            if para:
+                flush()
+            items.append(re.sub(r"^\s*([-*+]|\d+\.)\s+", "", line))
+        elif not line.strip():
+            flush()
+        else:
+            if items and line.startswith("  "):
+                items[-1] += " " + line.strip()
+            else:
+                para.append(line.strip())
+    flush()
+    return "\n".join(x for x in out if x)
+
+
+def rpi_meta(slug, cache=None):
+    """(branch, title, description, step titles) of a project from its repository's en/meta.yml ("master" or
+    "main" branch); None when it has none."""
+    for branch in ("master", "main"):
+        url = f"{RPI_RAW}/{slug}/{branch}/en/meta.yml"
+        try:
+            text = B.fetch(url, cache)
+        except (urllib.error.URLError, OSError):
+            continue
+        title = (re.search(r"^title:\s*(.+)$", text, re.M) or re.search(r"()", "")).group(1).strip().strip("'\"")
+        desc = re.search(r"^description:\s*(.+(?:\n\s{2,}.+)*)", text, re.M)
+        steps = re.findall(r"^\s*-\s*title:\s*(.+)$", text, re.M)
+        return branch, title or slug, " ".join(desc.group(1).split()).strip("'\"") if desc else "", steps
+    return None
+
+
+def rpi_books(piece, work, cache=None, left_out=None, limit=None):
+    """[Book] of one bucket of Raspberry Pi projects (piece "0" to "5"): each project's steps in order (from its
+    public repository's en/step_<n>.md), the projects as the parts; a project whose LICENCE.md does not give CC BY-SA
+    4.0 is left out."""
+    left_out = left_out if left_out is not None else []
+    if ai_refused("https://projects.raspberrypi.org/en", cache):
+        left_out.append({"title": "Raspberry Pi Projects", "reason": "The site shuts out AI companies' readers."})
+        return []
+    pages, done, closed, start = [], 0, 0, time.monotonic()
+    for slug in rpi_projects(cache):
+        if bucket_of(slug, RPI_BUCKETS) != int(piece) or (limit and done >= limit):
+            continue
+        if time.monotonic() - start > TIME_BUDGET:
+            left_out.append({"title": f"Raspberry Pi project {slug}", "reason": "The time for one build ran out."})
+            continue
+        meta = rpi_meta(slug, cache)
+        if meta is None:
+            continue
+        branch, title, desc, steps = meta
+        try:
+            licence = B.fetch(f"{RPI_RAW}/{slug}/{branch}/LICENCE.md", cache)
+        except (urllib.error.URLError, OSError):
+            licence = ""
+        if "by-sa/4.0" not in licence:
+            closed += 1
+            continue
+        for n, step in enumerate(steps, 1):
+            try:
+                text = B.fetch(f"{RPI_RAW}/{slug}/{branch}/en/step_{n}.md", cache)
+            except (urllib.error.URLError, OSError):
+                continue
+            body = (f"<p>{B.esc(desc)}</p>" if n == 1 and desc else "") + markdown_html(text)
+            pages.append(B.Page(f"{slug}-{n}", f"{title}: {step.strip().strip(chr(39) + chr(34))}", body, 0, title))
+        done += 1
+    if closed:
+        left_out.append({"title": "Raspberry Pi Projects", "reason": f"{closed} projects' repositories do not give the "
+                         "CC BY-SA 4.0 licence: left out."})
+    if not pages:
+        return []
+    book = B.Book(name=f"raspberry_pi_projects_{piece}", title=f"Raspberry Pi Projects: coding and electronics, part "
+                  f"{int(piece) + 1} of {RPI_BUCKETS}", subject="Coding and electronics projects", level="school",
+                  group="k12", publisher="Raspberry Pi Foundation", country="United Kingdom", licence="CC BY-SA 4.0",
+                  licence_url=CC_BY_SA_4, source="https://projects.raspberrypi.org/en",
+                  grades="Ages 7 to 18 (projects at every level, from first Scratch games to Python and electronics)",
+                  version=f"read {datetime.date.today().isoformat()}",
+                  description="The Raspberry Pi Foundation's step-by-step coding and electronics projects (Scratch, "
+                              "Python, HTML and CSS, physical computing, machine learning), each project's steps in "
+                              "order with its code as text; the pictures are left out (their descriptions kept).",
+                  notice="Raspberry Pi Foundation projects, licensed under the Creative Commons Attribution-ShareAlike "
+                         "4.0 International licence; each project is at https://projects.raspberrypi.org/en/projects/"
+                         "<its name>.",
+                  practice_note="UK source: spellings, school years and some hardware names follow UK use.",
+                  changes="each step's Markdown made into a web page (pictures left out, their descriptions kept)")
+    book.pages = pages
+    return [book]
+
+
+PIECED_SOURCES["raspberry_pi_projects"] = {
+    "keys": lambda: [f"dir:raspberry_pi_projects:{n}" for n in range(RPI_BUCKETS)], "books": rpi_books,
+    "sign": lambda piece: sha(sorted(s for s in rpi_projects() if bucket_of(s, RPI_BUCKETS) == int(piece)),
+                              month_token())}
+
+
+# ====================================================================== personal use only
+
+OYC = "https://oyc.yale.edu"
+OYC_TERMS = OYC + "/terms"
+OYC_TEXT = r"Creative Commons Attribution-Noncommercial-Share Alike 3\.0"
+
+
+def oyc_courses(cache=None):
+    """The course addresses of Open Yale Courses ("https://oyc.yale.edu/astronomy/astr-160"), from its course list."""
+    text = B.fetch(OYC + "/courses", None)
+    return sorted({u.rstrip("/") for u in any_links(text, OYC + "/courses")
+                   if re.match(r"^https://oyc\.yale\.edu/[a-z-]+/[a-z]+-\d+[a-z]?/?$", u)})
+
+
+def oyc_books(piece, work, cache=None, left_out=None, limit=None):
+    """[Book] of one Open Yale course (piece: its code, "astr-160"): the course page and every lecture's page with its
+    whole transcript, personal use only (CC BY-NC-SA 3.0)."""
+    left_out = left_out if left_out is not None else []
+    course = next((c for c in oyc_courses(cache) if c.endswith("/" + piece)), "")
+    if not course:
+        left_out.append({"title": f"Open Yale Courses {piece}", "reason": "The course is no longer listed."})
+        return []
+    entry = dict(US, name=f"open_yale_courses_{piece.replace('-', '_')}", title="", subject="College course "
+                 "(lecture transcripts)", group="course", level="college", country="United States",
+                 publisher="Open Yale Courses (Yale University)", licence="CC BY-NC-SA 3.0",
+                 licence_url="https://creativecommons.org/licenses/by-nc-sa/3.0/us/", source=course,
+                 licence_page=OYC_TERMS, licence_text=OYC_TEXT, personal_use=True,
+                 description="", crawl=[(course, 1)], follow=r"$^",
+                 pages=rf"^{re.escape(course)}(/(lecture|session)-\d+)?$",
+                 unit_rules=[(r"lecture|session", "Lectures"), (r".", "About the course")], limit=60,
+                 title_from=r"<h2>([A-Z]{2,6} \d+[a-z]? - (?:Lecture|Session) \d+[^<]*)</h2>")
+    text = B.fetch(course, cache)
+    entry["title"] = f"{B.first_heading(text) or piece} (Open Yale Courses)"
+    entry["description"] = (f"{entry['title']}: the course page and every lecture with its whole transcript, as Open "
+                            "Yale Courses publishes them (the videos are not included). Personal use only.")
+    entry["notice"] = ("Most of the lectures and course material within Open Yale Courses are licensed under a Creative "
+                       "Commons Attribution-Noncommercial-Share Alike 3.0 license; third-party content named in a "
+                       "lecture's credits is not covered.")
+    book = guide_book(entry, cache, left_out, limit)
+    return [book] if book is not None else []
+
+
+PERSONAL_BOOKS["open_yale_courses"] = {
+    "keys": lambda: [f"dir:open_yale_courses:{c.rsplit('/', 1)[-1]}" for c in oyc_courses()],
+    "books": oyc_books, "sign": lambda key: month_token()}
+
+# The 80 repositories the inventory marked "personal use only", each with what was done: (name, the inventory's
+# section, what was done: a build key, or the reason it is not built).
+PERSONAL = [
+    ("Irish Health Publications Archive (hselibrary.ie)", "OpenDOAR", "Not built: no feed or API; its publications "
+     "are deposited in Lenus (below)."),
+    ("Bookshare", "OpenDOAR", "Not built: membership only (the owner's own account); never redistributable. See "
+     "OWNER_NOTES."),
+    ("Exploratorium Digital Library", "OpenDOAR", "Not built: www.exploratorium.edu answers programs with 403 "
+     "(robots.txt included)."),
+    ("Werner Icking Music Archive", "OpenDOAR", "Not built: sheet music as pictures (PDF scans), no text; for braille "
+     "music transcription the owner opens it in a browser."),
+    ("A Celebration of Women Writers (University of Pennsylvania)", "OpenDOAR", "Not built: its pages say only "
+     "\"Copyright 1994-2026\" with no licence; most of its works are in Project Gutenberg and Wikisource (Kiwix)."),
+    ("Biblioteca Virtual Miguel de Cervantes", "OpenDOAR", "Not built: Spanish literature under the site's own terms, "
+     "which limit reuse."),
+    ("First World War Poetry Digital Archive (Oxford)", "OpenDOAR", "Not built: images and catalogue records; the "
+     "poems' texts are in Project Gutenberg and Wikisource (Kiwix)."),
+    ("Historic American Sheet Music (Duke)", "OpenDOAR", "Not built: sheet music as pictures, no text."),
+    ("Lenus, The Irish Health Repository", "OpenDOAR", "Not built yet: its DSpace OAI-PMH records give no file "
+     "addresses (Crawl-delay 10); a reader of its REST API would be needed."),
+    ("Papers Past (New Zealand)", "OpenDOAR", "Not built: its robots.txt address answers with a bot-check page."),
+    ("Policy Archive", "OpenDOAR", "Not built: its robots.txt disallows every PDF (\"Disallow: /*.pdf\") and the "
+     "bitstreams."),
+    ("Riberdis (Spain)", "OpenDOAR", "Not built: Spanish-language documents, copyright per item."),
+    ("Applied Math and Science Education Repository (AMSER)", "ROAR", "Not built: a list of links to other sites "
+     "(a referatory), no texts of its own."),
+    ("ATE Central", "ROAR", "Not built: a referatory of technician-education materials, licence per item."),
+    ("Exploratorium Digital Library", "ROAR", "Not built: 403 (as above)."),
+    ("Digital Collections, National Library of Medicine", "ROAR", "Not built: collections.nlm.nih.gov's robots.txt "
+     "shuts out anthropic-ai and GPTBot (\"Disallow: /\")."),
+    ("Oxford Text Archive", "re3data", "Not built: access restricted per item (many need registration and a signed "
+     "agreement)."),
+    ("International Music Score Library Project (IMSLP)", "re3data", "Not built: scores as pictures, no text (for "
+     "braille music transcription, opened in a browser)."),
+    ("NIST Digital Library of Mathematical Functions", "re3data", "Not built: its notice says \"Bulk copying, "
+     "reproduction, or redistribution in any form is not permitted\" (dlmf.nist.gov/about/notices)."),
+    ("Agrega 2 (Spain)", "OER World Map", "Not built: Spanish."),
+    ("Applied Math and Science Education Repository", "OER World Map", "Not built: referatory (as above)."),
+    ("Bundeszentrale für politische Bildung: Lernen", "OER World Map", "Not built: German."),
+    ("Curriki", "OER World Map", "Not built: mostly non-commercial items on a site with no feed or API."),
+    ("e-genius (Austria)", "OER World Map", "Not built: German."),
+    ("eBook-Lessons (Austria)", "OER World Map", "Not built: German."),
+    ("eCampusOntario Open Library", "OER World Map", "Not built yet: a catalogue of Pressbooks books on many hosts, "
+     "licence per book; the reader of Lumen's Pressbooks API could be pointed at them later."),
+    ("EDUCARE (Brazil)", "OER World Map", "Not built: Portuguese."),
+    ("EmRede (Brazil)", "OER World Map", "Not built: Portuguese."),
+    ("HELM Open (University of Nottingham)", "OER World Map", "Not built: interactive learning objects (animations), "
+     "little text."),
+    ("Instructables", "OER World Map", "Not built: its robots.txt disallows /howto/ and every .html page, and each "
+     "project is its author's copyright."),
+    ("IntechOpen", "OER World Map", "Not built: its robots.txt has a group for ClaudeBot, GPTBot and CCBot; books are "
+     "reached through DOAB, which is blocked."),
+    ("Intellectum (Colombia)", "OER World Map", "Not built: Spanish."),
+    ("Kidsome", "OER World Map", "Not built: CC BY-NC-ND children's videos and games; no feed."),
+    ("Kita Fachtexte (Germany)", "OER World Map", "Not built: German."),
+    ("La Trobe eBureau", "OER World Map", "Not built yet: Pressbooks textbooks, licence per book; could use the "
+     "Pressbooks reader later."),
+    ("Library of Open Educational Resources (aoe.fi)", "OER World Map", "Not built: Finnish."),
+    ("METU OpenCourseWare", "OER World Map", "Not built: course pages, mostly slides; host not checked further."),
+    ("Netaji Subhas Open University OER Repository", "OER World Map", "Not built: DSpace of study materials; host "
+     "not checked further."),
+    ("Open Institutional Repository, Autonomous University of the State of Hidalgo", "OER World Map", "Not built: "
+     "Spanish."),
+    ("Open Oregon State", "OER World Map", "Not built: open.oregonstate.education answers programs with 403."),
+    ("Open Yale Courses", "OER World Map", "Built: dir:open_yale_courses:<course> (every course, each lecture's "
+     "transcript; CC BY-NC-SA 3.0, personal use only)."),
+    ("Open.Ed (University of Edinburgh)", "OER World Map", "Not built: a guide to Edinburgh's open materials on other "
+     "sites."),
+    ("OpenCourseWare Universidad Carlos III de Madrid", "OER World Map", "Not built: Spanish."),
+    ("OpenMichigan: Deep Blue", "OER World Map", "Not built: the host did not answer (inventory)."),
+    ("PDXOPEN (Portland State)", "OER World Map", "Not built: bepress Digital Commons, whose PDFs answer programs "
+     "with a bot check (as RIT's and GALILEO's do)."),
+    ("Proedu (Brazil)", "OER World Map", "Not built: Portuguese."),
+    ("SaberULA (Venezuela)", "OER World Map", "Not built: Spanish."),
+    ("Saskatchewan Open Education Resources", "OER World Map", "Not built: saskoer.ca now answers with a parked "
+     "page."),
+    ("Saving Planets", "OER World Map", "Not built: a small site with no feed."),
+    ("Spoken Tutorial", "OER World Map", "Not built: video tutorials."),
+    ("Teachers Without Borders", "OER World Map", "Not built: no feed or API."),
+    ("TeachingOERmath.info", "OER World Map", "Not built: a small site with no feed."),
+    ("UFPA Multimidia (Brazil)", "OER World Map", "Not built: Portuguese."),
+    ("University of Tripoli Digital Repository", "OER World Map", "Not built: Arabic research outputs."),
+    ("VideoLectures.NET", "OER World Map", "Not built: videos (CC BY-NC-ND)."),
+    ("Wawasan Open University OER Repository", "OER World Map", "Not built: a WEKO repository with no feed that "
+     "answered."),
+    ("Youth Start (Austria)", "OER World Map", "Not built: German."),
+    ("Disability Studies Quarterly", "DOAJ", "Built: pub:dsq:<year> (Janeway OAI-PMH; CC BY-NC-ND 4.0, each article "
+     "whole and unchanged)."),
+    ("Journal of Accessibility and Design for All", "DOAJ", "Built: pub:jacces:<year> (OJS OAI-PMH; CC BY-NC 4.0)."),
+    ("Canadian Journal of Disability Studies", "DOAJ", "Built: pub:cjds:<year> (OJS OAI-PMH; CC BY-NC-ND 4.0, whole "
+     "and unchanged)."),
+    ("Developmental Disabilities Network Journal", "DOAJ", "Not built: its bepress PDFs answer programs with a bot "
+     "check (403), although its OAI-PMH feed answers."),
+    ("Disability, CBR and Inclusive Development", "DOAJ", "Built: pub:dcidj:<year> (OJS OAI-PMH; CC BY-NC-ND 4.0, "
+     "whole and unchanged)."),
+    ("Indian Journal of Ophthalmology", "DOAJ", "Built: pub:jnl_indian_journal_ophthalmology:<piece> (Europe PMC; "
+     "CC BY-NC-SA)."),
+    ("NLM Digital Collections", "US agencies", "Not built: AI-reader block (as above)."),
+    ("Catalog of US Government Publications (GPO)", "data.gov", "Not built: a finding list of records, not texts "
+     "(catalog.gpo.gov answers 403); its booklets are reached through govinfo and the Internet Archive collections."),
+    ("NIST Digital Library of Mathematical Functions", "data.gov", "Not built: no bulk copying (as above)."),
+    ("National Sexual Violence Resource Center", "data.gov", "Not built: its robots.txt says ai-train=no and shuts "
+     "out ClaudeBot and anthropic-ai."),
+    ("Internet Archive: Community Texts", "Internet Archive", "Built: pub:ia_opensource:<subject> (items with a "
+     "Creative Commons or public-domain licence address only)."),
+    ("Internet Archive: Canadian Government Publications Portal", "Internet Archive", "Built: "
+     "pub:ia_governmentpublications:<subject> (Crown copyright, non-commercial reproduction)."),
+    ("Internet Archive: Government Documents (Worldwide)", "Internet Archive", "Not built as one source: 18 million "
+     "items of every country and licence; its US and Canadian parts are built (FEDLINK, US Government Documents, the "
+     "Canadian portal)."),
+    ("Internet Archive: Books for People with Print Disabilities", "Internet Archive", "Not built: needs the owner's "
+     "own qualifying account. See OWNER_NOTES."),
+    ("Internet Archive: Texts to Borrow", "Internet Archive", "Not built: controlled lending only; no program may "
+     "download them."),
+    ("Internet Archive Books", "Internet Archive", "Built: pub:ia_internetarchivebooks:<subject> (items before 1931 "
+     "only)."),
+    ("Internet Archive: Medical Heritage Library", "Internet Archive", "Built: pub:ia_medicalheritagelibrary:<subject> "
+     "(before 1931; history only)."),
+    ("Internet Archive: JSTOR Early Journal Content", "Internet Archive", "Built: pub:ia_jstor_ejc:<subject>."),
+    ("Internet Archive: Periodicals", "Internet Archive", "Built: pub:ia_periodicals:<subject> (before 1931)."),
+    ("Internet Archive: The Magazine Rack", "Internet Archive", "Not built: magazines, mostly in copyright; its few "
+     "open items are in Community Texts and Folkscanomy."),
+    ("Internet Archive: Folkscanomy", "Internet Archive", "Built: pub:ia_folkscanomy:<subject> (open licence "
+     "address only)."),
+    ("Internet Archive: University of Toronto Government Publications", "Internet Archive", "Built: "
+     "pub:ia_uoftgovpubs:<subject> (Crown copyright, non-commercial reproduction)."),
+    ("Internet Archive: Wellcome Library", "Internet Archive", "Built: pub:ia_wellcomelibrary:<subject> (before "
+     "1931)."),
+]
+
+# What only the owner can do (not built here).
+OWNER_NOTES = [
+    ("Internet Archive: Books for People with Print Disabilities (item 2 of the ranked list)", "5.47 million "
+     "in-copyright books, open only to qualified print-disabled readers through the Archive's accessible-books "
+     "programme. The owner qualifies: sign in at archive.org with the owner's own account after qualifying (through "
+     "a certifying authority or the Archive's print-disability programme), then borrow or download the DAISY or EPUB "
+     "files for personal reading. Never redistributed, so nothing is built here."),
+    ("Bookshare", "Accessible books (DAISY, BRF, EPUB) for people with a print disability, with the owner's own "
+     "membership; never redistributable, so nothing is built here."),
+]
+
+PIECED = PIECED_SOURCES
 
 
 # ====================================================================== what was checked, and what was not built
@@ -579,6 +1472,19 @@ NOT_INCLUDED = [
      "(the page's own text is not in what the server sends: \"Rental Assistance\" holds 780 characters of menus), and "
      "it has no sitemap (404) or API; checked 2026-11-21. Fair housing law is in the library as the Fair Housing Act "
      "and 24 CFR part 100 (law: keys)."),
+    ("GALILEO Open Learning Materials (oer.galileo.usg.edu)", "Its OAI-PMH feed answers and lists the CC BY and CC "
+     "BY-SA textbooks, but every PDF answers programs with Cloudflare's bot check (403 \"Just a moment...\"), "
+     "although robots.txt allows them (checked 2026-11-21): not built."),
+    ("Sickle Cell Open Education (sicklecellanaemia.org)", "The domain is now parked and for sale (checked "
+     "2026-11-21); the material is gone."),
+    ("NTRL, the National Technical Reports Library (ntrl.ntis.gov)", "No robots.txt (allowed), but its search is a "
+     "script application with no documented API or bulk download, and its PDFs are reached only through that "
+     "search; not built. Agency reports are reached through govinfo and the Internet Archive's FEDLINK collection."),
+    ("Global Digital Library website (digitallibrary.io)", "Its own site answers robots.txt with a web page; its "
+     "books are built from its Kolibri Studio channel instead (dir:gdl)."),
+    ("StoryWeaver website (storyweaver.org.in)", "A script application behind Cloudflare with no documented API; its "
+     "stories are built from Pratham Books' StoryWeaver channel on Kolibri Studio instead (dir:storyweaver; the "
+     "channel was last published in 2018)."),
     ("Energy Saver's home guides (heating and cooling, insulation, appliances)", "Removed from energy.gov in its "
      "redesign: its sitemap (99,494 addresses, read 2026-11-21) keeps only 39 Energy Saver articles, which are built "
      "(dir:energy_saver_articles)."),

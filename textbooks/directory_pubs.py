@@ -31,9 +31,8 @@ asks for their default pieces, and ALL_PIECES lists every piece back to the begi
   1931), Community Texts and Folkscanomy (items with an open licence address), the Canadian Government Publications
   Portal and the University of Toronto's government publications (Crown copyright: personal use).
   Personal use only, from the journals' own OAI-PMH feeds: Disability Studies Quarterly, the Canadian Journal of
-  Disability Studies and Disability, CBR and Inclusive Development (CC BY-NC-ND: each article whole and unchanged),
-  the Journal of Accessibility and Design for All (CC BY-NC) and the Developmental Disabilities Network Journal (CC
-  BY-NC-SA).
+  Disability Studies and Disability, CBR and Inclusive Development (CC BY-NC-ND: each article whole and unchanged)
+  and the Journal of Accessibility and Design for All (CC BY-NC).
 
 Every request obeys the host's robots.txt (and its Crawl-delay) through build_textbooks.allowed_by_robots, and a
 host whose robots.txt shuts out AI companies' readers or says ai-train=no is not read (directory_sources.ai_refused).
@@ -380,6 +379,93 @@ def jsesd_items(spec, piece, cache, left_out, today):
     return out
 
 
+# ====================================================================== personal-use journals (Janeway and OJS)
+
+def janeway_items(spec, piece, cache, left_out, today):
+    """The articles of a Janeway journal (Disability Studies Quarterly) published in one year: each record of its
+    OAI-PMH feed (/api/oai/) gives the article's number and licence (dc:rights); the article page's own full text
+    (its articleBody) is kept whole and unchanged (a NoDerivatives licence: converted only)."""
+    base = spec["site"].rstrip("/")
+    out, closed, failed = [], 0, 0
+    for rec in oai_records(f"{base}/api/oai/", {"metadataPrefix": "oai_dc"}, cache):
+        if len(out) >= spec.get("limit", P.MAX_ITEMS):
+            break
+        meta = rec["meta"]
+        date = B.iso_date((meta.get("date") or [rec["datestamp"]])[0])
+        if not date.startswith(piece):
+            continue
+        licence, licence_url = oai_licence(meta)
+        if not B.licence_kind(licence, True):
+            closed += 1
+            continue
+        number = rec["identifier"].rsplit(":", 1)[-1]
+        url = f"{base}/article/id/{number}/"
+        if not B.allowed_by_robots(url, cache):
+            continue
+        try:
+            text = B.fetch(url, cache)
+        except (urllib.error.URLError, OSError):
+            failed += 1
+            continue
+        body = P.div_inner(text, r'<div itemprop="articleBody"[^>]*>')
+        if not body.strip():
+            failed += 1
+            continue
+        out.append(P.item(url, (meta.get("title") or [url])[0], date, P.clean(body, url, whole=True),
+                          P.month_unit(date), byline="; ".join(meta.get("creator", [])), licence=licence,
+                          licence_url=licence_url))
+    if closed or failed:
+        left_out.append({"title": f"{spec['series_title']}, {piece}", "reason": f"{closed} articles have another "
+                         f"licence; {failed} could not be read."})
+    out.sort(key=lambda i: i["date"], reverse=True)
+    return out
+
+
+def ojs_items(spec, piece, cache, left_out, today):
+    """The articles of an Open Journal Systems journal published in one year: its OAI-PMH feed (spec["oai"]) gives
+    each article's page and licence; the article page links its PDF galley (/article/view/<id>/<galley>), read from
+    /article/download/<id>/<galley> and kept whole (a NoDerivatives licence is converted only)."""
+    out, closed, failed = [], 0, 0
+    for rec in oai_records(spec["oai"], {"metadataPrefix": "oai_dc"}, cache):
+        if len(out) >= spec.get("limit", P.MAX_ITEMS):
+            break
+        meta = rec["meta"]
+        date = B.iso_date((meta.get("date") or [rec["datestamp"]])[0])
+        if not date.startswith(piece):
+            continue
+        licence, licence_url = oai_licence(meta)
+        if not licence:
+            licence, licence_url = spec["licence"], spec["licence_url"]
+        if not B.licence_kind(licence, True):
+            closed += 1
+            continue
+        page = next((u for u in meta.get("identifier", []) if "/article/view/" in u), "")
+        if not page or not B.allowed_by_robots(page, cache):
+            failed += 1
+            continue
+        try:
+            text = B.fetch(page, cache)
+        except (urllib.error.URLError, OSError):
+            failed += 1
+            continue
+        m = re.search(r'href="([^"]*/article/view/\d+/\d+)"[^>]*class="[^"]*(?:obj_galley_link|galley-link)[^"]*pdf',
+                      text) or re.search(r'href="([^"]*/article/view/\d+/\d+)"', text)
+        if not m:
+            failed += 1
+            continue
+        pdf = urllib.parse.urljoin(page, m.group(1)).replace("/article/view/", "/article/download/")
+        body, _n = PM.pdf_item_body(pdf, cache, left_out, (meta.get("title") or [page])[0])
+        if not body:
+            continue
+        out.append(P.item(page, (meta.get("title") or [page])[0], date, body, P.month_unit(date),
+                          byline="; ".join(meta.get("creator", [])), licence=licence, licence_url=licence_url))
+    if closed or failed:
+        left_out.append({"title": f"{spec['series_title']}, {piece}", "reason": f"{closed} articles have another "
+                         f"licence; {failed} could not be read."})
+    out.sort(key=lambda i: i["date"], reverse=True)
+    return out
+
+
 # ====================================================================== GovInfo: the Federal Register (bulk data)
 
 FR_HEADINGS = {"HED": 2, "HD1": 3, "HD2": 4, "HD3": 5, "HD4": 6, "HD5": 6, "HD6": 6}
@@ -632,7 +718,7 @@ def template_args(inner):
 
 def wiki_inline(text):
     """Wikitext inline markup as HTML: links as their words, bold and italics, external links as their words."""
-    text = B.esc(text)
+    text = html.escape(text or "", quote=False)
     text = re.sub(r"\[\[(?:[^|\]]*\|)?([^\]]*)\]\]", r"\1", text)
     text = re.sub(r"\[(https?://[^\s\]]+)\s+([^\]]+)\]", r"\2", text)
     text = re.sub(r"\[(https?://[^\s\]]+)\]", r"\1", text)
@@ -1069,15 +1155,52 @@ SOURCES.update({
         pieces=lambda today: _years_back(2013, today)[:2], piece_rule=r"^20\d\d$"),
 })
 SOURCES.update({f"ia_{c.lower().replace('-', '_')}": ia_spec(c) for c in IA_COLLECTIONS})
+
+
+def _personal_journal(name, title, driver, licence, first, subject, country, publisher, source, **more):
+    """A personal-use journal's SOURCES entry (pieces by year)."""
+    whole = "ND" in licence
+    return _spec(group="journals", driver=driver, series_title=title, subject=subject, country=country,
+                 publisher=publisher, licence=licence, licence_url=B._licence_address(licence), source=source,
+                 personal_use=True, unchanged=whole, first_year=first,
+                 description=f"Every article of {title} published in one year, under its own licence ({licence}"
+                             + (": each article whole and unchanged, only converted" if whole else "") +
+                             "). Personal use only.",
+                 changes="each article converted to a web page" + (" (its text unchanged)" if whole else
+                                                                    " (pictures left out)"),
+                 pieces=lambda today, f=first: _years_back(max(f, _this_year(today) - 1), today),
+                 piece_rule=r"^(19|20)\d\d$", **more)
+
+
+SOURCES.update({
+    "dsq": _personal_journal("dsq", "Disability Studies Quarterly", "dir_janeway", "CC BY-NC-ND 4.0", 1980,
+                             "Disability studies", "United States", "The Ohio State University Libraries and the "
+                             "articles' authors", "https://dsq-sds.org/", site="https://dsq-sds.org/"),
+    "jacces": _personal_journal("jacces", "Journal of Accessibility and Design for All", "dir_ojs", "CC BY-NC 4.0",
+                                2011, "Accessibility and universal design", "Spain", "Universitat Politècnica de "
+                                "Catalunya and the articles' authors", "https://www.jacces.org/",
+                                oai="https://www.jacces.org/index.php/jacces/oai"),
+    "cjds": _personal_journal("cjds", "Canadian Journal of Disability Studies", "dir_ojs", "CC BY-NC-ND 4.0", 2012,
+                              "Disability studies", "Canada", "Canadian Disability Studies Association and the "
+                              "articles' authors", "https://cjds.uwaterloo.ca/",
+                              oai="https://cjds.uwaterloo.ca/index.php/cjds/oai"),
+    "dcidj": _personal_journal("dcidj", "Disability, CBR and Inclusive Development", "dir_ojs", "CC BY-NC-ND 4.0",
+                               2012, "Community-based rehabilitation and inclusive development", "International",
+                               "University of Gondar and the articles' authors", "https://dcidj.uog.edu.et/",
+                               oai="https://dcidj.uog.edu.et/index.php/up-j-dcbrid/oai"),
+})
 for _name, _spec_ in SOURCES.items():
     _spec_["name"] = _name
 
 DRIVERS = {"dir_epmc_journal": epmc_journal_items, "dir_bepress": bepress_items, "dir_jsesd": jsesd_items,
+           "dir_janeway": janeway_items, "dir_ojs": ojs_items,
            "dir_fr": fr_items,
            "dir_crec": crec_items, "dir_chrg": chrg_items, "dir_wikinews": wikinews_items, "dir_fym": fym_items,
            "dir_ia": ia_items}
 
 ALL_PIECES = {f"jnl_{name}": (lambda t, n=name: journal_pieces(n, t)) for name in JOURNALS}
+ALL_PIECES.update({name: (lambda t, f=SOURCES[name]["first_year"]: _years_back(f, t))
+                   for name in ("dsq", "jacces", "cjds", "dcidj")})
 ALL_PIECES.update({
     "jsesd": lambda t: ["all"],
     "federal_register_rules": lambda t: _months_back(2000, t),
@@ -1106,6 +1229,7 @@ def _closed_sign(spec, piece):
 
 
 EXTRA_SIGNS = {"dir_epmc_journal": _month_sign, "dir_bepress": _month_sign, "dir_jsesd": _month_sign,
+               "dir_janeway": _month_sign, "dir_ojs": _month_sign,
                "dir_fr": _closed_sign,
                "dir_crec": _closed_sign, "dir_chrg": _closed_sign, "dir_wikinews": lambda s, p: "closed",
                "dir_fym": _month_sign, "dir_ia": _month_sign}
@@ -1169,6 +1293,8 @@ NOT_INCLUDED = [
     ("Social Inclusion (Cogitatio Press)", "CC BY; Europe PMC holds none of its articles in full text (ISSN "
      "2183-2803) and Cogitatio's site gives no OAI-PMH feed that answered on 2026-11-21; not built yet."),
     ("Scandinavian Journal of Disability Research", "CC BY, but sjdr.se's robots.txt disallows the site."),
+    ("Developmental Disabilities Network Journal (personal use only)", "CC BY-NC-SA; its OAI-PMH feed answers, but "
+     "its PDFs (digitalcommons.usu.edu) answer programs with a bot check (403), as RIT's and GALILEO's do."),
     ("Federal Register notices and proposed rules", "Only the final rules are built (the inventory asked for new "
                                                      "rules); notices number tens of thousands a year."),
 ]
