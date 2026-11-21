@@ -179,6 +179,9 @@ def fingerprint(key):
             return law_sign(next(e for e in sources.LAWS + sources.LAWS_MORE if e["name"] == name))
         if kind == "pub":
             return pub_sign(key)
+        if kind == "cook":
+            import cookbooks                     # here, not at the top: cookbooks imports the builder
+            return cookbooks.sign(key)
         if kind == "med":
             import medications                   # here, not at the top: medications imports the builder
             return medications.sign(key)

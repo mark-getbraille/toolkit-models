@@ -531,6 +531,8 @@ GROUPS = {
     # School books, kindergarten to grade 12 (the owner's request of 2026-11-21): K12_GUIDES, the K-12 PDFs, Siyavula,
     # OpenStax's high school books and the K-12 courses of courses.py.
     "k12": "School books (K-12)",
+    # Cookbooks and recipes (cookbooks.py; keys cookbooks, cook:...), the owner's request of 2026-11-21.
+    "cookbooks": "Reference, cookbooks and recipes",
 }
 
 # W3C WAI documents under the W3C Document License, kept whole and unchanged (WHOLE_AND_UNCHANGED). Checked by hand
@@ -1061,6 +1063,9 @@ def expand_keys(words):
         elif w == "medicines" or w.startswith("med:"):
             import medications                    # here, not at the top: medications imports the builder
             keys += medications.expand_keys([w])
+        elif w == "cookbooks" or w.startswith("cook:"):
+            import cookbooks                      # here, not at the top: cookbooks imports the builder
+            keys += cookbooks.expand_keys([w])
         elif w == "publications" or w.startswith("pub:"):
             import periodicals                    # here, not at the top: periodicals imports the builder
             keys += periodicals.expand_keys(["pub:all" if w == "publications" else w])
