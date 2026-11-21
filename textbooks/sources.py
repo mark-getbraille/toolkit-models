@@ -1103,3 +1103,142 @@ REFERENCE_NOT_INCLUDED = [
      "indiacode.nic.in did not answer in time."),
 ]
 NOT_INCLUDED = NOT_INCLUDED + REFERENCE_NOT_INCLUDED
+
+# ====================================================================== North American animals (added 2026-11-21)
+# Reference works on the wild and domestic animals of the United States and Canada, for the Assistant (group
+# "science"). Checked by hand on 2026-11-21; the licence line is checked again at every build.
+#
+# NOAA Fisheries' species directory: www.fisheries.noaa.gov/disclaimer, "Copyright Policy: Information created by
+# the U.S. government and presented on U.S. government websites is not subject to copyright in the United States."
+# (It also asks for the credit "Courtesy: National Oceanic and Atmospheric Administration", given in the notice, and
+# says it marks text and pictures of others: only the text is kept, and a picture only as its description.) Its
+# robots.txt allows /species/; its sitemap lists 309 species profiles.
+LICENCE_LINES["noaa_fisheries"] = ("www.fisheries.noaa.gov/disclaimer: \"Information created by the U.S. government and "
+                                   "presented on U.S. government websites is not subject to copyright in the United "
+                                   "States.\"")
+GOV_GUIDES += [
+    dict(name="noaa_fisheries_species_directory", title="NOAA Fisheries species directory: whales, dolphins, seals, "
+         "sea turtles, fish and shellfish of US waters", subject="Animals (marine)", group="science",
+         publisher="NOAA Fisheries (National Marine Fisheries Service)", country="United States", licence=US_GOV,
+         licence_url=US_GOV_URL, source="https://www.fisheries.noaa.gov/species-directory",
+         description="NOAA Fisheries' profile of each marine species it manages or protects: what it looks like, "
+                     "where it lives, what it eats, its life history, threats, its status under the Endangered "
+                     "Species Act and the Marine Mammal Protection Act, and how it is fished or protected. Marine "
+                     "mammals, sea turtles, sharks and rays, fish, corals, shellfish and other invertebrates.",
+         notice="Courtesy: National Oceanic and Atmospheric Administration (NOAA Fisheries).",
+         licence_page="https://www.fisheries.noaa.gov/disclaimer",
+         licence_text=r"Information created by the U\.S\. government and presented on U\.S\. government websites is "
+                      r"not subject to copyright",
+         page_mark="", start=[], units="", pages=r"^https://www\.fisheries\.noaa\.gov/species/[a-z0-9-]+$",
+         sitemap="https://www.fisheries.noaa.gov/sitemap.xml",
+         unit_rules=[(r"whale|dolphin|porpoise|seal|sea-lion|otter|manatee|walrus|orca|narwhal|beluga|dugong",
+                      "Marine mammals"),
+                     (r"turtle", "Sea turtles"), (r"coral", "Corals"),
+                     (r"shark|-ray$|stingray|skate|sawfish|manta", "Sharks and rays"),
+                     (r"crab|lobster|shrimp|abalone|clam|oyster|scallop|squid|octopus|conch|urchin|sea-cucumber|"
+                      r"mussel|geoduck|snail", "Shellfish and other invertebrates"),
+                     (r".", "Fish")],
+         content=(r"<main\b[^>]*>", r"</main>"),
+         drop=[r"<nav\b.*?</nav>", r"<figure\b.*?</figure>",
+               r'<div class="[^"]*(?:teaser|related|promo|card-list|feature-story)[^"]*".*?</div>\s*</div>'],
+         changes="made into web pages with the site's menus, related stories and pictures left out (only NOAA's own "
+                 "text is kept)", limit=320),
+]
+
+# Old field guides and natural histories of North American animals, in the US public domain (published before 1931,
+# more than 95 years ago), from the Internet Archive's scans with their machine-read text. The builder checks the
+# item's publication year at every build (build_textbooks.archive_year). They are OLD: names, ranges, numbers and
+# advice are out of date (some species have been renamed, some are now rare or extinct, and they come from before
+# modern conservation and animal welfare), and the machine-read text has the scanner's mistakes. Each description
+# says so.
+OLD_PD = dict(group="science", country="United States", licence="Public domain (published before 1931)",
+              licence_url="https://www.copyright.gov/help/faq/faq-duration.html", old_public_domain=True,
+              changes="its scanned pages' machine-read text (with the scanner's mistakes) made into web pages, ten "
+                      "pages at a time or one per chapter")
+OLD_NOTE = (" Published in {year}: an old book whose names, ranges and advice are out of date, kept for its "
+            "descriptions of the animals.")
+PDF_DOCS += [
+    dict(OLD_PD, name="reed_bird_guide_land_birds_1909", title="Bird Guide: Land Birds East of the Rockies (Chester A. "
+         "Reed, 1909)", subject="Birds", publisher="Chester A. Reed (Doubleday, Page and Company)",
+         archive="birdguidelandbir00reedrich", published="1909",
+         description="A pocket field guide to the land birds of eastern North America, from parrots to bluebirds: "
+                     "each bird's size, colours and markings, song, nest and eggs, and range." + OLD_NOTE.format(
+                         year=1909)),
+    dict(OLD_PD, name="chapman_handbook_birds_eastern_na_1895", title="Handbook of Birds of Eastern North America "
+         "(Frank M. Chapman, 1895)", subject="Birds", publisher="Frank M. Chapman (D. Appleton and Company)",
+         archive="handbookofbirdso00chaprich", published="1895",
+         description="The American Museum of Natural History ornithologist's handbook of the birds of eastern North "
+                     "America, with keys to the species, descriptions of plumage, nests, eggs, songs and ranges." +
+                     OLD_NOTE.format(year=1895)),
+    dict(OLD_PD, name="anthony_field_book_na_mammals_1928", title="Field Book of North American Mammals (H. E. "
+         "Anthony, 1928)", subject="Mammals", publisher="H. E. Anthony (G. P. Putnam's Sons)",
+         archive="fieldbookofnorth00anth", published="1928",
+         description="A field book describing every mammal then known north of Mexico: size, colour, signs, habits "
+                     "and range." + OLD_NOTE.format(year=1928)),
+    dict(OLD_PD, name="ditmars_reptile_book_1907", title="The Reptile Book (Raymond L. Ditmars, 1907)",
+         subject="Reptiles", publisher="Raymond L. Ditmars (Doubleday, Page and Company)",
+         archive="reptilebookcom00ditm", published="1907",
+         description="The Bronx Zoo curator's book of the turtles, crocodilians, lizards and snakes of the United "
+                     "States and northern Mexico, with how to tell the venomous snakes." + OLD_NOTE.format(year=1907)),
+    dict(OLD_PD, name="dickerson_frog_book_1906", title="The Frog Book: North American Toads and Frogs (Mary C. "
+         "Dickerson, 1906)", subject="Amphibians", publisher="Mary C. Dickerson (Doubleday, Page and Company)",
+         archive="frogbooknorthame00dick2", published="1906",
+         description="A study of the toads and frogs of North America: how to recognise each, their calls, eggs and "
+                     "tadpoles, and their habits." + OLD_NOTE.format(year=1906)),
+    dict(OLD_PD, name="holland_butterfly_book_1902", title="The Butterfly Book (W. J. Holland, 1902)",
+         subject="Insects (butterflies)", publisher="W. J. Holland (Doubleday, Page and Company)",
+         archive="butterflybookpop00holluoft", published="1902",
+         description="A popular guide to the butterflies of North America: how to recognise each, its caterpillar "
+                     "and food plants, and how butterflies live." + OLD_NOTE.format(year=1902)),
+    dict(OLD_PD, name="jordan_evermann_food_game_fishes_1902", title="American Food and Game Fishes (David Starr "
+         "Jordan and Barton Warren Evermann, 1902)", subject="Fish",
+         publisher="David Starr Jordan and Barton Warren Evermann (Doubleday, Page and Company)",
+         archive="americanfoodgame1902jord", published="1902",
+         description="A popular account of the food and game fishes of North American waters, fresh and salt: how "
+                     "to recognise each, where it lives and its habits." + OLD_NOTE.format(year=1902)),
+    dict(OLD_PD, name="hornaday_american_natural_history_1904", title="The American Natural History (William T. "
+         "Hornaday, 1904)", subject="Animals", publisher="William T. Hornaday (Charles Scribner's Sons)",
+         archive="americannaturalh00horn", published="1904",
+         description="The New York Zoological Park director's natural history of the animals of North America and "
+                     "the world: mammals, birds, reptiles, amphibians and fishes." + OLD_NOTE.format(year=1904)),
+]
+
+# Looked at for North American animals on 2026-11-21 and not built, with the reason.
+ANIMALS_NOT_INCLUDED = [
+    ("US Fish and Wildlife Service species profiles (fws.gov/species)", "Public domain (US government), and robots.txt "
+     "allows them, but the site has no sitemap of its species pages (its sitemaps list programs, refuges, stories and "
+     "documents) and no copyright line on its policies page to check at build time; its tens of thousands of species "
+     "pages would have to be found through its search service. Not built yet."),
+    ("National Park Service species pages", "Public domain, but spread over each park's own pages (nps.gov/<park>/"
+     "learn/nature/...), not one guide; the picture describer has NPS photos (npgallery)."),
+    ("CDC pages on ticks, zoonoses and Healthy Pets; USDA APHIS animal health pages", "Public domain, but cdc.gov and "
+     "aphis.usda.gov refuse automated requests (403), robots.txt included. They are linked in the manual collection "
+     "pet_livestock_supplies for the person to open."),
+    ("EPA pet and flea and tick pages, and the Pesticide Product Label System (flea and tick labels)", "EPA's "
+     "disclaimer says its documents \"may be freely distributed and used for non-commercial, scientific and "
+     "educational purposes\" and that commercial use \"may be protected\", not a plain public-domain statement; the "
+     "labels in the Label System are written by each product's maker. Linked in pet_livestock_supplies, not built."),
+    ("Biodiversity Heritage Library", "Its robots.txt says \"Content-Signal: search=yes,ai-train=no\"; its old "
+     "public-domain North American natural histories are taken from the Internet Archive's own copies instead."),
+    ("Cornell Lab of Ornithology, All About Birds", "Copyright of the Cornell Lab; no open licence."),
+    ("Animal Diversity Web (University of Michigan)", "No open licence was confirmed for its species accounts in this "
+     "pass, and its robots.txt asks programs to wait 8 to 16 seconds between pages; not built."),
+    ("Smithsonian National Zoo animal fact sheets", "Only the Smithsonian's Open Access items are CC0; the zoo's web "
+     "pages were not found among them, so they are not built."),
+    ("Wikipedia and Wikispecies", "Already in the Kiwix library (CC BY-SA)."),
+    ("Hinterland Who's Who, Canadian Wildlife Service, Parks Canada and the Species at Risk Public Registry",
+     "canada.ca terms allow non-commercial reproduction only, not an open licence; Hinterland Who's Who is copyright "
+     "of Environment and Climate Change Canada and the Canadian Wildlife Federation."),
+    ("State and provincial wildlife agency species guides", "Not checked one by one in this pass; state agency sites "
+     "usually carry \"Copyright © State of ...\" footers without an open licence, and Ontario's and British "
+     "Columbia's pages are under their King's Printer terms rather than the Open Government Licence. Alberta's OGL "
+     "publications (open.alberta.ca) can be added to PDF_DOCS one checked record at a time."),
+    ("Extension service guides on pests and livestock", "University extension publications are each university's "
+     "copyright (some CC BY-NC-ND, which a rebuilt book may not use); none with an open licence and a full-text "
+     "source was found in this pass."),
+    ("AKC and CKC breed standards, AVMA and ASPCA pages, AAFCO pet food label guides", "Copyright of each "
+     "organisation; no open licence."),
+    ("Animal drug labels (DailyMed animal labels, the FDA Green Book, Health Canada veterinary drugs)", "Left to the "
+     "reference library's drug-label work."),
+]
+NOT_INCLUDED = NOT_INCLUDED + ANIMALS_NOT_INCLUDED

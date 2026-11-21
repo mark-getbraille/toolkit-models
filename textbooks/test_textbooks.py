@@ -179,7 +179,9 @@ def test_reference_sources():
             continue
         assert B.licence_kind(e["licence"]) == "open"
         assert e.get("archive") or (e.get("page") and e.get("licence_text"))
-        if e.get("archive"):
+        if e.get("archive") and e.get("old_public_domain"):
+            assert e["licence"] == "Public domain (published before 1931)" and int(e["published"]) < 1931
+        elif e.get("archive"):
             assert e["distribution_a"] and not B.NOT_FIELD_SAFE.search(e["title"])
         if e.get("pdf"):
             assert e["pdf"].startswith("https://") and e.get("licence_page") and e.get("licence_text")
@@ -387,3 +389,24 @@ def test_rulebook_sections():
     whole = words(B.part_html(text, 0, text.count))
     assert words(" ".join(p.body for p in pages)) == whole
     assert "<h3>1.1 Basics</h3>" in pages[2].body and "[Page 3]" in pages[1].body
+
+
+def test_north_american_animal_sources(monkeypatch):
+    """The animal references: NOAA's species directory is a science guide; the old field guides are Internet Archive
+    items published before 1931, and one whose record says a later year is left out; no animal drug labels."""
+    keys = sources.expand_keys(["group:science"])
+    assert "guide:noaa_fisheries_species_directory" in keys and "pdf:reed_bird_guide_land_birds_1909" in keys
+    old = [e for e in sources.PDF_DOCS if e.get("old_public_domain")]
+    assert len(old) >= 8 and all(e["archive"] and "out of date" in e["description"] for e in old)
+    assert not any("dailymed" in str(e).lower() for e in sources.PDF_DOCS + sources.GOV_GUIDES)
+    pages = {"https://archive.org/metadata/a": json.dumps({"metadata": {"date": "1909"}}),
+             "https://archive.org/metadata/b": json.dumps({"metadata": {"year": ["1952"]}}),
+             "https://archive.org/metadata/c": json.dumps({"metadata": {}})}
+    monkeypatch.setattr(B, "fetch", lambda url, cache=None, binary=False: pages[url])
+    assert (B.archive_year("a"), B.archive_year("b"), B.archive_year("c")) == (1909, 1952, 0)
+    monkeypatch.setattr(B, "archive_pdf", lambda ident, cache=None: ("https://archive.org/download/b/b.pdf",
+                                                                     "https://archive.org/details/b"))
+    left = []
+    entry = dict(old[0], archive="b")
+    assert B.pdfdoc_book(entry, "unused", left_out=left) is None
+    assert "before 1931" in left[0]["reason"]

@@ -1519,6 +1519,17 @@ def archive_pdf(identifier, cache=None):
             f"https://archive.org/details/{identifier}")
 
 
+def archive_year(identifier, cache=None):
+    """The year an Internet Archive item says its work was published (its "date", else "year"), or 0."""
+    meta = json.loads(fetch(f"https://archive.org/metadata/{identifier}", cache)).get("metadata", {})
+    for field in ("date", "year"):
+        value = meta.get(field)
+        m = re.search(r"\b(1[5-9]\d\d|20\d\d)\b", str(value[0] if isinstance(value, list) else value or ""))
+        if m:
+            return int(m.group(1))
+    return 0
+
+
 def newest_pdf(page_text, base, pattern=r"\.pdf$"):
     """The newest PDF linked from an official publication page: the one whose address has the latest year and month
     ("...-2026-10.pdf"), else the last one listed. "" when the page links none."""
@@ -1760,6 +1771,12 @@ def pdfdoc_book(entry, work, cache=None, left_out=None):
             return None
     if entry.get("archive"):
         pdf_url, page = archive_pdf(entry["archive"], cache)
+        if entry.get("old_public_domain"):
+            year = archive_year(entry["archive"], cache)
+            if not year or year >= 1931:
+                left_out.append({"title": title, "reason": "The Internet Archive's record does not show it was "
+                                 f"published before 1931 ({year or 'no year'}), so it may still be in copyright."})
+                return None
     elif entry.get("pdf"):
         pdf_url, page = entry["pdf"], entry.get("page") or entry["pdf"]
     else:
@@ -1807,8 +1824,9 @@ def pdfdoc_book(entry, work, cache=None, left_out=None):
                 original_pdf={"url": pdf_url, "size": os.path.getsize(local), "sha256": file_sha256(local)},
                 published=entry.get("published") or pdf_date(local), region=entry.get("region", ""),
                 notice=entry.get("notice", ""), unchanged=whole,
-                changes="its text made into web pages, one per chapter, with each drawing's caption kept as text"
-                        + ("; parts about weapons and tactics left out" if entry.get("distribution_a") else ""))
+                changes=entry.get("changes") or
+                "its text made into web pages, one per chapter, with each drawing's caption kept as text"
+                + ("; parts about weapons and tactics left out" if entry.get("distribution_a") else ""))
     skipped = []
     if entry.get("split_sections"):              # one page per numbered section of its own text (sections_of_pdf)
         book.pages += section_pages(text)
