@@ -231,6 +231,12 @@ SIGN_OFF = re.compile(r"^\s*(thanks|thank you|thanks again|many thanks|thx|regar
                       r"regards|best|best wishes|all the best|cheers|sincerely|yours|yours truly|take care|talk soon|"
                       r"see you|later|respectfully|with thanks|ciao)\b[ ,!.\-]*$", re.I)
 TITLE_RE = r"(?:%s)\.?" % "|".join(TITLES)
+# Words that are never names on their own (titles and forms of address).
+NEVER_NAMES = {t.lower() for t in TITLES} | {"sir", "madam", "madame", "team", "all", "everyone", "hello", "hi",
+                                            "dear", "folks", "guys", "colleagues", "friends", "whom"}
+# "My name is ...", "I am ...", "This is ...": the capitalised words after it are a name when they are not ordinary
+# words (this also catches short names such as "Bo" or "Ni").
+INTRO = re.compile(r"\b(?i:my name is|i am|i'm|this is|myself|it's)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)")
 # Words after which an ambiguous word at the start of a sentence ("Dawn has ...", "Bill said ...") is a name.
 PERSON_VERBS = (r"\s+(has|had|is|was|will|would|said|says|wants|wanted|called|asked|told|thinks|thought|and|can|"
                 r"could|should|needs|needed|mentioned|sent|just|also|wrote|agreed|knows)\b")
@@ -287,7 +293,7 @@ class NameScrubber:
         next_char = after[:1]
         base = re.sub(r"'s$", "", word.strip("'.")).strip("'")
         w = base.lower()
-        if not w or w.startswith("i'"):
+        if not w or w.startswith("i'") or w in NEVER_NAMES:
             return False
         if w in self.known or w in self.writer or w in self.mapping or w in FIRST_NAMES:
             return True
@@ -346,6 +352,15 @@ class NameScrubber:
             i += len(run)
         out.append(text[pos:])
         return "".join(out)
+
+    def introductions(self, text):
+        """The name in "My name is ...", "I am ..." or "This is ..." becomes a placeholder (see INTRO)."""
+        def fix(m):
+            words = m.group(1).split()
+            if words[0].lower() in COMMON_WORDS and len(words[0]) > 3 and not self._is_name(words[0]):
+                return m.group(0)
+            return m.group(0)[:m.start(1) - m.start(0)] + self._placeholder([w.lower() for w in words])
+        return INTRO.sub(fix, text)
 
     def greetings(self, text):
         """The name after a greeting at the start of a line ("Hi Pat," "Dear Ms Lopez,") becomes a placeholder,
@@ -411,6 +426,7 @@ class NameScrubber:
         if signature:
             text = self.signature(text)
         text = self.greetings(text)
+        text = self.introductions(text)
         text = self.replace_names(text)
         # "[Your name]" from the signature step may be followed by a name the step above replaced: tidy up
         text = re.sub(r"\[Your name\](\s*\[Name(?: \d+)?\])+", "[Your name]", text)

@@ -112,6 +112,14 @@ def test_ambiguous_names_count_only_where_a_name_fits():
     assert "Dawn" not in scrub.NameScrubber().scrub("Dawn has the keys.", signature=False)
 
 
+def test_introductions_and_forms_of_address():
+    names = scrub.NameScrubber()
+    assert names.scrub("Hello, I am Bo Ky and I write about my order.", signature=False) == \
+        "Hello, I am [Name] and I write about my order."
+    assert names.scrub("I am happy to help.", signature=False) == "I am happy to help."
+    assert names.scrub("Dear Sir/Madam, thank you.", signature=False) == "Dear Sir/Madam, thank you."
+
+
 def test_a_lone_name_at_the_end_becomes_your_name():
     names = scrub.NameScrubber()
     assert names.scrub("See you at the call then.\nBob").endswith("\n[Your name]")
