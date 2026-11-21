@@ -1190,6 +1190,18 @@ SOURCES = [
            prepare_pack, "about 200 MB"),
     Source("fresh_rotten", "Fresh or rotten fruit (ready-made pack)", "CC BY 4.0 (Sultana et al.)",
            "Fresh and rotten fruits (Sultana et al.), CC BY 4.0", "permissive", 2000, 10, prepare_pack, "about 200 MB"),
+    Source("avocado_ripeness", "Is this avocado ripe? Hass avocados photographed every day as they ripened, five "
+           "stages (ready-made pack)", "CC BY 4.0 (Mendeley Data 3xd9n945v8)",
+           "'Hass' Avocado Ripening Photographic Dataset (Xavier, Rodrigues and Silva), CC BY 4.0, "
+           "https://doi.org/10.17632/3xd9n945v8.1", "permissive", 1500, 15, prepare_pack, "about 100 MB"),
+    Source("banana_ripeness", "Is this banana ripe? Green, semi-ripe, ripe and overripe bananas from Bangladesh "
+           "(ready-made pack)", "CC BY 4.0 (Mendeley Data ptfscwtnyz)",
+           "BananaImageBD (Ferdaus et al.), CC BY 4.0, https://doi.org/10.17632/ptfscwtnyz.2", "permissive", 820, 10,
+           prepare_pack, "about 10 MB"),
+    Source("fruitnet_quality", "Is this fruit good or bad? Six Indian fruits sorted into good and bad quality "
+           "(FruitNet, ready-made pack)", "CC BY 4.0 (Mendeley Data b6fftwbr2v)",
+           "FruitNet: Indian fruits dataset with quality (Meshram and Patil), CC BY 4.0, "
+           "https://doi.org/10.17632/b6fftwbr2v.3", "permissive", 2400, 15, prepare_pack, "about 60 MB"),
     Source("banknotes", "Indian and Thai banknotes, photographed for blind users (ready-made pack)",
            "CC BY 4.0 (Mendeley Data)", "Indian and Thai banknotes dataset, Mendeley Data 2kfz5yc7pt, CC BY 4.0",
            "permissive", 1500, 10, prepare_pack, "about 200 MB"),

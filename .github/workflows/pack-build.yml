@@ -216,6 +216,9 @@ jobs:
             plp_floating_targets) limit=30 ;;
             usda_ars) limit=300 ;;
             agrob_tomato) limit=450 ;;
+            avocado_ripeness) limit=1500 ;;
+            banana_ripeness) limit=820 ;;
+            fruitnet_quality) limit=2400 ;;
             clock_times) limit=1300 ;;
             seven_segment) limit=3333 ;;
             open_images_home) limit=3900 ;;

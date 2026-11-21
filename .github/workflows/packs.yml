@@ -75,6 +75,7 @@ jobs:
                    "agml_plant_health", "agml_weeds", "agml_harvest", "gwhd_wheat", "poultry_droppings",
                    "inat_crops", "trashnet", "taco_litter", "ccsn_clouds", "weather_images", "eurosat",
                    "commons_land_industry", "loc_haer", "plitter_street", "plp_floating_targets", "usda_ars", "agrob_tomato",
+                   "avocado_ripeness", "banana_ripeness", "fruitnet_quality",
                    "clock_times", "seven_segment", "open_images_home", "commons_pests", "commons_appliances",
                    "commons_connectors", "laundry_symbols", "commons_tools", "commons_personal",
                    "commons_hairstyles", "commons_kitchen",

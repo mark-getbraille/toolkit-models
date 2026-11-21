@@ -95,7 +95,8 @@ TOPICS = [
     Topic("food", "Food and packaged goods",
           "Food on the plate and in the shop: fresh or spoiled meat, fish, eggs and fruit, groceries on shelves, "
           "packaged goods with their names and use-by dates, and the text on food packs.",
-          ("nutrition5k", "fresh_rotten", "open_images_food", "grocery_store", "fish_eyes", "commons_food",
+          ("nutrition5k", "fresh_rotten", "avocado_ripeness", "banana_ripeness", "fruitnet_quality",
+           "open_images_food", "grocery_store", "fish_eyes", "commons_food",
            "meatscan", "eggs", "beef", "abo_packaged_goods", "abo_pet_supplies", "open_images_packaged_goods", "commons_packaging",
            "locbeef", "fish_freshness", "horse_mackerel", "fish_eyes_stages", "chicken_breast", "food_packaging",
            "packeat", "cerrado_fruits",

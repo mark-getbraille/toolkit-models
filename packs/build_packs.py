@@ -1486,6 +1486,11 @@ PACKS.update(CULTURE_PACKS)
 from land_industry_packs import LAND_PACKS
 PACKS.update(LAND_PACKS)
 
+# Food ripeness and quality from open research datasets on Mendeley Data (CC BY 4.0): avocados by ripening stage,
+# bananas by ripeness, and six Indian fruits sorted into good and bad quality (food_quality_packs.py).
+from food_quality_packs import FOOD_QUALITY_PACKS
+PACKS.update(FOOD_QUALITY_PACKS)
+
 # Practical home life: clock faces, seven-segment displays, household pests, appliances and their controls, plugs and
 # batteries, laundry symbols, tools, toiletries, hairstyles and the kitchen (is the burner on?).
 from home_packs import HOME_PACKS
