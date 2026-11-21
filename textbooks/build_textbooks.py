@@ -1495,7 +1495,11 @@ def allowed_by_robots(url, cache=None):
         text = ""
         try:
             text = fetch(site + "/robots.txt", cache)
-            rp.parse(text.splitlines())
+            # A Disallow rule ending in "?" ("Disallow: /TR/?", www.w3.org) means addresses that start with those
+            # characters, a query included; Python's parser drops the "?" and so would refuse all of /TR/. Such
+            # rules are left to wildcard_rules, which reads them as the robots.txt standard (RFC 9309) does.
+            rp.parse([line for line in text.splitlines()
+                      if not re.match(r"(?i)^\s*disallow\s*:\s*\S*\?\s*(#.*)?$", line)])
         except urllib.error.HTTPError as e:
             rp.parse([] if e.code in (404, 410) else ["User-agent: *", "Disallow: /"])
         except (urllib.error.URLError, OSError):
@@ -1527,7 +1531,8 @@ def _rule_regex(value):
 
 def wildcard_rules(text):
     """The Disallow rules of robots.txt's "User-agent: *" group (or of a group naming this builder) that use "*"
-    or "$" (as Google and the robots.txt standard, RFC 9309, read them), as regular expressions of a path:
+    or "$", or end in "?" (as Google and the robots.txt standard, RFC 9309, read them), as regular expressions of a
+    path:
     "Disallow: /*/print$" refuses "/browse/benefits/print". A path that an Allow rule of the same group matches
     with a longer rule stays allowed, as the standard says (each returned rule carries those Allow rules)."""
     groups, agents, rules, in_rules = [], [], [], False
@@ -1551,7 +1556,7 @@ def wildcard_rules(text):
     out = []
     for rules in chosen:
         for field, value in rules:
-            if field == "disallow" and value and ("*" in value or value.endswith("$")):
+            if field == "disallow" and value and ("*" in value or value.endswith("$") or value.endswith("?")):
                 longer = [_rule_regex(v) for f, v in rules if f == "allow" and len(v) > len(value)]
                 out.append(WildcardRule(_rule_regex(value), longer))
     return out
