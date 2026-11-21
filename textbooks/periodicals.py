@@ -2231,3 +2231,8 @@ def main(argv=None):
 
 if __name__ == "__main__":
     sys.exit(main())
+
+# More sources from the reference inventory of 2026-11-21 (Canada's Open Government Licence publications, GAO
+# reports, the US Government Manual, ERIC open full texts, GOV.UK guides, UK safety alerts, USDA Farmers' Bulletins):
+# publications_more.py adds them to SOURCES, DRIVERS, ALL_PIECES, LICENCE_LINES and NOT_INCLUDED when imported.
+import publications_more  # noqa: E402,F401
