@@ -140,6 +140,11 @@ Modern American English:
   blogs: Pluralistic (CC BY 4.0) and Global Voices (CC BY 3.0) blog posts, open.
   fineweb: a small sample of conversational web pages (forums, reviews, questions) from FineWeb, personal use only
     (each page keeps its writer's copyright).
+Creative writing:
+  gutenberg_creative: public-domain short stories, novels, children's books, poetry, plays and humour from Project
+    Gutenberg, open, labelled fiction_prose, children_story, poetry, screenplay_drama or humour. Pairs such as
+    "Continue this story in the same style" (with the passage before) and "Write a poem in the style of ...".
+  doctorow: Cory Doctorow's novels that he releases under Creative Commons (non-commercial), personal use only.
 Open:
   oasst2: OpenAssistant Conversations, Apache 2.0. Requests people wrote for an email, letter or message, with the
     best answer a person wrote.
@@ -189,6 +194,9 @@ Recent investigations and lawsuits: congress.gov blocks AI training; the committ
 antitrust, January 6 and others), FTC v. Meta, Epic v. Apple, Oracle v. Google, Waymo v. Uber and Theranos exhibits,
 the FBI Vault and agency FOIA rooms, and the NIH emails are scanned PDFs without a bulk route, so they were not
 built yet; CourtListener refused this kit; MuckRock and DocumentCloud say no AI training.
+Creative writing: Archive of Our Own (its terms forbid AI training and its authors object), FanFiction.Net and
+Wattpad (their robots.txt says no AI training), Reddit WritingPrompts (Reddit's terms), machine-written story sets,
+and openly licensed fan fiction (none found with a bulk download).
 Business: the Avocado email collection (sold by the LDC), TweetSumm (its tweets need a Kaggle login), the Bitext
 support set (machine-written), earnings call transcripts (copyrighted), USAJOBS (needs a key and email, not built
 yet), court and investigation exhibits (scanned PDFs inside dockets).
