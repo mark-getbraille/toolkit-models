@@ -22,6 +22,9 @@ The packs (both open, checked at the source in November 2026):
                              Allegro Coffee Decaf Organic French Roast Ground Coffee, 12 oz. Size: 12 oz.";
                              "What brand is this?" and "What size is this package?" where the listing says. A listing
                              with no English name is set aside for a description (needs_description).
+                             Hazardous household products (bleach, drain, oven and toilet cleaners, detergent pods,
+                             cleaners, motor oil) end with a short safety note and are also asked "How do I handle
+                             this safely?" (pg_hazard, the notes of chemical_packs.SAFETY).
   open_images_packaged_goods Google Open Images V7 validation and test photos (labels CC BY 4.0; each photo CC BY 2.0
                              with its photographer named, checked photo by photo) with a packaging label people
                              checked by hand: tin cans, drink cans, plastic bottles, bottled water, cardboard
@@ -58,6 +61,7 @@ from things_packs import (ABO_LISTINGS, ABO_IMAGES, ABO_PICTURE, ABO_CREDIT, ABO
 from expression_packs import mark_child, OI_CHILD
 from pill_packs import SAFETY
 from places import where, country_named
+from chemical_packs import SAFETY as CHEM_SAFETY, SAFE_Q
 
 WHAT_Q = "What is this?"
 BRAND_Q = "What brand is this?"
@@ -241,6 +245,36 @@ def pg_flavour(listing, country, name, group):
     return ""
 
 
+# Safety notes for hazardous household products (chemical_packs.SAFETY), from the listing's type and its own name:
+# [(pattern on the name, or None for any name, the types it applies to (None: the household and personal groups),
+# the note's key)]. The first that matches is said.
+PG_HAZARDS = [
+    (re.compile(r"\bbleach\b", re.I), None, "bleach"),
+    (re.compile(r"\b(drain|oven|toilet( bowl)?|lime ?scale|rust stain)\b.*\bclean\w*|\bdescal\w*", re.I), None,
+     "corrosive"),
+    (re.compile(r"\b(pods?|pacs?|paks?|capsules?)\b", re.I), {"LAUNDRY_DETERGENT", "DISHWASHER_DETERGENT"}, "pods"),
+    (None, {"AUTO_OIL"}, "oil"),
+    (None, {"CLEANING_AGENT", "LAUNDRY_DETERGENT", "DISHWASHER_DETERGENT"}, "cleaner"),
+    (re.compile(r"\b(disinfectant|all[- ]purpose cleaner|glass cleaner|degreaser|floor cleaner|surface cleaner|"
+                r"bathroom cleaner|kitchen cleaner)\b", re.I), None, "cleaner"),
+]
+
+
+def pg_hazard(code, group, name):
+    """The safety note of a hazardous household product ("Keep it away from children and pets. Never mix bleach
+    ..."), or "" for every other listing (food, medicines and the like have their own notes)."""
+    if group not in ("household", "personal"):
+        return ""
+    for pattern, types, key in PG_HAZARDS:
+        if types is not None and code not in types:
+            continue
+        if types is None and group not in ("household", "personal"):
+            continue
+        if pattern is None or pattern.search(name):
+            return CHEM_SAFETY[key]
+    return ""
+
+
 def sentence_end(text):
     """Text ending with a full stop (not doubled)."""
     text = text.strip()
@@ -286,7 +320,12 @@ def pg_rows(listing):
         answer += f" Flavour or variety: {flavour}."
     if group in PG_SAFETY_GROUPS:
         answer += f" {SAFETY}"
+    hazard = pg_hazard(code, group, name)
+    if hazard:
+        answer += f" {hazard}"
     rows = [{"question": WHAT_Q, "answer": answer}]
+    if hazard:
+        rows.append({"question": SAFE_Q, "answer": hazard})
     if brand:
         rows.append({"question": BRAND_Q, "answer": f"The brand is {brand}."})
     if size:

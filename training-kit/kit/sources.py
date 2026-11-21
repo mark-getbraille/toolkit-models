@@ -2214,6 +2214,16 @@ SOURCES = [
     Source("us_dot_street_photos", "US interstates, interchanges and road scenes in Federal Highway Administration photos (Wikimedia Commons copies, ready-made pack)",
            "Public domain (works of the US government, 17 U.S.C. 105); each Commons file's licence checked",
            "Federal Highway Administration, US Department of Transportation, via Wikimedia Commons (credited in CREDITS.txt)", "permissive", 500, 10, prepare_pack, "about 120 MB"),
+    # Household and garage products and chemicals (packs/chemical_packs.py): products in their containers with safety
+    # notes, finishes and corrosion as they look applied or in use, and WHMIS, DOT and NFPA hazard symbols. The two
+    # photo packs show people at work: never used for picture-making (PEOPLE_AND_BODILY_PACK_KEYS). The share-alike
+    # entry is in chemical_sources.py.
+    Source("commons_household_chemicals", "Household and garage products in their containers: cleaners, pool and garden chemicals, paints, oils, automotive fluids, glues, solvents, pest control, batteries, fuel and gas cylinders, fire extinguishers by type, with safety notes (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 2500, 20, prepare_pack, "about 600 MB"),
+    Source("commons_finishes_in_use", "What finishes and products look like applied or in use: rust and corrosion, galvanised, powder-coated, chrome, brushed and anodised metal, wood finishes, paint, mould, concrete and grout, oil stains, pool algae (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 2000, 20, prepare_pack, "about 500 MB"),
+    Source("commons_hazard_symbols", "Hazard symbols on chemical packages and what they mean: WHMIS symbols, the NFPA 704 diamond, GHS pictograms on labels (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 300, 10, prepare_pack, "about 30 MB"),
     Source('skin_lesion_photos', 'Skin spots photographed with a phone, adults (PAD-UFES-20, ready-made pack)',
            'CC BY 4.0 (Mendeley Data zr7vgbcyr2)',
            'PAD-UFES-20 (Pacheco et al., 2020), CC BY 4.0', "permissive", 2000, 20, prepare_pack, 'about 400 MB', content="medical"),
@@ -2417,6 +2427,8 @@ PEOPLE_AND_BODILY_PACK_KEYS = (
     "newberry_library", "state_libraries_midwest", "state_libraries_south", "state_libraries_west",
     # street_scene_packs.py: US and Canadian street scenes (people walk through them; all four)
     "commons_crosswalks_signals", "commons_streets_roads_na", "commons_neighbourhoods_na", "us_dot_street_photos",
+    # chemical_packs.py: household products and finishes (people at work in some photos; not the symbols pack)
+    "commons_household_chemicals", "commons_finishes_in_use",
 )
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + PEOPLE_AND_BODILY_PACK_KEYS
 # The drug and firearm packs (packs/drug_firearm_packs.py): describing only, never for picture-making, whether or not
@@ -3009,3 +3021,17 @@ PERSONAL_PICTURE_MAKING_OK |= _street_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in STREET_SCENE_SOURCES
                                                                if s.key not in _street_ok)
 _add_collections(STREET_SCENE_SOURCES)
+
+# Household and garage product and chemical collections that are not open (share-alike Commons files); the file may be
+# missing. None is used for picture-making (CHEMICAL_PICTURE_MAKING_OK is empty).
+try:
+    import chemical_sources as _chem  # noqa: E402
+except ImportError as _e:
+    _chem = None
+    if getattr(_e, "name", None) != "chemical_sources":
+        say(f"(The household chemical collections could not be loaded: {_e}. They are left out.)")
+CHEMICAL_SOURCES = list(getattr(_chem, "CHEMICAL_SOURCES", []) or [])
+_chem_ok = set(getattr(_chem, "CHEMICAL_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _chem_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in CHEMICAL_SOURCES if s.key not in _chem_ok)
+_add_collections(CHEMICAL_SOURCES)

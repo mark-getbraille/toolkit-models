@@ -1627,6 +1627,12 @@ PACKS.update(STATE_COLLECTIONS_PACKS)
 from street_scene_packs import STREET_SCENE_PACKS
 PACKS.update(STREET_SCENE_PACKS)
 
+# Household and garage products and chemicals (packs/chemical_packs.py): Commons products in their containers with
+# safety notes, finishes and corrosion as they look applied or in use, and WHMIS, DOT and NFPA hazard symbols. The two
+# photo packs show people at work, so they are never used for picture-making (the kit's PEOPLE_AND_BODILY_PACK_KEYS).
+from chemical_packs import CHEMICAL_PACKS
+PACKS.update(CHEMICAL_PACKS)
+
 
 # The packs whose builder reads the Wikimedia Commons API (commons_get, commons_members, commons_entries,
 # mechanical_packs.mech_entries, us_packs.us_commons, documentary_packs.commons_get or COMMONS_API itself). When many
@@ -1670,6 +1676,8 @@ COMMONS_KEYS = frozenset({
     "erotic_art",
     # US and Canadian street scenes (street_scene_packs.py; us_dot_street_photos reads FHWA's Commons copies)
     "commons_crosswalks_signals", "commons_streets_roads_na", "commons_neighbourhoods_na", "us_dot_street_photos",
+    # household and garage products and chemicals (chemical_packs.py)
+    "commons_household_chemicals", "commons_finishes_in_use", "commons_hazard_symbols",
 })
 
 
