@@ -151,3 +151,11 @@ def test_ai_block_and_guide_version(monkeypatch):
     assert book.notice.startswith("A work of the US General Services Administration")
     left = []
     assert W.book_for("wb:nothing_like_this", "/tmp/none", None, left) is None and left[0]["reason"] == "Unknown key."
+
+
+def test_public_release_line():
+    for words in ("12. DISTRIBUTION/AVAILABILITY STATEMENT Approved for public release; distribution unlimited",
+                  "Approved  for  public  release;  distrihution  unlimited",
+                  "Approved for public release: distribution is unlimited"):
+        assert re.search(W.PUBLIC_RELEASE, words), words
+    assert not re.search(W.PUBLIC_RELEASE, "Distribution authorized to U.S. Government agencies only")

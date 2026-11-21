@@ -141,6 +141,32 @@ PDFS = [
          notice="A work of the US Government Publishing Office (not under copyright in the United States). The "
                 "Superintendent of Documents asks that any reprinted edition be labeled clearly as a copy of the "
                 "authentic work: this is a copy, converted to an accessible format."),
+    _pdf("navy_correspondence_manual", "Department of the Navy Correspondence Manual (SECNAV M-5216.5, 2010)",
+         "Correspondence and letter writing (military)", "Secretary of the Navy (US Department of the Navy)",
+         DTIC_NOTE + "The Navy's and Marine Corps' manual of correspondence, the whole manual: standard letters, "
+         "multiple-address letters, endorsements, memorandums, business letters, executive correspondence, the "
+         "parts of a letter, effective writing (plain language), addressing, signing, assembling and dispatching, "
+         "and forms of address. This is the March 2010 edition; the Navy's newer edition (June 2015, changed 2018) "
+         "is only on its own site, which refuses programs.", "2010-03",
+         "SECNAV M-5216.5, March 2010 (DTIC record ADA549326)", archive="DTIC_ADA549326",
+         pdf_licence_text=PUBLIC_RELEASE,
+         notice="A work of the US Department of the Navy (not under copyright in the United States), approved for "
+                "public release; distribution unlimited. An older edition: check the current SECNAV M-5216.5 "
+                "before preparing official Navy correspondence."),
+    _pdf("tongue_and_quill", "The Tongue and Quill (AFH 33-337, 2004)", "Writing and speaking (military)",
+         "Air University and the Department of the Air Force",
+         DTIC_NOTE + "The Air Force's handbook of communication, the whole book: the steps to effective "
+         "communication (purpose and audience, research, supporting your ideas, organizing, drafting and "
+         "editing), writing with focus, persuading, listening, meetings, briefings and speeches, electronic "
+         "communication, the forms of Air Force writing (letters, memorandums, staff papers, bullet background "
+         "papers, awards and decorations, performance reports, résumés) and the mechanics of writing "
+         "(punctuation, capitalization, abbreviations, numbers). This is the August 2004 edition; the newer "
+         "editions are only on the Air Force's publications site, which refuses programs.", "2004-08",
+         "AFH 33-337, 1 August 2004 (DTIC record ADA521491)", archive="DTIC_ADA521491",
+         pdf_licence_text=PUBLIC_RELEASE,
+         notice="A work of the US Air Force (not under copyright in the United States), approved for public "
+                "release; distribution unlimited. An older edition: check the current Tongue and Quill before "
+                "preparing official Air Force correspondence."),
 ]
 for _e in PDFS:
     if _e["publisher"] == OPM:
@@ -511,9 +537,27 @@ LICENCE_LINES = {
                         "book adds: \"The Superintendent of Documents of the U.S. Government Publishing Office "
                         "requests that any reprinted edition be labeled clearly as a copy of the authentic work\" "
                         "(said in the book's notice). govinfo's robots.txt allows /content/pkg/.",
+    "dtic_military_manuals": "SECNAV M-5216.5 (2010) and AFH 33-337 (2004): the DTIC report page (SF 298) in each "
+                             "PDF says \"Approved for public release; distribution unlimited\" (checked at every "
+                             "build); works of the US government. archive.org's robots.txt allows the files. (The "
+                             "Tongue and Quill's own \"Distribution F\" is the Air Force's internal code for how "
+                             "printed copies were sent out, not a DoD restriction; the 1997 copy on the Internet "
+                             "Archive has no public-release line and is not used.)",
 }
 
 NOT_INCLUDED = [
+    ("AR 25-50, Preparing and Managing Correspondence, and DA Pam 600-67, Effective Writing for Army Leaders (US "
+     "Army)", "Already in the library through the Kiwix library's Army Publishing Directorate book "
+     "(armypubs_en_all), which holds the Army's public-release publications. armypubs.army.mil's own robots.txt says "
+     "\"Disallow: /\" for every program, and no Internet Archive copy was found, so they are not built here."),
+    ("Department of the Navy Correspondence Manual, current edition (SECNAV M-5216.5, June 2015, change 1 2018)",
+     "www.secnav.navy.mil answers programs with a bot-check script (robots.txt included), so the current edition "
+     "cannot be read; the March 2010 edition is built from DTIC's public-release record instead "
+     "(wb:navy_correspondence_manual). Index: https://www.secnav.navy.mil/doni/manuals-secnav.aspx"),
+    ("The Tongue and Quill, current edition (AFH 33-337, 2015 and later changes)", "www.e-publishing.af.mil and "
+     "static.e-publishing.af.mil refuse programs (\"Access Denied\", robots.txt included); the August 2004 edition is "
+     "built from DTIC's public-release record instead (wb:tongue_and_quill). Index: "
+     "https://www.e-publishing.af.mil/"),
     ("plainlanguage.gov's guideline pages (web edition)", "The same text as the Federal Plain Language Guidelines "
      "PDF (wb:plain_language_guidelines) and digital.gov's guide (wb:digital_gov_plain_language), both built; not "
      "added a third time."),
