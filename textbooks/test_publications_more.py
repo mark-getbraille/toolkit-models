@@ -159,10 +159,14 @@ def test_farmers_bulletins(monkeypatch):
     docs = [{"identifier": "CAT1", "title": "Home canning", "year": 1946, "creator": "United States. Department of "
              "Agriculture"}, {"identifier": "X2", "title": "Someone else's", "year": 1947, "creator": "A company"}]
     monkeypatch.setattr(M, "ia_collection_docs", lambda c, first, last, cache: docs)
-    monkeypatch.setattr(B, "fetch", lambda url, cache=None, binary=False, tries=4: "word " * 60 + "\n\nmore words")
+    meta = json.dumps({"files": [{"name": "farmbul0031_djvu.txt"}, {"name": "x.pdf"}]})
+    asked = []
+    monkeypatch.setattr(B, "fetch", lambda url, cache=None, binary=False, tries=4: asked.append(url) or (
+        meta if "/metadata/" in url else "word " * 60 + "\n\nmore words"))
     left = []
     items = M.farmers_bulletin_items(M.SOURCES["usda_farmers_bulletins"], "1940s", None, left, None)
     assert [i["title"] for i in items] == ["Home canning"] and "1 records do not show" in left[0]["reason"]
+    assert asked[-1] == "https://archive.org/download/CAT1/farmbul0031_djvu.txt"
     assert "UNSAFE" in M.SOURCES["usda_farmers_bulletins"]["notice"]
 
 

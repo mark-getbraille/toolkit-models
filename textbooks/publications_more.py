@@ -595,6 +595,16 @@ def usda_public_domain(doc):
                           words, re.I))
 
 
+def ia_text_url(ident, cache):
+    """The address of an Internet Archive item's OCR text (its "_djvu.txt" file, whose name often differs from the
+    item's: "farmbul0031_djvu.txt" in item CAT31124818), from the item's file list. Raises LookupError without one."""
+    meta = json.loads(B.fetch(f"{IA}/metadata/{urllib.parse.quote(ident)}", cache))
+    name = next((f.get("name", "") for f in meta.get("files") or [] if str(f.get("name", "")).endswith("_djvu.txt")), "")
+    if not name:
+        raise LookupError(f"{ident} has no OCR text")
+    return f"{IA}/download/{urllib.parse.quote(ident)}/{urllib.parse.quote(name)}"
+
+
 def farmers_bulletin_items(spec, piece, cache, left_out, today):
     """The Farmers' Bulletins of one decade ("1940s"): each bulletin's OCR text from the Internet Archive."""
     first = int(piece[:4])
@@ -604,10 +614,9 @@ def farmers_bulletin_items(spec, piece, cache, left_out, today):
         if not usda_public_domain(doc):
             not_pd += 1
             continue
-        url = f"{IA}/download/{urllib.parse.quote(ident)}/{urllib.parse.quote(ident)}_djvu.txt"
         try:
-            text = B.fetch(url, cache)
-        except (urllib.error.URLError, OSError):
+            text = B.fetch(ia_text_url(ident, cache), cache)
+        except (urllib.error.URLError, OSError, ValueError, LookupError):
             failed += 1
             continue
         if len(text.split()) < 50:
