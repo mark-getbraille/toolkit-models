@@ -685,7 +685,7 @@ SOURCES = {
         changes="made into web pages from GOV.UK's content API",
         pieces=lambda today: list(GOVUK_TOPICS), piece_rule=r"^(" + "|".join(GOVUK_TOPICS) + r")$"),
     "uk_safety_alerts": dict(
-        group="health", driver="uk_alerts", series_title="UK medicine, device and product safety alerts",
+        group="health", driver="uk_alerts", series_title="UK safety alerts",
         subject="UK safety alerts", publisher="Medicines and Healthcare products "
         "Regulatory Agency and Office for Product Safety and Standards (GOV.UK)", country="United Kingdom",
         licence="OGL-UK-3.0", licence_url=OGL_UK_URL, source=f"{GOVUK}/drug-device-alerts",

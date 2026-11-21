@@ -185,7 +185,37 @@ NIST_HANDBOOKS = [
          description="How inspectors check that packages hold the amount their labels say."),
 ]
 
-PDF_DOCS = FAA_HANDBOOKS + NAVY_RATE_MANUALS + ARMY_MANUALS + NIST_HANDBOOKS
+# ---------------------------------------------------------------------- statute compilations (item 24)
+# govinfo.gov's COMPS collection: the Social Security Act as amended, title by title, with its OWN section numbers
+# (people cite "section 1614", which the US Code renumbers as 42 U.S.C. 1382c). Package ids read from govinfo's
+# MODS records on 2026-11-21. The compilations are kept current by the House Office of the Legislative Counsel.
+COMPS = dict(US_PDF, group="law", publisher="Office of the Legislative Counsel, US House of Representatives (statute "
+             "compilations, from govinfo.gov)", subject="Social Security")
+
+
+def _comps(number, name, title, description):
+    """One statute compilation (a govinfo COMPS package) as a PDF_DOCS entry."""
+    return dict(COMPS, name=name, title=title, description=description,
+                pdf=f"https://www.govinfo.gov/content/pkg/COMPS-{number}/pdf/COMPS-{number}.pdf",
+                page=f"https://www.govinfo.gov/app/details/COMPS-{number}")
+
+
+STATUTE_COMPILATIONS = [
+    _comps(8755, "comps_social_security_act_title_2", "Social Security Act, Title II: Old-Age, Survivors, and "
+           "Disability Insurance Benefits (as amended)", "The Social Security Act's retirement, survivors and "
+           "disability insurance title, as amended, with the Act's own section numbers (sections 201 to 234)."),
+    _comps(8766, "comps_social_security_act_title_16", "Social Security Act, Title XVI: Supplemental Security Income "
+           "for the Aged, Blind, and Disabled (as amended)", "The SSI title of the Social Security Act, as amended, "
+           "with the Act's own section numbers (sections 1601 to 1637)."),
+    _comps(8768, "comps_social_security_act_title_18", "Social Security Act, Title XVIII: Health Insurance for the "
+           "Aged and Disabled (Medicare, as amended)", "Medicare's law: Parts A, B, C and D of the Social Security "
+           "Act as amended, with the Act's own section numbers (sections 1801 to 1899)."),
+    _comps(8765, "comps_social_security_act_title_19", "Social Security Act, Title XIX: Grants to States for Medical "
+           "Assistance Programs (Medicaid, as amended)", "Medicaid's law: the Social Security Act's Title XIX as "
+           "amended, with the Act's own section numbers (sections 1900 to 1946)."),
+]
+
+PDF_DOCS = FAA_HANDBOOKS + NAVY_RATE_MANUALS + ARMY_MANUALS + NIST_HANDBOOKS + STATUTE_COMPILATIONS
 
 # ---------------------------------------------------------------------- more CFR parts (item 16)
 # govinfo.gov annual editions (checked 2026-11-21: every part below is in the 2025 edition at these volumes).

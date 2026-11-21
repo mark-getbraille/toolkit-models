@@ -170,7 +170,8 @@ def test_practice_notices():
     for name in ("canada_ogl", "govuk_guides", "uk_safety_alerts"):
         spec = M.SOURCES[name]
         for piece in spec["pieces"](None):
-            note = sources.practice_note(spec["country"], spec["subject"], P.piece_label(name, piece))
+            note = sources.practice_note(spec["country"], spec["subject"],
+                                         f"{spec['series_title']}, {P.piece_label(name, piece)}")
             assert note.endswith("may differ from US practice."), (name, piece)
     assert "transport rules" in sources.practice_note("Canada", "x", P.piece_label("canada_ogl", "transport"))
     assert "benefits and pensions" in sources.practice_note("Canada", "x", P.piece_label("canada_ogl", "veterans"))
@@ -179,8 +180,8 @@ def test_practice_notices():
                                                         P.piece_label("govuk_guides", "driving"))
     assert "tax and debt" in sources.practice_note("United Kingdom", "UK government guides",
                                                    P.piece_label("govuk_guides", "tax_debt"))
-    assert "medicine names" in sources.practice_note("United Kingdom", "UK safety alerts",
-                                                     P.piece_label("uk_safety_alerts", "drug-2026"))
+    title = f"{M.SOURCES['uk_safety_alerts']['series_title']}, {P.piece_label('uk_safety_alerts', 'drug-2026')}"
+    assert "medicine names" in sources.practice_note("United Kingdom", "UK safety alerts", title)
     assert "recall" in sources.practice_note("United Kingdom", "UK safety alerts",
                                              P.piece_label("uk_safety_alerts", "product-2026"))
     assert sources.practice_note("United States", "GAO") == ""

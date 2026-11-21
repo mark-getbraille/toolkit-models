@@ -107,18 +107,27 @@ and why):
   shows no restricted marking; chapters about weapons or tactics are left out. Copies from the Internet Archive
   (armypubs.army.mil's robots.txt shuts out automated readers). Also two UK documents under the Open Government
   Licence v3.0 from gov.uk: the Maritime and Coastguard Agency's Survival at Sea notice (MSN 1560) and the Ministry
-  of Defence's first-aid chapter of JSP 375.
+  of Defence's first-aid chapter of JSP 375. Since November 2026 also two Army field hygiene manuals (FM 21-10, TC
+  4-02.3), under the same Distribution Statement A check (`textbooks/reference_more.py`).
 - **Courses** (group `course`): US Navy nonresident training courses with Distribution Statement A: sixteen modules
   of the Navy Electricity and Electronics Training Series (NEETS), Basic Machines, Culinary Specialist and Hospital
-  Corpsman (US government works). PDFs that are scans without words are refused.
+  Corpsman (US government works), and six more Navy rate training manuals (Military Requirements for Petty Officer
+  Third Class, Quartermaster, Construction Mechanic, Equipment Operator, Alternating Current and Transformers,
+  Opticalman). PDFs that are scans without words are refused.
 - **Reference, governments** (group `government`): Government of Alberta publications under the Open Government
-  Licence - Alberta (the Driver's Guide, seniors' safety guides, power-outage preparedness), the newest official PDF.
+  Licence - Alberta (the Driver's Guide, seniors' safety guides, power-outage preparedness), the newest official PDF;
+  the FAA's aviation handbooks (Pilot's Handbook of Aeronautical Knowledge, Airplane Flying, Instrument Flying,
+  Aviation Weather, the three Aviation Maintenance Technician handbooks and more) and NIST Handbooks 44, 130 and 133
+  (US government works).
 - **Reference, laws and rights** (group `law`), one book per law so only the wanted ones are downloaded: US Code
   chapters (ADA, Rehabilitation Act, IDEA, Fair Housing Act, Consumer Credit Protection Act, Social Security Titles II
   and XVI) and Code of Federal Regulations parts (air travel 14 CFR 382, ADA rules 28 CFR 35 and 36 and 29 CFR 1630,
   fair housing 24 CFR 100, transportation 49 CFR 37, telecommunications accessibility 47 CFR 6, 7, 14 and 64 subpart
   F, Section 508 standards 36 CFR 1194, IDEA rules 34 CFR 300, food labeling 21 CFR 101) from govinfo.gov's newest
-  annual editions (public domain; key `laws-more` adds larger ones such as Regulation Z and the SSA rules); Canada's
+  annual editions (public domain; key `laws-more` adds larger ones such as Regulation Z and the SSA rules), the FTC's
+  consumer rules (Funeral Rule, warranties, care labels, Cooling-Off Rule, Telemarketing Sales Rule), and with
+  `laws-more` drug labelling (21 CFR 201), Medicare Parts B and D (42 CFR 410, 423) and the FMCSA driver rules (49 CFR
+  390-396); the Social Security Act's Titles II, XVI, XVIII and XIX as amended (govinfo statute compilations); Canada's
   Accessible Canada Act and Regulations, Canadian Human Rights Act, Employment Equity Act and accessible
   transportation regulations from Justice Laws (Reproduction of Federal Law Order; marked "not the official
   version"); and the UK's Equality Act 2010, Consumer Rights Act 2015, Care Act 2014 and Landlord and Tenant Act 1985
@@ -137,7 +146,16 @@ and why):
   journal articles, open-licensed news, magazines, parliamentary debates and history, each source split into pieces
   (years, decades, topics, editions, volumes, or state and decade), every item with its date, in its own release
   (`publications-<source>`), listed in `textbooks.json` with `complete` (false while a piece is still being
-  collected) and `pieces_done`.
+  collected) and `pieces_done`. Added in November 2026 (`textbooks/publications_more.py`, asked for by key, not in
+  the hourly backfill): Government of Canada publications under the Open Government Licence - Canada
+  (`pub:canada_ogl`: health, transport, veterans, law; the PDF documents only, as the canada.ca web pages allow only
+  non-commercial use), GAO reports by year (`pub:gao_reports:1989` to `2008`), the United States Government Manual
+  (`pub:us_government_manual`), ERIC full texts whose own text states public domain or an open Creative Commons
+  licence (`pub:eric_open`: vision, braille, assistive technology, deafblindness, adult education), GOV.UK guides
+  (`pub:govuk_guides`: carers, pensions, housing, tax and debt, driving), UK drug, device and product safety alerts
+  (`pub:uk_safety_alerts:drug-2026`) and USDA Farmers' Bulletins by decade (`pub:usda_farmers_bulletins:1940s`, with
+  a notice that old advice can be unsafe). The UK National Archives' teaching resources are a guide
+  (`guide:uk_national_archives_teaching_resources`).
 - **Medicines** (`textbooks/medications.py`, keys `medicines` and `med:...`): the official US labels of medicines,
   read from DailyMed (National Library of Medicine) through its web services: 14 books of prescription medicines
   and 7 of over-the-counter medicines (by first letter), and two of animal medicines (pets and horses; farm
