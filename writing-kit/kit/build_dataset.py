@@ -40,7 +40,7 @@ Usage (from the writing-kit folder):
   python kit/build_dataset.py --out out --sources dolly,oasst2 --per-source 200
   python kit/build_dataset.py --out out --personal --enron-file enron_mail_20150507.tar.gz   (a copy you have)
   python kit/build_dataset.py --out out --cache cache        (keeps downloads in "cache" for the next build)
-  python kit/build_dataset.py --out out --scanned-folder "B:\Original sources"   (only your own scanned PDFs)
+  python kit/build_dataset.py --out out --scanned-folder "B:\\Original sources"   (only your own scanned PDFs)
 """
 
 import argparse

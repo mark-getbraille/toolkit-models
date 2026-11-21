@@ -25,7 +25,7 @@ import re
 
 import ocr
 
-HEADER_WORDS = r"(?:From|Sent|Date|To|Cc|Bcc|Subject|Attachments?|Importance)"
+HEADER_WORDS = r"(?:From|Sent|Date|To|Cc|Bcc|Subject|Attachments?|Importance|Priority)"
 HEADER_LINE = re.compile(r"^\s*" + HEADER_WORDS + r"\s*:", re.I)
 
 # Lines that are release stamps, page numbers or redaction codes, not the writer's words.
@@ -41,12 +41,14 @@ STAMP_LINES = [
     r"^\s*\d{1,4}\s*$",
     r"^\s*[A-Z]{2,8}[-_ ]?\d{5,}\s*$",                      # Bates numbers such as EPA-0012345
     r"^\s*(Date|Doc No|Case No)\.?\s*:?\s*[A-Z]?[-\d/]+\s*$",
+    r"^\s*PR_[A-Z0-9_]+\s*:.*$",                              # BlackBerry message properties
 ]
 STAMP_RE = re.compile("|".join("(?:%s)" % s for s in STAMP_LINES), re.I | re.M)
 
 # Signs of a US federal FOIA release (exemption codes and federal stamps); state releases use other words.
 FEDERAL_SIGNS = [
     (r"U\.?\s?S\.? Department of State", "a US State Department release stamp"),
+    (r"\bCase No\.?\s*F-\d{4}-\d+|\bC0\d{7}\b", "a US State Department case or document number"),
     (r"\(b\)\s*\((?:5|6|7)\)", "US federal FOIA exemption codes, such as (b)(6)"),
     (r"FEDERAL BUREAU OF INVESTIGATION|\bFBI\b.*\bb6\b", "an FBI release"),
     (r"Environmental Protection Agency|@epa\.gov", "an EPA release"),
@@ -63,11 +65,40 @@ US_STATES = ("alabama alaska arizona arkansas california colorado connecticut de
              "mt de sd nd ak vt wy dc").split()
 
 
+def _plain(line):
+    """line without accents (OCR often reads UNCLASSIFIED as \u00daNCLASSIFIED)."""
+    import unicodedata
+    return "".join(c for c in unicodedata.normalize("NFKD", line) if not unicodedata.combining(c))
+
+
+def garbled_stamp(line):
+    """True for a short line OCR made out of a faint release stamp ("UNC/ D D- D26"): no word of three small
+    letters, with slashes, bars or dashes and a digit."""
+    line = line.strip()
+    return 0 < len(line) <= 40 and not re.search(r"[a-z]{3}", line) and bool(re.search(r"[/|\\-]", line)) \
+        and bool(re.search(r"\d", line))
+
+
 def clean_text(text):
-    """text without release stamps, page numbers and lone redaction codes, with spaces tidied."""
-    text = STAMP_RE.sub("", text or "")
+    """text without release stamps, page numbers, lone redaction codes, BlackBerry message properties and the
+    "Message Headers:" block a phone backup prints, with spaces tidied. An "Original Message" separator misread by
+    OCR is written out again properly (so the quoted message is recognised), and dropped when nothing follows it."""
+    text = re.sub(r"(?im)^\s*Message Headers:\s*\n(?:\s*\n)?(?:\s*(?:Subject|To|From|Date|Cc)\s*:.*\n?)+", "",
+                  text or "")
+    lines = []
+    for line in text.split("\n"):
+        plain = _plain(line)
+        if STAMP_RE.search(plain) or garbled_stamp(plain):
+            continue
+        if 0 < len(line.strip()) <= 2 and not re.fullmatch(r"[A-Za-z0-9]{1,2}", line.strip()):
+            continue                                          # a stray mark read as a letter ("\u00e0", "~")
+        if re.match(r"^[\s.\-\u2013\u2014\u2026_~=*]*Original Message[\s.\-\u2013\u2014\u2026_~=*]*$", plain, re.I):
+            line = "-----Original Message-----"          # the separator, however OCR misread its dashes
+        lines.append(line)
+    text = "\n".join(lines)
     text = re.sub(r"[ \t]+", " ", text)
     text = re.sub(r"\n\s*\n\s*\n+", "\n\n", text)
+    text = re.sub(r"(\n|^)\s*-----Original Message-----\s*$", "", text.strip())   # a separator with nothing below
     return text.strip()
 
 
@@ -345,7 +376,7 @@ IA_LEFT_OUT_COLLECTIONS = {"documentcloud"}     # DocumentCloud mirrors: Documen
 
 def ia_pdfs(meta, max_mb):
     """[(name, size)] of an Internet Archive item's own PDF files (not derived copies or deleted ones) under max_mb
-    megabytes, smallest first."""
+    megabytes, in name order (the release's own order)."""
     out = []
     for f in meta.get("files", []):
         name = f.get("name", "")
@@ -354,7 +385,7 @@ def ia_pdfs(meta, max_mb):
         size = int(f.get("size") or 0)
         if size and size <= max_mb * 1024 * 1024:
             out.append((name, size))
-    return sorted(out, key=lambda x: (x[1], x[0]))
+    return sorted(out)
 
 
 def _read_ia(items, fetcher, say, page_log, federal, max_mb=80, files_per_item=4, max_pages=300):
