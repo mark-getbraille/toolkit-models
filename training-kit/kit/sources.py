@@ -2356,6 +2356,26 @@ SOURCES = [
            "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1500, 15, prepare_pack, "about 350 MB"),
     Source("commons_nara_aerial", "Aerial photographs of towns, farms and coasts from the US National Archives, USDA and USGS (Wikimedia Commons copies, ready-made pack)",
            "Public domain (works of the US government); each Commons file's licence checked", "US National Archives, USDA and USGS, via Wikimedia Commons (credited in CREDITS.txt)", "permissive", 800, 10, prepare_pack, "about 200 MB"),
+    # Drinks (packs/drinks_packs.py): the alcohol packs and the other drink packs have separate keys, so the alcohol
+    # ones can be left out on their own (the soft drinks are in the food topic, the alcohol ones in none). Answers about alcohol end with a
+    # responsible-drinking note, about energy drinks with a caffeine note; answers about stills START with the legal
+    # and safety notes on home distilling. The share-alike Commons files and what was left out are in drinks_sources.py.
+    Source("commons_alcoholic_drinks", "Wine, beer, spirits, cider, mead, sake and cocktails by name and region, with a responsible-drinking note (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 3000, 30, prepare_pack, "about 700 MB"),
+    Source("commons_bar_glassware", "Glassware, bar tools and how drinks are served: wine, beer and cocktail glasses, shakers, corkscrews, kegs, taps, boxed wine, barrels (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1500, 15, prepare_pack, "about 350 MB"),
+    Source("commons_brewing_winemaking", "Brewing and winemaking, at home too: kettles, fermenters, airlocks, hydrometers, carboys, presses, vineyards, malt and hops (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1500, 15, prepare_pack, "about 350 MB"),
+    Source("commons_distilling", "Stills and distilleries, with the legal and safety notes on home distilling first (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 300, 5, prepare_pack, "about 70 MB"),
+    Source("open_images_bar_drinks", "Wine by colour, beer styles, spirits and cocktails, glassware, kegs and taps, bars, breweries and vineyards; no photos with children (Open Images, ready-made pack)",
+           "Labels CC BY 4.0 (Open Images V7); each photo CC BY, CC0 or Public Domain Mark (credited in CREDITS.txt)", "Google Open Images V7 (labels CC BY 4.0) and the photographers credited in CREDITS.txt, https://storage.googleapis.com/openimages/web/index.html", "permissive", 3000, 20, prepare_pack, "about 600 MB"),
+    Source("europeana_drinks_history", "Historic wine and beer bottles, decanters, tankards, wine presses, breweries and distilleries, English records (Europeana, ready-made pack)",
+           "Each record CC0, Public Domain Mark or CC BY (credited in CREDITS.txt)", "Europeana and its providers (credited in CREDITS.txt), https://www.europeana.eu", "permissive", 400, 5, prepare_pack, "about 80 MB"),
+    Source("commons_soft_drinks", "Soft drinks, energy drinks (with a caffeine note), juices, waters, iced tea and coffee, kombucha, plant milks, smoothies, syrups and mocktails (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1800, 20, prepare_pack, "about 400 MB"),
+    Source("open_images_soft_drinks", "Colas and sodas, juices, smoothies and milkshakes, plant milks, coffee and tea drinks, drink mixes and syrups (Open Images, ready-made pack)",
+           "Labels CC BY 4.0 (Open Images V7); each photo CC BY, CC0 or Public Domain Mark (credited in CREDITS.txt)", "Google Open Images V7 (labels CC BY 4.0) and the photographers credited in CREDITS.txt, https://storage.googleapis.com/openimages/web/index.html", "permissive", 2500, 20, prepare_pack, "about 500 MB"),
     Source('skin_lesion_photos', 'Skin spots photographed with a phone, adults (PAD-UFES-20, ready-made pack)',
            'CC BY 4.0 (Mendeley Data zr7vgbcyr2)',
            'PAD-UFES-20 (Pacheco et al., 2020), CC BY 4.0', "permissive", 2000, 20, prepare_pack, 'about 400 MB', content="medical"),
@@ -2578,6 +2598,10 @@ PEOPLE_AND_BODILY_PACK_KEYS = (
     "open_images_public_home", "open_images_outings", "open_images_food_more", "open_images_cards_documents",
     "aic_collection", "cleveland_collection", "wordpress_photos", "europeana_fashion_archaeology",
     "cdc_phil_health_behaviour",
+    # drinks_packs.py: alcohol is never for picture-making (people drink in many of these photos), and the Open Images
+    # soft drinks show people too (the Commons soft drinks are products and are used)
+    "commons_alcoholic_drinks", "commons_bar_glassware", "commons_brewing_winemaking", "commons_distilling",
+    "open_images_bar_drinks", "europeana_drinks_history", "open_images_soft_drinks",
 )
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + PEOPLE_AND_BODILY_PACK_KEYS
 # The drug and firearm packs (packs/drug_firearm_packs.py): describing only, never for picture-making, whether or not
@@ -3226,3 +3250,17 @@ _gaps_ok = set(getattr(_gaps, "GAPS_PICTURE_MAKING_OK", ()) or ())
 PERSONAL_PICTURE_MAKING_OK |= _gaps_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in GAPS_SOURCES if s.key not in _gaps_ok)
 _add_collections(GAPS_SOURCES)
+# Drinks (drinks_sources.py): the share-alike Commons files of the drinks packs' categories (alcohol and soft drinks
+# kept apart) and the sources looked at and left out; the file may be missing. The soft drinks may be used for
+# picture-making (DRINKS_PICTURE_MAKING_OK); the alcohol ones never.
+try:
+    import drinks_sources as _drinks  # noqa: E402
+except ImportError as _e:
+    _drinks = None
+    if getattr(_e, "name", None) != "drinks_sources":
+        say(f"(The drinks collections could not be loaded: {_e}. They are left out.)")
+DRINKS_SOURCES = list(getattr(_drinks, "DRINKS_SOURCES", []) or [])
+_drinks_ok = set(getattr(_drinks, "DRINKS_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _drinks_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in DRINKS_SOURCES if s.key not in _drinks_ok)
+_add_collections(DRINKS_SOURCES)

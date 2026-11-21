@@ -232,6 +232,14 @@ jobs:
             cdc_phil_algae) limit=60 ;;
             commons_rocks_fossils) limit=1500 ;;
             commons_nara_aerial) limit=800 ;;
+            commons_alcoholic_drinks) limit=3000 ;;
+            commons_bar_glassware) limit=1500 ;;
+            commons_brewing_winemaking) limit=1500 ;;
+            commons_distilling) limit=300 ;;
+            open_images_bar_drinks) limit=3000 ;;
+            europeana_drinks_history) limit=400 ;;
+            commons_soft_drinks) limit=1800 ;;
+            open_images_soft_drinks) limit=2500 ;;
             clock_times) limit=1300 ;;
             seven_segment) limit=3333 ;;
             open_images_home) limit=3900 ;;

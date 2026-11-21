@@ -1666,6 +1666,13 @@ from gaps_oi_packs import OI_GAPS_PACKS
 PACKS.update(OI_GAPS_PACKS)
 from gaps_collection_packs import GAP_COLLECTION_PACKS
 PACKS.update(GAP_COLLECTION_PACKS)
+# Drinks (packs/drinks_packs.py, November 2026): alcoholic drinks, glassware and bar things, brewing, winemaking and
+# distilling (Commons, Open Images, Europeana), kept apart from the soft drinks, juices, waters and plant milks so the
+# alcohol packs can be left out on their own (DRINKS_ALCOHOL_KEYS, DRINKS_SOFT_KEYS). Answers about alcohol end with
+# a responsible-drinking note, about energy drinks with a caffeine note, and about stills START with the legal and
+# safety notes on home distilling.
+from drinks_packs import DRINKS_PACKS
+PACKS.update(DRINKS_PACKS)
 
 
 # The packs whose builder reads the Wikimedia Commons API (commons_get, commons_members, commons_entries,
@@ -1726,6 +1733,9 @@ COMMONS_KEYS = frozenset({
     "commons_household_chemicals", "commons_finishes_in_use", "commons_hazard_symbols",
     # the gaps' Commons packs (gaps_collection_packs.py; the other gap packs do not read Commons)
     "commons_rocks_fossils", "commons_nara_aerial",
+    # drinks (drinks_packs.py; the Open Images and Europeana drinks packs do not read Commons)
+    "commons_alcoholic_drinks", "commons_bar_glassware", "commons_brewing_winemaking", "commons_distilling",
+    "commons_soft_drinks",
 })
 
 
