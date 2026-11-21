@@ -1638,6 +1638,12 @@ PACKS.update(HARDWARE_PACKS)
 # (PEOPLE_PACKS).
 from everyday_extras_packs import EVERYDAY_EXTRAS_PACKS
 PACKS.update(EVERYDAY_EXTRAS_PACKS)
+# Home safety and controls, food state and public accessibility features (packs/home_safety_packs.py): Commons breaker
+# panels, fuse boxes, meters, stopcocks, sump pumps and furnaces, alarms, appliance displays and gauges with a STATED
+# light, reading or setting, unripe fruit, mould, doneness, USDA food safety photos, braille signage, bus stop signs and
+# ticket machines. A reading or light state only where the file's own words say it, with short safety notes.
+from home_safety_packs import HOME_SAFETY_PACKS
+PACKS.update(HOME_SAFETY_PACKS)
 
 
 # The packs whose builder reads the Wikimedia Commons API (commons_get, commons_members, commons_entries,
@@ -1691,6 +1697,9 @@ COMMONS_KEYS = frozenset({
     # everyday things (everyday_extras_packs.py)
     "commons_money_sides", "commons_mail_parcels", "commons_clothing_patterns", "commons_makeup_grooming",
     "commons_toys_sports_music", "commons_sky_weather", "commons_screens",
+    # home safety, food state and accessibility features (home_safety_packs.py; usda_food_safety_photos reads USDA's
+    # Commons copies through Commons search)
+    "commons_home_safety", "commons_food_state", "usda_food_safety_photos", "commons_access_features",
 })
 
 

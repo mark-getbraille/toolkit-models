@@ -116,7 +116,8 @@ jobs:
                    "commons_building_materials", "commons_hand_tools_trades", "commons_power_tools", "commons_shop_machines",
                    "commons_ppe", "commons_sewing_food_equipment", "abo_hardware", "nmah_hardware_tools",
                    "commons_money_sides", "commons_mail_parcels", "commons_clothing_patterns", "commons_makeup_grooming",
-                   "commons_toys_sports_music", "commons_sky_weather", "commons_screens"]
+                   "commons_toys_sports_music", "commons_sky_weather", "commons_screens",
+                   "commons_home_safety", "commons_food_state", "usda_food_safety_photos", "commons_access_features"]
           words = [w for w in sys.argv[1].split(",") if w]
           # "key+" is a top-up pass of key and "key?" a needs-only run (kept with the mark, which the build job reads);
           # "all?" asks for a needs-only run of every pack.
