@@ -169,8 +169,12 @@ def fingerprint(key):
         kind, _, name = key.partition(":")
         if kind == "pdf":
             return pdf_sign(next(e for e in sources.PDF_DOCS if e["name"] == name))
-        if kind in ("nonprofit", "guide"):
-            return guide_sign(next(e for e in sources.NONPROFIT + sources.GOV_GUIDES if e["name"] == name))
+        if kind in ("nonprofit", "guide", "k12"):
+            return guide_sign(next(e for e in sources.NONPROFIT + sources.GOV_GUIDES + sources.K12_GUIDES
+                                   if e["name"] == name))
+        if kind == "course":
+            import courses                       # here, not at the top: courses imports the builder
+            return courses.sign(key)
         if kind == "law":
             return law_sign(next(e for e in sources.LAWS + sources.LAWS_MORE if e["name"] == name))
         if kind == "pub":

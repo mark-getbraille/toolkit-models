@@ -36,7 +36,15 @@ OSBOOKS = [
     "introduction-anthropology", "introduction-political-science", "college-success-bundle", "principles-marketing",
     "business-law", "principles-finance", "data-science", "lifespan-development", "organic-chemistry",
     "life-liberty-pursuit-happiness", "foundations-information-systems", "workplace-software-skills",
+    # Added on 2026-11-21 from OpenStax's own list of approved repositories (content-manager-approved-books,
+    # checked with git ls-remote): Python programming, the nursing books and Principles of Management.
+    "introduction-python-programming", "nursing-external-bundle", "principles-of-management-bundle",
 ]
+
+# OpenStax books written for high school (openstax.org's catalogue lists them with K-12 subjects): put in the K-12
+# group with grades 9-12. OpenStax's other books with K-12 subjects are college books also used in high school
+# ("High school and college").
+OPENSTAX_HIGH_SCHOOL = {"physics", "statistics", "biology-ap-courses", "college-physics-ap-courses-2e", "algebra-1"}
 
 # Siyavula (South Africa): the books of its online reader; subject path, grade, title, subject in words.
 SIYAVULA = [
@@ -49,6 +57,19 @@ SIYAVULA = [
     ("natural-sciences", 7, "Natural Sciences Grade 7", "Science"),
     ("natural-sciences", 8, "Natural Sciences Grade 8", "Science"),
     ("natural-sciences", 9, "Natural Sciences Grade 9", "Science"),
+    # Added on 2026-11-21 (www.siyavula.com/read lists them; the builder checks each reader page's licence line:
+    # Computer Applications Technology and Mathematical Literacy state none there, so they are left out and said).
+    ("mathematics", 7, "Mathematics Grade 7", "Mathematics"),
+    ("mathematics", 8, "Mathematics Grade 8", "Mathematics"),
+    ("mathematics", 9, "Mathematics Grade 9", "Mathematics"),
+    ("life-sciences", 10, "Life Sciences Grade 10", "Biology"),
+    ("information-technology", 10, "Information Technology Grade 10", "Information technology"),
+    ("information-technology", 11, "Information Technology Grade 11", "Information technology"),
+    ("information-technology", 12, "Information Technology Grade 12", "Information technology"),
+    ("computer-applications-technology", 10, "Computer Applications Technology Grade 10", "Computer applications"),
+    ("computer-applications-technology", 11, "Computer Applications Technology Grade 11", "Computer applications"),
+    ("computer-applications-technology", 12, "Computer Applications Technology Grade 12", "Computer applications"),
+    ("mathematical-literacy", 10, "Mathematical Literacy Grade 10", "Mathematical literacy"),
 ]
 
 # Reference works of international bodies (the "Reference works" part of the Textbooks group): DSpace site,
@@ -390,8 +411,9 @@ NO_CHANGES = {
 
 # What was looked at and not included, with the reason (shown in textbooks.json and the toolkit's manual).
 NOT_INCLUDED = [
-    ("BCcampus Open Textbooks (Canada)", "Its Pressbooks site answers automated requests with a bot check "
-     "(Cloudflare \"Just a moment\"), also for the book exports, so it cannot be fetched automatically."),
+    ("BCcampus Open Textbooks (Canada), from its own site", "Its Pressbooks site answers automated requests with a "
+     "bot check (Cloudflare \"Just a moment\"), and its robots.txt shuts out AI companies' readers. Its books are "
+     "built from BCcampus' Kolibri Studio channel instead (courses.py, key course:bccampus)."),
     ("eCampusOntario Open Library (Canada)", "Its Pressbooks site refuses automated requests (403), robots.txt "
      "included."),
     ("CAUL Open Educational Resources Collective (Australia and New Zealand)", "Its Pressbooks site refuses "
@@ -411,7 +433,7 @@ NOT_INCLUDED = [
      "checked one by one yet."),
     ("UNESCO (unesdoc.unesco.org)", "Its document pages refuse automated requests (403)."),
     ("OECD", "Its licences differ per publication and were not checked one by one."),
-    ("Siyavula Mathematical Literacy and Life Sciences", "Only PDFs without a reader version with text formulas; "
+    ("Siyavula Mathematical Literacy, Life Sciences 11-12", "Only PDFs without a reader version with text formulas; "
      "left out until their pictures of formulas can be described."),
 ]
 
@@ -506,6 +528,9 @@ GROUPS = {
     "news": "News, open-licensed", "periodicals": "Magazines and newsletters", "history": "Reference, history",
     # The official labels of medicines (medications.py; keys medicines, med:...):
     "medicines": "Reference, medicines", "vet_medicines": "Reference, animal medicines",
+    # School books, kindergarten to grade 12 (the owner's request of 2026-11-21): K12_GUIDES, the K-12 PDFs, Siyavula,
+    # OpenStax's high school books and the K-12 courses of courses.py.
+    "k12": "School books (K-12)",
 }
 
 # W3C WAI documents under the W3C Document License, kept whole and unchanged (WHOLE_AND_UNCHANGED). Checked by hand
@@ -1004,11 +1029,19 @@ def expand_keys(words):
     pdfs = lambda g: [f"pdf:{e['name']}" for e in PDF_DOCS if e["group"] == g]   # noqa: E731
     every = [f"osbooks:{r}" for r in OSBOOKS] + ["siyavula", "dspace"] + \
         [f"nonprofit:{e['name']}" for e in NONPROFIT] + [f"pdf:{e['name']}" for e in PDF_DOCS] + \
-        [f"guide:{e['name']}" for e in GOV_GUIDES] + [f"law:{e['name']}" for e in LAWS]
+        [f"guide:{e['name']}" for e in GOV_GUIDES] + [f"law:{e['name']}" for e in LAWS] + \
+        [f"k12:{e['name']}" for e in K12_GUIDES]
     keys = []
     for w in words or ["all"]:
         if w == "all":
             keys += every
+        elif w in ("k12", "opencourses", "personaluse") or w.startswith("course:"):
+            # School books (K-12), the open courses, the personal-use courses (courses.py)
+            import courses                        # here, not at the top: courses imports the builder
+            if w == "k12":
+                keys += [f"k12:{e['name']}" for e in K12_GUIDES] + pdfs("k12") + ["siyavula"] + \
+                    [f"osbooks:{r}" for r in ("physics", "statistics", "biology-bundle", "college-physics-bundle")]
+            keys += courses.expand_keys([w])
         elif w == "osbooks":
             keys += [f"osbooks:{r}" for r in OSBOOKS]
         elif w == "nonprofit":
@@ -1312,6 +1345,11 @@ def practice_note(country, subject, title=""):
 
 # ====================================================================== open courses: candidates (step 5, 2026-11-21)
 #
+# SETTLED later on 2026-11-21: what was built from these lists is in courses.py (LibreTexts, BCcampus through Kolibri,
+# Khan Academy, CK-12 and EngageNY through Kolibri, MIT OpenCourseWare, Core Knowledge), in K12_GUIDES (Illustrative
+# Mathematics, Open Up HS Math) and PDF_DOCS (Utah's science books), with Siyavula's and OpenStax's new books above;
+# what was not built, and why, is in courses.NOT_INCLUDED. The lists below are kept as the record of the first look.
+#
 # Open courses and course textbooks of every subject, looked at for the "course" group. Each is (name, address,
 # licence as found, country, what was checked, what to do next). Only robots.txt was read for these on 2026-11-21;
 # no licence is taken as checked until a book's own page is read by the builder. Sources already recorded above
@@ -1414,4 +1452,137 @@ PERSONAL_USE_CANDIDATES = [
      PERSONAL_USE, "See OPEN_COURSE_CANDIDATES."),
     ("OpenLearn (The Open University)", "CC BY-NC-SA 4.0 (most courses)", "Kiwix ZIM if listed (www.open.edu "
      "refuses automated requests)", PERSONAL_USE, "Only through an offline package."),
+]
+
+
+# ====================================================================== K-12 school books (2026-11-21)
+#
+# School books from web sites, made into one ZIM book each by build_textbooks.webguide_book (keys k12:<name>), with
+# the fields of NONPROFIT plus level, grades, personal_use, latex/mathml, title_from, extra_pages, extra_titles,
+# path_from_url and fix (see webguide_book). Checked by hand on 2026-11-21 (robots.txt and the licence lines quoted
+# in LICENCE_LINES); the builder checks the licence again at every build (licence_page/licence_text, and page_mark on
+# every page).
+LICENCE_LINES.update({
+    "illustrative_mathematics": "Every page of im.kendallhunt.com ends: \"IM 6–8 Math was originally developed by "
+                                "Open Up Resources and authored by Illustrative Mathematics®, and is copyright "
+                                "2017-2019 by Open Up Resources. It is licensed under the Creative Commons Attribution "
+                                "4.0 International License (CC BY 4.0).\" (the same for IM 9–12 and K–5 Math); "
+                                "robots.txt has no rules.",
+    "open_up_hs_math": "www.openupresources.org/help-support/licensing-questions/: \"Open Up HS Math ... © Open Up "
+                       "Resources and Mathematics Vision Project. Unless otherwise noted, content produced by Open Up "
+                       "Resources and its partners in this book are published under a Creative Commons Attribution-"
+                       "NonCommercial 4.0 International License (CC BY-NC 4.0). ... Pre-Unit, Mid-Unit, and End-of-"
+                       "Unit Assessments do not fall under the Creative Commons License\" (so assessments are left out; "
+                       "personal use only).",
+    "utah_science": "Each Utah State Board of Education science book's credits page: \"Unless otherwise noted, the "
+                    "contents of this book are licensed under the Creative Commons Attribution NonCommercial "
+                    "ShareAlike license ... http://creativecommons.org/licenses/by-nc-sa/3.0/legalcode\" (adapted "
+                    "from CK-12, CC BY-NC 3.0); schools.utah.gov/robots.txt allows /curr/.",
+})
+
+IM_SITE = "https://im.kendallhunt.com"
+IM = dict(group="k12", level="school", subject="Mathematics", country="United States", licence="CC BY 4.0",
+          licence_url="https://creativecommons.org/licenses/by/4.0/",
+          publisher="Illustrative Mathematics (with Open Up Resources), published by Kendall Hunt",
+          licence_text=r"[Ll]icensed under the Creative Commons Attribution 4\.0 (International )?[Ll]icense",
+          page_mark=r"Creative\s+Commons\s+Attribution\s+4\.0", sitemap="", unit_rules=[],
+          content=(r"<main\b[^>]*>", r"</main>"), drop=[], fix=[(r"&lt;/?p&gt;", " ")], latex=True,
+          title_from=r'<h1[^>]*>(.*?)</h1>\s*<p class="im-c-heading[^"]*">(.*?)</p>', path_from_url=True,
+          extra_pages=[(r"/index\.html$", "/practice.html")], extra_titles=[(r"/practice\.html$", "practice problems")],
+          limit=900)
+
+
+def _im(name, title, grades, part, number, description):
+    """One Illustrative Mathematics student book (part "MS" or "HS", book number) as a K12_GUIDES entry."""
+    base = f"{IM_SITE}/{part}/students/{number}"
+    return dict(IM, name=name, title=title, grades=grades, source=f"{base}/index.html", licence_page=f"{base}/index.html",
+                start=[f"{base}/index.html"], units=r"^%s/\d+/index\.html$" % __import__("re").escape(base),
+                pages=r"^%s/(\d+/\d+/index|glossary)\.html$" % __import__("re").escape(base), description=description)
+
+
+def _im_k5(grade, words):
+    """The family materials of one IM K-5 Math grade (its student workbooks are printed only)."""
+    base = f"{IM_SITE}/k5/families/{grade}"
+    return dict(IM, name=f"im_k5_{grade.replace('-', '_')}_families", title=f"Illustrative Mathematics K-5: {words}, "
+                "Family Materials", grades=words.replace("Grade ", "").replace("Kindergarten", "K"), source=f"{IM_SITE}/K5/families/{grade}/units.html",
+                licence_page=f"{IM_SITE}/K5/families/{grade}/units.html", start=[f"{IM_SITE}/K5/families/{grade}/units.html"],
+                units="", pages=r"^%s/(information-for-families|unit-\d+/family-materials)\.html$" %
+                __import__("re").escape(base), extra_pages=[], extra_titles=[], title_from="",
+                titles=[(r"/information-for-families\.html$", "Information for families")],
+                description=f"IM K-5 Math, {words}: the letter to families for each unit, which says what the "
+                            "children learn, with sample problems and their solutions.")
+
+
+OUR_SITE = "https://access.openupresources.org/curricula/our-hs-math/en"
+OUR = dict(group="k12", level="school", subject="Mathematics", country="United States", licence="CC BY-NC 4.0",
+           licence_url="https://creativecommons.org/licenses/by-nc/4.0/", personal_use=True,
+           publisher="Open Up Resources and Mathematics Vision Project",
+           licence_page="https://www.openupresources.org/help-support/licensing-questions/",
+           licence_text=r"Open Up HS Math.{0,300}Creative Commons Attribution-NonCommercial 4\.0 International License",
+           page_mark="", sitemap="", unit_rules=[], content=(r"<main\b[^>]*>", r"</main>"), drop=[], mathml=True,
+           title_from=r'<h1[^>]*>\s*<span class="hed-alpha__superhed">(.*?)</span>\s*<span class="hed-alpha__hed"[^>]*>(.*?)</span>',
+           path_from_url=True, extra_titles=[(r"/ready_set_go\.html$", "Ready, Set, Go practice")], grades="9-12",
+           limit=900, notice="Open Up HS Math © Open Up Resources and Mathematics Vision Project, CC BY-NC 4.0. Its "
+                             "pre-unit, mid-unit and end-of-unit assessments are not under the licence and are not "
+                             "included.")
+
+
+def _our(name, path, words):
+    """One Open Up HS Math course (path under OUR_SITE) as a K12_GUIDES entry."""
+    base = f"{OUR_SITE}/{path}"
+    e = __import__("re").escape(base)
+    return dict(OUR, name=name, title=f"Open Up HS Math: {words}", source=f"{base}/index.html",
+                start=[f"{base}/index.html"], units=r"^%s/unit-\d+/index\.html$" % e,
+                pages=r"^%s/unit-\d+/lesson-\d+/(index|ready_set_go)\.html$" % e,
+                description=f"Open Up High School Mathematics, {words}: every lesson of the student edition (its "
+                            "tasks, learning focus and summaries) with its Ready, Set, Go practice; personal use only.")
+
+
+K12_GUIDES = [
+    _im("im_grade_6_math", "Illustrative Mathematics Grade 6 (student book)", "6", "MS", 1,
+        "IM 6-8 Math, grade 6: every lesson of the student book with its practice problems, lesson summaries and "
+        "glossary; formulas written as text and pictures described."),
+    _im("im_grade_7_math", "Illustrative Mathematics Grade 7 (student book)", "7", "MS", 2,
+        "IM 6-8 Math, grade 7: every lesson of the student book with its practice problems, lesson summaries and "
+        "glossary."),
+    _im("im_grade_8_math", "Illustrative Mathematics Grade 8 (student book)", "8", "MS", 3,
+        "IM 6-8 Math, grade 8: every lesson of the student book with its practice problems, lesson summaries and "
+        "glossary."),
+    _im("im_algebra_1", "Illustrative Mathematics Algebra 1 (student book)", "9-12", "HS", 1,
+        "IM 9-12 Math, Algebra 1: every lesson of the student book with its practice problems and glossary."),
+    _im("im_geometry", "Illustrative Mathematics Geometry (student book)", "9-12", "HS", 2,
+        "IM 9-12 Math, Geometry: every lesson of the student book with its practice problems and glossary."),
+    _im("im_algebra_2", "Illustrative Mathematics Algebra 2 (student book)", "9-12", "HS", 3,
+        "IM 9-12 Math, Algebra 2: every lesson of the student book with its practice problems and glossary."),
+    _im("im_algebra_1_supports", "Illustrative Mathematics Algebra 1 Extra Supports (student book)", "9-12", "HS", 4,
+        "IM 9-12 Math, the extra support lessons for Algebra 1 (Alg1+)."),
+] + [_im_k5(g, w) for g, w in [("kindergarten", "Kindergarten"), ("grade-1", "Grade 1"), ("grade-2", "Grade 2"),
+                               ("grade-3", "Grade 3"), ("grade-4", "Grade 4"), ("grade-5", "Grade 5")]] + [
+    _our("our_hs_algebra_1", "aga/algebra-1", "Algebra 1"),
+    _our("our_hs_geometry", "aga/geometry", "Geometry"),
+    _our("our_hs_algebra_2", "aga/algebra-2", "Algebra 2"),
+    _our("our_hs_math_1", "integrated/math-1", "Integrated Math 1"),
+    _our("our_hs_math_2", "integrated/math-2", "Integrated Math 2"),
+    _our("our_hs_math_3", "integrated/math-3", "Integrated Math 3"),
+]
+
+# Utah State Board of Education open science textbooks (the Utah Open Textbook Project), one PDF each: CC BY-NC-SA 3.0
+# (checked in each PDF's credits page at every build), so personal use only.
+UTAH_PAGE = "https://www.schools.utah.gov/curr/science"
+UTAH = dict(group="k12", level="school", country="United States", licence="CC BY-NC-SA 3.0",
+            licence_url="https://creativecommons.org/licenses/by-nc-sa/3.0/", personal_use=True,
+            publisher="Utah State Board of Education (adapted from CK-12 Foundation)", page=UTAH_PAGE,
+            licence_page=UTAH_PAGE, licence_text=r"OER|textbook",
+            pdf_licence_text=r"(?i)licenses/by-nc-sa/3\.0|Attribution\s*Non\s*-?Commercial\s*Share\s*-?Alike")
+PDF_DOCS += [
+    dict(UTAH, name=f"utah_science_{key.lower()}", title=f"Utah {words} Science (SEEd)", subject=f"Science, {words}",
+         grades=grades, pdf=f"https://www.schools.utah.gov/curr/science/_science_/{key}OERSciTextbook.pdf",
+         description=f"The Utah State Board of Education's open science textbook for {words.lower()}, written for "
+                     "Utah's SEEd standards (Science with Engineering Education); personal use only.")
+    for key, words, grades in [
+        ("Kindergarten", "Kindergarten", "K"), ("1stGrade", "Grade 1", "1"), ("2ndGrade", "Grade 2", "2"),
+        ("3rdGrade", "Grade 3", "3"), ("4thGrade", "Grade 4", "4"), ("5thGrade", "Grade 5", "5"),
+        ("6thGrade", "Grade 6", "6"), ("7thGrade", "Grade 7", "7"), ("8thGrade", "Grade 8", "8"),
+        ("Biology", "High School Biology", "9-12"), ("Chemistry", "High School Chemistry", "9-12"),
+        ("EarthSpace", "High School Earth and Space", "9-12"), ("Physics", "High School Physics", "9-12")]
 ]
