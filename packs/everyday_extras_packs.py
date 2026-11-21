@@ -1,4 +1,5 @@
-"""Pack builders for EVERYDAY THINGS a blind person asks a picture describer about, starting with money. They are
+"""Pack builders for EVERYDAY THINGS a blind person asks a picture describer about: money, mail and paperwork, clothes,
+makeup and grooming, toys, balls and instruments, the sky and the weather, and phone and computer screens. They are
 used by build_packs.py in the same way as its own PACKS: each builder is build_<key>(limit) and returns [(file name,
 JPEG bytes or None, row)], where a row is {"question", "answer", "credit"}, plus "place" where the source names one,
 "child": true where the words of a picture name a child, and "facts" (the Commons category and file title it came
@@ -22,6 +23,30 @@ The packs (all open: CC0, public domain or CC BY, checked file by file at the so
                         size with no raised marks, and the large numeral on the back of newer $5 to $100 bills; for
                         Canadian notes the Bank of Canada's six-dot tactile symbols, large high-contrast numbers and
                         colours).
+  commons_mail_parcels  Commons: envelopes, window envelopes (the kind bills come in), US and Canadian postmarks,
+                        postage meter marks, US and Canadian stamps, mailboxes, parcel lockers, parcels, cardboard
+                        boxes, bubble wrap and packing tape. Answers say what the thing is, never what an address or
+                        a label says; files whose words name private data (PRIVATE) are left out.
+  commons_clothing_patterns  Commons: garments (T-shirts, hoodies, sweaters, jeans, skirts, dresses, ties, jackets,
+                        raincoats, scarves, gloves, socks, boots, sandals ...), patterns (stripes, gingham, polka dots,
+                        floral, houndstooth, camouflage), fabrics (denim, corduroy, fleece, velvet, flannel, lace),
+                        clothing labels, and clothing by colour; a garment's colour or pattern also from the file's
+                        own categories ("Red T-shirts", "Striped dresses") when they name only one.
+  commons_makeup_grooming  Commons: makeup (cosmetics, eye shadow, foundation, concealer, lip gloss and balm, makeup
+                        brushes) and grooming things (nail files, combs, curling irons, electric shavers, shaving
+                        cream, safety razors, tweezers, cotton swabs, hair clips, toothbrushes, floss, mouthwash).
+  commons_toys_sports_music  Commons: toys and games (teddy bears, dolls, action figures, toy trains, LEGO, blocks,
+                        jigsaws, Rubik's Cubes, yo-yos, kites, tops, board games, dice, dominoes), balls and sports
+                        equipment (basketballs to shuttlecocks, bats, gloves, clubs, sticks, skateboards, weights,
+                        skis), and 20 common musical instruments by kind.
+  commons_sky_weather   Commons: the ten cloud types and mammatus, lenticular, shelf, wall and funnel clouds,
+                        tornadoes, contrails, fog, thunderstorms, lightning, hail, blizzards, rain, rainbows, sunsets
+                        and sunrises, the night sky, full and crescent moons, star trails, auroras and eclipses (many
+                        are NOAA and NASA public-domain photos). No storm damage (HARM).
+  commons_screens       Commons: error messages, dialog and message boxes, login and lock screens, web browsers,
+                        CAPTCHAs, progress bars, 404 pages, Windows and Android screenshots. Most screenshots on Commons
+                        carry the software's own licence (GPL, CC BY-SA): only CC0, public-domain, CC BY, MIT and
+                        Apache ones are taken.
 
 BANKNOTE PICTURES AND THE LAW. US law (18 U.S.C. 504, 31 CFR 411.1) allows colour pictures of US paper money only when
 one-sided and less than three-quarters or more than one and a half times the real size; Canada's Criminal Code (s. 457)
@@ -34,9 +59,22 @@ Not repeated (they exist): commons_us_money and commons_ca_money (the same Commo
 takes the ones whose title names the side and adds the design and touch facts), banknotes, bd_taka, ghana_money.
 The Smithsonian's National Numismatic Collection (CC0) was looked at: in the open-access bulk files only 2 of 5,434
 of its records carry a picture, and api.si.edu refused automated requests (service_packs.py notes), so it is not used.
+Forms and receipts: us_federal_forms, cord, and the kit's funsd, sroie, wildreceipt, xfund and cra_forms. Clothing:
+fashionpedia, clothing (Grigorev, CC0), commons_us_streets (what people wear), laundry_symbols, met_collection (the
+Met's open access, the Costume Institute included) and the kit's cooper_hewitt; DeepFashion is non-commercial behind a
+signed agreement (a sign-up collection). Makeup: commons_personal (lipstick, mascara, nail polish, razors,
+hairbrushes), abo_products and the kit's openbeautyfacts (ODbL, share-alike); no open collection of makeup colour
+swatches was found. Toys, sports and music: wikidata_toys_games, wikidata_sports, playing_cards, the chess packs,
+wikidata_instruments, met_instruments, the kit's mimo_instruments (BY-NC-SA), turkish_instruments and sports100.
+Sky: ccsn_clouds (CC0), weather_images, earth_observatory, eso and the kit's nasa. Screens: the kit's rico_screens,
+rico_widgets and screenqa_rico (Rico's screenshots carry no licence; research); ScreenSpot and other GUI-agent sets
+were not taken (their screenshots are of commercial apps whose makers hold the rights).
 
-Safety (packs/SOURCE-RULES.md): no sexual content (NUDE, us_packs.NOT_SHOWN); every row whose words name a child is
-marked "child". A free photo that has no answer here is simply not used.
+Safety (packs/SOURCE-RULES.md): no sexual content, underwear or swimwear (NUDE, us_packs.NOT_SHOWN); every row whose
+words name a child is marked "child"; art, posters and drawings of a thing are left out (NOT_THE_THING). People wear
+the clothes, use the makeup and grooming things, play with the toys and play the instruments and sports, so those
+three packs are never used for picture-making (PEOPLE_PACKS; the kit's PEOPLE_AND_BODILY_PACK_KEYS). A free photo
+that has no answer here is simply not used.
 
     python packs/everyday_extras_packs.py commons_money_sides --limit 8      (prints a few rows: a quick check)
 """
@@ -477,6 +515,321 @@ def build_commons_money_sides(limit):
     return with_twins(fetched[:limit])
 
 
+# ----------------------------------------------------------------- fixed-answer packs
+
+WHAT_Q = "What is this?"
+CLOTHING_Q = "What clothing is this?"
+PATTERN_Q = "What pattern is this?"
+FABRIC_Q = "What fabric is this?"
+COLOUR_Q = "What colour is it?"
+INSTRUMENT_Q = "What musical instrument is this?"
+CLOUD_Q = "What kind of clouds are these?"
+SKY_Q = "What is in the sky?"
+WEATHER_Q = "What is the weather like?"
+SCREEN_Q = "What is on this screen?"
+
+
+def fixed(category, answer, question=WHAT_Q, depth=0, place="", more=()):
+    """A spec whose rows are fixed sentences: (question, answer) and any more (question, answer) pairs."""
+    return spec(category, ((question, answer),) + tuple(more), depth, place)
+
+
+def fixed_rows(title, caption, categories, one, sub):
+    """The rows of a fixed-answer spec."""
+    return [{"question": q, "answer": a} for q, a in one["info"]]
+
+
+# Words that make a file of these packs unusable: art and drawings of the thing, harm, and the private data of mail.
+NOT_THE_THING = re.compile(r"\b(drawings?|paintings?|illustrations?|cartoons?|in art|sculptures?|statues?|posters?|"
+                           r"advertis\w*|stamps? (depicting|showing)|on stamps|patents?|diagrams?|charts?|"
+                           r"heraldry|coats? of arms)\b", re.I)
+HARM = re.compile(r"\b(damage[ds]?|destroyed|destruction|aftermath|debris|victims?|killed|dead|deaths?|injur\w*|"
+                  r"wreck\w*|ruins?|disaster|casualt\w*|funeral|crash\w*|blood\w*)\b", re.I)
+PRIVATE = re.compile(r"\b(addressed to|return address|my (address|letter|mail|parcel|package)|tracking number|"
+                     r"social security|account number|signature)\b", re.I)
+
+
+def build_fixed(specs, limit, prefix, rows_for=fixed_rows, harm=False, private=False):
+    """A fixed-answer Commons pack: files whose words are about art of the thing (and harm, or private data, where
+    asked) are left out."""
+    def rows(title, caption, categories, one, sub):
+        words = f"{title} {caption} {sub}"
+        if NOT_THE_THING.search(words) or harm and HARM.search(words) or private and PRIVATE.search(words):
+            return []
+        return rows_for(title, caption, categories, one, sub)
+    return with_twins(commons_fetch(extras_commons(specs, limit, prefix, rows))[:limit])
+
+
+# ----------------------------------------------------------------- commons_mail_parcels
+
+MAIL_SPECS = [
+    fixed("Envelopes", "It is an envelope."),
+    fixed("Window envelopes", "It is a window envelope: the address shows through a clear window, as on many bills "
+                              "and bank statements.", depth=1),
+    fixed("Postmarks of the United States", "It is a postmark: the post office's mark on mail, showing where and "
+                                            "when it was mailed.", depth=1, place=USA),
+    fixed("Postmarks of Canada", "It is a postmark: the post office's mark on mail, showing where and when it was "
+                                 "mailed.", depth=1, place=CANADA),
+    fixed("Meter stamps", "It is a postage meter mark: postage printed straight onto the mail by a machine instead "
+                          "of a stamp."),
+    fixed("Stamps of the United States", "It is a US postage stamp.", depth=1, place=USA),
+    fixed("Stamps of Canada", "It is a Canadian postage stamp.", depth=1, place=CANADA),
+    fixed("Mailboxes in the United States", "It is a mailbox in the United States.", depth=1, place=USA),
+    fixed("Mailboxes in Canada", "It is a mailbox in Canada.", depth=1, place=CANADA),
+    fixed("Parcel lockers", "It is a parcel locker: a bank of locked boxes where packages are left and picked up "
+                            "with a code.", depth=1),
+    fixed("Parcels", "It is a parcel: a package wrapped or boxed for mailing.", depth=1),
+    fixed("Cardboard boxes", "It is a cardboard box."),
+    fixed("Bubble wrap", "It is bubble wrap: plastic sheet with rows of air bubbles, used for packing."),
+    fixed("Packing tape", "It is packing tape, used to seal boxes."),
+]
+
+
+def build_commons_mail_parcels(limit):
+    """The Commons mail and parcels pack (files whose words name private data are left out)."""
+    return build_fixed(MAIL_SPECS, limit, "mail", private=True)
+
+
+# ----------------------------------------------------------------- commons_clothing_patterns
+
+COLOURS = ("red", "orange", "yellow", "green", "blue", "purple", "violet", "pink", "brown", "black", "white", "grey",
+           "gray", "beige")
+GARMENT = (r"clothing|clothes|shirts?|t-shirts?|blouses?|dress(es)?|skirts?|trousers|pants|jeans|jackets?|coats?|"
+           r"sweaters?|hoodies?|cardigans?|scarves|scarfs?|hats?|caps?|gloves?|mittens?|socks?|shoes?|boots?|"
+           r"sandals?|neckties?|ties|shorts|leggings|suits?|uniforms?|raincoats?|fabrics?|textiles?")
+CATEGORY_COLOUR = re.compile(rf"^({'|'.join(COLOURS)}) ({GARMENT})\b", re.I)
+CATEGORY_PATTERN = [(re.compile(rf"^(striped|stripes) ({GARMENT})\b|^stripes in clothing", re.I), "It has stripes."),
+                    (re.compile(rf"^(polka[- ]dot(ted)?) ({GARMENT})\b", re.I), "It has polka dots."),
+                    (re.compile(rf"^(plaid|tartan|checked|checkered) ({GARMENT})\b", re.I), "It has a plaid "
+                                                                                             "(checked) pattern."),
+                    (re.compile(rf"^(floral|flowered|flower-patterned) ({GARMENT})\b", re.I), "It has a floral "
+                                                                                               "pattern (flowers).")]
+GARMENTS = [("T-shirts", "It is a T-shirt."), ("Hoodies", "It is a hoodie (a hooded sweatshirt)."),
+            ("Sweaters", "It is a sweater."), ("Cardigans", "It is a cardigan (a sweater that opens down the front)."),
+            ("Jeans", "They are jeans."), ("Skirts", "It is a skirt."), ("Dresses", "It is a dress."),
+            ("Neckties", "It is a necktie."), ("Bow ties", "It is a bow tie."), ("Jackets", "It is a jacket."),
+            ("Raincoats", "It is a raincoat."), ("Scarves", "It is a scarf."), ("Gloves", "They are gloves."),
+            ("Mittens", "They are mittens."), ("Socks", "They are socks."), ("Boots", "They are boots."),
+            ("Sandals", "They are sandals."), ("Polo shirts", "It is a polo shirt."),
+            ("Dress shirts", "It is a dress shirt (a button-up shirt with a collar)."), ("Shorts", "They are shorts."),
+            ("Leggings", "They are leggings.")]
+CLOTHING_SPECS = [fixed(c, a, CLOTHING_Q) for c, a in GARMENTS] + [
+    fixed("Striped clothing", "It has stripes.", PATTERN_Q, depth=1),
+    fixed("Striped shirts", "It is a striped shirt.", CLOTHING_Q, more=((PATTERN_Q, "It has stripes."),)),
+    fixed("Gingham", "It is gingham: a checked pattern of small, even squares, usually white and one colour.",
+          PATTERN_Q, depth=1),
+    fixed("Polka dots", "It has polka dots: round dots spaced evenly.", PATTERN_Q, depth=1),
+    fixed("Floral patterns", "It has a floral pattern (flowers).", PATTERN_Q),
+    fixed("Houndstooth", "It is houndstooth: a pattern of broken checks with pointed corners.", PATTERN_Q, depth=1),
+    fixed("Camouflage patterns", "It is a camouflage pattern.", PATTERN_Q, depth=1),
+    fixed("Denim", "It is denim, the sturdy cotton cloth jeans are made of.", FABRIC_Q, depth=1),
+    fixed("Corduroy", "It is corduroy: cloth with raised ridges (cords) running along it.", FABRIC_Q, depth=1),
+    fixed("Fleece (fabric)", "It is fleece: a soft, fuzzy, warm fabric.", FABRIC_Q, depth=1),
+    fixed("Velvet", "It is velvet: a soft fabric with a short, thick pile.", FABRIC_Q, depth=1),
+    fixed("Flannel", "It is flannel: a soft, slightly fuzzy woven fabric.", FABRIC_Q, depth=1),
+    fixed("Lace", "It is lace: an open, web-like fabric with patterns of holes.", FABRIC_Q),
+    fixed("Clothing labels", "It is a label sewn into clothing.", WHAT_Q),
+] + [fixed(f"{c.capitalize()} clothing", f"It is {c}.", COLOUR_Q, depth=1)
+     for c in ("red", "blue", "black", "white", "green", "yellow", "pink")]
+
+
+def clothing_rows(title, caption, categories, one, sub):
+    """The fixed rows, and a colour or pattern the file's own categories name ("Red T-shirts", "Striped dresses"),
+    each only when its categories name one alone."""
+    rows = fixed_rows(title, caption, categories, one, sub)
+    asked = {r["question"] for r in rows}
+    colours = {CATEGORY_COLOUR.match(c).group(1).lower().replace("gray", "grey") for c in categories
+               if CATEGORY_COLOUR.match(c)}
+    if COLOUR_Q not in asked and len(colours) == 1:
+        rows.append({"question": COLOUR_Q, "answer": f"It is {colours.pop()}."})
+    patterns = {said for c in categories for pattern, said in CATEGORY_PATTERN if pattern.search(c)}
+    if PATTERN_Q not in asked and len(patterns) == 1:
+        rows.append({"question": PATTERN_Q, "answer": patterns.pop()})
+    return rows
+
+
+def build_commons_clothing_patterns(limit):
+    """The Commons clothing, patterns, fabrics and colours pack."""
+    return build_fixed(CLOTHING_SPECS, limit, "clothing", clothing_rows)
+
+
+# ----------------------------------------------------------------- commons_makeup_grooming
+
+GROOMING_SPECS = [
+    fixed("Cosmetics", "It is makeup (cosmetics)."),
+    fixed("Eye shadow", "It is eye shadow (makeup for the eyelids).", depth=1),
+    fixed("Foundation (cosmetics)", "It is foundation: skin-coloured makeup for the face."),
+    fixed("Concealer", "It is concealer: makeup for covering spots and dark circles."),
+    fixed("Lip gloss", "It is lip gloss."), fixed("Lip balm", "It is lip balm.", depth=1),
+    fixed("Makeup brushes", "They are makeup brushes.", depth=1),
+    fixed("Nail files", "It is a nail file.", depth=1), fixed("Combs", "It is a comb.", depth=1),
+    fixed("Curling irons", "It is a curling iron, for curling hair; it gets very hot."),
+    fixed("Electric shavers", "It is an electric shaver.", depth=1),
+    fixed("Shaving cream", "It is shaving cream (or foam).", depth=1),
+    fixed("Safety razors", "It is a safety razor.", depth=1), fixed("Tweezers", "They are tweezers.", depth=1),
+    fixed("Cotton swabs", "They are cotton swabs (cotton buds).", depth=1),
+    fixed("Hair clips", "It is a hair clip.", depth=1), fixed("Toothbrushes", "It is a toothbrush.", depth=1),
+    fixed("Electric toothbrushes", "It is an electric toothbrush.", depth=1),
+    fixed("Dental floss", "It is dental floss.", depth=1), fixed("Mouthwash", "It is mouthwash.", depth=1),
+]
+
+
+def build_commons_makeup_grooming(limit):
+    """The Commons makeup and grooming pack (commons_personal has shampoo, lipstick, mascara, nail polish, razors and
+    hairbrushes)."""
+    return build_fixed(GROOMING_SPECS, limit, "grooming")
+
+
+# ----------------------------------------------------------------- commons_toys_sports_music
+
+TOY_SPECS = [
+    fixed("Teddy bears", "It is a teddy bear.", depth=1), fixed("Stuffed toys", "It is a stuffed toy (a soft toy).",
+                                                                  depth=1),
+    fixed("Dolls", "It is a doll."), fixed("Action figures", "It is an action figure (a toy figure).", depth=1),
+    fixed("Toy trains", "It is a toy train."), fixed("Lego", "It is LEGO: toy plastic bricks that fit together."),
+    fixed("Building blocks", "They are toy building blocks.", depth=1), fixed("Jigsaw puzzles", "It is a jigsaw "
+                                                                                                "puzzle."),
+    fixed("Rubik's Cube", "It is a Rubik's Cube: a puzzle cube whose rows of coloured squares twist."),
+    fixed("Yo-yos", "It is a yo-yo.", depth=1), fixed("Kites", "It is a kite."),
+    fixed("Spinning tops", "It is a spinning top."), fixed("Board games", "It is a board game."),
+    fixed("Dice", "They are dice."), fixed("Dominoes", "They are dominoes."),
+]
+BALLS = [("Basketballs", "It is a basketball."), ("American footballs", "It is an American football."),
+         ("Baseballs", "It is a baseball."), ("Softballs", "It is a softball."), ("Tennis balls", "It is a tennis ball."),
+         ("Golf balls", "It is a golf ball."), ("Volleyballs", "It is a volleyball."),
+         ("Bowling balls", "It is a bowling ball."), ("Table tennis balls", "It is a table tennis (ping-pong) ball."),
+         ("Ice hockey pucks", "It is an ice hockey puck."), ("Beach balls", "It is a beach ball."),
+         ("Baseball bats", "It is a baseball bat."), ("Baseball gloves", "It is a baseball glove (a mitt)."),
+         ("Golf clubs", "It is a golf club."), ("Ice hockey sticks", "It is an ice hockey stick."),
+         ("Skateboards", "It is a skateboard."), ("Roller skates", "They are roller skates."),
+         ("Dumbbells", "It is a dumbbell (a hand weight)."), ("Kettlebells", "It is a kettlebell (a weight with a "
+                                                                             "handle)."),
+         ("Yoga mats", "It is a yoga mat."), ("Jump ropes", "It is a jump rope (a skipping rope)."),
+         ("Shuttlecocks", "It is a shuttlecock (a badminton birdie)."), ("Snowboards", "It is a snowboard."),
+         ("Skis", "They are skis.")]
+INSTRUMENTS = ["Acoustic guitars", "Electric guitars", "Bass guitars", "Violins", "Cellos", "Upright pianos",
+               "Grand pianos", "Electronic keyboards", "Snare drums", "Trumpets", "Trombones", "Saxophones",
+               "Clarinets", "Flutes", "Harmonicas", "Banjos", "Accordions", "Harps", "Xylophones", "Tambourines"]
+INSTRUMENT_NAMES = {"Bass guitars": "a bass guitar", "Upright pianos": "an upright piano",
+                    "Grand pianos": "a grand piano", "Electronic keyboards": "an electronic keyboard",
+                    "Snare drums": "a snare drum", "Acoustic guitars": "an acoustic guitar",
+                    "Electric guitars": "an electric guitar", "Accordions": "an accordion"}
+
+
+def instrument_name(category):
+    """ "Violins" -> "a violin" (INSTRUMENT_NAMES first)."""
+    if category in INSTRUMENT_NAMES:
+        return INSTRUMENT_NAMES[category]
+    return "a " + category[:-1].lower()
+
+
+TOYS_SPORTS_MUSIC_SPECS = TOY_SPECS + [fixed(c, a, depth=1 if c != "Skis" and c != "Skateboards" else 0)
+                                       for c, a in BALLS] + \
+    [fixed(c, f"It is {instrument_name(c)}.", INSTRUMENT_Q) for c in INSTRUMENTS]
+
+
+def build_commons_toys_sports_music(limit):
+    """The Commons toys and games, balls and sports equipment, and musical instruments pack."""
+    return build_fixed(TOYS_SPORTS_MUSIC_SPECS, limit, "play")
+
+
+# ----------------------------------------------------------------- commons_sky_weather
+
+SKY_SPECS = [
+    fixed("Cirrus clouds", "They are cirrus clouds: thin, wispy streaks high in the sky, made of ice.", CLOUD_Q),
+    fixed("Cirrocumulus clouds", "They are cirrocumulus clouds: small white puffs in rows or ripples, high in the "
+                                 "sky.", CLOUD_Q),
+    fixed("Cirrostratus clouds", "It is cirrostratus: a thin, milky veil of high cloud that can make a halo around "
+                                 "the sun or the moon.", CLOUD_Q),
+    fixed("Altocumulus clouds", "They are altocumulus clouds: white or grey patches or rolls in the middle of the "
+                                "sky.", CLOUD_Q),
+    fixed("Altostratus clouds", "It is altostratus: a grey or bluish sheet of middle-level cloud; the sun may show "
+                                "through it dimly, as through frosted glass.", CLOUD_Q),
+    fixed("Nimbostratus clouds", "It is nimbostratus: a thick, dark grey layer of cloud that brings steady rain or "
+                                 "snow.", CLOUD_Q),
+    fixed("Stratocumulus clouds", "They are stratocumulus clouds: low, lumpy grey and white patches or rolls, often "
+                                  "with gaps of sky between them.", CLOUD_Q),
+    fixed("Stratus clouds", "It is stratus: a low, even, grey layer of cloud, like fog that does not touch the "
+                            "ground.", CLOUD_Q),
+    fixed("Cumulus clouds", "They are cumulus clouds: puffy white clouds with flat bottoms.", CLOUD_Q, depth=1),
+    fixed("Cumulonimbus clouds", "It is a cumulonimbus cloud: a towering thunderstorm cloud, often with a flat, "
+                                 "spreading top like an anvil.", CLOUD_Q, depth=1),
+    fixed("Mammatus clouds", "They are mammatus clouds: rounded pouches hanging from the underside of a cloud, often "
+                             "near a thunderstorm.", CLOUD_Q),
+    fixed("Lenticular clouds", "They are lenticular clouds: smooth, lens- or saucer-shaped clouds, often over "
+                               "mountains.", CLOUD_Q),
+    fixed("Shelf clouds", "It is a shelf cloud: a low, wedge-shaped cloud along the front edge of a thunderstorm; "
+                          "strong gusts of wind often come with it.", CLOUD_Q),
+    fixed("Wall clouds", "It is a wall cloud: a lowered part of a thunderstorm's base, where tornadoes can form.",
+          CLOUD_Q),
+    fixed("Funnel clouds", "It is a funnel cloud: a spinning cone of cloud reaching down from a storm; one that "
+                           "touches the ground is a tornado.", SKY_Q),
+    fixed("Tornadoes", "It is a tornado: a violently spinning column of air reaching from a storm to the ground.",
+          SKY_Q, depth=1),
+    fixed("Contrails", "They are contrails: white trails left by jet planes high in the sky.", SKY_Q),
+    fixed("Fog", "It is foggy: everything looks hazy, and things farther away fade out of sight.", WEATHER_Q),
+    fixed("Thunderstorms", "There is a thunderstorm.", WEATHER_Q, depth=1),
+    fixed("Lightning", "There is lightning: a bright flash of electricity from a thunderstorm.", SKY_Q, depth=1),
+    fixed("Hail", "There is hail: balls or lumps of ice that fall from thunderstorms.", WEATHER_Q, depth=1),
+    fixed("Blizzards", "It is a blizzard: blowing snow and strong wind make it hard to see.", WEATHER_Q),
+    fixed("Rain", "It is raining.", WEATHER_Q, depth=1),
+    fixed("Rainbows", "There is a rainbow: an arc of colours, red on the outside and violet on the inside.", SKY_Q,
+          depth=1),
+    fixed("Double rainbows", "There is a double rainbow: two arcs of colour; in the outer, fainter one the colours "
+                             "are in reverse order.", SKY_Q),
+    fixed("Sunsets", "It is a sunset: the sun is going down.", SKY_Q),
+    fixed("Sunrises", "It is a sunrise: the sun is coming up.", SKY_Q),
+    fixed("Night sky", "It is the sky at night.", SKY_Q),
+    fixed("Full moon", "It is the full moon: the Moon's whole round face is lit.", SKY_Q),
+    fixed("Crescent moon", "It is a crescent moon: only a thin, curved sliver of the Moon is lit.", SKY_Q),
+    fixed("Star trails", "It is a star-trail photo: a long exposure that draws the stars as curved lines while the "
+                         "Earth turns.", SKY_Q),
+    fixed("Aurora borealis", "It is the aurora borealis (the northern lights): glowing curtains of light in the night "
+                             "sky.", SKY_Q, depth=1),
+    fixed("Solar eclipses", "It is a solar eclipse: the Moon passing in front of the Sun.", SKY_Q, depth=1),
+    fixed("Lunar eclipses", "It is a lunar eclipse: the Earth's shadow falling on the Moon, which often turns it "
+                            "reddish.", SKY_Q, depth=1),
+    fixed("Blue sky", "The sky is clear and blue.", SKY_Q, depth=1),
+]
+
+
+def build_commons_sky_weather(limit):
+    """The Commons clouds, storms, rainbows, sunsets and night sky pack (no storm damage: HARM)."""
+    return build_fixed(SKY_SPECS, limit, "sky", harm=True)
+
+
+# ----------------------------------------------------------------- commons_screens
+
+SCREEN_SPECS = [
+    fixed("Error messages", "It is an error message: the computer or app is saying something went wrong.", SCREEN_Q,
+          depth=1),
+    fixed("Dialog boxes", "It is a dialog box: a small window with a question or a message, usually with buttons "
+                          "such as OK and Cancel.", SCREEN_Q, depth=1),
+    fixed("Message boxes", "It is a message box: a small window with a message and a button to close it.", SCREEN_Q,
+          depth=1),
+    fixed("Login screens", "It is a login screen, asking for a user name (or email address) and a password.",
+          SCREEN_Q, depth=1),
+    fixed("Lock screens", "It is a lock screen: the phone or computer must be unlocked before it can be used.",
+          SCREEN_Q),
+    fixed("Screenshots of web browsers", "It is a web browser showing a web page.", SCREEN_Q, depth=1),
+    fixed("Captcha", "It is a CAPTCHA: a test that asks you to type distorted letters or pick pictures, to show you "
+                     "are a person.", SCREEN_Q, depth=1),
+    fixed("Progress bars", "It is a progress bar, showing how far a task such as a download or an installation has "
+                           "got.", SCREEN_Q, depth=1),
+    fixed("HTTP 404", "It is a \"404 Not Found\" error page: the web page asked for does not exist.", SCREEN_Q,
+          depth=1),
+    fixed("Windows screenshots", "It is a screen of Microsoft Windows.", SCREEN_Q, depth=1),
+    fixed("Android screenshots", "It is an Android phone screen.", SCREEN_Q, depth=1),
+]
+
+
+def build_commons_screens(limit):
+    """The Commons screens pack: error messages, dialogs, login and lock screens, browsers, CAPTCHAs and the like.
+    Most screenshots are under the software's licence (GPL, BY-SA): only CC0, public domain, CC BY, MIT and Apache
+    files are taken here."""
+    return build_fixed(SCREEN_SPECS, limit, "screen")
+
+
 # ----------------------------------------------------------------- the packs
 
 MONEY_FACTS = ("Touch and low-vision facts: US Mint coin specifications; U.S. Currency Education Program, "
@@ -492,15 +845,41 @@ EVERYDAY_EXTRAS_PACKS = {
              "(only files whose title names the side; US coin and currency designs are US government work; "
              "banknote pictures one-sided and made small, as 18 U.S.C. 504 and Canada's Criminal Code s. 457 "
              "require)") + " " + MONEY_FACTS),
+    "commons_mail_parcels": (build_commons_mail_parcels, COMMONS_CREDIT.format(
+        what="categories of envelopes, window envelopes, postmarks, meter marks, US and Canadian stamps, mailboxes, "
+             "parcel lockers, parcels, cardboard boxes, bubble wrap and packing tape")),
+    "commons_clothing_patterns": (build_commons_clothing_patterns, COMMONS_CREDIT.format(
+        what="categories of garments, clothing patterns (stripes, gingham, polka dots, floral, houndstooth, "
+             "camouflage), fabrics (denim, corduroy, fleece, velvet, flannel, lace), clothing labels and clothing by "
+             "colour")),
+    "commons_makeup_grooming": (build_commons_makeup_grooming, COMMONS_CREDIT.format(
+        what="categories of cosmetics, eye shadow, foundation, concealer, lip gloss and balm, makeup brushes, nail "
+             "files, combs, curling irons, shavers, shaving cream, safety razors, tweezers, cotton swabs, hair clips, "
+             "toothbrushes, dental floss and mouthwash")),
+    "commons_toys_sports_music": (build_commons_toys_sports_music, COMMONS_CREDIT.format(
+        what="categories of toys and games, sports balls and equipment, and musical instruments")),
+    "commons_sky_weather": (build_commons_sky_weather, COMMONS_CREDIT.format(
+        what="categories of clouds by type, storms, tornadoes, lightning, hail, fog, rain, rainbows, sunsets, "
+             "sunrises, the Moon, star trails, auroras and eclipses (many are NOAA and NASA public-domain photos)")),
+    "commons_screens": (build_commons_screens, COMMONS_CREDIT.format(
+        what="categories of error messages, dialog and message boxes, login and lock screens, web browsers, "
+             "CAPTCHAs, progress bars, 404 pages and Windows and Android screenshots (only files under CC0, public "
+             "domain, CC BY, MIT or Apache)")),
 }
 
 # The packs that show people (worn clothes, players, instruments being played): never used for picture-making (the
 # kit's PEOPLE_AND_BODILY_PACK_KEYS).
-PEOPLE_PACKS = ()
+PEOPLE_PACKS = ("commons_clothing_patterns", "commons_makeup_grooming", "commons_toys_sports_music")
 
 # How many pictures a full build takes from each (Commons answers about one picture a second).
 EVERYDAY_EXTRAS_LIMITS = {
     "commons_money_sides": 700,   # 49 categories, about 2,100 files, about a third with the side in the title
+    "commons_mail_parcels": 1000,       # 14 categories, about 900 files and their subcategories
+    "commons_clothing_patterns": 3000,  # 42 categories, garments 100 to 400 files each
+    "commons_makeup_grooming": 1200,    # 20 categories, about 1,300 files
+    "commons_toys_sports_music": 4000,  # 59 categories
+    "commons_sky_weather": 4000,        # 35 categories, cloud types 150 to 1,100 files each
+    "commons_screens": 600,             # 11 categories; most screenshots are GPL or BY-SA and left out
 }
 
 

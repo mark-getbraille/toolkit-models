@@ -9,6 +9,8 @@ It checks that:
   - US bill answers say the large numeral only for series that have it, and Canadian note answers give the Bank of
     Canada's tactile symbols for the value, and say an older note has none;
   - banknote pictures are made at most NOTE_SIDE pixels long;
+  - the fixed-answer packs leave out art of a thing, storm damage (sky) and files naming private data (mail), and a
+    garment's colour or pattern comes from its own categories only when they name one alone;
   - every pack is wired: in build_packs.PACKS and COMMONS_KEYS, in the workflow's known list and limit lines, and in
     the kit's sources.
 
@@ -113,6 +115,41 @@ def test_note_pictures_made_small():
     assert max(small.size) <= e.NOTE_SIDE
     assert e.is_note(e.us_note_rows("$20HawaiiBack", [], 20))
     assert not e.is_note(e.us_coin_rows("1994-P Washington quarter obverse", [], COIN["Washington quarter"]))
+
+
+def run_rows(monkeypatch, specs, titles, **kw):
+    """The rows build_fixed gives each made-up title of the first spec (nothing downloaded)."""
+    got = {}
+
+    def fake(specs, limit, prefix, rows):
+        one = specs[0]
+        for title in titles:
+            got[title] = rows(title, "", [], one, one["category"])
+        return []
+    monkeypatch.setattr(e, "extras_commons", fake)
+    monkeypatch.setattr(e, "commons_fetch", lambda items: items)
+    e.build_fixed(specs, 5, "test", **kw)
+    return got
+
+
+def test_fixed_packs(monkeypatch):
+    got = run_rows(monkeypatch, [e.fixed("Tornadoes", "It is a tornado.", e.SKY_Q)],
+                   ["Painting of a tornado", "Tornado damage in Joplin", "Tornado near Dodge City"], harm=True)
+    assert got["Painting of a tornado"] == [] and got["Tornado damage in Joplin"] == []
+    assert got["Tornado near Dodge City"] == [{"question": e.SKY_Q, "answer": "It is a tornado."}]
+    got = run_rows(monkeypatch, e.MAIL_SPECS[:1], ["Envelope with return address", "Brown envelope"], private=True)
+    assert got["Envelope with return address"] == [] and got["Brown envelope"][0]["answer"] == "It is an envelope."
+    tee = e.CLOTHING_SPECS[0]
+    rows = answers(e.clothing_rows("x", "", ["Red T-shirts", "Striped T-shirts", "Men wearing T-shirts"], tee, ""))
+    assert rows == {e.CLOTHING_Q: "It is a T-shirt.", e.COLOUR_Q: "It is red.", e.PATTERN_Q: "It has stripes."}
+    assert answers(e.clothing_rows("x", "", ["Red T-shirts", "Blue T-shirts"], tee, "")) == {e.CLOTHING_Q:
+                                                                                              "It is a T-shirt."}
+    assert e.instrument_name("Violins") == "a violin" and e.instrument_name("Grand pianos") == "a grand piano"
+    for specs in (e.MAIL_SPECS, e.CLOTHING_SPECS, e.GROOMING_SPECS, e.TOYS_SPORTS_MUSIC_SPECS, e.SKY_SPECS,
+                  e.SCREEN_SPECS):
+        names = [one["category"] for one in specs]
+        assert len(names) == len(set(names))
+        assert all(a.endswith(".") and q.endswith("?") for one in specs for q, a in one["info"])
 
 
 def test_wiring():

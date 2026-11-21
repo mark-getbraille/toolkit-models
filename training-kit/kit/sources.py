@@ -2247,6 +2247,19 @@ SOURCES = [
     # by touch or with low vision (US Mint, uscurrency.gov, Bank of Canada); banknote pictures one-sided and small.
     Source("commons_money_sides", "US and Canadian coins and bills by side, with their design and how to tell them by touch or with low vision (Wikimedia Commons, ready-made pack)",
            "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0; touch facts from the US Mint, uscurrency.gov (US government) and the Bank of Canada (with attribution)", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org; Bank of Canada", "permissive", 700, 10, prepare_pack, "about 100 MB"),
+    # Mail and parcels, clothing, makeup and grooming, toys, sports and music, sky and weather, and screens (Commons).
+    Source("commons_mail_parcels", "Envelopes, window envelopes, postmarks, stamps, mailboxes, parcel lockers, parcels and boxes (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1000, 10, prepare_pack, "about 200 MB"),
+    Source("commons_clothing_patterns", "Clothes by kind, pattern (stripes, gingham, polka dots, floral), fabric and colour (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 3000, 20, prepare_pack, "about 600 MB"),
+    Source("commons_makeup_grooming", "Makeup and grooming things: eye shadow, foundation, brushes, combs, shavers, razors, toothbrushes (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1200, 10, prepare_pack, "about 250 MB"),
+    Source("commons_toys_sports_music", "Toys and games, sports balls and equipment, and musical instruments (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 4000, 30, prepare_pack, "about 800 MB"),
+    Source("commons_sky_weather", "Clouds by type, storms, tornadoes, lightning, rainbows, sunsets, the Moon and the night sky (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 4000, 30, prepare_pack, "about 800 MB"),
+    Source("commons_screens", "Computer and phone screens: error messages, dialog boxes, login and lock screens, CAPTCHAs (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 600, 10, prepare_pack, "about 100 MB"),
     Source('skin_lesion_photos', 'Skin spots photographed with a phone, adults (PAD-UFES-20, ready-made pack)',
            'CC BY 4.0 (Mendeley Data zr7vgbcyr2)',
            'PAD-UFES-20 (Pacheco et al., 2020), CC BY 4.0', "permissive", 2000, 20, prepare_pack, 'about 400 MB', content="medical"),
@@ -2453,6 +2466,9 @@ PEOPLE_AND_BODILY_PACK_KEYS = (
     # na_animal_packs.py: people hold the fish, frogs and snakes, work beside NOAA's animals, ride, lead and handle
     # the domestic animals
     "na_herps_fish", "noaa_fisheries_species", "na_domestic_animals",
+    # everyday_extras_packs.py: people wear the clothes, use the makeup and grooming things, play with the toys and
+    # play the sports and instruments
+    "commons_clothing_patterns", "commons_makeup_grooming", "commons_toys_sports_music",
 )
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + PEOPLE_AND_BODILY_PACK_KEYS
 # The drug and firearm packs (packs/drug_firearm_packs.py): describing only, never for picture-making, whether or not

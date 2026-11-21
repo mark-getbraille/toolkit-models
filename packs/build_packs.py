@@ -1637,7 +1637,10 @@ PACKS.update(NA_ANIMAL_PACKS)
 
 # Everyday things (packs/everyday_extras_packs.py): US and Canadian coins and bills by side, with the design and how
 # each can be told by touch or with low vision (US Mint, uscurrency.gov and Bank of Canada facts); banknote pictures
-# one-sided and small (18 U.S.C. 504). The packs that show people are never used for picture-making (PEOPLE_PACKS).
+# one-sided and small (18 U.S.C. 504). Commons mail and parcels, clothing (garments, patterns, fabrics, colours),
+# makeup and grooming, toys, balls, sports equipment and instruments, clouds, storms and the night sky, and screens
+# (error messages, dialogs, login screens). The packs that show people are never used for picture-making
+# (PEOPLE_PACKS).
 from everyday_extras_packs import EVERYDAY_EXTRAS_PACKS
 PACKS.update(EVERYDAY_EXTRAS_PACKS)
 
@@ -1687,7 +1690,8 @@ COMMONS_KEYS = frozenset({
     # North American animals (na_animal_packs.py; the GBIF and NOAA packs do not read Commons)
     "na_domestic_animals",
     # everyday things (everyday_extras_packs.py)
-    "commons_money_sides",
+    "commons_money_sides", "commons_mail_parcels", "commons_clothing_patterns", "commons_makeup_grooming",
+    "commons_toys_sports_music", "commons_sky_weather", "commons_screens",
 })
 
 
