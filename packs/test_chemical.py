@@ -78,7 +78,15 @@ def test_finishes():
     """Finishes and surfaces, with the oily-rag note for drying oils."""
     got = answers(c.rule_rows(["Linseed oil"], c.FINISH_RULES))
     assert "drying oil finish" in got[c.FINISH_Q] and "catch fire by themselves" in got[c.SAFE_Q]
-    assert "zinc" in answers(c.rule_rows(["Hot-dip galvanizing"], c.FINISH_RULES))[c.FINISH_Q]
+    assert "being dipped or finished" in answers(c.rule_rows(["Hot-dip galvanizing"], c.FINISH_RULES))[c.FINISH_Q]
+    assert answers(c.rule_rows(["Galvanized steel fences"], c.FINISH_RULES))[c.FINISH_Q].startswith(
+        "This is galvanised steel")
+    # Not pictures of the product or finish (live examples): set aside instead.
+    for title in ("WD-40 Headquarters San Diego", "Die Gartenlaube 1892 b 030 1", "El Salvador Pupuseria en la noche",
+                  "Fiche de tracabilite du nettoyage des toilettes"):
+        assert c.NOT_PRODUCT.search(title), title
+    assert not c.NOT_PRODUCT.search("CO2 extinguisher 9544108309") and not c.NOT_PRODUCT.search("Camping gaz")
+    assert c.caption_row("Scope and content: Photographer: PITTSBURGH STEEL CO.") == []
     assert "mirror-bright" in answers(c.rule_rows(["Chrome plating"], c.FINISH_RULES))[c.FINISH_Q]
     assert "lead" in answers(c.rule_rows(["Peeling paint"], c.FINISH_RULES))[c.SURFACE_Q]
     assert "smells musty" in answers(c.rule_rows(["Mold on walls"], c.FINISH_RULES))[c.SURFACE_Q]
@@ -198,3 +206,27 @@ def test_kit_share_alike_drops_harm(monkeypatch):
             ("chem-sa-Meth_lab_bleach.jpg", "u", {"question": "What is this?", "answer": "This is bleach."})]
     monkeypatch.setattr(k, "commons_sa_items", lambda *a, **kw: list(made))
     assert [i[0] for i in k.sa_items([], 10, 0, "chem-sa")] == ["chem-sa-Bleach.jpg"]
+
+
+def test_engine_end_to_end(monkeypatch):
+    """chem_commons with made-up Commons answers: product photos get their category's rows, a company building in
+    the same category is set aside for a description, and harm words leave a file out."""
+    members = {("WD-40", "subcat"): [], ("WD-40", "file"): ["File:WD-40 can.jpg", "File:WD-40 Headquarters.jpg",
+                                                             "File:Meth lab WD-40.jpg"],
+               ("Mousetraps", "subcat"): [], ("Mousetraps", "file"): ["File:Something odd.jpg"]}
+    files = {"File:WD-40 can.jpg": made_up("File:WD-40 can.jpg", ["WD-40"], "A blue and yellow can of WD-40."),
+             "File:WD-40 Headquarters.jpg": made_up("File:WD-40 Headquarters.jpg", ["WD-40"]),
+             "File:Meth lab WD-40.jpg": made_up("File:Meth lab WD-40.jpg", ["WD-40"]),
+             "File:Something odd.jpg": made_up("File:Something odd.jpg", ["Things"])}
+    set_aside = []
+    monkeypatch.setattr(c, "commons_members", lambda s, cat, kind: members.get((cat, kind), []))
+    monkeypatch.setattr(c, "commons_files", lambda s, titles, mimes=None: [dict(files[t], title=t) for t in titles])
+    monkeypatch.setattr(c, "needs_description", lambda name, *a, **kw: set_aside.append(name) or True)
+    monkeypatch.setattr(c, "considered", lambda *a, **kw: None)
+    monkeypatch.setattr(c, "session", lambda: None)
+    monkeypatch.setattr(c, "finish", lambda key, items, limit, **kw: items)
+    items = c.chem_commons([c.topic("WD-40", 0), c.topic("Mousetraps", 0)], c.RULES, 10, "chem", "test")
+    assert sorted(i[0] for i in items) == ["chem-Something_odd.jpg", "chem-WD-40_can.jpg"]
+    got = answers(dict((i[0], i[2]) for i in items)["chem-WD-40_can.jpg"])
+    assert got[c.BRAND_Q] == "The brand is WD-40." and got[c.DESCRIBE_Q] == "A blue and yellow can of WD-40."
+    assert set_aside == ["chem-WD-40_Headquarters.jpg"]

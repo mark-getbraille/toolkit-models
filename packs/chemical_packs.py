@@ -27,9 +27,9 @@ The packs (all open: CC0, public domain or CC BY, checked file by file at the so
                          mineral wool insulation and photographic chemicals.
   commons_finishes_in_use  Commons categories of what these look like applied or in use: rust, corrosion and
                          verdigris, against galvanised, powder-coated, chrome-plated and brushed metal; varnish,
-                         shellac, lacquer and linseed and tung oil on wood; peeling paint and house painting; mildew,
+                         shellac, lacquer and linseed and tung oil on wood; peeling paint and house painting;
                          efflorescence and spalling on walls and concrete; mortar joints; and pesticides being
-                         applied.
+                         applied. (Commons' "Mildew" is plant fungi, so it is not read.)
   commons_hazard_symbols   Commons drawings and photos of the symbols on chemical packages: the Canadian WHMIS
                          hazard symbols, the NFPA 704 "fire diamond", and GHS pictograms other than safety_signs'
                          nine drawings (photos of labels, variants), plus any US DOT hazardous materials placard
@@ -242,7 +242,7 @@ RULES = [
      "car battery"),
     (r"\b(AAA?|9-volt|9 volt|C|D) batteries\b", WHAT_Q, "These are household batteries.", "battery"),
     # fuel and gas
-    (r"\bpropane (cylinders|tanks|bottles)\b|\blpg cylinders\b", WHAT_Q, "This is a propane cylinder (a propane "
+    (r"\bpropane\b.*\b(cylinders|tanks|bottles|cartridges)\b|\blpg cylinders\b", WHAT_Q, "This is a propane cylinder (a propane "
                                                                           "tank), as used for barbecue grills.",
      "propane"),
     (r"\b(gasoline|petrol|fuel) (cans|containers)\b", WHAT_Q, "This is a fuel can (a gas can).", "fuel"),
@@ -306,9 +306,12 @@ FINISH_RULES = [
      "metal away: scaly or bubbling rust means the metal under it is weakening.", ""),
     (r"\bcorro(sion|ded)\b", SURFACE_Q, "This shows corroded metal: its surface is eaten away, pitted, crusted or "
                                         "discoloured.", ""),
-    (r"\b(hot-dip )?galvani[sz](ed|ing|ation)\b", FINISH_Q,
+    (r"\bgalvani[sz]ed\b", FINISH_Q,
      "This is galvanised steel: coated with zinc, a dull grey or silvery finish, often with a crystal pattern "
      "(spangle), that protects the steel from rust.", ""),
+    (r"\b(hot-dip )?galvani[sz](ing|ation)\b", FINISH_Q,
+     "This shows galvanising: steel coated with zinc, either being dipped or finished. Galvanised steel has a dull "
+     "grey or silvery finish, often with a crystal pattern (spangle), that protects it from rust.", ""),
     (r"\bpowder coat(ed|ing)\b", FINISH_Q, "This metal is powder-coated: a tough, even, baked-on plastic paint, "
                                            "usually smooth and slightly glossy.", ""),
     (r"\bchrom(e|ium)[- ]plat(ed|ing)\b|\bchrome (finish|trim|bumpers?)\b", FINISH_Q,
@@ -439,7 +442,7 @@ FINISH_TOPICS = [topic(c, d) for c, d in [
     ("Rust", 1), ("Corrosion", 1), ("Verdigris", 1), ("Galvanization", 1), ("Hot-dip galvanizing", 1),
     ("Powder coating", 1), ("Chrome plating", 1), ("Brushed metal", 1),
     ("Varnish", 1), ("Shellac", 1), ("Lacquer", 1), ("Linseed oil", 1), ("Tung oil", 0),
-    ("Peeling paint", 1), ("House painting", 1), ("Mildew", 1), ("Efflorescence", 1), ("Spalling", 1),
+    ("Peeling paint", 1), ("House painting", 1), ("Efflorescence", 1), ("Spalling", 1),
     ("Mortar joints", 1), ("Pesticide application", 1),
 ]]
 
@@ -497,7 +500,19 @@ def brand_rows(categories, rows):
 # A caption that is the upload form's leftovers, not a description ("Description NFPA 704 F4 Author ... Programs
 # ISIS/Draw", "Original file description is/was here").
 CAPTION_JUNK = re.compile(r"^\s*description\b|\bauthor\b|\bprograms?\b.*\b(draw|paint|inkscape|illustrator)\b|"
-                          r"original (file )?description|is/was here|\bown work\b|\bsource\s*:", re.I)
+                          r"original (file )?description|is/was here|\bown work\b|\bsource\s*:|scope and content|"
+                          r"photographer\s*:", re.I)
+# Files in a product or finish category that are not a picture of it: a company's building, a shop or street scene,
+# a show, a heritage record, a paper form or an old printed page. They are set aside for a description (their
+# category kept as a hint) instead of getting the category's answer. NOT_PRODUCT is read in the file's title;
+# NOT_PRODUCT_CAPTION in its caption too.
+NOT_PRODUCT = re.compile(r"\b(headquarters|head office|offices?|buildings?|factory|factories|warehouses?|museum|"
+                         r"exhibit\w*|monuments?|heritage|onroerenderfgoed|street|village|town|night|restaurant|"
+                         r"pupuseria|market|storefront|shopfront|re-?enactment|show|parade|fiche|form|sheet|"
+                         r"document|poster|advert\w*|logo|gartenlaube|engraving|woodcut|lithograph|page|seite|"
+                         r"magazine|catalogue|catalog)\b", re.I)
+NOT_PRODUCT_CAPTION = re.compile(r"\b(headquarters|office building|factory|re-?enactment|traceability|form to fill|"
+                                 r"magazine illustration|engraving)\b", re.I)
 
 
 def caption_row(text):
@@ -595,6 +610,9 @@ def chem_commons(topics, rules, limit, prefix, key, row_maker=file_rows, mimes=(
                     continue
                 seen.add(title)
                 rows = row_maker(f, found_in.get(title, t["root"]), rules)
+                if photos and (NOT_PRODUCT.search(title.split(":", 1)[-1].replace("_", " "))
+                               or NOT_PRODUCT_CAPTION.search(f.get("text", ""))):
+                    rows = []                  # not a picture of the product or finish: set aside, its category kept
                 if not rows:
                     needs_description(file_name(prefix, title), f["url"], f["credit"], f["licence"],
                                       text=f.get("text", ""), title=title,
@@ -787,7 +805,7 @@ CHEMICAL_PACKS = {
              "extinguishers by type, building products), with safety notes for hazardous products")),
     "commons_finishes_in_use": (build_commons_finishes_in_use, COMMONS_CREDIT.format(
         what="categories of finishes and surfaces: rust, corrosion and verdigris, galvanised, powder-coated, "
-             "chrome and brushed metal, wood finishes, peeling paint, mildew, efflorescence, spalling, mortar joints, "
+             "chrome and brushed metal, wood finishes, peeling paint, efflorescence, spalling, mortar joints, "
              "and pesticides being applied")),
     "commons_hazard_symbols": (build_commons_hazard_symbols, COMMONS_CREDIT.format(
         what="categories of WHMIS hazard symbols, NFPA 704 images and GHS pictograms (not safety_signs' nine "
@@ -797,7 +815,7 @@ CHEMICAL_PACKS = {
 # How many pictures a full build takes from each (Commons answers about one picture a second).
 CHEMICAL_LIMITS = {
     "commons_household_chemicals": 2500,  # 59 topics: about 3,900 files directly in them, more in subcategories
-    "commons_finishes_in_use": 2000,      # 20 topics: about 1,900 files directly in them (Rust alone about 770)
+    "commons_finishes_in_use": 2000,      # 19 topics: about 1,800 files directly in them (Rust alone about 770)
     "commons_hazard_symbols": 300,        # 3 topics of drawings and photos
 }
 
