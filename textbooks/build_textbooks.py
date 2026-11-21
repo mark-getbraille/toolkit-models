@@ -140,6 +140,9 @@ class Book:
     notice: str = ""             # a statement the licence asks to show with the work (on the welcome page)
     unchanged: bool = False      # kept whole with its text unchanged, only its format converted (a NoDerivatives or
                                  # other no-changes licence allows that: sources.WHOLE_AND_UNCHANGED)
+    practice_note: str = ""      # where a non-US book's practice may differ from the US ("" to use
+                                 # sources.practice_note from its country and subject)
+    grades: str = ""             # the school grades it is for, where known ("9-12", "K-5"; "" when not stated)
     redirects: list = field(default_factory=list)  # [(path, title, target path)]: more titles that lead to a page
                                  # (a medicine's brand names, medications.py), found by the title search
 
@@ -303,6 +306,12 @@ def two_letters(code):
     return {"eng": "en", "spa": "es", "fra": "fr", "por": "pt"}.get(code, code[:2])
 
 
+def practice_note_of(book):
+    """The notice saying where a book from outside the US may differ from US practice (its own practice_note, or
+    one made from its country, subject and title by sources.practice_note); "" for a US book."""
+    return book.practice_note or sources.practice_note(book.country, book.subject, book.title)
+
+
 def credit_line(book):
     """"From Physics by OpenStax, Rice University, CC BY 4.0 (https://...). Original: https://openstax.org/..."."""
     if book.unchanged:
@@ -324,6 +333,8 @@ def index_page(book):
         out.append(f"<p>Published (or last revised): {esc(book.published)}.</p>")
     if book.notice:
         out.append(f"<p>{esc(book.notice)}</p>")
+    if practice_note_of(book):
+        out.append(f"<p>{esc(practice_note_of(book))}</p>")
     if book.original_pdf.get("url"):
         out.append(f'<p>The publisher\'s original PDF: <a href="{esc(book.original_pdf["url"])}">'
                    f'{esc(book.original_pdf["url"])}</a>.</p>')
@@ -424,7 +435,9 @@ def manifest_entry(book, file_id, path, count, date):
     licence_kind, licence_text (as shown), language, flavour, date (when the ZIM file was made), published (when the
     publisher published or last revised the work: "YYYY-MM-DD", "YYYY-MM" or "YYYY", "" when unknown), region (state
     or province, "" for a whole country), size, sha256, article_count, file, url, description, source, original_pdf and
-    original_epub ({url, size, sha256} or {}), and unchanged (true for a work kept whole with its text unchanged)."""
+    original_epub ({url, size, sha256} or {}), unchanged (true for a work kept whole with its text unchanged),
+    practice_note (where a non-US work may differ from US practice, "" for a US work) and grades (school grades,
+    "" when not known)."""
     return {
         "id": file_id, "name": book.name, "title": book.title, "subject": book.subject, "level": book.level,
         "group": book.group, "publisher": book.publisher, "credit": book.publisher, "country": book.country,
@@ -437,6 +450,7 @@ def manifest_entry(book, file_id, path, count, date):
         "article_count": count, "file": os.path.basename(path), "url": f"{RELEASE}/{os.path.basename(path)}",
         "description": book.description, "source": book.source, "authors": book.authors,
         "original_pdf": book.original_pdf, "original_epub": book.original_epub,
+        "practice_note": practice_note_of(book), "grades": book.grades,
     }
 
 
@@ -1096,7 +1110,8 @@ def siyavula_book(subject, grade, title, subject_words, cache=None, left_out=Non
     book = Book(name=f"siyavula_{slug(subject).replace('-', '_')}_grade_{grade}", title=f"Siyavula {title}",
                 subject=subject_words, level="school", group="textbooks", publisher="Siyavula Education",
                 country="South Africa", licence="CC BY 4.0", licence_url="https://creativecommons.org/licenses/by/4.0/",
-                source=toc_url, description=f"{title}, a South African school textbook (CAPS curriculum) by Siyavula "
+                source=toc_url, grades=f"Grade {grade} (South Africa)",
+                description=f"{title}, a South African school textbook (CAPS curriculum) by Siyavula "
                 "Education, with worked examples and exercises.")
     if pdf:
         url = SIYAVULA_SITE + pdf.group(1)

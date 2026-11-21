@@ -410,3 +410,22 @@ def test_north_american_animal_sources(monkeypatch):
     entry = dict(old[0], archive="b")
     assert B.pdfdoc_book(entry, "unused", left_out=left) is None
     assert "before 1931" in left[0]["reason"]
+
+
+def test_practice_notes():
+    """A non-US book gets a notice specific to its subject; a US book gets none; every candidate course has the
+    fields the gap report and the next session need."""
+    assert sources.practice_note("United States", "Electrical wiring") == ""
+    note = sources.practice_note("Canada", "Electrical wiring")
+    assert note.startswith("Canadian source: wiring rules") and note.endswith("may differ from US practice.")
+    assert "medicine names" in sources.practice_note("United Kingdom", "First aid")
+    assert "side of the road" in sources.practice_note("Australia", "Automotive service")
+    assert "point of view" in sources.practice_note("United Kingdom", "History")
+    assert "units (metric)" in sources.practice_note("Ireland", "Music")
+    book = B.Book(name="x", title="Physical Sciences Grade 10", subject="Physics and chemistry", level="school",
+                  group="textbooks", publisher="P", country="South Africa", licence="CC BY 4.0", licence_url="u",
+                  source="s", grades="Grade 10 (South Africa)")
+    assert B.practice_note_of(book).startswith("South African source: metric units")
+    assert B.practice_note_of(book) in B.index_page(book)
+    assert all(len(c) == 6 for c in sources.OPEN_COURSE_CANDIDATES)
+    assert all(len(c) == 7 for c in sources.K12_CANDIDATES)

@@ -1251,3 +1251,137 @@ ANIMALS_NOT_INCLUDED = [
      "reference library's drug-label work."),
 ]
 NOT_INCLUDED = NOT_INCLUDED + ANIMALS_NOT_INCLUDED
+
+
+# ====================================================================== where a non-US source's practice may differ
+#
+# The owner's rule (November 2026): every book from outside the United States carries a short notice saying where
+# its practice may differ from US practice, as specific to its subject as the subject's words allow. The builder
+# shows it on the book's welcome page and puts it in textbooks.json ("practice_note"); practice_note() gives it.
+
+# How each country is named at the start of the notice ("" for the United States: no notice).
+PRACTICE_COUNTRY = {
+    "United Kingdom": "UK", "Canada": "Canadian", "Australia": "Australian", "New Zealand": "New Zealand",
+    "Ireland": "Irish", "South Africa": "South African", "India": "Indian", "International": "International",
+}
+
+# (words in a book's subject or title, what may differ), first match wins; the last line is for any other subject.
+PRACTICE_SUBJECTS = [
+    (r"electric|wiring|electronics", "wiring rules and electrical codes (not the US National Electrical Code), "
+     "mains voltage and frequency, plug types, wire colours and metric units"),
+    (r"plumb|gas fitt|hvac|heating|refrigerat", "plumbing and gas codes, pipe sizes and metric units, refrigerant "
+     "rules and approved fittings"),
+    (r"carpent|construct|building|millwright|joiner", "building codes, lumber sizes and metric units, and "
+     "workplace safety rules (not OSHA)"),
+    (r"weld|machin|metal|fabricat", "welding and safety standards (not AWS or OSHA), material grades and metric "
+     "units"),
+    (r"automotive|vehicle|motor|mechanic|driving", "the side of the road and the driver's seat, vehicle standards "
+     "and inspections, and metric units"),
+    (r"medic|nurs|pharm|health|first aid|drug|anatomy", "medicine names (international or local brand names, not "
+     "US ones), doses and units (mmol/L, kilograms), emergency numbers, and the laws on practice and prescribing"),
+    (r"law|legal|rights|regulat|employment|workplace", "the laws themselves, courts, rights and workplace rules, "
+     "which apply only there"),
+    (r"cook|food|culinary|nutrition", "food safety rules, metric measures and oven temperatures in Celsius, and "
+     "food names"),
+    (r"account|business|financ|tax|econom", "tax rules, accounting standards (IFRS, not US GAAP), currency and "
+     "business law"),
+    (r"agricult|farm|horticult", "pesticide approvals, farming rules, climate and seasons, and metric units"),
+    (r"history|social stud|civics|geograph|government|citizenship", "history, civics and geography taught from "
+     "that country's point of view, with its own spelling and curriculum"),
+    (r"math|algebra|geometr|calculus|statistic", "spelling, notation (decimal comma, the way division and dates are "
+     "written), the order of the curriculum, grade names and exams"),
+    (r"science|physics|chemistr|biolog", "metric units, spelling, the order of the curriculum, grade names and "
+     "exams, and local plants, animals and safety rules"),
+    (r"english|reading|literacy|language arts|writing", "spelling (colour, centre), vocabulary, grammar terms and "
+     "the books studied"),
+    (r"", "units (metric), spelling, laws, standards and everyday practice"),
+]
+
+
+def practice_note(country, subject, title=""):
+    """The notice for a book from a country outside the US, or "" for a US book or an unknown country:
+    "Canadian source: wiring rules and electrical codes (...) may differ from US practice." """
+    import re
+    who = PRACTICE_COUNTRY.get(country, "")
+    if not who:
+        return ""
+    words = f"{subject} {title}".lower()
+    what = next(text for pattern, text in PRACTICE_SUBJECTS if re.search(pattern, words))
+    return f"{who} source: {what} may differ from US practice."
+
+
+# ====================================================================== open courses: candidates (step 5, 2026-11-21)
+#
+# Open courses and course textbooks of every subject, looked at for the "course" group. Each is (name, address,
+# licence as found, country, what was checked, what to do next). Only robots.txt was read for these on 2026-11-21;
+# no licence is taken as checked until a book's own page is read by the builder. Sources already recorded above
+# (BCcampus, eCampusOntario, CAUL, OpenLearn, Saylor, Open Yale, MIT OpenCourseWare, OpenStax, Siyavula, Te Pukenga,
+# Scoilnet) are not repeated. MIT OpenCourseWare and OpenLearn are CC BY-NC-SA: the library's "non-commercial" kind
+# (ALLOWED), shown with "not for commercial use", for personal and school use.
+OPEN_COURSE_CANDIDATES = [
+    ("Open Textbook Library (University of Minnesota)", "https://open.umn.edu/opentextbooks", "per book (catalogue: "
+     "RSL licence.xml permits all uses with CC BY attribution)", "United States", "robots.txt allows all, "
+     "Crawl-delay 120", "Use as the catalogue: read each book's licence and its source (often a Pressbooks site, "
+     "some of them blocked as BCcampus is); build the CC BY, CC0 and BY-SA ones."),
+    ("LibreTexts (all its libraries: med, eng, chem, bio, workforce ...)", "https://commons.libretexts.org",
+     "per book (mixed: CC BY, BY-SA, BY-NC-SA, some all rights reserved)", "United States", "robots.txt: "
+     "Crawl-delay 5, Special: pages disallowed, files allowed", "Read each book's licence from its own page; the "
+     "Workforce library has trades courses (welding, HVAC, electrical, automotive)."),
+    ("MIT OpenCourseWare", "https://ocw.mit.edu", "CC BY-NC-SA 4.0 (each course page)", "United States",
+     "robots.txt allows all", "Non-commercial kind; start with courses whose notes are text, not scans."),
+    ("SkillsCommons (US Department of Labor TAACCCT)", "https://www.skillscommons.org", "CC BY 4.0 (grant "
+     "condition)", "United States", "not reachable from the build machine on 2026-11-21 (no answer)", "Try again; "
+     "look for its OAI-PMH feed (DSpace). Strong picture-pack candidate: labelled trade photos and diagrams."),
+    ("Washington SBCTC Open Course Library", "https://www.opencourselibrary.org", "CC BY (as stated by SBCTC)",
+     "United States", "address redirects; robots.txt not read yet", "Follow the redirect and read its terms."),
+    ("OER Commons (ISKME), CTE and all subjects", "https://www.oercommons.org", "per item (filter CC BY, CC0)",
+     "United States", "robots.txt refuses automated requests (403)", "Not fetched; each item links to its own "
+     "host, which can be added directly."),
+    ("Open Polytechnic of New Zealand", "https://www.openpolytechnic.ac.nz", "not yet found", "New Zealand",
+     "robots.txt read (200)", "Look for openly licensed course material; most is enrolment-only."),
+    ("Ako Aotearoa (New Zealand)", "https://ako.ac.nz", "not yet found (resources for teachers)", "New Zealand",
+     "robots.txt read (200)", "Check each resource's licence."),
+    ("OpenLearn Create (The Open University, UK)", "https://www.open.edu/openlearncreate", "per course (many "
+     "CC BY-NC-SA)", "United Kingdom", "create.open.edu did not answer; www.open.edu refuses (403, see above)",
+     "Not fetched unless the Open University allows it."),
+    ("TAFE and Australian open courses", "", "TAFE course material is mostly copyright; CAUL's collection is "
+     "blocked (see above)", "Australia", "not checked", "Look for Australian Pressbooks hosts that allow "
+     "automated download, and state government (CC BY 4.0) training resources."),
+    ("Irish and Scottish open resources (e.g. Ireland's National Forum, Scotland's college OER)", "", "not yet "
+     "found", "Ireland", "not checked", "Search their repositories for CC BY course books."),
+    ("State CTE curriculum centres (Oklahoma CareerTech, Texas CTE resource centre)", "", "mostly copyright",
+     "United States", "not checked", "Check each; keep only those with an open licence."),
+]
+
+# K-12 (kindergarten to grade 12) open textbooks and courses looked at on 2026-11-21: (name, address, licence as
+# found, country, grades, what was checked, what to do next). Grades are US grades ("K-5", "6-8", "9-12") or the
+# country's own years. Already recorded above and not repeated: CK-12 (its own licence, not a standard open one;
+# not CC BY-NC as sometimes said), Siyavula (built: grades 7 to 12), Oak National Academy (API key needed), Khan
+# Academy (not openly licensed: skipped; already in the Kiwix library). OpenStax's high school titles come with the
+# OpenStax repositories (OSBOOKS) when a "high-school" repository is listed there.
+K12_CANDIDATES = [
+    ("OpenStax high school titles (Physics, Biology, Statistics for high school)", "https://openstax.org",
+     "CC BY 4.0", "United States", "9-12", "robots.txt read (GPTBot shut out of /books/; other readers allowed)",
+     "Find the osbooks-* repository of each high school title with git ls-remote and add it to OSBOOKS."),
+    ("Illustrative Mathematics and Open Up Resources", "https://illustrativemathematics.org", "CC BY 4.0 "
+     "(their own statement)", "United States", "K-12", "not checked", "Check robots.txt and the licence page; the "
+     "student books are web pages."),
+    ("EngageNY / NYSED curriculum (New York)", "https://www.nysed.gov/curriculum-instruction", "CC BY-NC-SA 3.0",
+     "United States", "PreK-12", "not checked", "Non-commercial kind; mostly PDF modules."),
+    ("Utah Open Textbook Project (Utah State Board of Education)", "https://www.schools.utah.gov", "CC BY",
+     "United States", "K-12 (mostly 6-12 maths, science and language arts)", "not checked", "Find the current "
+     "address; the books are PDFs."),
+    ("Washington OSPI OER", "https://ospi.k12.wa.us", "CC BY 4.0 (OSPI's own material)", "United States", "K-12",
+     "not checked", "Check each item: OSPI links to others' material too."),
+    ("Oregon and other state K-12 OER hubs (OER Commons state hubs)", "https://www.oercommons.org/hubs",
+     "per item (CC BY or CC0 only)", "United States", "K-12", "OER Commons refuses automated requests (403)",
+     "Use each item's own host where it allows automated download."),
+    ("Core Knowledge (Core Knowledge Language Arts, history and geography)", "https://www.coreknowledge.org",
+     "CC BY-NC-SA 4.0", "United States", "PreK-8", "not checked", "Non-commercial kind; PDFs."),
+    ("BC open K-12 resources (British Columbia, Canada)", "https://www2.gov.bc.ca", "OGL-BC or CC BY where stated",
+     "Canada", "K-12", "not checked", "Look for openly licensed BC curriculum resources; OGL-BC is allowed."),
+    ("Australian state school resources (e.g. NSW, Victoria, Queensland)", "", "often CC BY 4.0 for state "
+     "government material", "Australia", "Foundation-Year 12", "not checked", "Check each state's licence page."),
+    ("OER Commons K-12 (CC BY or CC0 only)", "https://www.oercommons.org", "per item", "United States", "K-12",
+     "robots.txt refuses automated requests (403)", "Not fetched; use each item's own host."),
+]
