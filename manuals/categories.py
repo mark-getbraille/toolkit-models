@@ -568,3 +568,18 @@ CATEGORIES = {
 from smoking_vaping import CATEGORY as _SMOKING_VAPING  # noqa: E402
 
 CATEGORIES["smoking_vaping"] = _SMOKING_VAPING
+
+# Hardware, tools and shop equipment: their makers, access decisions, safety notices and public-domain guides are in
+# manuals/hardware_tools.py. Its new categories are added, and power_tools, hand_tools and lawn_garden are extended
+# (more Internet Archive words, the makers' libraries, a safety notice and the guides).
+from hardware_tools import CATEGORIES as _HARDWARE_TOOLS, EXTEND as _HARDWARE_EXTEND  # noqa: E402
+
+CATEGORIES.update(_HARDWARE_TOOLS)
+for _key, _more in _HARDWARE_EXTEND.items():
+    _cat = CATEGORIES[_key]
+    _cat["ia"] = list(_cat.get("ia", [])) + [w for w in _more.get("ia", []) if w not in _cat.get("ia", [])]
+    for _field in ("makers", "public_guides", "guidance"):
+        if _more.get(_field):
+            _cat[_field] = list(_cat.get(_field) or []) + list(_more[_field])
+    if _more.get("notice"):
+        _cat["notice"] = _more["notice"]
