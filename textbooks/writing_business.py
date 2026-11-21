@@ -228,6 +228,60 @@ PDFS = [
          notice="A work of the US Air Force (not under copyright in the United States), approved for public "
                 "release; distribution unlimited. An older edition: check the current Tongue and Quill before "
                 "preparing official Air Force correspondence."),
+    _pdf("opm_measuring_employee_performance", "A Handbook for Measuring Employee Performance (OPM, 2017)",
+         "Performance management and writing performance plans", OPM,
+         "OPM's handbook on writing employee performance plans, the whole book: performance management, the "
+         "eight steps to performance elements and standards (from the organization's goals to the measures), "
+         "writing elements and standards that can be measured, individual and team accomplishments, and many "
+         "worked examples.", "2017-03", "March 2017",
+         pdf=f"{OPM_SITE}/performance-management/reference-materials/articles/employee_performance_handbook.pdf",
+         page=f"{OPM_SITE}/performance-management/reference-materials/"),
+    _pdf("opm_structured_interviews", "Structured Interviews: A Practical Guide (OPM, 2008)",
+         "Hiring: structured interviews", OPM,
+         "OPM's guide to planning and holding structured job interviews, the whole guide: why they work, choosing "
+         "competencies, writing interview questions and rating scales, training interviewers, holding the "
+         "interview and documenting it, with sample questions and benchmarks.", "2008-09", "September 2008",
+         pdf=f"{OPM_SITE}/assessment-and-selection/structured-interviews/guide.pdf",
+         page=f"{OPM_SITE}/assessment-and-selection/structured-interviews/"),
+    _pdf("opm_assessment_decision_guide", "Assessment Decision Guide (OPM)", "Hiring: assessment methods", OPM,
+         "OPM's guide to choosing ways of assessing job applicants, the whole guide: the principles of assessment "
+         "(validity, reliability, fairness, the law), evaluating and putting assessment tools into practice, and "
+         "a description of each method (structured interviews, work samples, writing samples, situational "
+         "judgement tests, training and experience questionnaires, reference checking and others).", "2007-07",
+         "2007", pdf=f"{OPM_SITE}/assessment-and-selection/reference-materials/assessmentdecisionguide.pdf",
+         page=f"{OPM_SITE}/assessment-and-selection/reference-materials/"),
+    _pdf("opm_writing_editing_grade_guide", "Writing and Editing Grade Evaluation Guide (OPM, TS-115, 1992)",
+         "Writing and editing jobs (federal classification)", OPM,
+         "OPM's guide for grading federal writing and editing positions (writers, editors, technical writers), the "
+         "whole guide: what writing and editing work covers, and the factors used to grade it (the nature of the "
+         "assignment, the level of responsibility) with their descriptions at each grade.", "1992-05",
+         "TS-115, May 1992",
+         pdf=f"{OPM_SITE}/classification-qualifications/classifying-general-schedule-positions/functional-guides/"
+             "gswrited.pdf",
+         page=f"{OPM_SITE}/classification-qualifications/classifying-general-schedule-positions/functional-guides/"),
+    _pdf("opm_classifiers_handbook", "The Classifier's Handbook (OPM)", "Job classification and writing position "
+         "descriptions", OPM,
+         "OPM's handbook on classifying federal positions, the whole book: position descriptions and how to write "
+         "and read them, classification standards, determining the title, series and grade, the Factor Evaluation "
+         "System, and classification appeals.", "1991-08", "TS-107, August 1991",
+         pdf=f"{OPM_SITE}/classification-qualifications/classifying-general-schedule-positions/classifierhandbook.pdf",
+         page=f"{OPM_SITE}/classification-qualifications/classifying-general-schedule-positions/"),
+    _pdf("opm_position_classification_intro", "Introduction to the Position Classification Standards (OPM)",
+         "Job classification", OPM,
+         "OPM's introduction to the federal position classification standards, the whole document: the "
+         "classification system, how standards are written and used, the occupational series and grades, the "
+         "Factor Evaluation System and the general classification principles.", "2009-07", "TS-134, July 1995, "
+         "revised August 2009",
+         pdf=f"{OPM_SITE}/classification-qualifications/classifying-general-schedule-positions/"
+             "positionclassificationintro.pdf",
+         page=f"{OPM_SITE}/classification-qualifications/classifying-general-schedule-positions/"),
+    _pdf("opm_delegated_examining_handbook", "Delegated Examining Operations Handbook (OPM)",
+         "Federal hiring (examining and job announcements)", OPM,
+         "OPM's handbook for federal hiring through delegated examining, the whole book: workforce planning, job "
+         "analysis, writing job announcements, accepting applications, assessment, veterans' preference, "
+         "certificates, selection and the records to keep.", "2019-06", "June 2019",
+         pdf=f"{OPM_SITE}/hiring-information/competitive-hiring/deo_handbook.pdf",
+         page=f"{OPM_SITE}/hiring-information/competitive-hiring/"),
 ]
 for _e in PDFS:
     if _e["publisher"] == OPM:
@@ -613,6 +667,8 @@ LICENCE_LINES = {
                              "Tongue and Quill's own \"Distribution F\" is the Air Force's internal code for how "
                              "printed copies were sent out, not a DoD restriction; the 1997 copy on the Internet "
                              "Archive has no public-release line and is not used.)",
+    "opm_handbooks": "www.opm.gov: works of the US government (17 U.S.C. 105). robots.txt disallows only searches, "
+                     "logins and print pages (checked 2026-11-21).",
 }
 
 NOT_INCLUDED = [
@@ -632,6 +688,9 @@ NOT_INCLUDED = [
      "worksheet", "Public domain, but they are files on legacy.sba.gov, whose robots.txt disallows "
      "/sites/default/files/* for every program; the guide's own text about business plans is in "
      "wb:sba_business_guide. Index: https://legacy.sba.gov/document/support-andrews-business-plan-template-lean"),
+    ("OPM's \"Write It Right\" webinar and its plain writing plan and compliance reports", "Left out: the webinar is "
+     "the transcript of slides about occupational questionnaires, and the plan and reports describe OPM's own "
+     "compliance with the Plain Writing Act; OPM's handbooks are built instead."),
     ("plainlanguage.gov's guideline pages (web edition)", "The same text as the Federal Plain Language Guidelines "
      "PDF (wb:plain_language_guidelines) and digital.gov's guide (wb:digital_gov_plain_language), both built; not "
      "added a third time."),
