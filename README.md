@@ -158,6 +158,24 @@ and why):
   (`pub:uk_safety_alerts:drug-2026`) and USDA Farmers' Bulletins by decade (`pub:usda_farmers_bulletins:1940s`, with
   a notice that old advice can be unsafe). The UK National Archives' teaching resources are a guide
   (`guide:uk_national_archives_teaching_resources`).
+- **Blogs and online magazines** (`textbooks/blogs.py`, added November 2026): general-interest blogs with open
+  licences, one book per year (`pub:pluralistic:2025`; a month for a small build, `pub:pluralistic:2025-10`), every post
+  whole with its date, author and address; the current year in the daily refresh, every earlier year in the hourly
+  backfill back to the blog's first post: Cory Doctorow's Pluralistic (CC BY 4.0, serialized fiction left out), the
+  Creative Commons blog (CC BY 4.0), Waging Nonviolence (CC BY 4.0), Wikimedia's Diff (CC BY-SA 4.0), EFF's Deeplinks
+  blog (CC BY 4.0) and the UK Government Digital Service's accessibility blog (Open Government Licence, group
+  "disability"). A site whose robots.txt shuts out AI readers or says `ai-train=no` is not read (Boing Boing,
+  Techdirt, MetaFilter and others), nor one whose terms forbid taking stories wholesale or automatically
+  (ProPublica, The 19th, Common Dreams); those and the copyrighted ones (Hackaday, Make:, Wired, Ars Technica ...) are
+  in `periodicals.NOT_INCLUDED` with their feed address, for the Program Downloader (personal use only).
+- **More WCAG and accessibility guides** (`textbooks/accessibility_guides.py`, group "disability", added November
+  2026): from W3C, whole and unchanged, WCAG 2.1, Techniques for WCAG 2.2, the ARIA Authoring Practices Guide, How to
+  Meet WCAG (Quick Reference), Easy Checks, Accessibility Fundamentals, Web Accessibility Laws & Policies, ATAG 2.0,
+  UAAG 2.0, EPUB Accessibility 1.1 and WCAG2ICT (keys `nonprofit:w3c_...`); the US Access Board's Revised 508
+  Standards, ADA and ABA Standards and Guide to the ADA Standards, the ICT Testing Baseline and the NLS reference
+  guides (public domain); the GOV.UK Service Manual's accessibility pages (Open Government Licence); and the A11y
+  Project (Apache License 2.0) (keys `guide:...`). Copyrighted guides (AAArdvark's "WCAG in Plain English", WebAIM,
+  Deque, BANA, NFB, ACB ...) are in `sources.NOT_INCLUDED` with their index address.
 - **Medicines** (`textbooks/medications.py`, keys `medicines` and `med:...`): the official US labels of medicines,
   read from DailyMed (National Library of Medicine) through its web services: 14 books of prescription medicines
   and 7 of over-the-counter medicines (by first letter), and two of animal medicines (pets and horses; farm
@@ -242,7 +260,7 @@ The workflows also run on their own, on GitHub's schedule (times in UTC):
 
 - **Daily news, 10:23**: the current pieces of the news sources are built again (Voice of America's recent stories
   and this year, VOA Learning English, Global Voices, NASA, KFF Health News, The Conversation, CRS reports, UK Hansard,
-  Oireachtas debates, GOV.UK speeches). A news book keeps one file per month.
+  Oireachtas debates, GOV.UK speeches, and this year of each blog). A news book keeps one file per month.
 - **Backfill, every hour at :17**: the next older piece of any source, small and quick sources first (VOA radio
   scripts, Learning English, Milestones, FRUS, CRS, Amber Waves, KFF Health News, Global Voices, ...), then the big
   ones (VOA years, NASA, The Conversation, Hansard, historic newspapers), newest to oldest, one piece at a time.
