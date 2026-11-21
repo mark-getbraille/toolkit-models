@@ -345,6 +345,10 @@ jobs:
             commons_streets_roads_na) limit=3000 ;;
             commons_neighbourhoods_na) limit=1500 ;;
             us_dot_street_photos) limit=500 ;;
+            commons_home_safety) limit=1200 ;;
+            commons_food_state) limit=400 ;;
+            usda_food_safety_photos) limit=400 ;;
+            commons_access_features) limit=500 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in

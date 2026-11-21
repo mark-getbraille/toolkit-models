@@ -1627,6 +1627,13 @@ PACKS.update(STATE_COLLECTIONS_PACKS)
 from street_scene_packs import STREET_SCENE_PACKS
 PACKS.update(STREET_SCENE_PACKS)
 
+# Home safety and controls, food state and public accessibility features (packs/home_safety_packs.py): Commons breaker
+# panels, fuse boxes, meters, stopcocks, sump pumps and furnaces, alarms, appliance displays and gauges with a STATED
+# light, reading or setting, unripe fruit, mould, doneness, USDA food safety photos, braille signage, bus stop signs and
+# ticket machines. A reading or light state only where the file's own words say it, with short safety notes.
+from home_safety_packs import HOME_SAFETY_PACKS
+PACKS.update(HOME_SAFETY_PACKS)
+
 
 # The packs whose builder reads the Wikimedia Commons API (commons_get, commons_members, commons_entries,
 # mechanical_packs.mech_entries, us_packs.us_commons, documentary_packs.commons_get or COMMONS_API itself). When many
@@ -1670,6 +1677,9 @@ COMMONS_KEYS = frozenset({
     "erotic_art",
     # US and Canadian street scenes (street_scene_packs.py; us_dot_street_photos reads FHWA's Commons copies)
     "commons_crosswalks_signals", "commons_streets_roads_na", "commons_neighbourhoods_na", "us_dot_street_photos",
+    # home safety, food state and accessibility features (home_safety_packs.py; usda_food_safety_photos reads USDA's
+    # Commons copies through Commons search)
+    "commons_home_safety", "commons_food_state", "usda_food_safety_photos", "commons_access_features",
 })
 
 

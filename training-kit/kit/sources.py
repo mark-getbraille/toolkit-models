@@ -2214,6 +2214,18 @@ SOURCES = [
     Source("us_dot_street_photos", "US interstates, interchanges and road scenes in Federal Highway Administration photos (Wikimedia Commons copies, ready-made pack)",
            "Public domain (works of the US government, 17 U.S.C. 105); each Commons file's licence checked",
            "Federal Highway Administration, US Department of Transportation, via Wikimedia Commons (credited in CREDITS.txt)", "permissive", 500, 10, prepare_pack, "about 120 MB"),
+    # Home safety and controls, food state and public accessibility features (packs/home_safety_packs.py). A meter's
+    # reading, an alarm's light, a display's setting, a breaker's position, a gauge or a thermometer only where the
+    # file's own words say it; short safety notes. The share-alike entry is in home_safety_sources.py.
+    Source("commons_home_safety", "Breaker panels, fuse boxes, gas and smart meters, shut-off valves, sump pumps and furnaces, and alarms, thermostats, appliance displays and extinguisher gauges with a stated light or reading (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1200, 15, prepare_pack, "about 280 MB"),
+    Source("commons_food_state", "Unripe fruit, mould and rot on food, meat doneness and meat thermometer readings, with food safety notes (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 400, 10, prepare_pack, "about 90 MB"),
+    Source("usda_food_safety_photos", "Food safety at home in US Department of Agriculture photos: thermometers, safe temperatures, leftovers, thawing (Wikimedia Commons copies, ready-made pack)",
+           "Public domain (works of the US government, 17 U.S.C. 105); each Commons file's licence checked",
+           "US Department of Agriculture, via Wikimedia Commons (credited in CREDITS.txt)", "permissive", 400, 10, prepare_pack, "about 90 MB"),
+    Source("commons_access_features", "Braille signs, bus stop signs, ticket machines and lift buttons with braille (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 500, 10, prepare_pack, "about 110 MB"),
     Source('skin_lesion_photos', 'Skin spots photographed with a phone, adults (PAD-UFES-20, ready-made pack)',
            'CC BY 4.0 (Mendeley Data zr7vgbcyr2)',
            'PAD-UFES-20 (Pacheco et al., 2020), CC BY 4.0', "permissive", 2000, 20, prepare_pack, 'about 400 MB', content="medical"),
@@ -2417,6 +2429,8 @@ PEOPLE_AND_BODILY_PACK_KEYS = (
     "newberry_library", "state_libraries_midwest", "state_libraries_south", "state_libraries_west",
     # street_scene_packs.py: US and Canadian street scenes (people walk through them; all four)
     "commons_crosswalks_signals", "commons_streets_roads_na", "commons_neighbourhoods_na", "us_dot_street_photos",
+    # home_safety_packs.py: public places with people in them, and USDA photos of people cooking
+    "commons_access_features", "usda_food_safety_photos",
 )
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + PEOPLE_AND_BODILY_PACK_KEYS
 # The drug and firearm packs (packs/drug_firearm_packs.py): describing only, never for picture-making, whether or not
@@ -3009,3 +3023,18 @@ PERSONAL_PICTURE_MAKING_OK |= _street_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in STREET_SCENE_SOURCES
                                                                if s.key not in _street_ok)
 _add_collections(STREET_SCENE_SOURCES)
+
+# Home safety, food state and accessibility collections that are not open (share-alike Commons files); the file may be
+# missing. None is used for picture-making (HOME_SAFETY_PICTURE_MAKING_OK is empty).
+try:
+    import home_safety_sources as _home_safety  # noqa: E402
+except ImportError as _e:
+    _home_safety = None
+    if getattr(_e, "name", None) != "home_safety_sources":
+        say(f"(The home safety collections could not be loaded: {_e}. They are left out.)")
+HOME_SAFETY_SOURCES = list(getattr(_home_safety, "HOME_SAFETY_SOURCES", []) or [])
+_home_safety_ok = set(getattr(_home_safety, "HOME_SAFETY_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _home_safety_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in HOME_SAFETY_SOURCES
+                                                               if s.key not in _home_safety_ok)
+_add_collections(HOME_SAFETY_SOURCES)
