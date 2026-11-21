@@ -1054,6 +1054,12 @@ def expand_keys(words):
             keys += [f"law:{e['name']}" for e in LAWS_MORE]
         elif w == "guides":
             keys += [f"guide:{e['name']}" for e in GOV_GUIDES]
+        elif w == "drinks":
+            # Wine, beer, spirits and soft drinks, and making them (2026-11-21): the hand-written guide and the TTB
+            # wine manual (drinks_reference.py), then every law, guide, Wikibook and PDF of the group "drinks"
+            keys += ["drinks:guide", "drinks:ttb_wine_bam"] + expand_keys(["group:drinks"]) + \
+                [f"nonprofit:{e['name']}" for e in NONPROFIT if e.get("group") == "drinks"] + \
+                ["law:cfr_21_101_food_labeling"]
         elif w.startswith("group:"):
             g = w[6:]
             keys += pdfs(g) + [f"guide:{e['name']}" for e in GOV_GUIDES if e["group"] == g] + \
@@ -1586,3 +1592,346 @@ PDF_DOCS += [
         ("Biology", "High School Biology", "9-12"), ("Chemistry", "High School Chemistry", "9-12"),
         ("EarthSpace", "High School Earth and Space", "9-12"), ("Physics", "High School Physics", "9-12")]
 ]
+
+
+# ====================================================================== drinks: wine, beer, spirits, soft drinks and making them
+#
+# The owner's request of 2026-11-21: reference material on wine, beer, spirits and every other drink, how to taste and
+# describe them, how they are labelled, and how they are made (brewing, winemaking and distilling, at home too), IN
+# FULL wherever the licence allows (whole documents and books, not summaries). Checked by hand on 2026-11-21. The
+# hand-written guide "How to describe a drink" and the TTB's wine manual (one PDF per chapter) are built by
+# drinks_reference.py (keys drinks:guide and drinks:ttb_wine_bam); everything below is built by the usual readers.
+# Key "drinks" builds all of it (expand_keys). Answers about home distilling always give the legal and safety notes
+# first (drinks_reference.DISTILLING_WARNING): in the US it is illegal without federal permits (26 U.S.C. 5601).
+GROUPS["drinks"] = "Reference, drinks: wine, beer, spirits, soft drinks, and brewing, winemaking and distilling"
+TTB_POLICY = "https://www.ttb.gov/about-ttb/privacy-policy/"
+TTB_TEXT = r"You may copy text and images from our website freely"
+LICENCE_LINES["ttb"] = ("www.ttb.gov/about-ttb/privacy-policy/ (section 11, Copyright): \"Federal employees cannot claim "
+                        "copyright for any work on the TTB.gov website that was created or maintained during the course "
+                        "of their duties. You may copy text and images from our website freely, with the exception of "
+                        "official seals, names, and symbols (see below), but credit must be given to TTB.\"")
+LICENCE_LINES["wikibooks"] = ("en.wikibooks.org/wiki/Wikibooks:Copyrights: Wikibooks text is under the Creative Commons "
+                              "Attribution-ShareAlike licence (CC BY-SA 4.0): use with credit, and changed copies keep "
+                              "the same licence. The library shows such books as share-alike.")
+DRINKS_LAW = dict(group="drinks")
+LAWS += [
+    _cfr("cfr_27_4_wine_labeling", "Labeling and Advertising of Wine (27 CFR part 4)", "Wine (standards of identity "
+         "and labels)", 27, 1, 4, "The TTB's rules for wine labels and advertising, with the standards of identity: "
+         "what may be called grape wine, sparkling wine, dessert wine, fruit wine and the other classes and types, "
+         "varietal (grape variety) names, appellations of origin and viticultural areas, vintage dates and alcohol "
+         "content statements.", group="drinks"),
+    _cfr("cfr_27_5_distilled_spirits_labeling", "Labeling and Advertising of Distilled Spirits (27 CFR part 5)",
+         "Spirits (standards of identity and labels)", 27, 1, 5, "The TTB's rules for distilled spirits labels and "
+         "advertising, with the standards of identity (section 5.143 and the table of classes and types): what may be "
+         "called vodka, whisky, bourbon whisky (made from a fermented mash of at least 51 percent corn), rye whisky, "
+         "malt whisky, gin, brandy, rum, agave spirits and tequila, liqueurs and the others; age statements, proof and "
+         "alcohol content.", group="drinks"),
+    _cfr("cfr_27_7_malt_beverage_labeling", "Labeling and Advertising of Malt Beverages (27 CFR part 7)", "Beer (labels)",
+         27, 1, 7, "The TTB's rules for beer and other malt beverage labels and advertising: class and type "
+         "designations (beer, ale, porter, stout, lager, malt liquor and others), alcohol content statements, net "
+         "contents and name and address.", group="drinks"),
+    _cfr("cfr_27_16_health_warning", "Alcoholic Beverage Health Warning Statement (27 CFR part 16)", "Alcohol labels "
+         "(health warning)", 27, 1, 16, "The government warning every US alcoholic drink label carries (pregnancy, "
+         "driving and operating machinery, health problems), its exact wording and how it must be printed.",
+         group="drinks"),
+    _cfr("cfr_21_146_canned_fruit_juices", "Canned Fruit Juices (21 CFR part 146)", "Juices (standards of identity)",
+         21, 2, 146, "The FDA's standards of identity for fruit juices and beverages: orange juice in its forms "
+         "(fresh, pasteurized, from concentrate, frozen concentrate), grapefruit, lemon, pineapple and prune juice, "
+         "canned fruit nectars and lemonade concentrates.", group="drinks"),
+    _cfr("cfr_21_120_juice_haccp", "Hazard Analysis and Critical Control Point Systems for Juice (21 CFR part 120)",
+         "Juices (safety)", 21, 2, 120, "The FDA's safety rules for juice makers: the hazard analysis, the 5-log "
+         "pathogen reduction, and the warning label untreated juice must carry.", group="drinks"),
+    _usc("us_code_26_ch51_distilled_spirits_wines_beer", "Distilled Spirits, Wines, and Beer (26 U.S.C. chapter 51)",
+         "Alcohol law (taxes, home production and penalties)", 26, ["subtitleE-chap51"], "The federal law on alcoholic drinks "
+         "as codified in the Internal Revenue Code: taxes on spirits, wine and beer; the exemptions that let adults "
+         "make wine (section 5042) and beer (section 5053) at home for personal or family use within limits; and the "
+         "penalties, including section 5601 (distilling without registration, which is why distilling spirits at home "
+         "is illegal in the US without federal permits)."),
+]
+LAWS[-1]["group"] = "drinks"
+LAWS_MORE += [
+    _cfr("cfr_27_19_distilled_spirits_plants", "Distilled Spirits Plants (27 CFR part 19)", "Spirits (production)", 27,
+         1, 19, "The TTB's rules for licensed distilleries: registration, premises and equipment, production, storage "
+         "and bottling of spirits, gauging and records. In the US, distilling spirits needs this federal "
+         "registration even for personal use.", group="drinks"),
+    _cfr("cfr_27_24_wine", "Wine (27 CFR part 24)", "Wine (production, including at home)", 27, 1, 24, "The TTB's rules "
+         "for bonded wineries and wine production, including section 24.75 (wine for personal or family use: an adult "
+         "may make up to 100 gallons a year, or 200 gallons for a household of two or more adults, without paying "
+         "tax), cellar treatments and the materials allowed.", group="drinks"),
+    _cfr("cfr_27_25_beer", "Beer (27 CFR part 25)", "Beer (production, including at home)", 27, 1, 25, "The TTB's rules "
+         "for breweries, including sections 25.205 and 25.206 (beer for personal or family use: an adult may brew up to "
+         "100 gallons a year, or 200 gallons for a household of two or more adults, not for sale).", group="drinks"),
+]
+
+# 21 CFR part 101 (food labeling, with section 101.30 on the juice percentage) is already a book of LAWS
+# (cfr_21_101_food_labeling, group "law"); expand_keys("drinks") adds it.
+
+# Government web guides about drinks (webguide_book).
+GOV_GUIDES += [
+    dict(name="ttb_beverage_alcohol_guidance", title="TTB guidance on wine, beer and spirits: labels, classes and "
+         "types, and FAQs", subject="Wine, beer and spirits (labels and rules)", group="drinks",
+         publisher="Alcohol and Tobacco Tax and Trade Bureau (TTB), US Department of the Treasury",
+         country="United States", licence=US_GOV, licence_url=US_GOV_URL,
+         source="https://www.ttb.gov/regulated-commodities/beverage-alcohol",
+         description="The TTB's plain guidance pages: what every wine, beer and spirits label must say (brand, class "
+                     "and type, alcohol content, net contents, sulfites, the health warning), anatomy-of-a-label "
+                     "tools, grape variety names and American viticultural areas, malt beverage classes, and its "
+                     "questions and answers on wine, beer (including home brewing), spirits, cider and caffeinated "
+                     "alcohol drinks.",
+         notice="Courtesy: Alcohol and Tobacco Tax and Trade Bureau (TTB).",
+         licence_page=TTB_POLICY, licence_text=TTB_TEXT, page_mark="", start=[], units="",
+         pages=r"^https://www\.ttb\.gov/(regulated-commodities/beverage-alcohol/(wine|beer|distilled-spirits)/(?!.*"
+               r"(online-reading-room|statistics|proprietorship|contact-information|covid|forms|proposed|rulings|"
+               r"import|certification|el-manual|le-manuel|wholesaler|exporting|qualification|pending))[a-z0-9/-]*|"
+               r"regulated-commodities/labeling/malt-beverages/|faqs/(alcohol|general-alcohol|cider|flavored-malt-"
+               r"beverages|alcohol-beverages-with-added-caffiene|allergen-labeling|alcohol-labeling-and-formulation)/|"
+               r"business-central/consumer/[a-z0-9/-]*)$",
+         sitemap="https://www.ttb.gov/sitemap.xml",
+         unit_rules=[(r"/wine/", "Wine"), (r"/beer/|malt-beverages|flavored-malt", "Beer and malt beverages"),
+                     (r"/distilled-spirits/", "Distilled spirits"), (r".", "Questions and answers, and consumers")],
+         content=(r"<main\b[^>]*>", r"</main>"), drop=[r"<nav\b.*?</nav>"],
+         changes="made into web pages with the site's menus and pictures left out (only TTB's own text is kept)",
+         limit=160),
+    dict(name="fda_drink_labels_and_caffeine", title="FDA: reading the Nutrition Facts label, added sugars, caffeine "
+         "and juice safety", subject="Drinks (labels, sugar and caffeine)", group="drinks",
+         publisher="US Food and Drug Administration (FDA)", country="United States", licence=US_GOV,
+         licence_url=US_GOV_URL, source="https://www.fda.gov/food/nutrition-facts-label",
+         description="The FDA's plain-language guides to reading the Nutrition Facts label (serving size, calories, "
+                     "percent Daily Value, added sugars), how much caffeine is too much (energy drinks, coffee and "
+                     "tea; up to 400 milligrams a day for most healthy adults), and what to know about juice safety "
+                     "(untreated juice and its warning label).",
+         licence_page="https://www.fda.gov/about-fda/about-website/website-policies",
+         licence_text=r"They are in the public domain and may be republished", page_mark="", start=[], units="",
+         urls=["https://www.fda.gov/food/nutrition-facts-label/how-understand-and-use-nutrition-facts-label",
+               "https://www.fda.gov/food/nutrition-facts-label/added-sugars-nutrition-facts-label",
+               "https://www.fda.gov/food/nutrition-facts-label/lows-and-highs-percent-daily-value-nutrition-facts-label",
+               "https://www.fda.gov/consumers/consumer-updates/spilling-beans-how-much-caffeine-too-much",
+               "https://www.fda.gov/food/buy-store-serve-safe-food/what-you-need-know-about-juice-safety"],
+         pages=r"^https://www\.fda\.gov/(food|consumers)/[a-z0-9/-]+$", sitemap="", unit_rules=[],
+         content=(r"<main\b[^>]*>", r"</main>"), drop=[r"<nav\b.*?</nav>"], limit=10),
+]
+
+# Wikibooks' drink books (CC BY-SA 4.0: share-alike), whole: every page of each book.
+WIKIBOOKS = dict(group="drinks", country="International", licence="CC BY-SA 4.0",
+                 licence_url="https://creativecommons.org/licenses/by-sa/4.0/",
+                 publisher="Wikibooks contributors (en.wikibooks.org)",
+                 notice="From Wikibooks (en.wikibooks.org), written by its contributors, CC BY-SA 4.0; each page's "
+                        "history lists its authors.",
+                 licence_page="https://en.wikibooks.org/wiki/Wikibooks:Copyrights",
+                 licence_text=r"Creative Commons Attribution-ShareAlike", page_mark=r"Creative Commons Attribution-"
+                 r"ShareAlike", sitemap="", unit_rules=[],
+                 content=(r'<div id="mw-content-text"[^>]*>', r'<div class="printfooter"'),
+                 drop=[r'<span class="mw-editsection">.*?</span>\s*</span>', r'<div class="(?:navbox|noprint)[^"]*".*?'
+                       r'</div>', r'<table class="[^"]*(?:ambox|metadata|navbox)[^"]*".*?</table>'],
+                 changes="every page of the book made into web pages, with the site's menus, edit links and notices "
+                         "left out (its pictures' descriptions kept)")
+
+
+def _wikibook(name, book, title, subject, description):
+    """A Wikibooks book as a NONPROFIT entry: its contents page, the pages it links and the pages those link (units),
+    all within the book."""
+    pages = rf"^https://en\.wikibooks\.org/wiki/{book}/[^?#:]+$"
+    return dict(WIKIBOOKS, name=name, title=title, subject=subject, description=description,
+                source=f"https://en.wikibooks.org/wiki/{book}", start=[f"https://en.wikibooks.org/wiki/{book}"],
+                units=pages, pages=pages, limit=500)
+
+
+NONPROFIT += [
+    _wikibook("wikibooks_brewing", "Brewing", "Brewing (Wikibooks)", "Beer (home brewing)", "Wikibooks' open book on "
+              "brewing beer at home: ingredients (malt, hops, yeast, water), equipment, cleaning and sanitising, "
+              "milling, mashing, lautering, boiling, cooling, fermentation, bottling and kegging, and recipes with "
+              "their grain bills and hop schedules (units as written)."),
+    _wikibook("wikibooks_wine", "Wine", "Wine (Wikibooks)", "Wine (tasting, regions, making)", "Wikibooks' open book "
+              "on the informed enjoyment of wine: the vine, types of wine, the art and science of winemaking, wine "
+              "regions, tasting and evaluating, food pairing, serving and storage, and a glossary."),
+    _wikibook("wikibooks_bartending", "Bartending", "Bartending (Wikibooks)", "Cocktails and mixed drinks",
+              "Wikibooks' open bartending guide: spirits, liqueurs, beer and wine behind the bar, equipment and "
+              "glassware, techniques, and hundreds of cocktail and mixed drink recipes (measures as written)."),
+]
+
+# The TTB's Beverage Alcohol Manuals for spirits and beer (one complete PDF each; the wine manual is one PDF per
+# chapter: drinks_reference.wine_bam_book).
+TTB_PDF = dict(group="drinks", country="United States", licence=US_GOV, licence_url=US_GOV_URL,
+               licence_page=TTB_POLICY, licence_text=TTB_TEXT,
+               publisher="Alcohol and Tobacco Tax and Trade Bureau (TTB), US Department of the Treasury",
+               notice="Courtesy: Alcohol and Tobacco Tax and Trade Bureau (TTB).")
+PDF_DOCS += [
+    dict(TTB_PDF, name="ttb_bam_distilled_spirits", title="The Beverage Alcohol Manual: Distilled Spirits (TTB)",
+         subject="Spirits (labels and classes)",
+         pdf="https://www.ttb.gov/system/files/images/pdfs/spirits_bam/complete-distilled-spirit-beverage-alcohol-"
+             "manual.pdf", page="https://www.ttb.gov/regulated-commodities/beverage-alcohol/distilled-spirits/"
+                                "beverage-alcohol-manual/",
+         description="The TTB's practical guide to distilled spirits labels: mandatory information, type size, the "
+                     "health warning, class and type designations (the kinds of whisky, rum, gin, brandy and the "
+                     "others), name and address, standards of fill, colouring and flavouring, age statements and "
+                     "containers. TTB notes that it has not been updated for the newest part 5 rules (also in this "
+                     "library)."),
+    dict(TTB_PDF, name="ttb_bam_malt_beverages", title="The Beverage Alcohol Manual: Malt Beverages (TTB)",
+         subject="Beer (labels)",
+         pdf="https://www.ttb.gov/system/files/images/pdfs/beer-bam/complete-malt-beverage-alcohol-manual.pdf",
+         page="https://www.ttb.gov/regulated-commodities/beverage-alcohol/beer/beverage-alcohol-manual/",
+         description="The TTB's practical guide to beer and malt beverage labels: mandatory information, type size, "
+                     "the health warning, class and type, alcohol content and net contents."),
+]
+
+# Old books on drinks and making them, in the US public domain (published before 1931), from the Internet Archive's
+# scans with their machine-read text (the builder checks each item's year). They are OLD: their methods, hygiene and
+# safety advice, measures and the laws they mention are out of date (some recipes use ingredients now known to be
+# harmful), and the machine-read text has the scanner's mistakes. Units are kept as written (gallons, bushels,
+# pounds, gills, wine glasses): nothing is converted. Each description says so; the distilling books start with the
+# legal and safety notes.
+DRINKS_OLD = dict(OLD_PD, group="drinks")
+DRINKS_OLD_NOTE = (" Published in {year}: an old book whose methods, hygiene and safety advice and laws are out of "
+                   "date, kept whole for its history and recipes; its units are as written (nothing converted).")
+DISTILLING_NOTE = ("Legal and safety notes first: in the US, distilling spirits at home is illegal without federal "
+                   "permits, even for personal use (26 U.S.C. 5601), unlike home brewing and winemaking, which "
+                   "federal law allows for adults within limits; laws differ by state and country (New Zealand, for "
+                   "example, allows home distilling). Distilling carries real risks: methanol poisoning from improper "
+                   "cuts, fire and explosion from ethanol vapour, and pressure. ")
+
+
+def _old_drink(name, title, subject, publisher, archive, year, description, country="United States",
+               distilling=False):
+    """An old public-domain drinks book from the Internet Archive as a PDF_DOCS entry."""
+    return dict(DRINKS_OLD, name=name, title=title, subject=subject, publisher=publisher, archive=archive,
+                published=str(year), country=country,
+                description=(DISTILLING_NOTE if distilling else "") + description + DRINKS_OLD_NOTE.format(year=year))
+
+
+PDF_DOCS += [
+    # brewing
+    _old_drink("wahl_henius_handy_book_brewing_1901", "American Handy-Book of the Brewing, Malting and Auxiliary "
+               "Trades (Robert Wahl and Max Henius, 1901)", "Beer (brewing and malting)", "Wahl-Henius Institute "
+               "(Chicago)", "americanhandyboo00wahl", 1901, "The Chicago brewing school's reference book of the whole "
+               "trade: barley and malting, hops, water, yeast, mashing, boiling, fermentation, cellar work, beer types "
+               "and their analysis."),
+    _old_drink("pitt_how_to_brew_good_beer_1864", "How to Brew Good Beer (John Pitt, 1864)", "Beer (home brewing)",
+               "John Pitt (Longman)", "howtobrewgoodbee00pitt", 1864, "A complete guide to brewing ale, bitter ale, "
+               "table ale, brown stout, porter and table beer at home, with quantities, mashing heats and "
+               "fermentation.", country="United Kingdom"),
+    _old_drink("cobbett_cottage_economy_1833", "Cottage Economy (William Cobbett, 1833)", "Beer (home brewing) and "
+               "household", "William Cobbett", "cottageeconomyco00cobbrich", 1833, "Cobbett's famous household book: "
+               "brewing beer at home (with the utensils and quantities), making bread, keeping cows, pigs and bees.",
+               country="United Kingdom"),
+    _old_drink("booth_art_of_brewing_1829", "The Art of Brewing (David Booth, 1829)", "Beer (brewing)", "David Booth "
+               "(Society for the Diffusion of Useful Knowledge)", "artofbrewing00bootrich", 1829, "A practical "
+               "treatise on brewing for private families and the trade: malt, hops, water, mashing, boiling, "
+               "fermenting and cellaring.", country="United Kingdom"),
+    # wine, cider and fruit wines
+    _old_drink("haraszthy_grape_culture_wines_1862", "Grape Culture, Wines, and Wine-Making (Agoston Haraszthy, 1862)",
+               "Wine (grapes and winemaking)", "Agoston Haraszthy (Harper and Brothers)", "grapeculturewine02hara",
+               1862, "The California pioneer's report on European vineyards and winemaking, written for the state of "
+               "California: grape varieties, vineyards, pressing, fermentation, cellar work and sparkling wine."),
+    _old_drink("roos_wine_making_hot_climates_1900", "Wine-Making in Hot Climates (L. Roos, 1900)", "Wine (making)",
+               "L. Roos, translated for the Viticultural Station, Rutherglen (Victoria)", "winemakinginhotc00roosrich",
+               1900, "A practical winemaking manual: the grapes, crushing, fermentation and its temperature, pressing, "
+               "cellar care and wine faults.", country="Australia"),
+    _old_drink("wright_old_time_recipes_home_made_wines_1922", "Old-Time Recipes for Home Made Wines, Cordials and "
+               "Liqueurs (Helen S. Wright, 1922)", "Wine (country and fruit wines, cordials)", "Helen S. Wright "
+               "(Dana Estes)", "oldtimerecipesfo00wrig", 1922, "Old family recipes for wines from fruits, flowers, "
+               "vegetables and shrubs (elderberry, dandelion, currant, rhubarb, mead and many more), cordials, "
+               "liqueurs and non-alcoholic drinks, with their quantities as written."),
+    _old_drink("brannt_vinegar_cider_fruit_wines_1890", "A Practical Treatise on the Manufacture of Vinegar and "
+               "Acetates, Cider, and Fruit-Wines (William T. Brannt, 1890)", "Cider and fruit wines", "William T. "
+               "Brannt (Henry Carey Baird)", "practicaltreatis00branrich", 1890, "A manual of cider making, fruit "
+               "wines and vinegar: the fruit, pressing, fermentation, clarifying, preserving and bottling."),
+    _old_drink("alwood_cider_making_1903", "A Study of Cider Making in France, Germany, and England (William B. "
+               "Alwood, 1903)", "Cider (making)", "US Department of Agriculture, Bureau of Plant Industry",
+               "studyofcidermaki00alworich", 1903, "The USDA's report on how cider was made in Europe's cider "
+               "countries, with comments on American methods: apples, milling, pressing, fermentation and storage."),
+    _old_drink("crampton_fermented_alcoholic_beverages_1887", "Fermented Alcoholic Beverages, Malt Liquors, Wine and "
+               "Cider (Charles A. Crampton, 1887)", "Beer, wine and cider (composition)", "US Department of "
+               "Agriculture, Division of Chemistry (Bulletin 13, part 3)", "fermentedalcohol00cramrich", 1887, "The "
+               "USDA chemists' study of American beer, wine and cider: how they are made, what is in them, and the "
+               "adulterations of the time."),
+    # spirits and distilling
+    _old_drink("rattlehead_complete_practical_distiller_1880", "The Complete Practical Distiller (M. Lafayette Byrn "
+               "as David Rattlehead, 1880)", "Spirits (distilling)", "Henry Carey Baird", "completepractica00rattrich",
+               1880, "A distiller's manual of the time: mashing grain, fermenting, distilling and rectifying whisky, "
+               "brandy, rum and gin, with mash bills and quantities as written.", distilling=True),
+    _old_drink("wright_distillation_alcohol_farm_products_1918", "A Practical Handbook on the Distillation of Alcohol "
+               "from Farm Products (F. B. Wright, 1918)", "Spirits (distilling)", "Frederic B. Wright (Spon and "
+               "Chamberlain)", "practicalhandboo00wrig", 1918, "A handbook of making alcohol from grain, potatoes, "
+               "fruit and molasses: mashing, fermentation, stills and their working, and denaturing (written for "
+               "industrial alcohol).", distilling=True),
+    _old_drink("boucherie_art_of_making_whiskey_1819", "The Art of Making Whiskey (Anthony Boucherie, 1819)",
+               "Spirits (whiskey making)", "Anthony Boucherie (Lexington, Kentucky)", "the_art_of_making_whiskey_202011",
+               1819, "An early American whiskey maker's treatise: grain, mashing, fermentation and distilling, so as "
+               "to obtain a greater quantity and better quality of spirit.", distilling=True),
+    _old_drink("rack_french_wine_and_liquor_manufacturer_1868", "The French Wine and Liquor Manufacturer (John Rack, "
+               "1868)", "Spirits, liqueurs and cordials", "Dick and Fitzgerald", "b28061561", 1868, "A practical guide "
+               "and receipt book for the liquor merchant of the time: distillation, liqueurs, cordials, bitters and "
+               "syrups, with recipes and quantities as written.", distilling=True),
+    # bars and cocktails
+    _old_drink("thomas_bar_tenders_guide_1887", "The Bar-Tender's Guide, or How to Mix All Kinds of Plain and Fancy "
+               "Drinks (Jerry Thomas, 1887)", "Cocktails and mixed drinks", "Jerry Thomas (Dick and Fitzgerald)",
+               "bartendersguideo00thom", 1887, "The famous early bartender's book of recipes: punches, cocktails, "
+               "juleps, sours, fizzes, cobblers, egg nogs, temperance drinks and syrups, measures as written."),
+    _old_drink("haywood_mixology_1898", "Mixology: the Art of Preparing All Kinds of Drinks (Joseph L. Haywood, 1898)",
+               "Cocktails and mixed drinks", "Joseph L. Haywood", "mixologyartofpre00hayw", 1898, "A bartender's "
+               "recipe book of the 1890s: cocktails, punches, fizzes and other mixed drinks."),
+    # soft drinks, juices and syrups
+    _old_drink("sulz_treatise_on_beverages_1888", "A Treatise on Beverages, or the Complete Practical Bottler "
+               "(Charles Herman Sulz, 1888)", "Soft drinks, mineral waters and syrups", "Dick and Fitzgerald",
+               "treatiseonbevera00sulzrich", 1888, "The bottler's handbook of soda water, mineral waters, ginger ale, "
+               "root beer, syrups and fruit juices: making, carbonating and bottling them, with formulas as written."),
+    _old_drink("saxe_soda_water_dispensers_1894", "Saxe's New Guide, or Hints to Soda Water Dispensers (De Forest W. "
+               "Saxe, 1894)", "Soft drinks (soda fountain)", "De Forest W. Saxe", "saxesnewguideorh00saxerich", 1894,
+               "Formulas for the soda fountain's syrups, crushed fruits, phosphates, egg drinks and other soft drinks "
+               "of the time."),
+    _old_drink("wiley_beverages_and_their_adulteration_1919", "Beverages and Their Adulteration (Harvey W. Wiley, "
+               "1919)", "Drinks of every kind", "Harvey W. Wiley (P. Blakiston's Son)", "beveragestheirad00wileuoft",
+               1919, "The first FDA chief's book on every kind of drink: water, mineral waters, soft drinks, fruit "
+               "juices, tea, coffee and cocoa, beer, wine and spirits, how they are made and how they were "
+               "adulterated."),
+    _old_drink("dearing_unfermented_grape_juice_home_1919", "Unfermented Grape Juice: How to Make It in the Home "
+               "(Charles Dearing, 1919)", "Juices (making at home)", "US Department of Agriculture (Farmers' "
+               "Bulletin 1075)", "CAT87203087", 1919, "The USDA's bulletin on making and keeping grape juice at home: "
+               "the grapes, extracting, pasteurising, bottling and storage."),
+    _old_drink("cruess_unfermented_fruit_juices_1920", "Unfermented Fruit Juices (W. V. Cruess, 1920)", "Juices "
+               "(making)", "University of California Agricultural Experiment Station (Circular 220)",
+               "unfermentedfruit220crue", 1920, "A circular on making fruit juices at home and in small plants: "
+               "apple, grape, berry and citrus juices, extracting, clarifying, pasteurising and bottling."),
+    _old_drink("moore_uncle_sams_water_wagon_1919", "On Uncle Sam's Water Wagon: 500 Recipes for Delicious Drinks, "
+               "Which Can Be Made at Home (Helen Watkeys Moore, 1919)", "Soft drinks and mocktails (recipes)",
+               "Helen Watkeys Moore (G. P. Putnam's Sons)", "cu31924000559967", 1919, "Non-alcoholic drinks for the "
+               "home from the first year of Prohibition: fruit drinks, punches, syrups, sodas, milk drinks, tea and "
+               "coffee drinks."),
+]
+
+# A drinks subject's practice note (non-US books): drinking ages, alcohol and home-production laws and label rules.
+PRACTICE_SUBJECTS.insert(0, (r"\b(wine|beer|brew\w*|spirits?|distill\w*|cider|whisk(e?)y|cocktails?|drinks?|juices?|"
+                             r"bartend\w*|malt\w*|liqueurs?)\b",
+                             "drinking ages, alcohol laws, home brewing, winemaking and distilling rules (home "
+                             "distilling is legal in some countries, such as New Zealand, but not in the US), label "
+                             "rules and metric units"))
+
+# Looked at for drinks on 2026-11-21 and not built, with the reason.
+DRINKS_NOT_INCLUDED = [
+    ("BJCP Style Guidelines (Beer Judge Certification Program, bjcp.org)", "Not openly licensed: the guidelines page "
+     "asks anyone wanting to use them 'for purposes other than BJCP-sanctioned competitions or educational judge "
+     "training' to contact the BJCP for permission. No licence allows copying them into a library, so they are not "
+     "included (a link only: https://www.bjcp.org/bjcp-style-guidelines/)."),
+    ("Brewers Association beer style guidelines and American Homebrewers Association recipes", "Copyrighted, with no "
+     "open licence found; not included. Commercial recipe sites (Brewer's Friend and similar) are copyrighted too."),
+    ("NIAAA (niaaa.nih.gov) and Rethinking Drinking", "Public domain (US government), but niaaa.nih.gov's robots.txt "
+     "says 'Content-Signal: search=yes,ai-train=no,use=reference' and shuts out ClaudeBot and other AI crawlers by "
+     "name, so it is not read."),
+    ("Open Food Facts (labels and nutrition of drinks)", "Its robots.txt shuts out AI crawlers by name (GPTBot, "
+     "anthropic-ai, ClaudeBot) on every host, and search.openfoodfacts.org disallows every robot; not read."),
+    ("TTB COLAs Online public registry (approved label images)", "ttbonline.gov refused this machine's connections, "
+     "so its robots.txt and terms could not be checked; it has no official bulk download, and the labels are the "
+     "companies' own artwork. Not read."),
+    ("eCFR (ecfr.gov) full-text services", "Its robots.txt shuts out automated readers of its full-text services; the "
+     "same regulations come whole from govinfo.gov's annual edition."),
+    ("UCI Wine Quality data set (CC BY 4.0)", "Chemical measurements only (acidity, sugar, alcohol and a score), no "
+     "words for describing wine; not a reference book."),
+    ("Project Gutenberg", "Its site was down for maintenance on 2026-11-21; the same old books are read from the "
+     "Internet Archive's scans."),
+    ("University extension guides on home winemaking, cider and brewing", "Each is licensed by its own university, "
+     "and none with a clear open licence was confirmed in this pass (Penn State, Minnesota, UC ANR and Oregon State "
+     "were looked at: their robots.txt files allow reading, but no open licence was found on their pages). A "
+     "candidate for a later pass, one guide at a time; the USDA's and the University of California's old "
+     "public-domain bulletins are included instead."),
+]
+NOT_INCLUDED = NOT_INCLUDED + DRINKS_NOT_INCLUDED

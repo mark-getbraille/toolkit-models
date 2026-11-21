@@ -11,6 +11,9 @@ What is built (sources.py lists every book, the licence lines checked by hand, a
              online reader
   dspace     reference works of international bodies (WHO, World Bank, FAO) from their open repositories (PDF)
   sounds     animal sounds of US national parks as text and links (animal_sounds.py: the NPS Sound Gallery)
+  drinks     wine, beer, spirits and soft drinks, and brewing, winemaking and distilling (drinks_reference.py: the
+             guide "How to describe a drink" and the TTB wine manual; and the drinks laws, TTB and FDA guides,
+             Wikibooks and old public-domain books of sources.py, group "drinks"); drinks:guide, drinks:ttb_wine_bam
   pdf        official PDF documents (sources.PDF_DOCS): US military field manuals with Distribution Statement A
              (survival, first aid, map reading, knots, hygiene, cold weather, mountaineering; key fieldmanuals) and
              Alberta's publications under its Open Government Licence (key government), US Navy nonresident
@@ -1429,6 +1432,8 @@ def webguide_plan(entry, cache=None):
                 if extra != url and extra not in seen:
                     seen.add(extra)
                     plan.append((extra, unit))
+    for url in entry.get("urls", []):            # a fixed list of articles (a few pages of a large site)
+        add(url, "")
     for start in entry.get("start", []):
         text = fetch(start, cache)
         links = page_links(text, start)
@@ -2246,6 +2251,11 @@ def build(keys, out_dir, cache=None, pictures=False, local_osbooks=None, date=No
                 b = animal_sounds.nps_book(cache, left_out)
                 if b is not None:
                     books.append(b)
+            elif key.startswith("drinks:"):  # the drinks guide and the TTB wine manual (drinks_reference.py)
+                import drinks_reference          # here, not at the top: drinks_reference imports this module
+                b = drinks_reference.drinks_book(key[7:], work, cache, left_out)
+                if b is not None:
+                    books.append(b)
             elif key == "dspace":
                 for entry in sources.DSPACE:
                     try:
@@ -2344,13 +2354,16 @@ def merge(manifest_paths, existing=None):
     import medications                           # (the same)
     import animal_sounds                         # (the same)
     import courses                               # (the same)
+    import drinks_reference                      # (the same)
     return {"built": datetime.date.today().isoformat(), "release": RELEASE,
             "books": sorted(books.values(), key=lambda b: (b["group"], b["title"].casefold())),
             "left_out": left, "not_included": [{"title": t, "reason": r} for t, r in sources.NOT_INCLUDED +
                                                periodicals.NOT_INCLUDED + medications.NOT_INCLUDED +
-                                               animal_sounds.NOT_INCLUDED + courses.NOT_INCLUDED],
+                                               animal_sounds.NOT_INCLUDED + courses.NOT_INCLUDED +
+                                               drinks_reference.NOT_INCLUDED],
             "licence_lines": {**sources.LICENCE_LINES, **periodicals.LICENCE_LINES, **medications.LICENCE_LINES,
-                              "nps_sounds": animal_sounds.LICENCE_LINE, **courses.LICENCE_LINES},
+                              "nps_sounds": animal_sounds.LICENCE_LINE, **courses.LICENCE_LINES,
+                              "drinks_guide": drinks_reference.LICENCE_LINE},
             "groups": sources.GROUPS, "group_notes": {**periodicals.GROUP_NOTES, **medications.GROUP_NOTES,
                                                       **courses.GROUP_NOTES},
             "kiwix_labels": courses.KIWIX_LABELS,
