@@ -51,6 +51,9 @@ def test_notes_in_commons_answers():
         assert not NUMBERS.search(a.replace("26 U.S.C. 5601", "").replace("25.205 and 24.75", "")), a
     for text in (d.DISTILLING_WARNING, ):
         assert "26 U.S.C. 5601" in text and "New Zealand" in text and "methanol" in text and "pressure" in text
+    apparatus = next(spec for spec in d.DISTILLING if spec[0] == "Distillation apparatus")
+    assert apparatus[3].search("Copper whisky still") and not apparatus[3].search(
+        "Automotive fractionating columns used for final purification of hydrocarbons")
     # the brand categories only keep files whose words say can, bottle or drink
     brand = next(spec for spec in d.SOFT_DRINKS if spec[0] == "Energy drinks by brand")
     assert brand[3].search("Red Bull can") and not brand[3].search("Red Bull Racing car")

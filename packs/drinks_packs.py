@@ -217,9 +217,12 @@ BREWING_WINEMAKING = [
 
 # ----------------------------------------------------------------- Commons: distilling
 
+SPIRIT_WORDS = re.compile(r"\b(whisk(e)?y|spirits?|alcohol|brandy|moonshine|gin|rum|vodka|schnapps|liquor|"
+                          r"distiller(y|ies)|pot still|eau[- ]de[- ]vie|cognac|calvados|grappa|mezcal|tequila)\b", re.I)
 DISTILLING = [
     still("Pot stills", "a pot still, a copper still for making spirits such as whisky"),
-    still("Distillation apparatus", "distillation apparatus"),
+    # Laboratory and industrial stills are in this category too: only files whose own words name a drink.
+    still("Distillation apparatus", "distillation apparatus for making spirits") + (SPIRIT_WORDS,),
     thing("Distilleries", "a distillery", DISTILLERY_NOTE),
 ]
 
