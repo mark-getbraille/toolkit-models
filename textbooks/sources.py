@@ -1082,6 +1082,10 @@ def expand_keys(words):
         elif w == "medicines" or w.startswith("med:"):
             import medications                    # here, not at the top: medications imports the builder
             keys += medications.expand_keys([w])
+        elif w == "thin" or w.startswith("thin:"):
+            # More books for the thin topics (thin_topics.py), 2026-11-21: thin, or thin:<topic> such as thin:birds
+            import thin_topics                    # (already imported at the end of this module)
+            keys += thin_topics.expand_keys([w])
         elif w == "cookbooks" or w.startswith("cook:"):
             import cookbooks                      # here, not at the top: cookbooks imports the builder
             keys += cookbooks.expand_keys([w])
@@ -1974,3 +1978,13 @@ DRINKS_NOT_INCLUDED = [
      "public-domain bulletins are included instead."),
 ]
 NOT_INCLUDED = NOT_INCLUDED + DRINKS_NOT_INCLUDED
+
+
+# ====================================================================== thin topics (added 2026-11-21)
+# The topics that had only one or two books get more open and public-domain books: their entries, checks and
+# reasons are in thin_topics.py (keys thin, thin:<topic>, pdf:<name>).
+import thin_topics as _thin  # noqa: E402
+
+PDF_DOCS += _thin.PDF_DOCS
+LICENCE_LINES.update(_thin.LICENCE_LINES)
+NOT_INCLUDED = NOT_INCLUDED + _thin.NOT_INCLUDED
