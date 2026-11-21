@@ -31,3 +31,17 @@ def test_no_stage_label_gives_nothing():
 
 def test_registered():
     assert "agrob_tomato" in LAND_PACKS and LAND_LIMITS["agrob_tomato"] == 450
+
+
+def test_wired_in_workflows_and_kit():
+    """The pack is in build_packs.PACKS, the workflows' known list and limit line, and the training kit's sources."""
+    import re
+    repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    assert "agrob_tomato" in build_packs.PACKS
+    assert "agrob_tomato" not in build_packs.COMMONS_KEYS          # Zenodo, not Commons
+    with open(os.path.join(repo, ".github", "workflows", "packs.yml"), encoding="utf-8") as f:
+        assert '"agrob_tomato"' in f.read()
+    with open(os.path.join(repo, ".github", "workflows", "pack-build.yml"), encoding="utf-8") as f:
+        assert re.search(r"^\s*agrob_tomato\) limit=450 ;;$", f.read(), re.M)
+    with open(os.path.join(repo, "training-kit", "kit", "sources.py"), encoding="utf-8") as f:
+        assert "Source('agrob_tomato'" in f.read()
