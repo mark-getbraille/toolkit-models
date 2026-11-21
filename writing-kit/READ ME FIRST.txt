@@ -8,7 +8,8 @@ speech (court arguments, hearings, parliament, everyday conversations) as colloq
 It makes training files of pairs: an instruction, such as "Write a short, polite email to a colleague declining
 the meeting", and the writing that answers it.
 It is separate from the picture training kit. It needs no graphics card and nothing to install except Python
-(and, to read PDF files, the free pdftotext program from Xpdf or Poppler).
+(and, to read PDF files, the free pdftotext program from Xpdf or Poppler). To read SCANNED email releases (pictures
+of printed pages), it also needs the OCR reader: see "Scanned email releases" below.
 
 How to run it on Windows
 1. Install Python 3 from python.org if you do not have it. Tick "Add Python to PATH" in the installer.
@@ -94,6 +95,8 @@ ATTRIBUTION.txt: the credits and licences. Keep it with anything you make from t
 sources-not-used.txt: the sources that were checked and cannot be used, and why.
 messages folder: one folder per email that came with attachments, holding message.txt and the attachment files.
 transcripts folder: whole transcripts of real speech, one plain text file each, by source.
+scanned-pages-left-out.txt: the scanned pages the OCR reader could not read well enough, with the reason (only
+  when scanned releases were read).
 
 What is in each example
 instruction: what to write, with the tone and the audience. For a reply, the message being answered is included.
@@ -176,11 +179,26 @@ Personal use only:
     These are in Canadian English (colour, centre) and follow Canadian parliamentary procedure (members speak
     through the Speaker); every instruction from them says so.
   regulations: public comments people sent to US federal agencies (needs the key described above).
+Scanned email releases (read with OCR; see "Scanned email releases" below):
+  scanned_federal: Internet Archive copies of US federal releases, marked public domain there: the Clinton State
+    Department emails (21 October 2016 release, one PDF per email, and 31 August 2015 release), a Homeland Security
+    release, the NIH FOIA emails of April 2022 and the EPA Flint water documents. Open, except messages whose
+    sender writes from outside the federal government (a company, a private address, a state office): those are
+    personal use only and are used only with the personal choice.
+  scanned_state: Internet Archive copies of Sarah Palin's Alaska governor emails (scanned by the Anchorage Daily
+    News) and Governor Snyder's Flint emails. Personal use only.
+  govinfo_exhibits: scanned emails printed as pictures inside US Congress hearing records on GovInfo. Open, with
+    the same exception for writers outside the government.
 
 Sources that cannot be used, in short (the full reasons are in sources-not-used.txt)
-Hillary Clinton's State Department emails: the site's robots.txt turns all programs away, and they are scanned pages.
-Jeb Bush's Florida emails: the release site is gone.
-Sarah Palin's Alaska emails, Michigan's Flint emails and other state releases: only scanned pages, no text download.
+The State Department's own reading room (foia.state.gov): its robots.txt turns all programs away, so the Clinton
+emails come from their Internet Archive copies instead.
+Jeb Bush's Florida emails: the release site is gone, and the only copy found (on the Internet Archive) was
+uploaded anonymously with no licence and may still hold the Social Security numbers the first release exposed.
+Michigan's own site (michigan.gov): it answers "Access Denied" to programs, even for its robots.txt, so Snyder's
+Flint emails come from their Internet Archive copies instead.
+DocumentCloud's copies of releases (for example Palin's emails), and the Internet Archive's mirrors of them:
+DocumentCloud says no AI training.
 National Archives email records: the catalogue's robots.txt turns all programs away.
 MuckRock, DocumentCloud and the CRTC: their robots.txt says no AI training.
 Apache mailing lists and the Linux kernel lists: their robots.txt turns programs away.
@@ -190,10 +208,11 @@ DailyDialog: its official download is down. PersonaChat: no licence stated for t
 Switchboard and CALLHOME: sold by the LDC, not free.
 City councils through Legistar and Granicus: the minutes files are closed to programs. Toronto's open data has no
 minutes. Ontario's Hansard refuses programs. Other provincial Hansards and the Senate were not built yet.
-Recent investigations and lawsuits: congress.gov blocks AI training; the committee reports (Boeing 737 MAX, tech
+Recent investigations and lawsuits: congress.gov blocks AI training; the committee releases (Boeing 737 MAX, tech
 antitrust, January 6 and others), FTC v. Meta, Epic v. Apple, Oracle v. Google, Waymo v. Uber and Theranos exhibits,
-the FBI Vault and agency FOIA rooms, and the NIH emails are scanned PDFs without a bulk route, so they were not
-built yet; CourtListener refused this kit; MuckRock and DocumentCloud say no AI training.
+and the FBI Vault and agency FOIA rooms on the agencies' own sites have no list a program can follow, so the kit
+does not fetch them: download the ones you want and read them with --scanned-folder (below). CourtListener refused
+this kit; MuckRock and DocumentCloud say no AI training.
 Creative writing: Archive of Our Own (its terms forbid AI training and its authors object), FanFiction.Net and
 Wattpad (their robots.txt says no AI training), Reddit WritingPrompts (Reddit's terms), machine-written story sets,
 and openly licensed fan fiction (none found with a bulk download).
@@ -230,6 +249,48 @@ attached file beside it, in out\messages\<source>\<message>\. Attachments that a
 text, web pages, Word .docx, RTF, and PDF when pdftotext is installed) are also read, and their text becomes extra
 examples, such as "Write the memo that was attached to this email". Old Word .doc files are saved but not read.
 The Enron copy from Carnegie Mellon has no attachments: they were taken out before it was published.
+
+Scanned email releases (OCR)
+Many email releases are pictures of printed pages with no text: the Clinton State Department emails, Palin's and
+Snyder's emails, agency FOIA releases and committee exhibits. The kit reads them with OCR (optical character
+recognition) on your own computer. Nothing is sent anywhere, and it is not an AI vision model: it only reads letters.
+The OCR reader is RapidOCR (Apache 2.0 licence). It was chosen because one pip command installs it, with its small
+text-reading models inside, so it needs no separate program and never downloads anything while it runs. (Tesseract,
+the other choice, needs its own Windows installer.) PDF pages are drawn with pypdfium2 (Apache 2.0 or BSD).
+To install it once: press Enter on "Install OCR Reader.cmd" in the writing-kit folder, or type
+  pip install -r kit\requirements-ocr.txt
+It needs about 250 MB of disk space. Without it, the scanned sources are skipped and the build report says so.
+Reading is slow: about two to five seconds a page on an ordinary computer.
+
+Your own folder of scanned PDFs: --scanned-folder
+If you downloaded releases yourself (for example with Program Downloader's personal assistant into
+B:\Original sources), the kit can read them. Press Enter on "Build Writing Data from Scanned Folder.cmd" and type
+the folder when it asks, or type:
+  python kit\build_dataset.py --out out --scanned-folder "B:\Original sources"
+Every PDF in the folder and its subfolders is read. Alone, --scanned-folder reads only your folder; add --sources
+to read other sources in the same build, for example --sources scanned_federal,idl --personal.
+--scanned-max-pages 200 reads at most 200 pages of each PDF (useful for very large releases).
+What it does with each PDF:
+- reads each page: a page with real text is read directly; a scanned page is read with OCR;
+- keeps only pages the OCR is reasonably sure about (a confidence score of at least 0.80 out of 1, and at least
+  8 words). The pages left out are listed with the reason in out\scanned-pages-left-out.txt;
+- fixes common OCR mistakes in the header words ("Frorn;" becomes "From:", "Subiect" becomes "Subject:");
+- removes release stamps, page numbers, Bates numbers and lone redaction codes such as B6 or (b)(6);
+- splits the pages into emails wherever a From line is followed by Sent or Date and To or Subject lines, and joins
+  a reply with the earlier message printed below it, so the example shows the message being answered;
+- builds training pairs with the style labels, like every other email (most are email_business);
+- saves each email's pages as pictures and their OCR text beside it, in out\messages\scanned_folder\. When the
+  header lists attachments, the pages after the email are its attachment, and their text becomes an extra example.
+Licence: your own downloads are personal use only, unless a PDF is a US federal government work, which is public
+domain. The kit counts a PDF as a government work when its folder or file name contains "public domain",
+"government work", "US government" or "federal", or when its first pages carry a US federal release stamp, a State
+Department case or document number, or FOIA exemption codes such as (b)(6). If a stamp is too faint to read, put
+the file in a folder named, for example, "public domain". Even then, a message whose sender's address is outside
+the federal government (a company, a private address, a state office such as michigan.gov) is marked personal use
+only. Each example's licence_class says which; ATTRIBUTION.txt gives the counts. State releases (Alaska, Michigan,
+Florida) are not federal works, so they stay personal use only.
+Privacy is your rule, as everywhere: only Social Security, card, bank and account numbers and passwords are
+masked, in the text and as black boxes on the saved page pictures; everything else is kept.
 
 Being a good guest on other people's sites
 The kit reads each site's robots.txt and obeys it, leaves out any site that says no to AI training, waits between
