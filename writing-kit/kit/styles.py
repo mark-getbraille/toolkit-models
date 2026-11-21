@@ -57,7 +57,8 @@ BY_SOURCE = {
     "gutenberg": "letter_personal", "sbcsae": "transcript_conversation", "regulations": "comment_public",
     "scotus": "transcript_court", "hearings": "transcript_meeting", "hansard": "transcript_meeting",
     "fedreg": "plain_language_gov", "openstax_business": "academic", "wikinews": "news", "nsf": "academic",
-    "blogs": "blog",
+    "blogs": "blog", "scanned_federal": "email_business", "scanned_state": "email_business",
+    "govinfo_exhibits": "email_business", "scanned_folder": "email_business",
 }
 PERSONAL_WORDS = re.compile(r"(?i)\b(friend|mom|dad|mother|father|sister|brother|grandpa|grandma|neighbou?r|"
                             r"landlord|cousin|aunt|uncle|wife|husband|boyfriend|girlfriend|birthday|teacher)\b")

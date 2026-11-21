@@ -23,7 +23,12 @@ What it does, step by step:
        sources-not-used.txt            the sources that were checked and cannot be used, with the reason;
        messages/<source>/<message>/    message.txt and its attachments;
        transcripts/<source>/           whole transcripts of real speech;
-       <style>/train.jsonl and validation.jsonl, STYLES.txt   the same examples split by style (styles.py).
+       <style>/train.jsonl and validation.jsonl, STYLES.txt   the same examples split by style (styles.py);
+       scanned-pages-left-out.txt      the scanned pages OCR could not read well enough, with the reason.
+
+Scanned email releases (pictures of printed pages) are read with OCR on this computer (ocr.py, readers_scanned.py):
+from the Internet Archive copies and GovInfo hearing records listed in writing_sources.py, and from a folder of
+PDFs the owner downloaded himself (--scanned-folder).
 
 Each line of train.jsonl and validation.jsonl has:
   id, instruction, response, messages (the same pair as a chat: user then assistant), kind, form, tone, audience,
@@ -35,6 +40,7 @@ Usage (from the writing-kit folder):
   python kit/build_dataset.py --out out --sources dolly,oasst2 --per-source 200
   python kit/build_dataset.py --out out --personal --enron-file enron_mail_20150507.tar.gz   (a copy you have)
   python kit/build_dataset.py --out out --cache cache        (keeps downloads in "cache" for the next build)
+  python kit/build_dataset.py --out out --scanned-folder "B:\Original sources"   (only your own scanned PDFs)
 """
 
 import argparse
@@ -60,9 +66,13 @@ import readers_litigation  # noqa: E402
 import styles  # noqa: E402
 import readers_creative  # noqa: E402
 import attachments  # noqa: E402
+import ocr  # noqa: E402
+import readers_scanned  # noqa: E402
 
-READER_MODULES = (readers, readers_more, readers_meetings, readers_business, readers_litigation, readers_creative)
-GROUPED = {"enron", "w3c", "usenet", "irc", "debian", "scotus", "hearings", "hansard", "idl"}   # sources read mailbox by mailbox or list by list
+READER_MODULES = (readers, readers_more, readers_meetings, readers_business, readers_litigation, readers_creative,
+                  readers_scanned)
+GROUPED = {"enron", "w3c", "usenet", "irc", "debian", "scotus", "hearings", "hansard", "idl", "scanned_federal",
+           "scanned_state", "govinfo_exhibits"}   # sources read mailbox by mailbox or list by list
 
 VALIDATION_SHARE = 20          # one example in twenty goes to validation.jsonl
 
@@ -197,7 +207,10 @@ def attachment_examples(record, source, attach_dir, privacy=OWNER):
     attachments.save_message(folder, protect(header + record.get("body", ""), OWNER),
                              [(name, data) for name, data, _ in files])
     out = []
+    wanted = record.get("text_from")             # scanned messages: only the attachment's own OCR text, not the pages
     for name, data, ctype in ([] if record.get("no_attachment_text") else files):
+        if wanted is not None and name not in wanted:
+            continue
         text = attachments.extract_text(name, data, ctype)
         if len(text.split()) < 20:
             continue
@@ -243,10 +256,26 @@ def is_validation(row):
     return int(hashlib.sha1(row["response"].encode("utf-8")).hexdigest(), 16) % VALIDATION_SHARE == 0
 
 
+OPEN_PUBLIC_DOMAIN = {"licence": "Public domain: a work of the US federal government (17 U.S.C. 105)",
+                      "licence_class": writing_sources.OPEN,
+                      "licence_url": "https://creativecommons.org/publicdomain/mark/1.0/"}
+PERSONAL_SCANNED = {"licence": "Personal use only: the writer keeps the copyright (not a US federal government work)",
+                    "licence_class": writing_sources.PERSONAL, "licence_url": ""}
+
+
+def apply_record_licence(row, record):
+    """Scanned releases decide the licence message by message (readers_scanned.py): a record's "licence_open"
+    True marks the row public domain, False marks it personal use only. Other records keep the source's licence."""
+    if "licence_open" in record:
+        row.update(OPEN_PUBLIC_DOMAIN if record["licence_open"] else PERSONAL_SCANNED)
+    return row
+
+
 def build_source(source, fetcher, per_source, say, seen, reader_options, privacy=OWNER, attach_dir=None,
-                 wanted_styles=None):
+                 wanted_styles=None, classes=None):
     """(rows, counts) for one source: up to per_source examples, no more than a tenth from one mailbox, list or
-    channel when the source has several (at least 15)."""
+    channel when the source has several (at least 15). classes: the licence classes allowed in this build (rows of
+    other classes, possible in scanned releases, are left out)."""
     module = next(m for m in READER_MODULES if hasattr(m, source.reader))
     reader = getattr(module, source.reader)
     counts = Counter()
@@ -255,6 +284,8 @@ def build_source(source, fetcher, per_source, say, seen, reader_options, privacy
     group_cap = max(15, per_source // 10)
     if source.key in ("w3c", "usenet", "irc", "debian", "scotus", "hearings", "hansard", "idl"):
         group_cap = max(group_cap, per_source // 6 + 1)
+    if source.key in ("scanned_federal", "scanned_state", "govinfo_exhibits"):
+        group_cap = max(group_cap, per_source // 3 + 1)
     if source.key in ("w3c", "usenet", "irc", "debian", "scotus", "hearings", "hansard"):
         group_cap = max(group_cap, per_source // 2 + 1)
     try:
@@ -281,6 +312,10 @@ def build_source(source, fetcher, per_source, say, seen, reader_options, privacy
                 if not row:
                     counts[why] += 1
                     continue
+                apply_record_licence(row, record)
+                if classes and row["licence_class"] not in classes:
+                    counts["personal use only (writer outside the government); add --personal"] += 1
+                    continue
                 row["style"], row["register"] = styles.label(row, source.key, record)
                 if wanted_styles and row["style"] not in wanted_styles:
                     counts["not one of the chosen styles"] += 1
@@ -297,6 +332,9 @@ def build_source(source, fetcher, per_source, say, seen, reader_options, privacy
                 say(f"  {source.key}: {counts['read']} read, {counts['kept']} kept")
             if len(rows) >= per_source:
                 break
+    except ocr.OcrUnavailable as err:
+        counts["skipped: " + str(err)] += 1
+        say(f"{source.name}: skipped, because {err}.")
     except fetch.RobotsRefusal as err:
         counts["refused by robots.txt: " + str(err)] += 1
         say(f"{source.name}: not used, because {err}.")
@@ -307,14 +345,22 @@ def build_source(source, fetcher, per_source, say, seen, reader_options, privacy
     return rows[:per_source], counts
 
 
+SCANNED_READERS = ("read_ia_federal", "read_ia_state", "read_govinfo_exhibits", "read_scanned_folder")
 CHANGES = {OWNER: "Social Security, card, bank and account numbers and passwords masked; nothing else changed",
            STRICT: "personal details and names replaced with placeholders, sensitive messages left out, messages "
                    "shortened to the writer's own words"}
 
 
-def write_outputs(out, rows, counts_by_source, used, fetcher, started, privacy=OWNER):
+def write_outputs(out, rows, counts_by_source, used, fetcher, started, privacy=OWNER, page_log=None):
     """Write every output file into out (see the module notes)."""
     os.makedirs(out, exist_ok=True)
+    if page_log:
+        with open(os.path.join(out, "scanned-pages-left-out.txt"), "w", encoding="utf-8") as f:
+            f.write(f"Scanned pages left out by the OCR reader ({ocr.ENGINE_NAME}), with the reason. A page is kept "
+                    f"when its confidence score is at least {ocr.MIN_PAGE_CONFIDENCE:.2f} and it has at least "
+                    f"{ocr.MIN_PAGE_WORDS} words.\n\n")
+            for name, page, why in page_log:
+                f.write(f"{name}, page {page}: {why}\n" if page else f"{name}: {why}\n")
     train = [r for r in rows if not is_validation(r)]
     valid = [r for r in rows if is_validation(r)]
     if rows and not valid:
@@ -374,6 +420,10 @@ def write_outputs(out, rows, counts_by_source, used, fetcher, started, privacy=O
             for w in source.warnings:
                 f.write(f"  Warning: {w}\n")
             f.write("\n")
+        if page_log is not None and any(s.reader in ("read_ia_federal", "read_ia_state", "read_govinfo_exhibits",
+                                                         "read_scanned_folder") for s in used):
+            f.write(f"Scanned pages were read with {ocr.ENGINE_NAME}. Pages left out for a low confidence score "
+                    f"or almost no text: {len(page_log)} (listed in scanned-pages-left-out.txt).\n\n")
         if fetcher.warnings:
             f.write("Notes from robots.txt files:\n" + "".join(f"  {w}\n" for w in fetcher.warnings) + "\n")
         f.write(f"Time taken: {int(time.time() - started)} seconds.\n")
@@ -392,7 +442,12 @@ def write_outputs(out, rows, counts_by_source, used, fetcher, started, privacy=O
             f.write(f"{source.name}: {n} examples\n  Credit: {source.credit}\n  Licence: {source.licence} "
                     f"({source.licence_class}) {source.licence_url}\n  Where: {source.home}\n"
                     f"  Changes: {CHANGES[privacy] if source.key != 'sbcsae' else 'none (whole and unchanged)'}; "
-                    f"instructions written by rules.\n\n")
+                    + ("read from scanned pages with OCR; " if source.reader in SCANNED_READERS else "")
+                    + "instructions written by rules.\n")
+            if source.reader in SCANNED_READERS:
+                kinds = Counter(r["licence_class"] for r in rows if r["source"] == source.key)
+                f.write("  Licence by message: " + ", ".join(f"{k} {v}" for k, v in kinds.most_common()) + ".\n")
+            f.write("\n")
 
     with open(os.path.join(out, "sources-not-used.txt"), "w", encoding="utf-8") as f:
         f.write("Sources that were checked and cannot be used, with the reason (checked November 2026).\n\n")
@@ -419,6 +474,15 @@ def main(argv=None):
     parser.add_argument("--w3c-pages", type=int, default=30, help="at most this many messages per W3C period")
     parser.add_argument("--cache", default="", help="a folder to keep downloaded pages and files in, so a rebuild "
                                                     "does not download them again")
+    parser.add_argument("--scanned-folder", default="", help="a folder of scanned PDF email releases you downloaded "
+                                                             "yourself; they are read with OCR (personal use "
+                                                             "unless a US federal government work). Alone, only "
+                                                             "this folder is read; add --sources to read others too")
+    parser.add_argument("--scanned-max-mb", type=int, default=80, help="the largest scanned PDF (in megabytes) "
+                                                                       "the kit downloads from the Internet Archive "
+                                                                       "or GovInfo")
+    parser.add_argument("--scanned-max-pages", type=int, default=0, help="read at most this many pages of each "
+                                                                         "PDF in the scanned folder (0: all)")
     parser.add_argument("--privacy", choices=[OWNER, STRICT], default=OWNER,
                         help="owner (the default): keep every message whole and mask only Social Security, card, "
                              "bank and account numbers and passwords; strict: also replace names and personal "
@@ -434,7 +498,8 @@ def main(argv=None):
     classes = [writing_sources.OPEN, writing_sources.SHARE_ALIKE] + ([writing_sources.PERSONAL] if args.personal
                                                                      else [])
     known = writing_sources.by_key()
-    keys = [k.strip() for k in args.sources.split(",") if k.strip()] or [s.key for s in writing_sources.SOURCES]
+    keys = [k.strip() for k in args.sources.split(",") if k.strip()] or \
+        ([] if args.scanned_folder else [s.key for s in writing_sources.SOURCES])
     unknown = [k for k in keys if k not in known]
     if unknown:
         parser.error("unknown source: " + ", ".join(unknown) + ". Known: " + ", ".join(known))
@@ -444,12 +509,18 @@ def main(argv=None):
             used.append(known[k])
         else:
             say(f"{known[k].name} is {known[k].licence_class}; add --personal to use it.")
+    if args.scanned_folder:
+        if not os.path.isdir(args.scanned_folder):
+            parser.error(f"the scanned folder was not found: {args.scanned_folder}")
+        used.append(writing_sources.SCANNED_FOLDER)
 
     fetcher = fetch.Fetcher(say, cache_dir=args.cache or None)
-    seen, rows, counts = set(), [], {}
+    seen, rows, counts, page_log = set(), [], {}, []
     for source in used:
         say(f"Reading {source.name} ({source.licence_class}).")
-        options = {}
+        options = {"page_log": page_log, "scanned_max_mb": args.scanned_max_mb}
+        if source.key == "scanned_folder":
+            options["folder"], options["max_pages"] = args.scanned_folder, args.scanned_max_pages
         if source.key == "enron" and args.enron_file:
             options["local_file"] = args.enron_file
         if source.key == "oanc" and args.oanc_file:
@@ -459,10 +530,13 @@ def main(argv=None):
             if args.w3c_lists:
                 options["lists"] = [x.strip() for x in args.w3c_lists.split(",") if x.strip()]
         got, counts[source.key] = build_source(source, fetcher, args.per_source, say, seen, options, args.privacy,
-                                               os.path.join(args.out, "messages"), wanted_styles)
+                                               os.path.join(args.out, "messages"), wanted_styles,
+                                               # the owner's own downloads may always be personal use
+                                               classes + [writing_sources.PERSONAL] if source.key == "scanned_folder"
+                                               else classes)
         say(f"{source.name}: {len(got)} examples kept.")
         rows += got
-    train, valid = write_outputs(args.out, rows, counts, used, fetcher, started, args.privacy)
+    train, valid = write_outputs(args.out, rows, counts, used, fetcher, started, args.privacy, page_log)
     say(f"Done: {len(train)} training and {len(valid)} validation examples in {os.path.abspath(args.out)}. "
         "Read samples.txt and build-report.txt there.")
     return 0

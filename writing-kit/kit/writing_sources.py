@@ -308,25 +308,86 @@ SOURCES = [
         home="https://craphound.com/", reader="read_doctorow",
         notes="The plain-text editions on his site's download pages; a book whose file does not state a Creative "
               "Commons licence is skipped. Non-commercial, so personal use only."),
+    Source(
+        key="scanned_federal",
+        name="Scanned US federal email releases, read with OCR (Internet Archive copies)",
+        licence="Public domain: works of the US federal government (17 U.S.C. 105), marked public domain on the "
+                "Internet Archive; messages written from outside the federal government keep their writers' "
+                "copyright and are marked personal use only, one by one",
+        licence_class=OPEN, licence_url="https://creativecommons.org/publicdomain/mark/1.0/",
+        credit="US Department of State, Department of Homeland Security, National Institutes of Health and "
+               "Environmental Protection Agency FOIA releases; copies kept by the National Security Archive, The "
+               "Memory Hole and others on the Internet Archive",
+        home="https://archive.org/details/ClintonEmails10-21", reader="read_ia_federal",
+        notes="Scanned pages of printed emails: the Clinton State Department emails (the 21 October 2016 release, "
+              "one PDF per email, and the 31 August 2015 release), a DHS FOIA release, the NIH FOIA emails of "
+              "April 2022 and the EPA Flint water documents (May 2016). The official State Department reading room "
+              "(foia.state.gov) closes its robots.txt to all programs, so the Internet Archive copies are used; "
+              "each item's metadata is read at every build and an item not marked public domain is skipped. The "
+              "pages are read with OCR on this computer (ocr.py); only pages with a good confidence score are "
+              "kept. Each message's page pictures and OCR text are saved beside it. Messages whose sender's "
+              "address is outside the federal government (a company, a private address, a state office) are "
+              "personal use only and need --personal. The Internet Archive's terms offer its collections for "
+              "scholarship and research."),
+    Source(
+        key="scanned_state",
+        name="Scanned state government email releases, read with OCR (Internet Archive copies)",
+        licence="State government records released under state public-records laws; not federal works, and no "
+                "licence is given, so personal use only",
+        licence_class=PERSONAL, licence_url="https://archive.org/details/palinemails",
+        credit="State of Alaska (Sarah Palin's governor emails, scanned by the Anchorage Daily News) and State of "
+               "Michigan (Governor Rick Snyder's Flint emails); copies on the Internet Archive",
+        home="https://archive.org/details/palinemails", reader="read_ia_state",
+        notes="Sarah Palin's Alaska emails (released 10 June 2011) and Governor Snyder's Flint water emails "
+              "(January 2016), from their Internet Archive copies; michigan.gov refuses programs (it answers "
+              "'Access Denied' even for its robots.txt), so its own PDFs are not used. Read with OCR like the "
+              "federal releases."),
+    Source(
+        key="govinfo_exhibits",
+        name="Scanned email exhibits in US Congress hearing records (GovInfo), read with OCR",
+        licence="Public domain: works of the US government (GovInfo); exhibits from outside the government keep "
+                "their writers' copyright and are marked personal use only, one by one",
+        licence_class=OPEN, licence_url="https://www.govinfo.gov/about/policies",
+        credit="US Government Publishing Office, GovInfo (Congressional Hearings collection)",
+        home="https://www.govinfo.gov/app/collection/chrg", reader="read_govinfo_exhibits",
+        notes="Hearing records print submitted documents as scanned pictures ('[GRAPHICS NOT AVAILABLE IN TIFF "
+              "FORMAT]' in their text). The kit reads only the hearings whose text shows such pictures next to the "
+              "word email, downloads the official PDF, and reads only its picture pages with OCR."),
 ]
 
+# Used only with --scanned-folder: PDFs the owner downloaded himself. Each PDF is personal use only unless it is a
+# US federal government work (readers_scanned.government_reason); each row says which.
+SCANNED_FOLDER = Source(
+    key="scanned_folder", name="Scanned PDFs from your own folder (--scanned-folder), read with OCR",
+    licence="Your own downloads: personal use only, except US federal government works (public domain), which are "
+            "marked open one by one", licence_class=PERSONAL, licence_url="",
+    credit="The releases you downloaded (see each example's source file in the messages folder)", home="",
+    reader="read_scanned_folder",
+    notes="A PDF counts as a government work when its folder or file name says 'public domain', 'government work', "
+          "'US government' or 'federal', or when its first pages carry a US federal release stamp or FOIA "
+          "exemption codes such as (b)(6).")
+
 NOT_USED = [
-    ("Hillary Clinton emails, US State Department FOIA release (foia.state.gov)",
-     "Public domain US government records, but the robots.txt of foia.state.gov says 'User-agent: * / Disallow: /' "
-     "(no programs at all), and there is no other official bulk download; the copies elsewhere (WikiLeaks and news "
-     "sites) are not official. The records are also scanned PDF pages, not text."),
-    ("Jeb Bush's Florida governor emails (jebemails.com, 2015)",
+    ("Hillary Clinton emails on the State Department's own site (foia.state.gov)",
+     "The robots.txt of foia.state.gov says 'User-agent: * / Disallow: /' (no programs at all). The same releases "
+     "are read from their Internet Archive copies, marked public domain (source scanned_federal); the copies on "
+     "WikiLeaks and news sites are not used."),
+    ("Jeb Bush's Florida governor emails (jebemails.com, 2015, and the Internet Archive item JebBushEmails)",
      "The original release site is gone: jebemails.com now belongs to an unrelated email-marketing business. The "
-     "2015 release also exposed thousands of Floridians' Social Security numbers and private details (they were "
-     "redacted later). No official source remains."),
-    ("Sarah Palin's Alaska governor emails (2011 state release)",
-     "Alaska released them as about 24,000 printed pages; the only digital copies are scans made by news "
-     "organisations, not an official bulk download, and they are images rather than text."),
-    ("Other state public-records email releases (for example Michigan's Flint water emails)",
-     "Michigan released the Flint emails in 2016 as PDF page images (about 445,000 pages in all), with residents' "
-     "personal details in them and no bulk text download; the searchable copy at the University of Iowa is a "
-     "research archive, not an official bulk download. Other states' releases looked at were the same kind of "
-     "scanned pages. Not used."),
+     "only copy found on the Internet Archive (JebBushEmails, a 400 MB 7z file of text, not scanned pages) was "
+     "uploaded anonymously with no description of its origin and no licence, and the 2015 release exposed "
+     "thousands of Floridians' Social Security numbers and private details before they were redacted, so an "
+     "unreviewed copy is not used. No official source remains. If you download a reviewed copy yourself, "
+     "--scanned-folder can read its PDFs."),
+    ("Sarah Palin's Alaska emails on DocumentCloud and its Internet Archive mirror",
+     "DocumentCloud's robots.txt reserves AI training ('ai-train=no'), so its copy and the Internet Archive "
+     "mirrors of DocumentCloud documents (collection 'documentcloud') are left out. The Anchorage Daily News scans "
+     "on the Internet Archive (item palinemails) are used instead (source scanned_state)."),
+    ("Michigan's own Flint email pages (michigan.gov)",
+     "www.michigan.gov answers 'Access Denied' to programs, even for its robots.txt, so the site is treated as "
+     "closed. Governor Snyder's Flint emails are read from their Internet Archive copies (source scanned_state) "
+     "and the EPA's Flint documents from theirs (source scanned_federal). The searchable copy at the University of "
+     "Iowa is a research archive, not an official download, and was not used."),
     ("US National Archives email records (catalog.archives.gov)",
      "The robots.txt of catalog.archives.gov says 'Disallow: /' for all programs; its API needs a personal key, and "
      "the email records there are mostly scanned PDFs. Not used."),
@@ -424,8 +485,9 @@ NOT_USED = [
      "Not used."),
     ("Corporate emails in court and government records (FTC and SEC exhibits, congressional investigation "
      "document dumps)",
-     "They are scanned exhibit PDFs inside individual dockets with no bulk text route; the congressional ones that "
-     "are printed in hearing records come in through the GovInfo hearings source. Not used separately."),
+     "They are scanned exhibit PDFs inside individual dockets with no bulk route. Scanned exhibits printed in "
+     "hearing records come in through the GovInfo exhibits source (read with OCR); any others you download "
+     "yourself can be read with --scanned-folder."),
     ("TweetSumm (customer service on Twitter)",
      "CDLA-Sharing, but it publishes only tweet IDs and summaries; the tweets themselves come from a Kaggle copy that "
      "needs a login and Kaggle's terms. Not used."),
@@ -474,16 +536,19 @@ NOT_USED = [
      "Not used."),
     ("House Oversight, Senate Commerce and PSI, House Judiciary (2020 tech antitrust), Boeing 737 MAX and January 6 "
      "committee document releases",
-     "Committee sites allow programs, but the email exhibits are scanned PDF appendices, one report at a time, with "
-     "no bulk text route; not built in this round (hearing records on GovInfo come in through the hearings "
-     "source)."),
+     "Committee sites allow programs (oversight.house.gov's robots.txt allows all), but each release is a "
+     "separate PDF on a separate page with no list a program can follow; not built in this round. Download the "
+     "ones you want and use --scanned-folder (they are marked government works when their pages carry federal "
+     "stamps or the folder name says so). Hearing records on GovInfo are read by the GovInfo exhibits source."),
     ("FTC v. Meta, Epic v. Apple, Oracle v. Google, Waymo v. Uber and Theranos trial exhibits",
      "Published as PDFs on court and agency pages or on CourtListener, which refused this kit (403) and whose API "
      "needs a token; not built in this round. US v. Google's DOJ exhibits are used."),
-    ("FBI Vault and agency FOIA reading rooms (DHS, HHS, EPA), NIH and Fauci FOIA emails, congressional releases "
-     "about Hunter Biden",
-     "Federal records, but released as scanned PDF pages (with the agency's redactions) one release at a time; no "
-     "bulk text route was found. Not built in this round."),
+    ("FBI Vault and agency FOIA reading rooms (DHS, HHS, EPA) on the agencies' own sites, and congressional "
+     "releases about Hunter Biden",
+     "Federal records released as scanned PDF pages one release at a time, with no list a program can follow. "
+     "Several releases (DHS, NIH, EPA Flint) are read from their public-domain Internet Archive copies (source "
+     "scanned_federal); others can be downloaded by hand and read with --scanned-folder. The FBI's Clinton "
+     "investigation files on the Internet Archive are interview reports, not emails, and were not used."),
     ("State Department FOIA reading room (again)",
      "robots.txt still closes foia.state.gov to all programs. Not used."),
     ("Climate Investigations Center",

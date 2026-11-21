@@ -1,0 +1,8 @@
+# The OCR reader for scanned email releases (see READ ME FIRST.txt, "Scanned email releases").
+# Install once with:  pip install -r kit\requirements-ocr.txt
+# All run on this computer; nothing is downloaded when they run. Licences: RapidOCR and its models Apache 2.0,
+# ONNX Runtime MIT, pypdfium2 Apache 2.0 or BSD (PDFium BSD), and their helpers (OpenCV Apache 2.0, NumPy BSD,
+# Pillow MIT-CMU, Shapely BSD, pyclipper MIT, OmegaConf BSD).
+rapidocr==3.10.0
+onnxruntime>=1.17
+pypdfium2>=4.30
