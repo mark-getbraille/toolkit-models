@@ -89,8 +89,8 @@ GROUP_NOTES = {
     "news": "News ages fast: these stories are kept for reference, and the Assistant prefers newer items.",
 }
 MAX_ITEMS = 2500                 # the most items in one piece (a guard against a source that changed shape)
-MAX_ORIGINALS = 500              # the most item addresses listed in a book's "originals" (every item's own original
-                                 # address is on its page in the book in any case)
+MAX_ORIGINALS = 100              # the most item addresses listed in a book's "originals" (keeps textbooks.json small;
+                                 # every item's own original address is on its page in the book in any case)
 
 CC_BY_4 = "https://creativecommons.org/licenses/by/4.0/"
 
