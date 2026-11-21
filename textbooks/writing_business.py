@@ -127,6 +127,40 @@ GUIDES = [
                      (r"/grow-your-business|/trade-tools", "Grow your business"),
                      (r"contracts|subcontracting", "Government contracting"), (r".", "Local help")],
          version="sba.gov business guide as published", limit=60),
+    dict(US_WEB, name="nih_write_application", title="Write your application: NIH grant-writing guide",
+         subject="Grant writing (research grants)", publisher="National Institutes of Health (NIH), Office of "
+         "Extramural Research", source="https://grants.nih.gov/grants-process/write-application",
+         description="NIH's guide to writing a grant application, every page: general grant-writing tips "
+                     "(communicating your research's intent and value, tables, charts and figures), advice on the "
+                     "application's sections (budget, reference letters), the How to Apply application guide (which "
+                     "instructions to use, formatting attachments, page limits, rules for text fields), and sample "
+                     "applications and annotated form sets. The forms themselves are listed, not included.",
+         notice="A work of the National Institutes of Health (not under copyright in the United States). NIH's "
+                "rules change: check the current notice of funding opportunity before you apply.",
+         crawl=[("https://grants.nih.gov/grants-process/write-application", 2)],
+         follow=r"^https://grants\.nih\.gov/grants-process/write-application(/(?!forms-directory)[a-z0-9-]+)?$",
+         pages=r"^https://grants\.nih\.gov/grants-process/write-application(/(?!forms-directory/)[a-z0-9-]+)*$",
+         unit_rules=[(r"/general-grant-writing-tips", "General grant-writing tips"),
+                     (r"/advice-on-application-sections", "Advice on application sections"),
+                     (r"/how-to-apply-application-guide", "How to Apply: the application guide"),
+                     (r"/samples-applications", "Sample applications"), (r".", "Write your application")],
+         version="grants.nih.gov pages as published", limit=80),
+    dict(US_WEB, name="nsf_pappg", title="Proposal and Award Policies and Procedures Guide (NSF PAPPG 24-1)",
+         subject="Grant writing (research proposals)", publisher="US National Science Foundation (NSF)",
+         source="https://www.nsf.gov/policies/pappg/24-1",
+         description="NSF's guide to preparing and submitting research proposals and managing awards, every "
+                     "chapter: pre-submission, proposal preparation (the project summary, description, references, "
+                     "biographical sketches, budget and budget justification, data management plan), processing and "
+                     "review (the merit review criteria), declines and withdrawals, renewals, awards and their "
+                     "administration, financial requirements, recipient standards, allowable costs and disputes, "
+                     "with the summary of changes and the subject index.",
+         notice="A work of the National Science Foundation (not under copyright in the United States). This is "
+                "PAPPG 24-1, effective 20 May 2024, as NSF publishes it with its supplements; NSF says its Guidance "
+                "on Financial Assistance will replace it in 2027, so check nsf.gov/policies/pappg for the version "
+                "in effect when you apply.",
+         start=["https://www.nsf.gov/policies/pappg/24-1"],
+         pages=r"^https://www\.nsf\.gov/policies/pappg/24-1/[a-z0-9-]+$",
+         published="2024-05-20", version="PAPPG 24-1 (NSF 24-1), effective 20 May 2024", limit=30),
 ]
 
 
@@ -566,6 +600,9 @@ LICENCE_LINES = {
                           "be given appropriate acknowledgement.\" robots.txt disallows only /wp-admin/ and searches. "
                           "legacy.sba.gov's robots.txt disallows /sites/default/files/*, so its template files are "
                           "not fetched.",
+    "nih_nsf_grants": "grants.nih.gov and www.nsf.gov: works of the US government (17 U.S.C. 105). Their robots.txt "
+                      "files disallow only Drupal's system folders, searches and (NSF) listings; no AI rules "
+                      "(checked 2026-11-21).",
     "gpo_style_manual": "govinfo.gov/about/policies quotes 17 U.S.C. 105; the Internet Archive's record of the same "
                         "book adds: \"The Superintendent of Documents of the U.S. Government Publishing Office "
                         "requests that any reprinted edition be labeled clearly as a copy of the authentic work\" "
