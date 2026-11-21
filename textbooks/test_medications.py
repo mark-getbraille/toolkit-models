@@ -144,7 +144,7 @@ def answer(url, cache=None, binary=False, tries=4):
         ("doctype=34391-3", listing([(RX_ID, "ZINGO (EXAMPLOFEN) TABLET [EXAMPLE PHARMA INC.]"),
                                      (REPACK_ID, "EXAMPLOFEN TABLET [SOME REPACK LLC]")])),
         ("doctype=50578-4", listing([(VET_ID, "ZOOMZAP (ZAPICITINIB MALEATE) TABLET [EXAMPLE ANIMAL HEALTH]")])),
-        ("doctype=50576-8", listing([(FARM_ID, "FEEDMIX (PRETENDOMYCIN) GRANULE [EXAMPLE FEEDS]")])),
+        ("doctype=50576-8", listing([(FARM_ID, "FEEDMIX 10% TYPE A MEDICATED ARTICLE GRANULE [EXAMPLE FEEDS]")])),
         ("doctype=50577-6", listing([(HOMEO_ID, "CALM (CHAMOMILLA) LIQUID [EXAMPLE HOMEOPET]")])),
         ("spls.json", listing([])),
         ("rxnorm_mappings.zip", zipped("rxnorm_mappings.txt", RXNORM)),
@@ -210,6 +210,8 @@ def test_names_and_forms():
     assert M.parse_title("QUELLIN (CARPROFEN) TABLET, CHEWABLE [ELANCO US INC.]") == \
         ("QUELLIN", ["CARPROFEN"], "TABLET, CHEWABLE", "ELANCO US INC.")
     assert M.parse_title("CARPROFEN TABLET, CHEWABLE [ZYVET]") == ("", ["CARPROFEN"], "TABLET, CHEWABLE", "ZYVET")
+    assert M.parse_title("OTIC (NEOMYCIN SULFATE, AND TETRACAINE HYDROCHLORIDE) OINTMENT [X]")[1] == \
+        ["NEOMYCIN SULFATE", "TETRACAINE HYDROCHLORIDE"]
     assert M.parse_title("IBUPROFEN (IBUPROFEN) TABLET [X]")[0] == ""      # the generic name is not a brand
     assert M.parse_title("AMOXICILLIN (AMOXICILLIN) CAPSULE AMOXICILLIN (AMOXICILLIN) TABLET [X]")[:2] == \
         ("", ["AMOXICILLIN"])                                                 # a label of several products

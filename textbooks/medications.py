@@ -312,7 +312,8 @@ def parse_title(title):
     m = re.match(r"^(.*?)\s*\(((?:[^()]|\([^()]*\))*)\)\s*(.*)$", t)   # the first product of the title
     if m and m.group(2).strip():
         brand, inner, form = m.group(1).strip(), m.group(2), m.group(3).strip()
-        generics = [TITLE_FORM.sub(" ", g).strip() for g in re.split(r",\s*(?![^()]*\))", inner)]
+        generics = [re.sub(r"^\s*and\s+", "", TITLE_FORM.sub(" ", g), flags=re.I).strip()
+                    for g in re.split(r",\s*(?![^()]*\))", inner)]
         generics = [" ".join(g.split()) for g in generics if g]
         if not brand_words(brand, combo_key(generics)):     # "AMOXICILLIN CAPSULES (AMOXICILLIN)": no brand
             brand = ""
@@ -1308,7 +1309,35 @@ def animal_medicines(cache=None, left_out=None, only=None):
     if homeopathic:
         left_out.append({"title": "Homeopathic animal products", "reason": f"{homeopathic} labels left out: their "
                          "labels list dilutions, not medicines."})
-    return medicines
+    return regroup(medicines)
+
+
+def label_names(label):
+    """The active ingredients a label itself names (its product data), without repeats; [] when it names none."""
+    names = {}
+    for p in label.products:
+        for name, _strength in p["actives"]:
+            if name.strip():
+                names.setdefault(base_name(name), name.strip())
+    return list(names.values())
+
+
+def regroup(medicines):
+    """The animal Medicines grouped again by the active ingredients their labels name (a title such as "3% IODINE
+    TEAT DIP" or "A PALATABLE FORMULA FOR CATS" says the product, not its medicine): medicines whose labels name
+    the same ingredients become one, with all their brands and at most MAX_FORMS labels (one per form)."""
+    out = {}
+    for med in medicines:
+        names = label_names(med.labels[0][1]) or sorted(med.names)
+        key = combo_key(names) or med.key
+        if key not in out:
+            out[key] = Medicine(key=key, names=set(choose_names({n.lower(): 1 for n in names})), kind=med.kind)
+        target = out[key]
+        target.brands |= med.brands
+        for family, label in med.labels:
+            if family not in {f for f, _l in target.labels} and len(target.labels) < MAX_FORMS:
+                target.labels.append((family, label))
+    return list(out.values())
 
 
 def books_for_key(key, cache=None, left_out=None, only=None):
