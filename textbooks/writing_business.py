@@ -100,6 +100,33 @@ GUIDES = [
          unit_rules=[(r"/principles", "Principles"), (r"/writing", "Writing"), (r"/design", "Design"),
                      (r"/test", "Testing"), (r".", "About the guide")],
          version="digital.gov guide as published", limit=40),
+    dict(US_WEB, name="sba_business_guide", title="Small business guide: plan, launch, manage and grow your "
+         "business (US Small Business Administration)", subject="Small business: business plans, marketing and "
+         "management", publisher="US Small Business Administration (SBA)",
+         source="https://www.sba.gov/counseling/",
+         licence_page="https://www.sba.gov/about-sba/open-government/about-the-sba-gov-website/",
+         licence_text=r"Government information on SBA\.gov is in the public domain",
+         description="The SBA's business guide, every page of it: get started (assess your business, basic "
+                     "requirements, size standards), plan your business (market research and competitive analysis, "
+                     "writing a business plan, startup costs, business credit, funding, buying a business or "
+                     "franchise), launch your business (location, structure, name, registration, tax IDs, licences "
+                     "and permits, bank account), manage your business (finances, marketing and sales, hiring and "
+                     "managing employees, taxes, insurance, cybersecurity, staying legally compliant), grow your "
+                     "business, winning government contracts, and where to find free local help.",
+         notice="Government information on SBA.gov is in the public domain; the SBA asks that it be acknowledged "
+                "as the source. Information, not legal, tax or financial advice. The business plan templates the "
+                "guide names are Word files on legacy.sba.gov, whose robots.txt does not allow programs to fetch "
+                "them, so they are not in this book: open the links in a browser.",
+         sitemap="https://www.sba.gov/page-sitemap.xml",
+         pages=r"^https://www\.sba\.gov/counseling/(?!.*(?:-tool|-calculator|-lookup)/$)(get-started|plan-your-business|launch-your-business|"
+               r"manage-your-business|grow-your-business|governing-rules-and-responsibilities|how-to-win-contracts|"
+               r"prime-and-subcontracting|local-assistance|trade-tools-for-international-sales)(/[a-z0-9-]+)*/$",
+         unit_rules=[(r"/get-started", "Get started"), (r"/plan-your-business", "Plan your business"),
+                     (r"/launch-your-business", "Launch your business"),
+                     (r"/manage-your-business|/governing-rules", "Manage your business"),
+                     (r"/grow-your-business|/trade-tools", "Grow your business"),
+                     (r"contracts|subcontracting", "Government contracting"), (r".", "Local help")],
+         version="sba.gov business guide as published", limit=60),
 ]
 
 
@@ -533,6 +560,12 @@ LICENCE_LINES = {
     "digital_gov_plain_language": "digital.gov (GSA): a work of the US government (17 U.S.C. 105; the line checked "
                                   "is govinfo.gov's quotation of it). robots.txt: \"User-agent: *\", Crawl-delay 10, "
                                   "only Drupal's system folders disallowed; no AI rules (checked 2026-11-21).",
+    "sba_business_guide": "www.sba.gov/about-sba/open-government/about-the-sba-gov-website/: \"Government "
+                          "information on SBA.gov is in the public domain. Public domain information may be freely "
+                          "distributed and copied, but it is requested that in any subsequent use, SBA's information "
+                          "be given appropriate acknowledgement.\" robots.txt disallows only /wp-admin/ and searches. "
+                          "legacy.sba.gov's robots.txt disallows /sites/default/files/*, so its template files are "
+                          "not fetched.",
     "gpo_style_manual": "govinfo.gov/about/policies quotes 17 U.S.C. 105; the Internet Archive's record of the same "
                         "book adds: \"The Superintendent of Documents of the U.S. Government Publishing Office "
                         "requests that any reprinted edition be labeled clearly as a copy of the authentic work\" "
@@ -558,6 +591,10 @@ NOT_INCLUDED = [
      "static.e-publishing.af.mil refuse programs (\"Access Denied\", robots.txt included); the August 2004 edition is "
      "built from DTIC's public-release record instead (wb:tongue_and_quill). Index: "
      "https://www.e-publishing.af.mil/"),
+    ("SBA business plan templates (Andrew's lean and traditional plans, Rebecca's plan) and the startup costs "
+     "worksheet", "Public domain, but they are files on legacy.sba.gov, whose robots.txt disallows "
+     "/sites/default/files/* for every program; the guide's own text about business plans is in "
+     "wb:sba_business_guide. Index: https://legacy.sba.gov/document/support-andrews-business-plan-template-lean"),
     ("plainlanguage.gov's guideline pages (web edition)", "The same text as the Federal Plain Language Guidelines "
      "PDF (wb:plain_language_guidelines) and digital.gov's guide (wb:digital_gov_plain_language), both built; not "
      "added a third time."),
