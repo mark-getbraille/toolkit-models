@@ -73,7 +73,7 @@ def test_pdf_entries():
     assert all(e["pdf"].startswith("https://www.faa.gov/") for e in R.FAA_HANDBOOKS)
     assert len(R.FAA_HANDBOOKS) >= 15
     keys = sources.expand_keys(["courses", "fieldmanuals", "government"])
-    assert "pdf:navy_builder_3_2" in keys and "pdf:army_fm_3_05_70_survival" in keys
+    assert "pdf:navy_quartermaster_1_c" in keys and "pdf:army_fm_21_10_field_hygiene_2000" in keys
     assert "pdf:faa_aviation_weather_handbook" in keys and "pdf:nist_handbook_44_2025" in keys
 
 

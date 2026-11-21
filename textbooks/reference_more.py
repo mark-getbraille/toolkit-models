@@ -108,8 +108,10 @@ FAA_HANDBOOKS = [
 # Internet Archive copies with a text layer (the ERIC and Digital Library of India scans have their OCR words).
 # Like the Navy courses already built, each is kept ONLY when its own front matter prints Distribution Statement A
 # and no restricted marking (distribution_a, checked by the builder at every build); a manual that does not print
-# it is left out and the reason is said in the catalogue. US government works (17 U.S.C. 105). Seaman, Damage
-# Controlman and Basic Military Requirements were not found on the Internet Archive with a text layer.
+# it is left out and the reason is said in the catalogue. US government works (17 U.S.C. 105). Checked on
+# 2026-11-21: the six below print it; the 1970s ERIC copies of Builder, Construction Electrician, Utilitiesman,
+# Engineman, Electrician's Mate and Fireman do not, so they are not listed (NOT_INCLUDED). Seaman, Damage Controlman
+# and Basic Military Requirements were not found on the Internet Archive with a text layer.
 COURSE = dict(group="course", country="United States", licence=US_GOV, licence_url=US_GOV_URL, distribution_a=True,
               publisher="Naval Education and Training Command (US Navy)")
 
@@ -121,24 +123,6 @@ def _navy(name, title, archive, subject, description, published):
 
 
 NAVY_RATE_MANUALS = [
-    _navy("navy_builder_3_2", "Builder 3 & 2 (Rate Training Manual, 1981)", "ERIC_ED210471", "Carpentry and building",
-          "The Seabee builder's course: construction drawings, wood and concrete construction, masonry, roofing, "
-          "finishing, and safety.", "1981"),
-    _navy("navy_construction_electrician_3_2", "Construction Electrician 3 & 2 (Rate Training Manual, 1976)",
-          "ERIC_ED132306", "Electrical wiring", "The Seabee electrician's course: electrical theory, wiring, power "
-          "distribution, motors and generators, lighting and safety.", "1976"),
-    _navy("navy_utilitiesman_3_2", "Utilitiesman 3 and 2 (Rate Training Manual, 1973)", "ERIC_ED097442",
-          "Plumbing, heating and water", "The Seabee utilitiesman's course: plumbing, water supply and treatment, "
-          "sewage, heating, air conditioning and refrigeration.", "1973"),
-    _navy("navy_engineman_3_2", "Engineman 3 & 2 (Rate Training Manual, 1979)", "ERIC_ED178727", "Diesel engines",
-          "Diesel and gasoline engines: how they work, fuel, lubrication and cooling systems, maintenance and "
-          "troubleshooting.", "1979"),
-    _navy("navy_electricians_mate_3_2", "Electrician's Mate 3 & 2 (Rate Training Manual, 1974)", "ERIC_ED110703",
-          "Electrical systems", "Shipboard electrical equipment: generators, motors, controllers, distribution, "
-          "lighting, batteries and electrical safety.", "1974"),
-    _navy("navy_fireman", "Fireman (Naval Rate Training Manual, 1976)", "ERIC_ED126343", "Engineering basics",
-          "The basic course for the engineering ratings: shipboard engineering, boilers, engines, pumps, valves, "
-          "piping, and safety.", "1976"),
     _navy("navy_military_requirements_po3", "Military Requirements for Petty Officer Third Class (NAVEDTRA 12044, "
           "1991)", "militaryrequirem015037mbp", "Leadership and Navy life",
           "Leadership, supervision and training, Navy programmes, security, safety and the duties of a petty "
@@ -163,24 +147,20 @@ NAVY_RATE_MANUALS = [
 ]
 
 # ---------------------------------------------------------------------- Army field manuals, non-weapon (item 11)
-# The Kiwix catalogue already offers the whole Army Publishing Directorate (armypubs_en_all). These are the
-# public-release copies of the survival, first-aid and field hygiene manuals not already built; weapons and tactics
-# parts are left out by the builder (NOT_FIELD_SAFE) and Distribution Statement A is checked in each.
+# The Kiwix catalogue already offers the whole Army Publishing Directorate (armypubs_en_all). These are public-release
+# copies (Distribution Statement A in their front matter, checked 2026-11-21 and again at every build) of field
+# hygiene manuals not already built; weapons and tactics parts are left out by the builder (NOT_FIELD_SAFE).
 FIELD = dict(group="fieldmanual", country="United States", licence=US_GOV, licence_url=US_GOV_URL,
              distribution_a=True, publisher="Headquarters, Department of the Army")
 ARMY_MANUALS = [
-    dict(FIELD, name="army_fm_3_05_70_survival", title="Survival (FM 3-05.70, 2002)", subject="Survival",
-         archive="fm-3-05.70-survival-2002", published="2002",
-         description="The 2002 Army survival manual: psychology of survival, planning, medicine, shelters, water, "
-                     "fire, food, plants, poisonous animals, direction finding and signalling."),
-    dict(FIELD, name="army_fm_4_25_10_field_hygiene", title="Field Hygiene and Sanitation (FM 4-25.10, 2004)",
-         subject="Field hygiene and sanitation", archive="fm-4-25-10-field-hygiene-and-sanitation-2004",
-         published="2004", description="Every soldier's field hygiene manual: personal hygiene, water, food, waste, "
-         "insects and rodents, heat and cold injuries and noise."),
-    dict(FIELD, name="army_fm_21_11_first_aid_1989", title="First Aid for Soldiers (FM 21-11, 1989)",
-         subject="First aid", archive="fm-21-11-first-aid-for-soldier-1989", published="1989",
-         description="The 1989 Army first-aid manual: evaluating a casualty, breathing, bleeding, shock, wounds, "
-                     "fractures, burns, heat and cold injuries, bites and stings, and psychological first aid."),
+    dict(FIELD, name="army_fm_21_10_field_hygiene_2000", title="Field Hygiene and Sanitation (FM 21-10, 2000)",
+         subject="Field hygiene and sanitation", archive="FM21-10_2000", published="2000",
+         description="Every soldier's field hygiene manual: personal hygiene and physical fitness, water, food, "
+                     "waste disposal, insects, rodents and other pests, and heat, cold and noise injuries."),
+    dict(FIELD, name="army_tc_4_02_3_field_hygiene_2015", title="Field Hygiene and Sanitation (TC 4-02.3, 2015)",
+         subject="Field hygiene and sanitation", archive="tc-4-02.3-field-hygiene-and-sanitation-may-2015",
+         published="2015-05", description="The 2015 Army field hygiene manual: preventing disease and injury in "
+         "the field, safe water and food, waste, pests, and heat and cold injuries."),
 ]
 
 # ---------------------------------------------------------------------- NIST weights-and-measures handbooks (33)
@@ -299,7 +279,7 @@ PRACTICE_SUBJECTS = [
      "ages and amounts, and the agencies, forms and phone numbers to use"),
     (r"housing|tenan|landlord|renting|council tax", "tenancy and housing law, deposits, evictions, local taxes and "
      "council services"),
-    (r"debt|bankrupt|insolven|court claim", "debt rules, bankruptcy and insolvency, and court procedures"),
+    (r"debt|bankrupt|insolven|court claim", "tax and debt rules, bankruptcy and insolvency, and court procedures"),
     (r"recall|product safety", "which products are sold there, the recall and reporting systems, and the agencies "
      "to contact"),
     (r"transport|boating|aviation|aircraft|marine", "transport rules and licences, the side of the road, boating "
@@ -316,6 +296,13 @@ NOT_INCLUDED = [
      "No Internet Archive copy with a text layer was found (netc.navy.mil refuses programs)."),
     ("Navy Gunner's Mate and Seabee Combat Handbook copies on the Internet Archive", "Weapons and combat: never "
      "chosen."),
+    ("Navy rate training manuals of the 1970s on the Internet Archive (ERIC copies): Builder 3 & 2, Construction "
+     "Electrician 3 & 2, Utilitiesman 3 and 2, Engineman 3 & 2, Electrician's Mate 3 & 2, Fireman", "Their front "
+     "matter does not print Distribution Statement A (checked 2026-11-21), which the owner's rule requires for "
+     "military manuals."),
+    ("Army FM 3-05.70 Survival (2002) and FM 21-11 First Aid for Soldiers (1989) copies", "Their front matter says "
+     "\"Distribution authorized to ...\" (restricted); FM 4-25.10 (2004) prints no distribution statement. Not "
+     "built."),
     ("Old UK National Archives education pages (/education/resources/...)", "Gone from the site (410, or moved to "
      "the new teaching resources, which are built); the UK Government Web Archive keeps them, and its own terms were "
      "not checked."),
