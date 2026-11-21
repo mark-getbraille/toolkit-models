@@ -17,4 +17,5 @@
 # 21 November (3): with the hardware packs (one waiting run replaces another), money, mail, clothing, makeup, toys/sports/music, sky and weather, screens.
 # 21 November (4): and home safety, food state, USDA food safety photos, public accessibility features.
 # 21 November (5): and household chemicals, finishes in use, hazard symbols, and abo_packaged_goods rebuilt with safety notes.
-commons_fasteners,commons_door_hardware,commons_building_hardware,commons_plumbing_electrical,commons_building_materials,commons_hand_tools_trades,commons_power_tools,commons_shop_machines,commons_ppe,commons_sewing_food_equipment,abo_hardware,nmah_hardware_tools,commons_money_sides,commons_mail_parcels,commons_clothing_patterns,commons_makeup_grooming,commons_toys_sports_music,commons_sky_weather,commons_screens,commons_home_safety,commons_food_state,usda_food_safety_photos,commons_access_features,commons_household_chemicals,commons_finishes_in_use,commons_hazard_symbols,abo_packaged_goods
+# 21 November (6): tomato, avocado and banana ripeness, fruit quality, hazmat placards, domestic animal breeds (fixed), disasters (FEMA categories).
+agrob_tomato,commons_hazard_symbols,avocado_ripeness,banana_ripeness,fruitnet_quality,na_domestic_animals,commons_disasters

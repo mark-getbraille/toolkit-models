@@ -6,4 +6,5 @@
 # Again: the three books whose build failed (a key with no book now writes its manifest and its reason).
 # 21 November: North American animals (NOAA species directory and eight public-domain field guides).
 # 21 November (2): human and animal medicine labels (DailyMed, Drugs@FDA, Health Canada brand names), 23 books.
-medicines
+# 21 November (3): animal sounds (NPS Sound Gallery descriptions and links).
+sounds
