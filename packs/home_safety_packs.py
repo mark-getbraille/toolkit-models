@@ -158,8 +158,9 @@ RULES = [
     (r"\bwater meters?\b", WHAT_Q, "This is a water meter: it measures how much water the building uses."),
     (r"\bstopcocks?\b|\bshut-?off valves?\b", WHAT_Q,
      answer("This is a stopcock (a shut-off valve) on a water pipe: it turns the water off.", WATER_SHUTOFF_NOTE)),
-    (r"\bsump pumps?\b", WHAT_Q, answer("This is a sump pump: it pumps water out of a pit in the basement floor so the "
-                                       "basement does not flood.", SUMP_NOTE)),
+    (r"\bsump pumps?\b", WHAT_Q, answer("This is a sump pump: a pump that empties water from a pit (a sump). In a home it "
+                                       "sits in a pit in the basement floor so the basement does not flood.",
+                                       SUMP_NOTE)),
     (r"\bgas furnaces?\b", WHAT_Q, answer("This is a gas furnace: it burns gas to heat air that fans blow through the "
                                          "home's ducts.", FURNACE_NOTE)),
     (r"\bwater heaters?\b|\bboilers \(water heating\)\b", WHAT_Q,
@@ -236,7 +237,10 @@ SKIP = re.compile(r"\b(diagrams?|drawings?|art|artistic|historic|history|videos?
                   r"quality images|industrial|blast|smelting|glass|metallurg\w*|ships?|locomotives?|automobiles?|"
                   r"cars?|aircraft|patents?|advertis\w*|people|persons|in literature|icons?|emoji|cooking|recipes|"
                   r"dishes|cuisine|fried|varieties|cultivars?|plants?|trees|flowers|military|nuclear|"
-                  r"substations?|power stations?|high voltage)\b", re.I)
+                  r"substations?|power stations?|high voltage|motor control\w*|switchgear|control rooms?)\b", re.I)
+# File names of old book and magazine scans (Popular Science Monthly "PSM V57 D192 ...", "Page 12 of ..."): not
+# photos of a thing in a home today.
+OLD_SCAN = re.compile(r"^File:(PSM V\d|.*\b(page \d+|plate [ivxlc\d]+|fig(ure)?\.? ?\d+)\b)", re.I)
 # Words that leave a file out: fires, injuries and death (everyday packs), sex.
 HARM = re.compile(r"\b(fires? damage|burn(ed|t) (out|down)|house fires?|killed|dead|deaths?|died|fatal\w*|injur\w*|"
                   r"wounded|blood\w*|bod(y|ies)|corpses?|explosions?|exploded|electrocut\w*|arson)\b", re.I)
@@ -427,7 +431,7 @@ def file_place(title, cats):
 def file_rows(title, credit, text, raw, found_in, cats, t):
     """The rows of one Commons file: the RULES rows from its categories, the readers' rows from its own title and
     description, and its English caption ("Describe this picture."); [] for a state_only topic's file that gets no
-    new question."""
+    new question; None when no category of the file names a thing this pack asks about (it is passed over)."""
     all_cats = [found_in] + [c for c in cats if c != found_in]
     rows = rule_rows(all_cats, prefer=t["prefer"])
     words = f"{title.split(':', 1)[-1].rsplit('.', 1)[0].replace('_', ' ')}. {raw}"
@@ -440,6 +444,8 @@ def file_rows(title, credit, text, raw, found_in, cats, t):
             have.add(question)
     if t["state_only"] and not have & NEW_QUESTIONS:
         return []
+    if not rows:
+        return None             # a subcategory no rule names: not shown to be the thing (not asked about)
     text = "" if JUST_A_RECORD.search(text or "") or not in_english(text) else text
     if text and not NOT_RESPECTFUL.search(text) and not FIRST_PERSON.search(text):
         rows.append({"question": DESCRIBE_Q, "answer": text})
@@ -530,8 +536,14 @@ def safety_commons(topics, limit, prefix, key, people=False):
                 if HARM.search(words):
                     considered(title, url, "its words name a fire, an injury or a death (an everyday pack)")
                     continue
+                if OLD_SCAN.search(title):
+                    considered(title, url, "an old book or magazine scan")
+                    continue
                 seen.add(title)
                 rows = file_rows(title, credit, text, raw, found_in.get(title, t["root"]), cats.get(title, []), t)
+                if rows is None:
+                    considered(title, url, "its categories name nothing this pack asks about")
+                    continue
                 if not rows:
                     if t["state_only"]:
                         considered(title, url, "another pack already shows this category, and its words give no "

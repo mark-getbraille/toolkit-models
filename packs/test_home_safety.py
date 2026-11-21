@@ -118,6 +118,16 @@ def test_state_only_topics():
     assert d.file_rows("File:Lift.jpg", CREDIT, "", "Buttons without braille", "Elevator buttons", [], lift) == []
 
 
+def test_off_topic_and_scans():
+    """A subcategory no rule names gives no rows, even with a caption; old scans and industrial rooms are left out."""
+    t = d.topic("Distribution boards", 1, d.WHAT_Q)
+    assert d.file_rows("File:Mcc room.jpg", CREDIT, "Motor control centre room in a power plant, Nova Scotia.", "",
+                       "Motor control centre", [], t) is None
+    assert d.SKIP.search("Motor control centre") and d.SKIP.search("Switchgear in Germany")
+    assert d.OLD_SCAN.search("File:PSM V57 D192 Pressure recorder.png")
+    assert not d.OLD_SCAN.search("File:Gas meter indicator.jpg")
+
+
 def test_harm_words():
     """Fire, injury and death words leave a file out."""
     assert d.HARM.search("House fire damage after the smoke alarm failed")
