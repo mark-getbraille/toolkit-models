@@ -76,6 +76,7 @@ import re
 import subprocess
 import sys
 import time
+import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -1104,7 +1105,7 @@ def osbooks_books(repo, pictures=False, catalogue=None, left_out=None):
         collection = os.path.normpath(os.path.join(repo, "META-INF", href))
         ob = OpenStaxBook(repo, collection, pictures, (catalogue or {}).get(item.get("slug", "")))
         cms = ob.cms
-        cms_licence = licence_short(cms.get("license_name", ""), cms.get("license_url", "")) if cms else ""
+        cms_licence = licence_short(cms.get("license_name") or "", cms.get("license_url") or "") if cms else ""  # may be null
         licence = ob.licence
         if cms_licence and cms_licence != licence and licence_kind(licence) and licence_kind(cms_licence):
             # They disagree: the stricter one (non-commercial over share-alike over open) is used.
@@ -1125,12 +1126,14 @@ def osbooks_books(repo, pictures=False, catalogue=None, left_out=None):
                             if a.get("value", {}).get("senior_author")) if cms else ob.authors
         high_school = ob.slug in sources.OPENSTAX_HIGH_SCHOOL
         book = Book(
-            name=f"openstax_{ob.slug.replace('-', '_')}", title=f"OpenStax {ob.title}",
+            name="openstax_" + unicodedata.normalize("NFKD", ob.slug).encode("ascii", "ignore").decode().replace("-", "_"),
+            title=f"OpenStax {ob.title}",   # (the name in plain letters: "precálculo" -> "precalculo")
             subject=subjects[0] if subjects else "General", level="school" if k12 else "college",
             group="k12" if high_school else "textbooks",
             grades="9-12 (high school)" if high_school else ("High school and college" if k12 else ""), publisher="OpenStax, Rice University", country="United States", licence=licence,
             licence_url=ob.licence_url or (cms.get("license_url") or ""),
-            source=f"https://openstax.org/details/books/{ob.slug}", language="eng",
+            source=f"https://openstax.org/details/books/{ob.slug}",
+            language={"es": "spa", "pl": "pol"}.get((ob.language or "en")[:2].lower(), "eng"),   # the book's own
             description=plain(cms.get("description", ""))[:600] if cms else "", authors=authors or ob.authors,
             original_pdf={"url": pdf, "size": head_size(pdf), "sha256": ""} if pdf else {},
             flavour="maxi" if pictures else "nopic", published=iso_date(cms.get("publish_date") or ""))

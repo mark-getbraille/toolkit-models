@@ -39,6 +39,13 @@ OSBOOKS = [
     # Added on 2026-11-21 from OpenStax's own list of approved repositories (content-manager-approved-books,
     # checked with git ls-remote): Python programming, the nursing books and Principles of Management.
     "introduction-python-programming", "nursing-external-bundle", "principles-of-management-bundle",
+    # Added on 2026-11-21 (the catalogue pass): every osbooks-* repository GitHub lists for openstax that was not
+    # above: two new English books and OpenStax's Spanish and Polish editions (their language is the book's own).
+    # (data-science and life-liberty-pursuit-happiness are now named principles-data-science and
+    # life-liberty-and-pursuit-happiness on GitHub, which still answers to the old names.)
+    "additive-manufacturing", "neuroscience", "calculo-bundle", "fisica-universitaria-bundle",
+    "introduccion-estadistica-bundle", "precalculo", "quimica-bundle", "fizyka-bundle", "makroekonomia",
+    "mikroekonomia", "psychologia",
 ]
 
 # OpenStax books written for high school (openstax.org's catalogue lists them with K-12 subjects): put in the K-12

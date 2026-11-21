@@ -47,7 +47,7 @@ SNAKE_NOTE = ("Safety first: never touch or handle a snake that may be venomous.
 OLD_SEA_NOTE = (" Published in {year}: an old book whose rules of the road, equipment and safety advice are out of "
                 "date; never use it for navigation (use current charts, the Navigation Rules and Notices to "
                 "Mariners), kept for its explanations of boats, rigging and seamanship.")
-OLD_SEWING_NOTE = (" Published in {year}: an old book whose patterns, sizes and fashions are of their time, kept for "
+OLD_SEWING_NOTE = (" Published in {year}: an old book whose patterns, sizes and fashions are out of date, kept for "
                    "its explanations of stitches and methods; measures are in inches and yards.")
 TAX_NOTE = (" Tax laws change every year: this is the IRS's newest edition (the builder reads it again when the IRS "
             "changes it). Information, not tax advice.")
@@ -118,11 +118,10 @@ MAMMALS = [
     _old("nelson_wild_animals_north_america_1918", "Wild Animals of North America (Edward W. Nelson, 1918)",
          "Mammals", "science", "Edward W. Nelson (National Geographic Society)", "wildanimalsofnor00nels", 1918,
          "The chief of the US Biological Survey's popular studies of the big and little mammals of North America."),
-    _gov("bailey_mammals_new_mexico_1931", "Mammals of New Mexico (Vernon Bailey, North American Fauna 53, 1931)",
-         "Mammals", "science", "Bureau of Biological Survey, US Department of Agriculture",
-         "The US Biological Survey's account of every mammal of New Mexico: description, measurements, range, "
-         "habits, food and economic status. A work of the US government; old (1931): names and status are out of "
-         "date.", "1931", archive="mammalsofnewmexi53bail"),
+    _old("merriam_mammals_adirondack_1884", "The Mammals of the Adirondack Region (C. Hart Merriam, 1884)",
+         "Mammals", "science", "C. Hart Merriam (published by the author)", "mammalsofadirond00merr", 1884,
+         "The first chief of the US Biological Survey's study of the mammals of northeastern New York, from bats and "
+         "shrews to moose, wolves and panthers, with long accounts of their habits."),
 ]
 
 # ---------------------------------------------------------------------- reptiles and amphibians (had 2)
@@ -131,12 +130,11 @@ REPTILES = [
          "science", "Raymond L. Ditmars (Sturgis and Walton)", "reptilesofworld00ditm", 1910,
          SNAKE_NOTE + "The Bronx Zoo curator's account of the tortoises and turtles, crocodilians, lizards and snakes "
          "of the world: how to tell them apart, where they live and how they behave."),
-    _gov("stejneger_poisonous_snakes_na_1895", "The Poisonous Snakes of North America (Leonhard Stejneger, 1895)",
-         "Reptiles (venomous snakes)", "science", USNM,
+    _old("stejneger_poisonous_snakes_na_1895", "The Poisonous Snakes of North America (Leonhard Stejneger, 1895)",
+         "Reptiles (venomous snakes)", "science", USNM, "poisonoussnakeso00stej", 1895,
          SNAKE_NOTE + "The US National Museum's account of the coral snakes, rattlesnakes, copperhead and "
-         "cottonmouth: how to recognise each, its range, and what was known of its venom. A work of the US "
-         "government; old (1895): its first-aid advice is out of date and must not be followed.", "1895",
-         archive="poisonoussnakeso00stej"),
+         "cottonmouth: how to recognise each, its range, and what was known of its venom. Its first-aid advice is "
+         "out of date and must not be followed."),
     _old("stejneger_barbour_checklist_1917", "A Check List of North American Amphibians and Reptiles (Leonhard "
          "Stejneger and Thomas Barbour, 1917)", "Reptiles and amphibians", "science",
          "Leonhard Stejneger and Thomas Barbour (Harvard University Press)", "checklistofnorth00stejuoft", 1917,
@@ -207,13 +205,12 @@ MAPS = [
          "USGS Bulletin 1532)", "Maps and navigation (map projections)", "government", USGS,
          "The earlier, shorter USGS manual of the map projections it uses, with their properties and formulas.",
          "1982", pdf="https://pubs.usgs.gov/bul/1532/report.pdf", page="https://pubs.usgs.gov/publication/b1532"),
-    _gov("bowditch_american_practical_navigator_1914", "American Practical Navigator (Nathaniel Bowditch, US "
+    _old("bowditch_american_practical_navigator_1914", "American Practical Navigator (Nathaniel Bowditch, US "
          "Hydrographic Office edition of 1914)", "Maps and navigation (navigation at sea)", "government",
-         "US Navy Hydrographic Office (Government Printing Office)",
-         "\"Bowditch\", the classic US manual of navigation and nautical astronomy, with its tables. A work of the US "
-         "government; old (1914): its methods are those of its time and it must never be used for navigation (the "
-         "National Geospatial-Intelligence Agency publishes the current edition, whose site could not be reached "
-         "from the build machine)." + NAV_NOTE, "1914", archive="americanpracnavi00bowdrich"),
+         "US Navy Hydrographic Office (Government Printing Office)", "americanpracnavi00bowdrich", 1914,
+         "\"Bowditch\", the classic US manual of navigation and nautical astronomy, with its tables (the National "
+         "Geospatial-Intelligence Agency publishes the current edition, whose site could not be reached from the "
+         "build machine).", note=OLD_SEA_NOTE.replace("rules of the road, equipment", "methods, tables") + NAV_NOTE),
 ]
 
 # ---------------------------------------------------------------------- boating and seamanship (had 1: MSN 1560)
@@ -306,7 +303,7 @@ BRAILLE = [
          "disability", "American Braille Press", "braillemusicnota00unse", 1930,
          "An explanation of the braille music code of 1930: notes and their values, rests, octave marks, "
          "intervals and chords, and the other signs, with examples.",
-         note=" Published in {year}: an old book; braille music signs have been revised since (the current code is "
+         note=" Published in {year}: an old book, out of date: braille music signs have been revised since (the current code is "
               "the Music Braille Code 2015 and the New International Manual of Braille Music Notation), so check "
               "every sign against the current code; the machine-read text has the scanner's mistakes and its "
               "braille examples may be pictures."),
