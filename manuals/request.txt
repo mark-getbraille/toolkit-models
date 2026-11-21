@@ -2,4 +2,5 @@
 # main): category keys from manuals/categories.py, separated by commas, or all.
 # Again with the new household categories (computers, TV and audio, older electronics, lawn and garden, around the
 # house), products from about 1990 on, and without the copies of manual-copying sites.
-firearms,smoking_vaping,pet_livestock_supplies
+# 21 November: hardware, tools and shop equipment manuals, plus firearms, smoking and pet-livestock supplies.
+firearms,smoking_vaping,pet_livestock_supplies,door_hardware_locks,cabinet_hardware,fasteners_anchors,plumbing_fittings,electrical_devices,garage_doors,woodshop_machines,metal_shop_welding,automotive_shop,trade_tools,masonry_paint_drywall,ladders_handling,sewing_textile,kitchen_equipment,accessible_tools,safety_ppe,power_tools,hand_tools,lawn_garden
