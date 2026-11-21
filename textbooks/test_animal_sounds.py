@@ -1,7 +1,8 @@
 """Self-tests of animal_sounds.py (the NPS animal sounds book) with made-up pages only: nothing is downloaded. It
 checks that only the animal groups of the gallery are taken (and the chickens), that each page's title, caption,
 description, credit, audio transcript and MP3 address are read, that a page without a recording is passed over, and
-that the book is written with its pages grouped by kind of animal, links to the recordings and the licence line.
+that the book is written with its pages grouped by kind of animal, the recordings copied into it (public domain:
+the reference-library audit of 2026-11-21), links to the original recordings and the licence line.
 
 Run it from the repository's folder:   python3 -m pytest textbooks/test_animal_sounds.py
 """
@@ -59,6 +60,8 @@ def test_book(monkeypatch, tmp_path):
                         ("Chickens", "sounds-chickens")):
         pages[f"https://www.nps.gov/subjects/sound/{path}.htm"] = sound_html(title)
     pages["https://www.nps.gov/subjects/sound/sounds-dawnchorus_bryce.htm"] = sound_html("Dawn chorus", mp3=False)
+    for title in ("Pigfrog", "Osprey", "Elkbugle", "Chickens"):
+        pages[f"https://www.nps.gov/nps-audiovideo/legacy/mp3/x-{title}.mp3"] = b"ID3" + title.encode() * 10
     monkeypatch.setattr(B, "fetch", lambda url, cache=None, **kw: pages[url])
     monkeypatch.setattr(B, "allowed_by_robots", lambda url, cache=None: True)
     left = []
@@ -71,9 +74,20 @@ def test_book(monkeypatch, tmp_path):
     osprey = next(p for p in book.pages if p.title == "Osprey")
     assert "What it sounds like: Loud rising whistles of a osprey." in osprey.body
     assert 'href="https://www.nps.gov/nps-audiovideo/legacy/mp3/x-Osprey.mp3"' in osprey.body
+    assert '<audio controls src="media/osprey.mp3">' in osprey.body
+    assert book.resources["media/osprey.mp3"] == (b"ID3" + b"Osprey" * 10, "audio/mpeg") and len(book.resources) == 4
     assert "public domain" in book.pages[0].body and "xeno-canto" in book.pages[0].body
     entry = B.write_book(book, str(tmp_path), versioned=True)
     assert entry["licence_kind"] == "open" and entry["group"] == "science" and entry["article_count"] >= 6
+
+
+def test_recording_stays_a_link_when_not_an_mp3(monkeypatch):
+    monkeypatch.setattr(B, "allowed_by_robots", lambda url, cache=None: True)
+    monkeypatch.setattr(B, "fetch", lambda url, cache=None, **kw: b"<html>not a sound</html>")
+    left = []
+    assert A.recording("https://www.nps.gov/x.mp3", None, left) is None and "linked only" in left[0]["reason"]
+    monkeypatch.setattr(B, "fetch", lambda url, cache=None, **kw: b"ID3" + b"0" * A.MAX_MP3)
+    assert A.recording("https://www.nps.gov/x.mp3", None, []) is None
 
 
 def test_refused_by_robots(monkeypatch):

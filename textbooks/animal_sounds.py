@@ -1,4 +1,4 @@
-"""Animal sounds: a reference book of North American animal calls, as TEXT AND LINKS, for the textbooks release.
+"""Animal sounds: a reference book of North American animal calls, as text with the recordings (textbooks release).
 
 Why a reference book and not a training collection: the picture describer cannot hear, so a recording teaches it
 nothing. What helps a blind person is a page per animal that says, in words, what its call sounds like, and a link to
@@ -13,8 +13,10 @@ Where the pages come from (checked by hand on 2026-11-21):
       its Crawl-delay of 5 seconds is written for bingbot only, but the builder keeps it too (NPS_PACE), so about
       45 pages take four minutes. Only the animal groups are
       used (amphibians, birds, insects, mammals, reptiles, and the chickens of the cultural-historical group); the
-      machine, weather, water and music sounds are not. The book holds the page's own words and the address of its
-      MP3 file (a link the toolkit can open); the recordings themselves are not copied into the book.
+      machine, weather, water and music sounds are not. The book holds the page's own words, the recording itself
+      (its MP3 file, copied into the book: the gallery says the files are in the public domain and may be
+      downloaded; changed on 2026-11-21 from links only, the reference-library audit) and the address of the
+      original MP3 file. A recording larger than MAX_MP3 bytes, or one robots.txt does not allow, stays a link.
 
 Looked at and not used (NOT_INCLUDED says why): xeno-canto (its robots.txt shuts out AI crawlers by name, and most
 recordings are CC BY-NC-SA), the Macaulay Library (contributors keep the copyright; reuse needs permission), Freesound
@@ -34,6 +36,7 @@ import build_textbooks as B
 GALLERY = "https://www.nps.gov/subjects/sound/gallery.htm"
 NPS_PACE = 5.0                   # seconds between two requests to www.nps.gov (its robots.txt asks bingbot for this)
 NPS_SITE = "https://www.nps.gov"
+MAX_MP3 = 15_000_000             # bytes: a larger recording stays a link only (a guard against a long file)
 ANIMAL_GROUPS = ("Amphibians", "Birds", "Insects", "Mammals", "Reptiles")
 # Animal pages filed under another group of the gallery: {page path: the group it goes in}.
 ANIMAL_EXTRAS = {"/subjects/sound/sounds-chickens.htm": "Birds"}
@@ -111,10 +114,12 @@ def sound_page(page, url):
             "transcript": transcript, "mp3s": mp3s, "url": url}
 
 
-def page_body(sound):
+def page_body(sound, copies=None):
     """The body of one animal's page: what the sound is like (the transcript), the caption and description, the
-    credit, and the links to listen (the MP3 files) and to the original page."""
+    credit, the recordings copied into the book (copies: {MP3 address: path in the book}, played with an <audio>
+    player), and the links to the original MP3 files and to the original page."""
     esc = B.esc
+    copies = copies or {}
     out = []
     if sound["transcript"]:
         out.append(f"<p>What it sounds like: {esc(sound['transcript'])}</p>")
@@ -124,7 +129,9 @@ def page_body(sound):
     links = "".join(f'<li><a href="{esc(m)}">Listen: {esc(sound["title"])}'
                     f'{f" ({i})" if len(sound["mp3s"]) > 1 else ""}</a> (MP3 sound file, public domain)</li>'
                     for i, m in enumerate(sound["mp3s"], 1))
-    out.append(f"<h2>Recording</h2><ul>{links}</ul>")
+    players = "".join(f'<p><audio controls src="{esc(copies[m])}">Recording: {esc(sound["title"])}</audio></p>'
+                      for m in sound["mp3s"] if m in copies)
+    out.append(f"<h2>Recording</h2>{players}<ul>{links}</ul>")
     out.append(f'<p>Credit: {esc(sound["credit"])}, US National Park Service. Original page: '
                f'<a href="{esc(sound["url"])}">{esc(sound["url"])}</a>.</p>')
     return "\n".join(out)
@@ -134,10 +141,30 @@ def about_body():
     """The "About this book" page: what it is, how to use it, where it comes from, and what was left out."""
     left = "".join(f"<li>{B.esc(name)}: {B.esc(why)}</li>" for name, why in NOT_INCLUDED)
     return ("<p>Animal calls recorded in US national parks, one page per recording, grouped by kind of animal. Each "
-            "page says in words what the sound is like (the Park Service's own audio transcript) and links to the "
-            "recording, so you can listen to it.</p>"
+            "page says in words what the sound is like (the Park Service's own audio transcript), holds the "
+            "recording itself to play, and links to the original recording.</p>"
             f"<p>{B.esc(LICENCE_LINE)}</p>"
             f"<h2>Not in this book</h2><ul>{left}</ul>")
+
+
+def recording(url, cache=None, left_out=None):
+    """The bytes of one MP3 recording (public domain, "may be downloaded"), or None when robots.txt does not allow
+    it, it cannot be read, it is not an MP3 or it is larger than MAX_MP3 (then the page keeps only its link, and
+    left_out says why)."""
+    left_out = left_out if left_out is not None else []
+    if not B.allowed_by_robots(url, cache):
+        left_out.append({"title": url, "reason": "robots.txt does not allow the recording; linked only."})
+        return None
+    try:
+        data = B.fetch(url, cache, binary=True)
+    except Exception as e:  # noqa: BLE001 - the page keeps its link
+        left_out.append({"title": url, "reason": f"The recording could not be read ({e}); linked only."})
+        return None
+    is_mp3 = isinstance(data, bytes) and (data[:3] == b"ID3" or data[:2] in (b"\xff\xfb", b"\xff\xf3", b"\xff\xf2"))
+    if not is_mp3 or len(data) > MAX_MP3:
+        left_out.append({"title": url, "reason": "The recording is not an MP3 file or is too large; linked only."})
+        return None
+    return data
 
 
 def nps_book(cache=None, left_out=None):
@@ -151,9 +178,10 @@ def nps_book(cache=None, left_out=None):
                   level="reference", group="science", publisher="US National Park Service (Natural Sounds)",
                   country="United States", licence=B.sources.US_GOV, licence_url=GALLERY, source=GALLERY,
                   description="North American animal calls recorded in national parks (birds, mammals, frogs and "
-                              "toads, insects, alligators): what each sounds like in words, with a link to listen.",
+                              "toads, insects, alligators): what each sounds like in words, with the recording to "
+                              "listen to.",
                   changes="the animal pages of the gallery made into one book: each page's caption, description, "
-                          "credit and audio transcript, with links to the recordings (not copied)")
+                          "credit and audio transcript, with the recordings (copied unchanged) and links to them")
     B.CRAWL_DELAY["www.nps.gov"] = max(B.CRAWL_DELAY.get("www.nps.gov", 0), NPS_PACE)
     pages, by_group = [], {}
     for group, url in gallery_links(B.fetch(GALLERY, cache)):
@@ -176,6 +204,13 @@ def nps_book(cache=None, left_out=None):
             while path in used:
                 path += "-2"
             used.add(path)
-            pages.append(B.Page(path, sound["title"], page_body(sound), 0, group))
+            copies = {}
+            for k, mp3 in enumerate(sound["mp3s"], 1):
+                data = recording(mp3, cache, left_out)
+                if data:
+                    media = f"media/{path}{f'-{k}' if k > 1 else ''}.mp3"
+                    book.resources[media] = (data, "audio/mpeg")
+                    copies[mp3] = media
+            pages.append(B.Page(path, sound["title"], page_body(sound, copies), 0, group))
     book.pages = [B.Page("about-this-book", "About this book", about_body())] + pages if pages else []
     return book

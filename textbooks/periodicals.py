@@ -13,8 +13,9 @@ build_periodicals(), and sources.expand_keys() expands "publications" and "pub:.
 
 Groups (the "group" field of each catalogue entry; the names are in sources.GROUPS):
   reports      Reference, government reports   Congressional Research Service reports (public domain)
-  journals     Articles, open-access journals  eLife digests (plain-language summaries, CC BY, read from Europe
-                                               PMC: eLife's own API host disallows all robots); review
+  journals     Articles, open-access journals  eLife papers whole, their digest (plain-language summary) first
+                                               (CC BY, read from Europe PMC: eLife's own API host disallows all
+                                               robots); review
                                                articles from the Europe PMC open-access subset (CC BY and CC0 only)
                                                on topics useful to a blind adult
   news         News, open-licensed             Global Voices (CC BY 3.0); Voice of America's own reporting (public
@@ -152,13 +153,15 @@ SOURCES = {
         changes="made into web pages with the site's menus, charts and photographs left out",
         pieces=lambda today: ["2020s", "2010s", "2000s"], piece_rule=r"^(19|20)\d0s$"),
     "elife_digests": dict(
-        group="journals", driver="elife", series_title="eLife digests (plain-language summaries of research)",
+        group="journals", driver="elife", series_title="eLife papers with their digests (plain-language summaries)",
         subject="Science and medicine explained", publisher="eLife Sciences Publications and the papers' authors "
         "(from Europe PMC)", country="International", licence="CC BY 4.0", licence_url=CC_BY_4,
         source="https://europepmc.org/",
-        description="The plain-language summaries (\"eLife digests\") of research papers in eLife, written for "
-                    "everyone, from the papers' open-access full text in Europe PMC. One book per year.",
-        changes="the digest of each paper only (the rest of the paper left out), made into web pages",
+        description="Research papers in eLife that have a plain-language summary (\"eLife digest\", written for "
+                    "everyone), each paper whole: its digest first, then its abstract, text and references, from the "
+                    "papers' open-access full text in Europe PMC. One book per year.",
+        changes="each whole paper made into a web page, its digest first, with the figures as their captions (until "
+                "2026-11-21 only the digest was kept; the reference-library audit made it the whole paper)",
         pieces=lambda today: _years(4, today), piece_rule=r"^20\d\d$"),
     "europepmc_reviews": dict(
         group="journals", driver="europepmc", series_title="Open-access health reviews",
@@ -168,7 +171,7 @@ SOURCES = {
         description="Review articles from open-access journals (Creative Commons Attribution or CC0 only), newest "
                     "first, on one topic. Each article's authors, journal, date, DOI and own licence are on its "
                     "page.",
-        changes="made into web pages with the figures and the reference lists left out (figure captions kept)",
+        changes="made into web pages with the figures as their captions (the reference lists kept)",
         pieces=lambda today: list(EPMC_TOPICS), piece_rule="^(" + "|".join(EPMC_TOPICS) + r")(-(19|20)\d\d)?$",
         per_piece=150, years_back=5),
     "global_voices": dict(
@@ -911,12 +914,23 @@ def open_enough(short):
 
 class Jats:
     """Turns a JATS (journal article XML) element into the books' plain HTML: sections become headings, figures
-    their label and caption ("Figure 2: ..."), tables stay tables, formulas become text (mathtext), references
-    are left out."""
+    their label and caption ("Figure 2: ..."), tables stay tables, formulas become text (mathtext), and the back
+    matter is kept whole (acknowledgements, appendices, notes, and the reference list as a numbered list: since the
+    reference-library audit of 2026-11-21, so each article is the whole document)."""
 
     INLINE = {"bold": "strong", "italic": "em", "sup": "sup", "sub": "sub", "underline": "em", "sc": ""}
-    SKIP = {"ref-list", "fn-group", "ack", "object-id", "graphic", "media", "alternatives", "inline-graphic",
+    SKIP = {"object-id", "graphic", "media", "alternatives", "inline-graphic",
             "label", "title", "caption", "table-wrap-foot", "permissions", "funding-group"}
+    DEFAULT_TITLES = {"ack": "Acknowledgements", "ref-list": "References", "fn-group": "Notes", "app": "Appendix"}
+
+    @staticmethod
+    def reference(ref):
+        """One reference of a reference list in words: a mixed citation as written (it has its own punctuation),
+        an element citation as its parts joined by spaces."""
+        cite = next((x for x in ref if _tag(x) in ("mixed-citation", "element-citation", "citation")), ref)
+        if _tag(cite) == "element-citation":
+            return " ".join(t.strip() for t in cite.itertext() if t.strip())
+        return " ".join("".join(cite.itertext()).split())
 
     def html(self, el, depth=2):
         """The HTML of el's text and children (not its own tag)."""
@@ -939,9 +953,19 @@ class Jats:
             return f'<{elem} class="math" role="math" aria-label="{B.esc(text)}">{B.esc(text)}</{elem}>'
         if tag in self.SKIP:
             return ""
-        if tag == "sec" or tag == "boxed-text":
+        if tag == "ref-list":
             title = el.find("{*}title")
-            head = f"<h{depth}>{self.html(title, depth)}</h{depth}>" if title is not None and _words(title) else ""
+            words = self.html(title, depth) if title is not None and _words(title) else \
+                ("References" if depth <= 2 else "")    # inside a section already titled: no second heading
+            refs = "".join(f"<li>{B.esc(self.reference(r))}</li>" for r in el if _tag(r) == "ref")
+            inner = "".join(self.convert(x, min(depth + 1, 6)) for x in el if _tag(x) == "ref-list")
+            return (f"<h{depth}>{words}</h{depth}>" if words else "") + (f"<ol>{refs}</ol>" if refs else "") + inner
+        if tag == "fn":
+            return f"<p>{self.html(el, depth)}</p>" if not el.findall("{*}p") else self.html(el, depth)
+        if tag in ("sec", "boxed-text", "ack", "fn-group", "app", "app-group", "glossary"):
+            title = el.find("{*}title")
+            words = self.html(title, depth) if title is not None and _words(title) else self.DEFAULT_TITLES.get(tag, "")
+            head = f"<h{depth}>{words}</h{depth}>" if words else ""
             return head + self.html(el, min(depth + 1, 6))
         if tag == "p":
             return f"<p>{self.html(el, depth)}</p>"
@@ -975,7 +999,8 @@ class Jats:
 
 def jats_article(xml_text):
     """{title, authors, journal, date, doi, licence, licence_url, body} of a JATS article ("" fields when not
-    stated). The body starts with its plain-language summary (when it has one), then the abstract and the text."""
+    stated). The body starts with its plain-language summary (when it has one), then the abstract, the text and the
+    back matter (acknowledgements, appendices, notes and references)."""
     root = ET.fromstring(xml_text.encode("utf-8") if isinstance(xml_text, str) else xml_text)
     meta = next((x for x in root.iter() if _tag(x) == "article-meta"), root)
     title = _words(next((x for x in meta.iter() if _tag(x) == "article-title"), None))
@@ -1015,6 +1040,9 @@ def jats_article(xml_text):
     body = next((x for x in root if _tag(x) == "body"), None)
     if body is not None:
         parts.append(j.html(body, 2))
+    back = next((x for x in root if _tag(x) == "back"), None)
+    if back is not None:                              # acknowledgements, appendices, notes, references
+        parts.append(j.html(back, 2))
     return {"title": title, "authors": authors, "journal": journal, "date": date, "doi": doi, "licence": licence,
             "licence_url": licence_url, "body": "".join(parts), "summary": summary}
 
@@ -1077,7 +1105,6 @@ def europepmc_items(spec, piece, cache, left_out, today):
                                 f"{spec['series_title']}: {name}"):
         when, credit = epmc_credit(r, art)
         body = clean(art["body"], "https://europepmc.org/")
-        body += "<p>The article's list of references is left out; it is in the original.</p>"
         out.append(item(f"https://europepmc.org/article/PMC/{r['pmcid']}", art["title"] or r.get("title", ""), when,
                         body, month_unit(when)[-4:], byline=credit, licence=art["licence"],
                         licence_url=art["licence_url"] or B._licence_address(art["licence"])))
@@ -1086,19 +1113,19 @@ def europepmc_items(spec, piece, cache, left_out, today):
 
 
 def elife_digest_items(spec, piece, cache, left_out, today):
-    """The eLife digests (the plain-language summaries eLife's editors write for some of its papers) of the papers
-    first published in the year piece, taken from each paper's open-access full text in Europe PMC (CC BY or CC0,
-    checked per paper): the digest only, with the paper's credit. eLife's own API is not used (its robots.txt
-    disallows all)."""
+    """The papers first published in the year piece that have an eLife digest (the plain-language summary eLife's
+    editors write for some of its papers), taken from each paper's open-access full text in Europe PMC (CC BY or
+    CC0, checked per paper): the whole paper, its digest first, with the paper's credit. eLife's own API is not used
+    (its robots.txt disallows all)."""
     query = (f"JOURNAL:\"eLife\" AND \"eLife digest\" AND OPEN_ACCESS:y AND (LICENSE:\"cc by\" OR LICENSE:\"cc0\") "
              f"AND FIRST_PDATE:[{piece}-01-01 TO {piece}-12-31]")
     out = []
     for r, art in epmc_articles(spec, query, spec.get("limit", MAX_ITEMS), cache, left_out,
                                 f"{spec['series_title']}, {piece}", wanted=lambda a: bool(a["summary"])):
         when, credit = epmc_credit(r, art)
-        body = clean(art["summary"], "https://elifesciences.org/")
+        body = clean(art["body"], "https://elifesciences.org/")        # the digest first, then the whole paper
         out.append(item(f"https://europepmc.org/article/PMC/{r['pmcid']}", art["title"] or r.get("title", ""), when,
-                        body, month_unit(when), byline=f"Digest of: {credit}", licence=art["licence"],
+                        body, month_unit(when), byline=credit, licence=art["licence"],
                         licence_url=art["licence_url"] or B._licence_address(art["licence"])))
     out.sort(key=lambda i: i["date"], reverse=True)
     return out

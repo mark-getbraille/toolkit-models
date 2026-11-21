@@ -146,8 +146,9 @@ def jats(licence_xml, extra=""):
 
 
 def test_elife_from_europepmc(monkeypatch):
-    """eLife digests come from Europe PMC (eLife's own API host disallows all robots): only the digest of each
-    CC BY paper, with the paper's credit; papers without a digest, or under another licence, are left out."""
+    """eLife papers come from Europe PMC (eLife's own API host disallows all robots): each CC BY paper that has a
+    digest, WHOLE (the digest first, then the abstract, text and references: the reference-library audit), with the
+    paper's credit; papers without a digest, or under another licence, are left out."""
     with_digest = jats('<license xlink:href="http://creativecommons.org/licenses/by/4.0/"><license-p>Open'
                        '</license-p></license>').replace('abstract-type="summary"><title>Author summary',
                                                          'abstract-type="plain-language-summary"><title>eLife digest')
@@ -162,14 +163,17 @@ def test_elife_from_europepmc(monkeypatch):
     assert "elifesciences" not in json.dumps(P.SOURCES["elife_digests"], default=str)
     items = P.elife_digest_items(P.SOURCES["elife_digests"], "2025", None, [], TODAY)
     assert len(items) == 1 and items[0]["licence"] == "CC BY 4.0" and items[0]["date"] == "2025-06-01"
-    assert "Plain summary." in items[0]["body"] and "Eyes need light" not in items[0]["body"]
-    assert items[0]["byline"].startswith("Digest of: Jan Doe. Seeing Well. Made-up Journal")
+    body = items[0]["body"]
+    assert body.index("Plain summary.") < body.index("Technical abstract.") < body.index("Eyes need light")
+    assert "Old paper" in body                                            # the references are kept
+    assert items[0]["byline"].startswith("Jan Doe. Seeing Well. Made-up Journal")
     assert any("eLife's own API" in t and "disallows all" in r for t, r in P.NOT_INCLUDED)
 
 
 def test_jats_and_europepmc(monkeypatch):
     """Europe PMC reviews: only CC BY and CC0 articles (checked in each article's own text), the plain-language
-    summary first, formulas as text, figures as their caption, references left out."""
+    summary first, formulas as text, figures as their caption, the back matter and references kept (whole
+    articles), with no second "References" heading inside a section already titled so."""
     open_one = jats('<license xlink:href="http://creativecommons.org/licenses/by/4.0/"><license-p>Open'
                     '</license-p></license>')
     nc_one = jats('<license><license-p>Creative Commons Attribution-NonCommercial 4.0 License</license-p>'
@@ -181,12 +185,19 @@ def test_jats_and_europepmc(monkeypatch):
     art = P.jats_article(open_one)
     assert art["licence"] == "CC BY 4.0" and art["authors"] == "Jan Doe" and art["date"] == "2026-04-03"
     assert art["body"].index("Plain summary.") < art["body"].index("Technical abstract.")
-    assert "x + 1" in art["body"] and "Figure: Figure 1 An eye." in art["body"] and "Old paper" not in art["body"]
+    assert "x + 1" in art["body"] and "Figure: Figure 1 An eye." in art["body"]
+    assert "<h2>References</h2><ol><li>Old paper</li></ol>" in art["body"]
+    back = P.jats_article(open_one.replace("</body>", "</body><back><ack><p>Thanks to all.</p></ack><ref-list>"
+                                           "<ref><element-citation><surname>Roe</surname><year>2020</year>"
+                                           "</element-citation></ref><ref><mixed-citation>Poe, A. (2019). Light."
+                                           "</mixed-citation></ref></ref-list></back>"))["body"]
+    assert "<h2>Acknowledgements</h2><p>Thanks to all.</p>" in back
+    assert "<h2>References</h2><ol><li>Roe 2020</li><li>Poe, A. (2019). Light.</li></ol>" in back
     assert P.open_enough("CC BY 4.0") and P.open_enough("CC0 1.0") and not P.open_enough("CC BY-NC 4.0")
     left = []
     items = P.europepmc_items(P.SOURCES["europepmc_reviews"], "vision", None, left, TODAY)
     assert len(items) == 1 and items[0]["date"] == "2026-04-02" and "Made-up Journal" in items[0]["byline"]
-    assert "<h2>References</h2>" not in items[0]["body"]                  # its empty heading is dropped too
+    assert "Old paper" in items[0]["body"]                                # the reference list is kept
     assert "not CC BY or CC0" in left[0]["reason"]
 
 
