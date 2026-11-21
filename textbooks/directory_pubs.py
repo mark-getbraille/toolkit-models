@@ -1314,7 +1314,11 @@ def register(module):
     if not hasattr(module, "EXTRA_SIGNS"):
         module.EXTRA_SIGNS = {}
     module.EXTRA_SIGNS.update(EXTRA_SIGNS)
-    for row in NOT_INCLUDED:
+    import directory_sources as D                # the web guides' and books' records go into the catalogue too
+    module.LICENCE_LINES.update(D.LICENCE_LINES)
+    personal = [(f"{name} (personal use only; {where})", why) for name, where, why in D.PERSONAL
+                if not why.startswith("Built")]
+    for row in NOT_INCLUDED + D.NOT_INCLUDED + personal + D.OWNER_NOTES:
         if row not in module.NOT_INCLUDED:
             module.NOT_INCLUDED.append(row)
 
