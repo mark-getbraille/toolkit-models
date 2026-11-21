@@ -47,6 +47,9 @@ def test_rule_rows():
     assert d.rule_rows(["Braille signage"])[0]["question"] == d.BRAILLE_Q
     assert d.rule_rows(["Bus stop signs in Ohio"])[0]["question"] == d.SIGN_Q
     assert d.rule_rows(["Fire extinguisher signs"]) == []
+    assert "EPA" in d.rule_rows(["Mold on buildings"])[0]["answer"]
+    assert "kilowatt-hours" in d.rule_rows(["Electronic electricity meters"])[0]["answer"]
+    assert "120 F" in d.rule_rows(["Tankless water heaters controllers"])[0]["answer"]
     assert d.rule_rows(["Kitchens"]) == []
 
 

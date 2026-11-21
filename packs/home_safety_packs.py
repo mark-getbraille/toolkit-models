@@ -178,12 +178,17 @@ RULES = [
      "It is a dry powder (dry chemical) extinguisher, for most kinds of fire; the powder makes a thick cloud."),
     (r"\bfoam fire extinguishers\b", KIND_Q, "It is a foam extinguisher, for paper, wood and burning liquids; not "
                                              "for electrical or cooking-fat fires."),
+    (r"\bmou?ld on (buildings?|walls?|ceilings?)\b", WHAT_Q,
+     answer("This shows mould growing on a wall or building: a sign of damp or a leak.", "Do not scrub or sniff it "
+            "dry; find and fix the damp first. A patch bigger than about 10 square feet (1 square metre) needs a "
+            "professional (US EPA advice).")),
     (r"\bwater damage\b|\bwater leaks?\b|\bwater stains?\b|\bleaking (pipes?|roofs?)\b|\bdamp(ness)?\b(?! proof)",
      WHAT_Q, answer("This shows water damage: a leak or damp has stained, swollen or rotted the surface.", LEAK_NOTE)),
     # commons_food_state
     (r"\b(green|unripe) bananas\b", RIPE_Q, "No: these bananas are green (unripe). Bananas ripen at room temperature "
                                             "in a few days, turning yellow, then getting brown spots as they get "
-                                            "sweeter and softer."),
+                                            "sweeter and softer. Green cooking bananas and plantains are often cooked while "
+                                            "still green."),
     (r"\bunripe tomatoes\b", RIPE_Q, "No: this tomato is not ripe yet. It ripens on the counter, out of the fridge, "
                                      "turning red (or its ripe colour) and a little soft."),
     (r"\bunripe (fruits?|avocados?|mangoes|peaches|strawberries)\b", RIPE_Q,
@@ -559,6 +564,8 @@ HOME_TOPICS = [
     topic("Stopcocks", 1, WHAT_Q),
     topic("Sump pumps", 0, WHAT_Q),
     topic("Gas furnaces", 1, WHAT_Q),
+    topic("Electronic electricity meters", 1, WHAT_Q, readers=("meter",)),
+    topic("Mold on buildings", 1, WHAT_Q),
     # already shown by other packs: kept only with a new question
     topic("Smoke detectors", 2, LIGHT_Q, True, ("light",)),
     topic("Carbon monoxide detectors", 0, LIGHT_Q, True, ("light", "display")),
@@ -572,6 +579,7 @@ HOME_TOPICS = [
     topic("Fire extinguishers", 1, KIND_Q, True, ("gauge",)),
     topic("Fire extinguishers in the United States", 0, GAUGE_Q, True, ("gauge",)),
     topic("Water damage", 1, WHAT_Q, True),
+    topic("Tankless water heaters controllers", 1, DISPLAY_Q, True, ("display",)),
 ]
 FOOD_TOPICS = [
     topic("Green bananas", 1, RIPE_Q),
