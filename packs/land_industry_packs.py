@@ -36,6 +36,9 @@ The packs (all open: CC0, public domain, CC BY, MIT or Apache):
   poultry_droppings  Poultry fecal images from farms in Arusha and Kilimanjaro, Tanzania (CC BY 4.0, Zenodo 4628934),
                      healthy, coccidiosis, salmonella or Newcastle disease, as farmers' phones photographed them.
                      "Do these chicken droppings show signs of disease?"
+  agrob_tomato       AgRobTomato (CC BY 4.0, Zenodo 5596799): 450 greenhouse photos of tomato plants, every tomato
+                     labelled unripe, breaking, reddish or ripe. "Are the tomatoes in this photo ripe?", answered
+                     with the counts of each stage from the labels only.
   inat_crops         iNaturalist research-grade observations of crop plants and fruit trees (photos CC0 or CC BY
                      only): wheat, rice, maize, cassava, coffee, cacao, tea, bananas, apples on the tree and others.
                      "What crop is this?" (with "with fruit" from the observer's fruiting annotation), and the
@@ -519,6 +522,54 @@ def build_poultry_droppings(limit):
                             {"question": "Do these chicken droppings show signs of disease?", "answer": answer,
                              "credit": POULTRY_CREDIT, **where("Tanzania")}))
     pass_random(505).shuffle(out)
+    return out[:limit]
+
+
+# ----------------------------------------------------------------- AgRobTomato (greenhouse tomato ripeness)
+
+# One zip of 137 MB (checked 2026-11-21, licence CC BY 4.0 on the record page): 450 greenhouse photos, each with an
+# annotation file (Pascal VOC XML) in which people drew a box round every tomato and gave it one of four stages.
+AGROB_TOMATO = ("https://zenodo.org/records/5596799/files/Dataset-Greenhouse_Tomato_AgRob.zip?download=1")
+AGROB_TOMATO_CREDIT = ("AgRobTomato Dataset: Greenhouse tomatoes with different ripeness stages (INESC TEC), "
+                       "Zenodo 5596799, CC BY 4.0")
+ASK_TOMATO_RIPE = "Are the tomatoes in this photo ripe?"
+# The dataset's four labels, in ripening order, as said in the answer.
+AGROB_STAGES = [("unriped", "unripe (green)"), ("breaking", "breaking (just starting to change colour)"),
+                ("reddish", "reddish (nearly ripe)"), ("riped", "fully ripe (red)")]
+
+
+def tomato_answer(names):
+    """The answer for one photo from the stage labels of its boxes (names: a list such as ["unriped", "riped"]), or
+    "" when no box has one of the four labels. Only the counts the labels give are said; nothing is judged from the
+    picture: "The tomatoes marked in this photo: 12 unripe (green) and 1 reddish (nearly ripe). None is fully ripe." """
+    counts = {label: names.count(label) for label, _ in AGROB_STAGES}
+    parts = [f"{counts[label]} {said}" for label, said in AGROB_STAGES if counts[label]]
+    if not parts:
+        return ""
+    listed_parts = parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " and " + parts[-1]
+    end = "" if counts["riped"] else " None is fully ripe."
+    return f"The tomatoes marked in this photo: {listed_parts}.{end}"
+
+
+def build_agrob_tomato(limit):
+    """The AgRobTomato pack: each greenhouse photo with "Are the tomatoes in this photo ripe?", answered from its
+    annotation's stage labels only (tomato_answer). Photos whose annotation has no stage label are left out."""
+    import xml.etree.ElementTree as ET
+    z = remote_zip(AGROB_TOMATO)
+    names = set(z.namelist())
+    out = []
+    for xml_name in sorted(n for n in names if n.endswith(".xml") and "/Annotations/" in n):
+        root = ET.fromstring(z.read(xml_name))
+        answer = tomato_answer([clean(o.findtext("name")).lower() for o in root.iter("object")])
+        jpg = xml_name.replace("/Annotations/", "/JPEGImages/")[:-4] + ".jpg"
+        if not answer or jpg not in names:
+            continue
+        data = smaller(z.read(jpg))
+        if data:
+            out.append((f"agrob-tomato-{len(out)}.jpg", data,
+                        {"question": ASK_TOMATO_RIPE, "answer": answer, "credit": AGROB_TOMATO_CREDIT}))
+    pass_random(5596799).shuffle(out)
+    say(f"AgRobTomato: {len(out)} greenhouse photos with ripeness labels")
     return out[:limit]
 
 
@@ -1458,6 +1509,8 @@ LAND_PACKS = {
     "poultry_droppings": (build_poultry_droppings, "Machine Learning Dataset for Poultry Diseases Diagnostics "
                                                    "(Machuve et al.), CC BY 4.0, "
                                                    "https://doi.org/10.5281/zenodo.4628934"),
+    "agrob_tomato": (build_agrob_tomato, "AgRobTomato Dataset: Greenhouse tomatoes with different ripeness stages, "
+                                         "CC BY 4.0, https://doi.org/10.5281/zenodo.5596799"),
     "inat_crops": (build_inat_crops, "iNaturalist research-grade observations of crop plants: photos CC0 or CC BY, "
                                      "each with its photographer below. https://www.inaturalist.org; records via "
                                      "GBIF (https://www.gbif.org), photos from the iNaturalist Open Dataset."),
@@ -1499,6 +1552,7 @@ LAND_LIMITS = {
     "agml_harvest": 1200,             # banana bunches 2,685, dragon fruit about 1,000 raw photos
     "gwhd_wheat": 2000,               # of 6,500 photos in 47 sessions
     "poultry_droppings": 2000,        # of about 6,800 photos in four classes (Newcastle disease: about 370)
+    "agrob_tomato": 450,              # all of its 450 photos
     "inat_crops": 2400,               # about 60 a crop (one page of results each, two for fruit trees)
     "trashnet": 1500,                 # of 2,527 photos
     "taco_litter": 1500,              # all of TACO's 1,500 photos

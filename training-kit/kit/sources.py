@@ -1664,6 +1664,11 @@ SOURCES = [
            'CC BY 4.0 (Zenodo 4628934)',
            'Machine Learning Dataset for Poultry Diseases Diagnostics (Machuve et al.), CC BY 4.0, '
            'https://doi.org/10.5281/zenodo.4628934', "permissive", 1300, 15, prepare_pack, 'about 600 MB'),
+    Source('agrob_tomato', 'Are the tomatoes ripe? Greenhouse tomato plants with every tomato labelled by ripeness '
+           '(ready-made pack)',
+           'CC BY 4.0 (Zenodo 5596799)',
+           'AgRobTomato Dataset: Greenhouse tomatoes with different ripeness stages, CC BY 4.0, '
+           'https://doi.org/10.5281/zenodo.5596799', "permissive", 450, 5, prepare_pack, 'about 60 MB'),
     Source('inat_crops', 'Cultivated crops and fruit trees: wheat, rice, maize, cassava, coffee, tea and more '
            '(iNaturalist, ready-made pack)',
            'Each photo CC0 or CC BY (its iNaturalist page)',

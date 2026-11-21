@@ -149,7 +149,7 @@ TOPICS = [
           "Plants, mushrooms, insects, birds and other animals by name, pet and farm breeds, crops and their "
           "diseases, weeds, clouds and weather, and landscapes seen from the ground and from space.",
           ("inaturalist", "lila_camera_traps", "gbif_species", "commons_breeds", "cattle_health",
-           "agml_plant_health", "agml_weeds", "agml_harvest", "gwhd_wheat", "inat_crops", "ccsn_clouds",
+           "agml_plant_health", "agml_weeds", "agml_harvest", "agrob_tomato", "gwhd_wheat", "inat_crops", "ccsn_clouds",
            "weather_images", "eurosat", "inaturalist_us", "inaturalist_ca", "earth_observatory", "usgs",
            "npgallery", "na_wild_mammals", "na_birds", "na_herps_fish", "na_insects", "na_invertebrates",
            "na_animal_signs", "noaa_fisheries_species", "na_domestic_animals", "commons_sky_weather",
