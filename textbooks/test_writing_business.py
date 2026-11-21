@@ -167,3 +167,15 @@ def test_uk_spelling_note():
     assert note.startswith("UK source: spelling (British: organise, colour") and "single quotation marks" in note
     assert not sources.practice_note("United States", uk["subject"])
     assert sources.practice_note("United Kingdom", "Web accessibility").startswith("UK source: accessibility laws")
+
+
+def test_already_in_and_not_built_are_said():
+    rows = {t: r for t, r in W.NOT_INCLUDED}
+    business = next(t for t in rows if t.startswith("Business Communication for Success"))
+    assert "course:libretexts" in rows[business] and "Not added twice" in rows[business]
+    army = next(t for t in rows if t.startswith("AR 25-50"))
+    assert "armypubs_en_all" in rows[army] and "Disallow: /" in rows[army]
+    canada = next(t for t in rows if t.startswith("The Canadian Style"))
+    assert "ai-train=no" in rows[canada] and "personal use only" in rows[canada] and "Index: https://" in rows[canada]
+    for name in ("Social Security", "IRS plain-language", "SBA business plan templates", "Open Technical"):
+        assert any(t.startswith(name) for t in rows), name

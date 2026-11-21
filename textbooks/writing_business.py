@@ -703,10 +703,30 @@ LICENCE_LINES = {
 }
 
 NOT_INCLUDED = [
+    # ---- already in the library
+    ("Business Communication for Success, Business English for Success, Writing for Success, Business Writing for "
+     "Everyone, The Word on College Reading and Writing, Technical Writing (several open editions), Technical "
+     "Communication, Professional Communications Foundations, Introduction to Professional Communications, "
+     "Business Communication Skills for Managers and other open business-communication textbooks",
+     "Already in the library: LibreTexts' catalogue (course:libretexts, the biz, human and socialsci libraries) has "
+     "them with CC BY, CC BY-NC or CC BY-NC-SA licences (checked in commons.libretexts.org's catalogue on "
+     "2026-11-21), and OpenStax's Writing Guide with Handbook, Principles of Management, Entrepreneurship and "
+     "Workplace Software and Skills are OpenStax books (osbooks). Not added twice."),
+    ("Lumen Learning business communication courses and BCcampus open textbooks", "Already in the library: every "
+     "Lumen CC BY or CC BY-SA course (dir:lumen) and BCcampus' Kolibri channel (course:bccampus)."),
     ("AR 25-50, Preparing and Managing Correspondence, and DA Pam 600-67, Effective Writing for Army Leaders (US "
      "Army)", "Already in the library through the Kiwix library's Army Publishing Directorate book "
      "(armypubs_en_all), which holds the Army's public-release publications. armypubs.army.mil's own robots.txt says "
      "\"Disallow: /\" for every program, and no Internet Archive copy was found, so they are not built here."),
+    ("Open Technical Communication (Reardon, Powell, Arnett, Logan and Race; CC BY 4.0)", "Not built: LibreTexts "
+     "lists it without a licence, its GALILEO Open Learning Materials PDF answers programs with Cloudflare's bot "
+     "check, and its Manifold edition (alg.manifoldapp.org) shuts out ClaudeBot and other AI readers in robots.txt "
+     "(checked 2026-11-21). Index: https://oer.galileo.usg.edu/english-textbooks/"),
+    ("Technical Writing Essentials (Suzan Last; CC BY 4.0) and Professional Communications OER (Olds College; CC "
+     "BY 4.0)", "Not built: LibreTexts lists Technical Writing Essentials without a licence; their Pressbooks sites "
+     "(pressbooks.bccampus.ca: \"Content-Signal: ai-train=no\" and AI readers shut out; the other refuses programs) "
+     "cannot be read under the owner's rules. Index: https://pressbooks.bccampus.ca/technicalwriting/"),
+    # ---- official guides not built
     ("Department of the Navy Correspondence Manual, current edition (SECNAV M-5216.5, June 2015, change 1 2018)",
      "www.secnav.navy.mil answers programs with a bot-check script (robots.txt included), so the current edition "
      "cannot be read; the March 2010 edition is built from DTIC's public-release record instead "
@@ -719,9 +739,23 @@ NOT_INCLUDED = [
      "worksheet", "Public domain, but they are files on legacy.sba.gov, whose robots.txt disallows "
      "/sites/default/files/* for every program; the guide's own text about business plans is in "
      "wb:sba_business_guide. Index: https://legacy.sba.gov/document/support-andrews-business-plan-template-lean"),
+    ("IRS plain-language letter guide", "No public IRS guide to writing plain-language letters was found: the "
+     "Internal Revenue Manual's publishing chapters (IRM 1.17, read 2026-11-21) describe the letter programme's "
+     "procedures, not how to write; the IRS's own plain-language pages are gone (404)."),
+    ("Social Security Administration plain-language guides (www.ssa.gov)", "www.ssa.gov refuses programs (\"Access "
+     "Denied\", robots.txt included), checked 2026-11-21. Index: https://www.ssa.gov/agency/plain-language/"),
     ("OPM's \"Write It Right\" webinar and its plain writing plan and compliance reports", "Left out: the webinar is "
      "the transcript of slides about occupational questionnaires, and the plan and reports describe OPM's own "
      "compliance with the Plain Writing Act; OPM's handbooks are built instead."),
+    ("The Canadian Style and Writing Tips Plus (Translation Bureau, Language Portal of Canada)", "Not read: The "
+     "Canadian Style is on btb.termiumplus.gc.ca, whose robots.txt says \"Content-Signal: ai-train=no\" and shuts out "
+     "ClaudeBot, anthropic-ai and other AI readers; the Language Portal (nos-langues.canada.ca) answers programs with "
+     "a security check; and canada.ca's terms allow non-commercial reproduction of its web pages only (it would be "
+     "personal use only). Publications deposited on open.canada.ca under the Open Government Licence - Canada are "
+     "different, but its catalogue lists no Canadian Style or Writing Tips (searched 2026-11-21). "
+     "For personal use, the owner's Program Downloader can open the index in a browser. Index: "
+     "https://www.noslangues-ourlanguages.gc.ca/en/writing-tips-plus/index-eng and "
+     "https://www.btb.termiumplus.gc.ca/tpv2guides/guides/tcdnstyl/index-eng.html"),
     ("plainlanguage.gov's guideline pages (web edition)", "The same text as the Federal Plain Language Guidelines "
      "PDF (wb:plain_language_guidelines) and digital.gov's guide (wb:digital_gov_plain_language), both built; not "
      "added a third time."),
