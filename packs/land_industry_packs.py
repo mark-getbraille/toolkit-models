@@ -555,7 +555,9 @@ def build_agrob_tomato(limit):
     """The AgRobTomato pack: each greenhouse photo with "Are the tomatoes in this photo ripe?", answered from its
     annotation's stage labels only (tomato_answer). Photos whose annotation has no stage label are left out."""
     import xml.etree.ElementTree as ET
-    z = remote_zip(AGROB_TOMATO)
+    import zipfile
+    # One download (137 MB): reading its 900 small files piece by piece (remote_zip) takes far longer.
+    z = zipfile.ZipFile(io.BytesIO(session().get(AGROB_TOMATO, timeout=1800).content))
     names = set(z.namelist())
     out = []
     for xml_name in sorted(n for n in names if n.endswith(".xml") and "/Annotations/" in n):
@@ -1552,7 +1554,7 @@ LAND_LIMITS = {
     "agml_harvest": 1200,             # banana bunches 2,685, dragon fruit about 1,000 raw photos
     "gwhd_wheat": 2000,               # of 6,500 photos in 47 sessions
     "poultry_droppings": 2000,        # of about 6,800 photos in four classes (Newcastle disease: about 370)
-    "agrob_tomato": 450,              # all of its 450 photos
+    "agrob_tomato": 450,              # all of its 450 photos (435 have stage labels)
     "inat_crops": 2400,               # about 60 a crop (one page of results each, two for fruit trees)
     "trashnet": 1500,                 # of 2,527 photos
     "taco_litter": 1500,              # all of TACO's 1,500 photos
