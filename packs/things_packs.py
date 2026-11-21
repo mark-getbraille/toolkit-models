@@ -225,6 +225,13 @@ ABO_USES = {
     "ELECTRIC_WATER_BOILER": "used to boil water", "COFFEE_MAKER": "used to make coffee",
     "MARKING_PEN": "used to write or mark", "WATER_PUMP": "used to pump water",
 }
+# The hardware, tool, plumbing-fixture and protective-equipment types that hardware_packs abo_hardware takes, with
+# answers that name finishes and sizes: abo_products leaves them out, so no listing is in both packs.
+ABO_HARDWARE_TYPES = frozenset({
+    "HARDWARE_HANDLE", "HARDWARE", "HARDWARE_HINGE", "LOCK", "DOORSTOP", "STORAGE_HOOK", "HARDWARE_CLAMP_VISE",
+    "TOOLS", "WRENCH", "SCREWDRIVER", "PLIERS", "DRILL_BITS", "FASTENER_DRIVE_BIT", "MULTITOOL", "UTILITY_KNIFE",
+    "PORTABLE_TOOL_BOX", "LADDER", "FAUCET", "SHOWERHEAD", "VALVE", "TOILET_SEAT", "TOWEL_HOLDER",
+    "TOILET_PAPER_HOLDER", "CARGO_STRAP", "EARMUFF", "EARPLUG", "SAFETY_GLASSES"})
 ABO_TOOL_Q = "What tool is this, and what is it used for?"
 ABO_WHAT_Q = "What is this?"
 ABO_PHONE_CASE_SHARE = 0.03          # phone cases are half of ABO: at most this share of the pack
@@ -255,7 +262,7 @@ def abo_name_says(kind, name):
 def abo_rows(listing):
     """The rows for one ABO listing, or [] when it is not one this pack uses (or has no English name)."""
     kind_code = ((listing.get("product_type") or [{}])[0] or {}).get("value", "")
-    if kind_code not in ABO_TYPES and kind_code not in ABO_GENERAL:
+    if (kind_code not in ABO_TYPES and kind_code not in ABO_GENERAL) or kind_code in ABO_HARDWARE_TYPES:
         return []
     country = listing.get("country") or ""
     name = abo_value(listing.get("item_name"), country)

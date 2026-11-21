@@ -1282,6 +1282,47 @@ def public_manual_entries(fetch, docs):
     return entries, notes
 
 
+def public_guide_entries(fetch, guides, key):
+    """The index entries of a category's public-domain guides (hardware_tools.GUIDES: US government works, each the
+    Internet Archive's copy): kept only when the item has a PDF; a military training manual only when the front of
+    its own text says it is approved for public release (or it is from before 1964, long before distribution
+    statements were printed) and shows no restricted marking. Returns (entries, notes)."""
+    entries, notes = [], []
+    for doc in guides:
+        if listing_out_of_time():
+            break
+        try:
+            pdf, size, text = ia_files(fetch, doc["ia"])
+            base = f"https://archive.org/download/{urllib.parse.quote(doc['ia'])}/"
+            front = fetch.text(base + urllib.parse.quote(text))[:FRONT_CHARS] if text and doc.get("military") else ""
+        except (RuntimeError, OutOfTime, ValueError, CopySite) as e:
+            notes.append(f"{doc['title']}: {e}")
+            continue
+        if not pdf:
+            notes.append(f"{doc['title']}: left out (no PDF in the Internet Archive item)")
+            continue
+        release = ""
+        if doc.get("military"):
+            ok, why = public_release(front)
+            old = doc.get("year") and int(doc["year"]) < 1964 and not RESTRICTED.search(" ".join(front.split()))
+            if not ok and not old:
+                notes.append(f"{doc['title']}: left out ({why})")
+                continue
+            release = ("Distribution Statement A: approved for public release; distribution is unlimited" if ok
+                       else f"printed in {doc['year']}, before distribution statements; no restricted marking")
+        page = f"https://archive.org/details/{urllib.parse.quote(doc['ia'])}"
+        entries.append({"id": f"guide-{key}-{doc['ia']}", "brand": doc["by"], "model": "", "name": doc["title"],
+                        "type": "guide", "category": key, "barcodes": [], "fcc_ids": [], "ic_ids": [],
+                        "source": "Internet Archive", "page": page,
+                        "manuals": [{"title": doc["title"], "url": base + urllib.parse.quote(pdf), "page": page,
+                                     "kind": "pdf", "ia": doc["ia"], "size": size, "document": "guide",
+                                     "text_url": base + urllib.parse.quote(text) if text else "",
+                                     **({"release": release} if release else {}),
+                                     "rights": "a US government work (public domain)",
+                                     "source": "Internet Archive"}]})
+    return entries, notes
+
+
 def attach_manuals(entries, manual_entries):
     """Give device records (openFDA, ENERGY STAR, EnerGuide) the manuals of Internet Archive items of the same brand
     and model, and the Canadian certification numbers those items print."""
@@ -1377,6 +1418,11 @@ def build(key, out_dir, limit, fetch):
         manual_entries += got
         notes += why
         say(f"{key}: {len(got)} publicly released military manuals")
+    if cat.get("public_guides"):
+        got, why = public_guide_entries(fetch, cat["public_guides"], key)
+        manual_entries += got
+        notes += why
+        say(f"{key}: {len(got)} public-domain guides")
     if cat.get("udi"):
         devices = []
         for term in cat["udi"]:
@@ -1430,6 +1476,8 @@ def write(key, entries, out_dir, notes=(), requests_made=0):
              "notes": list(notes)[:50], "entries": entries}
     if cat.get("guidance"):
         index["guidance"] = cat["guidance"]
+    if cat.get("notice"):
+        index["notice"] = cat["notice"]          # the category's safety notice, said first by the toolkit
     if cat.get("makers"):
         index["makers"] = [{k: m.get(k, "") for k in ("key", "maker", "type", "access", "library", "site", "reason")}
                            for m in cat["makers"]]

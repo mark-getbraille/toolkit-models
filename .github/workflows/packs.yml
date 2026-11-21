@@ -111,7 +111,10 @@ jobs:
                    "newberry_library", "state_libraries_midwest", "state_libraries_south", "state_libraries_west",
                    "commons_crosswalks_signals", "commons_streets_roads_na", "commons_neighbourhoods_na", "us_dot_street_photos",
                    "na_wild_mammals", "na_birds", "na_herps_fish", "na_insects", "na_invertebrates", "na_animal_signs",
-                   "na_domestic_animals", "noaa_fisheries_species"]
+                   "na_domestic_animals", "noaa_fisheries_species",
+                   "commons_fasteners", "commons_door_hardware", "commons_building_hardware", "commons_plumbing_electrical",
+                   "commons_building_materials", "commons_hand_tools_trades", "commons_power_tools", "commons_shop_machines",
+                   "commons_ppe", "commons_sewing_food_equipment", "abo_hardware", "nmah_hardware_tools"]
           words = [w for w in sys.argv[1].split(",") if w]
           # "key+" is a top-up pass of key and "key?" a needs-only run (kept with the mark, which the build job reads);
           # "all?" asks for a needs-only run of every pack.
