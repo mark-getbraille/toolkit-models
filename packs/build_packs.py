@@ -1630,6 +1630,15 @@ PACKS.update(NA_ANIMAL_PACKS)
 from hardware_packs import HARDWARE_PACKS
 PACKS.update(HARDWARE_PACKS)
 
+# Everyday things (packs/everyday_extras_packs.py): US and Canadian coins and bills by side, with the design and how
+# each can be told by touch or with low vision (US Mint, uscurrency.gov and Bank of Canada facts); banknote pictures
+# one-sided and small (18 U.S.C. 504). Commons mail and parcels, clothing (garments, patterns, fabrics, colours),
+# makeup and grooming, toys, balls, sports equipment and instruments, clouds, storms and the night sky, and screens
+# (error messages, dialogs, login screens). The packs that show people are never used for picture-making
+# (PEOPLE_PACKS).
+from everyday_extras_packs import EVERYDAY_EXTRAS_PACKS
+PACKS.update(EVERYDAY_EXTRAS_PACKS)
+
 
 # The packs whose builder reads the Wikimedia Commons API (commons_get, commons_members, commons_entries,
 # mechanical_packs.mech_entries, us_packs.us_commons, documentary_packs.commons_get or COMMONS_API itself). When many
@@ -1679,6 +1688,9 @@ COMMONS_KEYS = frozenset({
     "commons_fasteners", "commons_door_hardware", "commons_building_hardware", "commons_plumbing_electrical",
     "commons_building_materials", "commons_hand_tools_trades", "commons_power_tools", "commons_shop_machines",
     "commons_ppe", "commons_sewing_food_equipment",
+    # everyday things (everyday_extras_packs.py)
+    "commons_money_sides", "commons_mail_parcels", "commons_clothing_patterns", "commons_makeup_grooming",
+    "commons_toys_sports_music", "commons_sky_weather", "commons_screens",
 })
 
 

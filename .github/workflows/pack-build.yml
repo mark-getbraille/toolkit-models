@@ -366,6 +366,13 @@ jobs:
             commons_sewing_food_equipment) limit=800 ;;
             abo_hardware) limit=1000 ;;
             nmah_hardware_tools) limit=800 ;;
+            commons_money_sides) limit=700 ;;
+            commons_mail_parcels) limit=1000 ;;
+            commons_clothing_patterns) limit=3000 ;;
+            commons_makeup_grooming) limit=1200 ;;
+            commons_toys_sports_music) limit=4000 ;;
+            commons_sky_weather) limit=4000 ;;
+            commons_screens) limit=600 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in

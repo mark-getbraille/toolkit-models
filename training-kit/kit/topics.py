@@ -142,7 +142,8 @@ TOPICS = [
            "hiertext", "mapqa",
            # non-commercial and research-only (personal use)
            "sroie", "wildreceipt", "dvqa", "funsd", "xfund", "chartqa", "scienceqa", "ai2d", "streetsignset",
-           "fintabnet_tables", "cra_forms", "screenqa_rico", "rico_screens", "rico_widgets")),
+           "fintabnet_tables", "cra_forms", "screenqa_rico", "rico_screens", "rico_widgets",
+           "commons_mail_parcels", "commons_screens")),
     Topic("nature", "Plants, animals and nature",
           "Plants, mushrooms, insects, birds and other animals by name, pet and farm breeds, crops and their "
           "diseases, weeds, clouds and weather, and landscapes seen from the ground and from space.",
@@ -150,7 +151,7 @@ TOPICS = [
            "agml_plant_health", "agml_weeds", "agml_harvest", "gwhd_wheat", "inat_crops", "ccsn_clouds",
            "weather_images", "eurosat", "inaturalist_us", "inaturalist_ca", "earth_observatory", "usgs",
            "npgallery", "na_wild_mammals", "na_birds", "na_herps_fish", "na_insects", "na_invertebrates",
-           "na_animal_signs", "noaa_fisheries_species", "na_domestic_animals",
+           "na_animal_signs", "noaa_fisheries_species", "na_domestic_animals", "commons_sky_weather",
            # share-alike
            "oxford_pets", "plantvillage", "plantnet_sa", "commons_breeds_sa", "inaturalist_us_sa",
            "inaturalist_ca_sa", "plant_seedlings_sa",
