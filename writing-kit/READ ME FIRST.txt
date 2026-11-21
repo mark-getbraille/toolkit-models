@@ -18,14 +18,14 @@ How to run it on Windows
    This also uses the personal-use-only sources (see Licences below). It takes one to two hours the first time,
    because some sites are asked for one page every few seconds. A second build is quicker: downloads are kept
    in the "cache" folder.
-4. When it says "Done", open the folder "output" in the writing-kit folder.
+4. When it says "Done", open the folder "out" in the writing-kit folder.
 Each window says what it is doing, one line at a time, so your screen reader can follow it. Close the window to stop.
 
 How to run it from a command prompt
 Go to the writing-kit folder, then type one of these:
-  python kit\build_dataset.py --out output --cache cache
-  python kit\build_dataset.py --out output --cache cache --personal
-  python kit\build_dataset.py --out output --cache cache --personal --per-source 1000
+  python kit\build_dataset.py --out out --cache cache
+  python kit\build_dataset.py --out out --cache cache --personal
+  python kit\build_dataset.py --out out --cache cache --personal --per-source 1000
 --per-source sets how many examples to keep from each source (300 if you leave it out).
 --sources picks sources by name, separated by commas (the names are in the list of sources below).
 --privacy strict uses the old, careful scrubbing instead of your rule (see Privacy below).
@@ -44,7 +44,47 @@ The Open American National Corpus: its official download is on GitHub, and GitHu
   anc.org/data/oanc/download/ (330 MB), and add --oanc-file followed by where you saved it, for example
   --oanc-file "C:\Users\You\Downloads\OANC-1.0.1-UTF8.zip".
 
-What you get, in the output folder
+Styles: training on one style at a time
+Every example has a style label (one of the names below), a register (formal, neutral or casual) and its
+source. The out folder has one folder per style, each with its own train.jsonl and validation.jsonl, besides the
+combined train.jsonl and validation.jsonl, and STYLES.txt lists how many examples each style has.
+To train on one style, use the files in its folder, for example out\email_business\train.jsonl.
+To build only some styles, add --styles and the names, separated by commas, for example
+  python kit\build_dataset.py --out out --cache cache --personal --styles email_business,memo,press_release
+The styles:
+  email_business: work email: requests, replies, updates, scheduling, follow-ups between colleagues or companies.
+  email_personal: personal email to friends, family, neighbours or landlords.
+  text_message: text messages (SMS) and very short notes.
+  chat: live chat: IRC channels, customer service chats, assistant conversations.
+  forum_post: posts on Usenet groups, mailing-list style forums and web forums.
+  comment_public: public comments: comments to government agencies, Wikipedia talk-page comments.
+  review: product and service reviews.
+  social_post: short social media posts and announcements.
+  letter_formal: formal letters: to agencies, the SEC, shareholders, fundraising letters.
+  letter_personal: personal letters, mostly old public-domain letters.
+  memo: memos and documents attached to work email.
+  press_release: press releases from companies and agencies.
+  report: reports from agencies and organisations.
+  minutes: minutes of meetings.
+  transcript_meeting: transcripts of hearings, parliament and public meetings.
+  transcript_court: transcripts of court proceedings (US Supreme Court oral arguments).
+  transcript_conversation: transcripts of everyday spoken conversations (telephone, face to face).
+  speech: speeches, remarks and addresses.
+  plain_language_gov: plain-language government writing: public notices and statements.
+  legal: legal writing: opinions, filings.
+  technical: technical and how-to writing, guides.
+  academic: academic and textbook writing, grant summaries.
+  news: news reports and magazine articles.
+  blog: blog posts.
+  fiction_prose: novels and short stories.
+  fan_fiction: fan fiction released under an open licence.
+  poetry: poems.
+  screenplay_drama: plays and screenplays.
+  dialogue: made-up dialogues between characters.
+  children_story: stories for children.
+  humour: humorous writing.
+
+What you get, in the out folder
 train.jsonl: the training examples, one per line.
 validation.jsonl: about one example in twenty, kept back to check the training.
 samples.txt: the first ten examples from each source, in plain text. Read this first.
@@ -60,6 +100,7 @@ instruction: what to write, with the tone and the audience. For a reply, the mes
   For a chat, the conversation so far is included and it asks for the next message.
 response: the writing itself.
 messages: the same pair as a chat, user then assistant, the way most training programs want it.
+style and register: the style label and formal, neutral or casual (see Styles above).
 kind, form, tone, audience, length: what the rules found, for example kind "declining", form "email".
 source, licence, licence_class, credit: where the example came from and under what licence.
 The instructions are made from the writing itself by simple rules, with no AI and nothing online. For the
@@ -177,7 +218,7 @@ sensitive messages dropped), add --privacy strict.
 
 Attachments
 Attachments are kept. For each email that had attachments, the kit saves the email as message.txt and every
-attached file beside it, in output\messages\<source>\<message>\. Attachments that are written documents (plain
+attached file beside it, in out\messages\<source>\<message>\. Attachments that are written documents (plain
 text, web pages, Word .docx, RTF, and PDF when pdftotext is installed) are also read, and their text becomes extra
 examples, such as "Write the memo that was attached to this email". Old Word .doc files are saved but not read.
 The Enron copy from Carnegie Mellon has no attachments: they were taken out before it was published.

@@ -15,25 +15,26 @@ What it does, step by step:
      (attachments.py), and saves whole speech transcripts as text files;
   5. leaves out repeats, spreads the examples over many mailboxes, lists and channels, and puts about one in twenty
      into the validation file (the same one every time, chosen from the text);
-  6. writes, in the output folder:
+  6. writes, in the output folder (out by default):
        train.jsonl, validation.jsonl   one example per line (fields below);
        samples.txt                     the first examples of each source, to read and check;
        build-report.txt                what was read, kept and not used, and why, per source;
        ATTRIBUTION.txt                 the credits and licences of the sources used;
        sources-not-used.txt            the sources that were checked and cannot be used, with the reason;
        messages/<source>/<message>/    message.txt and its attachments;
-       transcripts/<source>/           whole transcripts of real speech.
+       transcripts/<source>/           whole transcripts of real speech;
+       <style>/train.jsonl and validation.jsonl, STYLES.txt   the same examples split by style (styles.py).
 
 Each line of train.jsonl and validation.jsonl has:
   id, instruction, response, messages (the same pair as a chat: user then assistant), kind, form, tone, audience,
   length, source, source_name, licence, licence_class, licence_url, credit.
 
 Usage (from the writing-kit folder):
-  python kit/build_dataset.py --out output                      (open and share-alike sources, 300 each)
-  python kit/build_dataset.py --out output --personal           (also Enron and the W3C lists: personal use only)
-  python kit/build_dataset.py --out output --sources dolly,oasst2 --per-source 200
-  python kit/build_dataset.py --out output --personal --enron-file enron_mail_20150507.tar.gz   (a copy you have)
-  python kit/build_dataset.py --out output --cache cache        (keeps downloads in "cache" for the next build)
+  python kit/build_dataset.py --out out                      (open and share-alike sources, 300 each)
+  python kit/build_dataset.py --out out --personal           (also Enron and the W3C lists: personal use only)
+  python kit/build_dataset.py --out out --sources dolly,oasst2 --per-source 200
+  python kit/build_dataset.py --out out --personal --enron-file enron_mail_20150507.tar.gz   (a copy you have)
+  python kit/build_dataset.py --out out --cache cache        (keeps downloads in "cache" for the next build)
 """
 
 import argparse
@@ -56,6 +57,7 @@ import readers_more  # noqa: E402
 import readers_meetings  # noqa: E402
 import readers_business  # noqa: E402
 import readers_litigation  # noqa: E402
+import styles  # noqa: E402
 import attachments  # noqa: E402
 
 READER_MODULES = (readers, readers_more, readers_meetings, readers_business, readers_litigation)
@@ -240,7 +242,8 @@ def is_validation(row):
     return int(hashlib.sha1(row["response"].encode("utf-8")).hexdigest(), 16) % VALIDATION_SHARE == 0
 
 
-def build_source(source, fetcher, per_source, say, seen, reader_options, privacy=OWNER, attach_dir=None):
+def build_source(source, fetcher, per_source, say, seen, reader_options, privacy=OWNER, attach_dir=None,
+                 wanted_styles=None):
     """(rows, counts) for one source: up to per_source examples, no more than a tenth from one mailbox, list or
     channel when the source has several (at least 15)."""
     module = next(m for m in READER_MODULES if hasattr(m, source.reader))
@@ -276,6 +279,10 @@ def build_source(source, fetcher, per_source, say, seen, reader_options, privacy
             for row, why in made:
                 if not row:
                     counts[why] += 1
+                    continue
+                row["style"], row["register"] = styles.label(row, source.key, record)
+                if wanted_styles and row["style"] not in wanted_styles:
+                    counts["not one of the chosen styles"] += 1
                     continue
                 key = normalise(row["response"]) + "|" + normalise(row["instruction"][:200])
                 if key in seen:
@@ -315,6 +322,21 @@ def write_outputs(out, rows, counts_by_source, used, fetcher, started, privacy=O
         with open(os.path.join(out, name), "w", encoding="utf-8") as f:
             for r in part:
                 f.write(json.dumps(r, ensure_ascii=False) + "\n")
+    # one folder per style, so a single style can be trained on its own
+    by_style = Counter(r["style"] for r in rows)
+    for style in by_style:
+        folder = os.path.join(out, style)
+        os.makedirs(folder, exist_ok=True)
+        for name, part in (("train.jsonl", train), ("validation.jsonl", valid)):
+            with open(os.path.join(folder, name), "w", encoding="utf-8") as f:
+                for r in part:
+                    if r["style"] == style:
+                        f.write(json.dumps(r, ensure_ascii=False) + "\n")
+    with open(os.path.join(out, "STYLES.txt"), "w", encoding="utf-8") as f:
+        f.write("The styles in this build, with how many examples each (folder name: what it is).\n\n")
+        for style, description in styles.STYLES.items():
+            if by_style[style]:
+                f.write(f"{style}: {by_style[style]} examples. {description}.\n")
 
     with open(os.path.join(out, "samples.txt"), "w", encoding="utf-8") as f:
         f.write(f"Samples to read and check: the first ten examples of each source (privacy setting: {privacy}).\n"
@@ -323,7 +345,8 @@ def write_outputs(out, rows, counts_by_source, used, fetcher, started, privacy=O
             mine = [r for r in rows if r["source"] == source.key][:10]
             f.write(f"===== {source.name} ({source.licence_class}): {len(mine)} shown =====\n\n")
             for n, r in enumerate(mine, 1):
-                f.write(f"Example {n}. Kind: {r['kind']}. Tone: {r['tone']}.\nInstruction: {r['instruction']}\n"
+                f.write(f"Example {n}. Style: {r['style']}. Register: {r['register']}. Kind: {r['kind']}.\n"
+                        f"Instruction: {r['instruction']}\n"
                         f"Answer:\n{r['response']}\n\n")
 
     with open(os.path.join(out, "build-report.txt"), "w", encoding="utf-8") as f:
@@ -331,6 +354,10 @@ def write_outputs(out, rows, counts_by_source, used, fetcher, started, privacy=O
                 f"({'whole messages; only SSN, card, bank and account numbers and passwords masked' if privacy == OWNER else 'names and personal details replaced, sensitive messages dropped'}).\n\n")
         f.write(f"Examples in all: {len(rows)} ({len(train)} for training, {len(valid)} for validation).\n\n")
         kinds = Counter(r["kind"] for r in rows)
+        f.write("Styles: " + ", ".join(f"{k} {v}" for k, v in Counter(r["style"] for r in rows).most_common())
+                + ".\n")
+        f.write("Registers: " + ", ".join(f"{k} {v}" for k, v in Counter(r["register"] for r in rows).most_common())
+                + ".\n")
         f.write("Kinds of message: " + ", ".join(f"{k} {v}" for k, v in kinds.most_common()) + ".\n\n")
         for source in used:
             c = counts_by_source.get(source.key, Counter())
@@ -375,7 +402,9 @@ def write_outputs(out, rows, counts_by_source, used, fetcher, started, privacy=O
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Build the Writing Kit's training files.")
-    parser.add_argument("--out", default="output", help="folder for the files (made if missing)")
+    parser.add_argument("--out", default="out", help="folder for the files (made if missing)")
+    parser.add_argument("--styles", default="", help="build only these styles, separated by commas (see STYLES.txt "
+                                                     "or READ ME FIRST.txt for the names)")
     parser.add_argument("--sources", default="", help="keys separated by commas (default: every allowed source)")
     parser.add_argument("--per-source", type=int, default=300, help="at most this many examples from each source")
     parser.add_argument("--personal", action="store_true", help="also use the personal-use-only sources")
@@ -394,6 +423,10 @@ def main(argv=None):
                              "bank and account numbers and passwords; strict: also replace names and personal "
                              "details and drop sensitive messages")
     args = parser.parse_args(argv)
+    wanted_styles = {x.strip() for x in args.styles.split(",") if x.strip()}
+    bad = wanted_styles - set(styles.STYLES)
+    if bad:
+        parser.error("unknown style: " + ", ".join(sorted(bad)) + ". Known: " + ", ".join(styles.STYLES))
 
     started = time.time()
     say = lambda text: print(text, flush=True)
@@ -425,7 +458,7 @@ def main(argv=None):
             if args.w3c_lists:
                 options["lists"] = [x.strip() for x in args.w3c_lists.split(",") if x.strip()]
         got, counts[source.key] = build_source(source, fetcher, args.per_source, say, seen, options, args.privacy,
-                                               os.path.join(args.out, "messages"))
+                                               os.path.join(args.out, "messages"), wanted_styles)
         say(f"{source.name}: {len(got)} examples kept.")
         rows += got
     train, valid = write_outputs(args.out, rows, counts, used, fetcher, started, args.privacy)

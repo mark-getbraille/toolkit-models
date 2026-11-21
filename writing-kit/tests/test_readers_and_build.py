@@ -215,3 +215,47 @@ def test_owner_build_keeps_whole_messages_and_attachments(tmp_path, monkeypatch)
     assert sorted(p.name for p in folders[0].iterdir()) == ["memo.txt", "message.txt"]
     report = (out / "build-report.txt").read_text(encoding="utf-8")
     assert "attachments saved: 1" in report and "Privacy setting: owner" in report
+
+
+# ----------------------------------------------------------------- style labels
+
+import styles  # noqa: E402
+
+
+def test_every_example_has_a_style_and_register_and_per_style_files(tmp_path, monkeypatch):
+    def fake_enron(fetcher, say=print, **_):
+        yield readers.enron_record(MAIL.encode(), "calloway-w")
+
+    def fake_sms(fetcher, say=print, **_):
+        yield {"type": "sms", "text": "ok see you at 7, bring the snacks", "group": "sms"}
+
+    monkeypatch.setattr(readers, "read_enron", fake_enron)
+    monkeypatch.setattr(readers_more, "read_sms", fake_sms)
+    out = tmp_path / "out"
+    assert build_dataset.main(["--out", str(out), "--sources", "enron,sms", "--personal"]) == 0
+    rows = [json.loads(line) for name in ("train.jsonl", "validation.jsonl")
+            for line in open(out / name, encoding="utf-8")]
+    assert {r["style"] for r in rows} == {"email_business", "text_message"}
+    assert all(r["register"] in styles.REGISTERS and r["source"] for r in rows)
+    assert (out / "text_message" / "train.jsonl").exists() or (out / "text_message" / "validation.jsonl").exists()
+    per_style = sum(1 for style in ("email_business", "text_message") for name in ("train.jsonl", "validation.jsonl")
+                    for _ in open(out / style / name, encoding="utf-8"))
+    assert per_style == len(rows)
+    assert "text_message" in (out / "STYLES.txt").read_text(encoding="utf-8")
+
+
+def test_only_chosen_styles_are_built(tmp_path, monkeypatch):
+    monkeypatch.setattr(readers_more, "read_sms", lambda f, say=print, **_: iter(
+        [{"type": "sms", "text": "ok see you at 7, bring the snacks", "group": "sms"}]))
+    out = tmp_path / "out"
+    build_dataset.main(["--out", str(out), "--sources", "sms", "--styles", "email_business"])
+    assert (out / "train.jsonl").read_text(encoding="utf-8") == ""
+
+
+def test_style_labels_come_from_a_fixed_list():
+    assert styles.label({"kind": "press release"}, "edgar") == ("press_release", "formal")
+    assert styles.label({"instruction": "Write an email to my neighbor about the noise"}, "oasst2")[0] == \
+        "email_personal"
+    assert styles.label({}, "scotus") == ("transcript_court", "formal")
+    assert styles.label({}, "irc") == ("chat", "casual")
+    assert styles.label({}, "gutenberg", {"style_label": "poetry"})[0] == "poetry"
