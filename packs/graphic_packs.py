@@ -54,8 +54,10 @@ The packs (licences checked at the source in November 2026):
                     domain or CC BY (each author credited; the CC BY-SA files are a share-alike kit entry,
                     training-kit/kit/graphic_sources.py), with the file's English caption or description.
   commons_disasters Wikimedia Commons categories of earthquake, flood, tornado, landslide and fire damage, collapsed
-                    buildings, debris and rubble, and the FEMA photographs on Commons (US government
-                    work). Licences as commons_war.
+                    buildings, debris and rubble, and FEMA's own disaster categories on Commons (hurricanes,
+                    floods, tornadoes, debris, earthquakes, landslides, wildfires, winter storms, levee breaks,
+                    aerial views; US government work), read one small category at a time at a slow pace.
+                    Licences as commons_war.
   commons_safety    Wikimedia Commons categories of practical safety scenes: fallen power lines, flooded roads,
                     smoke, burning buildings, unexploded ordnance and its warning signs, landmine warning signs,
                     checkpoints, barricades and sandbags, air-raid and fallout shelters and their signs, air-raid
@@ -586,15 +588,38 @@ COMMONS_WAR = {
     "Destroyed vehicles in the 2022 Russian invasion of Ukraine": False,
     "National Museum of Health and Medicine": True, "Otis Historical Archives": False,
 }
+# The disaster categories, small ones only (checked 2026-11-21 with their file counts): the pack failed several times
+# while Commons refused it, because "Images from FEMA" (53 subcategories, tens of thousands of files) and "Floods" (63
+# subcategories) were walked whole. Now FEMA's own disaster categories are read one by one, the big ones are not
+# walked a level down, each listing stops at DISASTER_MOST_LISTED files, and the pack pauses DISASTER_PAUSE seconds
+# between categories (the way the GBIF packs read one small piece at a time).
 COMMONS_DISASTERS = {
-    "Earthquake damage": True, "Earthquake damage in California": True,
-    "Buildings damaged by the 2010 Canterbury earthquake": True, "2010 Haiti earthquake damage": True,
-    "Damage of the 2023 Kahramanmaraş earthquakes in Adıyaman": False, "Flood damage": True, "Floods": True,
+    "Earthquake damage": True, "Earthquake damage in California": True,                     # 128, 91 files
+    "Buildings damaged by the 2010 Canterbury earthquake": False, "2010 Haiti earthquake damage": True,
+    "1994 Northridge earthquake": True,
+    "Damage of the 2023 Kahramanmaraş earthquakes in Adıyaman": False, "Flood damage": True, "Floods": False,
+    "Floods in the United States": False,
     "2011 Brisbane flood damage": False, "Johnstown Flood": True, "1966 flood of Florence": True,
-    "Bridges destroyed by floods": True, "Tornado damage": True, "Landslides": True, "Collapsed buildings": True,
-    "Debris": True, "Rubble": True, "House fires": True,
-    "Images from FEMA": True,
+    "Bridges destroyed by floods": True, "Tornado damage": True, "2011 Joplin tornado": True,
+    "2013 Moore tornado": True, "Storm damage": False, "Landslides": False, "Mudslides": False,
+    "Collapsed buildings": True, "Debris": False, "Rubble": True, "House fires": True,
+    # FEMA's photographs (US government work), its disaster categories only (not ceremonies, officials or events)
+    "Images from FEMA, category Hurricane/Tropical Storm": False,                            # 3,268 files
+    "Images from FEMA, category Flooding": False,                                            # 754
+    "Images from FEMA, category Tornado": False,                                             # 990
+    "Images from FEMA, category Debris": False,                                              # 635
+    "Images from FEMA, category Earthquake": True,                                           # 25, 6 subcategories
+    "Images from FEMA, category Mudslide/Landslide": False,                                  # 90
+    "Images from FEMA, category Wildfire": False,                                            # 221
+    "Images from FEMA, category Fire": False,                                                # 136
+    "Images from FEMA, category Winter Storm": False,                                        # 329
+    "Images from FEMA, category Dam/Levee Break": False,                                     # 81
+    "Images from FEMA, category Coastal Storm": False,                                       # 24
+    "Images from FEMA, category Severe Storm": False,                                        # 31
+    "Aerial photographs from the Federal Emergency Management Agency": False,                # 481
 }
+DISASTER_MOST_LISTED = 600       # files listed from one category at most (a few listing requests each)
+DISASTER_PAUSE = 5               # seconds between categories
 # The practical safety scenes: category -> (question, answer about the hazard or sign, whether one level of its
 # subcategories is used too). The answers describe; they never give tactical or weapon-use advice.
 HAZARDS = "What hazards are in this picture?"
@@ -657,36 +682,60 @@ def commons_answer(text):
     return answer
 
 
-def commons_titles(s, category, deeper):
+def capped_members(s, category, kind, most):
+    """The titles of a category's members of one kind ("file" or "subcat"), at most most of them (a few listing
+    requests instead of dozens for a big category)."""
+    from food_packs import commons_get
+    titles, params = [], {"action": "query", "list": "categorymembers", "cmtitle": f"Category:{category}",
+                          "cmtype": kind, "cmlimit": min(500, most)}
+    while len(titles) < most:
+        data = commons_get(s, params)
+        titles += [m["title"] for m in (data.get("query") or {}).get("categorymembers", [])]
+        if "continue" not in data:
+            break
+        params.update(data["continue"])
+    return titles[:most]
+
+
+def commons_titles(s, category, deeper, most=None):
     """The file titles of a Commons category and, when deeper, of one level of its subcategories (leaving out the
     subcategories COMMONS_NOT_IT names and those about children, such as "Child casualties"); file names that
-    COMMONS_NOT_IT names are left out too."""
+    COMMONS_NOT_IT names are left out too. most: list at most this many files from each category (None: all)."""
+    def files_of(c):
+        """The file titles of one category (capped when most is given)."""
+        return capped_members(s, c, "file", most) if most else commons_members(s, c, "file")
     try:
-        titles = commons_members(s, category, "file")
+        titles = files_of(category)
         if deeper:
             for sub in commons_members(s, category, "subcat"):
                 sub = sub.split(":", 1)[-1]
                 if not COMMONS_NOT_IT.search(sub) and not child_in(sub):
-                    titles += commons_members(s, sub, "file")
+                    titles += files_of(sub)
     except Exception as e:  # noqa: BLE001 - a missing or refused category is left out
         say(f"  Commons {category}: left out ({str(e)[:100]})")
         return []
     return [t for t in dict.fromkeys(titles) if not COMMONS_NOT_IT.search(t)]
 
 
-def build_commons(key, categories, limit, safety=False):
+def build_commons(key, categories, limit, safety=False, most=None, pause=0):
     """A Commons pack: for each category, its files (see commons_titles) whose licence is CC0, public domain or CC BY
     (food_packs.commons_entries), each with its English caption or description as "Describe this picture." and, for
     the safety categories (safety=True: categories is SAFETY), the category's question and answer too. The
-    categories share the limit; a file is used once, under the first category it is met in."""
+    categories share the limit; a file is used once, under the first category it is met in. most: files listed
+    from one category at most; pause: seconds to wait between categories (a slower, gentler pace)."""
     s, items, seen = session(), [], set()
     if QUICK_CATEGORIES:                              # a quick check (main --categories): only a few categories
         categories = dict(pass_random(key).sample(sorted(categories.items()), min(QUICK_CATEGORIES,
                                                                                      len(categories))))
     per_category = max(6, limit // len(categories) * 2)
-    for category, value in categories.items():
+    for number, (category, value) in enumerate(categories.items()):
         question, answer, deeper = value if safety else (None, None, value)
-        titles = commons_titles(s, category, deeper)
+        if pause and number:
+            time.sleep(pause)
+        if listing_out_of_time():
+            say(f"  {key}: stopped looking at half the time limit")
+            break
+        titles = commons_titles(s, category, deeper, most)
         titles = [t for t in titles if t not in seen]
         pass_random(category).shuffle(titles)
         found = 0
@@ -741,7 +790,8 @@ def build_commons_war(limit):
 
 def build_commons_disasters(limit):
     """The Commons disasters pack (see the module docstring)."""
-    return build_commons("commons_disasters", COMMONS_DISASTERS, limit)
+    return build_commons("commons_disasters", COMMONS_DISASTERS, limit, most=DISASTER_MOST_LISTED,
+                         pause=DISASTER_PAUSE)
 
 
 def build_commons_safety(limit):

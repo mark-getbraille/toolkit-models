@@ -34,9 +34,9 @@ The packs (all open: CC0, public domain or CC BY, checked file by file at the so
                          hazard symbols, the NFPA 704 "fire diamond", and GHS pictograms other than safety_signs'
                          nine drawings (photos of labels, variants), and US DOT hazardous materials placards and
                          markings (the Emergency Response Guidebook's diagrams and Commons' DOT hazmat drawings, with
-                         the guidebook's division names). Each symbol's meaning comes from its own file title or category ("WHMIS Class
-                         B", "GHS05", "Hazard class 3"): no title, no meaning. The nine GHS pictogram drawings are
-                         NOT repeated: safety_signs has them (events_safety_packs.ghs_items).
+                         the guidebook's division names). Each symbol's meaning comes from its own file title or
+                         category ("WHMIS Class B", "GHS05", "Hazard class 3"): no title, no meaning. The nine GHS
+                         pictogram drawings are NOT repeated: safety_signs has them (events_safety_packs.ghs_items).
 
 Not repeated: abo_packaged_goods (Amazon's catalogue photos of cleaners, laundry detergent and motor oil; this
 change adds the safety notes of SAFETY to its hazardous household rows), commons_packaging, open_images_packaged_goods,
