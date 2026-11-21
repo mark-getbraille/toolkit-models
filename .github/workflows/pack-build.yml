@@ -354,6 +354,7 @@ jobs:
             na_animal_signs) limit=5000 ;;
             na_domestic_animals) limit=8000 ;;
             noaa_fisheries_species) limit=800 ;;
+            commons_money_sides) limit=700 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in

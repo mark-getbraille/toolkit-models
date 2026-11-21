@@ -2243,6 +2243,10 @@ SOURCES = [
            "NOAA Fisheries (Courtesy: National Oceanic and Atmospheric Administration), https://www.fisheries.noaa.gov", "permissive", 800, 10, prepare_pack, "about 80 MB"),
     Source("na_domestic_animals", "Dog, cat, horse, cattle, pig, sheep, goat, poultry and rabbit breeds, pets, working and service dogs, animal equipment and farm scenes (Wikimedia Commons, ready-made pack)",
            "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 8000, 40, prepare_pack, "about 1.6 GB"),
+    # Everyday things (packs/everyday_extras_packs.py). Money: the side, the design and how a coin or bill can be told
+    # by touch or with low vision (US Mint, uscurrency.gov, Bank of Canada); banknote pictures one-sided and small.
+    Source("commons_money_sides", "US and Canadian coins and bills by side, with their design and how to tell them by touch or with low vision (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0; touch facts from the US Mint, uscurrency.gov (US government) and the Bank of Canada (with attribution)", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org; Bank of Canada", "permissive", 700, 10, prepare_pack, "about 100 MB"),
     Source('skin_lesion_photos', 'Skin spots photographed with a phone, adults (PAD-UFES-20, ready-made pack)',
            'CC BY 4.0 (Mendeley Data zr7vgbcyr2)',
            'PAD-UFES-20 (Pacheco et al., 2020), CC BY 4.0', "permissive", 2000, 20, prepare_pack, 'about 400 MB', content="medical"),
