@@ -533,13 +533,13 @@ IDENTIFIER_PATTERNS = [
         r"(?P<v>(?=[\dA-Z\-]*\d{4})[\dA-Z][\dA-Z\-]{5,})")),
     ("[password]", re.compile(
         r"(?i)\b(?:password|passwd|pwd|passcode|pass code|pin(?: number| code)?|security code|access code)\b"
-        r"\s*[:=]\s*[\"']?(?P<v>(?!\[)[^\s\"']{2,40}?)(?=[\"']?(?:[.,;)]?\s|[.,;)]?$))")),
+        r"[ \t]*[:=][ \t]*[\"']?(?P<v>(?!\[)[^\s\"']{2,40}?)(?=[\"']?(?:[.,;)]?\s|[.,;)]?$))")),
     ("[password]", re.compile(
         r"(?i)\b(?:password|passwd|pwd|passcode|pass code|pin(?: number| code)?|security code|access code)\b"
         r"\s+(?:is|was|will be|=)\s+[\"']?(?P<v>(?!\[)(?=[^\s\"']*[\d!@#$%^&*])[^\s\"']{3,40}?)"
         r"(?=[\"']?(?:[.,;)]?\s|[.,;)]?$))")),
     ("[password]", re.compile(r"(?i)\b(?:pin|pin number|pin code)\s+(?P<v>\d{4,8})\b")),
-    ("[login]", re.compile(r"(?i)\b(?:user ?name|user ?id|login(?: id| name)?)\b(?:\s+(?:is|=))?\s*[:=]\s*[\"']?"
+    ("[login]", re.compile(r"(?i)\b(?:user ?name|user ?id|login(?: id| name)?)\b(?:[ \t]+(?:is|=))?[ \t]*[:=][ \t]*[\"']?"
                            r"(?P<v>(?!\[)[^\s\"']{2,40})")),
 ]
 

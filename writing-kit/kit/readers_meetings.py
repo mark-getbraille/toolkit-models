@@ -176,6 +176,6 @@ def read_hansard(fetcher, say=print, sittings=((45, 1, range(2, 60)),), **_):
             turns = hansard_turns(xml)
             if len(turns) >= 4:
                 raw = "\n\n".join(f"{who}:\n{words}" for who, words in turns)
-                yield {"type": "chat", "turns": turns, "group": f"{parl}-{sess}", "style": "speech",
+                yield {"type": "chat", "turns": turns, "group": f"{parl}-{sess}-{num}", "style": "speech",
                        "setting": "a debate in Canada's House of Commons. " + CANADA_NOTE, "raw": raw,
                        "raw_name": f"HAN{num:03d}-{parl}-{sess}.txt"}

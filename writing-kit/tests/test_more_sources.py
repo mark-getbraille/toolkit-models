@@ -35,7 +35,8 @@ def test_only_identity_theft_identifiers_are_masked():
 
 
 def test_ordinary_words_about_accounts_and_passwords_stay():
-    for text in ["I forgot my password again.", "The account is fine.", "Deal 4410937 is booked."]:
+    for text in ["I forgot my password again.", "The account is fine.", "Deal 4410937 is booked.",
+                 "Password:\n\nHi everyone, here is the new process.", "Send your password by today."]:
         assert scrub.mask_identifiers(text) == text
 
 
