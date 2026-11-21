@@ -1646,7 +1646,7 @@ def webguide_plan(entry, cache=None):
                     seen.add(extra)
                     plan.append((extra, unit))
     for url in entry.get("urls", []):            # a fixed list of articles (a few pages of a large site)
-        add(url, "")
+        add(*url) if isinstance(url, tuple) else add(url, "")    # (address, part) or an address
     for start in entry.get("start", []):
         text = fetch(start, cache)
         links = page_links(text, start)
@@ -2445,6 +2445,10 @@ def build(keys, out_dir, cache=None, pictures=False, local_osbooks=None, date=No
         if key.startswith("cat:"):               # whole open catalogues: OBP, Open Textbook Library, IA (open_catalogues.py)
             import open_catalogues               # here, not at the top: open_catalogues imports this module
             manifests.update(open_catalogues.build_catalogues([key], out_dir, cache, date))
+            continue
+        if key.startswith("dir:"):               # the reference-directory repositories (directory_sources.py)
+            import directory_sources             # here, not at the top: directory_sources imports this module
+            manifests.update(directory_sources.build_directory([key], out_dir, cache, date))
             continue
         if key.startswith("pub:"):               # periodicals, journals, reports, news, history (periodicals.py)
             import periodicals                   # here, not at the top: periodicals imports this module

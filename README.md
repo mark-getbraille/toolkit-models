@@ -210,6 +210,25 @@ and why):
   book is deduplicated against the library and across editions. Pressbooks Directory, eCampusOntario, Saylor and the
   GPO bookstore could not be read (`open_catalogues.NOT_INCLUDED` says why).
 
+- **The reference-directory repositories** (`textbooks/directory_sources.py`, keys `directory`, `directory-personal`,
+  `dir:<name>`, and `textbooks/directory_pubs.py`, keys `pub:<source>:<piece>`), from the owner's inventory of every
+  open-repository directory (21 November 2026): US agency guides in the public domain (National Eye Institute in
+  English and Spanish, NIDCD, NCCIH, the Administration for Community Living, VA benefits and Blind Rehabilitation,
+  US Courts' self-help guides, Energy Saver's remaining articles, Nutrition.gov, the National Agricultural Library,
+  Military OneSource); twenty CC BY open-access journals on disability, assistive technology, eye health, ageing,
+  rehabilitation, emergency medicine, public health and nutrition, each article whole, from Europe PMC; the Journal
+  of Science Education for Students with Disabilities; the Federal Register's final rules and the Congressional
+  Record by month, and hearings on disability and blindness by year (govinfo); Wikinews by year (CC BY 2.5, from the
+  dump); Frontiers for Young Minds; StoryWeaver and Global Digital Library children's stories by language and
+  reading level (from their Kolibri Studio channels); the Encyclopaedia Britannica's first to eighth editions (National
+  Library of Scotland, marked old, with the non-US note); the OEIS; Lumen Learning's CC BY courses; Raspberry Pi
+  Projects; and the Internet Archive's collections by subject (items before 1931, or US government works). Marked
+  "personal use only": Open Yale Courses, Disability Studies Quarterly and four other non-commercial journals, and
+  the Internet Archive collections the inventory judged personal use. What was looked at and not built (AHRQ and
+  CareerOneStop shut out AI readers, Investor.gov and StudentAid.gov refuse programs, HUD's pages are empty for
+  programs, GALILEO's and some university repositories' PDFs sit behind a bot check ...) and the 80 personal-use
+  repositories, each with what was done, are in `directory_sources.NOT_INCLUDED` and `directory_sources.PERSONAL`.
+
 How the books are made accessible: one page per chapter and section with headings; an index page listing every unit,
 chapter and section; every figure's number, the publisher's description of the picture and its caption as text
 (pictures themselves only when the request asks for them); formulas as readable text; tables with captions;
