@@ -64,8 +64,8 @@ Forms and receipts: us_federal_forms, cord, and the kit's funsd, sroie, wildrece
 fashionpedia, clothing (Grigorev, CC0), commons_us_streets (what people wear), laundry_symbols, met_collection (the
 Met's open access, the Costume Institute included) and the kit's cooper_hewitt; DeepFashion is non-commercial behind a
 signed agreement (a sign-up collection). Makeup: commons_personal (lipstick, mascara, nail polish, razors,
-hairbrushes), abo_products and the kit's openbeautyfacts (ODbL, share-alike); no open collection of makeup colour
-swatches was found. Toys, sports and music: wikidata_toys_games, wikidata_sports, playing_cards, the chess packs,
+hairbrushes) and abo_products (the kit's openbeautyfacts is not built: Open Beauty Facts blocks AI crawlers); no open
+collection of makeup colour swatches was found. Toys, sports and music: wikidata_toys_games, wikidata_sports, playing_cards, the chess packs,
 wikidata_instruments, met_instruments, the kit's mimo_instruments (BY-NC-SA), turkish_instruments and sports100.
 Sky: ccsn_clouds (CC0), weather_images, earth_observatory, eso and the kit's nasa. Screens: the kit's rico_screens,
 rico_widgets and screenqa_rico (Rico's screenshots carry no licence; research); ScreenSpot and other GUI-agent sets

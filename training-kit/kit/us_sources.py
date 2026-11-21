@@ -28,15 +28,16 @@ The collections (US_SOURCES):
     commons_us_sa          Wikimedia Commons: the US house, house-style, room, street, money, road-sign and packaging
                            categories of the open packs, files under CC BY-SA or GFDL, with the category's question and
                            the file's own caption. "What kind of house is this?" -> "It is a Victorian house ..."
-    openfacts_us           Open Food Facts, Open Beauty Facts and Open Products Facts (photos CC BY-SA 3.0, data ODbL
-                           1.0; https://world.openfoodfacts.org/terms-of-use): front photos of products sold in the
+    openfacts_us           Open Food Facts (photos CC BY-SA 3.0, data ODbL 1.0;
+                           https://world.openfoodfacts.org/terms-of-use): front photos of products sold in the
                            United States (countries_tags en:united-states) with a US barcode (a UPC, GS1 prefixes
                            000 to 139, so European products also sold there are left out), with the name, brand and
-                           size people
-                           typed in: "What product is this?" -> "This is Honey Nut Cheerios by General Mills,
-                           10.8 oz." (the world-wide entries openfoodfacts, openbeautyfacts and openproductsfacts take
-                           the most scanned products of every country; a product in both is saved once under the
-                           same file name in each).
+                           size people typed in: "What product is this?" -> "This is Honey Nut Cheerios by General
+                           Mills, 10.8 oz." Read through off_dump.py (the product database on Hugging Face, the
+                           photos on AWS Open Data), never Open Food Facts' websites, which block AI crawlers; Open
+                           Beauty Facts and Open Products Facts are no longer read (same block, no open photo
+                           route). The world-wide entry openfoodfacts takes the most scanned products of every
+                           country; a product in both is saved once under the same file name in each.
     inaturalist_us_sa      iNaturalist research-grade observations in each US state whose photo is CC BY-SA (through
                            GBIF and the iNaturalist Open Dataset, inat_gbif.py; such photos are few).
   noncommercial
@@ -75,8 +76,7 @@ import random
 import re
 import time
 
-from extra_sources import (get_json, off_name, per_label, research, save, say, stream_tar,
-                           OFF_SEARCH, OFF_IMAGES)
+from extra_sources import get_json, off_name, per_label, research, save, say, stream_tar
 from home_sources import commons_sa_items, facts_image, kind_rows, FACT_SITES, FACTS_FIELDS, FACTS_CREDIT
 from more_sources import fetch_shared
 from personal_sources import CHILD_WORDS
@@ -201,52 +201,49 @@ def us_barcode(code):
 
 
 def off_us_front(code, images):
-    """The full-size address of an Open Food Facts product's chosen English front photo, or ""."""
-    chosen = (images or {}).get("front_en") or {}
-    if not chosen.get("rev"):
-        return ""
-    path = "/".join([code[:3], code[3:6], code[6:9], code[9:]]) if len(code) > 8 else code
-    return f"{OFF_IMAGES}{path}/front_en.{chosen['rev']}.full.jpg"
+    """The AWS Open Data address of an Open Food Facts product's chosen English front photo, or "" (off_dump)."""
+    import off_dump
+    return off_dump.photo_url(code, images, "front", "en")
 
 
-def us_food_items(want):
+def us_food_items(work, want):
     """[(file name, address, row)] for Open Food Facts products sold in the USA with a US barcode (us_barcode), the
-    most scanned of each grocery category first, an even share of each."""
+    most scanned of each grocery category first, an even share of each. Read from the product database's slim copy
+    (off_dump), never from Open Food Facts' websites."""
+    import off_dump
     per = per_label(want, len(US_FOOD_CATEGORIES))
+    wanted = {f"en:{c}": c for c in US_FOOD_CATEGORIES}
+
+    def labels(hit):
+        """The grocery categories of a product sold in the USA with a US barcode, an English front photo and a
+        name that is not left out."""
+        if "en:united-states" not in hit["countries_tags"] or not us_barcode(hit["code"]) \
+                or not off_us_front(hit["code"], hit["images"]):
+            return ()
+        answer = off_name(hit)
+        if not answer or NOT_SHOWN.search(answer):
+            return ()
+        return [wanted[t] for t in hit["categories_tags"] if t in wanted]
+
+    best = off_dump.top_by_label(work, labels, per)
     items = []
     for category in US_FOOD_CATEGORIES:
-        hits, page = [], 1
-        while len(hits) < per and page <= 5:
-            try:
-                data = get_json(OFF_SEARCH, {"q": f'countries_tags:"en:united-states" AND '
-                                                  f'categories_tags:"en:{category}"', "page_size": 100,
-                                             "page": page, "sort_by": "-unique_scans_n",
-                                             "fields": "code,product_name,product_name_en,brands,quantity,images"})
-            except RuntimeError:
-                break
-            batch = data.get("hits") or []
-            hits += [h for h in batch if us_barcode(h.get("code")) and off_us_front(h["code"], h.get("images"))]
-            if len(batch) < 100:
-                break
-            page += 1
-            time.sleep(1)
-        got = 0
-        for hit in hits[:per]:
-            answer = off_name(hit)
-            if not answer or NOT_SHOWN.search(answer):
-                continue
+        hits = best.get(category, [])
+        for hit in hits:
             items.append((f"off-front-{hit['code']}.jpg", off_us_front(hit["code"], hit["images"]),
-                          {"question": PRODUCT_Q, "answer": answer, "split": "",
+                          {"question": PRODUCT_Q, "answer": off_name(hit), "split": "",
                            "credit": US_FACTS_CREDIT.format(code=hit["code"]), "place": "USA",
                            "place_kind": "market"}))
-            got += 1
-        say(f"  Open Food Facts (USA) {category}: {got} products")
+        say(f"  Open Food Facts (USA) {category}: {len(hits)} products")
     return items
 
 
 def us_site_items(site, want):
     """[(file name, address, row)] for Open Beauty Facts or Open Products Facts products sold in the USA: "What
-    product is this?" and the "What kind of product is this?" and "Is this A or B?" rows its categories allow."""
+    product is this?" and the "What kind of product is this?" and "Is this A or B?" rows its categories allow.
+    Not used: those sites block AI crawlers (off_dump.NOT_BUILT), so this stops at once; the code is kept."""
+    import off_dump
+    off_dump.refuse(f"Open {site.capitalize()} Facts (USA)")
     base, _, name, _ = FACT_SITES[site]
     hits, page = [], 1
     while len(hits) < want * 2 and page <= 10:
@@ -281,12 +278,11 @@ def us_site_items(site, want):
 
 
 def prepare_openfacts_us(source, data_dir, work, cap):
-    """Front photos of products sold in the USA from Open Food Facts (about three quarters), Open Beauty Facts and
-    Open Products Facts, with their name, brand and size; the USA as the place of sale."""
+    """Front photos of Open Food Facts products sold in the USA, with their name, brand and size; the USA as the
+    place of sale. Open Beauty Facts and Open Products Facts (us_site_items) used to give a quarter: they block AI
+    crawlers and have no open bulk route for their photos, so the food products now fill the entry."""
     want = int((cap + source.test) * 1.15)
-    items = us_food_items(int(want * 0.75))
-    items += us_site_items("beauty", int(want * 0.15) + 1)
-    items += us_site_items("products", int(want * 0.10) + 1)
+    items = us_food_items(work, want)
     return fetch_shared(items, os.path.join(data_dir, source.key), workers=4)
 
 
@@ -463,12 +459,12 @@ US_SOURCES = [
            "share-alike", 3000, 30, prepare_commons_us_sa, "about 400 MB of pictures",
            terms="https://creativecommons.org/licenses/by-sa/4.0/",
            terms_summary="CC BY-SA (or GFDL): use with credit, and anything made from it keeps the same licence."),
-    Source("openfacts_us", "Open Food, Beauty and Products Facts: products sold in the USA, their name, brand and "
-                           "size (share-alike)",
+    Source("openfacts_us", "Open Food Facts: products sold in the USA, their name, brand and size (share-alike)",
            "Photos CC BY-SA 3.0, database ODbL 1.0 (https://world.openfoodfacts.org/terms-of-use)",
-           "Open Food Facts, Open Beauty Facts and Open Products Facts contributors, photos CC BY-SA 3.0, data ODbL "
-           "1.0, each product credited in its row, https://world.openfoodfacts.org", "share-alike", 3000, 30,
-           prepare_openfacts_us, "about 1 GB of photos", terms="https://world.openfoodfacts.org/terms-of-use",
+           "Open Food Facts contributors, photos CC BY-SA 3.0, data ODbL 1.0, each product credited in its row, "
+           "https://world.openfoodfacts.org", "share-alike", 3000, 30,
+           prepare_openfacts_us, "about 450 MB of product records (read once, shared by the Open Food Facts "
+           "entries) and 1.2 GB of photos", terms="https://world.openfoodfacts.org/terms-of-use",
            terms_summary="CC BY-SA 3.0 photos and an ODbL database: use with credit, and anything made from them "
                          "keeps the same licence."),
     Source("inaturalist_us_sa", "iNaturalist: wild plants and animals in each US state, photos under CC BY-SA "

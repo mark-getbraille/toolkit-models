@@ -106,8 +106,8 @@ The packs (all open; checked at the source in November 2026):
                            Toronto, markets and festivals. (people_activity_packs.commons_daily_life takes no Canadian
                            category; work in Canada is work_farm_mech_packs'.)
 
-The share-alike, non-commercial and research collections on the same subjects (Commons BY-SA files, Open Food,
-Beauty and Products Facts sold in Canada, iNaturalist BY-SA and BY-NC photos in Canada, Health Canada recall photos,
+The share-alike, non-commercial and research collections on the same subjects (Commons BY-SA files, Open Food
+Facts products sold in Canada, iNaturalist BY-SA and BY-NC photos in Canada, Health Canada recall photos,
 blank CRA forms, the City of Montréal's archive photos), the sign-up collections, the ones looked at and left out and
 the owners to ask for permission are in training-kit/kit/canada_sources.py.
 

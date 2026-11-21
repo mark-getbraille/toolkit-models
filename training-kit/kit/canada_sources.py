@@ -32,12 +32,14 @@ The collections (CANADA_SOURCES):
   share-alike
     commons_ca_sa          Wikimedia Commons: the Canadian house, room, street, road-sign, shop, holiday, eating-out,
                            transit and public-place categories of the open packs, files under CC BY-SA or GFDL.
-    openfacts_ca           Open Food Facts, Open Beauty Facts and Open Products Facts (photos CC BY-SA 3.0, data ODbL
-                           1.0; https://world.openfoodfacts.org/terms-of-use): front photos of products sold in Canada
+    openfacts_ca           Open Food Facts (photos CC BY-SA 3.0, data ODbL 1.0;
+                           https://world.openfoodfacts.org/terms-of-use): front photos of products sold in Canada
                            (countries_tags en:canada) with a North American or GS1 Canada barcode (GS1 prefixes 000 to
-                           139, or 754 and 755), with the name, brand and size people typed in, and, for Open Beauty
-                           and Products Facts, "What languages is the label in?" when the product's record
-                           (languages_codes) says English and French (the food search service does not return it).
+                           139, or 754 and 755), with the name, brand and size people typed in. Read through
+                           off_dump.py (the product database on Hugging Face, the photos on AWS Open Data), never
+                           Open Food Facts' websites, which block AI crawlers. Open Beauty Facts and Open Products
+                           Facts (which gave "What languages is the label in?" from their records) are no longer read:
+                           same block, no open photo route (ca_site_items is kept, and stops at once).
                            Supplements, vitamins, cough drops and throat lozenges are skipped (med_vet_sources.
                            openfacts_supplements takes them).
     inaturalist_ca_sa      iNaturalist research-grade observations in each province and territory, photos CC BY-SA
@@ -91,7 +93,7 @@ import re
 import time
 import unicodedata
 
-from extra_sources import USER_AGENT, get_json, off_name, per_label, research, save, say, OFF_SEARCH
+from extra_sources import USER_AGENT, get_json, off_name, per_label, research, save, say
 from home_sources import commons_sa_items, facts_image, kind_rows, FACT_SITES, FACTS_FIELDS, FACTS_CREDIT
 from more_sources import fetch_shared
 from personal_sources import CHILD_WORDS
@@ -226,44 +228,43 @@ def bilingual_row(hit, extra):
     return None
 
 
-def ca_food_items(want):
+def ca_food_items(work, want):
     """[(file name, address, row)] for Open Food Facts products sold in Canada with a Canadian shelf barcode, the
-    most scanned of each grocery category first, an even share of each."""
+    most scanned of each grocery category first, an even share of each. Read from the product database's slim copy
+    (off_dump), never from Open Food Facts' websites."""
+    import off_dump
     per = per_label(want, len(CA_FOOD_CATEGORIES))
+    wanted = {f"en:{c}": c for c in CA_FOOD_CATEGORIES}
+
+    def labels(hit):
+        """The grocery categories of a product sold in Canada with a Canadian shelf barcode, an English front photo
+        and a name that is not left out; never a supplement."""
+        if "en:canada" not in hit["countries_tags"] or not ca_barcode(hit["code"]) or is_supplement(hit) \
+                or not off_us_front(hit["code"], hit["images"]):
+            return ()
+        answer = off_name(hit)
+        if not answer or NOT_SHOWN.search(answer):
+            return ()
+        return [wanted[t] for t in hit["categories_tags"] if t in wanted]
+
+    best = off_dump.top_by_label(work, labels, per)
     items = []
     for category in CA_FOOD_CATEGORIES:
-        hits, page = [], 1
-        while len(hits) < per and page <= 5:
-            try:
-                data = get_json(OFF_SEARCH, {"q": f'countries_tags:"en:canada" AND categories_tags:"en:{category}"',
-                                             "page_size": 100, "page": page, "sort_by": "-unique_scans_n",
-                                             "fields": "code,product_name,product_name_en,brands,quantity,images,"
-                                                       "categories_tags"})
-            except RuntimeError:
-                break
-            batch = data.get("hits") or []
-            hits += [h for h in batch if ca_barcode(h.get("code")) and off_us_front(h["code"], h.get("images"))
-                     and not is_supplement(h)]
-            if len(batch) < 100:
-                break
-            page += 1
-            time.sleep(1)
-        got = 0
-        for hit in hits[:per]:
-            answer = off_name(hit)
-            if not answer or NOT_SHOWN.search(answer):
-                continue
-            name, url = f"off-front-{hit['code']}.jpg", off_us_front(hit["code"], hit["images"])
+        hits = best.get(category, [])
+        for hit in hits:
             extra = {"split": "", "credit": CA_FACTS_CREDIT.format(code=hit["code"]), "place": CANADA,
                      "place_kind": "market"}
-            items.append((name, url, dict(extra, question=PRODUCT_Q, answer=answer)))
-            got += 1
-        say(f"  Open Food Facts (Canada) {category}: {got} products")
+            items.append((f"off-front-{hit['code']}.jpg", off_us_front(hit["code"], hit["images"]),
+                          dict(extra, question=PRODUCT_Q, answer=off_name(hit))))
+        say(f"  Open Food Facts (Canada) {category}: {len(hits)} products")
     return items
 
 
 def ca_site_items(site, want):
-    """[(file name, address, row)] for Open Beauty Facts or Open Products Facts products sold in Canada."""
+    """[(file name, address, row)] for Open Beauty Facts or Open Products Facts products sold in Canada. Not used:
+    those sites block AI crawlers (off_dump.NOT_BUILT), so this stops at once; the code is kept."""
+    import off_dump
+    off_dump.refuse(f"Open {site.capitalize()} Facts (Canada)")
     base, _, name, _ = FACT_SITES[site]
     hits, page = [], 1
     while len(hits) < want * 2 and page <= 10:
@@ -301,12 +302,11 @@ def ca_site_items(site, want):
 
 
 def prepare_openfacts_ca(source, data_dir, work, cap):
-    """Front photos of products sold in Canada from Open Food Facts (about three quarters), Open Beauty Facts and
-    Open Products Facts, with their name, brand and size; Canada as the place of sale."""
+    """Front photos of Open Food Facts products sold in Canada, with their name, brand and size; Canada as the place
+    of sale. Open Beauty Facts and Open Products Facts (ca_site_items) used to give a quarter: they block AI crawlers
+    and have no open bulk route for their photos, so the food products now fill the entry."""
     want = int((cap + source.test) * 1.15)
-    items = ca_food_items(int(want * 0.75))
-    items += ca_site_items("beauty", int(want * 0.15) + 1)
-    items += ca_site_items("products", int(want * 0.10) + 1)
+    items = ca_food_items(work, want)
     return fetch_shared(items, os.path.join(data_dir, source.key), workers=4)
 
 
@@ -611,12 +611,12 @@ CANADA_SOURCES = [
            "share-alike", 2500, 25, prepare_commons_ca_sa, "about 350 MB of pictures",
            terms="https://creativecommons.org/licenses/by-sa/4.0/",
            terms_summary="CC BY-SA (or GFDL): use with credit, and anything made from it keeps the same licence."),
-    Source("openfacts_ca", "Open Food, Beauty and Products Facts: products sold in Canada, their name, brand and "
-                           "size (share-alike)",
+    Source("openfacts_ca", "Open Food Facts: products sold in Canada, their name, brand and size (share-alike)",
            "Photos CC BY-SA 3.0, database ODbL 1.0 (https://world.openfoodfacts.org/terms-of-use)",
-           "Open Food Facts, Open Beauty Facts and Open Products Facts contributors, photos CC BY-SA 3.0, data ODbL "
-           "1.0, each product credited in its row, https://world.openfoodfacts.org", "share-alike", 2500, 25,
-           prepare_openfacts_ca, "about 800 MB of photos", terms="https://world.openfoodfacts.org/terms-of-use",
+           "Open Food Facts contributors, photos CC BY-SA 3.0, data ODbL 1.0, each product credited in its row, "
+           "https://world.openfoodfacts.org", "share-alike", 2500, 25,
+           prepare_openfacts_ca, "about 450 MB of product records (read once, shared by the Open Food Facts "
+           "entries) and 1 GB of photos", terms="https://world.openfoodfacts.org/terms-of-use",
            terms_summary="CC BY-SA 3.0 photos and an ODbL database: use with credit, and anything made from them "
                          "keeps the same licence."),
     Source("inaturalist_ca_sa", "iNaturalist: wild plants and animals in each Canadian province and territory, "

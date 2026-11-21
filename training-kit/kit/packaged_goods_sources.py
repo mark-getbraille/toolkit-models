@@ -307,8 +307,11 @@ PACKAGED_GOODS_NOT_INCLUDED = {
     "Grocery Products dataset (Tonioni and Di Stefano, 2017)":
         "no licence stated; studio product pictures of an Italian shop labelled by category and product number "
         "only. Not built.",
-    "Open Food, Beauty, Products and Pet Food Facts": "already the share-alike entries openfacts_us and "
-                                                      "openfacts_ca (and the other Open Facts entries).",
+    "Open Food, Beauty, Products and Pet Food Facts": "Open Food Facts is already the share-alike entries "
+                                                      "openfacts_us and openfacts_ca (and openfoodfacts), read "
+                                                      "through its bulk routes (off_dump.py); Open Beauty, Products "
+                                                      "and Pet Food Facts are not built: the source blocks AI "
+                                                      "crawlers.",
     "Walmart, Target, Kroger, Costco, Amazon.com product pages":
         "their terms forbid copying or scraping; already in us_sources.US_NOT_INCLUDED and "
         "US_PERMISSION_CANDIDATES. (Amazon's own open set is ABO, used.)",

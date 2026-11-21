@@ -40,8 +40,9 @@ The collections (EXTRA_SOURCES):
     mapqa                 MapQA: questions about real US choropleth maps (CC BY-SA 4.0).
     hypersim              Hypersim: computer-made pictures of rooms, with the kind of room (CC BY-SA 3.0).
     openfoodfacts         Open Food Facts: product front photos with the name, brand and size (photos CC BY-SA
-                          3.0, data ODbL).
-    openfoodfacts_labels  Open Food Facts: ingredient-list and nutrition-table photos, read out.
+                          3.0, data ODbL). Read through off_dump.py (the product database on Hugging Face, the
+                          photos on AWS Open Data), never Open Food Facts' websites, which block AI crawlers.
+    openfoodfacts_labels  Open Food Facts: ingredient-list and nutrition-table photos, read out (the same route).
     commons_breeds_sa     Wikimedia Commons: animal breed photos under CC BY-SA or GFDL.
     commons_food_sa       Wikimedia Commons: food photos under CC BY-SA or GFDL.
     commons_medical_sa    Wikimedia Commons: medical photos of adults under CC BY-SA or GFDL (content "medical").
@@ -675,9 +676,8 @@ def prepare_hypersim(source, data_dir, work, cap):
 
 # ----------------------------------------------------------------- share-alike: Open Food Facts
 
-OFF_SEARCH = "https://search.openfoodfacts.org/search"
-OFF_PRODUCT = "https://world.openfoodfacts.org/api/v2/product/"
-OFF_IMAGES = "https://images.openfoodfacts.org/images/products/"
+# Read only through Open Food Facts' bulk-reuse routes (off_dump.py: the product database on Hugging Face and the
+# photos on AWS Open Data): its websites shut out AI crawlers in robots.txt and are never read.
 # Food categories (Open Food Facts tags), so the products are spread over the whole shop.
 OFF_CATEGORIES = ("breakfast-cereals", "biscuits", "chocolates", "crisps", "yogurts", "cheeses", "breads",
                   "pastas", "rices", "canned-vegetables", "soups", "sauces", "jams", "fruit-juices", "sodas", "teas",
@@ -688,34 +688,31 @@ OFF_CREDIT = "Open Food Facts contributors, product {code}: photos CC BY-SA 3.0,
 
 
 def off_image(code, images, kind):
-    """The full-size address of a product's chosen English photo of a kind ("front", "ingredients" or "nutrition"),
-    or "" when there is none."""
-    chosen = images.get(f"{kind}_en") or {}
-    if not chosen.get("rev"):
-        return ""
-    path = "/".join([code[:3], code[3:6], code[6:9], code[9:]]) if len(code) > 8 else code
-    return f"{OFF_IMAGES}{path}/{kind}_en.{chosen['rev']}.full.jpg"
+    """The AWS Open Data address of a product's chosen English photo of a kind ("front", "ingredients" or
+    "nutrition"), or "" when there is none (off_dump.photo_url)."""
+    import off_dump
+    return off_dump.photo_url(code, images, kind, "en")
 
 
-def off_products(per_category):
-    """Open Food Facts products in English, the most scanned first, up to per_category from each category:
-    [(category, hit)], each hit with its code, names, brands, quantity, nutriments and chosen photos."""
+def off_products(work, per_category):
+    """Open Food Facts products in English with an English front photo, the most scanned first, up to per_category
+    from each category: [(category, hit)], each hit with its code, names, brands, quantity, chosen photos and row
+    group (off_dump.slim). Read from the product database's slim copy in the work folder (off_dump)."""
+    import off_dump
+    wanted = {f"en:{c}": c for c in OFF_CATEGORIES}
+
+    def labels(hit):
+        """The categories of OFF_CATEGORIES an English product with an English front photo is in."""
+        if hit.get("lang") != "en" or "front_en" not in hit["images"]:
+            return ()
+        return [wanted[t] for t in hit["categories_tags"] if t in wanted]
+
+    best = off_dump.top_by_label(work, labels, per_category)
     found = []
     for category in OFF_CATEGORIES:
-        hits, page = [], 1
-        while len(hits) < per_category and page <= 10:
-            data = get_json(OFF_SEARCH, {"q": f'categories_tags:"en:{category}" AND lang:en', "page_size": 100,
-                                         "page": page, "sort_by": "-unique_scans_n",
-                                         "fields": "code,product_name,product_name_en,brands,quantity,lang,"
-                                                   "nutriments,images"})
-            batch = data.get("hits") or []
-            hits += [h for h in batch if (h.get("images") or {}).get("front_en")]
-            if len(batch) < 100:
-                break
-            page += 1
-            time.sleep(1)
-        found += [(category, h) for h in hits[:per_category]]
-        say(f"  Open Food Facts {category}: {min(len(hits), per_category)} products")
+        hits = best.get(category, [])
+        found += [(category, h) for h in hits]
+        say(f"  Open Food Facts {category}: {len(hits)} products")
     return found
 
 
@@ -739,13 +736,13 @@ def prepare_openfoodfacts(source, data_dir, work, cap):
     name, brand and size people typed in. The most scanned products of 30 food categories, an equal share of each.
     "What product is this?" """
     items = []
-    for category, hit in off_products(per_label(int((cap + source.test) * 1.2), len(OFF_CATEGORIES))):
+    for category, hit in off_products(work, per_label(int((cap + source.test) * 1.2), len(OFF_CATEGORIES))):
         answer, url = off_name(hit), off_image(hit["code"], hit["images"], "front")
         if answer and url:
             items.append((f"off-front-{hit['code']}.jpg", url,
                           {"question": "What product is this?", "answer": answer, "split": "",
                            "credit": OFF_CREDIT.format(code=hit["code"])}))
-    say(f"  Fetching {len(items)} Open Food Facts product photos.")
+    say(f"  Fetching {len(items)} Open Food Facts product photos (AWS Open Data).")
     return fetch_pictures(items, os.path.join(data_dir, source.key), workers=4, pause=0.2)
 
 
@@ -784,30 +781,28 @@ def looks_english(text):
 def prepare_openfoodfacts_labels(source, data_dir, work, cap):
     """Open Food Facts (photos CC BY-SA 3.0, database ODbL 1.0): the English ingredient-list and nutrition-table
     photos of food products, with what people typed from them: "Read the ingredients on this label." and "What does
-    the nutrition label say per 100 grams?" The ingredient text is fetched product by product, gently (one a
-    second). Ingredient lists over 120 words are left out."""
+    the nutrition label say per 100 grams?" The ingredient lists and nutrition values come from the product database
+    (off_dump.details reads them for the chosen products only). Ingredient lists over 120 words are left out."""
+    import off_dump
+    chosen = off_products(work, per_label(int((cap + source.test) * 0.7), len(OFF_CATEGORIES)))
+    facts = off_dump.details(work, [hit for _, hit in chosen])
     items = []
-    for category, hit in off_products(per_label(int((cap + source.test) * 0.7), len(OFF_CATEGORIES))):
+    for category, hit in chosen:
         code, credit = hit["code"], OFF_CREDIT.format(code=hit["code"])
+        more = facts.get(code) or {}
         url = off_image(code, hit["images"], "nutrition")
-        answer = nutrition_answer(hit.get("nutriments") or {})
+        answer = nutrition_answer(more.get("nutriments") or {})
         if url and answer:
             items.append((f"off-nutrition-{code}.jpg", url,
                           {"question": "What does the nutrition label say per 100 grams?", "answer": answer,
                            "split": "", "credit": credit}))
         url = off_image(code, hit["images"], "ingredients")
-        if url:
-            try:
-                product = get_json(OFF_PRODUCT + code + ".json", {"fields": "ingredients_text_en"}).get("product")
-            except RuntimeError:
-                product = None
-            text = clean(re.sub(r"_", "", (product or {}).get("ingredients_text_en") or ""))
-            if text and len(text.split()) <= 120 and looks_english(text):
-                items.append((f"off-ingredients-{code}.jpg", url,
-                              {"question": "Read the ingredients on this label.",
-                               "answer": f"The ingredients are: {text.rstrip('.')}.", "split": "", "credit": credit}))
-            time.sleep(1)
-    say(f"  Fetching {len(items)} Open Food Facts label photos.")
+        text = clean(re.sub(r"_", "", more.get("ingredients_text_en") or ""))
+        if url and text and len(text.split()) <= 120 and looks_english(text):
+            items.append((f"off-ingredients-{code}.jpg", url,
+                          {"question": "Read the ingredients on this label.",
+                           "answer": f"The ingredients are: {text.rstrip('.')}.", "split": "", "credit": credit}))
+    say(f"  Fetching {len(items)} Open Food Facts label photos (AWS Open Data).")
     return fetch_pictures(items, os.path.join(data_dir, source.key), workers=4, pause=0.2)
 
 
@@ -2513,11 +2508,14 @@ EXTRA_SOURCES = [
     Source("openfoodfacts", "Open Food Facts: food products, their name, brand and size (share-alike)",
            "Photos CC BY-SA 3.0, database ODbL 1.0 (world.openfoodfacts.org/terms-of-use)",
            "Open Food Facts contributors, photos CC BY-SA 3.0, data ODbL 1.0, https://world.openfoodfacts.org",
-           "share-alike", 1500, 20, prepare_openfoodfacts, "about 600 MB of photos"),
+           "share-alike", 1500, 20, prepare_openfoodfacts,
+           "about 450 MB of product records (read once, shared by the Open Food Facts entries) and 700 MB of photos"),
     Source("openfoodfacts_labels", "Open Food Facts: ingredient lists and nutrition tables, read out (share-alike)",
            "Photos CC BY-SA 3.0, database ODbL 1.0 (world.openfoodfacts.org/terms-of-use)",
            "Open Food Facts contributors, photos CC BY-SA 3.0, data ODbL 1.0, https://world.openfoodfacts.org",
-           "share-alike", 2000, 20, prepare_openfoodfacts_labels, "about 800 MB of photos"),
+           "share-alike", 2000, 20, prepare_openfoodfacts_labels,
+           "about 450 MB of product records (read once, shared by the Open Food Facts entries), 200 MB of "
+           "ingredient and nutrition records and 900 MB of photos"),
     Source("commons_breeds_sa", "Wikimedia Commons: animal breeds, photos under CC BY-SA or GFDL (share-alike)",
            "Each photo CC BY-SA or GFDL (its Commons page); captions CC0",
            "Wikimedia Commons authors, CC BY-SA or GFDL, each credited in its row, https://commons.wikimedia.org",

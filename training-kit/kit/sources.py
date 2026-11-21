@@ -2859,8 +2859,8 @@ NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(
     s.key for s in LAND_SOURCES if s.key not in _land_ok)
 _add_collections(LAND_SOURCES)
 
-# Home-life collections that are not open (Open Beauty, Products and Pet Food Facts, share-alike Commons home and
-# hairstyle files, DTD patterns); the file may be missing.
+# Home-life collections that are not open (share-alike Commons home and hairstyle files, DTD patterns; the Open
+# Beauty, Products and Pet Food Facts entries are not built: those sites block AI crawlers); the file may be missing.
 try:
     import home_sources as _home  # noqa: E402
 except ImportError as _e:
