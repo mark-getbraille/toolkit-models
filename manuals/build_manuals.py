@@ -637,21 +637,34 @@ def before_1990(doc):
     return bool(years) and max(years) < OLDEST_YEAR
 
 
-def ia_search(fetch, words, collections=("manuals", "computermanuals"), limit=200):
+def _title_words(words):
+    """The title clause of one group of words: each word in quotes, all of them needed ('"car" AND "seat"')."""
+    return " AND ".join('"' + w.replace('"', "") + '"' for w in words.split())
+
+
+def ia_search(fetch, words, collections=("manuals", "computermanuals"), limit=200, any_year=False, any_of=None):
     """Items of the manual collections whose title has the words (each word in quotes), without the copies of
-    manual-copying sites (left out by the search itself, and again by copy_site_item)."""
-    title = " AND ".join('"' + w.replace('"', "") + '"' for w in words.split())
+    manual-copying sites (left out by the search itself, and again by copy_site_item).
+    words ""        every item of the collections (a collection whose items all belong to one category:
+                    the category's "ia_whole")
+    any_of          instead of words: a list of word groups, any one of which the title must have (a mixed
+                    collection searched with a category's words: its "ia_mixed")
+    any_year        keep items older than OLDEST_YEAR too (video games, synthesizers, tractors, old computers)"""
+    if any_of:
+        title = " OR ".join(f"({_title_words(w)})" for w in any_of if w.split())
+    else:
+        title = _title_words(words)
     where = " OR ".join(f"collection:{c}" for c in collections)
     not_copies = " OR ".join(f"identifier:{p}-* OR identifier:{p}_*" for p in COPY_SITE_ITEMS)
     items, page = [], 1
     while len(items) < limit and page <= IA_PAGES and not listing_out_of_time():
         url = "https://archive.org/advancedsearch.php?" + urllib.parse.urlencode(
-            [("q", f"mediatype:texts AND ({where}) AND title:({title}) AND NOT ({not_copies})")] +
+            [("q", f"mediatype:texts AND ({where}){f' AND title:({title})' if title else ''} AND NOT ({not_copies})")] +
             [("fl[]", f) for f in ("identifier", "title", "description", "item_size", "collection", "rights",
                                    "licenseurl", "subject", "source", "originalurl", "year", "date")] +
             [("rows", IA_ROWS), ("page", page), ("output", "json")])
         docs = ((fetch.json(url).get("response") or {}).get("docs") or [])
-        items += [d for d in docs if not copy_site_item(d.get("identifier"), d) and not before_1990(d)]
+        items += [d for d in docs if not copy_site_item(d.get("identifier"), d) and (any_year or not before_1990(d))]
         if len(docs) < IA_ROWS:
             break
         page += 1
@@ -1387,7 +1400,7 @@ def build(key, out_dir, limit, fetch):
         entries = [e for e in entries if e.get("instructions")]
     manual_entries = []
     if cat.get("ia"):
-        per_word = max(1, limit // len(cat["ia"]))
+        per_word = max(1, limit // (len(cat["ia"]) + len(cat.get("ia_whole") or {}) + len(cat.get("ia_mixed") or {})))
         seen = set()
         for words in cat["ia"]:
             if listing_out_of_time():
@@ -1395,7 +1408,7 @@ def build(key, out_dir, limit, fetch):
                 break
             try:
                 docs = ia_search(fetch, words, ("manuals", "computermanuals") + tuple(cat.get("ia_collections", ())),
-                                 per_word)
+                                 per_word, any_year=bool(cat.get("any_year")))
             except (RuntimeError, OutOfTime, ValueError) as e:
                 notes.append(f"Internet Archive search {words!r} failed: {e}")
                 continue
@@ -1404,6 +1417,14 @@ def build(key, out_dir, limit, fetch):
                     seen.add(d.get("identifier"))
                     manual_entries.append(ia_entry(d))
             say(f"{key}: {len(manual_entries)} Internet Archive items after {words!r}")
+    if cat.get("ia_whole") or cat.get("ia_mixed"):
+        manual_entries += ia_collection_entries(fetch, key, cat, limit, notes,
+                                                {m.get("ia") for e in manual_entries for m in e.get("manuals") or [] if m.get("ia")})
+    if cat.get("ia_exclude"):
+        before = len(manual_entries)
+        manual_entries = [e for e in manual_entries if not ia_excluded(e, cat["ia_exclude"])]
+        if before != len(manual_entries):
+            notes.append(f"{before - len(manual_entries)} Internet Archive items left out by the category's rule.")
     if cat.get("wikidata"):
         try:
             wd = wikidata_entries(wikidata_rows(fetch), key)
@@ -1473,6 +1494,47 @@ def build(key, out_dir, limit, fetch):
         say(f"{key}: the files of {filled} Internet Archive manuals found")
     entries += manual_entries
     return write(key, entries, out_dir, notes, fetch.requests if fetch else 0)
+
+
+def ia_collection_entries(fetch, key, cat, limit, notes, seen):
+    """The entries of a category's own Internet Archive collections (manuals/more_categories.py maps them):
+      ia_whole   {collection: kind}: every item of the collection belongs to the category (Hasbro's toys, the
+                 synthesizer manuals, a console's game manuals, the amateur radio library); no title words needed
+      ia_mixed   {collection: kind}: a collection with other products too (Graco's sprayers beside its car seats,
+                 Yamaha's motorcycles beside its keyboards): searched with the category's own words (cat["ia"])
+    Each entry's "kind" says what the collection holds ("Super Nintendo game manual"). Collections outside the
+    Manual Library (the DLARC amateur radio collections) are reached this way too. cat["any_year"]: older items are
+    kept (OLDEST_YEAR is not applied)."""
+    out, sets = [], [(c, k, None) for c, k in (cat.get("ia_whole") or {}).items()]
+    sets += [(c, k, list(cat.get("ia") or [])) for c, k in (cat.get("ia_mixed") or {}).items()]
+    per = max(1, limit // max(1, len(cat.get("ia") or []) + len(sets)))
+    for collection, kind, words in sets:
+        if listing_out_of_time():
+            notes.append("Listing stopped at half the time limit.")
+            break
+        if words is not None and not words:
+            continue
+        try:
+            docs = ia_search(fetch, "", (collection,), per, any_year=bool(cat.get("any_year")), any_of=words)
+        except (RuntimeError, OutOfTime, ValueError) as e:
+            notes.append(f"Internet Archive collection {collection!r} failed: {e}")
+            continue
+        for d in docs:
+            if d.get("identifier") in seen:
+                continue
+            seen.add(d.get("identifier"))
+            e = ia_entry(d)
+            e["kind"] = kind
+            e["collection"] = collection
+            out.append(e)
+        say(f"{key}: {len(out)} items from the category's own collections after {collection!r}")
+    return out
+
+
+def ia_excluded(entry, rule):
+    """True when an Internet Archive entry's name or title matches the category's ia_exclude rule."""
+    words = " ".join([entry.get("name", "")] + [m.get("title", "") for m in entry.get("manuals") or []])
+    return bool(re.search(rule, words, re.I))
 
 
 _EPA = {}            # the EPA data, read once per build and shared by the categories (chemical_labels.EpaData)
