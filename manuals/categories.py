@@ -568,3 +568,9 @@ CATEGORIES = {
 from smoking_vaping import CATEGORY as _SMOKING_VAPING  # noqa: E402
 
 CATEGORIES["smoking_vaping"] = _SMOKING_VAPING
+
+# Pet and livestock supplies: its makers, their access decisions and exclusions are in
+# manuals/pet_livestock_supplies.py (pet- and livestock-specific; household pest control is not in it).
+from pet_livestock_supplies import CATEGORY as _PET_LIVESTOCK  # noqa: E402
+
+CATEGORIES["pet_livestock_supplies"] = _PET_LIVESTOCK

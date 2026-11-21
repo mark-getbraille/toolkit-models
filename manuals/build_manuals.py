@@ -55,6 +55,10 @@ Sources, and why each may be used by a program:
       NFA and automatic firearms. Never anything for making a suppressor (suppressor and baffle kits, drilled cups,
       filter adapters), automatic-fire conversion parts (auto sears, lightning links, "switches", conversion
       kits), reloading equipment or armorer's manuals (categories.FIREARMS_EXCLUDE).
+  Makers' own manual libraries (category pet_livestock_supplies, manuals/pet_livestock_supplies.py)   crates,
+      aquarium and terrarium equipment, incubators and brooders, clippers, feeders and fountains, fences and
+      chargers, waterers, horse tack and flea and tick collars, with Internet Archive manuals; every maker "link" in
+      this first version (listed for the person to open); EPA's pet pesticide pages and label system as guidance.
   Makers' own manual libraries (category smoking_vaping, manuals/smoking_vaping.py)   vaporizers, e-rigs, water
       pipes, hookahs, rolling machines, grinders and nicotine e-cigarettes, under the same robots.txt and terms rules
       (read on 2026-11-19): Puffco is READ (its product support pages, the manual PDFs on its shop's file host,
