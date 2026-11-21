@@ -30,7 +30,7 @@ on:
   workflow_dispatch:
     inputs:
       keys:
-        description: "Keys separated by commas (osbooks, osbooks:<repository>, siyavula, dspace, nonprofit, fieldmanuals, government, courses, guides, laws, laws-more, group:<group>, guide:<name>, law:<name>, pdf:<name>, publications, pub:<group>, pub:<source>, pub:<source>:<piece>, medicines, med:rx, med:otc, med:rx:<letters>, med:otc:<letters>, med:animal, pictures), or all"
+        description: "Keys separated by commas (osbooks, osbooks:<repository>, siyavula, dspace, nonprofit, fieldmanuals, government, courses, guides, laws, laws-more, group:<group>, guide:<name>, law:<name>, pdf:<name>, publications, pub:<group>, pub:<source>, pub:<source>:<piece>, medicines, med:rx, med:otc, med:rx:<letters>, med:otc:<letters>, med:animal, opencourses, personaluse, k12, k12:<name>, course:<source>, course:<source>:<piece>, pictures), or all"
         required: true
         default: "all"
       schedule:
@@ -144,6 +144,12 @@ jobs:
               gh release view medicines > /dev/null 2>&1 || gh release create medicines --title "Medicines: official drug labels" \
                 --notes "The official US labels of human and animal medicines (DailyMed), one ZIM book per group, for the Digital Accessibility Toolkit (textbooks/medications.py). Information, not medical advice: ask a pharmacist, doctor or veterinarian. Listed in the textbooks release's textbooks.json."
             fi
+            case "$release" in
+              libretexts-*|courses-*) gh release view "$release" > /dev/null 2>&1 || gh release create "$release" \
+                --title "Open courses: $release" --notes "Open courses and textbooks for the Digital Accessibility Toolkit (textbooks/courses.py), each with its licence and credit on its welcome page; listed in the textbooks release's textbooks.json." ;;
+              personal-*) gh release view "$release" > /dev/null 2>&1 || gh release create "$release" \
+                --title "Personal use only: $release" --notes "Courses under non-commercial licences, for personal use only (textbooks/courses.py); each book's licence and credit are on its welcome page; listed in the textbooks release's textbooks.json." ;;
+            esac
             gh release view "$release" > /dev/null 2>&1 || gh release create "$release" --title "Publications: $release" \
               --notes "Periodicals, journals, reports, news and history for the Digital Accessibility Toolkit (textbooks/periodicals.py); listed in the textbooks release's textbooks.json."
             files=$(python -c "import json,sys;print(' '.join(json.load(open(sys.argv[1]))['files']))" "$manifest")

@@ -172,6 +172,9 @@ def fingerprint(key):
         if kind in ("nonprofit", "guide", "k12"):
             return guide_sign(next(e for e in sources.NONPROFIT + sources.GOV_GUIDES + sources.K12_GUIDES
                                    if e["name"] == name))
+        if kind == "course":
+            import courses                       # here, not at the top: courses imports the builder
+            return courses.sign(key)
         if kind == "law":
             return law_sign(next(e for e in sources.LAWS + sources.LAWS_MORE if e["name"] == name))
         if kind == "pub":

@@ -1035,9 +1035,13 @@ def expand_keys(words):
     for w in words or ["all"]:
         if w == "all":
             keys += every
-        elif w == "k12":                          # school books, kindergarten to grade 12
-            keys += [f"k12:{e['name']}" for e in K12_GUIDES] + pdfs("k12") + ["siyavula"] + \
-                [f"osbooks:{r}" for r in ("physics", "statistics", "biology-bundle", "college-physics-bundle")]
+        elif w in ("k12", "opencourses", "personaluse") or w.startswith("course:"):
+            # School books (K-12), the open courses, the personal-use courses (courses.py)
+            import courses                        # here, not at the top: courses imports the builder
+            if w == "k12":
+                keys += [f"k12:{e['name']}" for e in K12_GUIDES] + pdfs("k12") + ["siyavula"] + \
+                    [f"osbooks:{r}" for r in ("physics", "statistics", "biology-bundle", "college-physics-bundle")]
+            keys += courses.expand_keys([w])
         elif w == "osbooks":
             keys += [f"osbooks:{r}" for r in OSBOOKS]
         elif w == "nonprofit":

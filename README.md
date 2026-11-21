@@ -147,6 +147,20 @@ and why):
   leaflet (Medication Guide), then the rest of the label, in the label's own words. Every page says "Information,
   not medical advice: ask a pharmacist or doctor" (animals: "ask a veterinarian"). In their own release
   (`medicines`), rebuilt each month after DailyMed's monthly release, old versions kept.
+- **School books, K-12** (key `k12`, group "School books (K-12)"): Illustrative Mathematics' student books for
+  grades 6 to 8, Algebra 1, Geometry and Algebra 2 and its K-5 family materials (CC BY 4.0), Open Up HS Math (CC
+  BY-NC 4.0, personal use only), the Utah State Board of Education's science books for kindergarten to high school
+  (CC BY-NC-SA 3.0, personal use only), Siyavula (more grades) and OpenStax's high school books (keys `k12:<name>`,
+  `pdf:utah_science_<grade>`); every book shows its grade level.
+- **Open courses and personal-use courses** (`textbooks/courses.py`, keys `opencourses`, `personaluse`,
+  `course:<source>` and `course:<source>:<piece>`): every LibreTexts book with an allowed licence (from its full
+  PDF, split back into its pages, each with its own licence line), BCcampus' open textbooks from its Kolibri Studio
+  channel, and, marked "personal use only", Khan Academy, CK-12 and EngageNY from their Kolibri Studio channels
+  (Khan Academy is never read from its website), every MIT OpenCourseWare course from its offline zip, and Core
+  Knowledge's free materials. Big sources are split into pieces so no build job takes more than 4 hours; each
+  source has its own release (`libretexts-<library>`, `courses-bccampus`, `personal-...`). What was looked at and
+  not built (SkillsCommons, the BCcampus and eCampusOntario sites, Open Course Library, OER Commons, Saylor,
+  TED-Ed, OpenLearn ...) is in `courses.NOT_INCLUDED`, with the reason.
 
 How the books are made accessible: one page per chapter and section with headings; an index page listing every unit,
 chapter and section; every figure's number, the publisher's description of the picture and its caption as text

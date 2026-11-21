@@ -2205,6 +2205,10 @@ def build(keys, out_dir, cache=None, pictures=False, local_osbooks=None, date=No
             import medications                   # here, not at the top: medications imports this module
             manifests.update(medications.build_medicines([key], out_dir, cache, date))
             continue
+        if key.startswith("course:"):            # open courses, school books, personal-use courses (courses.py)
+            import courses                       # here, not at the top: courses imports this module
+            manifests.update(courses.build_courses([key], out_dir, cache, date))
+            continue
         if key.startswith("pub:"):               # periodicals, journals, reports, news, history (periodicals.py)
             import periodicals                   # here, not at the top: periodicals imports this module
             # "pub:voa:recent+pub:voa:2026": pieces built one after another in this one job
@@ -2324,12 +2328,17 @@ def merge(manifest_paths, existing=None):
     left = [x for x in left if not (x["title"] in seen or seen.add(x["title"]))]
     import periodicals                           # here, not at the top: periodicals imports this module
     import medications                           # (the same)
+    import courses                               # (the same)
     return {"built": datetime.date.today().isoformat(), "release": RELEASE,
             "books": sorted(books.values(), key=lambda b: (b["group"], b["title"].casefold())),
             "left_out": left, "not_included": [{"title": t, "reason": r} for t, r in sources.NOT_INCLUDED +
-                                               periodicals.NOT_INCLUDED + medications.NOT_INCLUDED],
-            "licence_lines": {**sources.LICENCE_LINES, **periodicals.LICENCE_LINES, **medications.LICENCE_LINES},
-            "groups": sources.GROUPS, "group_notes": {**periodicals.GROUP_NOTES, **medications.GROUP_NOTES},
+                                               periodicals.NOT_INCLUDED + medications.NOT_INCLUDED +
+                                               courses.NOT_INCLUDED],
+            "licence_lines": {**sources.LICENCE_LINES, **periodicals.LICENCE_LINES, **medications.LICENCE_LINES,
+                              **courses.LICENCE_LINES},
+            "groups": sources.GROUPS, "group_notes": {**periodicals.GROUP_NOTES, **medications.GROUP_NOTES,
+                                                      **courses.GROUP_NOTES},
+            "kiwix_labels": courses.KIWIX_LABELS,
             "pieces_done": sorted(done),
             "pieces_failed": {k: n for k, n in sorted(failed.items()) if k not in done}}
 
