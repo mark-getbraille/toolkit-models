@@ -2270,3 +2270,7 @@ if __name__ == "__main__":
 # reports, the US Government Manual, ERIC open full texts, GOV.UK guides, UK safety alerts, USDA Farmers' Bulletins):
 # publications_more.py adds them to SOURCES, DRIVERS, ALL_PIECES, LICENCE_LINES and NOT_INCLUDED when imported.
 import publications_more  # noqa: E402,F401
+# The reference-directory repositories of 2026-11-21 that come in pieces (open-access journals by ISSN, JSESD, the
+# Federal Register's rules, the Congressional Record, hearings on disability, Wikinews, Frontiers for Young Minds, the
+# Internet Archive's collections by subject): directory_pubs.py adds them in the same way.
+import directory_pubs  # noqa: E402,F401
