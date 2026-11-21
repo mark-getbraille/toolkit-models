@@ -80,7 +80,9 @@ reference), publisher and credit, country, licence (non-commercial ones are mark
 language, size, SHA-256, number of pages, date (when the file was made), `published` (when the publisher published or
 last revised the work: `YYYY-MM-DD`, `YYYY-MM` or `YYYY`, empty when the source does not say; the toolkit ranks newer
 works higher), `region` (the state or province a law or guide applies to), and the official address of the
-publisher's original PDF (and EPUB) when there is one. `groups` maps each group key to the collection name. The original PDFs are never copied here; the toolkit downloads them from the publisher.
+publisher's original PDF (and EPUB) when there is one, and `originals`, every original file and page with its
+licence and whether it may be downloaded (see "Originals" below). `groups` maps each group key to the collection
+name. The original PDFs are never copied here; the toolkit downloads them from the publisher.
 
 The files are ordinary ZIM files, so the free Kiwix apps (Windows, Android, iOS, kiwix-serve) open them too.
 
@@ -176,6 +178,45 @@ The workflow `.github/workflows/textbooks.yml` builds the books when someone sta
 `law:us_code_ada`; `sources.expand_keys` lists them). `python -m pytest textbooks` tests the builder with a made-up book and a made-up website.
 
 Each book keeps its own licence; the credit and licence are on its welcome page and in `textbooks.json`.
+
+### Originals: the files each book and manual was made from (for the Program Downloader)
+
+Every book in `textbooks.json` and every entry of every manual collection index has a field `originals`: the
+publisher's own files and pages the book or entry was made from, with what may be done with each. The owner's
+Program Downloader reads the two catalogues from the GitHub releases and downloads every original whose
+`may_download` is `true` into `B:\Original sources`; the others are links the owner opens in a browser.
+
+Where the catalogues are (release assets; the addresses always give the newest copy):
+
+| What | Release | Asset name | Address |
+| --- | --- | --- | --- |
+| Books catalogue | `textbooks` | `textbooks.json` | https://github.com/mark-getbraille/toolkit-models/releases/download/textbooks/textbooks.json |
+| Manuals catalogue | `manuals` | `manuals.json` | https://github.com/mark-getbraille/toolkit-models/releases/download/manuals/manuals.json |
+| One manual collection's index | `manuals` | `manuals-<key>.<YYYY-MM-DD>.json.gz` (gzipped JSON) | the `url` of the newest entry of `manuals.json` `collections.<key>.versions` (or `RELEASE/` + `collections.<key>.file`) |
+
+`textbooks.json` lists every book, including those whose ZIM file is in another release (`medicines`,
+`libretexts-*`, `courses-*`, `personal-*`, `publications-*`): the book's `originals` are in its entry in
+`textbooks.json` (`books[]`). `manuals.json` lists the collections (`collections.<key>`, with `original_count` and
+`downloadable_count`); the manual records, each with its `originals`, are the `entries[]` of the collection's index
+file.
+
+Each item of `originals`:
+
+| Field | Meaning |
+| --- | --- |
+| `url` | the original's own address at the publisher (never a copy in this repository) |
+| `kind` | `pdf`, `epub`, `zip`, `html` (a web page), `csv`, `xml`, `json`, `txt`, `mp3`, `sqlite`, `jpg`, `png` ... |
+| `size` | bytes, `0` when not known |
+| `sha256` | the file's SHA-256 when the builder downloaded it, else `""` (a web page changes, so it has none) |
+| `licence` | the licence or rights as shown to the owner ("CC BY 4.0", "CC BY-NC-SA 4.0, not for commercial use, personal use only", "a US government work (public domain)", "belongs to its maker ...") |
+| `may_download` | `true` only when the licence allows copying AND the host's robots.txt (checked when the catalogue was built) and terms allow automated download; otherwise `false` |
+| `why` | the reason in plain words, for both answers (for `false`: open the link in a browser) |
+
+Notes for a downloader: personal-use originals (`licence` ending "personal use only") may be downloaded for the
+owner's own use only. Books built before this field existed get it when the catalogue is merged; their robots.txt
+answer may be "not checked" (so `may_download` is `false`) until the book is built again. The older fields
+`original_pdf` and `original_epub` (`{url, size, sha256}`) stay for compatibility; they are also in `originals`.
+Download one file at a time, with a pause between requests to the same site, and keep the `url` as given.
 
 ### Automatic updates, and where old versions are
 

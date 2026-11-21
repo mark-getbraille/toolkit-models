@@ -409,6 +409,17 @@ NO_CHANGES = {
     "W3C Document License": "no-changes",
 }
 
+# Sites whose terms forbid or limit downloads by programs even where robots.txt would allow them: an original on
+# one of these hosts gets "may_download": false with this reason in textbooks.json "originals"
+# (build_textbooks.download_permission); the owner can still open the link in a browser. Every other original is
+# downloadable only when its licence allows copying and the site's robots.txt allows programs (checked at build time).
+NO_AUTOMATED_DOWNLOAD = {
+    "www.khanacademy.org": "Khan Academy's terms limit automated access (khanacademy.org is never read here; its "
+                           "lessons come only through Kolibri Studio).",
+    "www.ck12.org": "CK-12's own terms of use, not a standard open licence (ck12.org is never read here; its lessons "
+                    "come only through Kolibri Studio).",
+}
+
 # What was looked at and not included, with the reason (shown in textbooks.json and the toolkit's manual).
 NOT_INCLUDED = [
     ("BCcampus Open Textbooks (Canada), from its own site", "Its Pressbooks site answers automated requests with a "

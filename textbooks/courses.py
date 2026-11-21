@@ -637,6 +637,7 @@ def kolibri_books(name, topic_slug, work, cache=None, left_out=None, only=None):
         topics = {r[0]: r[1] for r in rows if r[2] == "topic"}
         parents = {r[0]: r[7] for r in rows}
         counts, licences, owners, pages = {}, [], set(), []
+        originals = [{"url": f"{STUDIO}/content/databases/{spec['id']}.sqlite3", "kind": "sqlite"}]
         number = 0
         for r in rows:
             if r[2] == "topic":
@@ -655,6 +656,9 @@ def kolibri_books(name, topic_slug, work, cache=None, left_out=None, only=None):
             got = kolibri_resource_pages(db, r, work, max(number, 1), unit, counts, cache)
             if got:
                 pages += got
+                files = kolibri_files(db, r[0])           # the resource's own files are its originals
+                originals.extend({"url": kolibri_file_url(c, ext), "kind": ext}
+                                 for preset in ("document", "epub", "html5") for c, ext, _l in files.get(preset, []))
                 licences.append(short)
                 if r[6]:
                     owners.add(r[6])
@@ -675,6 +679,7 @@ def kolibri_books(name, topic_slug, work, cache=None, left_out=None, only=None):
                                           + "." if counts else ""),
             notice=("Rights holders named in the channel: " + ", ".join(sorted(owners)) + ".") if owners else "",
             changes="its documents, transcripts and web pages made into web pages, one per resource")
+        book.originals = originals
         book.pages = pages
         return book
     return items, make, (lambda item: f"{spec['title']}: {item[1]}")
@@ -714,6 +719,9 @@ def ocw_in_piece(course, piece):
     return ocw_department(course) == dept and bucket(course, OCW_BUCKETS.get(dept, 1)) == int(k)
 
 
+OCW_ZIPS = {}                    # {course: the address of its offline zip}, filled by ocw_zip
+
+
 def ocw_zip(course, work, cache=None):
     """The local copy of a course's offline zip (its download page names it), or "" when it has none."""
     page = f"{OCW}/courses/{course}/download/"
@@ -721,6 +729,7 @@ def ocw_zip(course, work, cache=None):
     if not m:
         return ""
     url = urllib.parse.urljoin(page, m.group(1))
+    OCW_ZIPS[course] = url                     # its address, for the book's "originals"
     if B.head_size(url) > OCW_MAX_ZIP:
         return "too big"
     return download(url, os.path.join(work, "ocw", f"{course}.zip"))
@@ -850,6 +859,9 @@ def ocw_book(course, work, cache=None, left_out=None):
         notice="MIT OpenCourseWare material is licensed CC BY-NC-SA 4.0 unless a resource says otherwise; "
                "third-party material in a course is the copyright of its owners.",
         changes="the course's offline pages and PDFs made into web pages, with formulas and transcripts as text")
+    if OCW_ZIPS.get(course):                    # the course's own offline zip is its original
+        book.originals.append({"url": OCW_ZIPS[course], "kind": "zip", "size": os.path.getsize(path),
+                               "sha256": B.file_sha256(path)})
     book.pages = pages
     return book
 
@@ -905,7 +917,7 @@ def ckf_book(item, work, cache=None, left_out=None):
     if not pdfs:
         left_out.append({"title": f"Core Knowledge: {title}", "reason": "Its page links no PDF."})
         return None
-    pages, version, checked = [], "", None
+    pages, version, checked, originals = [], "", None, []
     for k, pdf in enumerate(pdfs, 1):
         local = download(pdf, os.path.join(work, "coreknowledge", hashlib.sha256(pdf.encode()).hexdigest()[:24] +
                                            ".pdf"))
@@ -920,6 +932,7 @@ def ckf_book(item, work, cache=None, left_out=None):
         version = B.pdf_date(local) or version
         name = os.path.splitext(urllib.parse.unquote(pdf.rsplit("/", 1)[-1]))[0].replace("_", " ")
         pages += pdf_pages_as_pages(local, f"pdf-{k}", name, k, "")
+        originals.append({"url": pdf, "kind": "pdf", "size": os.path.getsize(local), "sha256": B.file_sha256(local)})
         os.remove(local)
     if not pages:
         return None
@@ -936,6 +949,7 @@ def ckf_book(item, work, cache=None, left_out=None):
         notice="Core Knowledge materials are licensed under a Creative Commons Attribution-NonCommercial-ShareAlike "
                "licence; Core Knowledge®, Core Knowledge Curriculum Series™ and CKLA are trademarks of the Core "
                "Knowledge Foundation.")
+    book.originals = originals
     book.pages = pages
     return book
 

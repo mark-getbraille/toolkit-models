@@ -89,6 +89,8 @@ GROUP_NOTES = {
     "news": "News ages fast: these stories are kept for reference, and the Assistant prefers newer items.",
 }
 MAX_ITEMS = 2500                 # the most items in one piece (a guard against a source that changed shape)
+MAX_ORIGINALS = 500              # the most item addresses listed in a book's "originals" (every item's own original
+                                 # address is on its page in the book in any case)
 
 CC_BY_4 = "https://creativecommons.org/licenses/by/4.0/"
 
@@ -2134,6 +2136,11 @@ def make_book(name, piece, items):
                     f'(<a href="{B.esc(lic_url)}">{B.esc(lic_url)}</a>).'
                     f'{(" " + B.UNCHANGED) if whole else ""}</p>')
         book.pages.append(B.Page(path, i["title"], "".join(head) + "\n" + i["body"] + tail, 0, i["unit"]))
+    if spec.get("repo"):                       # the source's own open repository (TEI files), as a zip
+        book.originals.append({"url": spec["repo"].rstrip("/") + "/archive/HEAD.zip", "kind": "zip"})
+    if spec["driver"] == "crs":                 # the list of every report, with each report's files
+        book.originals.append({"url": CRS_SITE + "reports.csv", "kind": "csv"})
+    book.originals += [{"url": i["url"], "kind": "html"} for i in items[:MAX_ORIGINALS]]   # each item's original
     book.published = PUBLISHED.get((name, piece)) or B.newest_date([i["date"] for i in items])
     book.series, book.piece, book.item_dates = name, piece, [i["date"] for i in items]
     book.incomplete = INCOMPLETE.get((name, piece))

@@ -1166,6 +1166,9 @@ def make_book(kind, piece, medicines, fda, only=False):
         letter = title[:1].upper() if title[:1].isalpha() else "0-9"
         pages.append(B.Page(path, title, body, 0, letter))
         dates += [lab.date for _f, lab in med.labels]
+        # Each label's official SPL XML file (what the page was made from) is one of the book's originals.
+        book.originals += [{"url": f"{DM_SERVICES}/spls/{lab.setid}.xml", "kind": "xml"} for _f, lab in med.labels
+                           if lab.setid]
         for brand in sorted(med.brands | med.canada, key=str.casefold):
             brand_rows.append((brand, title, path))
     if not pages:

@@ -206,11 +206,13 @@ def nps_book(cache=None, left_out=None):
             used.add(path)
             copies = {}
             for k, mp3 in enumerate(sound["mp3s"], 1):
+                book.originals.append({"url": mp3, "kind": "mp3"})
                 data = recording(mp3, cache, left_out)
                 if data:
                     media = f"media/{path}{f'-{k}' if k > 1 else ''}.mp3"
                     book.resources[media] = (data, "audio/mpeg")
                     copies[mp3] = media
+            book.originals.append({"url": sound["url"], "kind": "html"})
             pages.append(B.Page(path, sound["title"], page_body(sound, copies), 0, group))
     book.pages = [B.Page("about-this-book", "About this book", about_body())] + pages if pages else []
     return book

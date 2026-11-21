@@ -2,7 +2,7 @@
 checks that only the animal groups of the gallery are taken (and the chickens), that each page's title, caption,
 description, credit, audio transcript and MP3 address are read, that a page without a recording is passed over, and
 that the book is written with its pages grouped by kind of animal, the recordings copied into it (public domain:
-the reference-library audit of 2026-11-21), links to the original recordings and the licence line.
+the reference-library audit of 2026-11-21), links to the original recordings, its "originals" and the licence line.
 
 Run it from the repository's folder:   python3 -m pytest textbooks/test_animal_sounds.py
 """
@@ -79,6 +79,9 @@ def test_book(monkeypatch, tmp_path):
     assert "public domain" in book.pages[0].body and "xeno-canto" in book.pages[0].body
     entry = B.write_book(book, str(tmp_path), versioned=True)
     assert entry["licence_kind"] == "open" and entry["group"] == "science" and entry["article_count"] >= 6
+    mp3s = [o for o in entry["originals"] if o["kind"] == "mp3"]
+    assert len(mp3s) == 4 and all(o["may_download"] for o in mp3s)
+    assert entry["originals"][-1]["url"] == A.GALLERY and entry["originals"][-1]["kind"] == "html"
 
 
 def test_recording_stays_a_link_when_not_an_mp3(monkeypatch):

@@ -10,7 +10,7 @@ What is built (sources.py lists every book, the licence lines checked by hand, a
   siyavula   Siyavula's South African school textbooks (mathematics, physical and natural sciences), from its
              online reader
   dspace     reference works of international bodies (WHO, World Bank, FAO) from their open repositories (PDF)
-  sounds     animal sounds of US national parks as text and links (animal_sounds.py: the NPS Sound Gallery)
+  sounds     animal sounds of US national parks as text with the recordings (animal_sounds.py: NPS Sound Gallery)
   pdf        official PDF documents (sources.PDF_DOCS): US military field manuals with Distribution Statement A
              (survival, first aid, map reading, knots, hygiene, cold weather, mountaineering; key fieldmanuals) and
              Alberta's publications under its Open Government Licence (key government), US Navy nonresident
@@ -150,6 +150,9 @@ class Book:
                                  # for personal use only (sources.PERSONAL_USE); shown with the licence
     version: str = ""            # the publisher's own version or edition of what was read ("channel version 27",
                                  # "updated 2026-03-07"), "" when the source gives none
+    originals: list = field(default_factory=list)  # more original files besides original_pdf, original_epub and
+                                 # source: [{url, kind?, size?, sha256?}] (a course's zip, a label's XML, a
+                                 # recording); originals_of() adds the licence and may_download to each
 
 
 def licence_short(text, url=""):
@@ -354,6 +357,7 @@ def index_page(book):
     if book.original_pdf.get("url"):
         out.append(f'<p>The publisher\'s original PDF: <a href="{esc(book.original_pdf["url"])}">'
                    f'{esc(book.original_pdf["url"])}</a>.</p>')
+    out.append(originals_html(getattr(book, "checked_originals", None) or originals_of(book)))
     out.append("<h2>Contents</h2>")
     unit, chapter_open = None, False
     out.append("<ul>")
@@ -384,6 +388,136 @@ def index_page(book):
     return re.sub(r"<ul></ul>", "", "\n".join(out))
 
 
+# ====================================================================== originals (the files the book was made from)
+
+# The kind of an original file from the end of its address ("html" for a web page).
+ORIGINAL_KINDS = {".pdf": "pdf", ".epub": "epub", ".zip": "zip", ".csv": "csv", ".json": "json", ".xml": "xml",
+                  ".mp3": "mp3", ".sqlite3": "sqlite", ".txt": "txt", ".gz": "gz", ".tsv": "tsv", ".htm": "html",
+                  ".html": "html", ".cfm": "html", ".php": "html", ".aspx": "html"}
+
+
+def original_kind(url):
+    """The kind of an original from its address: "pdf", "epub", "zip", "csv", "xml", "mp3", "sqlite" ... or "html"
+    for a web page (LibreTexts' ".../pdf" download address is a PDF)."""
+    path = urllib.parse.urlsplit(url).path.lower()
+    if path.endswith("/pdf"):
+        return "pdf"
+    ext = os.path.splitext(path)[1]
+    return ORIGINAL_KINDS.get(ext, "html")
+
+
+def source_address(text):
+    """The address at the start of a book's source ("https://www.ck12.org/ (read only through Kolibri Studio)" ->
+    "https://www.ck12.org/"), "" when it does not start with one."""
+    m = re.match(r"\s*(https?://\S+)", text or "")
+    return m.group(1) if m else ""
+
+
+def robots_for_originals(url):
+    """True or False: whether the site's robots.txt lets programs download url (allowed_by_robots); None when it
+    could not be checked (then may_download is false)."""
+    try:
+        return bool(allowed_by_robots(url))
+    except Exception:  # noqa: BLE001 - not checked: said in "why"
+        return None
+
+
+def download_permission(url, copy_ok, licence_text, robots=None):
+    """(may_download, why) of one original: true only when the licence allows copying (copy_ok), the site's terms
+    do not forbid programs (sources.NO_AUTOMATED_DOWNLOAD) and its robots.txt allows downloading url (robots(url):
+    True, False, or None when not checked). The owner can always open the link in a browser."""
+    host = (urllib.parse.urlsplit(url).hostname or "").lower()
+    if not copy_ok:
+        return False, (f"The licence ({licence_text}) does not allow copying; open the link in a browser to read "
+                       "it.")
+    if host in sources.NO_AUTOMATED_DOWNLOAD:
+        return False, sources.NO_AUTOMATED_DOWNLOAD[host] + " Open the link in a browser."
+    allowed = robots(url) if robots is not None else None
+    if allowed is None:
+        return False, ("The site's robots.txt was not checked when this catalogue was made; open the link in a "
+                       "browser (the next build checks it).")
+    if not allowed:
+        return False, f"The robots.txt of {host} does not allow programs to download it; open the link in a browser."
+    return True, (f"The licence ({licence_text}) allows copying"
+                  f"{' for personal use' if sources.PERSONAL_USE in licence_text else ''}, and the robots.txt of "
+                  f"{host} allows programs to download it.")
+
+
+def originals_list(candidates, copy_ok, licence_text, robots=None):
+    """The "originals" field from candidates ([{url, kind?, size?, sha256?}], the first of an address wins): each
+    {url, kind, size, sha256, licence, may_download, why} (see download_permission). Robots answers are asked once
+    per address."""
+    out, seen = [], set()
+    for c in candidates:
+        url = (c or {}).get("url") or ""
+        if not url.startswith(("http://", "https://")) or url in seen:
+            continue
+        seen.add(url)
+        may, why = download_permission(url, copy_ok, licence_text, robots)
+        out.append({"url": url, "kind": c.get("kind") or original_kind(url), "size": int(c.get("size") or 0),
+                    "sha256": c.get("sha256") or "", "licence": licence_text, "may_download": may, "why": why})
+    return out
+
+
+def copy_allowed(licence):
+    """True when a licence allows copying the original as it is (every licence a built book may have: open,
+    share-alike, non-commercial (personal use), and the no-changes ones, since an original is copied unchanged)."""
+    return bool(licence_kind(licence, True) or licence_kind(licence_short(licence), True))
+
+
+def originals_of(book, robots=None):
+    """The originals of a book (textbooks.json "originals"): its original PDF, original EPUB, the files its driver
+    recorded (book.originals) and its source page, each with its licence and may_download (download_permission).
+    robots(url) answers whether robots.txt allows it (None: not checked, so may_download is false)."""
+    candidates = []
+    if book.original_pdf.get("url"):
+        candidates.append(dict(book.original_pdf, kind="pdf"))
+    if book.original_epub.get("url"):
+        candidates.append(dict(book.original_epub, kind="epub"))
+    candidates += list(book.originals)
+    if source_address(book.source):
+        candidates.append({"url": source_address(book.source)})
+    return originals_list(candidates, copy_allowed(book.licence),
+                          licence_words(book.licence, book.unchanged, book.personal_use), robots)
+
+
+def entry_originals(entry, robots=None):
+    """The originals of a catalogue entry built before the field existed (from its original_pdf, original_epub and
+    source), for merge()."""
+    candidates = [dict(entry.get("original_pdf") or {}, kind="pdf"), dict(entry.get("original_epub") or {},
+                                                                           kind="epub"),
+                  {"url": source_address(entry.get("source", ""))}]
+    licence = entry.get("licence", "")
+    text = entry.get("licence_text") or licence_words(licence, entry.get("unchanged", False),
+                                                      entry.get("personal_use", False))
+    return originals_list(candidates, copy_allowed(licence), text, robots)
+
+
+def human_size(size):
+    """"12.3 MB", "512 KB", "" for 0."""
+    if not size:
+        return ""
+    for unit, n in (("GB", 1 << 30), ("MB", 1 << 20), ("KB", 1 << 10)):
+        if size >= n:
+            return f"{size / n:.1f} {unit}"
+    return f"{size} bytes"
+
+
+def originals_html(originals):
+    """The welcome page's list of originals: each address as a link, with its kind, size, licence and whether
+    programs may download it (and why not)."""
+    if not originals:
+        return ""
+    items = []
+    for o in originals:
+        facts = ", ".join(x for x in (o["kind"].upper(), human_size(o["size"])) if x)
+        may = "may be downloaded" if o["may_download"] else "open it in a browser"
+        items.append(f'<li><a href="{esc(o["url"])}">{esc(o["url"])}</a> ({esc(facts)}; {esc(may)}). '
+                     f'{esc(o["why"])}</li>')
+    return ("<h2>Originals</h2><p>The original files and pages this book was made from, where to download them:</p>"
+            "<ul>" + "".join(items) + "</ul>")
+
+
 def content_sha256(book):
     """A checksum of a book's text (title, licence, pages and pictures), the same for two builds of the same text
     although their ZIM files differ (each file has its own id and date): updates.merge_versions keeps a new version
@@ -406,6 +540,7 @@ def write_book(book, out_dir, date=None, versioned=False):
     <name>_<YYYY-MM>.zim (replaced by the next build in the same month: news pieces, VOA years)."""
     date = date or datetime.date.today()
     file_id = f"{book.name}.{date:%Y-%m-%d}" if versioned else f"{book.name}_{date:%Y-%m}"
+    book.checked_originals = originals_of(book, robots_for_originals)   # robots.txt checked once, for both uses
     w = ZimWriter()
     pages = book.pages
     for i, p in enumerate(pages):
@@ -453,7 +588,8 @@ def manifest_entry(book, file_id, path, count, date):
     or province, "" for a whole country), size, sha256, article_count, file, url, description, source, original_pdf and
     original_epub ({url, size, sha256} or {}), unchanged (true for a work kept whole with its text unchanged),
     practice_note (where a non-US work may differ from US practice, "" for a US work), grades (school grades,
-    "" when not known), personal_use (true: "personal use only") and version (the publisher's own version)."""
+    "" when not known), personal_use (true: "personal use only"), version (the publisher's own version) and
+    originals (every original file and page, with its licence and may_download: originals_of; see the README)."""
     return {
         "id": file_id, "name": book.name, "title": book.title, "subject": book.subject, "level": book.level,
         "group": book.group, "publisher": book.publisher, "credit": book.publisher, "country": book.country,
@@ -467,6 +603,7 @@ def manifest_entry(book, file_id, path, count, date):
         "article_count": count, "file": os.path.basename(path), "url": f"{RELEASE}/{os.path.basename(path)}",
         "description": book.description, "source": book.source, "authors": book.authors,
         "original_pdf": book.original_pdf, "original_epub": book.original_epub,
+        "originals": getattr(book, "checked_originals", None) or originals_of(book),
         "practice_note": practice_note_of(book), "grades": book.grades,
     }
 
@@ -992,6 +1129,9 @@ def osbooks_books(repo, pictures=False, catalogue=None, left_out=None):
             description=plain(cms.get("description", ""))[:600] if cms else "", authors=authors or ob.authors,
             original_pdf={"url": pdf, "size": head_size(pdf), "sha256": ""} if pdf else {},
             flavour="maxi" if pictures else "nopic", published=iso_date(cms.get("publish_date") or ""))
+        folder = os.path.basename(os.path.normpath(repo))
+        if folder.startswith("osbooks-"):          # the book's own source: its repository (CNXML), as a zip
+            book.originals.append({"url": f"https://github.com/openstax/{folder}/archive/HEAD.zip", "kind": "zip"})
         book.pages = ob.pages()
         book.resources = ob.resources
         out.append(book)
@@ -1552,6 +1692,7 @@ def webguide_book(entry, cache=None, left_out=None):
             if re.search(pattern, url):
                 page_title += f" ({words})"
         book.pages.append(Page(paths[url], page_title, body, 0, unit))
+        book.originals.append({"url": url, "kind": "html"})      # each page of the guide is one of its originals
     if skipped:
         left_out.append({"title": title, "reason": f"{skipped} pages could not be read or are not allowed by the "
                          "site's robots.txt."})
@@ -2187,6 +2328,7 @@ def lawdoc_book(entry, cache=None, left_out=None):
                 published=entry.get("published") or published,
                 changes=entry.get("changes") or "made into web pages, one per section or part, with editorial notes "
                                                  "and the site's menus left out; not an official version")
+    book.originals = [{"url": url} for url, _text in texts]   # the official text files and pages read
     paths = set()
     for url, text in texts:
         for unit, page_title, body in law_pages(text, entry, url):
@@ -2241,7 +2383,7 @@ def build(keys, out_dir, cache=None, pictures=False, local_osbooks=None, date=No
                         b = None
                     if b is not None:
                         books.append(b)
-            elif key == "sounds":            # animal sounds as text and links (animal_sounds.py)
+            elif key == "sounds":            # animal sounds as text with the recordings (animal_sounds.py)
                 import animal_sounds             # here, not at the top: animal_sounds imports this module
                 b = animal_sounds.nps_book(cache, left_out)
                 if b is not None:
@@ -2317,10 +2459,12 @@ def build(keys, out_dir, cache=None, pictures=False, local_osbooks=None, date=No
     return manifests
 
 
-def merge(manifest_paths, existing=None):
+def merge(manifest_paths, existing=None, robots=None):
     """The catalogue textbooks.json from the manifests: the newest release of each book, the left-out books,
     sources.NOT_INCLUDED and the names of the groups (sources.GROUPS: group key -> collection name). existing:
-    the textbooks.json published before (books it has that no manifest built again are kept)."""
+    the textbooks.json published before (books it has that no manifest built again are kept). A book built before
+    the "originals" field existed gets it here (entry_originals), robots(url) answering for robots.txt (None: not
+    checked, so its may_download is false until it is built again)."""
     import updates                               # here, not at the top: updates imports this module
     books, done = {}, set((existing or {}).get("pieces_done", []))
     failed = dict((existing or {}).get("pieces_failed", {}))
@@ -2338,6 +2482,9 @@ def merge(manifest_paths, existing=None):
         done |= set(data.get("done", []))
         for k in data.get("failed", []):
             failed[k] = failed.get(k, 0) + 1
+    for name, entry in books.items():
+        if "originals" not in entry:              # built before the field existed
+            books[name] = dict(entry, originals=entry_originals(entry, robots))
     seen = set()
     left = [x for x in left if not (x["title"] in seen or seen.add(x["title"]))]
     import periodicals                           # here, not at the top: periodicals imports this module
@@ -2374,7 +2521,7 @@ def main(argv=None):
         if a.existing and os.path.exists(a.existing):
             with open(a.existing, encoding="utf-8") as f:
                 existing = json.load(f)
-        data = merge(a.merge, existing)
+        data = merge(a.merge, existing, robots_for_originals)
         os.makedirs(a.out, exist_ok=True)
         with open(os.path.join(a.out, "textbooks.json"), "w", encoding="utf-8") as f:
             json.dump(data, f, indent=1, ensure_ascii=False)
