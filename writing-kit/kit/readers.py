@@ -149,7 +149,7 @@ def w3c_message(page):
     }
 
 
-def read_w3c(fetcher, say=print, lists=None, periods_per_list=4, pages_per_period=40, **_):
+def read_w3c(fetcher, say=print, lists=None, periods_per_list=3, pages_per_period=30, **_):
     """Email records from the public HTML archives of a few W3C lists (newest periods first, skipping the current
     one), one page at a time with the wait fetch.py keeps."""
     for name in lists or W3C_LISTS:

@@ -49,6 +49,7 @@ FOOTER_MARKERS = [
     r"^Sent from my \w+", r"^Get Outlook for", r"^Please consider the environment",
     r"^This (e-?mail|message)( and any attachments)? (is|are|may be) (confidential|intended)",
     r"^\*{5,}", r"^={5,}", r"^-- ?$",
+    r"^.{0,40}Enron Capital & Trade Resources",       # left over from Enron's quoted headers
 ]
 
 
@@ -113,7 +114,9 @@ SENSITIVE = {
         r"boyfriend", r"fianc\w*", r"honeymoon", r"in-laws?", r"memorial", r"condolences?", r"sympathy",
         r"(mom|dad|mum|mommy|daddy|grandpa|grandma|granny|aunt|uncle|cousin|nephew|niece|stepson|stepdaughter)s?",
         r"adopt\w*", r"home ?study", r"hubby", r"wife", r"husband", r"spouse", r"pregnan\w*", r"birth",
-        r"miss you", r"love you", r"xoxo", r"hugs", r"sweetheart", r"honey", r"darling", r"babe"),
+        r"miss you", r"love you", r"xoxo", r"hugs", r"sweetheart", r"honey", r"darling", r"babe", r"dating",
+        r"date night", r"cute", r"in love", r"crush", r"chicks?", r"girls", r"partying", r"partied", r"shenanigans",
+        r"hook(ed)? up", r"exes", r"my ex"),
     "money trouble": _words(
         r"debts?", r"bankrupt\w*", r"foreclos\w*", r"loans?", r"mortgage", r"evict\w*", r"can'?t afford",
         r"cannot afford", r"unemploy\w*", r"salary", r"salaries", r"paychecks?", r"payroll", r"garnish\w*",
@@ -125,7 +128,7 @@ SENSITIVE = {
         r"bonus(es)?", r"compensation", r"offer letter", r"interview\w*", r"resume", r"résumé",
         r"job (offer|search|application)", r"hiring", r"promotion", r"demot\w*", r"reprimand\w*", r"written warning",
         r"separation agreement", r"retention", r"pension", r"401\(?k\)?", r"benefits enrollment", r"candidates?",
-        r"job (openings?|opportunit\w*)", r"recruit\w*", r"headhunter", r"job references?", r"separations?",
+        r"job (openings?|opportunit\w*)", r"recruit\w*", r"headhunter", r"job references?", r"as a reference", r"separations?",
         r"waivers?", r"pay ?stubs?", r"visas?", r"immigration", r"green card", r"background check"),
     "sexual content": _words(
         r"sex\w*", r"nude\w*", r"naked", r"porn\w*", r"erotic\w*", r"condoms?", r"intimate", r"affair",
@@ -138,7 +141,8 @@ SENSITIVE = {
         r"passwords?", r"passcodes?", r"PIN", r"SSN", r"social security", r"privileged", r"confidential",
         r"attorney-client", r"do not forward", r"log-?in details", r"usernames?", r"subpoena\w*", r"litigation",
         r"settlement", r"deposition", r"indict\w*", r"testimony", r"court ?house", r"courts?", r"mediation",
-        r"TRO", r"sub ?poena\w*", r"complaint against", r"filed a complaint", r"plaintiff", r"defendant"),
+        r"TRO", r"sub ?poena\w*", r"complaint against", r"filed a complaint", r"plaintiff", r"defendant",
+        r"jury", r"filing a complaint", r"violen\w*", r"threats?", r"threaten\w*"),
     "crime or police": _words(
         r"police", r"arrest\w*", r"jail", r"prison", r"crime", r"criminal", r"drugs?", r"stolen", r"theft",
         r"assault\w*", r"DUI", r"court date", r"fraud\w*", r"weapons?", r"guns?", r"shotguns?", r"rifles?",
@@ -181,7 +185,7 @@ DETAIL_PATTERNS = [
     ("[card number]", re.compile(r"\b(?:\d{4}[ -]){3}\d{1,7}\b")),
     ("[account number]", re.compile(
         r"(?<=\b)(?:account|acct|a/c|policy|member|customer|routing|employee|badge|licen[cs]e|passport|"
-        r"confirmation|order|invoice|ticket|case|reference|ref)\s*(?:no\.?|number|num\.?|#)?(?:\s+is)?\s*[:#]?\s*"
+        r"confirmation|order|invoice|ticket|case|reference|ref|tag|deal)\s*(?:no\.?|number|num\.?|#)?(?:\s+is)?\s*[:#]?\s*"
         r"(?=[A-Z0-9\-]*\d)[A-Z0-9][A-Z0-9\-]{3,}", re.I)),
     ("[phone number]", re.compile(r"\+\d{1,3}[\s.\-]?\(?\d{1,4}\)?(?:[\s.\-]?\d{2,4}){2,4}\b")),
     ("[phone number]", re.compile(
@@ -189,6 +193,7 @@ DETAIL_PATTERNS = [
         re.I)),
     ("[phone number]", re.compile(r"\b(?:x|ext\.?|extension)\s*\d{3,6}\b", re.I)),
     ("[phone number]", re.compile(r"\b\d{3}-\d{4}\b")),
+    ("[phone number]", re.compile(r"(?<![\d.\-/])\b\d-\d{4}\b(?![\-/]\d)")),        # internal extensions: 3-6731
     ("[street address]", re.compile(
         r"\b\d{1,6}\s+(?:[NSEW]\.?\s+)?(?:[A-Z][A-Za-z]+\.?\s+){1,4}(?:" + STREET_WORDS + r")\b\.?"
         r"(?:,?\s*(?:Suite|Ste|Apt|Unit|Floor|Fl|#)\.?\s*\w+)?")),

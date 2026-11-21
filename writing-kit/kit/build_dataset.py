@@ -235,6 +235,9 @@ def main(argv=None):
     parser.add_argument("--enron-file", default="", help="a copy of enron_mail_20150507.tar.gz already on this "
                                                          "computer (then nothing is downloaded for Enron)")
     parser.add_argument("--w3c-lists", default="", help="W3C list names separated by commas")
+    parser.add_argument("--w3c-periods", type=int, default=3, help="how many archive periods (three months each) "
+                                                                    "to read from each W3C list")
+    parser.add_argument("--w3c-pages", type=int, default=30, help="at most this many messages per W3C period")
     parser.add_argument("--cache", default="", help="a folder to keep downloaded pages and files in, so a rebuild "
                                                     "does not download them again")
     args = parser.parse_args(argv)
@@ -262,8 +265,10 @@ def main(argv=None):
         options = {}
         if source.key == "enron" and args.enron_file:
             options["local_file"] = args.enron_file
-        if source.key == "w3c" and args.w3c_lists:
-            options["lists"] = [x.strip() for x in args.w3c_lists.split(",") if x.strip()]
+        if source.key == "w3c":
+            options["periods_per_list"], options["pages_per_period"] = args.w3c_periods, args.w3c_pages
+            if args.w3c_lists:
+                options["lists"] = [x.strip() for x in args.w3c_lists.split(",") if x.strip()]
         got, counts[source.key] = build_source(source, fetcher, args.per_source, say, seen, options)
         say(f"{source.name}: {len(got)} examples kept.")
         rows += got

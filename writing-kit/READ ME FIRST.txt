@@ -1,0 +1,101 @@
+Writing Kit
+
+What it is
+This kit gathers examples of short, everyday writing to teach Qwen, your own model, to write emails and other
+informal messages: replies, requests, thank-you notes, follow-ups, scheduling, complaints, short announcements,
+text messages and memos. It makes training files of pairs: an instruction, such as "Write a short, polite email to
+a colleague declining the meeting", and the message that answers it.
+It is separate from the picture training kit. It needs no graphics card and nothing to install except Python.
+
+How to run it on Windows
+1. Install Python 3 from python.org if you do not have it. Tick "Add Python to PATH" in the installer.
+2. Open the writing-kit folder and press Enter on "Build Writing Data.cmd".
+   This uses only the open and share-alike sources. It takes a minute or two.
+3. Or press Enter on "Build Writing Data with Personal Sources.cmd".
+   This also uses the Enron emails and the W3C mailing lists, which are personal use only (see Licences below).
+   It takes longer: about 40 minutes, because the W3C site is asked for one page every few seconds.
+4. When it says "Done", open the folder "output" in the writing-kit folder.
+Each window says what it is doing, one line at a time, so your screen reader can follow it. Close the window to stop.
+
+How to run it from a command prompt
+Go to the writing-kit folder, then type one of these:
+  python kit\build_dataset.py --out output
+  python kit\build_dataset.py --out output --personal
+  python kit\build_dataset.py --out output --personal --per-source 1000 --cache cache
+--per-source sets how many examples to keep from each source (300 if you leave it out).
+--cache keeps every downloaded page in a folder, so building again does not download it again.
+--sources picks sources by name, separated by commas: oasst2, dolly, enron, w3c.
+--enron-file uses a copy of the Enron file you already have instead of downloading it.
+
+What you get, in the output folder
+train.jsonl: the training examples, one per line.
+validation.jsonl: about one example in twenty, kept back to check the training.
+samples.txt: the first ten examples from each source, in plain text. Read this first.
+build-report.txt: how many messages were read, kept and dropped, and why, for each source.
+ATTRIBUTION.txt: the credits and licences. Keep it with anything you make from the files.
+sources-not-used.txt: the sources that were checked and cannot be used, and why.
+
+What is in each example
+instruction: what to write, with the tone and the audience, for example "Write a very short, friendly and casual
+  reply to a colleague thanking them for the quick turnaround."
+response: the message itself, scrubbed of personal details.
+messages: the same pair as a chat, user then assistant, the way most training programs want it.
+kind, form, tone, audience, length: what the rules found, for example kind "declining", form "email".
+source, licence, licence_class, credit: where the example came from and under what licence.
+For real emails the instruction is made from the message itself by simple rules, with no AI and nothing online.
+For the OpenAssistant and Dolly examples, the instruction is the request a person wrote.
+
+Licences
+Every source has one of three classes, the same as in the picture kit:
+open: may be used and shared for any purpose, with credit.
+share-alike: may be used for any purpose with credit, but anything made from it that you share must have the same
+  licence.
+personal use only: no licence lets others re-use it. Use it only to train your own model on your own computer, and
+  do not share the files or the trained add-on.
+Without the personal choice, the files have only open and share-alike examples.
+
+The sources used
+OpenAssistant Conversations, OASST2: open, Apache License 2.0. Requests people wrote for an email, letter, note or
+  message, with the best answer a person wrote. Machine-written answers are left out.
+databricks-dolly-15k: share-alike, CC BY-SA 3.0. Requests and answers written by Databricks employees; only the ones
+  asking for an email, letter, note or message.
+Enron emails: personal use only. Real office email from about 2000 and 2001, made public by the US energy regulator
+  FERC during its investigation and shared by Carnegie Mellon University for research. Only each person's own sent
+  mail is used, never attachments. One thing for you to decide: the university's robots.txt blocks two companies'
+  AI crawlers, Meta's and ByteDance's, along with some search engines. It does not block AI crawlers in general and
+  allows this kit, but if you would rather not use it, leave out the personal choice or use --sources.
+W3C mailing lists: personal use only. Public messages on the W3C web accessibility lists (w3c-wai-ig, w3c-wai-gl,
+  public-aria). People who post there let W3C publish their messages, not others, so this is personal use only.
+
+Sources that cannot be used, in short (the full reasons are in sources-not-used.txt)
+Hillary Clinton's State Department emails: the site's robots.txt turns all programs away, and they are scanned pages.
+Jeb Bush's Florida emails: the release site is gone, and the release exposed people's Social Security numbers.
+Sarah Palin's Alaska emails, Michigan's Flint emails and other state releases: only scanned pages, no text download.
+National Archives email records: the catalogue's robots.txt turns all programs away.
+MuckRock: its robots.txt says no AI training.
+Apache mailing lists: their robots.txt turns programs away unless the Apache Foundation allows them.
+IETF mailing lists: the posts are licensed only to the IETF Trust, and the bulk download is closed to programs.
+Stack Exchange: the official download's terms now forbid AI training.
+Machine-written email sets on Hugging Face, and sets that are non-commercial or have no licence.
+
+Privacy
+Real emails carry real people's details, so every message is scrubbed before it can become an example, and most are
+dropped. SCRUBBING.txt explains every rule in plain words. In short:
+- only the writer's own words are kept: earlier messages quoted below, forwards and footers are cut off;
+- messages about health, family, money trouble, jobs and HR, sex, children, passwords, legal matters, crime,
+  gambling and drinking, or with swearing, are dropped whole;
+- email addresses, phone numbers, street addresses, ID, card and account numbers, dates of birth and web addresses
+  are replaced with words in square brackets, such as [phone number];
+- people's names are replaced with [Name], [Name 2] and so on, and the writer's own name with [Your name];
+- only short, ordinary messages that read well are kept;
+- attachments are never downloaded or used.
+No method is perfect. Read samples.txt, and if you find a name or detail that got through, tell the kit's maker so
+the rules can be improved.
+
+Being a good guest on other people's sites
+The kit reads each site's robots.txt and obeys it, leaves out any site that says no to AI training, waits between
+requests (10 seconds where a site asks for it, otherwise 3), and downloads only official files and pages. It never
+logs in and sends no personal details.
+
+Checking the kit
+The tests use only made-up messages. From the writing-kit folder: python -m pytest tests

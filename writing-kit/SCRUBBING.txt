@@ -1,0 +1,77 @@
+How the Writing Kit protects people's privacy
+
+Email collections hold the details of ordinary people who never expected their messages to be read by a computer
+program. So every message goes through these steps, in this order, before it can become a training example. The
+rules are in kit\scrub.py, and the tests in tests\test_scrub.py try each rule on made-up messages.
+
+Step 1. Only the writer's own words
+Everything below the writer's own text is cut off: earlier messages quoted in a reply (lines that start with ">",
+"-----Original Message-----", "On Monday ... wrote:", copied From and To lines), forwarded messages, and footers
+such as "Sent from my iPhone" or confidentiality notices. Date and time stamps left by mail programs are removed,
+and lines broken at about 75 characters are joined back into paragraphs.
+
+Step 2. Sensitive messages are dropped whole
+A message is not used at all if it, or its subject line, touches any of these:
+- health and medical matters: doctors, hospitals, illness, medicines, therapy, pregnancy, injuries;
+- family and personal life: husbands, wives, children, parents, weddings, divorce, funerals, adoption, romance;
+- money trouble and personal banking: debt, loans, mortgages, salaries, pay, bank and card accounts, taxes;
+- jobs and HR: performance reviews, firing, lay-offs, resignations, discipline, bonuses, hiring, interviews,
+  recruiting, visas, pay stubs;
+- anything sexual;
+- children: kids, sons, daughters, babies, school, homework;
+- passwords, confidential and legal matters: passwords, "confidential", "privileged", lawyers, courts, lawsuits;
+- crime and police, weapons;
+- gambling, drinking and partying;
+- swearing and insults.
+These lists are wide on purpose: it is better to lose a harmless message than to keep a private one.
+
+Step 3. Personal details are replaced
+Each of these is replaced with a word in square brackets:
+- email addresses, including old Lotus Notes addresses: [email address]
+- web addresses: [link]
+- phone numbers in any common form, and extensions: [phone number]
+- Social Security numbers and similar: [ID number]
+- card numbers: [card number]
+- account, order, invoice, ticket, policy and reference numbers: [account number]
+- dates of birth: [date of birth]
+- street addresses and post office boxes: [street address]
+- ZIP codes and postcodes: [postcode]
+- computer IP addresses: [IP address]
+- any other number of six digits or more: [number]
+
+Step 4. Names are replaced
+Every person's name becomes [Name], then [Name 2], [Name 3] and so on; the same person keeps the same placeholder
+all through the message. The writer's own name at the end becomes [Your name], and the job title, company and phone
+lines under it are cut off. Public officials are not treated differently: everyone gets a placeholder.
+Names are found in several ways at once:
+- the names and addresses in the message's own From, To and Cc lines;
+- the word after a greeting such as "Hi", "Dear" or "Good morning";
+- the word after a title such as Mr, Ms, Dr or Senator;
+- a list of common first names and surnames;
+- any capitalised word that is not an ordinary English word and not a well-known place or company. This also
+  replaces some company and place names. That is on purpose: losing a place name is better than keeping a surname.
+Some first names are also ordinary words (Will, May, Bill, Mark, Dawn). These count as a name only where a name
+fits: in the middle of a sentence, before a comma at the start of a line, or before words like "said" or "has".
+
+Step 5. Only good, short, ordinary messages are kept
+A message is dropped if it is:
+- shorter than about 12 words or longer than about 200;
+- an automatic message, newsletter, out-of-office reply or forward;
+- mostly numbers, a table or a list;
+- mostly capital letters, or written without capital letters at the start of sentences;
+- not ordinary English sentences;
+- so full of placeholders (more than about one word in eight) that it no longer reads as a message;
+- only a note that sends an attachment;
+- the same as a message already kept.
+
+Attachments
+Attachments are never downloaded, read or kept. The Enron file has none, multi-part messages are skipped, and on
+the W3C pages only the message text is read, never the attachment links.
+
+The writing datasets (OpenAssistant and Dolly)
+These requests and answers were written for sharing, but the same steps 2 to 5 are applied to them, and to the
+request as well as the answer.
+
+What to do if something gets through
+No method catches everything. Read samples.txt after a build. If you find a real name, address or private detail,
+note the example and tell the kit's maker, so the rule that missed it can be fixed and a test added.

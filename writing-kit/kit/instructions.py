@@ -151,12 +151,12 @@ def guess_tone(text, kind):
     """"friendly and casual", "polite and professional" or "firm but polite"."""
     if kind == "complaint":
         return "firm but polite"
-    casual = len(re.findall(r"\b(hi|hey|thanks|cheers|great|cool|awesome|guys|folks|gonna|yeah|ok|okay|lol|dude|"
+    casual = len(re.findall(r"\b(hi|hey|cheers|great|cool|awesome|guys|folks|gonna|yeah|ok|okay|lol|dude|"
                             r"wanna|kinda|btw|thx)\b|!|"
                             r"\b\w+'(ll|re|ve|s|t|d)\b", text, re.I))
     formal = len(re.findall(r"\b(dear|regards|sincerely|kindly|please find|i would like|we would like|"
                             r"furthermore|however|therefore|respectfully|appreciate)\b", text, re.I))
-    return "friendly and casual" if casual > formal + 1 else "polite and professional"
+    return "friendly and casual" if casual > formal else "polite and professional"
 
 
 def guess_form(text, kind, audience):

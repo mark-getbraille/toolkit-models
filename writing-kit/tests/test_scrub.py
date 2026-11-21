@@ -34,6 +34,11 @@ def test_phone_numbers_in_many_forms_are_replaced():
         assert not any(ch.isdigit() for ch in out), (number, out)
 
 
+def test_internal_extensions_are_replaced_but_not_ranges():
+    assert scrub.scrub_details("Call me at 3-6731 if needed.") == "Call me at [phone number] if needed."
+    assert "2-4" in scrub.scrub_details("Pages 2-4 cover it.")
+
+
 def test_id_card_and_account_numbers_are_replaced():
     out = scrub.scrub_details("SSN 123-45-6789, card 4111 1111 1111 1111, account number is 99887766, "
                               "order #AB12345.")
@@ -57,7 +62,7 @@ def test_street_addresses_postcodes_and_ip_addresses_are_replaced():
 
 
 def test_long_numbers_are_replaced():
-    assert scrub.scrub_details("Deal 4410937 is booked.") == "Deal [number] is booked."
+    assert scrub.scrub_details("Batch 4410937 is booked.") == "Batch [number] is booked."
 
 
 # ----------------------------------------------------------------- names
@@ -144,20 +149,21 @@ def test_wrapped_lines_are_joined_back():
 # ----------------------------------------------------------------- sensitive messages are dropped
 
 def test_sensitive_messages_are_dropped():
-    examples = {
-        "health or medical": "I can't come in, I have a doctor's appointment about my surgery next week.",
-        "family or personal life": "My wife and I are going through a divorce, so I need Friday off.",
-        "money trouble": "I am behind on my mortgage and cannot afford the payment this month.",
-        "HR, jobs or discipline": "Her performance review went badly and HR wants a written warning on file.",
-        "sexual content": "That party was full of sexy people, let me tell you about it.",
-        "children": "Can you pick up the kids from school at three?",
-        "passwords, confidential or legal": "My password is tulip42, keep it confidential.",
-        "crime or police": "The police called about the stolen van.",
-        "gambling, drinking or partying": "I put a bet on the game and got drunk after.",
-        "swearing or insults": "That vendor is a bunch of idiots, damn it.",
-        "personal banking": "Move $500 from our checking account to the credit card.",
-    }
-    for subject, text in examples.items():
+    examples = [
+        ("health or medical", "I can't come in, I have a doctor's appointment about my surgery next week."),
+        ("family or personal life", "My wife and I are going through a divorce, so I need Friday off."),
+        ("money trouble", "I am behind on my mortgage and cannot afford the payment this month."),
+        ("HR, jobs or discipline", "Her performance review went badly and HR wants a written warning on file."),
+        ("sexual content", "That party was full of sexy people, let me tell you about it."),
+        ("children", "Can you pick up the kids from school at three?"),
+        ("passwords, confidential or legal", "My password is tulip42, keep it confidential."),
+        ("crime or police", "The police called about the stolen van."),
+        ("gambling, drinking or partying", "I put a bet on the game and got drunk after."),
+        ("swearing or insults", "That vendor is a bunch of idiots, damn it."),
+        ("personal banking", "Move $500 from our checking account to the credit card."),
+        ("family or personal life", "You always looked cute when we were dating."),
+    ]
+    for subject, text in examples:
         cleaned, why = clean("Hello there", text + " Let me know what you think about it soon.")
         assert cleaned is None and why == "sensitive: " + subject, (subject, why)
 
