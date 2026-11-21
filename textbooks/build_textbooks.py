@@ -26,6 +26,9 @@ What is built (sources.py lists every book, the licence lines checked by hand, a
              Laws (King's Printer Licence) and UK acts from legislation.gov.uk (Open Government Licence); one book
              per law; key laws, laws-more (sources.LAWS_MORE: larger regulations), or law:<name>
   group:<g>  every guide, PDF and law of one group (group:health, group:disability, group:consumer, group:law)
+  med        medicines (medications.py): the official US labels of prescription and over-the-counter medicines
+             (one book per first letter) and of pet and farm animal medicines, from DailyMed; key medicines, or
+             med:rx:<letters>, med:otc:<letters>, med:animal
 Every book records "published": when the publisher published or last revised it (the toolkit ranks newer ones
 higher).
 Each book's licence is read again from its source while building; a book whose licence is not allowed
@@ -53,7 +56,8 @@ Usage:
   python textbooks/build_textbooks.py --local-osbooks path/to/osbooks-repo --out build/textbooks   (no network)
 Each run writes <id>.zim for each book and manifest-<key>.json (the books' catalogue entries and the left-out
 ones). Keys: see sources.expand_keys (osbooks, osbooks:<repository>, siyavula, dspace, nonprofit, nonprofit:<name>,
-fieldmanuals, government, courses, pdf:<name>, guides, guide:<name>, laws, laws-more, law:<name>, group:<g>, all).
+fieldmanuals, government, courses, pdf:<name>, guides, guide:<name>, laws, laws-more, law:<name>, group:<g>, medicines,
+med:<piece>, all).
 """
 
 import argparse
@@ -136,6 +140,8 @@ class Book:
     notice: str = ""             # a statement the licence asks to show with the work (on the welcome page)
     unchanged: bool = False      # kept whole with its text unchanged, only its format converted (a NoDerivatives or
                                  # other no-changes licence allows that: sources.WHOLE_AND_UNCHANGED)
+    redirects: list = field(default_factory=list)  # [(path, title, target path)]: more titles that lead to a page
+                                 # (a medicine's brand names, medications.py), found by the title search
 
 
 def licence_short(text, url=""):
@@ -360,6 +366,8 @@ def content_sha256(book):
         h.update((part or "").encode("utf-8") + b"\0")
     for p in book.pages:
         h.update(f"{p.path}\0{p.title}\0{p.unit}\0{p.body}\0".encode("utf-8"))
+    for path, title, target in book.redirects:
+        h.update(f"{path}\0{title}\0{target}\0".encode("utf-8"))
     for path in sorted(book.resources):
         h.update(path.encode("utf-8") + hashlib.sha256(book.resources[path][0]).digest())
     return h.hexdigest()
@@ -381,6 +389,9 @@ def write_book(book, out_dir, date=None, versioned=False):
     w.add("style.css", "", STYLE, "text/css")
     for path, (data, mimetype) in book.resources.items():
         w.add(path, "", data, mimetype)
+    for path, title, target in book.redirects:
+        if not w.has(path):
+            w.redirect(path, title, target)
     w.metadata({
         "Name": book.name, "Title": book.title[:30] if len(book.title) > 30 else book.title,
         "Language": book.language, "Creator": book.publisher, "Publisher": "GetBraille.com (toolkit-models)",
@@ -2084,6 +2095,10 @@ def build(keys, out_dir, cache=None, pictures=False, local_osbooks=None, date=No
     if local_osbooks:
         plan = [f"local:{local_osbooks}"]
     for key in plan:
+        if key.startswith("med:"):               # medicines: human and veterinary drug labels (medications.py)
+            import medications                   # here, not at the top: medications imports this module
+            manifests.update(medications.build_medicines([key], out_dir, cache, date))
+            continue
         if key.startswith("pub:"):               # periodicals, journals, reports, news, history (periodicals.py)
             import periodicals                   # here, not at the top: periodicals imports this module
             # "pub:voa:recent+pub:voa:2026": pieces built one after another in this one job
@@ -2202,12 +2217,14 @@ def merge(manifest_paths, existing=None):
     seen = set()
     left = [x for x in left if not (x["title"] in seen or seen.add(x["title"]))]
     import periodicals                           # here, not at the top: periodicals imports this module
+    import medications                           # (the same)
     return {"built": datetime.date.today().isoformat(), "release": RELEASE,
             "books": sorted(books.values(), key=lambda b: (b["group"], b["title"].casefold())),
             "left_out": left, "not_included": [{"title": t, "reason": r} for t, r in sources.NOT_INCLUDED +
-                                               periodicals.NOT_INCLUDED],
-            "licence_lines": {**sources.LICENCE_LINES, **periodicals.LICENCE_LINES}, "groups": sources.GROUPS,
-            "group_notes": periodicals.GROUP_NOTES, "pieces_done": sorted(done),
+                                               periodicals.NOT_INCLUDED + medications.NOT_INCLUDED],
+            "licence_lines": {**sources.LICENCE_LINES, **periodicals.LICENCE_LINES, **medications.LICENCE_LINES},
+            "groups": sources.GROUPS, "group_notes": {**periodicals.GROUP_NOTES, **medications.GROUP_NOTES},
+            "pieces_done": sorted(done),
             "pieces_failed": {k: n for k, n in sorted(failed.items()) if k not in done}}
 
 
