@@ -106,7 +106,7 @@ def test_firearms_collection_rule():
     assert not B.ia_excluded(entry("Ruger 10/22 Instruction Manual"), rule)
     for bad in ("TM 9-1005-319-10 Rifle M16A2 operator's manual", "Department of the Army field manual rifle",
                 "Solvent trap baffle kit instructions", "Auto sear installation", "Glock switch",
-                "Winchester catalog 1990", "Reloading manual 9mm", "Armorer's manual"):
+                "Winchester catalog 1990", "Reloading manual 9mm", "Armorer's manual", "Rifle_Parts_Catalog_1950"):
         assert B.ia_excluded(entry(bad), rule), bad
 
 
@@ -114,3 +114,10 @@ def test_word_search_unchanged_for_old_categories():
     fetch = FakeArchive({"manuals": [{"identifier": "x", "title": "Toaster T1 manual", "year": "1985"}]})
     assert B.ia_search(fetch, "toaster", ("manuals",), 10) == []              # before 1990: left out, as before
     assert 'title:("toaster")' in fetch.queries[-1]
+
+
+def test_farm_rule_reads_underscored_titles():
+    rule = C.CATEGORIES["farm_equipment"]["ia_exclude"]
+    entry = lambda t: {"name": t, "manuals": [{"title": t}]}          # noqa: E731
+    assert B.ia_excluded(entry("New_Idea_571_Rectangular_Baler_Parts_Catalog_"), rule)
+    assert not B.ia_excluded(entry("John_Deere_Four_Row_Tractor_Corn_Planter_490_1946_"), rule)

@@ -1534,7 +1534,7 @@ def ia_collection_entries(fetch, key, cat, limit, notes, seen):
 def ia_excluded(entry, rule):
     """True when an Internet Archive entry's name or title matches the category's ia_exclude rule."""
     words = " ".join([entry.get("name", "")] + [m.get("title", "") for m in entry.get("manuals") or []])
-    return bool(re.search(rule, words, re.I))
+    return bool(re.search(rule, words.replace("_", " "), re.I))     # "Baler_Parts_Catalog_": words, not one name
 
 
 _EPA = {}            # the EPA data, read once per build and shared by the categories (chemical_labels.EpaData)
