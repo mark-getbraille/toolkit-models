@@ -196,3 +196,11 @@ def test_personal_list_is_complete():
     assert any("Print Disabilities" in n for n, _w in D.OWNER_NOTES)
     names = [n for n, _r in DP.NOT_INCLUDED + D.NOT_INCLUDED]
     assert any("AHRQ" in n for n in names) and any("CareerOneStop" in n for n in names)
+
+
+def test_directory_all_chunks():
+    keys = sources.expand_keys(["directory-all:federal_register_rules:1"])
+    assert len(keys) == 200 and keys[0].startswith("pub:federal_register_rules:")
+    rest = sources.expand_keys(["directory-all:federal_register_rules:2"])
+    assert rest and not set(rest) & set(keys) and rest[-1] == "pub:federal_register_rules:2000-01"
+    assert sources.expand_keys(["directory-all:oeis"])[-1] == "dir:oeis:39"

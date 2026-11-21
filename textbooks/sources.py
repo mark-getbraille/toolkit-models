@@ -1085,7 +1085,7 @@ def expand_keys(words):
         elif w == "cookbooks" or w.startswith("cook:"):
             import cookbooks                      # here, not at the top: cookbooks imports the builder
             keys += cookbooks.expand_keys([w])
-        elif w in ("directory", "directory-personal") or w.startswith("dir:"):
+        elif w in ("directory", "directory-personal") or w.startswith(("dir:", "directory-all:")):
             import directory_sources              # the reference-directory repositories (directory_sources.py)
             keys += directory_sources.expand_keys([w])
         elif w == "publications" or w.startswith("pub:"):

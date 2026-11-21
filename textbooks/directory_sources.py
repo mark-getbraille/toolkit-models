@@ -35,8 +35,9 @@ Internet Archive's Books for People with Print Disabilities) needs the owner's o
 built (OWNER_NOTES).
 
 Keys: directory (every open book here and every piece of directory_pubs' default pieces), directory-personal (the
-personal-use ones), dir:<name> (one book or every piece of one source), dir:<name>:<piece>. Run from the repository's
-folder:
+personal-use ones), dir:<name> (one book or every piece of one source), dir:<name>:<piece>, and
+directory-all:<source>[:<n>] (every piece of one source back to its beginning, or its n-th block of 200, so one
+request stays within a workflow run's 256 jobs). Run from the repository's folder:
   python3 textbooks/build_textbooks.py dir:nei_eye_health --out build/textbooks --cache build/textbooks-cache
   python3 textbooks/directory_sources.py dir:nei_eye_health --out build/textbooks --limit 5     (a small test)
   python3 textbooks/directory_sources.py --list directory
@@ -457,6 +458,8 @@ def expand_keys(words):
         elif w == "directory-personal":
             import directory_pubs
             keys += all_keys(True) + directory_pubs.default_keys(personal=True)
+        elif w.startswith("directory-all:"):
+            keys += all_pieces(*w.split(":")[1:3])
         elif w.startswith("dir:") and w.count(":") == 1 and w[4:] in PIECED:
             keys += PIECED[w[4:]]["keys"]()
         elif w.startswith("dir:") and w.count(":") == 1 and w[4:] in PERSONAL_BOOKS:
@@ -464,6 +467,24 @@ def expand_keys(words):
         else:
             keys.append(w)
     return list(dict.fromkeys(keys))
+
+
+CHUNK = 200                      # piece keys in one "directory-all:<source>:<n>" word (one workflow run: at most 256)
+
+
+def all_pieces(name, chunk=""):
+    """Every piece key of one source back to its beginning ("directory-all:federal_register_rules"), or the n-th
+    block of CHUNK of them ("directory-all:federal_register_rules:2"), so a request stays within one workflow run's
+    256 jobs. name: a source of this module (dir:) or of directory_pubs (pub:)."""
+    if name in PIECED or name in PERSONAL_BOOKS:
+        keys = (PIECED.get(name) or PERSONAL_BOOKS[name])["keys"]()
+    else:
+        import directory_pubs                    # here, not at the top: it imports the periodicals builder
+        keys = [f"pub:{name}:{p}" for p in directory_pubs.ALL_PIECES[name](None)]
+    if chunk:
+        n = int(chunk)
+        keys = keys[(n - 1) * CHUNK:n * CHUNK]
+    return keys
 
 
 def sign(key):
