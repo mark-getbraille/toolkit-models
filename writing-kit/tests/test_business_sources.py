@@ -101,3 +101,9 @@ def test_nsf_abstracts_become_grant_summaries():
     f = FakeFetcher({"api.nsf.gov": json.dumps(award).encode()})
     rec = next(rb.read_nsf(f, say=lambda t: None, pages=1))
     assert "Community Water Monitoring" in rec["instruction"] and rec["form"] == "project summary"
+
+
+def test_presidential_documents_on_one_line_are_split():
+    title, body = rb.presidential_parts("Administration of Barack Obama, 2011 The President's Weekly Address "
+                                        "January 1, 2011 Hello, everybody. Happy New Year.")
+    assert title == "The President's Weekly Address" and body == "Hello, everybody. Happy New Year."

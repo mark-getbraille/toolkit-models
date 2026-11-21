@@ -18,7 +18,7 @@ import re
 import urllib.parse
 
 IDL_SOLR = ("https://solr.idl.ucsf.edu/solr/ltdl3/select?q={q}&fq={fq}&fl={fl}&rows={rows}&start={start}"
-            "&sort=dddate%20desc&wt=json")
+            "&wt=json")
 IDL_FIELDS = "id,bn,ti,industry,collection,dddate,attachment,ot,au,rc"
 IDL_INDUSTRIES = ["Opioids", "Drug", "Food", "Chemical", "Fossil Fuel", "Tobacco"]
 DOJ_GOOGLE = "https://www.justice.gov/atr/us-and-plaintiff-states-v-google-llc-2020-trial-exhibits"
@@ -39,7 +39,7 @@ def email_parts(text):
 
 
 def read_idl(fetcher, say=print, per_industry=60, since="2010-01-01", **_):
-    """Email records (with attachment texts) from the Industry Documents Library, newest first, from each industry."""
+    """Email records (with attachment texts) from the Industry Documents Library, from 2010 on, from each industry."""
     fq = f"availability:public AND dddate:[{since}T00:00:00Z TO *]"
     for industry in IDL_INDUSTRIES:
         q = f'dt:Email AND industry:"{industry}"'

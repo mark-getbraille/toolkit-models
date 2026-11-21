@@ -83,6 +83,11 @@ Business writing comes first (you asked for it especially):
   abcd: ABCD customer service chats, MIT licence, open.
   openstax_business: the business communication, management and ethics chapters of OpenStax's business books,
     CC BY 4.0, open.
+  idl: recent company emails (2010 on) made public in lawsuits, from the UCSF Industry Documents Library (opioid,
+    drug, food, chemical, fossil fuel and tobacco companies; about 3.8 million public opioid-industry emails alone),
+    with their attachments. Personal use only: the companies' writers keep their copyright.
+  doj_google: the emails among the US v. Google trial exhibits (2023) that the Justice Department published, with
+    each exhibit PDF saved beside its email. Personal use only.
   enron, w3c, debian (below) are real organisational email; taskmaster, sgd and multiwoz are customer service
   conversations; fedreg, hearings and presidential are formal American writing; regulations are public comments.
 Modern American English:
@@ -139,6 +144,10 @@ DailyDialog: its official download is down. PersonaChat: no licence stated for t
 Switchboard and CALLHOME: sold by the LDC, not free.
 City councils through Legistar and Granicus: the minutes files are closed to programs. Toronto's open data has no
 minutes. Ontario's Hansard refuses programs. Other provincial Hansards and the Senate were not built yet.
+Recent investigations and lawsuits: congress.gov blocks AI training; the committee reports (Boeing 737 MAX, tech
+antitrust, January 6 and others), FTC v. Meta, Epic v. Apple, Oracle v. Google, Waymo v. Uber and Theranos exhibits,
+the FBI Vault and agency FOIA rooms, and the NIH emails are scanned PDFs without a bulk route, so they were not
+built yet; CourtListener refused this kit; MuckRock and DocumentCloud say no AI training.
 Business: the Avocado email collection (sold by the LDC), TweetSumm (its tweets need a Kaggle login), the Bitext
 support set (machine-written), earnings call transcripts (copyrighted), USAJOBS (needs a key and email, not built
 yet), court and investigation exhibits (scanned PDFs inside dockets).
@@ -160,8 +169,9 @@ Why: these add nothing to how someone writes, but a model can learn text by hear
 are exactly what someone needs to steal an identity or break into an account. Everything else stays as released.
 A note about where the emails come from: the government email releases (Clinton, Bush, Palin and the like) were
 reviewed and redacted by the agency that released them before they were published. The Enron emails were not:
-FERC published them without redacting, so they contain private details of ordinary employees. That is one more
-reason the Enron examples are personal use only and should not be shared.
+FERC published them without redacting, so they contain private details of ordinary employees. The litigation
+emails (Industry Documents Library, US v. Google) were produced in court and released under court orders and
+settlements, sometimes with redactions. All of these are personal use only and should not be shared.
 SCRUBBING.txt explains both settings in detail. If you ever want the careful setting back (names replaced,
 sensitive messages dropped), add --privacy strict.
 

@@ -310,6 +310,22 @@ def read_nsf(fetcher, say=print, pages=2, **_):
 
 # ----------------------------------------------------------------- Presidential documents (GovInfo DCPD)
 
+MONTHS = "January|February|March|April|May|June|July|August|September|October|November|December"
+
+
+def presidential_parts(text):
+    """(title, body) of a presidential document's text, whether it has line breaks or is one long line."""
+    m = re.match(r"\s*Administration of [^,\n]+, \d{4}\s+(.{3,200}?)\s+((?:" + MONTHS + r") \d{1,2}, \d{4})\s+(.*)",
+                 text, re.S)
+    if m:
+        return m.group(1).strip(), m.group(3).strip()
+    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+    if len(lines) < 3:
+        return "", ""
+    return (lines[1], "\n".join(lines[2:])) if lines[0].startswith("Administration of") else \
+        (lines[0], "\n".join(lines[1:]))
+
+
 def read_presidential(fetcher, say=print, years=("2016", "2011", "2023"), per_year=30, **_):
     for year in years:
         sitemap = fetcher.get(DCPD_SITEMAP.format(year=year)).decode("utf-8", "replace")
@@ -317,11 +333,9 @@ def read_presidential(fetcher, say=print, years=("2016", "2011", "2023"), per_ye
         say(f"  Presidential documents: {len(packages)} listed for {year}; reading {per_year}.")
         for pkg in packages[:per_year]:
             text = html_text(fetcher.get(DCPD_HTM.format(pkg=pkg)).decode("utf-8", "replace"))
-            lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
-            if len(lines) < 4:
+            title, body = presidential_parts(text)
+            if not title:
                 continue
-            title = lines[1] if lines[0].startswith("Administration of") else lines[0]
-            body = "\n".join(lines[2:] if lines[0].startswith("Administration of") else lines[1:])
             body = re.split(r"\nCategories:|\nNOTE:", body)[0]
             if len(body.split()) < 80:
                 continue
