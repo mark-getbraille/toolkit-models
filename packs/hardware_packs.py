@@ -361,6 +361,10 @@ SKIP = re.compile(r"\b(drawings?|diagrams?|illustrations?|icons?|logos?|in art|i
                   r"screw-shaped food|food|pushpins?|paper fasteners|tie clips|stamps?|banknotes?|coins?|"
                   r"quality images|featured pictures|valued images|nailsmiths|lamentation|crucifixion|"
                   r"in fiction|in literature|in film|sculptures?|monuments?|memorials?)\b", re.I)
+# Words that show a museum or archaeological object, not today's hardware (a Commons "Shelf supports" category holds
+# an Egyptian bench end): such files are left out of the Commons packs (nmah_hardware_tools has historic hardware).
+ANCIENT = re.compile(r"\b(MET|Metropolitan Museum|museum|musée|museo|ancient|archaeolog\w*|dynasty|pharaoh|"
+                     r"palace of|treasury|reliquar\w*|\d+ BCE?|century BC|byzantine|medieval)\b", re.I)
 # Words that leave a file out of these everyday packs (injuries and accidents).
 HARM = re.compile(r"\b(injur\w*|wound\w*|blood\w*|accidents?|amputat\w*|killed|dead|deaths?|fatal\w*|x-ray|"
                   r"radiograph\w*|surgery|surgical|implant\w*|stab\w*|torture\w*|crucifi\w*)\b", re.I)
@@ -454,8 +458,11 @@ def hardware_commons(topics, kinds, limit, prefix, key, pack_features=("head", "
                 if NUDE.search(words):
                     considered(title, url, "its words are about nudity")
                     continue
-                if HARM.search(words) or any(SKIP.search(c) for c in its if c.lower().startswith(("drawings", "in art"))):
+                if HARM.search(words):
                     considered(title, url, "its words name an injury, surgery or an accident (an everyday pack)")
+                    continue
+                if ANCIENT.search(words):
+                    considered(title, url, "a museum or archaeological object, not today's hardware")
                     continue
                 seen.add(title)
                 text = "" if JUST_A_RECORD.search(text or "") or not in_english(text) else text
@@ -739,8 +746,6 @@ DOOR_KINDS = [
                                                                      "latch or bolt goes into."),
     kind(r"\bpanic (bars?|hardware|exit devices?)\b|\bpush bars?\b|\bcrash bars?\b", "a panic bar (exit device)",
          "a bar across an exit door: pushing it opens the door."),
-    kind(r"\blocks? \(security devices\)|\blocks\b", "a lock", "it keeps a door, lid or gate shut until it is "
-                                                              "unlocked."),
     # door furniture
     kind(r"\bdoor ?knobs?\b", "a doorknob", "a round handle turned to open the latch."),
     kind(r"\blever handles?\b|\bdoor levers?\b", "a door lever handle", "a handle pushed down to open the latch; "
@@ -788,6 +793,8 @@ DOOR_KINDS = [
     kind(r"\binsect screens?\b|\bwindow screens?\b|\bfly screens?\b|\bscreen doors?\b", "an insect screen",
          "a mesh over a window or door that keeps insects out."),
     kind(r"\bbuilders hardware\b|\bdoor furniture\b", "a piece of door hardware", "a fitting on a door."),
+    kind(r"\blocks? \(security devices\)|\blocks\b", "a lock", "it keeps a door, lid or gate shut until it is "
+                                                              "unlocked."),
 ]
 
 

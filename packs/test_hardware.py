@@ -53,6 +53,8 @@ def test_kinds_are_the_most_specific():
     assert kind_of(h.DOOR_KINDS, "Concealed hinges", ["Hinges"]) == "a concealed (European) cabinet hinge"
     assert kind_of(h.DOOR_KINDS, "Padlocks", ["Locks (security devices)"]) == "a padlock"
     assert kind_of(h.DOOR_KINDS, "Drawer slides") == "a drawer slide"
+    assert kind_of(h.DOOR_KINDS, "Window locks", ["Locks (security devices)"]) == "a window lock"
+    assert kind_of(h.DOOR_KINDS, "Locks (security devices)") == "a lock"
     assert kind_of(h.BUILDING_KINDS, "Joist hangers", ["Mounting brackets"]) == "a joist hanger"
     assert kind_of(h.PLUMBING_KINDS, "Twist-on wire connectors") == "a wire nut (twist-on connector)"
     assert kind_of(h.PLUMBING_KINDS, "NEMA 14-50") == "a NEMA 14-50 plug or outlet"
@@ -129,6 +131,8 @@ def test_tables_and_skips():
     for kept in ("Carriage bolts", "Wood screws", "Hinges", "Wing nuts", "Table saws", "Respirators"):
         assert not h.SKIP.search(kept), kept
     assert "Wood screws" in h.EXISTING and "Rivets" in h.EXISTING          # asked by commons_tools and machine parts
+    assert h.ANCIENT.search("Bench End-Panel from a shelf support in the Palace of Amenhotep III (MET, 11.215.454)")
+    assert not h.ANCIENT.search("Two stainless steel shelf supports 2017")
     assert h.HARM.search("Hand injury from a nail gun") and not h.HARM.search("Galvanised roofing nails")
 
 
