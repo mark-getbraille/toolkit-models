@@ -63,10 +63,15 @@ def test_kinds_are_the_most_specific():
     assert kind_of(h.MATERIAL_KINDS, "PTFE tape") == "PTFE thread tape (plumber's tape)"
     assert kind_of(h.HAND_TOOL_KINDS, "Locking pliers", ["Pliers"]) == "locking pliers"
     assert kind_of(h.HAND_TOOL_KINDS, "Jack stands") == "a jack stand"
+    assert kind_of(h.HAND_TOOL_KINDS, "Impact wrenches") == "an impact wrench"
+    assert kind_of(h.HAND_TOOL_KINDS, "Tile saws") == "a tile cutter"
     assert kind_of(h.POWER_KINDS, "Impact drivers", ["Power tools"]) == "an impact driver"
     assert kind_of(h.SHOP_KINDS, "Jointers") == "a jointer"
     assert kind_of(h.SHOP_KINDS, "TIG welding", ["Welding"]) == "a TIG welder"
     assert kind_of(h.PPE_KINDS, "N95 respirators", ["Respirators"]) == "an N95 respirator"
+    assert kind_of(h.PLUMBING_KINDS, "GFCI outlets") == "a GFCI outlet"
+    assert kind_of(h.PLUMBING_KINDS, "PEX fittings") == "PEX pipe or a PEX fitting"
+    assert kind_of(h.SHOP_KINDS, "MIG welding") == "a MIG welder"
     assert kind_of(h.SEWING_FOOD_KINDS, "Sergers") == "a serger (overlock machine)"
     assert kind_of(h.FASTENER_KINDS, "Something else entirely") is None
 

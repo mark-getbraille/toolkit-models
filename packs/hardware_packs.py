@@ -265,12 +265,17 @@ def file_features(texts, title):
 
 
 def file_kind(kinds, found_in, categories, title):
-    """The first kind rule that matches the category the file was found in, else one of its other categories, else
-    its own title; None when nothing matches."""
+    """The kind rule for a file: looking at the category it was found in, else its other categories, else its own
+    title, the rule whose match is the longest (the most specific: "Impact wrenches" is an impact wrench, not just a
+    wrench; "Window locks" a window lock, not just a lock; the first rule wins a tie); None when nothing matches."""
     for text in [found_in] + [c for c in categories if c != found_in] + [re.sub(r"^File:|\.\w{3,4}$|_", " ", title)]:
+        best, length = None, 0
         for rule in kinds:
-            if rule[0].search(text):
-                return rule
+            m = rule[0].search(text)
+            if m and len(m.group(0)) > length:
+                best, length = rule, len(m.group(0))
+        if best:
+            return best
     return None
 
 
@@ -600,6 +605,8 @@ FASTENER_KINDS = [
                                                     "turns on."),
     kind(r"\bbolts without a thread\b|\bclevis pins?\b", "a clevis pin", "a pin with a head at one end and a hole "
                                                                         "for a cotter pin at the other."),
+    kind(r"\bhex external\b|\bexternal hex\b", "a hex head screw or bolt", "a six-sided head turned with a "
+                                                                            "spanner or socket."),
     kind(r"\bhex(agon)? head bolts?\b|\bhex bolts?\b", "a hex bolt", "a bolt with a six-sided head, turned with a "
                                                                      "spanner or socket."),
     # nuts
@@ -913,9 +920,9 @@ PLUMBING_KINDS = [
                                                                 "to seal it."),
     kind(r"\bpress fittings?\b|\bpress[- ]fit\b|\bpropress\b", "a press fitting", "a fitting squeezed onto the pipe "
                                                                                  "with a pressing tool."),
-    kind(r"\bpex\b", "PEX pipe or a PEX fitting", "PEX is bendable plastic water pipe, joined with crimp, clamp or "
+    kind(r"\bpex( pipes?| fittings?| tubing| crimp\w*)?\b", "PEX pipe or a PEX fitting", "PEX is bendable plastic water pipe, joined with crimp, clamp or "
                                                   "expansion fittings."),
-    kind(r"\bpvc\b|\bcpvc\b|\babs pipes?\b", "PVC pipe or a PVC fitting", "rigid plastic pipe joined with solvent "
+    kind(r"\b(c?pvc|abs)( pipes?| fittings?| elbows?| tees?)?\b", "PVC pipe or a PVC fitting", "rigid plastic pipe joined with solvent "
                                                                           "cement."),
     kind(r"\bcopper (pipe )?fittings?\b|\bsweat fittings?\b|\bsolder fittings?\b", "a copper pipe fitting",
          "soldered onto copper water pipe."),
@@ -948,16 +955,16 @@ PLUMBING_KINDS = [
     kind(r"\bshower heads?\b", "a shower head", "the spray head of a shower."),
     kind(r"\bpipe fittings?\b|\bplumbing fittings?\b|\bfittings?\b", "a pipe fitting", "a piece that joins pipes."),
     # electrical
-    kind(r"\bgfci\b|\bgfi\b|\bground[- ]fault\b", "a GFCI outlet", "an outlet with Test and Reset buttons that cuts "
+    kind(r"\b(gfci|gfi|ground[- ]fault)( circuit interrupters?| outlets?| receptacles?)?\b", "a GFCI outlet", "an outlet with Test and Reset buttons that cuts "
                                                                    "the power if current leaks, used near water."),
-    kind(r"\bnema 14-50\b", "a NEMA 14-50 plug or outlet", "a large 240-volt, 50-amp outlet, for electric ranges, "
+    kind(r"\bnema 14-50( plugs?| outlets?| receptacles?| connectors?)?\b", "a NEMA 14-50 plug or outlet", "a large 240-volt, 50-amp outlet, for electric ranges, "
                                                           "car chargers and RVs: four slots."),
-    kind(r"\bnema 6-(15|20|30|50)\b", "a NEMA 6 plug or outlet", "a 240-volt outlet for large appliances and "
+    kind(r"\bnema 6-(15|20|30|50)( plugs?| outlets?| receptacles?| connectors?)?\b", "a NEMA 6 plug or outlet", "a 240-volt outlet for large appliances and "
                                                                  "welders."),
-    kind(r"\bnema 5-20\b", "a NEMA 5-20 plug or outlet", "a 120-volt, 20-amp outlet: one slot has a T shape."),
-    kind(r"\bnema l\d", "a NEMA twist-lock plug or outlet", "its curved blades are pushed in and turned to lock, as on "
+    kind(r"\bnema 5-20( plugs?| outlets?| receptacles?| connectors?)?\b", "a NEMA 5-20 plug or outlet", "a 120-volt, 20-amp outlet: one slot has a T shape."),
+    kind(r"\bnema l\d+-\d+( plugs?| outlets?| receptacles?| connectors?)?", "a NEMA twist-lock plug or outlet", "its curved blades are pushed in and turned to lock, as on "
                                                             "generators."),
-    kind(r"\bnema\b", "a NEMA plug or outlet", "a North American plug or outlet type."),
+    kind(r"\bnema( plugs?| outlets?| receptacles?| connectors?)?\b", "a NEMA plug or outlet", "a North American plug or outlet type."),
     kind(r"\boutlets?\b|\breceptacles?\b|\bsockets\b|\bpower sockets?\b", "an electrical outlet (receptacle)",
          "where a plug goes into the wall."),
     kind(r"\blight switch\w*\b|\bwall switch\w*\b|\bdimmers?\b|\btoggle switch\w*\b|\brocker switch\w*\b",
@@ -976,9 +983,9 @@ PLUMBING_KINDS = [
          r"\bfuse ?boxes?\b", "an electrical panel (breaker box)", "it holds the breakers for the house's circuits."),
     kind(r"\bextension (cords?|leads?)\b|\bpower strips?\b", "an extension cord", "a cord with sockets at its end."),
     kind(r"\bcoaxial\b", "coaxial cable", "round cable for TV aerials, satellite and cable internet."),
-    kind(r"\bnm[- ]b?\b|\bromex\b|\bnon[- ]metallic sheathed\b", "NM (Romex) cable", "house wiring cable: insulated "
+    kind(r"\bnm[- ]b?( cables?)?\b|\bromex( cables?)?\b|\bnon[- ]metallic sheathed( cables?)?\b", "NM (Romex) cable", "house wiring cable: insulated "
                                                                                     "wires in a plastic sheath."),
-    kind(r"\bthhn\b", "THHN wire", "single insulated wires pulled through conduit."),
+    kind(r"\bthhn( wires?| cables?)?\b", "THHN wire", "single insulated wires pulled through conduit."),
     kind(r"\barmou?red cables?\b|\bbx cables?\b|\bmc cables?\b", "armoured cable", "wires inside a flexible metal "
                                                                                   "sheath."),
     kind(r"\bconduits?\b", "electrical conduit", "a tube that protects electrical wires."),
@@ -1004,9 +1011,9 @@ MATERIAL_TOPICS = [
     topic("Wood glue", 0), topic("Sealants", 1), topic("Wire spools", 0),
 ]
 MATERIAL_KINDS = [
-    kind(r"\boriented strand board\b|\bosb\b", "OSB (oriented strand board)", "sheets made of wood flakes pressed with "
+    kind(r"\boriented strand boards?\b|\bosb( boards?| panels?| sheathing)?\b", "OSB (oriented strand board)", "sheets made of wood flakes pressed with "
                                                                               "glue, for walls, floors and roofs."),
-    kind(r"\bmedium[- ]density fibreboard\b|\bmdf\b", "MDF (medium-density fibreboard)", "smooth sheets of fine wood "
+    kind(r"\bmedium[- ]density fib(re|er)boards?\b|\bmdf( boards?| panels?| sheets?)?\b", "MDF (medium-density fibreboard)", "smooth sheets of fine wood "
                                                                                        "fibres pressed with glue."),
     kind(r"\bparticle ?board\b|\bchipboard\b", "particle board (chipboard)", "sheets of wood chips pressed with "
                                                                               "glue."),
@@ -1109,9 +1116,9 @@ HAND_TOOL_KINDS = [
                                                                                               "a screw."),
     tool(r"\bcombination (wrench|spanner)\w*\b", "a combination wrench", "open at one end and a closed ring at the "
                                                                          "other, both the same size."),
-    tool(r"\bbox[- ]end\b|\bring spanners?\b|\boffset ring\b", "a box-end (ring) wrench", "a closed ring that grips "
+    tool(r"\bbox[- ]end( wrench\w*| spanners?)?\b|\bring spanners?\b|\boffset ring( wrench\w*| spanners?)?\b", "a box-end (ring) wrench", "a closed ring that grips "
                                                                                           "all six sides of a nut."),
-    tool(r"\bopen[- ]end(ed)?\b|\bopen[- ]ended spanners?\b", "an open-end wrench", "U-shaped jaws that slip onto a "
+    tool(r"\bopen[- ]end(ed)?( wrench\w*| spanners?)?\b", "an open-end wrench", "U-shaped jaws that slip onto a "
                                                                                     "nut from the side."),
     tool(r"\bratchet(ing)? (wrench|spanner)\w*\b|\bratchets? \(tool\)|\bratchet handles?\b", "a ratchet",
          "a handle that turns a socket one way and clicks back freely the other."),
@@ -1200,7 +1207,7 @@ HAND_TOOL_KINDS = [
     tool(r"\bfloor jacks?\b|\btrolley jacks?\b|\bbottle jacks?\b|\bscissor jacks?\b|\bcar jacks?\b|\bjacks \(",
          "a jack", "it lifts a vehicle.", "Never work under a vehicle held only by a jack."),
     tool(r"\bcreepers?\b", "a mechanic's creeper", "a low board on casters for lying under a vehicle."),
-    tool(r"\bobd(-ii)?\b|\bscan tools?\b|\bcode readers?\b", "an OBD scanner (code reader)", "it plugs into the car's "
+    tool(r"\bobd(-ii|2)?( scanners?| readers?| ports?| connectors?)?\b|\bscan tools?\b|\bcode readers?\b", "an OBD scanner (code reader)", "it plugs into the car's "
                                                                                            "diagnostic port and "
                                                                                            "reads fault codes."),
     tool(r"\bimpact (wrench|gun|driver)\w*\b", "an impact wrench", "a power wrench that hammers as it turns, for "
@@ -1282,7 +1289,7 @@ POWER_TOPICS = [
 POWER_KINDS = [
     tool(r"\bimpact drivers?\b", "an impact driver", "a compact power driver that hammers as it turns, for long "
                                                      "screws."),
-    tool(r"\brotary hammers?\b|\bsds\b", "a rotary hammer", "a heavy drill that hammers, for concrete."),
+    tool(r"\brotary hammers?\b|\bsds(-| )?(plus|max)?( drills?| hammers?)?\b", "a rotary hammer", "a heavy drill that hammers, for concrete."),
     tool(r"\bhammer drills?\b", "a hammer drill", "a drill with a hammer action for brick and concrete."),
     tool(r"\bcordless drills?\b|\bdrill[- ]drivers?\b|\belectric drills?\b|\bpower drills?\b|\bdrills \(tool",
          "a power drill", "it drills holes and drives screws."),
@@ -1383,7 +1390,9 @@ SHOP_KINDS = [
                                                                          "turning tools."),
     tool(r"\bwoodturning tools?\b|\bturning (tools?|gouges?|chisels?)\b|\bskew chisels?\b|\bparting tools?\b",
          "a woodturning tool", "a long chisel or gouge held against wood spinning on a lathe."),
-    tool(r"\bmetal lathes?\b|\bengine lathes?\b|\bcnc lathes?\b|\bmini lathes?\b|\blathes?\b", "a lathe", "it spins the "
+    tool(r"\bmetal lathes?\b|\bengine lathes?\b|\bmetalworking lathes?\b", "a metal lathe", "it spins metal work against "
+                                                                                       "a cutting tool."),
+    tool(r"\bcnc lathes?\b|\bmini lathes?\b|\blathes?\b", "a lathe", "it spins the "
                                                                                                          "work "
                                                                                                          "against a "
                                                                                                          "cutting "
@@ -1443,15 +1452,15 @@ SHOP_KINDS = [
                                                                                               "lens that protects the "
                                                                                               "eyes and face from the "
                                                                                               "arc.", PPE_LINE),
-    tool(r"\boxy[- ](fuel|acetylene)\b|\bcutting torch\w*\b|\bwelding torch\w*\b|\bgas welding\b", "an oxy-acetylene "
+    tool(r"\boxy[- ](fuel|acetylene)( weld\w*| and cutting| cutting| torch\w*)*\b|\bcutting torch\w*\b|\bwelding torch\w*\b|\bgas welding\b", "an oxy-acetylene "
          "torch", "a torch burning oxygen and acetylene gas, for welding, brazing and cutting.",
          "Keep the gas cylinders upright and chained."),
-    tool(r"\bmig\b|\bgas metal arc\b|\bflux[- ]core\w*\b", "a MIG welder", "it feeds a wire through a gun that welds "
+    tool(r"\bmig( weld\w*)?\b|\bgas metal arc( weld\w*)?\b|\bflux[- ]core\w*( weld\w*)?\b", "a MIG welder", "it feeds a wire through a gun that welds "
                                                                             "with an electric arc.",
          "Wear a welding helmet, gloves and covered skin."),
-    tool(r"\btig\b|\bgas tungsten arc\b", "a TIG welder", "a tungsten electrode makes the arc; filler rod is fed by "
+    tool(r"\btig( weld\w*)?\b|\bgas tungsten arc( weld\w*)?\b", "a TIG welder", "a tungsten electrode makes the arc; filler rod is fed by "
                                                           "hand.", "Wear a welding helmet, gloves and covered skin."),
-    tool(r"\bshielded metal arc\b|\bstick weld\w*\b|\barc weld\w*\b|\bsmaw\b", "a stick (arc) welder",
+    tool(r"\bshielded metal arc( weld\w*)?\b|\bstick weld\w*\b|\barc weld\w*\b|\bsmaw\b", "a stick (arc) welder",
          "it welds with a coated electrode held in a clamp.", "Wear a welding helmet, gloves and covered skin."),
     tool(r"\bwelding (machines?|equipment|power sources?)\b|\bwelders?\b|\bwelding\b", "welding equipment",
          "equipment for joining metal by melting it.", "Wear a welding helmet, gloves and covered skin."),
@@ -1492,12 +1501,12 @@ PPE_TOPICS = [
     topic("Safety harnesses", 1),
 ]
 PPE_KINDS = [
-    kind(r"\bn95\b|\bffp2\b|\bkn95\b", "an N95 respirator", "a fitted mask that filters at least 95 percent of "
+    kind(r"\b(n95|ffp2|kn95)( respirators?| masks?)?\b", "an N95 respirator", "a fitted mask that filters at least 95 percent of "
                                                             "airborne particles; not for oil mists, gases or "
                                                             "vapours.", line=PPE_LINE),
-    kind(r"\bp100\b|\bffp3\b", "a P100 respirator filter", "it filters at least 99.97 percent of particles, oil mists "
+    kind(r"\b(p100|ffp3)( filters?| respirators?| masks?)?\b", "a P100 respirator filter", "it filters at least 99.97 percent of particles, oil mists "
                                                            "included.", line=PPE_LINE),
-    kind(r"\bpowered air[- ]purifying\b|\bpapr\b", "a powered air-purifying respirator (PAPR)", "a battery blower "
+    kind(r"\bpowered air[- ]purifying( respirators?)?\b|\bpaprs?\b", "a powered air-purifying respirator (PAPR)", "a battery blower "
                                                                                                 "pushes filtered air "
                                                                                                 "into a hood or "
                                                                                                 "mask.",
