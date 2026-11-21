@@ -2148,6 +2148,7 @@ def make_book(name, piece, items):
     if spec["driver"] == "crs":                 # the list of every report, with each report's files
         book.originals.append({"url": CRS_SITE + "reports.csv", "kind": "csv"})
     book.originals += [{"url": i["url"], "kind": "html"} for i in items[:MAX_ORIGINALS]]   # each item's original
+    book.personal_use = bool(spec.get("personal_use"))   # a non-commercial source: "personal use only"
     book.published = PUBLISHED.get((name, piece)) or B.newest_date([i["date"] for i in items])
     book.series, book.piece, book.item_dates = name, piece, [i["date"] for i in items]
     book.incomplete = INCOMPLETE.get((name, piece))
@@ -2270,3 +2271,8 @@ if __name__ == "__main__":
 # reports, the US Government Manual, ERIC open full texts, GOV.UK guides, UK safety alerts, USDA Farmers' Bulletins):
 # publications_more.py adds them to SOURCES, DRIVERS, ALL_PIECES, LICENCE_LINES and NOT_INCLUDED when imported.
 import publications_more  # noqa: E402,F401
+
+# General-interest blogs and online magazines with open licences (Pluralistic, the Creative Commons blog, Waging
+# Nonviolence, Wikimedia's Diff, EFF Deeplinks, the GDS accessibility blog), the owner's request of 2026-11-21:
+# blogs.py adds them to SOURCES, DRIVERS, ALL_PIECES, BACKFILL_ORDER, LICENCE_LINES and NOT_INCLUDED when imported.
+import blogs  # noqa: E402,F401
