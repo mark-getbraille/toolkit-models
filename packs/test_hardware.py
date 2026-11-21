@@ -138,6 +138,8 @@ def test_tables_and_skips():
     assert "Wood screws" in h.EXISTING and "Rivets" in h.EXISTING          # asked by commons_tools and machine parts
     assert h.ANCIENT.search("Bench End-Panel from a shelf support in the Palace of Amenhotep III (MET, 11.215.454)")
     assert not h.ANCIENT.search("Two stainless steel shelf supports 2017")
+    assert h.HISTORIC.search("British Army on the Western Front, 1914-1918 British soldiers making a new saw mill")
+    assert not h.HISTORIC.search("Black and Decker FS540 unloaded, 2019")
     assert h.HARM.search("Hand injury from a nail gun") and not h.HARM.search("Galvanised roofing nails")
 
 

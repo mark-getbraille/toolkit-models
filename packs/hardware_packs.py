@@ -370,6 +370,9 @@ SKIP = re.compile(r"\b(drawings?|diagrams?|illustrations?|icons?|logos?|in art|i
 # an Egyptian bench end): such files are left out of the Commons packs (nmah_hardware_tools has historic hardware).
 ANCIENT = re.compile(r"\b(MET|Metropolitan Museum|museum|musée|museo|ancient|archaeolog\w*|dynasty|pharaoh|"
                      r"palace of|treasury|reliquar\w*|\d+ BCE?|century BC|byzantine|medieval)\b", re.I)
+# Old photos (a year before 1950 in the title or caption, or a war) often show something else under the category's
+# name (a 1916 army saw mill filed under "Table saws"): left out of the Commons packs too.
+HISTORIC = re.compile(r"\b(1[0-8]\d\d|19[0-4]\d)s?\b|\b(world war|western front|civil war|wartime)\b", re.I)
 # Words that leave a file out of these everyday packs (injuries and accidents).
 HARM = re.compile(r"\b(injur\w*|wound\w*|blood\w*|accidents?|amputat\w*|killed|dead|deaths?|fatal\w*|x-ray|"
                   r"radiograph\w*|surgery|surgical|implant\w*|stab\w*|torture\w*|crucifi\w*)\b", re.I)
@@ -466,8 +469,8 @@ def hardware_commons(topics, kinds, limit, prefix, key, pack_features=("head", "
                 if HARM.search(words):
                     considered(title, url, "its words name an injury, surgery or an accident (an everyday pack)")
                     continue
-                if ANCIENT.search(words):
-                    considered(title, url, "a museum or archaeological object, not today's hardware")
+                if ANCIENT.search(words) or HISTORIC.search(f"{title} {text}"):
+                    considered(title, url, "a museum, archaeological or old photo, not today's hardware")
                     continue
                 seen.add(title)
                 text = "" if JUST_A_RECORD.search(text or "") or not in_english(text) else text
