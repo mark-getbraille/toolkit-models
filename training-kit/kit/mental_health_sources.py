@@ -11,7 +11,7 @@ Answers say only what the Commons category names, with a plain line, and every a
 (general information, not medical advice or a diagnosis; 911 in an emergency; call or text 988 in a mental health crisis; the quitline for the quitting things), the same words as the packs' (packs/test_health_life.py checks).
 
 Picture-making (MENTAL_HEALTH_PICTURE_MAKING_OK): none (sleep masks and the like are often worn by people in their photos), so sources.py puts the pack in NOT_FOR_PICTURE_MAKING.
-Topics: the home topic (Home and household): everyday things, no people's bodies and no medical photos.
+Topics: the health topic (Health and medical pictures): everyday things, no people's bodies and no medical photos.
 
     python -c "import sources, mental_health_sources"      (from the kit folder: checks the file loads)
 """

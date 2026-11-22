@@ -94,6 +94,10 @@ MODULES = [
     "sexual_health",        # CDC contraception, STIs, HIV, violence; OPA, OWH, FDA, NIDDK, help lines (sexhealth:)
     "aging_end_of_life",    # ACL long-term care, VA geriatrics, NCI end of life, NIDCD, IRS, VA burial, DOJ (aging:)
     "wilderness_first_aid", # NPS and USFS backcountry safety, NIOSH outdoor hazards, CDC, NOAA SARSAT, TB MEDs (wild:)
+    # personal care, toys and world money (the owner's request of 2026-11-22)
+    "personal_care",        # FDA cosmetics safety, products and tattoos, with the personal care index (pcare:)
+    "toys_books",           # CPSC Which Toy for Which Child and playground handbook (1997), the toys index (toys:)
+    "world_money",          # RBA, ECB and Bank of Canada pages for blind people, the world money index (wmoney:)
     # Kiwix references, sheet music, newspapers and old-time radio (the owner's request of 2026-11-22)
     "stack_exchange",       # Stack Exchange how-to sites in the Kiwix library, REFERENCE ONLY, never training (se:)
     "a11y_community",       # accessibility communities: GNOME, ArchWiki and KDE accessibility pages, index (a11yc:)
@@ -104,6 +108,19 @@ MODULES = [
     "small_boats",          # Navigation Rules, boating CFR, Coast Guard and Army boat manuals, NOAA, NWS, old boat books (boat:)
     # home manufacturing and making (the owner's request of 2026-11-22), its own group
     "making_books",         # 3D printing, lasers, CNC, lathes: Klipper, FreeCAD, LinuxCNC, OpenSCAD, FDA, NIST (make:)
+    # reference gaps (the owner's request of 2026-11-22), each in its own group
+    "geography",            # the CIA World Factbook (last edition, by continent) and a geography index (geo:)
+    "pet_care",             # pet care: CDC Healthy Pets, FDA CVM pet food and poisons, old dog and cat books (pet:)
+    "genealogy",            # genealogy: NARA guides, Census Bureau family history, CDC vital records offices (gen:)
+    "audio_media",          # audio and media: Audacity Manual, OSARA, W3C WAI media guide, LoC AV formats (media:)
+    "audio_description",    # describing pictures and video: 47 CFR part 79 (audio description rules), index (describe:)
+    "typing_skills",        # typing: old public-domain touch typing courses and a keyboard skills index (typing:)
+    "recycling",            # recycling and waste: EPA (personal use), FDA medicine disposal, DEA take-back (recycle:)
+    "game_fish",            # game and fish: CDC game diseases, APHIS and USGS CWD, FDA and EPA fish advice (gamefish:)
+    "holiday_observances",  # holidays: OPM, CRS histories, Wikipedia observances, UK and Canada holidays (holiday:)
+    # foraging and home food preserving (the owner's request of 2026-11-22), each in its own group
+    "foraging",             # edible wild plants and foraging: NPS park rules, UK FSA, USDA 1936, FM 21-76 1957, old fungi books (forage:)
+    "preserving",           # home food preserving: CDC botulism, UK FSA, old preserving books as history, Kerr 1945 (preserve:)
     # the master guide to the whole library, made from the code at build time (the owner's request of 2026-11-22)
     "library_guide",        # one book: every group, manual, topic, pack, writing source, B: folder (libguide:)
 ]

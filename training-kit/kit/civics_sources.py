@@ -5,7 +5,7 @@ sources looked at and left out, with the reason (CIVICS_NOT_INCLUDED):
                              measures and courts; never usable as real documents).
 
 Legal answers end with "General information, not tax or legal advice; check the current rules or ask a
-professional." Topic: documents (Documents, maps and signs). Picture-making (CIVICS_PICTURE_MAKING_OK): none.
+professional." Topic: money (Money and paperwork). Picture-making (CIVICS_PICTURE_MAKING_OK): none.
 
     python -c "import sources, civics_sources"      (from the kit folder: checks the file loads)
 """

@@ -13,7 +13,7 @@ influence, carbon monoxide, epoxy and solvents), the same words as the pack's (p
 
 Picture-making (SMALL_BOATS_PICTURE_MAKING_OK): none (boat photos often show the people aboard, and the
 boatbuilders' photos show people at work: describing only).
-Topics: the machines topic (Vehicles, machines and devices), beside the boating and paddling pack.
+Topics: the transport topic (Transport and travel), beside the boating and paddling pack.
 
     python -c "import sources, small_boats_sources"      (from the kit folder: checks the file loads)
 """
