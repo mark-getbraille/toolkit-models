@@ -16,10 +16,12 @@ truthfully in the notice whether Distribution Statement A is printed; a restrict
     Winter Operations (MCRP 12-10A.2, formerly MCRP 3-35.1B). Since the owner's decision of 22 November 2026 old
     military manuals are kept whole; only parts about explosives, demolition, mines, grenades, booby traps,
     improvised explosives or sabotage are left out (build_textbooks.NOT_FIELD_SAFE);
-  - the Navy's Boatswain's Mate 2c (1944) and the Bluejacket's Manual (1917), whole, and the Admiralty Manual of
-    Seamanship of 1908 (revised 1915), public domain in the UK and the US;
+  - the Navy's Boatswain's Mate 2c (1944) and the Bluejacket's Manual (1917, and the 1918 printing of the 6th
+    edition, whole by the owner's decision, its few pages on First World War contact mines kept as history), and
+    the Admiralty Manual of Seamanship of 1908 (revised 1915), public domain in the UK and the US;
   - the Admiralty Manuals of Seamanship of 1951 to 1972 (seven volumes, every downloadable Internet Archive copy of
-    an edition published in 1975 or earlier), by the owner's informed decision of 22 November 2026: public domain in
+    an edition published in 1975 or earlier) and the Admiralty Manual of Navigation of 1970 and 1973 (two volumes),
+    by the owner's informed decision of 22 November 2026: public domain in
     the UK (Crown copyright ends 50 years after publication) but possibly restored in the US by the URAA (1996).
     They carry CROWN_NOTICE, the licence UK_CROWN_EXPIRED and the mark us_restoration_risk=True (crown_expired_book),
     and never a US public-domain licence.
@@ -144,6 +146,23 @@ PDFS += [
                   "kept as history.", note="Published in {year}: its rules, first aid and equipment are those of "
                   "its day.", notice=KO.OUTDOOR_SAFETY)),   # published by the Naval Institute (not a government work):
                                                                 # public domain as published before 1931
+    # The owner's decision of 22 November 2026: the 1918 edition is built WHOLE, everything included. It is public
+    # domain in the US as published before 1931 (a private printing, not a government work); its scan has no
+    # bookmarks, so no part could be cut anyway. Its few pages on how First World War contact mines and their
+    # firing gear worked are kept as history, and its description says so.
+    old_book(GROUP, "bluejackets_manual_1918", "The Bluejacket's Manual (US Navy, 6th edition, revised November 1916, "
+             "1918 printing)", "Seamanship, knots and boats", "Lieutenant Norman R. van der Veer, US Navy (Military "
+             "Publishing Co., New York)", "bluejacketsmanua0000lieu", 1918,
+             "The sailor's handbook of the First World War years, read whole, everything included: part one, the "
+             "subjects every man on board ship should know (discipline and duty, the service, enlistments and "
+             "courts-martial, pay, salutes and naval customs, the ships, the daily routine, drills, uniform, "
+             "painting, swimming and life buoys, athletics), then the subjects for seamen (boats and their gear, "
+             "marlinespike seamanship and cordage, lookouts and watches, deck seamanship, ground tackle, the "
+             "compass, log and lead, steering, signals, small arms and guns of its day, first aid). Its few pages on "
+             "how the Navy's contact mines of the First World War and their firing gear worked are kept as history, "
+             "by the owner's decision; that equipment is long gone. The machine-read text of this scan has some "
+             "mistakes.", note="Published in {year}: its rules, first aid and equipment are those of its day.",
+             notice=KO.OUTDOOR_SAFETY),
     old_book(GROUP, "admiralty_manual_of_seamanship_1915", "Manual of Seamanship, Volume 1 (Admiralty, UK, 1908, "
              "revised and reprinted 1915)", "Seamanship, knots, splices and rigging", "Admiralty (Great Britain)",
              "manual-seamanship-1915", 1915,
@@ -264,6 +283,25 @@ CROWN_PDFS = [
                        "first change): types of ship, fibre, man-made and wire rope, bends and hitches, derricks and "
                        "winches, types of boat and sailing rigs, hints to coxswains, compasses, buoyage and "
                        "sounding."),
+    # The Admiralty Manual of Navigation, the same treatment as the seamanship manuals (the owner's approval of 22
+    # November 2026): published in 1970 and 1973, so public domain in the UK; US copyright possibly restored.
+    crown_expired_book("admiralty_manual_of_navigation_1970_v1", "Admiralty Manual of Navigation, Volume I (B.R. "
+                       "45(1), revised 1964, consolidated edition 1970 incorporating Changes 1 to 4)",
+                       "admiralty-manual-navigation-v-1", 1970,
+                       "Volume I of the Royal Navy's manual of navigation, which replaced the 1955 volume: position and "
+                       "direction on the earth's surface, Admiralty charts and publications (Notices to Mariners, "
+                       "lists of lights and sailing directions), the ship's position and track, fixing by terrestrial "
+                       "objects, navigation in pilotage waters, radio aids to navigation, navigational instruments, "
+                       "the gyro-compass, the magnetic compass, transmitting compasses, chronometers, watches and "
+                       "time, tides and tidal streams, navigation in ice, graphical problems and the rule of the "
+                       "road (the collision regulations of its day).", subject="Navigation and charts"),
+    crown_expired_book("admiralty_manual_of_navigation_1973_v2", "Admiralty Manual of Navigation, Volume II (B.R. "
+                       "45(2), 1973)", "admiralty-manual-of-navigation-volume-2", 1973,
+                       "Volume II of the Royal Navy's manual of navigation, the mathematics of navigation and nautical "
+                       "astronomy: the rhumb line and the traverse table, great-circle sailing, charts and map "
+                       "projections (the Mercator and gnomonic charts), the celestial sphere, time, the sextant and "
+                       "its altitudes, the position line from a heavenly body, finding latitude, the nautical tables "
+                       "and the theory of the compass.", subject="Navigation and nautical astronomy"),
 ]
 PDFS += CROWN_PDFS
 
@@ -277,8 +315,10 @@ LICENCE_LINES = {
                       "guides; no statement printed on the Coast Guard handbook and the 1917 and 1944 pack manuals, "
                       "checked 2026-11-22); archive.org's robots.txt allows the files; no "
                       "AI rules (checked 2026-11-22).",
-    "knots_military_crown": "Internet Archive copies (collection admiralty-publications) of the Admiralty Manuals of "
-                            "Seamanship of 1951 to 1972: Crown copyright (UK), ended 50 years after publication, so "
+    "knots_military_crown": "Internet Archive copies (collection admiralty-publications, and collection manuals for "
+                            "the Manual of Navigation) of the Admiralty Manuals of Seamanship of 1951 to 1972 and the "
+                            "Admiralty Manual of Navigation of 1970 and 1973: Crown copyright (UK), ended 50 years "
+                            "after publication, so "
                             "public domain in the UK (the builder checks each item's year at every build: 1975 or "
                             "earlier in 2026); their US copyright may have been restored (URAA, 1996); included at "
                             "the owner's decision (22 November 2026), marked us_restoration_risk; not downloadable "

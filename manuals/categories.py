@@ -765,6 +765,12 @@ for _key in ("craft_machines", "woodshop_machines", "metal_shop_welding"):
 from audio_gear_manuals import CATEGORY as _AUDIO_GEAR  # noqa: E402
 
 CATEGORIES["audio_gear"] = _AUDIO_GEAR
+# Home food preserving (the owner's request of 2026-11-22, manuals/preserving_manuals.py): pressure, water-bath and
+# steam canners, canning jars, freeze dryers and fermentation crocks, with the canner, dehydrator, vacuum sealer and
+# freeze dryer makers link-only, the USDA Complete Guide to Home Canning and the preserving safety notice said first.
+from preserving_manuals import CATEGORY as _CANNING_PRESERVING  # noqa: E402
+
+CATEGORIES["canning_preserving"] = _CANNING_PRESERVING
 # Sports, under its own heading "Sports" (the owner's request of 2026-11-22): hoops, goals, ball and pitching machines,
 # skates, helmets, golf gear, scoreboards and punching bags; every maker link-only, the safety notice first:
 # manuals/sports_manuals.py. Fitness equipment and trackers stay in fitness_equipment.

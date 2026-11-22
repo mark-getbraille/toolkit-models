@@ -2003,6 +2003,14 @@ for _packs, _commons in ((MENTAL_HEALTH_PACKS, MENTAL_HEALTH_COMMONS_KEYS),
 from small_boats_packs import SMALL_BOATS_PACKS, SMALL_BOATS_COMMONS_KEYS
 PACKS.update(SMALL_BOATS_PACKS)
 COMMONS_KEYS = COMMONS_KEYS | frozenset(SMALL_BOATS_COMMONS_KEYS)
+# Edible wild plants and foraging, and home food preserving (packs/foraging_preserving_packs.py, the owner's request of
+# 2026-11-22): Commons wild greens, berries, nuts, roots, flowers and seaweeds with their poisonous lookalikes, more
+# edible and poisonous wild mushrooms, preserving jars, pickles, ferments, jams, dried and salted food, and
+# iNaturalist (through GBIF) wild edibles and lookalikes; every answer ends with the foraging, mushroom, poison or
+# home preserving note.
+from foraging_preserving_packs import FORAGING_PRESERVING_PACKS, FORAGING_PRESERVING_COMMONS_KEYS
+PACKS.update(FORAGING_PRESERVING_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(FORAGING_PRESERVING_COMMONS_KEYS)
 # Large public-domain US government photo libraries (the owner's request of 2026-11-22), one file each: the NASA Image
 # and Video Library by theme (packs/nasa_library_packs.py: astronauts, aircraft, Earth from space, planets and
 # telescopes, rockets and launch sites, NASA people at work) and NPGallery by theme (packs/nps_library_packs.py:

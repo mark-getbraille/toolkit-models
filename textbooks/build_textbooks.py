@@ -2769,6 +2769,7 @@ def merge(manifest_paths, existing=None, robots=None):
     import drinks_reference                      # (the same)
     import open_catalogues                       # (the same)
     import stack_exchange                        # (the same) Stack Exchange Kiwix books: reference only
+    import more_refs                             # Kiwix labels of the reference modules (Wikiquote)
     return {"built": datetime.date.today().isoformat(), "release": RELEASE,
             "books": sorted(books.values(), key=lambda b: (b["group"], b["title"].casefold())),
             "left_out": left, "not_included": [{"title": t, "reason": r} for t, r in sources.NOT_INCLUDED +
@@ -2783,7 +2784,8 @@ def merge(manifest_paths, existing=None, robots=None):
             "groups": sources.GROUPS, "group_notes": {**periodicals.GROUP_NOTES, **medications.GROUP_NOTES,
                                                       **courses.GROUP_NOTES, **cookbooks.GROUP_NOTES},
             # stack_exchange last: its reference-only labels win over an older plain label (cooking Q&A)
-            "kiwix_labels": {**courses.KIWIX_LABELS, **cookbooks.KIWIX_LABELS, **stack_exchange.KIWIX_LABELS},
+            "kiwix_labels": {**courses.KIWIX_LABELS, **cookbooks.KIWIX_LABELS, **more_refs.kiwix_labels(),
+                             **stack_exchange.KIWIX_LABELS},
             "kiwix_reference_only": stack_exchange.KIWIX_REFERENCE_ONLY,   # never used to train a model
             "pieces_done": sorted(done),
             "pieces_failed": {k: n for k, n in sorted(failed.items()) if k not in done}}

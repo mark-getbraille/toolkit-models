@@ -120,6 +120,15 @@ MODULES = [
     "recycling",            # recycling and waste: EPA (personal use), FDA medicine disposal, DEA take-back (recycle:)
     "game_fish",            # game and fish: CDC game diseases, APHIS and USGS CWD, FDA and EPA fish advice (gamefish:)
     "holiday_observances",  # holidays: OPM, CRS histories, Wikipedia observances, UK and Canada holidays (holiday:)
+    # foraging and home food preserving (the owner's request of 2026-11-22), each in its own group
+    "foraging",             # edible wild plants and foraging: NPS park rules, UK FSA, USDA 1936, FM 21-76 1957, old fungi books (forage:)
+    "preserving",           # home food preserving: CDC botulism, UK FSA, old preserving books as history, Kerr 1945 (preserve:)
+    # the master guide to the whole library, made from the code at build time (the owner's request of 2026-11-22)
+    "library_guide",        # one book: every group, manual, topic, pack, writing source, B: folder (libguide:)
+    # court opinions, patents, quotations and proverbs (the owner's request of 2026-11-22)
+    "court_opinions",       # Supreme Court opinions by volume and landmark cases by subject, from govinfo (court:)
+    "patents",              # famous patents (Wikisource), assistive and household patents (USPTO, sign-up) (pat:)
+    "quotations",           # Bartlett, Hoyt, Brewer, proverb and idiom books, Wikiquote from its dump (quote:)
 ]
 
 _loaded = {}
@@ -192,6 +201,15 @@ def allowed():
     out = {}
     for m in modules():
         out.update(getattr(m, "ALLOWED", {}))
+    return out
+
+
+def kiwix_labels():
+    """The labels these modules give Kiwix files of the toolkit's Kiwix library ({ZIM name: licence words}), such as
+    Wikiquote's (quotations.py)."""
+    out = {}
+    for m in modules():
+        out.update(getattr(m, "KIWIX_LABELS", {}))
     return out
 
 

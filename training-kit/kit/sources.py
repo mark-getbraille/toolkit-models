@@ -3589,6 +3589,22 @@ PERSONAL_PICTURE_MAKING_OK |= _small_boats_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in SMALL_BOATS_SOURCES
                                                                if s.key not in _small_boats_ok)
 _add_collections(SMALL_BOATS_SOURCES)
+# Edible wild plants and foraging, and home food preserving (the owner's request of 2026-11-22,
+# foraging_preserving_sources.py): the ready-made Commons packs of wild food plants and lookalikes, wild mushrooms and
+# preserved foods, the iNaturalist (through GBIF) wild edibles pack, and the sources looked at and left out; the file
+# may be missing. Only the keys in FORAGING_PRESERVING_PICTURE_MAKING_OK may be used for picture-making.
+try:
+    import foraging_preserving_sources as _foraging  # noqa: E402
+except ImportError as _e:
+    _foraging = None
+    if getattr(_e, "name", None) != "foraging_preserving_sources":
+        say(f"(The foraging and home preserving collections could not be loaded: {_e}. They are left out.)")
+FORAGING_PRESERVING_SOURCES = list(getattr(_foraging, "FORAGING_PRESERVING_SOURCES", []) or [])
+_foraging_ok = set(getattr(_foraging, "FORAGING_PRESERVING_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _foraging_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in FORAGING_PRESERVING_SOURCES
+                                                               if s.key not in _foraging_ok)
+_add_collections(FORAGING_PRESERVING_SOURCES)
 # Large public-domain US government photo libraries (photo_library_sources.py, the owner's request of 2026-11-22): the
 # NASA Image and Video Library and NPGallery packs by theme, and what was left out; the file may be missing. Only the
 # keys in PHOTO_LIBRARY_PICTURE_MAKING_OK may be used for picture-making; the packs that are mostly people
