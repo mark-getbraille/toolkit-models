@@ -362,7 +362,7 @@ def test_the_topic_window_is_accessible(app, wizard):
     assert_accessible(window)
     letters = {letter_of(c.GetLabel()) for c in walk(window)
                if isinstance(c, (wx.Button, wx.CheckBox, wx.StaticText)) and letter_of(c.GetLabel())}
-    assert letters == {"t", "a", "e", "s", "c"}
+    assert letters == {"t", "a", "e", "s", "q", "c"}
     assert window.topic.GetCount() == 12 and window.share.GetValue() == 15
     assert (window.share.GetMin(), window.share.GetMax()) == (0, 40)
 

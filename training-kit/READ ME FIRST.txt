@@ -264,6 +264,7 @@ How to train one in the program:
    describe everyday things. 15 percent is a good start; you can choose 0 to 40. If the report says everyday
    description got worse, train again with a higher share.
 6. Press "Start training this add-on" (Alt+S). Cancel (Alt+C) or Escape closes the window without training.
+   "Test on real questions" (Alt+Q) tests the topic instead of training it (see Testing on real questions below).
 The training then runs like any other, saying each step. Some collections of a topic are share-alike,
 non-commercial or research-only: they are used only when Include Wikipedia, or the non-commercial or research-only
 box, is ticked on the first page. The nudity and sexual content topics tick the content choices they need by
@@ -271,6 +272,8 @@ themselves. Your own pictures are not used for a topic add-on.
 The report starts with the topic's score in plain words: how the add-on did on the topic's own test pictures, which
 were kept back and never trained on, and on everyday test pictures, each before and after training (from 0 to 1;
 higher is closer to people's own descriptions).
+It also says how the add-on did on blind people's real questions of that topic and on everyday ones, before and
+after training (see Testing on real questions below).
 The result zip is named after the topic, for example picture-training-4b-topic-food-2026-11-20.zip. Install it in
 the toolkit the same way as any trained describer. Inside it, addon-label.json says which topic it is, which model
 it is for, whether it is sensitive, and its licence: "open", or "personal use only" when it learned from any
@@ -279,6 +282,43 @@ published, shared or sold. A topic add-on only describes pictures; it is never u
 is explained in "TOPIC ADD-ON LABEL FORMAT.txt".
 With the .cmd files: open a command prompt in the kit folder and type, for example, kit\run.cmd --model 4b --topic
 food (add --topic-replay 0.25 for a 25 percent everyday share; kit\run.cmd --topic list says the topics).
+
+Testing on real questions
+The kit has a test made of questions that blind people really asked about their own photos, to see whether a topic
+add-on (or any trained describer) really helps. There are 600 questions, about 50 for each topic plus everyday ones:
+medicines 50, drugs 22 (cigarettes and tobacco), food 50, drinks 50, alcohol 50, machines 50, art 35, documents 50,
+nature 50, home health tests 21 and everyday 172. Firearms, nudity and sexual content have none: no open set of
+blind people's questions has them. Home health tests are questions about reading a pregnancy test's result lines;
+COVID-19 and ovulation tests are not in any open set yet. They are the questions blind people ask every day: what
+is this, read the label, the expiry date, how much, what colour, which button, is it on or off, which banknote, and
+which medicine.
+Where they come from, all under the CC BY 4.0 licence (credited in every report):
+- VizWiz (vizwiz.org): photos blind people took with their phones, each with their question and the answers of ten
+  sighted people. Mostly from its test part, which the kit never trains on. Some are photos with private information
+  (bills, cards, mail, prescription labels, screens) that VizWiz published with the private parts covered over; only
+  those covered-over copies are used. Questions about passwords, identity numbers, faces, tattoos, number plates,
+  nudity or anything with a phone or card number in the answers are left out.
+- ORBIT (City, University of London and Microsoft): frames of videos blind people filmed of their own things, with
+  "What is this?" and the name they gave the thing.
+These photos are never trained on: a training leaves them out by itself.
+The list of questions is in the kit (kit\real_questions.jsonl, small). The photos, about 200 MB, are downloaded the
+first time on this computer, from VizWiz's own server and ORBIT's own download (one frame at a time), into the
+picture library's "real-questions" folder.
+How it is scored: each answer is short (the model is asked for a word or phrase). Accuracy is VizWiz's standard
+score, from 0 to 1: an answer that three or more of the ten sighted people also gave scores 1, one that two gave
+about 0.6, one that one gave about 0.3. For ORBIT, the answer scores 1 when it names the thing. When most people
+said the photo does not show enough, the right answer is "unanswerable" or "I can't tell", and the report says how
+often the model said so when it should, and how often it gave up on a question people could answer. Each topic gets
+a short line in plain words: good, fair, weak or poor.
+How to run it in the program: press "Topic add-ons" (Alt+2), choose the topic in Topic (Alt+T), and press "Test on
+real questions" (Alt+Q). It tests that topic's newest finished add-on in the kit's work folder, or the model itself
+when there is none yet, on the topic's questions and the everyday ones. The progress page says how it goes; it takes
+a few minutes after the first download. Open the report (Alt+E on the progress page) when it says FINISHED: it is
+report-real-questions-<name>.txt in the kit folder.
+With the .cmd files: kit\run.cmd --evaluate 4b (the model itself), kit\run.cmd --evaluate "<an add-on folder or
+result zip>", and add --topic food (or any topic) to test only that topic's questions and the everyday ones.
+A topic add-on's training runs this test by itself, before and after, and its report says whether the add-on got
+better at the topic's real questions and whether everyday answers stayed as good.
 
 The picture library
 The program keeps every picture for good in the picture library folder. It suggests "Picture Library" on the drive

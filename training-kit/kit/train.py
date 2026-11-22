@@ -85,6 +85,13 @@ everyday mix (topics.EVERYDAY_KEYS) so ordinary description is not forgotten. Th
 the content choices it needs by itself (nudity, or nudity and sexual content). Your own pictures are not used; only
 the checked review pictures that fit the topic are. The add-on gets its label, addon-label.json (topics.make_label),
 in its folder and in the result zip (also in its toolkit/ folder). A topic add-on is never for picture-making.
+After its test, a topic add-on is also tested before and after on blind people's real questions of its topic and
+everyday ones (real_questions.py: VizWiz and ORBIT photos, scored with VizWiz's standard accuracy), which the report
+says in plain words.
+
+Real questions (real_questions.py): --evaluate 4b|8b|<add-on folder or result zip> [--topic ID] trains nothing; it
+tests that model or add-on on blind people's real questions and writes report-real-questions-<name>.txt. The real
+questions' photos are left out of every training (real_questions.leave_out).
 """
 
 
@@ -179,9 +186,9 @@ class State:
 
 # ----------------------------------------------------------------- 1. the graphics card and the disk
 
-def check_computer(model_key, work):
-    """Stop with a plain reason unless there is an NVIDIA card with enough memory and enough free disk space;
-    returns the card's name and memory in GB."""
+def check_computer(model_key, work, free_needed=None):
+    """Stop with a plain reason unless there is an NVIDIA card with enough memory and enough free disk space
+    (free_needed GB; the training's FREE_GB_NEEDED when not given); returns the card's name and memory in GB."""
     import torch
     if not torch.cuda.is_available():
         stop("No NVIDIA graphics card can be used. The kit needs an NVIDIA card with at least 12 GB of memory and an "
@@ -195,8 +202,9 @@ def check_computer(model_key, work):
              f"{memory:.0f} GB." + (" Try Start Training.cmd (the 4B model) instead." if model_key == "8b" else ""))
     free = shutil.disk_usage(work).free / 1024 ** 3
     say(f"Free disk space on this drive: {free:.0f} GB.")
-    if free < FREE_GB_NEEDED[model_key]:
-        stop(f"The kit needs about {FREE_GB_NEEDED[model_key]} GB of free disk space here; there is {free:.0f} GB. "
+    need_gb = FREE_GB_NEEDED[model_key] if free_needed is None else free_needed
+    if free < need_gb:
+        stop(f"The kit needs about {need_gb} GB of free disk space here; there is {free:.0f} GB. "
              "Free some space, or move the kit folder to a bigger drive, and start it again.")
     return props.name, memory
 
@@ -893,6 +901,10 @@ def write_report(path, info, before, after, before_rows, after_rows):
                  f"({info.get('replay_pictures', 0)} everyday pictures).",
                  f"  Licence: {label.get('licence_class', '')}; sensitive: {'yes' if label.get('sensitive') else 'no'}; "
                  "never for picture-making. Its label is addon-label.json."]
+        real = info.get("real_questions") or {}
+        if real.get("before") and real.get("after"):   # blind people's real questions (real_questions.py)
+            import real_questions
+            block += real_questions.compare_lines(topic, real["before"], real["after"])
     lines = [*block, *([""] if block else []), "Picture Model Training Kit: report", "",
              f"Finished: {datetime.datetime.now():%d %B %Y at %H:%M}",
              f"Model: {info['model']} (commit {info['revision'][:12]})",
@@ -1040,6 +1052,15 @@ def follow_up_rows(work, state, plan, with_wikipedia, size, replay, with_nudity=
 
 # ----------------------------------------------------------------- a topic add-on
 
+def real_questions_summary(before, after):
+    """The scores of the real-questions test before and after (real_questions.summarise for each topic), for the
+    report and scores.json; {} when it was not run."""
+    if not (before and after):
+        return {}
+    import real_questions
+    return {"before": real_questions.summarise(before), "after": real_questions.summarise(after)}
+
+
 def topic_rows(work, state, topic, size, with_wikipedia, replay, content):
     """(training rows, test rows, everyday pictures added) of a topic add-on (topics.py): the topic's collections
     that the choices allow, mixed with the everyday share replay (a fraction of the whole) from topics.EVERYDAY_KEYS;
@@ -1115,7 +1136,16 @@ def main(argv=None):
     parser.add_argument("--topic-replay", type=float, default=0.15,
                         help="with --topic: the everyday share of the training pictures, 0 to 0.40 (or 0 to 40 "
                              "percent)")
+    parser.add_argument("--evaluate", default="",
+                        help="test a model (4b, 8b) or an add-on (its folder or result zip) on blind people's real "
+                             "questions (real_questions.py), with --topic ID for one topic's questions; no training")
     args = parser.parse_args(argv)
+    if args.evaluate and args.topic.strip().lower() != "list":
+        import real_questions             # the real-questions test alone (real_questions.py)
+        sources.say = say
+        system_monitor.start(say)
+        return real_questions.run_evaluation(sys.modules[__name__], args.evaluate, args.topic, args.model,
+                                             args.library)
     topic = None
     if args.topic:
         import topics
@@ -1344,6 +1374,10 @@ def main(argv=None):
         run, tag = run + extra, tag + extra
     if not train_rows:
         stop("No collection could be downloaded. Check the internet connection and start the kit again.")
+    import real_questions                      # the real questions' photos are a test only: never trained on
+    train_rows, held = real_questions.leave_out(train_rows)
+    if held:
+        say(f"  {held} pictures that are in the real-questions test were left out of the training.")
     extra = place_rows(train_rows)                     # "Which country might this photo be from?" and the like
     if extra:
         import random
@@ -1393,6 +1427,15 @@ def main(argv=None):
         free()
     after = state.data[f"after-{run}"]
     say(f"  Score after training: {after['all']:.3f} (before: {before['all']:.3f}).")
+    real_before, real_after = [], []
+    if topic is not None:          # blind people's real questions of this topic, before and after (real_questions.py)
+        import real_questions
+        say("  Testing on blind people's real questions of this topic and everyday ones, before and after.")
+        try:
+            real_before, real_after = real_questions.run_for_topic(
+                sys.modules[__name__], topic, folder, final, results, state, run, args.library)
+        except Exception as e:  # noqa: BLE001 - said in plain words; the training's result is kept
+            say(f"  The real-questions test could not be finished ({e}); the report leaves it out.")
     say("Step 7 of 7: writing the report and the zip to send.")
     repo, revision, _ = MODELS[args.model]
     info = {"model": repo, "revision": revision, "run": run, "card": card, "train": len(train_rows),
@@ -1408,6 +1451,7 @@ def main(argv=None):
             "continued_from": plan["from"] if plan else None,
             "topic": topic.id if topic is not None else None,
             "topic_replay": args.topic_replay if topic is not None else None, "replay_pictures": replay_pictures,
+            "real_questions": real_questions_summary(real_before, real_after),
             "settings": {"lora_r": 16, "lora_alpha": 32, "rate": 1e-4, "accumulate": 8, "four_bit": True,
                          "long_side": sources.LONG_SIDE, "system": SYSTEM}}
     if topic is not None:

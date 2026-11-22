@@ -42,8 +42,12 @@ want more expertise; Qwen stays the general describer. The window lists the topi
 description, how many of its collections the first page's Wikipedia and personal-use boxes allow, its licence),
 and takes the everyday share (0 to 40 percent, 15 at first). Start training this add-on starts the training with
 the first page's folders, model and size, adding --topic ID --topic-replay SHARE to kit\\train.py. Its letters:
-T (Topic), A (About this topic), E (Everyday share), S (Start), C (Cancel). Only for a picture describer, and not
-as a follow-up. The topic and share are remembered ("topic", "topic_replay" in settings.json).
+T (Topic), A (About this topic), E (Everyday share), S (Start), Q (Test on real questions), C (Cancel). Only for a
+picture describer, and not as a follow-up. The topic and share are remembered ("topic", "topic_replay" in
+settings.json). Test on real questions (Alt+Q) runs kit\\train.py --evaluate on this computer: the newest finished
+add-on of that topic in the kit's work folder (kit\\real_questions.find_addon), or the first page's model itself when
+there is none, on blind people's real questions of the topic and everyday ones (kit\\real_questions.py); the
+progress page shows and says how it goes, and Open the report opens report-real-questions-<name>.txt.
 
 Personal-use collections: when either box is ticked the training is for personal use only (train.py and
 train_pictures.py get --personal-noncommercial and --personal-research --accept-research-terms), which the Check
@@ -192,7 +196,10 @@ SPOKEN = re.compile(r"^(Step \d+ of \d+:|\s*Collection \d+ of \d+:|\s*Ready:|\s+
                     r"To use it in the Digital Accessibility Toolkit|\s*The toolkit version of the add-on could not|"
                     r"Making the toolkit version of your earlier|"
                     # a topic add-on (kit\\topics.py): which topic, what is ready, and its label
-                    r"Topic add-on|\s*Topic add-on ready|\s*The add-on's label)")
+                    r"Topic add-on|\s*Topic add-on ready|\s*The add-on's label|"
+                    # blind people's real questions (kit\\real_questions.py): the test starting, and every 25 answers
+                    r"Real questions test|\s*Testing on blind people's real questions|\s*Real questions \(|"
+                    r"\s+real questions[^:]*: \d+ of \d+ questions answered)")
 
 
 def is_computer_line(line):
@@ -1021,12 +1028,23 @@ def topic_args(topic_id, share):
     return ["--topic", topic_id, "--topic-replay", f"{share:.2f}"]
 
 
+TEST_REAL_QUESTIONS = 5901          # what the Topic add-ons window ends with for its Test on real questions button
+
+
+def evaluation_args(model, topic_id, addon=None, library=""):
+    """kit\\train.py's arguments for the real-questions test (kit\\real_questions.py): the add-on folder when there is
+    one, else the model itself."""
+    args = ["--model", model, "--evaluate", addon or model, "--topic", topic_id]
+    return args + (["--library", library] if library else [])
+
+
 class TopicAddonDialog(wx.Dialog):
     """Topic add-ons: choose a topic (Topic:, a list of the topics), read about it (About this topic: its
     description, how many of its collections are used with the first page's boxes, and its licence), set the
-    everyday share (0 to 40 percent, 15 at first), then Start training this add-on, or Cancel. Standard controls, a
-    label ending ":" before each field, Alt letters named in the tooltips (T, A, E, S, C), no default button, Escape
-    is Cancel and F1 opens READ ME FIRST.txt. Choosing a topic says its title and licence."""
+    everyday share (0 to 40 percent, 15 at first), then Start training this add-on, Test on real questions (ends with
+    TEST_REAL_QUESTIONS), or Cancel. Standard controls, a label ending ":" before each field, Alt letters named in the
+    tooltips (T, A, E, S, Q, C), no default button, Escape is Cancel and F1 opens READ ME FIRST.txt. Choosing a topic
+    says its title and licence."""
 
     def __init__(self, parent, topics, module, boxes, chosen_id="", share=None):
         """The topic list, the explanation, the everyday share and the two buttons. topics: the kit's topics.py;
@@ -1059,13 +1077,17 @@ class TopicAddonDialog(wx.Dialog):
         s.Add(self.share, 0, wx.ALL, 8)
         self.mnemonics["e"] = self.share
         row = wx.BoxSizer(wx.HORIZONTAL)
+        test_button = wx.Button(panel, label="Test on real &questions")
+        test_button.SetToolTip("Test this topic's newest add-on (or the model itself) on questions blind people really "
+                               "asked, and write a report (Alt+Q)")
+        test_button.Bind(wx.EVT_BUTTON, lambda e: self.EndModal(TEST_REAL_QUESTIONS))
         start_button = wx.Button(panel, label="&Start training this add-on")
         start_button.SetToolTip("Train the add-on for this topic with the first page's folders and model (Alt+S)")
         start_button.Bind(wx.EVT_BUTTON, lambda e: self.EndModal(wx.ID_OK))
         cancel = wx.Button(panel, label="&Cancel")
         cancel.SetToolTip("Close without training (Alt+C)")
         cancel.Bind(wx.EVT_BUTTON, lambda e: self.EndModal(wx.ID_CANCEL))
-        for b in (start_button, cancel):
+        for b in (start_button, test_button, cancel):
             row.Add(b, 0, wx.ALL, 4)
         s.Add(row, 0, wx.ALL, 4)
         panel.SetSizer(s)
@@ -1680,18 +1702,54 @@ class Wizard(wx.Frame):
         dialog = TopicAddonDialog(self, topics, sources_module(), self.boxes(), chosen.get("topic", ""),
                                   chosen.get("topic_replay"))
         try:
-            speak("Topic add-ons. Choose a topic with the arrow keys, then press Alt+S to start training it.", True)
-            if dialog.ShowModal() != wx.ID_OK:
-                return
+            speak("Topic add-ons. Choose a topic with the arrow keys, then press Alt+S to start training it, or Alt+Q "
+                  "to test it on real questions.", True)
+            answer = dialog.ShowModal()
             topic, share = dialog.chosen(), dialog.chosen_share()
         finally:
             dialog.Destroy()
+        if answer == TEST_REAL_QUESTIONS:
+            save_choices({**load_choices(), "topic": topic.id})
+            self.start_evaluation(topic)
+            return
+        if answer != wx.ID_OK:
+            return
         save_choices({**load_choices(), "topic": topic.id, "topic_replay": share})
         self.topic_run = (topic, share)
         try:
             self.on_start(None)
         finally:
             self.topic_run = None
+
+    def start_evaluation(self, topic):
+        """Test on real questions: the newest finished add-on of topic in the kit's work folder (or the first page's
+        model itself), on blind people's real questions of the topic and everyday ones (kit\\train.py --evaluate),
+        shown and said on the progress page like a training."""
+        lines, ready = check_computer(self.folder.GetValue(), self.library.GetValue())
+        self.check_result.SetValue("\n".join(lines))
+        if not ready:
+            speak(" ".join(lines), True)
+            return
+        self.kit = os.path.join(self.folder.GetValue(), KIT_NAME)
+        model = MODELS[self.model.GetSelection()][0]
+        addon = None
+        try:
+            import real_questions                       # kit\\real_questions.py, bundled like topics.py
+            addon = real_questions.find_addon(os.path.join(self.kit, "work"), topic.id, model)
+        except Exception:  # noqa: BLE001 - no add-on found: the model itself is tested
+            addon = None
+        args = evaluation_args(model, topic.id, addon, self.library.GetValue().strip())
+        note = (f"Real questions test: {topic.title}, " + ("its newest add-on." if addon else
+                f"no add-on of this topic yet, so the {model.upper()} model itself is tested."))
+        self.first.Hide()
+        self.second.Show()
+        self.panel.Layout()
+        self.status.SetFocus()
+        self.personal_run = False
+        self.lines.put(note)
+        speak(note)
+        log(f"Real questions test: folder {self.kit}, settings {' '.join(args)}.")
+        threading.Thread(target=self.work, args=(args, False, "describer"), daemon=True).start()
 
     def on_check(self, _event):
         """Check the card and the disk, show and say it."""
@@ -1949,7 +2007,8 @@ def self_test():
                  os.path.join("kit", "run_review.cmd"), os.path.join("kit", "run_review.py"),
                  os.path.join("kit", "review_sources.py"), os.path.join("kit", "requirements.txt"),
                  os.path.join("kit", "make_toolkit_addon.py"), "Make Toolkit Add-on.cmd",
-                 os.path.join("kit", "topics.py"), "TOPIC ADD-ON LABEL FORMAT.txt"):
+                 os.path.join("kit", "topics.py"), "TOPIC ADD-ON LABEL FORMAT.txt",
+                 os.path.join("kit", "real_questions.py"), os.path.join("kit", "real_questions.jsonl")):
         if not os.path.exists(resource(name)):
             raise SystemExit(f"missing from the program: {name}")
     module = own_data_module()
