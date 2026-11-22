@@ -55,9 +55,10 @@ MODULES = [
     "radio_books",          # radio rules, NCVEC question pools, AUXCOMM, military radio manuals, mesh radio docs (radio:)
     # health and life (the owner's request of 2026-11-22), each in its own group
     "mental_health",        # NIMH topics, CDC, VA PTSD, OWH, Smokefree.gov, NIDA, NCI grief, help lines (mind:)
-    "fitness_nutrition",    # Physical Activity and Dietary Guidelines, Move Your Way, FDA label, CDC, NHLBI, NIDDK (fit:)
+    "fitness_nutrition",    # Physical Activity and Dietary Guidelines, Move Your Way, CDC, NHLBI, NIDDK, OWH (fit:)
     "sexual_health",        # CDC contraception, STIs, HIV, violence; OPA, OWH, FDA, NIDDK, help lines (sexhealth:)
     "aging_end_of_life",    # ACL long-term care, VA geriatrics, NCI end of life, NIDCD, IRS, VA burial, DOJ (aging:)
+    "wilderness_first_aid", # NPS and USFS backcountry safety, NIOSH outdoor hazards, CDC, NOAA SARSAT, TB MEDs (wild:)
 ]
 
 _loaded = {}
