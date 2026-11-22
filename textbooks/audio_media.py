@@ -5,7 +5,7 @@ and audio description, and keeping recordings safe for the long term. Keys: audi
 What this module builds, in plain words, each IN FULL:
   - the Audacity Manual (version 3.7), every page: recording, editing, effects, generators and analysers, the menus,
     preferences and keyboard shortcuts, tutorials (recording from a microphone, making a podcast, digitising tapes
-    and records), and exporting audio. Licensed CC BY 3.0 by the Audacity Team (its credits page says so, checked at
+    and records), and exporting audio. Licensed CC BY 3.0 by the Audacity Team (its front page says so, checked at
     every build);
   - the OSARA guide (Open Source Accessibility for the REAPER Application, by James Teh, NV Access and others):
     installing OSARA, its keyboard commands for REAPER with a screen reader, reviewing and editing tracks and items,
@@ -48,8 +48,8 @@ GROUP = "audiomedia"
 GROUPS = {GROUP: "Reference, audio and media production"}
 
 AUD = "https://manual.audacityteam.org"
-AUD_CREDITS = AUD + "/man/credits.html"
-AUD_TEXT = r"Pages in this Manual are available under the terms of the"
+AUD_LICENCE_PAGE = AUD + "/index.html"           # the front page's "Copyright:" paragraph
+AUD_TEXT = r"Pages in this Manual are available under the terms of the Creative Commons Attribution 3\.0"
 OSARA = "https://osara.reaperaccessibility.com/"
 OSARA_TEXT = r"License: GNU General Public License version 2"
 # The W3C fields, the same as sources.W3C (which cannot be imported here: sources imports this module at its end).
@@ -67,7 +67,7 @@ GUIDES = [
     dict(K.WEB, group=GROUP, name="audacity_manual", title="Audacity Manual (version 3.7): recording, editing, "
          "effects and keyboard shortcuts", subject="Audio editing (Audacity)", publisher="The Audacity Team",
          country="International", licence="CC BY 3.0", licence_url="https://creativecommons.org/licenses/by/3.0/",
-         licence_page=AUD_CREDITS, licence_text=AUD_TEXT, source=AUD + "/index.html",
+         licence_page=AUD_LICENCE_PAGE, licence_text=AUD_TEXT, source=AUD + "/index.html",
          crawl=[(AUD + "/index.html", 2), (AUD + "/man/subject_index.html", 1), (AUD + "/man/menu_reference.html", 1)],
          pages=r"^https://manual\.audacityteam\.org/man/(?!license|credits)[A-Za-z0-9_]+\.html$",
          content=(r'<div id="content"[^>]*>', r'<div id="footer"'),
@@ -164,7 +164,7 @@ COLLECTION = K.Collection("media", GROUP, guides=GUIDES, makers=MAKERS,
                           words={"audio-media": lambda: ["media:index"] + [f"media:{g['name']}" for g in GUIDES]})
 
 LICENCE_LINES = {
-    "media_audacity": "manual.audacityteam.org/man/credits.html (checked at every build): \"Pages in this Manual are "
+    "media_audacity": "manual.audacityteam.org/index.html (checked at every build): \"Pages in this Manual are "
                       "available under the terms of the Creative Commons Attribution 3.0 license\"; robots.txt: none "
                       "(the site answers 404, so every page is allowed); no AI rules (checked 2026-11-22).",
     "media_osara": "osara.reaperaccessibility.com (checked at every build): \"License: GNU General Public License "
