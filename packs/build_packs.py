@@ -1824,6 +1824,22 @@ COMMONS_KEYS = COMMONS_KEYS | frozenset(HAZARD_COMMONS_KEYS)
 from baby_packs import BABY_PACKS, BABY_COMMONS_KEYS
 PACKS.update(BABY_PACKS)
 COMMONS_KEYS = COMMONS_KEYS | frozenset(BABY_COMMONS_KEYS)
+# Home repair and upkeep, and pest control (packs/home_upkeep_packs.py, the owner's request of 2026-11-22): Commons
+# repair, plumbing, roofing and gutter, flooring, damp and cleaning categories, locks and locksmithing, small engines and
+# bicycle repair tools, traps, pesticide labels and the household pests commons_pests does not ask about, and Open Images
+# house parts, plumbing, wiring, finishes, bicycle parts and pests; safety notes on electrical work, gas, ladders and
+# roofs, engines, pesticides and traps, stings, lead and mould. The people-at-work packs are describing only.
+from home_upkeep_packs import HOME_UPKEEP_PACKS, HOME_UPKEEP_COMMONS_KEYS
+PACKS.update(HOME_UPKEEP_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(HOME_UPKEEP_COMMONS_KEYS)
+# The textile crafts and mending (packs/textile_crafts_packs.py, the same request): Commons knitting, crochet, lace,
+# macramé and yarn; quilting, embroidery, weaving, spinning, dyeing and felting; sewing notions, patterns, mending and
+# darning; upholstery, leatherwork, shoe repair and furniture restoration; fabrics and fibres by name; Open Images
+# needlework, notions and fabrics; and the Smithsonian NMAH's quilts, samplers, lace and sewing, spinning and weaving
+# tools (CC0, named from each record).
+from textile_crafts_packs import TEXTILE_CRAFTS_PACKS, TEXTILE_CRAFTS_COMMONS_KEYS
+PACKS.update(TEXTILE_CRAFTS_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(TEXTILE_CRAFTS_COMMONS_KEYS)
 
 
 def pack_lanes(keys):

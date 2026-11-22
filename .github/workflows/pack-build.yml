@@ -427,6 +427,17 @@ jobs:
             commons_baby_products) limit=800 ;;
             open_images_baby_products) limit=1500 ;;
             abo_baby_products) limit=80 ;;
+            commons_home_repair) limit=1200 ;;
+            commons_locks_engines_bikes) limit=900 ;;
+            commons_pest_control) limit=1200 ;;
+            open_images_home_upkeep) limit=2500 ;;
+            commons_knit_crochet_lace) limit=1200 ;;
+            commons_quilt_embroidery_weaving) limit=2000 ;;
+            commons_sewing_mending) limit=1200 ;;
+            commons_upholstery_leather_shoes) limit=700 ;;
+            commons_fabrics_fibres) limit=1000 ;;
+            open_images_textile_crafts) limit=2000 ;;
+            nmah_textiles_sewing) limit=1000 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in

@@ -3325,3 +3325,19 @@ PERSONAL_PICTURE_MAKING_OK |= _daily_access_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in DAILY_ACCESS_SOURCES
                                                                if s.key not in _daily_access_ok)
 _add_collections(DAILY_ACCESS_SOURCES)
+# Home repair, upkeep and the textile crafts (home_crafts_sources.py, the owner's request of 2026-11-22): the
+# ready-made packs of packs/home_upkeep_packs.py and packs/textile_crafts_packs.py, their share-alike Commons files, and
+# the sources looked at and left out; the file may be missing. Only the keys in HOME_CRAFTS_PICTURE_MAKING_OK may be
+# used for picture-making.
+try:
+    import home_crafts_sources as _home_crafts  # noqa: E402
+except ImportError as _e:
+    _home_crafts = None
+    if getattr(_e, "name", None) != "home_crafts_sources":
+        say(f"(The home repair and crafts collections could not be loaded: {_e}. They are left out.)")
+HOME_CRAFTS_SOURCES = list(getattr(_home_crafts, "HOME_CRAFTS_SOURCES", []) or [])
+_home_crafts_ok = set(getattr(_home_crafts, "HOME_CRAFTS_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _home_crafts_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in HOME_CRAFTS_SOURCES
+                                                               if s.key not in _home_crafts_ok)
+_add_collections(HOME_CRAFTS_SOURCES)
