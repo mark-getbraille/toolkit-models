@@ -154,7 +154,14 @@ jobs:
                    "open_images_home_health", "commons_string_instrument_parts", "commons_wind_percussion_parts",
                    "commons_piano_parts", "commons_instrument_care", "open_images_instrument_care",
                    "commons_camp_cooking", "commons_emergency_cooking", "commons_grills_smokers",
-                   "commons_barbecue_food", "open_images_outdoor_cooking"]
+                   "commons_barbecue_food", "open_images_outdoor_cooking",
+                   "commons_homestead_poultry_bees", "commons_homestead_farmstead", "open_images_homestead",
+                   "commons_water_trail_markers", "commons_boating_paddling", "commons_fishing_tackle",
+                   "commons_outdoor_gear", "open_images_outdoors", "commons_card_games",
+                   "commons_board_games_world", "commons_puzzles_hobbies", "open_images_games",
+                   "commons_science_instruments", "open_images_science", "commons_clothing_more",
+                   "open_images_clothing", "commons_poisonous_plants", "commons_mushrooms_id",
+                   "commons_wild_plants_bark"]
           words = [w for w in sys.argv[1].split(",") if w]
           # "key+" is a top-up pass of key and "key?" a needs-only run (kept with the mark, which the build job reads);
           # "all?" asks for a needs-only run of every pack.

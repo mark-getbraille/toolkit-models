@@ -3424,3 +3424,25 @@ PERSONAL_PICTURE_MAKING_OK |= _outdoor_cooking_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in OUTDOOR_COOKING_SOURCES
                                                                if s.key not in _outdoor_cooking_ok)
 _add_collections(OUTDOOR_COOKING_SOURCES)
+# Leisure and learning (the owner's requests of 2026-11-22): homesteading (homestead_sources.py), outdoor recreation
+# (outdoors_sources.py), games and hobbies (games_sources.py), science instruments (science_use_sources.py), clothing
+# (clothing_sources.py) and plant identification (plant_id_sources.py): the ready-made packs, their share-alike
+# Commons files and what was left out; each file may be missing. Only the keys in each file's
+# <NAME>_PICTURE_MAKING_OK may be used for picture-making.
+LEISURE_SOURCES = []
+for _module_name, _prefix in (("homestead_sources", "HOMESTEAD"), ("outdoors_sources", "OUTDOORS"),
+                              ("games_sources", "GAMES"), ("science_use_sources", "SCIENCE"),
+                              ("clothing_sources", "CLOTHING"), ("plant_id_sources", "PLANT_ID")):
+    try:
+        _leisure = __import__(_module_name)
+    except ImportError as _e:
+        _leisure = None
+        if getattr(_e, "name", None) != _module_name:
+            say(f"(The {_module_name} collections could not be loaded: {_e}. They are left out.)")
+    _leisure_sources = list(getattr(_leisure, f"{_prefix}_SOURCES", []) or [])
+    _leisure_ok = set(getattr(_leisure, f"{_prefix}_PICTURE_MAKING_OK", ()) or ())
+    PERSONAL_PICTURE_MAKING_OK |= _leisure_ok
+    NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in _leisure_sources
+                                                                   if s.key not in _leisure_ok)
+    _add_collections(_leisure_sources)
+    LEISURE_SOURCES += _leisure_sources
