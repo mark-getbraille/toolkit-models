@@ -136,7 +136,9 @@ jobs:
                    "lfa_covid_tests", "commons_home_health_tests",
                    "laundry_care_labels",
                    "commons_household_hazards", "open_images_household_hazards",
-                   "commons_baby_products", "open_images_baby_products", "abo_baby_products"]
+                   "commons_baby_products", "open_images_baby_products", "abo_baby_products",
+                   "commons_camp_cooking", "commons_emergency_cooking", "commons_grills_smokers",
+                   "commons_barbecue_food", "open_images_outdoor_cooking"]
           words = [w for w in sys.argv[1].split(",") if w]
           # "key+" is a top-up pass of key and "key?" a needs-only run (kept with the mark, which the build job reads);
           # "all?" asks for a needs-only run of every pack.

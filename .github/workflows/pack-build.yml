@@ -427,6 +427,11 @@ jobs:
             commons_baby_products) limit=800 ;;
             open_images_baby_products) limit=1500 ;;
             abo_baby_products) limit=80 ;;
+            commons_camp_cooking) limit=900 ;;
+            commons_emergency_cooking) limit=500 ;;
+            commons_grills_smokers) limit=900 ;;
+            commons_barbecue_food) limit=900 ;;
+            open_images_outdoor_cooking) limit=1200 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in

@@ -1824,6 +1824,13 @@ COMMONS_KEYS = COMMONS_KEYS | frozenset(HAZARD_COMMONS_KEYS)
 from baby_packs import BABY_PACKS, BABY_COMMONS_KEYS
 PACKS.update(BABY_PACKS)
 COMMONS_KEYS = COMMONS_KEYS | frozenset(BABY_COMMONS_KEYS)
+# Emergency cooking, camp cooking, and grills and smokers (packs/outdoor_cooking_packs.py): Commons camp stoves, mess
+# kits, coolers, Dutch ovens, solar cookers, hayboxes, canned heat, grills, kamados, pellet grills, smokehouses,
+# griddles, chimney starters, propane cylinders and barbecue food, and Open Images grilling, campfires and camp kitchen
+# things; every answer ends with the carbon monoxide, fire, propane, hot surface, food temperature or water notes.
+from outdoor_cooking_packs import OUTDOOR_COOKING_PACKS, OUTDOOR_COOKING_COMMONS_KEYS
+PACKS.update(OUTDOOR_COOKING_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(OUTDOOR_COOKING_COMMONS_KEYS)
 
 
 def pack_lanes(keys):

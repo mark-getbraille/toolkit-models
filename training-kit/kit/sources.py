@@ -3325,3 +3325,18 @@ PERSONAL_PICTURE_MAKING_OK |= _daily_access_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in DAILY_ACCESS_SOURCES
                                                                if s.key not in _daily_access_ok)
 _add_collections(DAILY_ACCESS_SOURCES)
+# Emergency cooking, camp cooking, and grills and smokers (outdoor_cooking_sources.py): the ready-made packs, their
+# share-alike Commons files, and the sources looked at and left out; the file may be missing. Only the keys in
+# OUTDOOR_COOKING_PICTURE_MAKING_OK may be used for picture-making.
+try:
+    import outdoor_cooking_sources as _outdoor_cooking  # noqa: E402
+except ImportError as _e:
+    _outdoor_cooking = None
+    if getattr(_e, "name", None) != "outdoor_cooking_sources":
+        say(f"(The outdoor cooking collections could not be loaded: {_e}. They are left out.)")
+OUTDOOR_COOKING_SOURCES = list(getattr(_outdoor_cooking, "OUTDOOR_COOKING_SOURCES", []) or [])
+_outdoor_cooking_ok = set(getattr(_outdoor_cooking, "OUTDOOR_COOKING_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _outdoor_cooking_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in OUTDOOR_COOKING_SOURCES
+                                                               if s.key not in _outdoor_cooking_ok)
+_add_collections(OUTDOOR_COOKING_SOURCES)

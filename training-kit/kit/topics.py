@@ -100,6 +100,7 @@ TOPICS = [
            "meatscan", "eggs", "beef", "abo_packaged_goods", "abo_pet_supplies", "open_images_packaged_goods", "commons_packaging",
            "locbeef", "fish_freshness", "horse_mackerel", "fish_eyes_stages", "chicken_breast", "food_packaging",
            "packeat", "cerrado_fruits", "commons_date_codes",
+           "commons_barbecue_food",
            # share-alike
            "openfoodfacts", "openfoodfacts_labels", "commons_food_sa", "openfacts_us", "openfacts_ca",
            # research-only (personal use)
@@ -131,9 +132,11 @@ TOPICS = [
            "gso_objects", "commons_household_chemicals", "commons_finishes_in_use", "commons_appliance_controls",
            "open_images_appliance_controls",
            "commons_baby_products", "open_images_baby_products", "abo_baby_products", "commons_household_hazards", "open_images_household_hazards",
+           "commons_camp_cooking", "commons_emergency_cooking", "commons_grills_smokers", "open_images_outdoor_cooking",
            # share-alike
            "commons_mechanical_sa", "dashboard_symbols_sa", "device_models_sa", "farm_mech_commons_sa",
            "commons_airplanes_sa", "chemical_commons_sa", "appliance_commons_sa",
+           "outdoor_cooking_commons_sa",
            # non-commercial and research-only (personal use)
            "autovi", "dashboard_warning_icons", "car_parts_damage", "car_parts_dsmlr", "car_damage_views",
            "mechanical_parts_2022", "co3d_devices", "stanford_cars", "fgvc_aircraft", "museums_victoria",
