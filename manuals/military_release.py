@@ -77,7 +77,7 @@ DISTRIBUTION_A = re.compile(r"approved\s*for\s*public\s*release\s*[;:,.]?\s*(?:a
 
 # Restricted (but unclassified) markings: never republished, personal use at most.
 RESTRICTED = re.compile(r"distribution\s*(?:statement\s*)?[B-F]\s*[:.\-–—]|distribution\s+(?:statement\s+)?[B-F]\b|"
-                        r"distribution\s*authori[sz]ed\s*to|distribution\s+(?:is\s+)?limited\s+to|"
+                        r"distribution\s*authori[sz]ed\s*to|distribution\s+(?:is\s+)?(?:limited|restricted)\s+to|"
                         r"authorized\s+to\s+U\.?\s?S\.?\s+Government\s+agencies|for\s*official\s*use\s*only|"
                         r"\bFOUO\b|controlled\s*unclassified|\bCUI\b|\bNOFORN\b|export[- ]?controlled|\bITAR\b|"
                         r"not\s+releasable\s+to|warning:?\s+this\s+document\s+contains\s+technical\s+data\s+whose\s+"

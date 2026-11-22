@@ -146,3 +146,10 @@ def test_scan_without_text_is_left_out():
     for blank in ("", "   \n  ", None):
         rule = M.release_rule(blank, IA)
         assert rule.verdict == "out" and "no readable text" in rule.reason
+
+
+def test_distribution_restricted_to_is_a_restricted_marking():
+    """FM 31-27's wording (found 22 November 2026): "Distribution restricted to United States (U.S.) Government
+    agencies" is a restricted marking like "distribution limited to"."""
+    import military_release as m
+    assert m.RESTRICTED.search("Distribution restricted to United States (U.S.) Government agencies only.")
