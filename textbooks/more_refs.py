@@ -91,6 +91,8 @@ MODULES = [
     "sexual_health",        # CDC contraception, STIs, HIV, violence; OPA, OWH, FDA, NIDDK, help lines (sexhealth:)
     "aging_end_of_life",    # ACL long-term care, VA geriatrics, NCI end of life, NIDCD, IRS, VA burial, DOJ (aging:)
     "wilderness_first_aid", # NPS and USFS backcountry safety, NIOSH outdoor hazards, CDC, NOAA SARSAT, TB MEDs (wild:)
+    # reference gaps (the owner's request of 2026-11-22), each in its own group
+    "geography",            # the CIA World Factbook (last edition, by continent) and a geography index (geo:)
 ]
 
 _loaded = {}
