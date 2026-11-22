@@ -28,7 +28,7 @@ import sys
 
 import build_packs  # noqa: F401 - loaded first: the other pack files and build_packs import each other
 from build_packs import say
-from described_commons import build_described, file_words
+from described_commons import build_described, file_words, own_caption_row
 
 ASK_LETTER = "Which letter is this hand showing in fingerspelling?"
 ASK_NUMBER = "Which number is this hand showing in sign language?"
@@ -106,10 +106,8 @@ SIGN_SPECS = [
 
 
 def caption_row(title, text, category):
-    """The file's own caption or description, as "Write a short description ..." (when it has a real one)."""
-    if text and len(text.split()) >= 5:
-        return {"question": build_packs.ALT_TEXT, "answer": text}
-    return None
+    """The file's own caption, when it is a real one in English (described_commons.own_caption_row)."""
+    return own_caption_row(title, text, category)
 
 
 def build_commons_sign_language(limit):

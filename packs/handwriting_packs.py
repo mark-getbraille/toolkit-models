@@ -40,7 +40,7 @@ import zipfile
 import build_packs  # noqa: F401 - loaded first: the other pack files and build_packs import each other
 from build_packs import say, smaller, clean
 from food_packs import with_twins
-from described_commons import build_described, file_words
+from described_commons import build_described, file_words, own_caption_row
 
 READ_PAGE = "Read this handwritten page."
 ASK_WHAT = "What is this?"
@@ -151,6 +151,7 @@ def signer(title):
         m = pattern.match(words)
         if m:
             name = re.sub(r"\s*\((?:[^()]*)\)\s*$", "", m.group(1)).strip(" ,.-")
+            name = re.sub(r"['’]s$", "", name)
             name = re.sub(r"\s+(?:\d{4}|v\d+|transparent|black|white|cropped|vector)$", "", name, flags=re.I)
             if 2 <= len(name.split()) <= 5 and name[:1].isupper() and not NOT_A_NAME.search(name) \
                     and not re.search(r"\d", name):
@@ -167,21 +168,29 @@ def signature_rows(title, text):
     return rows
 
 
+def autograph_rows(title, text):
+    """An autograph: Commons' category holds signatures and also whole letters and pages written by a known person,
+    so it says only that; whose it is when the file name says."""
+    name = signer(title)
+    rows = [(ASK_WHAT, "This is an autograph: something written or signed by hand by its author.")]
+    if name:
+        rows.append((ASK_SIGNATURE, f"It is the signature of {name}."))
+    return rows
+
+
 HANDWRITING = [
     ("Handwriting", True, kind("handwriting")),
     ("Handwritten letters", True, kind("a handwritten letter")),
     ("Handwritten signs", True, kind("a handwritten sign")),
     ("Shopping lists", False, kind("a shopping list")),
-    ("Autographs", True, signature_rows),
+    ("Autographs", True, autograph_rows),
     ("Signatures", True, signature_rows),
 ]
 
 
 def caption_row(title, text, category):
-    """The file's own caption or description, as "Write a short description ..." (when it has a real one)."""
-    if text and len(text.split()) >= 5:
-        return {"question": build_packs.ALT_TEXT, "answer": text}
-    return None
+    """The file's own caption, when it is a real one in English (described_commons.own_caption_row)."""
+    return own_caption_row(title, text, category)
 
 
 def build_commons_handwriting(limit):

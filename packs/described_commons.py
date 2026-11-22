@@ -139,6 +139,23 @@ def build_described(specs, limit, prefix, adults_only=True, extra_row=None):
     return with_twins(fetched[:limit])
 
 
+# A caption that is about the file, not the picture ("This image is available from ...", "Own work").
+NOT_A_CAPTION = re.compile(r"\b(available from|digital id|this (image|file|photo) (is|was)|uploaded|own work|"
+                           r"scanned|scan of|catalog(ue)? (number|no)|accession|copyright|licen[cs]ed?)\b", re.I)
+ENGLISH = re.compile(r"\b(the|a|an|of|and|in|on|with|for|from|to|is|at|by)\b", re.I)
+
+
+def own_caption_row(title, text, category=""):
+    """The file's own caption or description as "Write a short description ..." when it is a real one in
+    English (five words or more, with common English words, not words about the file itself); else None."""
+    words = (text or "").split()
+    if len(words) < 5 or NOT_A_CAPTION.search(text) or len(ENGLISH.findall(text)) < max(1, len(words) // 12):
+        return None
+    if re.search(r"\b(der|die|das|und|von|mit|een|het|les|des|und|del|della)\b", text, re.I):
+        return None
+    return {"question": build_packs.ALT_TEXT, "answer": text}
+
+
 def file_words(title):
     """A Commons file title as words: "File:Abraham Lincoln signature.svg" -> "Abraham Lincoln signature"."""
     name = title.split(":", 1)[-1].rsplit(".", 1)[0]

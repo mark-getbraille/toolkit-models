@@ -281,3 +281,14 @@ def test_weather_maps_wired():
     assert any("Storm Prediction Center" in key for key in k.WEATHER_NOT_INCLUDED)
     import topics
     assert {"wpc_surface_maps", "nhc_forecast_cones"} <= set(topics.find("documents").keys)
+
+
+def test_captions_and_autographs():
+    import described_commons as dcm
+    assert dcm.own_caption_row("t", "The autograph of Bob Boone on a baseball.")["answer"].startswith("The autograph")
+    assert dcm.own_caption_row("t", "This image is available from the Netherlands Institute for Art History.") is None
+    assert dcm.own_caption_row("t", "Widmung von Rudolf Ernst Keller für Rudolf Hotzenköcherle, Zürich.") is None
+    assert dcm.own_caption_row("t", "Too short.") is None
+    assert hw.signer("File:Bob Boone's Autograph.jpg") == "Bob Boone"
+    rows = hw.autograph_rows("File:Brandenburger family scrapbook page 6.jpg", "")
+    assert rows == [("What is this?", "This is an autograph: something written or signed by hand by its author.")]
