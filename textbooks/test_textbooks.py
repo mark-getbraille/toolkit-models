@@ -65,6 +65,51 @@ def test_sample_book(tmp_path):
     json.dumps(data)
 
 
+def test_openstax_pinned_to_cc_by_and_personal_use(tmp_path):
+    """OpenStax's 2026 change to CC BY-NC-SA: a pinned repository is built from its last CC BY 4.0 commit with that
+    commit as its version (openstax.org's catalogue, which describes the newest version, does not change its
+    licence); a version under CC BY-NC-SA (in its collection, its LICENSE file or openstax.org's catalogue) is
+    labelled personal use only."""
+    repo = make_sample_repo(str(tmp_path / "osbooks-tiny"))
+    cms = {"tiny-science": {"license_name": "Creative Commons Attribution-NonCommercial-ShareAlike License",
+                            "license_url": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+                            "book_state": "deprecated", "pdf_url": ""}}
+    pin = ("a" * 40, "2026-02-01", "b" * 40, "2026-03-19")
+    book = B.osbooks_books(repo, catalogue=cms, pin=pin)[0]
+    assert book.licence == "CC BY 4.0" and not book.personal_use and book.version.startswith("GitHub commit aaaa")
+    assert book.originals[0]["url"] == f"https://github.com/openstax/osbooks-tiny/archive/{'a' * 40}.zip"
+    assert "2026-03-19" in book.description and book.published == "2026-02-01" and not book.original_pdf
+    cms["tiny-science"]["book_state"] = "live"
+    newest = B.osbooks_books(repo, catalogue=cms)[0]          # the newest version: openstax.org's stricter licence
+    assert newest.licence == "CC BY-NC-SA 4.0" and newest.personal_use
+    assert newest.licence_url == "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+    assert B.licence_words(newest.licence, False, newest.personal_use) == \
+        "CC BY-NC-SA 4.0, not for commercial use, personal use only"
+    assert B.osbooks_books(repo, only=["another-book"]) == []
+    with open(os.path.join(repo, "LICENSE"), "w") as f:      # the repository's own LICENSE file counts too
+        f.write("Attribution-NonCommercial-ShareAlike 4.0 International\n\n=====\n")
+    assert B.repository_licence(repo) == "CC BY-NC-SA 4.0"
+    assert B.osbooks_books(repo)[0].personal_use
+
+
+def test_openstax_pins_recorded():
+    """Every pinned OpenStax repository is one the library builds, with full commit ids and the dates; the weekly
+    check does not rebuild a pinned repository; nothing reads openstax.org's archive or book files."""
+    import updates
+    assert set(sources.OSBOOKS_PINS) <= set(sources.OSBOOKS) and set(sources.OSBOOKS_NEWER) <= set(sources.OSBOOKS_PINS)
+    for repo, (commit, date, change, change_date) in sources.OSBOOKS_PINS.items():
+        assert re.fullmatch(r"[0-9a-f]{40}", commit) and re.fullmatch(r"[0-9a-f]{40}", change), repo
+        assert date < change_date and change_date.startswith("2026-"), repo
+    assert updates.fingerprint("osbooks:biology-bundle") == sources.OSBOOKS_PINS["biology-bundle"][0]
+    assert "osbooks-new:principles-finance" in sources.expand_keys(["osbooks"])
+    here = os.path.dirname(os.path.abspath(__file__))
+    for name in os.listdir(here):
+        if name.endswith(".py") and not name.startswith("test_"):
+            with open(os.path.join(here, name), encoding="utf-8") as f:
+                code = f.read()
+            assert not re.search(r"openstax\.org/(apps/archive|books/|contents|resources)", code), name
+
+
 # ---------------------------------------------------------------- non-profit guides and official PDFs (made-up pages)
 
 GUIDE_PAGES = {

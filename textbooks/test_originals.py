@@ -132,7 +132,8 @@ def test_drivers_record_their_originals():
     here = os.path.dirname(os.path.abspath(__file__))
     code = {n: open(os.path.join(here, n), encoding="utf-8").read()
             for n in ("build_textbooks.py", "periodicals.py", "medications.py", "courses.py", "animal_sounds.py")}
-    assert "/archive/HEAD.zip" in code["build_textbooks.py"]                  # OpenStax repositories
+    assert "/archive/\"" in code["build_textbooks.py"] and "'HEAD'}.zip" in code["build_textbooks.py"]  # OpenStax
+    # repositories: the pinned commit's zip, or HEAD's
     assert 'book.originals.append({"url": url, "kind": "html"})' in code["build_textbooks.py"]   # web guides
     assert "book.originals = [{\"url\": url}" in code["build_textbooks.py"]   # laws
     assert "reports.csv" in code["periodicals.py"] and "MAX_ORIGINALS" in code["periodicals.py"]

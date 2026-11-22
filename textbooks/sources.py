@@ -48,6 +48,109 @@ OSBOOKS = [
     "mikroekonomia", "psychologia",
 ]
 
+# OpenStax changed most of its books from CC BY 4.0 to CC BY-NC-SA 4.0 in March and April 2026 (and its three
+# Polish books in October 2026). So each repository that was CC BY 4.0 before its change is built from the last
+# commit before it (OSBOOKS_PINS), which OpenStax published under CC BY 4.0: the builder fetches that one commit
+# from GitHub (git, not openstax.org: openstax.org's robots.txt keeps programs out of its book files), checks the
+# licence written in it again, and records the commit as the book's version. Found on 2026-11-22 from each
+# repository's own history (git log of LICENSE and collections/*.collection.xml): the change commit is the first
+# that made LICENSE or a collection file say CC BY-NC-SA; the pinned commit is its parent, where both still say
+# CC BY 4.0. repository: (pinned commit, its date, the change commit, its date).
+OSBOOKS_PINS = {
+    "anatomy-physiology": ("b0058a743bdd2cc08196abaaa7d5469970c0d80c", "2026-03-11",
+                           "fdfa6e21ac3bc372dc2802a9952df124a619fdcc", "2026-03-19"),
+    "biology-bundle": ("d2779c2edfb435e75047325434fe2fe93d5aa120", "2026-02-03",
+                       "4ea6132f7acb0fc9ef1015b11a59427fd7b4c61c", "2026-03-19"),
+    "chemistry-bundle": ("32c719622fbb7a0ca729cd645c1df4cf4e7d5b3a", "2026-02-04",
+                         "0243cd5879b93936ad8bc70ca181480403c331ec", "2026-03-19"),
+    "college-physics-bundle": ("f98d7a792138a6133fe7267d17e70aa04e9ccbed", "2026-02-04",
+                               "5182c46ee4854d84e3e35ea34e5ed0bef461b19b", "2026-03-19"),
+    "university-physics-bundle": ("db44eb99e9aa1d918fd8cf182f82ccdece9c7b11", "2026-02-02",
+                                  "b375d3f61093460d280a21dddee51e7b6c9ce3b2", "2026-03-19"),
+    "astronomy": ("63157f370b09c06a4cc12832384aaaf4de1ced3b", "2026-02-02",
+                  "4aedbad89cb6b91004a2fd0cba74c813d78bbd1d", "2026-03-12"),
+    "psychology": ("e061043bf2f9e86ace51c4e8dc9555160f60a99d", "2026-01-23",
+                   "e91efc4674c71be3c9b13b16766078dfafa06ebb", "2026-03-23"),
+    "introduction-sociology": ("d35d5f3bdac40f93607d600134865d4f13ce1f9b", "2026-02-09",
+                               "cb424bc47ff1be02df7cff71d7e8d9ead113ba3c", "2026-03-23"),
+    "microbiology": ("ecf34dad129d686703780e87ab5aa2e59c577a6a", "2026-01-12",
+                     "f1d8d4e9941417f25610a239045c35488d56cf22", "2026-03-19"),
+    "us-history": ("046331cfcea0ac1b1a8fd461b3e6aae638845af3", "2025-12-04",
+                   "ec99b9ad7e897c7f38339f0a32cde8d6f193d741", "2026-03-23"),
+    "world-history": ("3e17beda9130380d24be881e6d1942dfcc1be845", "2025-12-05",
+                      "b2ddac6d5ab41847257c1484ee9271576d1a053e", "2026-03-23"),
+    "principles-economics-bundle": ("020e54dbecb376f27b37c3498f9347a45961c11a", "2026-01-26",
+                                    "1a5128dd299708e9a59eb38941b1ff1410bc1e63", "2026-03-20"),
+    "introductory-statistics-bundle": ("50ec91749080bb040b57bb40c34337cacc994cba", "2026-03-17",
+                                       "592cff1f07c4fda4800180503d540158f7f48638", "2026-03-19"),
+    "college-algebra-bundle": ("4922e46ebc04326979e19392ccc2384cb8b9076c", "2026-03-16",
+                               "8c1dc56c4f2f3b41005ba40192dff8e277d8ad84", "2026-03-18"),
+    "prealgebra-bundle": ("77a933c672e9c48c746eb802d588a9a7ddfd6e0d", "2025-10-02",
+                          "751be9772758a6345b0bf1bf36617ca648619749", "2026-03-12"),
+    "contemporary-mathematics": ("fa7c1a151783958fd2c114da66831e3d57ce2321", "2026-01-14",
+                                 "139356b6b651fa34ebaf7fff54d53ecf989b2376", "2026-03-18"),
+    "business-ethics": ("d64573e2807a1e7ba5d7dec8c36cd815a942b5c7", "2025-12-04",
+                        "658a300b1049320d1b524a70089dc2c6007fbdcb", "2026-03-19"),
+    "introduction-philosophy": ("d7bd4f0f520529b3ad83272448a9c2be25c9040a", "2025-12-05",
+                                "a108740c4a8c121b67a164ec5a397d1a7f246987", "2026-03-23"),
+    "writing-guide": ("a6c95528390e3a2936f5bf87c49ac1a4995a0a6e", "2025-12-04",
+                      "59c6457b8e9a9993b72212e29cfc50e05458e93a", "2026-03-23"),
+    "entrepreneurship": ("c1fa2c872ba07dc864c3aeb5a510b08b4f657288", "2026-01-14",
+                         "f54bbd3a726559e99e1b66604f7eae9d12fce12a", "2026-03-20"),
+    "introduction-anthropology": ("f0f11fc382e1f8974f2b961d512369ac87d27e32", "2025-12-04",
+                                  "2ea3a1e809c61c281337d22e9804f4f212f38933", "2026-03-23"),
+    "introduction-political-science": ("4391e659b98eec43b71e8b3f08241215fb4dd4c4", "2025-12-04",
+                                       "da3ba0d26f42caded8c4df531ff0703d42813465", "2026-03-20"),
+    "college-success-bundle": ("4c04b87eb2753872c2d442fe9736859ddb27bb72", "2026-02-19",
+                               "2f4a072a44939b960f6ff06923333d060711fb05", "2026-03-19"),
+    "principles-marketing": ("40369d8ce3adb160cf8d2cc6528cd00be6a472eb", "2025-12-04",
+                             "3659194af32bdee4d53ac8280fa6389246774b08", "2026-03-20"),
+    "principles-finance": ("3b7fc65c527ef51dbee24689691f19947fb72fb2", "2025-12-04",
+                           "c802474325f10146c2ba1ca9af727b7940c19772", "2026-04-08"),
+    "lifespan-development": ("2a3fbff4504dd90fa2728ff06a27c23a36e6b88d", "2026-02-18",
+                             "26d84bf43131d2458732295d473d8519c550ade1", "2026-03-23"),
+    "workplace-software-skills": ("994e5e50c3bbafb958bdb1160dbf175f76d292c5", "2025-12-04",
+                                  "bd6d91d0e6d8dde265b6e529dd8548fd078117fd", "2026-03-24"),
+    "introduction-python-programming": ("2825b114221917bea5ae328a94e484b4da8a93ca", "2026-03-16",
+                                        "51334a9168e16653891fde9e4820c8ef9c57f247", "2026-03-24"),
+    "nursing-external-bundle": ("f0124920c65609137effe2333dea327d1c77accc", "2026-02-19",
+                                "80d61e847fa0f23fe83626e72ecaee50200511c7", "2026-03-23"),
+    "principles-of-management-bundle": ("a995241fbc161854a1fab15bdd3bec3f98dfd64b", "2025-12-10",
+                                        "68db8ae2fc667dfaaba193c9db10844d5ed2ed39", "2026-03-20"),
+    # The Polish books: their collection files were changed to CC BY-NC-SA in October 2026 (mikroekonomia has no
+    # LICENSE file; its collection file is the only statement).
+    "makroekonomia": ("36f59aa574f0177f9cc78b59b6beb632a5b9d067", "2025-12-04",
+                      "562f6377d8515c88de3ab47d34bff6a8625db7ba", "2026-10-05"),
+    "mikroekonomia": ("47c2114ba9e7718d35be5fdea8a7b91755e107e6", "2025-12-04",
+                      "2a0c45f12821616a6ee2e9287c07ded3e18696a5", "2026-10-02"),
+    "psychologia": ("f45cabb8dff099d42ef68f45e8da7e31bd7be730", "2026-01-14",
+                    "5fc5ec854f5cde78625e3aa9d595ed50b961e996", "2026-10-02"),
+}
+# The other repositories of OSBOOKS are read at their newest version (checked on 2026-11-22):
+#   still CC BY 4.0 in LICENSE and collection: physics, statistics, introduction-intellectual-property,
+#     life-liberty-pursuit-happiness, fisica-universitaria-bundle, introduccion-estadistica-bundle, precalculo,
+#     quimica-bundle, and fizyka-bundle (openstax.org's catalogue says CC BY-NC-SA for it, so the builder uses that);
+#     if one changes later, the builder reads the new licence and labels the book with it;
+#   CC BY-NC-SA since before 2026, so no CC BY version was ever published: calculus-bundle,
+#     principles-accounting-bundle, business-law, organic-chemistry, calculo-bundle, data-science (changed on
+#     2024-12-02, before the book came out in January 2025), foundations-information-systems (2025-02-10, before
+#     March 2025), neuroscience (LICENSE CC BY-NC-SA since 2023);
+#   CC BY only in drafts of the edition OpenStax then published under CC BY-NC-SA, so not pinned: american-government
+#     (LICENSE changed on 2025-06-10, commit 37ee81a, while the 4th edition was being written; published July 2025
+#     under CC BY-NC-SA), introduction-business (2nd edition, collection changed on 2026-04-23, commit 59882ea, the
+#     day after it came out under CC BY-NC-SA), additive-manufacturing (LICENSE changed on 2025-02-18, commit a19e670,
+#     before the book came out in March 2025).
+# A newest version under CC BY-NC-SA is built (and labelled) "CC BY-NC-SA 4.0, not for commercial use, personal use
+# only". OpenStax's earlier editions (American Government 3e, Introduction to Business 1e) were CC BY but OpenStax
+# has retired them, and the builder leaves retired editions out.
+
+# A pinned repository whose newest version has a newer edition OpenStax has published (openstax.org's catalogue
+# lists it as live): that edition is built too, from the newest version, as a separate personal-use book (key
+# osbooks-new:<repository>; only the books named here, so the pinned books are not built twice). Repositories whose
+# newest version only has errata fixes, or editions not yet published (college-success-2e, introduction-philosophy-2e,
+# healthcare-foundations in prealgebra-bundle), are not repeated.
+OSBOOKS_NEWER = {"principles-finance": ["principles-finance-2e"]}
+
 # OpenStax books written for high school (openstax.org's catalogue lists them with K-12 subjects): put in the K-12
 # group with grades 9-12. OpenStax's other books with K-12 subjects are college books also used in high school
 # ("High school and college").
@@ -97,7 +200,9 @@ LICENCE_LINES = {
     "osbooks": "Each OpenStax collection file states its own licence, for example osbooks-physics: "
                "<md:license url=\"http://creativecommons.org/licenses/by/4.0/\">Creative Commons Attribution "
                "License</md:license>; osbooks-anatomy-physiology (since March 2026): \"Creative Commons "
-               "Attribution-NonCommercial-ShareAlike 4.0 International\".",
+               "Attribution-NonCommercial-ShareAlike 4.0 International\". OpenStax moved most books to CC BY-NC-SA "
+               "in March and April 2026 (each repository's LICENSE commit \"updating license to CC BY NC-SA\"); "
+               "those are built from the last CC BY 4.0 commit (OSBOOKS_PINS).",
     "siyavula": "Siyavula's reader pages: \"All Siyavula textbook content made available on this site is released "
                 "under the terms of a Creative Commons Attribution License.\" The books' copyright page: \"This "
                 "book is released under the CC-BY 4.0 license. ... you have to acknowledge Siyavula Education as "
@@ -1045,11 +1150,13 @@ def expand_keys(words):
     """The build keys a request asks for: "all" (every book except "laws-more"), osbooks, nonprofit, fieldmanuals,
     government (Alberta's PDFs), courses, laws (sources.LAWS), laws-more (sources.LAWS_MORE), guides
     (sources.GOV_GUIDES), group:<group> (every web guide, PDF and law of that group, such as group:health), or one
-    key: osbooks:<repository>, siyavula, dspace, nonprofit:<name>, pdf:<name>, guide:<name>, law:<name>; medicines
-    (every medicine book, medications.py) or med:<piece>; publications or pub:<piece> (periodicals.py). "all" does
-    not include the medicines or the publications: ask for them by name."""
+    key: osbooks:<repository> (osbooks-new:<repository>: the newer edition of OSBOOKS_NEWER), siyavula, dspace,
+    nonprofit:<name>, pdf:<name>, guide:<name>, law:<name>; medicines (every medicine book, medications.py) or
+    med:<piece>; publications or pub:<piece> (periodicals.py). "all" does not include the medicines or the
+    publications: ask for them by name."""
     pdfs = lambda g: [f"pdf:{e['name']}" for e in PDF_DOCS if e["group"] == g]   # noqa: E731
-    every = [f"osbooks:{r}" for r in OSBOOKS] + ["siyavula", "dspace"] + \
+    every = [f"osbooks:{r}" for r in OSBOOKS] + [f"osbooks-new:{r}" for r in OSBOOKS_NEWER] + \
+        ["siyavula", "dspace"] + \
         [f"nonprofit:{e['name']}" for e in NONPROFIT] + [f"pdf:{e['name']}" for e in PDF_DOCS] + \
         [f"guide:{e['name']}" for e in GOV_GUIDES] + [f"law:{e['name']}" for e in LAWS] + \
         [f"k12:{e['name']}" for e in K12_GUIDES]
@@ -1065,7 +1172,7 @@ def expand_keys(words):
                     [f"osbooks:{r}" for r in ("physics", "statistics", "biology-bundle", "college-physics-bundle")]
             keys += courses.expand_keys([w])
         elif w == "osbooks":
-            keys += [f"osbooks:{r}" for r in OSBOOKS]
+            keys += [f"osbooks:{r}" for r in OSBOOKS] + [f"osbooks-new:{r}" for r in OSBOOKS_NEWER]
         elif w == "nonprofit":
             keys += [f"nonprofit:{e['name']}" for e in NONPROFIT]
         elif w in ("fieldmanuals", "government", "courses"):

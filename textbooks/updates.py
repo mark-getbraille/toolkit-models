@@ -3,7 +3,8 @@
 Two jobs, in plain words:
 
 1. Has a source changed? fingerprint(key) asks each source cheaply for a sign of change: the newest commit of an
-   OpenStax or Office of the Historian repository (git ls-remote), a DSpace record's "lastModified", the address and
+   OpenStax or Office of the Historian repository (git ls-remote; an OpenStax repository pinned to its last CC BY
+   4.0 commit, sources.OSBOOKS_PINS, gives that commit, so it is not rebuilt), a DSpace record's "lastModified", the address and
    size of an official PDF (the Internet Archive's file checksum; a web server's ETag, Last-Modified and size), the
    newest govinfo edition of a law, the list of articles of a web guide or the newest "lastmod" of its sitemap, the
    newest report of a CRS year, DailyMed's newest monthly release for the medicine books, and so on. Every book's
@@ -160,8 +161,10 @@ def fingerprint(key):
     """Today's sign of change of a build key ("" when the key is not checked weekly, or the source could not be
     asked: then nothing is rebuilt)."""
     try:
-        if key.startswith("osbooks:"):
-            return git_head(f"https://github.com/openstax/osbooks-{key[8:]}")
+        if key.startswith("osbooks:") and key[8:] in sources.OSBOOKS_PINS:
+            return sources.OSBOOKS_PINS[key[8:]][0]   # pinned to its last CC BY 4.0 commit: it does not change
+        if key.startswith(("osbooks:", "osbooks-new:")):
+            return git_head(f"https://github.com/openstax/osbooks-{key.split(':', 1)[1]}")
         if key == "siyavula":
             return _sha(*[_sha(*B.page_links(B.fetch(f"{B.SIYAVULA_SITE}/read/za/{s}/grade-{g}", None), ""))
                           for s, g, _t, _w in sources.SIYAVULA])

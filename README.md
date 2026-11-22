@@ -89,9 +89,13 @@ The files are ordinary ZIM files, so the free Kiwix apps (Windows, Android, iOS,
 What is built (`textbooks/sources.py` lists every source, the licence lines that were checked, and what was left out
 and why):
 
-- **OpenStax** (Rice University) textbooks, from the openstax/osbooks-* repositories on GitHub. Each book's licence
-  is read from its own collection file every time it is built: some are CC BY 4.0, many are now CC BY-NC-SA 4.0
-  (shown as "not for commercial use"). Retired editions are left out.
+- **OpenStax** (Rice University) textbooks, from the openstax/osbooks-* repositories on GitHub (with git; openstax.org's
+  robots.txt keeps programs out of its book files). OpenStax changed most of its books from CC BY 4.0 to
+  CC BY-NC-SA 4.0 in March and April 2026: those books are built from the last version before the change, which
+  OpenStax published under CC BY 4.0 (the commit and the reason are in textbooks/sources.py, OSBOOKS_PINS, and in
+  each book's catalogue entry). Each book's licence is read from that version's collection and LICENSE files every
+  time it is built; a book whose version is CC BY-NC-SA is shown as "not for commercial use, personal use only".
+  Retired editions are left out.
 - **Siyavula** (South Africa) mathematics, physical sciences and natural sciences school textbooks, CC BY 4.0, from
   Siyavula's online reader (allowed by its robots.txt); the books are named by subject and grade, crediting
   Siyavula Education (its "Everything Maths" and "Everything Science" names are its trademarks and are not used).

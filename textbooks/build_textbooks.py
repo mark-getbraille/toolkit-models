@@ -6,7 +6,11 @@ size, and reads and searches them without the internet, like the Kiwix books. Th
 the free Kiwix apps open them too.
 
 What is built (sources.py lists every book, the licence lines checked by hand, and what was left out and why):
-  osbooks    OpenStax textbooks (Rice University), from the openstax/osbooks-* repositories on GitHub (CNXML)
+  osbooks    OpenStax textbooks (Rice University), from the openstax/osbooks-* repositories on GitHub (CNXML), with
+             git. Most were changed to CC BY-NC-SA in March and April 2026: those are built from the last commit
+             before the change, published under CC BY 4.0 (sources.OSBOOKS_PINS); a book whose version is under
+             CC BY-NC-SA is labelled "not for commercial use, personal use only". openstax.org is read only for its
+             catalogue (/apps/cms/api/v2/pages, which its robots.txt allows), never for the book files.
   siyavula   Siyavula's South African school textbooks (mathematics, physical and natural sciences), from its
              online reader
   dspace     reference works of international bodies (WHO, World Bank, FAO) from their open repositories (PDF)
@@ -1063,7 +1067,8 @@ class OpenStaxBook:
 
 def openstax_catalogue(cache=None):
     """{slug: record} of OpenStax's own list of books (openstax.org's CMS: subject, level, the original PDF), or
-    {} when it cannot be read."""
+    {} when it cannot be read. openstax.org's robots.txt allows this address (it shuts out /apps/archive,
+    /apps/cms/api/spike and, for GPTBot, /books/, none of which is read here)."""
     url = ("https://openstax.org/apps/cms/api/v2/pages/?type=books.Book&limit=250&fields=title,book_state,"
            "license_name,license_url,pdf_url,high_resolution_pdf_url,book_subjects,k12book_subjects,"
            "description,publish_date,authors")
@@ -1075,18 +1080,55 @@ def openstax_catalogue(cache=None):
     return {item["meta"]["slug"]: item for item in data.get("items", [])}
 
 
-def clone_osbooks(repo_name, work, pictures=False):
-    """A shallow copy of github.com/openstax/osbooks-<repo_name> in work (without the pictures unless pictures)."""
+def clone_osbooks(repo_name, work, pictures=False, commit=None):
+    """A copy of github.com/openstax/osbooks-<repo_name> in work (without the pictures unless pictures): its newest
+    version, or with commit only that one commit (sources.OSBOOKS_PINS: the last CC BY 4.0 version). Only git is
+    used (GitHub serves public repositories to git; openstax.org itself is not read for the books)."""
+    url = f"https://github.com/openstax/osbooks-{repo_name}"
+    env = dict(os.environ, GIT_LFS_SKIP_SMUDGE="1")
+    paths = ["LICENSE", "META-INF", "collections", "modules"] + (["media"] if pictures else [])
+    if commit:
+        dest = os.path.join(work, f"osbooks-{repo_name}-{commit[:12]}")
+        if os.path.isdir(os.path.join(dest, ".git")):
+            return dest
+        subprocess.run(["git", "init", "-q", dest], check=True, env=env)
+        subprocess.run(["git", "-C", dest, "fetch", "-q", "--depth", "1", "--filter=blob:none", url, commit],
+                       check=True, env=env)
+        listed = subprocess.run(["git", "-C", dest, "ls-tree", "--name-only", "FETCH_HEAD"], check=True, env=env,
+                                capture_output=True, text=True).stdout.split()
+        subprocess.run(["git", "-C", dest, "checkout", "FETCH_HEAD", "--"] + [p for p in paths if p in listed],
+                       check=True, env=env)     # (mikroekonomia has no LICENSE file)
+        return dest
     dest = os.path.join(work, f"osbooks-{repo_name}")
     if os.path.isdir(os.path.join(dest, ".git")):
         return dest
-    url = f"https://github.com/openstax/osbooks-{repo_name}"
-    env = dict(os.environ, GIT_LFS_SKIP_SMUDGE="1")
     subprocess.run(["git", "clone", "--depth", "1", "--filter=blob:none", "--no-checkout", url, dest], check=True,
                    env=env)
-    paths = ["LICENSE", "META-INF", "collections", "modules"] + (["media"] if pictures else [])
-    subprocess.run(["git", "-C", dest, "checkout", "HEAD", "--"] + paths, check=True, env=env)
+    listed = subprocess.run(["git", "-C", dest, "ls-tree", "--name-only", "HEAD"], check=True, env=env,
+                            capture_output=True, text=True).stdout.split()
+    subprocess.run(["git", "-C", dest, "checkout", "HEAD", "--"] + [p for p in paths if p in listed], check=True,
+                   env=env)
     return dest
+
+
+def repository_licence(repo):
+    """The short licence of a repository's LICENSE file ("CC BY-NC-SA 4.0"), from its first line, or "" when it has
+    none or names no licence."""
+    try:
+        with open(os.path.join(repo, "LICENSE"), encoding="utf-8", errors="replace") as f:
+            first = f.readline().strip()
+    except OSError:
+        return ""
+    short = licence_short(first) if re.search(r"attribution|\bcc[ -]by\b", first, re.I) else ""
+    return short if licence_kind(short) else ""
+
+
+def stricter_licence(a, b):
+    """The stricter of two allowed short licences (non-commercial over share-alike over open); a when b is ""."""
+    if not b or not licence_kind(a) or not licence_kind(b):
+        return a or b
+    order = ["open", "share-alike", "non-commercial"]
+    return b if order.index(licence_kind(b)) > order.index(licence_kind(a)) else a
 
 
 def plain(html_text):
@@ -1094,24 +1136,32 @@ def plain(html_text):
     return " ".join(html.unescape(re.sub(r"<[^>]+>", " ", html_text or "")).split())
 
 
-def osbooks_books(repo, pictures=False, catalogue=None, left_out=None):
+def osbooks_books(repo, pictures=False, catalogue=None, left_out=None, pin=None, only=None, github=None):
     """[Book] of an OpenStax repository folder (every book its META-INF/books.xml lists). A book whose licence is
-    not allowed is added to left_out instead."""
+    not allowed is added to left_out instead.
+    The licence is the stricter of the collection file's and the LICENSE file's. pin: (commit, date, change commit,
+    change date) of sources.OSBOOKS_PINS when the folder holds that pinned commit: the licence is then the one
+    written in that version (openstax.org's catalogue describes the newest version, so its licence, retired state
+    and PDF are not used for it), and the commit is recorded as the version. Otherwise openstax.org's licence is
+    used too when it is stricter. A book under a non-commercial licence is marked personal use only.
+    only: the slugs to build (None: every book). github: the repository's name ("osbooks-physics"; taken from the
+    folder's name when it starts with "osbooks-")."""
     left_out = left_out if left_out is not None else []
     container = ET.parse(os.path.join(repo, "META-INF", "books.xml")).getroot()
+    folder = os.path.basename(os.path.normpath(repo))
+    github = github or (folder if folder.startswith("osbooks-") else "")
     out = []
     for item in container:
+        if only is not None and item.get("slug", "") not in only:
+            continue
         href = item.get("href", "")
         collection = os.path.normpath(os.path.join(repo, "META-INF", href))
-        ob = OpenStaxBook(repo, collection, pictures, (catalogue or {}).get(item.get("slug", "")))
+        ob = OpenStaxBook(repo, collection, pictures, None if pin else (catalogue or {}).get(item.get("slug", "")))
         cms = ob.cms
         cms_licence = licence_short(cms.get("license_name") or "", cms.get("license_url") or "") if cms else ""  # may be null
-        licence = ob.licence
-        if cms_licence and cms_licence != licence and licence_kind(licence) and licence_kind(cms_licence):
-            # They disagree: the stricter one (non-commercial over share-alike over open) is used.
-            order = ["open", "share-alike", "non-commercial"]
-            if order.index(licence_kind(cms_licence)) > order.index(licence_kind(licence)):
-                licence = cms_licence
+        # They may disagree: the stricter one (non-commercial over share-alike over open) is used.
+        licence = stricter_licence(ob.licence, repository_licence(repo))
+        licence = stricter_licence(licence, cms_licence)
         if not licence_kind(licence):
             left_out.append({"title": f"OpenStax {ob.title}", "reason": f"Its licence ({licence}) is not one the "
                              "toolkit may repackage (NoDerivatives or unknown)."})
@@ -1125,21 +1175,34 @@ def osbooks_books(repo, pictures=False, catalogue=None, left_out=None):
         authors = ", ".join(a.get("value", {}).get("name", "") for a in cms.get("authors", [])
                             if a.get("value", {}).get("senior_author")) if cms else ob.authors
         high_school = ob.slug in sources.OPENSTAX_HIGH_SCHOOL
+        personal = licence_kind(licence).startswith("non-commercial")
+        description = plain(cms.get("description", ""))[:600] if cms else ""
+        version = ""
+        if pin:
+            commit, date, change, change_date = pin
+            version = f"GitHub commit {commit[:12]} ({date})"
+            description = (f"The version of {date} (GitHub commit {commit[:12]}), the last one OpenStax published "
+                           f"under {licence}: OpenStax changed this book's licence to CC BY-NC-SA on {change_date} "
+                           f"(commit {change[:12]}). Later corrections are not included.")
         book = Book(
             name="openstax_" + unicodedata.normalize("NFKD", ob.slug).encode("ascii", "ignore").decode().replace("-", "_"),
             title=f"OpenStax {ob.title}",   # (the name in plain letters: "precálculo" -> "precalculo")
             subject=subjects[0] if subjects else "General", level="school" if k12 else "college",
             group="k12" if high_school else "textbooks",
             grades="9-12 (high school)" if high_school else ("High school and college" if k12 else ""), publisher="OpenStax, Rice University", country="United States", licence=licence,
-            licence_url=ob.licence_url or (cms.get("license_url") or ""),
+            licence_url=(ob.licence_url if licence == ob.licence else _licence_address(licence))
+            or (cms.get("license_url") or ""),
             source=f"https://openstax.org/details/books/{ob.slug}",
             language={"es": "spa", "pl": "pol"}.get((ob.language or "en")[:2].lower(), "eng"),   # the book's own
-            description=plain(cms.get("description", ""))[:600] if cms else "", authors=authors or ob.authors,
+            description=description, authors=authors or ob.authors,
             original_pdf={"url": pdf, "size": head_size(pdf), "sha256": ""} if pdf else {},
-            flavour="maxi" if pictures else "nopic", published=iso_date(cms.get("publish_date") or ""))
-        folder = os.path.basename(os.path.normpath(repo))
-        if folder.startswith("osbooks-"):          # the book's own source: its repository (CNXML), as a zip
-            book.originals.append({"url": f"https://github.com/openstax/{folder}/archive/HEAD.zip", "kind": "zip"})
+            flavour="maxi" if pictures else "nopic", published=iso_date(cms.get("publish_date") or ""),
+            personal_use=personal, version=version)
+        if pin:
+            book.published = pin[1]
+        if github:                         # the book's own source: its repository (CNXML), as a zip
+            book.originals.append({"url": f"https://github.com/openstax/{github}/archive/"
+                                          f"{pin[0] if pin else 'HEAD'}.zip", "kind": "zip"})
         book.pages = ob.pages()
         book.resources = ob.resources
         out.append(book)
@@ -2471,11 +2534,18 @@ def build(keys, out_dir, cache=None, pictures=False, local_osbooks=None, date=No
         import updates                           # here, not at the top: updates imports this module
         sign = updates.fingerprint(key)          # the source's sign of change now, kept in the catalogue
         try:
-            if key.startswith("osbooks:") or key.startswith("local:"):
+            if key.startswith(("osbooks:", "osbooks-new:", "local:")):
+                # OpenStax: a pinned repository from its last CC BY 4.0 commit (sources.OSBOOKS_PINS), the others
+                # and the newer editions of sources.OSBOOKS_NEWER from their newest version
                 if catalogue is None:
                     catalogue = openstax_catalogue(cache) if not key.startswith("local:") else {}
-                repo = key[6:] if key.startswith("local:") else clone_osbooks(key[8:], work, pictures)
-                books = osbooks_books(repo, pictures, catalogue, left_out)
+                name = key.split(":", 1)[1]
+                pin = sources.OSBOOKS_PINS.get(name) if key.startswith("osbooks:") else None
+                only = sources.OSBOOKS_NEWER.get(name, []) if key.startswith("osbooks-new:") else None
+                repo = name if key.startswith("local:") else clone_osbooks(name, work, pictures,
+                                                                           pin[0] if pin else None)
+                books = osbooks_books(repo, pictures, catalogue, left_out, pin, only,
+                                      None if key.startswith("local:") else f"osbooks-{name}")
             elif key == "siyavula":
                 for subject, grade, title, words in sources.SIYAVULA:
                     try:
