@@ -148,13 +148,13 @@ TOPICS = [
            "vam", "mimo_instruments", "princeton_general_personal", "turkish_instruments")),
     Topic("documents", "Documents, maps and signs",
           "Reading text and making sense of pages: letters, forms, receipts, tables and charts, maps, sheet "
-          "music, road and safety signs, and phone screens.",
+          "music, road, safety and indoor signs (toilets, room numbers, exits), and phone screens.",
           ("textvqa", "textocr", "coco_text", "cord", "doclaynet", "plotqa", "loc_letters", "owid_charts",
            "pubtabnet_tables", "us_federal_forms", "open_images_cards_documents", "loc_maps", "safety_signs", "commons_hazard_symbols", "us_road_signs",
            "ca_road_signs",
-           "deepscores_sheet_music", "field_manual_figures",
+           "deepscores_sheet_music", "field_manual_figures", "commons_indoor_wayfinding", "open_images_indoor",
            # share-alike
-           "hiertext", "mapqa",
+           "hiertext", "mapqa", "indoor_commons_sa",
            # non-commercial and research-only (personal use)
            "sroie", "wildreceipt", "dvqa", "funsd", "xfund", "chartqa", "scienceqa", "ai2d", "streetsignset",
            "fintabnet_tables", "cra_forms", "screenqa_rico", "rico_screens", "rico_widgets",

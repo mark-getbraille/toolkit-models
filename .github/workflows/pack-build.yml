@@ -405,6 +405,8 @@ jobs:
             commons_household_chemicals) limit=2500 ;;
             commons_finishes_in_use) limit=2000 ;;
             commons_hazard_symbols) limit=450 ;;
+            commons_indoor_wayfinding) limit=2500 ;;
+            open_images_indoor) limit=2500 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in

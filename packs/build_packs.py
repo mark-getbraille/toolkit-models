@@ -1738,6 +1738,15 @@ COMMONS_KEYS = frozenset({
     "commons_soft_drinks",
 })
 
+# Everyday access, each pack file with its packs and the keys of those that read Commons (added to COMMONS_KEYS here,
+# in one place): finding your way inside public buildings (packs/indoor_packs.py: Commons lobbies, corridors,
+# stairwells, lifts, escalators, toilet signs, room numbers, desks, waiting rooms, gates and ticket barriers, and Open
+# Images indoor places, signs and doors; sign text only where a category names it, such as a room number). For
+# describing only (public places with people in them).
+from indoor_packs import INDOOR_PACKS, INDOOR_COMMONS_KEYS
+PACKS.update(INDOOR_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(INDOOR_COMMONS_KEYS)
+
 
 def pack_lanes(keys):
     """Split the workflow's pack keys into (Commons lane, other lane), keeping their order. A key may carry the

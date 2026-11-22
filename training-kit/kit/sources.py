@@ -3264,3 +3264,18 @@ _drinks_ok = set(getattr(_drinks, "DRINKS_PICTURE_MAKING_OK", ()) or ())
 PERSONAL_PICTURE_MAKING_OK |= _drinks_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in DRINKS_SOURCES if s.key not in _drinks_ok)
 _add_collections(DRINKS_SOURCES)
+# Everyday access (daily_access_sources.py): the ready-made packs for finding your way inside public buildings (and the
+# other everyday-access packs made with them), their share-alike Commons files, and the sources looked at and left
+# out; the file may be missing. Only the keys in DAILY_ACCESS_PICTURE_MAKING_OK may be used for picture-making.
+try:
+    import daily_access_sources as _daily_access  # noqa: E402
+except ImportError as _e:
+    _daily_access = None
+    if getattr(_e, "name", None) != "daily_access_sources":
+        say(f"(The everyday access collections could not be loaded: {_e}. They are left out.)")
+DAILY_ACCESS_SOURCES = list(getattr(_daily_access, "DAILY_ACCESS_SOURCES", []) or [])
+_daily_access_ok = set(getattr(_daily_access, "DAILY_ACCESS_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _daily_access_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in DAILY_ACCESS_SOURCES
+                                                               if s.key not in _daily_access_ok)
+_add_collections(DAILY_ACCESS_SOURCES)
