@@ -171,8 +171,13 @@ TOPICS = [
            "commons_generators_power", "commons_wind_water_power",
            # computer and phone basics (practical_sources.py; also in the screens topic)
            "commons_computer_basics", "open_images_computer_basics",
+           # home manufacturing and making: 3D printers, cutters and lasers, CNC, lathes and mills, moulding and
+           # casting, circuit board fabrication (making_sources.py; also in the home topic)
+           "commons_3d_printing", "commons_cutting_lasers", "commons_cnc_machining", "commons_moulding_casting",
+           "commons_pcb_fabrication", "open_images_making",
            # share-alike
-           "radio_commons_sa", "commons_mechanical_sa", "device_models_sa", "farm_mech_commons_sa",
+           "radio_commons_sa", "making_commons_sa", "commons_mechanical_sa", "device_models_sa",
+           "farm_mech_commons_sa",
            # non-commercial and research-only (personal use)
            "mechanical_parts_2022", "co3d_devices", "museums_victoria", "stanford_products")),
     # Transport and travel (the owner's decision of 22 November 2026): vehicles of every kind and getting around, in
@@ -213,7 +218,7 @@ TOPICS = [
     Topic("home", "Home and household",
           "Appliances, kitchens, laundry, cleaning and hazards, home repair, heating, lighting, building, pests, "
           "baby things, sewing, crafts, emergency kits, pools, knots, camp, homestead and outdoor gear, fishing, "
-          "fitness equipment, games and clothes.",
+          "fitness equipment, games, clothes, 3D printing, lasers and CNC.",
           ("commons_appliances", "commons_appliance_controls", "open_images_appliance_controls", "commons_kitchen",
            "laundry_symbols", "laundry_care_labels", "commons_household_chemicals", "commons_finishes_in_use",
            "commons_household_hazards", "open_images_household_hazards",
@@ -255,6 +260,9 @@ TOPICS = [
            "commons_outdoor_skills", "open_images_knots_outdoor", "knots_commons_sa",
            # fitness equipment and adaptive sports (fitness_nutrition_sources.py)
            "commons_fitness_equipment", "commons_adaptive_sports",
+           # home manufacturing and making (making_sources.py; also in the machines topic)
+           "commons_3d_printing", "commons_cutting_lasers", "commons_cnc_machining", "commons_moulding_casting",
+           "commons_pcb_fabrication", "open_images_making", "making_commons_sa",
            # non-commercial and research-only (personal use)
            "cpsc_recalls")),
     # Power and electrical (the owner's decision of 22 November 2026): backup generators, solar, batteries, small wind
@@ -269,6 +277,8 @@ TOPICS = [
            "commons_home_repair", "open_images_home_upkeep", "commons_plumbing_electrical", "commons_connectors",
            "commons_electronic_parts", "commons_cables_connectors", "commons_circuit_diagrams",
            "open_images_electronics", "commons_emergency_lighting", "commons_emergency_kits_power",
+           # circuit board fabrication (making_sources.py; also in machines and home)
+           "commons_pcb_fabrication",
            # share-alike
            "power_commons_sa", "home_upkeep_commons_sa")),
     # Radio communications (the owner's decision of 22 November 2026): ham and other two-way radio, antennas and

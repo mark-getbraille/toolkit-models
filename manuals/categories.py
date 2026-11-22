@@ -739,3 +739,15 @@ CATEGORIES.update({"sleep_relaxation": _SLEEP_RELAXATION, "fitness_equipment": _
 from small_boats_manuals import CATEGORY as _SMALL_BOATS  # noqa: E402
 
 CATEGORIES["small_boats"] = _SMALL_BOATS
+# Home manufacturing and making, under its own heading (manuals/making_manuals.py, the owner's request of 2026-11-22):
+# 3D printers, heat presses and vinyl cutters, laser engravers and desktop CNC, mini lathes and mills, and moulding and
+# casting; every maker link-only, each with its safety notice said first. Cricut and Silhouette stay in craft_machines,
+# Glowforge, Shapeoko and the CNC routers in woodshop_machines, metal lathes and the machinist manuals in
+# metal_shop_welding. Those three existing collections are listed under the same heading too (the owner's request of
+# 22 November 2026); their keys do not change.
+from making_manuals import CATEGORIES as _MAKING, HEADING as _MAKING_HEADING  # noqa: E402
+
+CATEGORIES.update(_MAKING)
+for _key in ("craft_machines", "woodshop_machines", "metal_shop_welding"):
+    if _key in CATEGORIES:
+        CATEGORIES[_key]["heading"] = _MAKING_HEADING
