@@ -248,6 +248,10 @@ def aiga_specs():
     return specs
 
 
+# Some categories also hold street scenes that merely show such a place (a marathon passing an exchange office): only
+# files whose own words name it.
+CHANGE_WORDS = re.compile(r"\b(bureaux? de change|currency|exchange|change|cambio|wechsel|forex|money)\b", re.I)
+TAXI_WORDS = re.compile(r"\b(taxis?|taxi ?stand|taxi ?rank|cabs?|taxistanovi\w*)\b", re.I)
 TRAVEL_SPECS = [
     ("Internal airport signs", True, [(SIGN_Q, "It is a sign inside an airport.")]),
     ("Airport signs in the United States", True, [(SIGN_Q, "It is an airport sign in the USA.")]),
@@ -257,9 +261,9 @@ TRAVEL_SPECS = [
                                           "out after a flight.")]),
     ("Jet bridges", True, [(WHAT_Q, "This is a jet bridge (air bridge): the covered walkway from the gate to the "
                                     "plane's door.")]),
-    ("Taxi signs", True, [(SIGN_Q, "It is a taxi sign: taxis stop or wait here.")]),
+    ("Taxi signs", True, [(SIGN_Q, "It is a taxi sign: taxis stop or wait here.")], TAXI_WORDS),
     ("Bureaux de change", True, [(PLACE_Q, "This is a bureau de change (currency exchange), where you can change "
-                                           "money.")]),
+                                           "money.")], CHANGE_WORDS),
 ]
 
 

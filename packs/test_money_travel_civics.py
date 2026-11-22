@@ -131,6 +131,7 @@ def test_aiga_signs():
     assert len(meaning("File:Aiga noparking.svg")) == 1 and "no parking" in meaning("File:Aiga noparking.svg")[0]
     assert len(meaning("File:Aiga parking.svg")) == 1 and "for parking" in meaning("File:Aiga parking.svg")[0]
     assert meaning("File:Aiga toiletsq men.svg") == [] and meaning("File:BSicon PASSPORT.svg") == []
+    assert not tr.CHANGE_WORDS.search("File:2013 Boston Marathon-48.jpg") and tr.TAXI_WORDS.search("taxi rank")
     for _c, _d, rows, _p in specs:
         assert rows[0][1].startswith("It is the symbol sign for ") and rows[0][1].endswith(tr.AIGA_NOTE)
 
