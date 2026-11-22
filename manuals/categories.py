@@ -669,3 +669,9 @@ from radio_manuals import CATEGORIES as _RADIO  # noqa: E402
 
 CATEGORIES.update(_PREPAREDNESS)
 CATEGORIES.update(_RADIO)
+# Password managers, security keys, routers, VPNs and home cameras (privacy, security and digital safety; the owner's
+# request of 2026-11-22): the Internet Archive words, the makers as links, KeePassXC's openly licensed guides and the
+# security guidance are in manuals/privacy_manuals.py.
+from privacy_manuals import CATEGORY as _PRIVACY_SECURITY  # noqa: E402
+
+CATEGORIES["privacy_security"] = _PRIVACY_SECURITY

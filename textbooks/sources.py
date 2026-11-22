@@ -2189,3 +2189,8 @@ GROUPS.update(_g)
 LICENCE_LINES.update(_l)
 NOT_INCLUDED = NOT_INCLUDED + _n
 PRACTICE_SUBJECTS[:0] = _p
+# The privacy rules as law books (textbooks/privacy_books.py: the HIPAA, FERPA and COPPA rules, the UK Data
+# Protection Act 2018 and UK GDPR, Canada's PIPEDA), made with this module's own helpers and built as law:<name>.
+import privacy_books as _privacy_books  # noqa: E402
+
+LAWS += _privacy_books.laws(__import__(__name__))

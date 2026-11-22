@@ -17,7 +17,7 @@ UTF-8 JSON, one object, with exactly these fields in this order:
 
   "format"              1 (a whole number). A reader should refuse a format it does not know.
   "topic_id"            the topic's short name, lower case: one of
-                        "medicines", "drugs", "firearms", "food", "drinks", "alcohol", "machines", "home", "radio", "art", "documents", "nature",
+                        "medicines", "drugs", "firearms", "food", "drinks", "alcohol", "machines", "home", "radio", "privacy", "art", "documents", "nature",
                         "vision", "nudity", "sexual". New topics may be added later.
   "title"               the topic's name for people, for example "Food and packaged goods".
   "description"         one or two plain sentences about what the add-on knows, to show the person.

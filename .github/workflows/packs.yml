@@ -157,6 +157,7 @@ jobs:
                    "commons_barbecue_food", "open_images_outdoor_cooking",
                    "commons_emergency_kits_power", "commons_warnings_shelters", "commons_emergency_signs_maps", "commons_disaster_types", "open_images_disasters",
                    "commons_radios", "commons_antennas_station", "commons_radio_cards_charts", "commons_mesh_data_radio", "open_images_radio",
+                   "synthetic_scam_examples", "commons_privacy_security", "commons_privacy_screens",
                    "commons_braille_writing", "commons_tactile_access", "commons_mobility_deafblind",
                    "aph_museum_objects"]
           words = [w for w in sys.argv[1].split(",") if w]

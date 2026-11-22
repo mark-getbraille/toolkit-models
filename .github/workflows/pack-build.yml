@@ -500,6 +500,9 @@ jobs:
             commons_radio_cards_charts) limit=300 ;;
             commons_mesh_data_radio) limit=250 ;;
             open_images_radio) limit=400 ;;
+            synthetic_scam_examples) limit=3000 ;;
+            commons_privacy_security) limit=900 ;;
+            commons_privacy_screens) limit=600 ;;
             commons_braille_writing) limit=400 ;;
             commons_tactile_access) limit=600 ;;
             commons_mobility_deafblind) limit=150 ;;
