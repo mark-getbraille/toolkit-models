@@ -228,6 +228,13 @@ class Collection:
                              "readers or says ai-train=no; it is not read."})
             return None
         if name in self.guides:
+            if entry.get("crawl"):           # crawl once here, so an address with and without its last "/" is one
+                found, seen = [], set()
+                for url, unit in D.crawl(entry, cache, limit):
+                    if url.rstrip("/") not in seen:
+                        seen.add(url.rstrip("/"))
+                        found.append((url, unit))
+                entry = dict(entry, crawl=None, urls=found, sitemap="", start=[])
             book = D.guide_book(entry, cache, left_out, limit)
         else:
             book = B.pdfdoc_book(entry, work, cache, left_out)
@@ -351,3 +358,14 @@ def last_modified(url):
     finally:
         B._last[urllib.parse.urlsplit(url).hostname] = time.monotonic()
     return email.utils.parsedate_to_datetime(when).date().isoformat() if when else ""
+
+
+def guide(group, name, title, subject, publisher, start, pages, description, notice, depth=1, follow=None,
+          units=None, limit=200, **more):
+    """A US government web guide read by crawling (directory_sources.crawl): start (one address or a list), the
+    address pattern of its pages, the hub pages to follow (follow) for a depth of 2, its parts (units: [(pattern,
+    part)]). A start address is given without its last "/" so the crawler does not add one to every link."""
+    starts = [start] if isinstance(start, str) else list(start)
+    return us_web(group, name=name, title=title, subject=subject, publisher=publisher, source=starts[0],
+                  description=description, notice=notice, crawl=[(s.rstrip("/"), depth) for s in starts],
+                  follow=follow, pages=pages, unit_rules=units or [], limit=limit, **more)

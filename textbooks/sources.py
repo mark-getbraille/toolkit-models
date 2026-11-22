@@ -2049,6 +2049,7 @@ import more_refs as _more  # noqa: E402
 
 _g, _l, _n, _p = _more.records()
 ALLOWED.update(_more.allowed())
+NO_CHANGES.update(_more.no_changes())
 GROUPS.update(_g)
 LICENCE_LINES.update(_l)
 NOT_INCLUDED = NOT_INCLUDED + _n

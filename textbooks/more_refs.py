@@ -104,6 +104,15 @@ def allowed():
     return out
 
 
+def no_changes():
+    """The no-changes licences these modules add to sources.NO_CHANGES ({short name: kind}): a permission to copy
+    and distribute freely that says nothing of changes, so the work is kept whole with its text unchanged."""
+    out = {}
+    for m in modules():
+        out.update(getattr(m, "NO_CHANGES", {}))
+    return out
+
+
 def records():
     """(GROUPS, LICENCE_LINES, NOT_INCLUDED, PRACTICE_SUBJECTS) of every module, for sources.py."""
     groups, lines, rows, practice = {}, {}, [], []
