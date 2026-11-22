@@ -110,6 +110,9 @@ jobs:
         key: ${{ fromJSON(needs.plan.outputs.keys) }}
     env:
       GH_TOKEN: ${{ github.token }}
+      # The free api.data.gov key for the govinfo search books (textbooks/govinfo_kit.py); without the secret those
+      # books are left out and the manifest says where to sign up.
+      GOVINFO_API_KEY: ${{ secrets.GOVINFO_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
