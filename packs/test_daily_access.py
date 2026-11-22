@@ -27,6 +27,7 @@ import build_packs  # noqa: E402,F401 - loaded first, as the builders expect
 import gaps_oi_packs as g  # noqa: E402
 import indoor_packs as indoor  # noqa: E402
 import appliance_controls_packs as appl  # noqa: E402
+import synthetic_bills_packs as bills  # noqa: E402
 
 REPO = os.path.dirname(HERE)
 # Each pack file of this group: (module, its packs, its limits, its Commons keys, its Commons specs, its Open Images
@@ -36,6 +37,7 @@ MODULES = [
      [indoor.INDOOR_OI]),
     (appl, appl.APPLIANCE_CONTROLS_PACKS, appl.APPLIANCE_CONTROLS_LIMITS, appl.APPLIANCE_CONTROLS_COMMONS_KEYS,
      appl.CONTROL_SPECS, [appl.CONTROLS_OI]),
+    (bills, bills.SYNTHETIC_BILLS_PACKS, bills.SYNTHETIC_BILLS_LIMITS, bills.SYNTHETIC_BILLS_COMMONS_KEYS, [], []),
 ]
 
 
@@ -108,6 +110,27 @@ def test_appliance_specs():
     said = {r["question"]: r["answer"] for r in rows}
     assert said["What kind of display is in this picture?"].endswith("not what it shows.")
     assert not any(re.search(r"\d", r["answer"]) for r in rows)
+
+
+# ----------------------------------------------------------------- synthetic bills
+
+def test_synthetic_bills_are_made_up_and_exact():
+    for n in range(16):
+        d = bills.details(n)
+        assert sum(c for _, c in d["lines"]) == d["amount"] > 0
+        assert all(".example" in w or "555-01" in w or "stub" in w or "automatic" in w or "card" in w
+                   for w in d["ways"])
+        assert d["account"].startswith("****") and d["due"] > d["issued"]
+    name, data, rows = bills.make_document(3)
+    assert (name, data) == bills.make_document(3)[:2]
+    assert all(r["synthetic"] for r in rows) and "made-up" in rows[0]["credit"]
+    said = {r["question"]: r["answer"] for r in rows}
+    d = bills.details(3)
+    assert said[bills.KIND_Q].endswith("(a made-up company).")
+    if d["kind"] not in ("bank", "pharmacy"):
+        assert bills.money(d["amount"]) in said[bills.AMOUNT_Q] and bills.long_date(d["due"]) in said[bills.DUE_Q]
+        assert said[bills.PAY_Q].startswith("The page says you can pay ")
+    assert bills.money(128407) == "$1,284.07" and bills.page_part(1000, 100, 1240, 1754) == "near the top right"
 
 
 # ----------------------------------------------------------------- shared checks
@@ -199,3 +222,4 @@ def test_wiring():
     assert set(indoor.INDOOR_PACKS) <= no_making
     assert "commons_appliance_controls" not in no_making and "open_images_appliance_controls" in no_making
     assert listed["appliance_commons_sa"].group == "share-alike"
+    assert "synthetic_bills" in no_making and "synthetic_bills" in topics.find("documents").keys

@@ -1753,6 +1753,12 @@ COMMONS_KEYS = COMMONS_KEYS | frozenset(INDOOR_COMMONS_KEYS)
 from appliance_controls_packs import APPLIANCE_CONTROLS_PACKS, APPLIANCE_CONTROLS_COMMONS_KEYS
 PACKS.update(APPLIANCE_CONTROLS_PACKS)
 COMMONS_KEYS = COMMONS_KEYS | frozenset(APPLIANCE_CONTROLS_COMMONS_KEYS)
+# Bills and statements, COMPUTER-MADE ONLY (packs/synthetic_bills_packs.py, with the phone-photo effects of
+# packs/phone_photo.py): utility, phone, bank and credit-card statements, pharmacy receipts and medical bills with
+# made-up people, companies and amounts, drawn from a fixed seed; every row marked synthetic. Never for picture-making.
+from synthetic_bills_packs import SYNTHETIC_BILLS_PACKS, SYNTHETIC_BILLS_COMMONS_KEYS
+PACKS.update(SYNTHETIC_BILLS_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(SYNTHETIC_BILLS_COMMONS_KEYS)
 
 
 def pack_lanes(keys):

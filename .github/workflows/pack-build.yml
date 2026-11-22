@@ -409,6 +409,7 @@ jobs:
             open_images_indoor) limit=2500 ;;
             commons_appliance_controls) limit=600 ;;
             open_images_appliance_controls) limit=2000 ;;
+            synthetic_bills) limit=4000 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in

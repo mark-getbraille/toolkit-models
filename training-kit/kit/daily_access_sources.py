@@ -3,6 +3,7 @@ everyday-access packs made with it (see DAILY_ACCESS_SOURCES). This file lists:
   - the ready-made packs built in packs/ (group "permissive"; the kit downloads them with prepare_pack):
       indoor_packs.py              commons_indoor_wayfinding, open_images_indoor
       appliance_controls_packs.py  commons_appliance_controls, open_images_appliance_controls
+      synthetic_bills_packs.py     synthetic_bills (computer-made, made-up details)
   - the share-alike Commons files of the same Commons categories (group "share-alike": only with the share-alike
     choice, --with-wikipedia; an add-on trained with them is CC BY-SA);
   - the sign-up, permission and not-included collections looked at for these subjects, with the reason
@@ -112,6 +113,13 @@ DAILY_ACCESS_SOURCES = [
                                              "coffee makers, air conditioners, dryers, stoves and convection ovens "
                                              "(Open Images, ready-made pack)",
            OI_OPEN, OI_CREDIT, "permissive", 2000, 20, prepare_pack, "about 400 MB"),
+    # ---- ready-made pack (packs/synthetic_bills_packs.py)
+    Source("synthetic_bills", "Bills and statements, computer-made with made-up names and amounts: utility, phone, "
+                              "bank and credit-card statements, pharmacy receipts and medical bills; the amount due, "
+                              "due date, account holder and how to pay (synthetic, ready-made pack)",
+           "CC0 (drawn by packs/synthetic_bills_packs.py from a fixed seed; no real person's documents)",
+           "Computer-made by the kit's makers (packs/synthetic_bills_packs.py)", "permissive", 4000, 40, prepare_pack,
+           "about 600 MB"),
     # ---- share-alike
     Source("appliance_commons_sa", "Wikimedia Commons: rotary switches, air-conditioner remotes, smart thermostats and "
                                    "cooktops, files under CC BY-SA or GFDL (share-alike)",
