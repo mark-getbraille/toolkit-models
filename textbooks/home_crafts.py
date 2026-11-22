@@ -1,5 +1,10 @@
-"""Home repair, upkeep, pest control and the textile crafts for the reference library, in the group "Reference, home
-repair, pests and handcrafts" (the owner's request of 2026-11-22). Keys: home-crafts (every book), craft:<name>.
+"""Home repair, upkeep, pest control and the textile crafts for the reference library (the owner's request of
+2026-11-22). Keys: home-crafts (every book), craft:<name>.
+
+Groups: the home repair, pest, heating, stain and mending books are in "Reference, home repair and pests"; the
+textile craft books (quilting, embroidery, weaving, spinning, dyeing, tatting, macramé, needlework and knitting,
+upholstery and leatherwork) are in "Reference, arts and crafts" (CRAFT_GROUP, the group of crafts_books.py), the one
+top-level group for crafts (the owner's request of 22 November 2026). Their keys did not change.
 
 What this module builds, in plain words, each IN FULL:
   - the EPA's pages on controlling pests safely at home, marked "personal use only" (the EPA's copyright statement,
@@ -52,7 +57,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import refs_kit as K  # noqa: E402
 
 GROUP = "homecraft"
-GROUPS = {GROUP: "Reference, home repair, pests and handcrafts"}
+GROUPS = {GROUP: "Reference, home repair and pests"}
+# The textile craft books' group: "Reference, arts and crafts" (named in crafts_books.py's GROUPS).
+CRAFT_GROUP = "crafts"
 
 # The EPA's terms: the same names as pets_home.py (that module adds EPA_TERMS to sources.ALLOWED as non-commercial).
 EPA_TERMS = "EPA website copyright statement"
@@ -184,15 +191,19 @@ PDFS = [
 ]
 
 
-def _old(name, title, subject, publisher, archive, year, description, note=OLD_CRAFT_NOTE, country="United States"):
-    """One old public-domain book of the Internet Archive (published before 1931) as a PDF entry."""
-    return dict(group=GROUP, name=name, title=title, subject=subject, publisher=publisher, archive=archive,
+def _old(name, title, subject, publisher, archive, year, description, note=OLD_CRAFT_NOTE, country="United States",
+         group=CRAFT_GROUP):
+    """One old public-domain book of the Internet Archive (published before 1931) as a PDF entry, in the arts and
+    crafts group unless group says otherwise (the mending and shoe repair books are home repair)."""
+    return dict(group=group, name=name, title=title, subject=subject, publisher=publisher, archive=archive,
                 country=country, licence=OLD_LICENCE, licence_url=OLD_URL, old_public_domain=True, level="reference",
                 published=str(year), version=f"{year} edition", description=description + note.format(year=year),
                 notice=OLD_NOTICE, changes="its scanned pages' machine-read text (with the scanner's mistakes) made "
                                            "into web pages, ten pages at a time or one per chapter")
 
 
+# The old craft and mending books: the craft books in the arts and crafts group, the mending and shoe repair books
+# (group=GROUP) in the home repair group.
 PDFS += [
     _old("webster_quilts_1915", "Quilts: Their Story and How to Make Them (Marie D. Webster, 1915)", "Quilting",
          "Marie D. Webster (Doubleday, Page and Company)", "quiltstheirstory00webs", 1915,
@@ -241,7 +252,7 @@ PDFS += [
          "Mending and repairing", "Charles Godfrey Leland (Chatto and Windus, London)", "manualofmending00lela",
          1896,
          "Mending things at home: cements and glues, repairing china, glass, wood, furniture, leather, books, "
-         "metal and clothes.", note=OLD_CHEMICAL_NOTE, country="United Kingdom"),
+         "metal and clothes.", note=OLD_CHEMICAL_NOTE, country="United Kingdom", group=GROUP),
     _old("hasluck_upholstery_1904", "Upholstery (Paul N. Hasluck, 1904)", "Upholstery",
          "Paul N. Hasluck (Cassell and Company)", "upholsterywithnu00hasl", 1904,
          "Upholstering chairs, couches and other furniture: tools and materials, webbing, springing, stuffing, "
@@ -253,11 +264,11 @@ PDFS += [
     _old("hasluck_boot_making_mending_1898", "Boot Making and Mending (Paul N. Hasluck, 1898)", "Shoe repair",
          "Paul N. Hasluck (Cassell and Company)", "bootmakingmendin00hasl", 1898,
          "Making and mending boots and shoes: tools, leather, lasts, soling and heeling, patching, lasting and "
-         "finishing.", note=OLD_TOOLS_NOTE, country="United Kingdom"),
+         "finishing.", note=OLD_TOOLS_NOTE, country="United Kingdom", group=GROUP),
     _old("bower_practical_shoe_repairing_1923", "Practical Shoe Repairing (Charles Leslie Bower, 1923)",
          "Shoe repair", "Charles Leslie Bower", "practicalshoerep00bowe", 1923,
          "The shoe repairer's trade: the shop and its tools and machines, taking off and putting on soles and "
-         "heels, stitching, patching and finishing.", note=OLD_TOOLS_NOTE),
+         "heels, stitching, patching and finishing.", note=OLD_TOOLS_NOTE, group=GROUP),
     _old("mickel_leather_work_1915", "Leather Work (Adelaide Mickel, 1915)", "Leatherwork",
          "Adelaide Mickel (Manual Arts Press)", "in.ernet.dli.2015.88834", 1915,
          "Leather craft for beginners: tools, kinds of leather, cutting, tooling and modelling, staining, lacing "

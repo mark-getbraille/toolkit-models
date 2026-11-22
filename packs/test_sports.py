@@ -166,4 +166,4 @@ def test_wiring():
     assert "commons_sports_venues" in topics.find("places").keys
     assert "commons_sports_action" in topics.find("people").keys
     ids = [t.id for t in topics.TOPICS]
-    assert ids.index("sports") == ids.index("art") + 1
+    assert ids.index("sports") == ids.index("crafts") + 1 == ids.index("art") + 2     # arts and crafts between

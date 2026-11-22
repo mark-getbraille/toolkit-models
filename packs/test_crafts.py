@@ -5,7 +5,7 @@ It checks that the kiln, clay, lye, wax, glass, torch, resin and blade notes fol
 the kit; that the museum craft packs keep only CC0, described, English-titled objects under their own file names,
 never a nude; that Open Images rows say only what the labels say; that pottery and jewellery are collections of
 their own; and that every pack is wired (build_packs, COMMONS_KEYS only for Commons packs, the workflows, the kit's
-sources, the art topic, picture-making only for things, the hidden imports). The shared checks of Open Images labels
+sources, the crafts and art topics, picture-making only for things, the hidden imports). The shared checks of Open Images labels
 and Commons categories are in packs/test_electronics.py.
 
 Run it from the repository's folder:   python3 -m pytest packs/test_crafts.py
@@ -112,9 +112,17 @@ def test_wiring():
     for key in ("pottery_commons_sa", "jewellery_commons_sa", "crafts_commons_sa"):
         assert listed[key].group == "share-alike", key
     assert set(c.POTTERY_KEYS) <= set(k.POTTERY_KIT_KEYS) and set(c.JEWELLERY_KEYS) <= set(k.JEWELLERY_KIT_KEYS)
-    art = set(topics.find("art").keys)
+    # the topics: exactly as the kit module says; every collection in "crafts" (Arts and crafts), the museum ones in
+    # "art" too, and no Commons or Open Images craft collection left in "art" or "home"
+    for topic_id, topic_keys in k.CRAFTS_TOPICS.items():
+        assert set(topic_keys) <= set(topics.find(topic_id).keys), topic_id
+    crafts = set(topics.find("crafts").keys)
+    for topic in topics.TOPICS:
+        held = {s.key for s in k.CRAFTS_SOURCES} & set(topic.keys)
+        assert held <= set(k.CRAFTS_TOPICS.get(topic.id, ())), topic.id
+    assert not {s.key for s in k.CRAFTS_SOURCES} & set(topics.find("home").keys)
     no_making = set(sources.NOT_FOR_PICTURE_MAKING)
     for s in k.CRAFTS_SOURCES:
-        assert s.key in art, s.key
+        assert s.key in crafts, s.key
         assert (s.key in no_making) == (s.key not in k.CRAFTS_PICTURE_MAKING_OK), s.key
     assert "commons_pottery_ceramics" in no_making and "museum_ceramics" not in no_making

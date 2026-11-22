@@ -7,8 +7,8 @@ lasers; spinning chucks and no gloves for lathes and mills; molten metal and wat
 Archive words are ones no other collection searches; that every maker is link-only with its reason, an https address,
 no manual-copying site, no id used twice, and no maker another collection already links (Cricut, Silhouette,
 Glowforge, Carbide 3D, Grizzly, Tormach stay where they are); that the heading "Home manufacturing and making" is on
-these categories only (the craft, woodshop and metal shop collections keep their keys and no heading) and is written
-into the index and the manifest.
+these categories and the woodshop and metal shop collections (keys unchanged), while heat_press_vinyl and the craft
+machines are under "Arts and crafts" (22 November 2026), and is written into the index and the manifest.
 
 Run it from the repository's folder:   python3 -m pytest manuals/test_making_manuals.py
 """
@@ -77,11 +77,14 @@ def test_makers_are_link_only_and_not_repeated():
 
 def test_heading():
     for key in KEYS:
+        if key != "heat_press_vinyl":
+            assert C.CATEGORIES[key]["heading"] == "Home manufacturing and making", key
+    # the existing woodshop and metal shop collections are listed under the same heading (22 Nov 2026)
+    for key in ("woodshop_machines", "metal_shop_welding"):
         assert C.CATEGORIES[key]["heading"] == "Home manufacturing and making", key
-    # the existing craft, woodshop and metal shop collections are listed under the same heading (22 Nov 2026)
-    for key in ("craft_machines", "woodshop_machines", "metal_shop_welding"):
-        assert C.CATEGORIES[key]["heading"] == "Home manufacturing and making", key
-    assert C.CATEGORIES["sewing_textile"].get("heading") != "Home manufacturing and making"
+    # craft machines (Cricut, Silhouette) and heat presses and vinyl moved to "Arts and crafts" (22 Nov 2026)
+    for key in ("craft_machines", "heat_press_vinyl", "sewing_textile"):
+        assert C.CATEGORIES[key]["heading"] == "Arts and crafts", key
 
 
 class FakeFetch:

@@ -616,6 +616,13 @@ jobs:
             commons_moulding_casting) limit=700 ;;
             commons_pcb_fabrication) limit=120 ;;
             open_images_making) limit=1500 ;;
+            commons_cameras_by_type) limit=1200 ;;
+            commons_camera_makers) limit=1200 ;;
+            commons_lenses_lighting) limit=1200 ;;
+            commons_film_darkroom) limit=1100 ;;
+            commons_historic_processes) limit=1500 ;;
+            nmah_photography) limit=600 ;;
+            open_images_photography) limit=1500 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in

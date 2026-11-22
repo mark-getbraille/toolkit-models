@@ -54,6 +54,7 @@ import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import refs_kit as K  # noqa: E402
+import govinfo_kit as GK  # noqa: E402 - the shared govinfo names (one key for every govinfo sign-up entry)
 import practical_index as PI  # noqa: E402 - the EPA's terms (as recycling.py uses them)
 import aging_end_of_life as AG  # noqa: E402 - the sections' groups and notes are the existing modules' own
 import car_care as CC  # noqa: E402
@@ -68,10 +69,12 @@ import relationships as RL  # noqa: E402
 import veterans as VT  # noqa: E402
 
 PREFIX = "gpo"
-GOVINFO = "https://www.govinfo.gov"
-KEY_ENV = "GOVINFO_API_KEY"
-SIGNUP = "https://api.data.gov/signup/"
-API = "https://api.govinfo.gov/search"
+# The same names as govinfo_kit.py (the history, travel and education collections' govinfo helpers), so the owner
+# sets one key, GOVINFO_API_KEY, for every govinfo sign-up entry.
+GOVINFO = GK.GOVINFO
+KEY_ENV = GK.GOVINFO_KEY_ENV
+SIGNUP = GK.GOVINFO_SIGNUP
+API = GK.GOVINFO_API + "/search"
 
 # ---------------------------------------------------------------------- the sections
 
