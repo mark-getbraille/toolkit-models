@@ -653,3 +653,9 @@ from instrument_care import CATEGORY as _INSTRUMENT_CARE  # noqa: E402
 
 CATEGORIES.update({"car_care": _CAR_CARE, "garden_care": _GARDEN_CARE, "instrument_care": _INSTRUMENT_CARE})
 CATEGORIES.update(_HOME_HEALTH_CARE)
+# Disabilities other than blindness (the owner's request of 2026-11-22): hearing aids, cochlear implants, assistive
+# listening, captioned phones and AAC devices; wheelchairs, scooters, lifts and accessible vehicles. Makers link-only,
+# the US government's guides in full: manuals/disability_devices.py.
+from disability_devices import CATEGORIES as _DISABILITY_DEVICES  # noqa: E402
+
+CATEGORIES.update(_DISABILITY_DEVICES)
