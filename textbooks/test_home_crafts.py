@@ -53,7 +53,7 @@ def test_every_book_has_its_licence_and_notice():
 
 
 def test_epa_books_personal_use_with_safety_notes():
-    for g in H.GUIDES:
+    for g in [g for g in H.GUIDES if g["name"].startswith("epa_")]:
         assert g["personal_use"] and g["licence"] == H.EPA_TERMS and g["licence_page"] == H.EPA_DISCLAIMER
         assert B.licence_kind(B.licence_short(g["licence"])) == "non-commercial"
         assert "Personal use only" in g["notice"]
@@ -61,6 +61,24 @@ def test_epa_books_personal_use_with_safety_notes():
     assert H.PESTICIDE_SAFETY in pest["notice"] and "1-800-222-1222" in pest["notice"]
     leak = H.COLLECTION.guides["epa_fix_a_leak"]
     assert "shut-off valve" in leak["notice"] and "licensed" in leak["notice"]
+
+
+def test_heating_books():
+    """The heating books carry the carbon monoxide, 3-feet and gas-professional note; the US Fire Administration's
+    book is public domain, the EPA's Burn Wise personal use; their page patterns leave out forms and other parts."""
+    usfa = H.COLLECTION.guides["usfa_home_heating_fire_safety"]
+    burn = H.COLLECTION.guides["epa_burn_wise"]
+    for g in (usfa, burn):
+        assert H.HEAT_SAFETY in g["notice"]
+    for words in ("carbon monoxide", "3 feet", "911", "qualified professional"):
+        assert words in H.HEAT_SAFETY
+    assert usfa["licence"] == sources.US_GOV and not usfa.get("personal_use") and burn["personal_use"]
+    pattern = re.compile(usfa["pages"])
+    assert pattern.match("https://www.usfa.fema.gov/prevention/home-fires/prepare-for-fire/fire-extinguishers/")
+    assert not pattern.match("https://www.usfa.fema.gov/prevention/home-fires/prevent-fires/cooking/")
+    pattern = re.compile(burn["pages"])
+    assert pattern.match("https://www.epa.gov/burnwise/build-firewood-storage")
+    assert not pattern.match("https://www.epa.gov/burnwise/wood-burning-resources-businesses")
 
 
 def test_page_patterns():

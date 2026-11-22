@@ -18,6 +18,12 @@ What this module builds, in plain words, each IN FULL:
     Repairing (1896), Paul Hasluck's Upholstery (1904) and Boot Making and Mending (1898), Emil Johnson's Furniture
     Upholstery for Schools (1919), Charles Bower's Practical Shoe Repairing (1923) and Adelaide Mickel's Leather Work
     (1915). Each old book's description says what is out of date in it (old chemicals, dyes and safety advice).
+  - emergency and secondary heating (added the same day): the EPA's Burn Wise pages (wood stoves, fireplaces,
+    seasoning and storing firewood, chimney sweeps; personal use only) and the US Fire Administration's heating,
+    electrical, power-outage and preparing-for-fire pages (smoke alarms, extinguishers, escape plans; public domain),
+    each with the carbon monoxide, 3-feet and gas-professional safety note in its notice.
+  - emergency lighting (added the same day): the US Fire Administration's candle and power-outage pages in the same
+    book. (Lantern and lamp makers' manuals are the manual collection emergency_lighting, links only.)
   (Already in the library and not repeated: the EPA's mould, radon, lead and indoor air guides (home:epa_home_health),
   the Energy Saver articles (energy_saver_articles), the old sewing, knitting and crochet books of thin:sewing, the
   USDA Farmers' Bulletins on home sewing, stains and household pests (pub:usda_farmers_bulletins) and Dillmont's
@@ -109,6 +115,54 @@ GUIDES = [
                  "plumber.", depth=1, units=[(r"fix-leak-week", "Fix a Leak"), (r".", "Water at home")], limit=20),
          licence=EPA_TERMS, licence_url=EPA_DISCLAIMER, licence_page=EPA_DISCLAIMER, licence_text=EPA_TEXT,
          personal_use=True, urls=["https://www.epa.gov/watersense/fix-leak-week"]),
+]
+
+# ====================================================================== emergency and secondary heating
+
+# The same safety words as packs/heating_packs.py HEAT_SAFETY (the coordinator's addition of 2026-11-22).
+HEAT_SAFETY = ("Heating safety: keep anything that can burn at least 3 feet (1 metre) away. Stoves, fireplaces and "
+               "fuel-burning heaters make carbon monoxide, which can kill: have a working carbon monoxide alarm, "
+               "never use outdoor heaters, grills or generators indoors, and if the alarm sounds or anyone feels ill "
+               "(headache, dizziness, nausea), get everyone out and call 911. Gas lines, gas appliances and stove "
+               "installation are work for a qualified professional.")
+BURNWISE_NOT = ("forms/|epa-approved-test-labs|residential-wood-burning-appliance-laboratory|wood-burning-resources-|"
+                "hangtag|case-studies|ordinances|toolkit|tribes|order-form")
+USFA_PAGES = (r"prevent-fires/(heating|candle|appliance-and-electrical|severe-weather|basement-and-garage|"
+              r"home-hazardous-materials)|prepare-for-fire(/[a-z0-9-]+)?")
+GUIDES += [
+    dict(K.guide(GROUP, "epa_burn_wise", "Burn Wise: wood stoves, fireplaces and firewood (EPA)", "Wood heating",
+                 "US Environmental Protection Agency (EPA), Burn Wise program", "https://www.epa.gov/burnwise",
+                 rf"^https://www\.epa\.gov/burnwise(/(?!{BURNWISE_NOT})[a-z0-9-]+)?$",
+                 "The EPA's Burn Wise pages for people who heat with wood, every page for homes: best wood-burning "
+                 "practices and tips for a better burn, choosing a wood-burning appliance and telling whether a stove "
+                 "is EPA-certified, installation and maintenance, chimney sweeps, building firewood storage and "
+                 "seasoning wood, energy efficiency, wood smoke and your health, backyard fires, changing out an old "
+                 "stove, and frequent questions.",
+                 "From the US Environmental Protection Agency. Personal use only: EPA says its documents \"may be "
+                 "freely distributed and used for non-commercial, scientific and educational purposes\". " +
+                 HEAT_SAFETY, depth=1, limit=40),
+         licence=EPA_TERMS, licence_url=EPA_DISCLAIMER, licence_page=EPA_DISCLAIMER, licence_text=EPA_TEXT,
+         personal_use=True, urls=["https://www.epa.gov/burnwise/best-wood-burning-practices",
+                                  "https://www.epa.gov/burnwise/wood-burning-installation-and-maintenance"]),
+    K.guide(GROUP, "usfa_home_heating_fire_safety", "Heating, candle, electrical and home fire safety: smoke "
+            "alarms, extinguishers and escape plans (US Fire Administration)", "Home heating and fire safety",
+            "US Fire Administration (FEMA)",
+            ["https://www.usfa.fema.gov/prevention/home-fires/prevent-fires/heating",
+             "https://www.usfa.fema.gov/prevention/home-fires/prepare-for-fire"],
+            rf"^https://www\.usfa\.fema\.gov/prevention/home-fires/({USFA_PAGES})/$",
+            "The US Fire Administration's home fire safety pages, every page of these parts: heating fire safety "
+            "(space heaters, fireplaces and wood stoves, chimneys, furnaces, carbon monoxide), candle fire safety, "
+            "appliance and "
+            "electrical fire safety, fire safety in severe weather and power outages (generators and candles), the "
+            "basement and garage, hazardous materials at home, and preparing for fire: smoke alarms, heat alarms, "
+            "fire extinguishers, home fire sprinklers and home fire escape plans.",
+            "A work of the US Fire Administration, part of FEMA (public domain). " + HEAT_SAFETY, depth=1,
+            units=[(r"/heating", "Heating fire safety"), (r"/candle", "Candles"),
+                   (r"/prepare-for-fire", "Preparing for fire"),
+                   (r".", "More fire safety")], limit=40,
+            urls=["https://www.usfa.fema.gov/prevention/home-fires/prevent-fires/heating/",
+                  "https://www.usfa.fema.gov/prevention/home-fires/prevent-fires/candle/",
+                  "https://www.usfa.fema.gov/prevention/home-fires/prepare-for-fire/smoke-alarms/"]),
 ]
 
 # ====================================================================== the USDA stain guide and the old craft books
@@ -222,6 +276,9 @@ LICENCE_LINES = {
     "homecraft_usda_stains": "The USDA's Home and Garden Bulletin 62 is a work of the US government (17 U.S.C. 105, "
                              "checked on govinfo.gov's policies page at every build), read from the Internet "
                              "Archive's copy (removingstainsfr00unit); archive.org's robots.txt allows it.",
+    "homecraft_usfa": "www.usfa.fema.gov: works of the US government (FEMA; 17 U.S.C. 105, checked on govinfo.gov's "
+                      "policies page at every build); robots.txt names only a sitemap, nothing refused; no AI rules "
+                      "(checked 2026-11-22).",
     "homecraft_old_books": "Internet Archive items: each item's metadata \"date\" before 1931 (checked at every "
                            "build, so a later reprint is refused); archive.org's robots.txt allows the files; no AI "
                            "rules (checked 2026-11-22).",
@@ -254,6 +311,41 @@ NOT_INCLUDED = [
      "and https://www.instructables.com/"),
     ("Wikibooks (Sewing, Knitting, Bicycle Maintenance and Repair, Home Improvement)", "CC BY-SA, and already whole "
      "in the Kiwix library's Wikibooks. Index: https://en.wikibooks.org/wiki/Bicycle_Maintenance_and_Repair"),
+    ("CPSC carbon monoxide, portable heater and generator safety pages; CDC carbon monoxide pages", "Public "
+     "information and public domain, but www.cpsc.gov and www.cdc.gov answered this build machine \"403 Forbidden\" "
+     "(2026-11-22); the US Fire Administration's heating pages (built: craft:usfa_home_heating_fire_safety) cover the "
+     "same safety rules. Link-only. Index: https://www.cpsc.gov/Safety-Education/Safety-Education-Centers/Carbon-"
+     "Monoxide-Information-Center and https://www.cdc.gov/carbon-monoxide/"),
+    ("NFPA heating and carbon monoxide safety tips", "\"© National Fire Protection Association\": copyright, not "
+     "openly licensed. Link-only. Index: https://www.nfpa.org/education-and-research/home-fire-safety"),
+    ("DOE Energy Saver wood and pellet heating; USDA APHIS \"Don't Move Firewood\" and emerald ash borer pages",
+     "Energy Saver's wood and pellet heating page answers \"404\" (removed in energy.gov's redesign; the remaining "
+     "articles are energy_saver_articles), and www.aphis.usda.gov answered \"403 Forbidden\" (2026-11-22). "
+     "dontmovefirewood.org is The Nature Conservancy's (copyright). Link-only. Index: "
+     "https://www.aphis.usda.gov/plant-pests-diseases/eab and https://www.dontmovefirewood.org/"),
+    ("Forest Service and extension firewood guides; old stove and heating books", "No openly licensed extension "
+     "firewood guide was found (copyright or non-commercial); the Forest Products Laboratory's site refuses programs "
+     "(as found for the hardware guides). The old books found on the Internet Archive are stove makers' sales "
+     "catalogues and steam-heating treatises, not guides; the USDA Farmers' Bulletins Construction of Chimneys and "
+     "Fireplaces (1930) and Machinery for Cutting Firewood (1919) are already in pub:usda_farmers_bulletins. Index: "
+     "https://www.fpl.fs.usda.gov/"),
+    ("Emergency lighting and candles during power outages: Ready.gov, CDC, CPSC and the Red Cross", "Ready.gov, "
+     "www.cdc.gov and www.cpsc.gov answered this build machine \"403 Forbidden\" (2026-11-22); the Red Cross's pages "
+     "are \"© American Red Cross\" (copyright). The US Fire Administration's candle and power-outage pages are built "
+     "(craft:usfa_home_heating_fire_safety). Link-only. Index: https://www.ready.gov/power-outages, "
+     "https://www.cdc.gov/natural-disasters/safety/power-outages.html and https://www.redcross.org/get-help/how-to-"
+     "prepare-for-emergencies/types-of-emergencies/power-outage.html"),
+    ("Lamp and lantern books: Coleman, Petromax, Aladdin and Dietz instructions, old lamp books, US Army lighting "
+     "manuals", "The owner wants modern lanterns and lamps, nothing from before 1900, so the old lamp books and "
+     "catalogues are left out. The makers' current instructions (lighting, shutdown, mantles, generators, pumps, "
+     "troubleshooting) are copyright: they are links in the manual collection emergency_lighting, and Coleman's old "
+     "manuals are in the Internet Archive collection of camping_outdoor, for the owner to fetch with Program "
+     "Downloader. No public-release US government or military lantern manual was found (the TM 10 series found "
+     "covers water heaters, 1945). Index: https://archive.org/details/manuals_coleman"),
+    ("US Army cold-weather and field heater manuals", "The cold-weather field manuals (FM 31-70 and others) are already "
+     "in the field manual library (fieldmanuals); the space heater technical manuals found (TM 9-4520-271-24P, 2006) "
+     "are parts lists without a distribution statement that could be checked. Index: "
+     "https://archive.org/details/milmanual-fm-31-70-basic-cold-weather-manual"),
     ("Encyclopedia of Needlework (Thérèse de Dillmont) and Weldon's Practical Needlework", "Dillmont is in the Kiwix "
      "library's Project Gutenberg books; no Internet Archive copy of Weldon's Practical Needlework volumes with a "
      "text layer was found (only Weldon's fancy-dress book). Index: https://www.gutenberg.org/ebooks/20776"),
