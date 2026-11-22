@@ -11,25 +11,29 @@ truthfully in the notice whether Distribution Statement A is printed; a restrict
     and splices, deck fittings and line handling, then boat characteristics, stability, weather and boat handling;
   - the Army's Manual of Pack Transportation (Quartermaster Corps, 1917) and Pack Transportation (FM 25-7, 1944):
     lash ropes and slings, the diamond hitch and the other pack hitches, lashed loads and the care of pack animals
-    (a field manual: parts about weapons or tactics are left out by the builder, and FM 25-7's chapter on hanger and
-    adapter loads, which carry weapons and ammunition, by keep_parts);
-  - two Marine Corps mountain leader's guides, only their safe chapters (keep_parts, build_textbooks.kept_part):
-    Mountain Warfare Operations (MCRP 12-10A.3, 2014): rope management, knots and anchors, lifting and crossing
-    systems, rappelling and climbing, rescue, steep climbing, alpine movement, survival and glaciers; and Winter
-    Operations (MCRP 12-10A.2, formerly MCRP 3-35.1B): avalanches, ice, ski equipment and techniques, skijoring,
-    over-snow casualty evacuation and snow shelters. Their chapters on intelligence, command, manoeuvre, security,
-    fires, force protection, tracking and firing positions are left out.
+    (read whole, FM 25-7's chapter on hanger and adapter loads included as history);
+  - two Marine Corps mountain leader's guides, read whole: Mountain Warfare Operations (MCRP 12-10A.3, 2014) and
+    Winter Operations (MCRP 12-10A.2, formerly MCRP 3-35.1B). Since the owner's decision of 22 November 2026 old
+    military manuals are kept whole; only parts about explosives, demolition, mines, grenades, booby traps,
+    improvised explosives or sabotage are left out (build_textbooks.NOT_FIELD_SAFE);
+  - the Navy's Boatswain's Mate 2c (1944) and the Bluejacket's Manual (1917), whole, and the Admiralty Manual of
+    Seamanship of 1908 (revised 1915), public domain in the UK and the US;
+  - the Admiralty Manuals of Seamanship of 1951 to 1972 (seven volumes, every downloadable Internet Archive copy of
+    an edition published in 1975 or earlier), by the owner's informed decision of 22 November 2026: public domain in
+    the UK (Crown copyright ends 50 years after publication) but possibly restored in the US by the URAA (1996).
+    They carry CROWN_NOTICE, the licence UK_CROWN_EXPIRED and the mark us_restoration_risk=True (crown_expired_book),
+    and never a US public-domain licence.
   Every book carries knots_outdoor.OUTDOOR_SAFETY (rope loads, climbing training, sharp tools, fire and local rules).
 
 Already in the library and not repeated: the Army's rigging manual FM 5-125 and Military Mountaineering TC 3-97.61
 (field manuals), the survival manuals (ATP 3-50.21, FM 21-76 / MCRP 3-02F, AFR 64-4), cold weather FM 31-70 and TC
 21-3, Knight's Modern Seamanship (thin:boating) and the Coast Guard's recreational boating guide (outdoors:).
 
-Not built (NOT_INCLUDED, with the reason and an address): the UK Admiralty Manual of Seamanship (the 1937 edition only
-as a lending-library scan; the 1951 to 1972 editions are public domain in the UK but may still be in copyright in the
-US by the 1996 restoration of foreign works, so link-only), Canada's Down But Not Out and B-GL-382-006 Survival (Crown
-copyright in force), and others listed below. The survival, evasion and resistance manuals (MCRP 3-02H, AFH 10-644)
-and the restricted pack animal manuals (FM 31-27, FM 3-05.213, personal use) are in military_whole.py (milw:).
+Not built (NOT_INCLUDED, with the reason and an address): the Admiralty Manual of Seamanship of 1983, 1995 and later
+(still Crown copyright in the UK: link-only for Program Downloader), the 1932 and 1937 editions and the other copies
+that are lending-library scans, Canada's Down But Not Out and B-GL-382-006 Survival (Crown copyright in force), and
+others listed below. The survival, evasion and resistance manuals (MCRP 3-02H, AFH 10-644) and the restricted pack
+animal manuals (FM 31-27, FM 3-05.213, personal use) are in military_whole.py (milw:).
 
 Run from the repository's folder:
   python3 textbooks/knots_military.py kmil:army_fm_25_7_pack_transportation_1944 --out build/textbooks --limit 3
@@ -168,6 +172,101 @@ PDFS += [
          "and equipment are those of its day.", work="a work of the US Navy", old_public_domain=True),
 ]
 
+# ---------------------------------------------------------------------- the Admiralty manuals of 1951 to 1975
+# The owner's informed decision of 22 November 2026: every downloadable Internet Archive copy of an Admiralty
+# seamanship, boat or rigging manual published in 1975 or earlier is built in full. They are public domain in the UK
+# (Crown copyright in a published work ends 50 years after the end of the year of publication), but they were still
+# in copyright there on 1 January 1996, so the US may have restored their copyright (the URAA restoration of foreign
+# works, 95 years from publication). The owner was told this and chose to include them. Each carries the same truthful
+# notice (CROWN_NOTICE), the licence UK_CROWN_EXPIRED (never a US public-domain licence) and the marks
+# uk_crown_expired=True (the builder checks the year at every build: build_textbooks.uk_crown_last_year) and
+# us_restoration_risk=True (so they can be found, and kept out of anything that claims US public-domain status).
+DECISION_DATE = "22 November 2026"
+UK_CROWN_EXPIRED = "Public domain in the UK (Crown copyright expired)"
+UK_CROWN_URL = ("https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/"
+                "uk-government-licensing-framework/crown-copyright/")
+CROWN_NOTICE = ("Crown copyright (UK). Public domain in the UK, where Crown copyright in published works ends 50 years "
+                "after publication. Its US copyright may have been restored (URAA, 1996); included at the owner's "
+                f"decision ({DECISION_DATE}).")
+CROWN_SCAN = ("Read from its Internet Archive scan (digitised by Google Books from a university library): the "
+              "machine-read text has the scanner's mistakes, and its pictures are described only by their captions.")
+CROWN_NOTE = ("Published in {year} for the Royal Navy: its ships, gear, signals and rules are those of its day "
+              "(the collision rules have changed since); never use it for navigation.")
+# The licence these books carry, added to the toolkit's allowed licences (more_refs.allowed): an open licence in the
+# toolkit's sense (no conditions), shown with its own name so it never reads as US public domain.
+ALLOWED = {UK_CROWN_EXPIRED: "open"}
+
+
+def crown_expired_book(name, title, archive, year, description, subject="Seamanship, boats, knots and rigging"):
+    """One Admiralty manual whose UK Crown copyright has ended (published in 1975 or earlier), from its downloadable
+    Internet Archive copy, built in full with the owner's notice (see the comment above)."""
+    return dict(group=GROUP, name=name, title=title, subject=subject, publisher="Admiralty (Great Britain), "
+                "published by His or Her Majesty's Stationery Office", archive=archive, country="United Kingdom",
+                licence=UK_CROWN_EXPIRED, licence_url=UK_CROWN_URL, uk_crown_expired=True, us_restoration_risk=True,
+                level="reference", published=str(year), version=f"{year} edition (Internet Archive item {archive})",
+                description=f"{description} {CROWN_NOTE.format(year=year)}",
+                notice=f"{CROWN_NOTICE} {CROWN_SCAN} {KO.OUTDOOR_SAFETY}",
+                changes="its scanned pages' machine-read text (with the scanner's mistakes) made into web pages, ten "
+                        "pages at a time or one per chapter")
+
+
+VOLUME_1951 = ("the 1951 edition (B.R. 67, in three volumes, 1951 to 1954), which replaced the 1937 edition")
+VOLUME_1964 = ("the 1964 to 1967 edition (B.R. 67), which replaced the 1951 edition")
+CROWN_PDFS = [
+    crown_expired_book("admiralty_manual_of_seamanship_1951_v1", "Manual of Seamanship, Volume I (Admiralty, UK, B.R. "
+                       "67 (1/51), 1951)", "manual-seamanship-1951-v1", 1951,
+                       f"Volume I of {VOLUME_1951}: the textbook for naval cadets and seaman boys under training. "
+                       "General sea terms, types of ship, warship design and construction, routine and organisation, "
+                       "rope and its usage (knots, bends, hitches, whippings and splices), rigging, ship's boats "
+                       "(pulling, sailing and power boats), anchors and cables, the mariner's compass, conning and "
+                       "steering, sounding by lead and line, charts, buoyage and lights, naval communications and "
+                       "ceremonial."),
+    crown_expired_book("admiralty_manual_of_seamanship_1951_v2", "Manual of Seamanship, Volume II (Admiralty, UK, "
+                       "B.R. 67 (2/51), 1952)", "manual-seamanship-1951-v2", 1952,
+                       f"Volume II of {VOLUME_1951}: the continuation of Volume I for junior officers, petty officers "
+                       "and men seeking advancement: ship recognition and safety, fire-fighting, rope and its usage, "
+                       "rigging, boatwork, life-saving appliances, anchors and cables, laying out hawsers and anchors "
+                       "and towing, replenishment at sea, damage control and stability, ship maintenance, the rule of "
+                       "the road (the 1910 regulations), conning and steering, compasses, speed and distance, "
+                       "sounding, charts, tides and tidal streams, pilotage, time and the stars, and the weather; and "
+                       "the naval chapters of its day (paravanes and minesweeping, aircraft, communications and "
+                       "ceremonial), kept as history."),
+    crown_expired_book("admiralty_manual_of_seamanship_1951_v3", "Manual of Seamanship, Volume III (Admiralty, UK, "
+                       "B.R. 67 (3/51), 1954)", "manual-seamanship-1951-v3", 1954,
+                       f"Volume III of {VOLUME_1951}: the more advanced seamanship for experienced seamen, a book of "
+                       "reference: the officer of the watch in harbour and at sea, the rule of the road, manoeuvring "
+                       "in company, handling ships in narrow waters and in heavy weather, towing at sea, moorings, "
+                       "salvage and wreck dispersal, fire-fighting, abandoning ship, survival and rescue, warship "
+                       "construction and equipment, merchant ships and cargo stowage."),
+    crown_expired_book("admiralty_manual_of_seamanship_1964_v1", "Admiralty Manual of Seamanship, Volume 1 (B.R. "
+                       "67(1), 1964)", "admiralty-manual-sea-v1", 1964,
+                       f"Volume 1 of {VOLUME_1964}: the basic book of seamanship for officers and men joining the "
+                       "Royal Navy: types of ship and their parts, fibre, man-made and wire rope and how to handle "
+                       "it, bends and hitches, derricks and winches, types and classes of boat, sailing rigs, hints "
+                       "to coxswains of boats, the gyro and magnetic compasses, conning and steering, buoyage and "
+                       "sounding."),
+    crown_expired_book("admiralty_manual_of_seamanship_1967_v2", "Admiralty Manual of Seamanship, Volume 2 (B.R. "
+                       "67(2), 1967)", "admiralty-manual-sea-v2", 1967,
+                       f"Volume 2 of {VOLUME_1964}: more technical detail, a general textbook and reference book for "
+                       "ratings seeking advancement and for junior officers: advanced splicing, the strength of "
+                       "rigging fittings and gear, derricks, winches and cranes, the supply, maintenance, repair and "
+                       "buoyancy of boats, elementary ship stability, latitude, longitude and charts, and the naval "
+                       "work of its day (target towing), kept as history."),
+    crown_expired_book("admiralty_manual_of_seamanship_1964_v3", "Admiralty Manual of Seamanship, Volume 3 (B.R. "
+                       "67(3), 1964, the 1967 impression)", "admiralty-manual-sea-v3", 1967,
+                       f"Volume 3 of {VOLUME_1964}, mainly for officers: ship knowledge, stability and maintenance "
+                       "organisation and the more advanced seamanship of a ship's officers. This copy is the 1967 "
+                       "impression of the 1964 volume."),
+    crown_expired_book("admiralty_manual_of_seamanship_1972_v1", "Admiralty Manual of Seamanship, Volume 1 (B.R. "
+                       "67(1), consolidated edition 1972, incorporating Change 1)", "admiraltymanualseamanshipv1-1972",
+                       1972,
+                       f"Volume 1 of {VOLUME_1964}, in its consolidated edition of 1972 (the 1964 volume with its "
+                       "first change): types of ship, fibre, man-made and wire rope, bends and hitches, derricks and "
+                       "winches, types of boat and sailing rigs, hints to coxswains, compasses, buoyage and "
+                       "sounding."),
+]
+PDFS += CROWN_PDFS
+
 COLLECTION = K.Collection("kmil", GROUP, pdfs=PDFS,
                           words={"knots-military": lambda: [f"kmil:{p['name']}" for p in PDFS]})
 
@@ -178,18 +277,30 @@ LICENCE_LINES = {
                       "guides; no statement printed on the Coast Guard handbook and the 1917 and 1944 pack manuals, "
                       "checked 2026-11-22); archive.org's robots.txt allows the files; no "
                       "AI rules (checked 2026-11-22).",
+    "knots_military_crown": "Internet Archive copies (collection admiralty-publications) of the Admiralty Manuals of "
+                            "Seamanship of 1951 to 1972: Crown copyright (UK), ended 50 years after publication, so "
+                            "public domain in the UK (the builder checks each item's year at every build: 1975 or "
+                            "earlier in 2026); their US copyright may have been restored (URAA, 1996); included at "
+                            "the owner's decision (22 November 2026), marked us_restoration_risk; not downloadable "
+                            "lending-library copies are never read (checked 2026-11-22).",
 }
 
 NOT_INCLUDED = [
-    ("Admiralty Manual of Seamanship (UK, BR 67), 1951, 1964, 1967 and 1972 editions", "Crown copyright in published "
-     "works lasts 50 years from publication, so they are public domain in the UK; but they were still in copyright "
-     "there on 1 January 1996, so the US may have restored their copyright (the URAA restoration of foreign works, 95 "
-     "years from publication): link-only for the owner to fetch himself (Program Downloader). The downloadable copies: "
-     "https://archive.org/details/manual-seamanship-1951-v1, https://archive.org/details/manual-seamanship-1951-v2, "
-     "https://archive.org/details/manual-seamanship-1951-v3, https://archive.org/details/admiralty-manual-sea-v1, "
-     "https://archive.org/details/admiralty-manual-sea-v2, https://archive.org/details/admiralty-manual-sea-v3 and "
-     "https://archive.org/details/admiraltymanualseamanshipv1-1972. The 1908 edition (revised 1915) is built in full. "
-     "Index: https://archive.org/details/manual-seamanship-1951-v1"),
+    ("Admiralty Manual of Seamanship (UK, BR 67), 1951 to 1972 editions: their lending-library copies", "The 1951, "
+     "1964, 1967 and 1972 editions are built in full from their downloadable Internet Archive copies (kmil:admiralty_"
+     "manual_of_seamanship_1951_v1 and the others: public domain in the UK, where Crown copyright in published works "
+     "ends 50 years after publication; still in copyright there on 1 January 1996, so their US copyright may have "
+     "been restored by the URAA, 1996; included at the owner's decision of 22 November 2026, marked "
+     "us_restoration_risk). The other copies found (bwb_KT-594-508, bwb_KV-026-742, admiraltymanualo0001vari, "
+     "admiraltymanualo0000admi, admiraltymanualo0002vari, admiraltymanualo0002admi, bwb_KV-186-592 and the 1951 "
+     "manualofseamansh0001vari_n6g9) are lending-library scans that cannot be downloaded (searched 2026-11-22). Index: "
+     "https://archive.org/details/admiralty-publications"),
+    ("Admiralty Manual of Seamanship (BR 67), 1983 and 1995 editions, and every edition published after 1975", "Still "
+     "Crown copyright in the UK (it lasts 50 years from publication: the 1995 edition until the end of 2045), so not "
+     "built; link-only for the owner to fetch himself with Program Downloader. The 1995 edition has a downloadable "
+     "copy: https://archive.org/details/br67manualseamanship1995; the 1983 volume 2 "
+     "(admiraltymanualo0003navy) and another 1995 copy (admiraltymanualo0000grea) are lending-library scans. Index: "
+     "https://archive.org/details/br67manualseamanship1995"),
     ("Admiralty Manual of Seamanship (UK), 1932 and 1937 editions", "Public domain in the UK and in the US (their "
      "Crown copyright had ended before 1996, so nothing was restored), but the Internet Archive's copies are "
      "lending-library scans that cannot be downloaded (checked 2026-11-22). Index: "

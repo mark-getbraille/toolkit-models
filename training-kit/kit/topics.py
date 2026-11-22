@@ -139,8 +139,8 @@ TOPICS = [
            "commons_construction_safety", "electronics_commons_sa",
            # car care: wipers, tyres, jacks, roadside help, EV connectors, dashboard lights
            "commons_car_care", "commons_ev_charging", "commons_dashboard_lights", "open_images_car_care",
-           # boats and paddling (outdoors_sources.py)
-           "commons_boating_paddling",
+           # boats and paddling (outdoors_sources.py) and small boat types, parts and engines (small_boats_sources.py)
+           "commons_boating_paddling", "commons_small_boats",
            # radios, antennas and mesh radio devices (radio_sources.py; also in the radio topic)
            "commons_radios", "commons_antennas_station", "commons_mesh_data_radio", "open_images_radio",
            # generators, dynamos and wind and water turbines (power_sources.py; also in the power topic)
@@ -152,6 +152,8 @@ TOPICS = [
            "car_care_commons_sa", "radio_commons_sa", "people_commons_sa",
            "commons_mechanical_sa", "dashboard_symbols_sa", "device_models_sa", "farm_mech_commons_sa",
            "commons_airplanes_sa",
+           # NASA aircraft and rockets (photo_library_sources.py)
+           "nasa_aircraft", "nasa_rockets_launch",
            # non-commercial and research-only (personal use)
            "autovi", "dashboard_warning_icons", "car_parts_damage", "car_parts_dsmlr", "car_damage_views",
            "mechanical_parts_2022", "co3d_devices", "stanford_cars", "fgvc_aircraft", "museums_victoria",
@@ -285,6 +287,8 @@ TOPICS = [
            "synthetic_pay_documents", "synthetic_travel_documents", "commons_travel_signs", "synthetic_civic_documents",
            "synthetic_gov_forms",
            "commons_hearing_communication", "commons_immigration_documents",
+           # national park visitor facilities and signs (photo_library_sources.py)
+           "npgallery_facilities",
            # share-alike
            "hiertext", "mapqa", "indoor_commons_sa",
            # non-commercial and research-only (personal use)
@@ -309,6 +313,8 @@ TOPICS = [
            # farm animals, science instruments and plant identification (the leisure collections)
            "open_images_homestead", "commons_science_instruments", "open_images_science", "commons_poisonous_plants",
            "commons_mushrooms_id", "commons_wild_plants_bark",
+           # NASA Earth from space, planets and telescopes, more park wildlife and landscapes (photo_library_sources.py)
+           "nasa_earth_from_space", "nasa_planets_telescopes", "npgallery_wildlife_more", "npgallery_landscapes_more",
            # share-alike
            "garden_commons_sa",
            "science_commons_sa", "plant_id_commons_sa",
@@ -329,6 +335,7 @@ TOPICS = [
            # gathered from other files
            "commons_disability", "tapad_tactile_paving", "commons_access_features", "commons_assistive_devices",
            "commons_eye_care", "commons_crosswalks_signals", "commons_indoor_wayfinding", "commons_money_sides",
+           "npgallery_accessibility",
            # share-alike
            "vision_commons_sa", "commons_disability_sa",
            # research-only (personal use): photos and scans of braille pages
