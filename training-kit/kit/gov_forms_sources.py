@@ -7,7 +7,7 @@ the kit downloads it with prepare_pack) and what was left out, with the reason (
 
 The blank official forms are the us_federal_forms pack; the forms with their instructions are reference books
 (textbooks/gov_forms.py, form:). Tax answers end with "General information, not tax or legal advice; check the
-current rules or ask a professional." Topic: documents (Documents, maps and signs). Picture-making
+current rules or ask a professional." Topic: money (Money and paperwork). Picture-making
 (GOV_FORMS_PICTURE_MAKING_OK): none (a model must never learn to draw convincing government forms).
 
     python -c "import sources, gov_forms_sources"      (from the kit folder: checks the file loads)

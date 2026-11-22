@@ -7,8 +7,8 @@ at and left out, with the reason (TRAVEL_NOT_INCLUDED):
                               control, baggage carousels, jet bridges, taxi signs and currency exchange offices.
 
 As in drinks_sources.py, nothing here is re-shared by the kit's makers: each pack is downloaded by the kit on the
-user's own computer from the kit's own release, only when the user ticks the matching choice. Topic: documents
-(Documents, maps and signs). Picture-making (TRAVEL_PICTURE_MAKING_OK): none: a model must never learn to draw
+user's own computer from the kit's own release, only when the user ticks the matching choice. Topics: transport
+(Transport and travel); the travel signs also in documents. Picture-making (TRAVEL_PICTURE_MAKING_OK): none: a model must never learn to draw
 convincing travel documents, and the Commons photos show travellers.
 
     python -c "import sources, travel_sources"      (from the kit folder: checks the file loads)
