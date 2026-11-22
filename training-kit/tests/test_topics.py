@@ -29,12 +29,39 @@ KNOWN = {s.key: s for s in sources.SOURCES}
 def test_the_owners_topics_are_there():
     assert [t.id for t in topics.TOPICS] == ["medicines", "health", "drugs", "firearms", "food", "drinks", "alcohol",
                                              "machines", "transport", "home", "power", "radio", "privacy", "screens",
-                                             "money", "people", "places", "art", "sports", "documents", "nature",
-                                             "vision", "nudity", "sexual"]
+                                             "money", "people", "places", "art", "crafts", "sports", "documents",
+                                             "nature", "vision", "nudity", "sexual"]
     for topic in topics.TOPICS:
         assert topic.title and topic.description.endswith(".") and len(topic.description) < 300
         assert topics.find(topic.id.upper()) is topic
     assert topics.find("nope") is None
+
+
+def test_arts_and_crafts_is_a_section_of_its_own():
+    """Arts and crafts (the owner's request of 22 November 2026): every craft collection is in "crafts", right after
+    "art" and before "sports"; the Commons and Open Images crafts left "art" and "home", the museum objects stayed in
+    "art", and household mending stayed in "home" too."""
+    ids = [t.id for t in topics.TOPICS]
+    assert ids.index("crafts") == ids.index("art") + 1 == ids.index("sports") - 1
+    crafts = topics.find("crafts")
+    assert crafts.title == "Arts and crafts" and not crafts.sensitive and not crafts.needs
+    by_id = {t.id: set(t.keys) for t in topics.TOPICS}
+    moved = {"commons_knit_crochet_lace", "commons_quilt_embroidery_weaving", "commons_fabrics_fibres",
+             "open_images_textile_crafts", "textile_crafts_commons_sa", "commons_pottery_ceramics",
+             "commons_jewellery_beading", "commons_paper_crafts", "commons_candle_soap", "commons_glass_carving",
+             "commons_art_supplies", "commons_models_resin", "open_images_crafts", "pottery_commons_sa",
+             "jewellery_commons_sa", "crafts_commons_sa"}
+    museum = {"museum_ceramics", "museum_jewellery", "museum_glass_crafts", "nmah_textiles_sewing"}
+    assert moved | museum | {"commons_sewing_mending", "commons_upholstery_leather_shoes",
+                             "commons_cutting_lasers"} <= by_id["crafts"]
+    assert not moved & (by_id["art"] | by_id["home"])
+    assert museum <= by_id["art"]
+    assert {"commons_sewing_mending", "commons_upholstery_leather_shoes"} <= by_id["home"]
+    assert {"commons_cutting_lasers", "commons_3d_printing"} <= by_id["machines"] & by_id["home"]
+    assert "commons_3d_printing" not in by_id["crafts"] and "commons_cnc_machining" not in by_id["crafts"]
+    for word in ("craft", "knit", "pottery", "quilt"):
+        assert word not in topics.find("art").description.lower()
+        assert word not in topics.find("home").description.lower()
 
 
 def test_every_topic_key_is_a_collection_of_the_kit():

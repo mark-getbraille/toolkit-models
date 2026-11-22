@@ -3674,3 +3674,19 @@ PERSONAL_PICTURE_MAKING_OK |= _sports_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in SPORTS_SOURCES
                                                                if s.key not in _sports_ok)
 _add_collections(SPORTS_SOURCES)
+# Photography (photography_sources.py, the owner's request of 2026-11-22): the ready-made packs (cameras by type and by
+# maker, lenses and lighting, film and the darkroom, historic processes, NMAH photographic history, Open Images
+# photography), their share-alike Commons files, and the sources looked at and left out; the file may be missing.
+# Only the keys in PHOTOGRAPHY_PICTURE_MAKING_OK may be used for picture-making.
+try:
+    import photography_sources as _photography  # noqa: E402
+except ImportError as _e:
+    _photography = None
+    if getattr(_e, "name", None) != "photography_sources":
+        say(f"(The photography collections could not be loaded: {_e}. They are left out.)")
+PHOTOGRAPHY_SOURCES = list(getattr(_photography, "PHOTOGRAPHY_SOURCES", []) or [])
+_photography_ok = set(getattr(_photography, "PHOTOGRAPHY_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _photography_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in PHOTOGRAPHY_SOURCES
+                                                               if s.key not in _photography_ok)
+_add_collections(PHOTOGRAPHY_SOURCES)

@@ -10,8 +10,8 @@ It checks that:
   - no Commons category of these packs is named by another pack file, nor twice here;
   - every pack is wired: in build_packs.PACKS, the Commons ones in COMMONS_KEYS (and only those), in the workflows'
     known list and limit lines, in the kit's sources (packs "permissive", prepare_pack), picture-making only for the
-    keys the kit module allows, in the machines and home topics (the circuit board pack also in power), no new
-    topic, and the guarded kit module listed twice as a hidden import.
+    keys the kit module allows, in the machines and home topics (the circuit board pack also in power, the cutting
+    machine pack also in crafts), no topic of its own, and the guarded kit module listed twice as a hidden import.
 
 Run it from the repository's folder:   python3 -m pytest packs/test_making.py
 """
@@ -193,8 +193,13 @@ def test_wiring():
     assert listed["making_commons_sa"].group == "share-alike"
     assert "open_images_making" in no_making and "commons_moulding_casting" in no_making
     assert "commons_3d_printing" not in no_making
-    # the topics: machines and home hold everything, power the circuit board pack; no topic of its own
+    # the topics: machines and home hold everything, power the circuit board pack, crafts the cutting machine pack;
+    # no topic of its own
     for topic_id, topic_keys in k.MAKING_TOPICS.items():
         assert set(topic_keys) <= set(topics.find(topic_id).keys), topic_id
-    assert set(k.MAKING_TOPICS) == {"machines", "home", "power"}
+    assert set(k.MAKING_TOPICS) == {"machines", "home", "power", "crafts"}
+    assert k.MAKING_TOPICS["crafts"] == ("commons_cutting_lasers",)        # craft cutters and heat presses
+    for topic in topics.TOPICS:                                             # no other making pack elsewhere
+        held = {s.key for s in k.MAKING_SOURCES} & set(topic.keys)
+        assert held <= set(k.MAKING_TOPICS.get(topic.id, ())), topic.id
     assert not [t for t in topics.TOPICS if t.id in ("making", "manufacturing", "home_manufacturing")]

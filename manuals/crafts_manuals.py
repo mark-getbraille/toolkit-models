@@ -9,12 +9,23 @@ them. An INDEX of facts and links only: each manual belongs to its maker.
                       Equipment, Lortone, Covington, Diamond Pacific, Ultra Tec;
   craft_machines      cutting machines, die cutters, airbrushes, wood-burning tools and bookbinding presses: Cricut,
                       Silhouette, Brother ScanNCut, Sizzix, Iwata, Badger, Paasche, Walnut Hollow, Colwood.
-Every maker is LINK ONLY in this first version (their terms were not checked one by one, so nothing is read; each
+All three, with the sewing, textile tool, art supply and heat press collections, are under the heading "Arts and
+crafts" (HEADING, HEADING_KEYS). Every maker is LINK ONLY in this first version (their terms were not checked one by one, so nothing is read; each
 library is listed for the person to open in a browser). The Internet Archive's manuals are searched with each
 collection's words. The safety data sheets of glazes, paints, resins and soaps are in the collection
 art_craft_supplies (chemicals.py), not here. Guidance: CPSC's page on art materials and the federal labelling law
 (LHAMA), and NIOSH's page on kiln and ceramic hazards, linked for the person to open.
 """
+
+# Arts and crafts is a heading of its own in the manual library (the owner's request of 22 November 2026: a top-level
+# section). categories.py gives every collection in HEADING_KEYS the field "heading" (as power and making do); the
+# keys do not change. Craft machines (Cricut, Silhouette) and heat presses and vinyl cutters (heat_press_vinyl) moved
+# here from "Home manufacturing and making": heat presses, heat-transfer vinyl and sublimation are mostly used to
+# decorate shirts, bags, mugs and signs, which is craft work, and Cricut's own heat presses are already in
+# craft_machines; the laser engravers, CNC, 3D printers, woodshop and metal shop stay under making.
+HEADING = "Arts and crafts"
+HEADING_KEYS = ("sewing_textile", "textile_craft_tools", "art_craft_supplies", "pottery_kilns", "jewellery_tools",
+                "craft_machines", "heat_press_vinyl")
 
 INDEX_LICENCE = "CC0 (facts and links); each manual belongs to its maker"
 LINK_REASON = ("listed for the person to open in a browser; nothing is read from its site in this first version "

@@ -179,8 +179,10 @@ TOPICS = [
            # casting, circuit board fabrication (making_sources.py; also in the home topic)
            "commons_3d_printing", "commons_cutting_lasers", "commons_cnc_machining", "commons_moulding_casting",
            "commons_pcb_fabrication", "open_images_making",
+           # cameras, lenses and darkroom equipment as devices (photography_sources.py; also in "art" and "crafts")
+           "commons_cameras_by_type", "commons_camera_makers", "commons_lenses_lighting", "commons_film_darkroom",
            # share-alike
-           "radio_commons_sa", "making_commons_sa", "commons_mechanical_sa", "device_models_sa",
+           "radio_commons_sa", "making_commons_sa", "photography_commons_sa", "commons_mechanical_sa", "device_models_sa",
            "farm_mech_commons_sa",
            # non-commercial and research-only (personal use)
            "mechanical_parts_2022", "co3d_devices", "museums_victoria", "stanford_products")),
@@ -216,13 +218,13 @@ TOPICS = [
            "stanford_cars", "fgvc_aircraft", "streetsignset", "lisa_traffic_signs", "mapillary_signs", "bdd100k",
            "bosch_traffic_lights", "lisa_traffic_lights")),
     # Home and household (the owner's decision of 22 November 2026): everything about running and keeping a home in
-    # one add-on. The household collections moved here from "machines"; the craft collections are also in "art" and
-    # the household pests also in "nature", so those add-ons keep them. The home health collections moved on to
-    # "health" (22 November 2026).
+    # one add-on. The household collections moved here from "machines"; the household pests are also in "nature". The
+    # home health collections moved on to "health", and the craft collections to "crafts" (Arts and crafts), keeping
+    # only sewing and mending, upholstery and shoe repair here as household upkeep (22 November 2026).
     Topic("home", "Home and household",
           "Appliances, kitchens, laundry, cleaning and hazards, home repair, heating, lighting, building, pests, "
-          "baby things, sewing, crafts, emergency kits, pools, knots, camp, homestead and outdoor gear, fishing, "
-          "fitness equipment, games, toys, personal care products, clothes, 3D printing, lasers and CNC.",
+          "baby things, mending, emergency kits, pools, knots, camp, homestead and outdoor gear, fishing, fitness "
+          "equipment, games, toys, personal care products, clothes, 3D printing, lasers and CNC.",
           ("commons_appliances", "commons_appliance_controls", "open_images_appliance_controls", "commons_kitchen",
            "laundry_symbols", "laundry_care_labels", "commons_household_chemicals", "commons_finishes_in_use",
            "commons_household_hazards", "open_images_household_hazards",
@@ -234,13 +236,8 @@ TOPICS = [
            "open_images_emergency_lighting",
            # light construction and home access (building_sources.py)
            "commons_light_construction", "commons_home_access_building", "open_images_building",
-           # sewing, mending and the textile crafts
-           "commons_sewing_mending", "commons_upholstery_leather_shoes", "commons_knit_crochet_lace",
-           "commons_quilt_embroidery_weaving", "commons_fabrics_fibres", "open_images_textile_crafts",
-           "nmah_textiles_sewing",
-           # other crafts (crafts_sources.py)
-           "commons_pottery_ceramics", "commons_jewellery_beading", "commons_paper_crafts", "commons_candle_soap",
-           "commons_glass_carving", "commons_art_supplies", "commons_models_resin", "open_images_crafts",
+           # sewing and mending, upholstery and shoe repair (household upkeep; also in "crafts")
+           "commons_sewing_mending", "commons_upholstery_leather_shoes",
            # emergency cooking, camp stoves, grills and smokers (outdoor_cooking_sources.py)
            "commons_camp_cooking", "commons_emergency_cooking", "commons_grills_smokers",
            "open_images_outdoor_cooking",
@@ -253,7 +250,6 @@ TOPICS = [
            "homestead_commons_sa", "outdoors_commons_sa", "games_commons_sa", "clothing_commons_sa",
            "commons_home_sa", "home_safety_commons_sa", "chemical_commons_sa", "appliance_commons_sa",
            "home_upkeep_commons_sa", "home_heating_commons_sa", "emergency_lighting_commons_sa", "building_commons_sa",
-           "textile_crafts_commons_sa", "pottery_commons_sa", "jewellery_commons_sa", "crafts_commons_sa",
            # emergency preparedness and disasters (preparedness_sources.py)
            "commons_emergency_kits_power", "commons_warnings_shelters", "commons_emergency_signs_maps",
            "commons_disaster_types", "open_images_disasters", "preparedness_commons_sa",
@@ -383,36 +379,55 @@ TOPICS = [
            "work_commons_sa", "hypersim",
            # non-commercial and research-only (personal use)
            "indoor_scenes", "rotterdam_accessibility", "mapillary_vistas", "accessparkcv")),
+    # Art and museum objects: the craft collections moved to "crafts" (Arts and crafts, 22 November 2026); the museum
+    # ceramics, jewellery, glass and textiles stay here too, as museum art objects.
     Topic("art", "Art and museum objects",
-          "Paintings, sculpture and museum objects, described the way museums write for blind visitors, musical "
-          "instruments of every culture, and crafts: quilts, knitting, crochet, lace, weaving, fabrics, pottery, "
-          "jewellery, paper, glass and carving.",
+          "Paintings, sculpture and museum objects, described the way museums write for blind visitors, museum "
+          "ceramics, jewellery, glass and textiles, musical instruments of every culture and their care, film "
+          "stills and old comics.",
           ("cooper_hewitt", "art_institute", "met", "met_collection", "aic_collection", "cleveland_collection",
            "europeana_fashion_archaeology", "europeana", "canterbury", "auckland",
            "wellcome", "smithsonian", "tepapa", "japan_search", "ksamsok", "rijksmuseum", "getty_museum", "smk",
            "nypl", "europeana_fi", "europeana_cs", "europeana_hu", "europeana_el", "europeana_no", "europeana_pl",
            "met_instruments", "wikidata_instruments",
-           "commons_knit_crochet_lace", "commons_quilt_embroidery_weaving", "commons_fabrics_fibres",
-           "open_images_textile_crafts", "nmah_textiles_sewing",
+           # museum art objects: ceramics, jewellery, glass and lacquer, quilts and needlework (also in "crafts")
+           "museum_ceramics", "museum_jewellery", "museum_glass_crafts", "nmah_textiles_sewing",
            # instrument care: parts, tuning and repair
            "commons_string_instrument_parts", "commons_wind_percussion_parts", "commons_piano_parts",
            "commons_instrument_care", "open_images_instrument_care",
            # share-alike
            "instrument_care_commons_sa",
-           "textile_crafts_commons_sa",
-           # arts and crafts: pottery, jewellery, paper, glass, carving, art supplies, models (crafts_sources.py)
+           # public-domain film stills and Golden Age comics (film_stills_sources.py, comics_sources.py)
+           "pd_film_stills", "commons_golden_age_comics",
+           # photography: cameras, lenses, film and darkroom, historic processes, NMAH, Open Images (photography_sources.py)
+           "commons_cameras_by_type", "commons_camera_makers", "commons_lenses_lighting", "commons_film_darkroom",
+           "commons_historic_processes", "nmah_photography", "open_images_photography", "photography_commons_sa",
+           # non-commercial and research-only (personal use)
+           "vam", "mimo_instruments", "princeton_general_personal", "turkish_instruments")),
+    # Arts and crafts (the owner's request of 22 November 2026: a top-level section): every craft collection in one
+    # add-on, gathered from "home" (the textile crafts and the other crafts, there for lack of a better home) and "art"
+    # (the Commons and Open Images crafts; the museum ceramics, jewellery, glass and textiles stay in "art" too), with
+    # the cutting machine and heat press pack of the making collections (also in "machines" and "home").
+    Topic("crafts", "Arts and crafts",
+          "Knitting, crochet, lace, quilting, embroidery, weaving, sewing, upholstery, leather and fabrics, pottery, "
+          "jewellery and beading, paper crafts, candles and soap, glass and carving, art supplies, models and "
+          "resin, craft cutters and heat presses, and photography.",
+          (# textile crafts (home_crafts_sources.py)
+           "commons_knit_crochet_lace", "commons_quilt_embroidery_weaving", "commons_sewing_mending",
+           "commons_upholstery_leather_shoes", "commons_fabrics_fibres", "open_images_textile_crafts",
+           "nmah_textiles_sewing",
+           # pottery, jewellery, paper, candles and soap, glass and carving, art supplies, models (crafts_sources.py)
            "commons_pottery_ceramics", "museum_ceramics", "commons_jewellery_beading", "museum_jewellery",
            "commons_paper_crafts", "commons_candle_soap", "commons_glass_carving", "commons_art_supplies",
            "commons_models_resin", "museum_glass_crafts", "open_images_crafts",
-           "pottery_commons_sa", "jewellery_commons_sa", "crafts_commons_sa",
-           # public-domain film stills and Golden Age comics (film_stills_sources.py, comics_sources.py)
-           "pd_film_stills", "commons_golden_age_comics",
-           # non-commercial and research-only (personal use)
-           "vam", "mimo_instruments", "princeton_general_personal", "turkish_instruments")),
-    # Documents, maps and signs: reading text and making sense of pages. The receipts, forms, bills, pay and civic
-    # papers moved to "money", the screens to "screens", the travel documents to "transport", the indoor photos to
-    # "places" and the hearing access pictures to "health" (22 November 2026); the road, travel and water signs and
-    # the wayfinding signs stay here for reading too.
+           # vinyl cutters, cutting machines, heat presses, screen printing and machine embroidery (making_sources.py;
+           # also in "machines" and "home", which keep the lasers and engravers it also holds)
+           "commons_cutting_lasers",
+           # photography: cameras, lenses, film and darkroom, historic processes, NMAH, Open Images (photography_sources.py)
+           "commons_cameras_by_type", "commons_camera_makers", "commons_lenses_lighting", "commons_film_darkroom",
+           "commons_historic_processes", "nmah_photography", "open_images_photography", "photography_commons_sa",
+           # share-alike
+           "textile_crafts_commons_sa", "pottery_commons_sa", "jewellery_commons_sa", "crafts_commons_sa")),
     # Sports (the owner's request of 22 November 2026: a top-level section): equipment, gear, places, athletes in action
     # and the sports of the world, with the adaptive and blind sports of the health collections.
     Topic("sports", "Sports",
@@ -422,6 +437,10 @@ TOPICS = [
            "open_images_sports", "wikidata_sports", "commons_adaptive_sports",
            # share-alike
            "sports_commons_sa")),
+    # Documents, maps and signs: reading text and making sense of pages. The receipts, forms, bills, pay and civic
+    # papers moved to "money", the screens to "screens", the travel documents to "transport", the indoor photos to
+    # "places" and the hearing access pictures to "health" (22 November 2026); the road, travel and water signs and
+    # the wayfinding signs stay here for reading too.
     Topic("documents", "Documents, maps and signs",
           "Reading text and making sense of pages: letters, handwriting, document pages, tables, charts, diagrams, "
           "maps, weather maps, sheet music, cards, mail, and road, safety, travel, emergency and indoor signs, buoys "

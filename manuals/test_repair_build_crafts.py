@@ -113,3 +113,23 @@ def test_written_index_has_notice(tmp_path):
     index = json.loads(gzip.decompress((tmp_path / manifest["file"]).read_bytes()))
     assert index["notice"] == BM.NOTICE
     assert any("access-board.gov" in g["url"] for g in index["guidance"])
+
+
+def test_arts_and_crafts_heading(tmp_path):
+    """Arts and crafts is a heading of its own (the owner's request of 22 November 2026): the craft collections carry
+    it, keys unchanged; craft_machines and heat_press_vinyl moved there from "Home manufacturing and making", whose
+    3D printers, lasers, CNC, woodshop and metal shop stay; and the heading is written into the index and manifest."""
+    assert CM.HEADING == "Arts and crafts"
+    assert set(CM.HEADING_KEYS) == {"sewing_textile", "textile_craft_tools", "art_craft_supplies", "pottery_kilns",
+                                    "jewellery_tools", "craft_machines", "heat_press_vinyl"}
+    for key in CM.HEADING_KEYS:
+        assert C.CATEGORIES[key]["heading"] == "Arts and crafts", key
+    for key in ("printers_3d", "laser_cnc_making", "woodshop_machines", "metal_shop_welding"):
+        assert C.CATEGORIES[key]["heading"] == "Home manufacturing and making", key
+    # the photography collections and the darkroom chemicals join the heading too (photography_manuals.py)
+    import photography_manuals as PM
+    assert sum(1 for c in C.CATEGORIES.values() if c.get("heading") == "Arts and crafts") == \
+        len(CM.HEADING_KEYS) + len(PM.HEADING_KEYS)
+    manifest = B.write("pottery_kilns", [], str(tmp_path))
+    index = json.loads(gzip.decompress((tmp_path / manifest["file"]).read_bytes()))
+    assert index["heading"] == manifest["heading"] == "Arts and crafts"
