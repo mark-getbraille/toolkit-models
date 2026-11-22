@@ -1082,6 +1082,9 @@ def expand_keys(words):
             keys += ["drinks:guide", "drinks:ttb_wine_bam"] + expand_keys(["group:drinks"]) + \
                 [f"nonprofit:{e['name']}" for e in NONPROFIT if e.get("group") == "drinks"] + \
                 ["law:cfr_21_101_food_labeling"]
+        elif _refs_words(w) is not None:
+            # The sources added on 2026-11-22 (refs_common.REGISTRY: benefits manuals, recalls, WordNet, computer help)
+            keys += _refs_words(w)
         elif w in ("writing", "group:writing") or w.startswith("wb:"):
             # Writing and business communication guides (writing_business.py), 2026-11-21: writing or wb:<name>
             import writing_business               # (already imported at the end of this module)
@@ -2033,3 +2036,20 @@ GROUPS.update(_wb.GROUPS)
 LICENCE_LINES.update(_wb.LICENCE_LINES)
 NOT_INCLUDED = NOT_INCLUDED + _wb.NOT_INCLUDED
 PRACTICE_SUBJECTS[:0] = _wb.PRACTICE_SUBJECTS
+
+
+# ====================================================================== sources added 2026-11-22 (refs_common.py)
+# Benefits manuals, recalls, WordNet and open computer-help documentation: each in its own module, listed in
+# refs_common.REGISTRY, which the builder, the weekly check and expand_keys ask; only their records are added here.
+import refs_common as _refs  # noqa: E402
+
+
+def _refs_words(word):
+    """The keys a request word stands for in the modules of refs_common.REGISTRY (None when none of them knows it)."""
+    return _refs.words(word)
+
+
+_refs_groups, _refs_lines, _refs_missing = _refs.records()
+GROUPS.update(_refs_groups)
+LICENCE_LINES.update(_refs_lines)
+NOT_INCLUDED = NOT_INCLUDED + _refs_missing
