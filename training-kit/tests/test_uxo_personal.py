@@ -371,3 +371,17 @@ def test_made_up_pdf_end_to_end(tmp_path):
     text = (tmp_path / "ws" / (os.path.splitext(next(iter(data["pictures"])))[0] + ".txt")).read_text("utf-8")
     assert "figure 1-1, examples of projected ordnance" in text and ux.UXO_LINE in text
     assert "1 new figures added for review" in summary
+
+
+def test_release_rule_additions():
+    """The documents added under the release rule of 22 November 2026 are Internet Archive documents judged by it
+    (basis "statement") and are no longer listed as left out."""
+    added = ux.UXO_DOCUMENTS_RELEASE_RULE + ux.SMALL_ARMS_DOCUMENTS_RELEASE_RULE
+    assert all(d in ux.DOCUMENTS[d["topic"]] for d in added)
+    for d in added:
+        assert d["source"] == "archive" and d["basis"] == "statement" and d["page"].startswith(ux.ARCHIVE)
+    left = " ".join(list(ux.UXO_NOT_INCLUDED) + list(ux.SMALL_ARMS_NOT_INCLUDED))
+    for number in ("FM 21-16", "TM 9-1005-313-10, M240", "TM 9-1005-317-10", "TM 9-285"):
+        assert number not in left, number
+    ids = [d["id"] for docs in ux.DOCUMENTS.values() for d in docs]
+    assert len(ids) == len(set(ids))

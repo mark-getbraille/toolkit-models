@@ -93,7 +93,9 @@ How to use (for the kit's own code):
                         review_only True) plus personal_only, never_publish and never_for_picture_making (all True).
                         fetch(folder, cap, say) fills the review workspace and the personal documents folder.
   UXO_DOCUMENTS, SMALL_ARMS_DOCUMENTS   the documents (checked by hand in November 2026; checked again in code);
-                        UXO_DOCUMENTS ends with PUBLIC_EDUCATION_DOCUMENTS, the owner's allow-list.
+                        UXO_DOCUMENTS holds PUBLIC_EDUCATION_DOCUMENTS, the owner's allow-list; both lists end
+                        with the documents added under the release rule of 22 November 2026
+                        (UXO_DOCUMENTS_RELEASE_RULE, SMALL_ARMS_DOCUMENTS_RELEASE_RULE).
   UXO_NOT_INCLUDED, SMALL_ARMS_NOT_INCLUDED   looked at and left out, with the reason; OWNER_DECISION the
                         owner's decisions about material outside the strict rule.
 
@@ -591,12 +593,58 @@ PUBLIC_EDUCATION_DOCUMENTS = [
 ]
 UXO_DOCUMENTS += PUBLIC_EDUCATION_DOCUMENTS
 
+# Added under the release rule of 22 November 2026 (military_release.py): looked at before and left out for printing
+# no Distribution Statement A or for a restricted marking (SMALL_ARMS_NOT_INCLUDED, UXO_NOT_INCLUDED until then). Each
+# Internet Archive item was read on 2026-11-22 (a text layer; the release rule's verdict in each comment) and is
+# judged again, and filtered to its recognition and safety pages, at every run. Kept apart for easy merges.
+UXO_DOCUMENTS_RELEASE_RULE = [
+    # No statement printed. The Internet Archive item now has a text layer (an "Additional Text PDF").
+    archive_doc("Unexploded_Ordinance_Procedures_FM_21-16", "FM 21-16 (1994)", "FM 21-16, Unexploded Ordnance (UXO) "
+                "Procedures", "Headquarters, Department of the Army", 1994, "uxo",
+                "Recognising, marking and reporting UXO; its disposal sections are cut by the section filter."),
+]
+SMALL_ARMS_DOCUMENTS_RELEASE_RULE = [
+    # Print DISTRIBUTION STATEMENT C: kept as PERSONAL USE ONLY (these collections are never published).
+    archive_doc("tm-9-1005-313-10-machine-gun-7.62-mm-m-240-m-240-b-m-240-c-m-240-d-m-240-e-1-m-2",
+                "TM 9-1005-313-10, M240 (2002)", "TM 9-1005-313-10, Operator's Manual, Machine Gun, 7.62 mm, M240 "
+                "series", "Headquarters, Department of the Army", 2002, "small_arms",
+                "Personal use only (Distribution Statement C). Kept: its safety and description pages."),
+    archive_doc("tm-9-1005-201-10-machine-gun-5.56mm-m-249-1991", "TM 9-1005-201-10, M249 (1991)",
+                "TM 9-1005-201-10, Operator's Manual, Machine Gun, 5.56 mm, M249", "Headquarters, Department of the "
+                "Army", 1991, "small_arms", "Personal use only (Distribution Statement C). Kept: its safety and "
+                "description pages."),
+    # No statement printed.
+    archive_doc("milmanual-tm-9-1005-317-10---operators-manual-m9-9mm-handgun", "TM 9-1005-317-10, M9 pistol",
+                "TM 9-1005-317-10, Operator's Manual, Pistol, 9 mm, M9", "Headquarters, Department of the Army",
+                1985, "small_arms", "Kept: its safety and description pages."),
+    archive_doc("milmanual-tm-9-1005-249-10---operators-manual-for-m16-m16a1", "TM 9-1005-249-10, M16 and M16A1",
+                "TM 9-1005-249-10, Operator's Manual, Rifle, 5.56 mm, M16 and M16A1", "Headquarters, Department of "
+                "the Army", 1985, "small_arms", "Kept: its safety and description pages."),
+    archive_doc("TM9-1005-211-12", "TM 9-1005-211-12, M1911A1 (1968)", "TM 9-1005-211-12, Pistol, Caliber .45, "
+                "Automatic, M1911A1", "Headquarters, Department of the Army", 1968, "small_arms",
+                "Mostly maintenance, which the section filter cuts."),
+    archive_doc("TM9-1005-222-12", "TM 9-1005-222-12, M1 rifle (1969)", "TM 9-1005-222-12, Rifle, Caliber .30, M1, "
+                "M1C and M1D", "Headquarters, Department of the Army", 1969, "small_arms",
+                "Mostly maintenance, which the section filter cuts."),
+    archive_doc("TM9-1005-223-20", "TM 9-1005-223-20, M14 rifle (1967)", "TM 9-1005-223-20, Rifles, 7.62 mm, M14 and "
+                "M14A1", "Headquarters, Department of the Army", 1967, "small_arms",
+                "Mostly maintenance, which the section filter cuts."),
+    archive_doc("TM9-1005-213-10", "TM 9-1005-213-10, M2 machine gun (1973)", "TM 9-1005-213-10, Operator's Manual, "
+                "Machine Gun, Caliber .50, Browning, M2", "Headquarters, Department of the Army", 1973, "small_arms",
+                "Kept: its safety and description pages."),
+    archive_doc("fstc-cs-07-35-66-small-arms-identification-and-operation-guide-eurasian-communist-countries",
+                "FSTC-CS-07-35-66 (1967)", "FSTC-CS-07-35-66, Small Arms Identification and Operation Guide, "
+                "Eurasian Communist Countries", "US Army Foreign Science and Technology Center", 1967, "small_arms",
+                "An identification guide; its operation pages are cut by the section filter."),
+    archive_doc("TM9-285", "TM 9-285, Shotguns (1942)", "TM 9-285, Shotguns, All Types", "War Department", 1942,
+                "small_arms", "The only shotgun manual found; mostly operation and care, which the filter cuts."),
+]
+UXO_DOCUMENTS += UXO_DOCUMENTS_RELEASE_RULE
+SMALL_ARMS_DOCUMENTS += SMALL_ARMS_DOCUMENTS_RELEASE_RULE
+
 DOCUMENTS = {"uxo": UXO_DOCUMENTS, "small_arms": SMALL_ARMS_DOCUMENTS}
 
 UXO_NOT_INCLUDED = {
-    "FM 21-16, Unexploded Ordnance (UXO) Procedures (1994), archive.org Unexploded_Ordinance_Procedures_FM_21-16":
-        "the only copy found is scanned without readable text, so its release statement cannot be checked by the "
-        "program; FM 3-100.38 and ATP 4-32.2 replaced it and are included.",
     "GICHD Explosive Ordnance Guide for Ukraine (2nd edition, 2022)":
         "a very good recognition guide, but '© GICHD' with no open licence; the GICHD terms of use reserve all "
         "rights and forbid changes (https://www.gichd.org/terms-of-use/), and its fuze and anti-disturbance "
@@ -624,32 +672,22 @@ UXO_NOT_INCLUDED = {
 }
 
 SMALL_ARMS_NOT_INCLUDED = {
-    "TM 9-1005-313-10, M240 machine gun operator's manual": "Distribution Statement C (US Government agencies and "
-                                                           "their contractors only): refused.",
-    "TM 9-1005-201-10, M249 machine gun operator's manual (1991)": "Distribution Statement C: refused.",
-    "TM 9-1005-317-10, M9 pistol operator's manual": "no Distribution Statement A in the copies found ('to be "
-                                                    "distributed in accordance with DA Form 12-40E'); TC 3-23.35 "
-                                                    "covers the M9 with Distribution A.",
-    "TM 9-1005-249-10 (M16, M16A1) and TM 9-1005-319-10 (M16A2)": "no Distribution Statement A in the copies "
-                                                                 "found; TC 3-22.9 covers the rifle.",
-    "TM 9-1005-211-12 (M1911A1, 1968), TM 9-1005-222-12 (M1 rifle, 1969), TM 9-1005-223-20 (M14, 1967), "
-    "TM 9-1005-213-10 (M2, 1973)":
-        "printed before distribution statements; no Distribution Statement A on them, and mostly maintenance.",
-    "FSTC-CS-07-35-66, Small Arms Identification and Operation Guide, Eurasian Communist Countries (1967)":
-        "no Distribution Statement A; and half of it is operation.",
     "DIA Small-Caliber Ammunition Identification Guide (DTIC ADA165896)": "ammunition, not the firearm itself; "
                                                                          "its release line cannot be read.",
     "TM 10698A-10/1, Shotgun, Combat, 12 Gauge, Semi-Automatic, M1014 operator's manual (USMC, 2000)":
-        "looked for in November 2026 as the only shotgun manual found: its cover says 'Distribution is limited to "
-        "U.S. Government agencies only' and 'For Official Use Only': refused.",
+        "its cover says 'Distribution is limited to U.S. Government agencies only' and 'For Official Use Only'; "
+        "the release rule of 22 November 2026 would keep it as personal use only, but no Internet Archive or "
+        "government copy was found when searched again on 2026-11-22.",
     "TC 3-22.12, M26 Modular Accessory Shotgun System (2014)": "listed by the Army Publishing Directorate, but no "
                                                               "public copy found (the APD gives it only on its "
                                                               "CAC-only library, and its robots.txt disallows "
                                                               "programs); its release statement could not be "
                                                               "checked, so it is not included.",
-    "M500 (Mossberg 500) military shotgun manuals": "no copy found with a Distribution Statement A.",
-    "TM 9-285, Shotguns, All Types (1942)": "printed before distribution statements; no Distribution Statement A, and "
-                                            "mostly operation and care.",
+    "M500 (Mossberg 500) military shotgun manuals": "no Internet Archive or government copy found (searched again "
+                                                    "on 2026-11-22 under the new release rule).",
+    "TM 9-1005-319-10 (M16A2)": "the only copy found is on a manual-copying site's Internet Archive mirror "
+                                "(manuallib-id-...), which the kit never uses; TM 9-1005-249-10 and TC 3-22.9 "
+                                "cover the rifle.",
     "State hunter-education manuals": "copyrighted (most are published by a private company for the states); no "
                                       "open licence found.",
     "TC 3-22.9 and the other training circulars' marksmanship chapters": "kept documents; the chapters on aiming, "
