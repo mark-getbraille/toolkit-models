@@ -48,7 +48,7 @@ def test_notes_follow_their_answers():
         assert answers[category].endswith(b.PERMIT_NOTE), category
     assert answers["Fall protection"].endswith(b.FALL_NOTE)
     assert "1 in 12" in b.RAMP_NOTE and "405.2" in b.RAMP_NOTE and "6 inches" in b.RAMP_NOTE
-    assert "silica" in b.CONCRETE_NOTE and all(a.startswith("This is ") for a in answers.values())
+    assert "silica" in b.CONCRETE_NOTE and all(a.startswith("It shows ") for a in answers.values())
     import sources  # noqa: F401 - loaded first
     import building_sources as k
     assert (k.CONCRETE_NOTE, k.PERMIT_NOTE, k.RAMP_NOTE) == (b.CONCRETE_NOTE, b.PERMIT_NOTE, b.RAMP_NOTE)

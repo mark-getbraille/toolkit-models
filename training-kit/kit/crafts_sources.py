@@ -57,8 +57,8 @@ BLADE_NOTE = ("Safety: carving tools and craft knives are very sharp: cut away f
 
 
 def thing(category, words, note="", deeper=True):
-    """(category, question, answer, deeper) for home_sources.commons_sa_items: "This is <words>." and the note."""
-    return (category, "What is this?", f"This is {words}." + (f" {note}" if note else ""), deeper)
+    """(category, question, answer, deeper) for home_sources.commons_sa_items: "It shows <words>." and the note."""
+    return (category, "What is this?", f"It shows {words}." + (f" {note}" if note else ""), deeper)
 
 
 POTTERY_SA = [
@@ -82,7 +82,7 @@ CRAFTS_SA = [
     thing("Origami", "origami: paper folded into a shape without cuts or glue", deeper=False),
     thing("Bookbinding", "bookbinding", deeper=False),
     thing("Western calligraphy", "Western calligraphy, decorative handwriting with a broad pen"),
-    thing("Aleppo soap", "Aleppo soap, a traditional soap made from olive and laurel oils", LYE_NOTE),
+    thing("Aleppo soap", "Aleppo soap, a traditional soap made from olive and laurel oils"),
     thing("Making a stained-glass window", "a stained-glass window being made", GLASS_NOTE),
     thing("Glassblowing", "glassblowing: shaping molten glass by blowing through a pipe", TORCH_NOTE),
     thing("Whittling", "whittling: carving wood with a knife", BLADE_NOTE),

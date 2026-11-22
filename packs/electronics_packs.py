@@ -35,7 +35,7 @@ labels CC BY 4.0 and photos CC BY, CC0 or the Public Domain Mark):
                                 packages and sockets, surface-mount parts, inductors, transformers, relays, crystals,
                                 fuses (blade, cartridge, thermal, holders, blown ones), lithium-ion and laptop
                                 batteries and battery packs, switches, pin headers, heat sinks, buzzers, valves and
-                                picture tubes, damaged parts. "What is this?" -> "This is a Zener diode, a diode made
+                                picture tubes, damaged parts. "What is this?" -> "It shows a Zener diode, a diode made
                                 to hold a steady voltage." and, where the file states one, "What value does it have?"
   commons_cables_connectors     cables and connectors home_packs commons_connectors does not ask about: HDMI cables,
                                 DisplayPort, VGA, DVI, TRS, XLR, RCA, coaxial and F connectors, Ethernet cables and
@@ -55,7 +55,7 @@ labels CC BY 4.0 and photos CC BY, CC0 or the Public Domain Mark):
                                 white canes and binoculars are disability_packs' and other packs' (not repeated).
   commons_circuit_diagrams      circuit diagrams (schematics), amplifier circuits, resistor and fuse diagrams, chip
                                 pinout diagrams and electronic symbols (drawings, which Commons sends as pictures):
-                                "What is this?" -> "This is a circuit diagram (a schematic): ..." Only what kind of
+                                "What kind of drawing is this?" -> "It shows a circuit diagram (a schematic): ..." Only what kind of
                                 drawing it is, and the file's own description; never a reading of the circuit.
   open_images_electronics       Open Images labels no other pack asks about: electronics, computers, television sets,
                                 electric motors, memory cards, power adapters, chips and semiconductors, diodes and
@@ -102,18 +102,18 @@ EWASTE_NOTE = "Old or broken electronics belong at an e-waste recycling drop-off
 
 
 def part(category, words, note="", deeper=True):
-    """A Commons spec for a part or thing: "What is this?" -> "This is <words>." and the note after."""
-    return (category, deeper, [(WHAT_Q, f"This is {words}." + (f" {note}" if note else ""))])
+    """A Commons spec for a part or thing: "What is this?" -> "It shows <words>." and the note after."""
+    return (category, deeper, [(WHAT_Q, f"It shows {words}." + (f" {note}" if note else ""))])
 
 
 def connector(category, words, deeper=True):
-    """A Commons spec for a connector or cable: "What kind of connector is this?" -> "This is <words>."."""
-    return (category, deeper, [(CONNECTOR_Q, f"This is {words}.")])
+    """A Commons spec for a connector or cable: "What kind of connector is this?" -> "It shows <words>."."""
+    return (category, deeper, [(CONNECTOR_Q, f"It shows {words}.")])
 
 
 def drawing(category, words, deeper=True):
-    """A Commons spec for a drawing: "What kind of drawing is this?" -> "This is <words>."."""
-    return (category, deeper, [(DRAWING_Q, f"This is {words}.")])
+    """A Commons spec for a drawing: "What kind of drawing is this?" -> "It shows <words>."."""
+    return (category, deeper, [(DRAWING_Q, f"It shows {words}.")])
 
 
 # ----------------------------------------------------------------- values and sizes the file's own words state

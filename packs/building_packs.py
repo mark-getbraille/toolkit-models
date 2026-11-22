@@ -81,8 +81,8 @@ LADDER_LINE = ("Read the ladder's safety labels: they give its weight rating and
 
 
 def thing(category, words, note="", deeper=True):
-    """A Commons spec: "What is this?" -> "This is <words>." and the note after."""
-    return (category, deeper, [(WHAT_Q, f"This is {words}." + (f" {note}" if note else ""))])
+    """A Commons spec: "What is this?" -> "It shows <words>." and the note after."""
+    return (category, deeper, [(WHAT_Q, f"It shows {words}." + (f" {note}" if note else ""))])
 
 
 # A lumber size in a file's own words: "2x4", "2 x 6", "4 by 4", "2×10".

@@ -11,7 +11,7 @@ The owner's request of 2026-11-22 (with packs/electronics_packs.py and packs/bui
 build_commons_facts, is electronics_packs'). Textile crafts (sewing, knitting, crochet, quilting, embroidery,
 weaving, macrame, spinning and dyeing, upholstery, leatherwork) and furniture refinishing are another collection's.
 
-WHAT THE ANSWERS SAY. A fixed sentence from the Commons category a file sits in ("This is a kiln, the oven in which
+WHAT THE ANSWERS SAY. A fixed sentence from the Commons category a file sits in ("It shows a kiln, the oven in which
 pottery is fired."), with the file's own description; the museum packs give the museum's own record (title, maker,
 date, materials, its description) as museum_rows writes it. Nothing is guessed from the picture: no glaze, metal,
 stone or value is named unless the source names it. Files and records whose words name a nude are left out (the
@@ -43,8 +43,9 @@ The packs (CRAFTS_PACKS):
                                Coptic binding, marbled paper, papermaking and handmade paper, calligraphy and
                                calligraphers, dip pens, pen nibs, brush pens and inkwells, block printing, linocut,
                                rubber stamps, decoupage.
-  commons_candle_soap          beeswax candles and candle wicks (WAX_NOTE), Aleppo soap (LYE_NOTE); Commons has no
-                               category for candle or soap making (checked 2026-11-22).
+  commons_candle_soap          beeswax candles and candle wicks (WAX_NOTE) and Aleppo soap (finished soap: no lye
+                               note); Commons has no category for candle or soap making (checked 2026-11-22), so
+                               LYE_NOTE is kept for the kit and the books on soap making.
   commons_glass_carving        a stained-glass window being made, fused glass, glassblowing and glassblowers,
                                lampworking, glass art, mosaic making; woodcarving and woodcarvers, whittling, chip
                                and relief carving, carving tools, pyrography.
@@ -102,8 +103,8 @@ PIGMENT_NOTE = ("Some artists' paints and pastels contain toxic pigments (such a
 
 
 def thing(category, words, note="", deeper=True):
-    """A Commons spec: "What is this?" -> "This is <words>." and the note after."""
-    return (category, deeper, [(WHAT_Q, f"This is {words}." + (f" {note}" if note else ""))])
+    """A Commons spec: "What is this?" -> "It shows <words>." and the note after."""
+    return (category, deeper, [(WHAT_Q, f"It shows {words}." + (f" {note}" if note else ""))])
 
 
 # ----------------------------------------------------------------- Commons: pottery and ceramics
@@ -190,7 +191,7 @@ PAPER = [
 CANDLE_SOAP = [
     thing("Beeswax candles", "beeswax candles"),
     thing("Candle wicks", "candle wicks", WAX_NOTE),
-    thing("Aleppo soap", "Aleppo soap, a traditional soap made from olive and laurel oils", LYE_NOTE),
+    thing("Aleppo soap", "Aleppo soap, a traditional soap made from olive and laurel oils"),
 ]
 
 # ----------------------------------------------------------------- Commons: glass, mosaics and carving

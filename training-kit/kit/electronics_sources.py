@@ -48,8 +48,8 @@ SOLDER_NOTE = ("A soldering iron's tip is hot enough to burn at a touch: keep it
 
 
 def thing(category, words, note="", deeper=True):
-    """(category, question, answer, deeper) for home_sources.commons_sa_items: "This is <words>." and the note."""
-    return (category, "What is this?", f"This is {words}." + (f" {note}" if note else ""), deeper)
+    """(category, question, answer, deeper) for home_sources.commons_sa_items: "It shows <words>." and the note."""
+    return (category, "What is this?", f"It shows {words}." + (f" {note}" if note else ""), deeper)
 
 
 # The main categories of packs/electronics_packs.py, files under CC BY-SA or GFDL.

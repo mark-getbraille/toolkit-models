@@ -46,8 +46,8 @@ RAMP_NOTE = ("For public buildings the ADA Standards say a ramp may be no steepe
 
 
 def thing(category, words, note="", deeper=True):
-    """(category, question, answer, deeper) for home_sources.commons_sa_items: "This is <words>." and the note."""
-    return (category, "What is this?", f"This is {words}." + (f" {note}" if note else ""), deeper)
+    """(category, question, answer, deeper) for home_sources.commons_sa_items: "It shows <words>." and the note."""
+    return (category, "What is this?", f"It shows {words}." + (f" {note}" if note else ""), deeper)
 
 
 BUILDING_SA = [

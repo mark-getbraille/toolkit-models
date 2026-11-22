@@ -36,7 +36,7 @@ def test_notes_follow_their_answers():
         assert a[category].endswith(c.KILN_NOTE), category
     for category in ("Pottery wheels", "Potters"):
         assert a[category].endswith(c.CLAY_NOTE), category
-    assert a["Aleppo soap"].endswith(c.LYE_NOTE)
+    assert not a["Aleppo soap"].endswith(c.LYE_NOTE)                         # finished soap, no lye handled
     assert a["Candle wicks"].endswith(c.WAX_NOTE) and a["Making a stained-glass window"].endswith(c.GLASS_NOTE)
     for category in ("Glassblowing", "Lampworking", "Goldsmiths", "Jewellers"):
         assert a[category].endswith(c.TORCH_NOTE), category
@@ -49,7 +49,7 @@ def test_notes_follow_their_answers():
     assert (k.KILN_NOTE, k.CLAY_NOTE, k.LYE_NOTE, k.TORCH_NOTE, k.GLASS_NOTE, k.BLADE_NOTE) == (
         c.KILN_NOTE, c.CLAY_NOTE, c.LYE_NOTE, c.TORCH_NOTE, c.GLASS_NOTE, c.BLADE_NOTE)
     sa = {cat: ans for cat, _q, ans, _d in k.POTTERY_SA + k.JEWELLERY_SA + k.CRAFTS_SA}
-    assert sa["Kilns"].endswith(k.KILN_NOTE) and sa["Aleppo soap"].endswith(k.LYE_NOTE)
+    assert sa["Kilns"].endswith(k.KILN_NOTE) and not sa["Aleppo soap"].endswith(k.LYE_NOTE)
 
 
 def test_museum_records(monkeypatch):

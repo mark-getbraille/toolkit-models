@@ -103,7 +103,7 @@ def test_notes_follow_their_answers():
                            "Smartphone screen protectors"):
             assert spec[2][0][1].endswith(e.DEVICE_NOTE), spec[0]
     assert "NLS" in e.DEVICE_NOTE and "VIST" in e.DEVICE_NOTE
-    assert all(a.startswith("This is ") for a in answers.values())
+    assert all(a.startswith("It shows ") for a in answers.values())
     assert "can kill" in e.MAINS_NOTE and "recycling" in e.LITHIUM_NOTE and "lead" in e.SOLDER_NOTE
     import sources  # noqa: F401 - loaded first: it loads electronics_sources at its end
     import electronics_sources as k
