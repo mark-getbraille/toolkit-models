@@ -50,6 +50,13 @@ MODULES = [
     "midwifery",            # CDC Hear Her, maternal and infant health, NHS after-birth pages (birth:)
     "instrument_care",      # old public-domain piano tuning and violin making books (instr:)
     "outdoor_cooking",      # emergency, camp and outdoor cooking: CDC, Ready.gov, USFA, CPSC, USFS, NPS, EPA, Army (outcook:)
+    # leisure and learning (the owner's request of 2026-11-22)
+    "homestead",            # homesteading and small livestock: EPA wells and septic, FDA eggs, old livestock books (homestead:)
+    "outdoors",             # outdoor recreation: USCG boating, USFS, NPS, FWS, NOAA fish species, old woodcraft (outdoors:)
+    "games_hobbies",        # games and hobbies: Foster's Hoyle, go, chess, mah-jongg, checkers, puzzles, stamps (games:)
+    "sacred_texts",         # sacred and philosophical texts: public-domain translations, Wikipedia intros (sacred:)
+    "science_use",          # science you can use: NIST units, USGS, NOAA, NASA (science:)
+    "literature",           # literature and culture: novels, poetry, plays, myths, essays, history (lit:)
 ]
 
 _loaded = {}
