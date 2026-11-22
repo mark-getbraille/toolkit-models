@@ -62,7 +62,9 @@ def test_field_manual_words():
     assert fm.CAPTION.match("Figure 1-4.\u2014Magnetic field around a conductor.").group(2).startswith("Magnetic")
     assert fm.SENTENCE.match("shows you a couple of people lifting") and not fm.SENTENCE.match("Square knot")
     assert fm.LIST_LINE.search("Figure 2-1. Jaw thrust method ............ 2-6")
-    assert fm.NOT_SAFE.search("Firing positions") and fm.NOT_SAFE.search("Improvised weapons")
+    # explosives are always left out; weapons and tactics are kept as history (the owner's decision, 22 Nov 2026)
+    assert fm.NOT_SAFE.search("Demolitions and booby traps") and fm.NOT_SAFE.search("Improvised explosive devices")
+    assert not fm.NOT_SAFE.search("Firing positions") and not fm.NOT_SAFE.search("Small arms")
     assert not fm.NOT_SAFE.search("Lean-to shelter") and not fm.NOT_SAFE.search("Snare for small game")
     assert fm.MEDICAL.search("Applying a tourniquet") and not fm.MEDICAL.search("Clove hitch")
     assert fm.TOO_LITTLE.match("(continued)") and not fm.TOO_LITTLE.match("Square knot")
@@ -138,7 +140,7 @@ def test_tables_and_kit_notes():
 
 def test_unsafe_pages_reads_pypdfium2_5_bookmarks():
     """unsafe_pages reads bookmarks the way pypdfium2 5 gives them (get_title, get_dest().get_index()) and the
-    older way (title, page_index), so a weapons chapter is always skipped."""
+    older way (title, page_index), so an explosives chapter is always skipped."""
     import field_manual_packs as fm
 
     class Dest:
@@ -173,7 +175,7 @@ def test_unsafe_pages_reads_pypdfium2_5_bookmarks():
             return 30
 
     for kind in (New, Old):
-        doc = Doc([kind("Chapter 1. Shelters", 0), kind("Chapter 2. Weapons", 10), kind("Chapter 3. Knots", 20)])
+        doc = Doc([kind("Chapter 1. Shelters", 0), kind("Chapter 2. Demolitions", 10), kind("Chapter 3. Knots", 20)])
         assert fm.unsafe_pages(doc) == set(range(10, 20)), kind
 
 

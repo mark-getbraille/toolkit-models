@@ -91,11 +91,11 @@ def test_military_rule():
 
 
 def test_military_book_marks_restricted_personal(monkeypatch, tmp_path):
-    """A made-up manual whose front page prints a restricted marking is kept as personal use, with its weapons part
+    """A made-up manual whose front page prints a restricted marking is kept as personal use, with its explosives part
     left out; a classified one is refused."""
     book = B.Book(name="radio_x", title="X", subject="s", level="reference", group="radio", publisher="p",
                   country="United States", licence=sources.US_GOV, licence_url="u", source="s", description="d")
-    book.pages = [B.Page("a", "Chapter 1 Antennas", "<p>x</p>"), B.Page("b", "Chapter 2 Weapons", "<p>y</p>")]
+    book.pages = [B.Page("a", "Chapter 1 Antennas", "<p>x</p>"), B.Page("b", "Chapter 2 Demolitions", "<p>y</p>")]
     monkeypatch.setattr(B, "pdfdoc_book", lambda entry, work, cache=None, left_out=None: book)
     monkeypatch.setattr(B, "front_text", lambda path: "Distribution authorized to DoD components only")
     out = R.military_book("usmc_mcrp_3_40_3c_antenna_handbook", str(tmp_path), None, [])

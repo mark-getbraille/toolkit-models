@@ -104,10 +104,12 @@ MANUALS += MANUALS_RELEASE_RULE
 # The release markings, from the shared rule (military_release.py), kept under these names for the tests.
 DISTRIBUTION_A = military_release.DISTRIBUTION_A
 RESTRICTED = military_release.RESTRICTED
-NOT_SAFE = re.compile(r"\b(weapons?|rifles?|pistols?|guns?|firing|fire\s+team|marksmanship|ammunition|rounds?\s+of|"
-                      r"bayonets?|knife\s+fighting|explosives?|demolitions?|mines?|grenades?|booby|traps?\s+for\s+"
-                      r"(people|enemy)|ambush\w*|tactic\w*|combat\s+operations?|enemy|sniper|kill\w*|evasion|"
-                      r"interrogation|captiv\w*|corpses?|dead\s+bod\w*|nude|naked)\b", re.I)
+# Figures and chapters left out: explosives, demolition, mines, grenades, booby traps and sabotage (they still work,
+# whatever the manual's age), and pictures of dead bodies or nudity. Weapons, gunnery, tactics and the rest are kept
+# (the owner's decision of 22 November 2026: old military manuals are historical).
+NOT_SAFE = re.compile(r"\b(explosives?|demolitions?|land\s*mines?|minefields?|mine\s*warfare|grenades?|booby|"
+                      r"traps?\s+for\s+(people|enemy)|improvised\s+(explosive|munitions?|devices?)|IEDs?|"
+                      r"sabotage|incendiar\w*|detonat\w*|blasting|corpses?|dead\s+bod\w*|nude|naked)\b", re.I)
 MEDICAL = re.compile(r"\b(wounds?|injur\w*|fractur\w*|bleed\w*|tourniquet|splint\w*|bandag\w*|dressings?|burns?|"
                      r"casualt\w*|resuscitat\w*|airway|CPR|frostbite|hypothermia|blisters?|bites?|stings?|medic\w*|"
                      r"pulse|shock|skin|eye|eyes|teeth|tooth|anatomy|lungs?|heart)\b", re.I)

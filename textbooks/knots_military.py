@@ -97,28 +97,28 @@ PDFS = [
          "The Army's 1944 field manual of pack transport: choosing and training pack animals, pack saddles and how "
          "to fit them, preparing cargo, slings, lashed loads and the pack hitches (the diamond, the squaw hitch and "
          "others), pack trains, marches and bivouacs, and emergency ways to pack. The machine-read text of this "
-         "scan has some mistakes. Its chapter on hanger and adapter loads (carrying weapons and ammunition on pack "
-         "saddles) is left out.", distribution_a=True, military=False, keep_parts=PACK_PARTS,
+         "scan has some mistakes. Read whole, its chapter on hanger and adapter loads (carrying the weapons and "
+         "ammunition of its day on pack saddles) included as history.", distribution_a=True, military=False,
          work="a work of the US Army"),
     _mil("usmc_mcrp_12_10a3_mountain_rope_work", "Mountain Leader's Guide to Mountain Warfare Operations (MCRP "
-         "12-10A.3, 2014): the rope, climbing, rescue and survival chapters", "Mountaineering rope work",
+         "12-10A.3, 2014)", "Mountaineering rope work",
          "US Marine Corps (Marine Corps Combat Development Command)",
          "mountain-leaders-guide-to-mountain-warfare-operations-mcrp-12-10-a.-3", "2014",
-         "Only the technical chapters of the Marine Corps mountain leader's guide: rope management, knots and "
-         "anchors, systems for lifting and crossing (mechanical advantage, rope bridges), rappelling and climbing, "
-         "rescue climbing, steep climbing, alpine equipment and movement, survival, and glaciers. Its chapters on "
-         "intelligence, command, manoeuvre, security, fires and force protection are left out.",
-         distribution_a=True, military=False, keep_parts=MOUNTAIN_PARTS, work="a work of the US Marine Corps"),
+         "The Marine Corps mountain leader's guide, read whole: rope management, knots and anchors, systems for "
+         "lifting and crossing (mechanical advantage, rope bridges), rappelling and climbing, rescue climbing, steep "
+         "climbing, alpine equipment and movement, survival, glaciers, and its military chapters (intelligence, "
+         "command, manoeuvre, security, fires and force protection). Any part about explosives or demolition is "
+         "left out.", distribution_a=True, military=False, work="a work of the US Marine Corps"),
     _mil("usmc_mcrp_12_10a2_winter_operations", "Mountain Leader's Guide to Winter Operations (MCRP 12-10A.2, "
-         "formerly MCRP 3-35.1B): the avalanche, ice, ski and snow shelter chapters", "Winter mountain travel",
+         "formerly MCRP 3-35.1B)", "Winter mountain travel",
          "US Marine Corps (Marine Corps Combat Development Command)",
          "mountain-leaders-guide-to-winter-operations-mcrp-12-10-a.-2", "2013",
-         "Only the technical chapters of the Marine Corps guide to winter mountain travel: avalanche-prone terrain "
-         "(stability tests, checklists and transceiver search), reconnaissance of ice, ski equipment and its care, "
-         "ski techniques, skijoring, over-snow casualty evacuation, snow shelters and the avalanche checklists. Its "
-         "chapters on tracking, ice countermobility, vehicles, firing positions and training are left out.",
+         "The Marine Corps guide to winter mountain operations, read whole: avalanche-prone terrain (stability "
+         "tests, checklists and transceiver search), reconnaissance of ice, ski equipment and its care, ski "
+         "techniques, skijoring, over-snow casualty evacuation, snow shelters, tracking, vehicles, firing positions "
+         "and training. Any part about explosives or demolition is left out.",
          "Avalanche terrain kills: take an avalanche course, carry a transceiver, probe and shovel, and check the "
-         "local avalanche forecast.", distribution_a=True, military=False, keep_parts=WINTER_PARTS,
+         "local avalanche forecast.", distribution_a=True, military=False,
          work="a work of the US Marine Corps"),
 ]
 

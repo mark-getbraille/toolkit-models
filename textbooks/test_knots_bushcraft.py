@@ -111,7 +111,8 @@ def test_kept_parts_on_made_up_pages():
     pdfs = knots_military.COLLECTION.pdfs
     for name in ("usmc_mcrp_12_10a3_mountain_rope_work", "usmc_mcrp_12_10a2_winter_operations",
                  "army_fm_25_7_pack_transportation_1944"):
-        assert pdfs[name]["keep_parts"] and pdfs[name]["distribution_a"], name
+        # read whole since 22 November 2026 (the owner's decision); only explosives parts are cut (distribution_a)
+        assert not pdfs[name].get("keep_parts") and pdfs[name]["distribution_a"], name
 
 
 def test_military_book_keeps_the_release_line(monkeypatch):

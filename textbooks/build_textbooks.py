@@ -1853,11 +1853,13 @@ RESTRICTED = military_release.RESTRICTED
 # Distribution Statement A (military_notice).
 APPROVAL_CLAIM = re.compile(r"^A work of the US [^.]*?\(public domain\)(?:, approved for public release; distribution "
                             r"is unlimited)?\.\s*", re.I)
-# Part titles that are never kept from a field manual: weapons, tactics, combat and anything meant to harm.
-NOT_FIELD_SAFE = re.compile(r"\b(weapons?|small\s+arms|ammunition|firing|marksmanship|ambush\w*|combat\s+operations?|"
-                            r"tactic\w*|camouflage|evasion|resistance|escape|explosives?|demolitions?|mines?|"
-                            r"grenades?|booby|sniper|patrol\w*|raids?|assault|interrogation|captivity|"
-                            r"mountain\s+warfare|offensive|defensive\s+operations)\b", re.I)
+# Part titles that are never kept from a field manual: explosives, demolition, mines, grenades, booby traps, improvised
+# explosives and sabotage, whatever the manual's age, because those instructions still work. Weapons, gunnery, small
+# arms, drill, tactics, evasion and the rest are kept whole (the owner's decision of 22 November 2026: old military
+# manuals are historical, and their whole text is included from here on).
+NOT_FIELD_SAFE = re.compile(r"\b(explosives?|demolitions?|land\s*mines?|mines?\s+and\s+booby|mine\s*warfare|"
+                            r"minefields?|grenades?|booby|improvised\s+(explosive|munitions?|devices?)|IEDs?|"
+                            r"sabotage|incendiar\w*|detonat\w*|blasting)\b", re.I)
 FIGURE_LINE = re.compile(r"^\s*(Figure\s+[A-Z]?-?\d+(?:-\d+)?[a-z]?\.?)(?:\s*[\u2014\u2013]\s*|\s+)(.{2,200}?)\s*$")
 
 
@@ -2290,7 +2292,7 @@ def pdfdoc_book(entry, work, cache=None, left_out=None):
                 notice=notice, unchanged=whole,
                 changes=entry.get("changes") or
                 "its text made into web pages, one per chapter, with each drawing's caption kept as text"
-                + ("; parts about weapons and tactics left out" if entry.get("distribution_a") else ""))
+                + ("; parts about explosives, demolition, mines and booby traps left out" if entry.get("distribution_a") else ""))
     skipped = []
     if entry.get("split_sections"):              # one page per numbered section of its own text (sections_of_pdf)
         book.pages += section_pages(text)

@@ -196,7 +196,8 @@ def test_field_manual_rules():
     assert B.DISTRIBUTION_A.search("Approved for public release: distribution is unlimited")
     assert B.RESTRICTED.search("DISTRIBUTION STATEMENT C: Distribution authorized to U.S. Government agencies")
     assert B.RESTRICTED.search("FOR OFFICIAL USE ONLY") and not B.RESTRICTED.search("DESTRUCTION NOTICE: Destroy")
-    assert B.NOT_FIELD_SAFE.search("Chapter 4: Small Arms and Ammunition")
+    assert B.NOT_FIELD_SAFE.search("Chapter 4: Demolitions and Booby Traps")
+    assert not B.NOT_FIELD_SAFE.search("Chapter 4: Small Arms and Ammunition")      # kept as history (22 Nov 2026)
     assert not B.NOT_FIELD_SAFE.search("Chapter 8: Knot Tying and Rope Management")
     page = ('<a href="/d/1/download/guide-2023-04.pdf">old</a><a href="/d/2/download/guide-2026-10.pdf">new</a>'
             '<a href="/d/3/download/guide-2025-03.pdf">x</a>')
