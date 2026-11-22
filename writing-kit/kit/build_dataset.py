@@ -23,6 +23,8 @@ What it does, step by step:
        sources-not-used.txt            the sources that were checked and cannot be used, with the reason;
        messages/<source>/<message>/    message.txt and its attachments;
        transcripts/<source>/           whole transcripts of real speech;
+       audio_text/<source>/            audio files with their matching text (pairs.jsonl, README.txt), for speech
+                                       and TTS work (sources_audio.py: LibriSpeech, LibriTTS, LibriVox);
        <style>/train.jsonl and validation.jsonl, STYLES.txt   the same examples split by style (styles.py);
        scanned-pages-left-out.txt      the scanned pages OCR could not read well enough, with the reason.
 
@@ -69,9 +71,10 @@ import attachments  # noqa: E402
 import ocr  # noqa: E402
 import readers_scanned  # noqa: E402
 import sources_more  # noqa: E402
+import sources_audio  # noqa: E402
 
 READER_MODULES = (readers, readers_more, readers_meetings, readers_business, readers_litigation, readers_creative,
-                  readers_scanned, sources_more)
+                  readers_scanned, sources_more, sources_audio)
 GROUPED = {"enron", "w3c", "usenet", "irc", "debian", "scotus", "hearings", "hansard", "idl", "scanned_federal",
            "scanned_state", "govinfo_exhibits"}   # sources read mailbox by mailbox or list by list
 GROUPED |= sources_more.GROUPED
@@ -293,6 +296,12 @@ def build_source(source, fetcher, per_source, say, seen, reader_options, privacy
     try:
         for record in reader(fetcher, say=say, **reader_options):
             counts["read"] += 1
+            if record.get("type") == "audio_pair":       # audio with its text: its own folder, not an example
+                if attach_dir:
+                    sources_audio.save_pair(os.path.join(os.path.dirname(attach_dir), "audio_text"), source.key,
+                                            record)
+                    counts["audio and text pairs saved"] += 1
+                continue
             group = record.get("group", "")
             if per_group[group] >= group_cap and len(per_group) > 0 and source.key in GROUPED:
                 counts["skipped: enough from this mailbox, list or channel"] += 1
@@ -413,11 +422,12 @@ def write_outputs(out, rows, counts_by_source, used, fetcher, started, privacy=O
             f.write(f"{source.name} ({source.licence_class}, {source.licence.split('. ')[0]}):\n")
             f.write(f"  read {c['read']} records, kept {c['kept']} examples, from {c['groups']} groups (mailboxes, "
                     f"lists, channels or files).\n")
-            for label in ("attachments saved", "attachment texts", "transcripts saved"):
+            for label in ("attachments saved", "attachment texts", "transcripts saved", "audio and text pairs saved"):
                 if c[label]:
                     f.write(f"  {label}: {c[label]}\n")
             for why, n in sorted(c.items(), key=lambda kv: -kv[1]):
-                if why not in ("read", "kept", "groups", "attachments saved", "attachment texts", "transcripts saved"):
+                if why not in ("read", "kept", "groups", "attachments saved", "attachment texts", "transcripts saved",
+                               "audio and text pairs saved"):
                     f.write(f"  not used, {why}: {n}\n")
             for w in source.warnings:
                 f.write(f"  Warning: {w}\n")
@@ -488,6 +498,8 @@ def main(argv=None):
                                                                        "or GovInfo")
     parser.add_argument("--scanned-max-pages", type=int, default=0, help="read at most this many pages of each "
                                                                          "PDF in the scanned folder (0: all)")
+    parser.add_argument("--audio-pairs", type=int, default=200, help="at most this many audio and text pairs from "
+                                                                      "each audio source (saved in audio_text)")
     parser.add_argument("--privacy", choices=[OWNER, STRICT], default=OWNER,
                         help="owner (the default): keep every message whole and mask only Social Security, card, "
                              "bank and account numbers and passwords; strict: also replace names and personal "
@@ -504,7 +516,7 @@ def main(argv=None):
                                                                      else [])
     known = writing_sources.by_key()
     keys = [k.strip() for k in args.sources.split(",") if k.strip()] or \
-        ([] if args.scanned_folder else [s.key for s in writing_sources.SOURCES])
+        ([] if args.scanned_folder else [s.key for s in writing_sources.SOURCES if s.key not in sources_audio.OPT_IN])
     unknown = [k for k in keys if k not in known]
     if unknown:
         parser.error("unknown source: " + ", ".join(unknown) + ". Known: " + ", ".join(known))
@@ -523,7 +535,7 @@ def main(argv=None):
     seen, rows, counts, page_log = set(), [], {}, []
     for source in used:
         say(f"Reading {source.name} ({source.licence_class}).")
-        options = {"page_log": page_log, "scanned_max_mb": args.scanned_max_mb}
+        options = {"page_log": page_log, "scanned_max_mb": args.scanned_max_mb, "audio_pairs": args.audio_pairs}
         if source.key == "scanned_folder":
             options["folder"], options["max_pages"] = args.scanned_folder, args.scanned_max_pages
         if source.key == "enron" and args.enron_file:

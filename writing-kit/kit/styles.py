@@ -56,6 +56,11 @@ import sources_more as _more  # noqa: E402
 STYLES.update(_more.STYLES)
 FORMAL_STYLES |= _more.FORMAL
 CASUAL_STYLES |= _more.CASUAL
+# ... and with sources_audio.py (nonfiction books and form letters).
+import sources_audio as _audio  # noqa: E402
+STYLES.update(_audio.STYLES)
+FORMAL_STYLES |= _audio.FORMAL
+CASUAL_STYLES |= _audio.CASUAL
 
 BY_SOURCE = {
     "enron": "email_business", "idl": "email_business", "doj_google": "email_business", "w3c": "email_business",

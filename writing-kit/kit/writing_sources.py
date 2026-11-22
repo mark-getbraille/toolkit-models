@@ -505,11 +505,13 @@ NOT_USED = [
      "address as the user agent (it would go in the computer's settings). Not built in this round."),
     ("Earnings call transcripts",
      "Not on EDGAR; the services that publish them (Seeking Alpha, Motley Fool and others) are copyrighted. Not used."),
-    ("plainlanguage.gov examples, agency press releases, SSA, IRS and VA sample letters, State Department "
-     "statements, military writing guides, GAO and CRS reports",
+    ("Agency press releases, VA sample letters, State Department statements, military writing guides, GAO and CRS "
+     "reports",
      "Public domain, but spread over many agency web pages without bulk routes (several guides and reports are "
      "already in the reference library); not built in this round. The Federal Register, presidential documents, "
-     "hearings and EDGAR sources cover formal American writing."),
+     "hearings and EDGAR sources cover formal American writing. The plainlanguage.gov examples and the IRS notice "
+     "explanations are now used (source gov_letters, sources_audio.py); SSA's notices are not (ssa.gov refuses "
+     "programs)."),
     ("CourtListener bulk data and Supreme Court opinions",
      "Court opinions are public domain, but courtlistener.com refused this kit's requests (403), its API needs a "
      "token and its bulk files are many gigabytes; Supreme Court opinions were not built in this round (its oral "
@@ -593,6 +595,13 @@ import sources_more  # noqa: E402
 
 SOURCES += sources_more.sources(Source, OPEN, SHARE_ALIKE, PERSONAL)
 NOT_USED += sources_more.NOT_USED
+
+# Audio with matching text (LibriSpeech, LibriTTS, LibriVox with Gutenberg) and government form letters:
+# sources_audio.py.
+import sources_audio  # noqa: E402
+
+SOURCES += sources_audio.sources(Source, OPEN, SHARE_ALIKE, PERSONAL)
+NOT_USED += sources_audio.NOT_USED
 
 
 def by_key():
