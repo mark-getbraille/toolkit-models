@@ -618,16 +618,18 @@ COURSES_AND_FORCES_NOT_INCLUDED = [
      "PDF lecture notes and videos; not built yet."),
     ("OpenLearn (The Open University)", "Its site refuses automated requests (403), as noted above."),
     ("Coursera, edX, Udemy", "Copyright, all rights reserved."),
-    ("US Army Correspondence Course Program subcourses", "Not found as copies with text and Distribution Statement A "
-     "on the Internet Archive in this search; the Army's own site needs a login."),
+    ("US Army Correspondence Course Program subcourses", "Not found as copies with text on the Internet Archive in "
+     "this search; the Army's own site needs a login. (Since 22 November 2026 a copy would not need Distribution "
+     "Statement A: military_release.py.)"),
     ("US Coast Guard Navigation Rules handbook", "The Internet Archive's copies are lending-library scans that "
      "cannot be downloaded; uscg.mil refuses automated requests (403)."),
     ("Other US Navy rate training manuals (Boatswain's Mate, Damage Controlman, Engineman, Seabee rates)", "Not "
      "found as downloadable copies with text on the Internet Archive in this search (Damage Controlman only as a "
      "microfiche scan)."),
     ("armypubs.army.mil, marines.mil, uscg.mil, fema.gov", "armypubs' robots.txt disallows every automated reader; the "
-     "others refuse automated requests (403). Internet Archive copies are used where their own front matter shows "
-     "Distribution Statement A."),
+     "others refuse automated requests (403). Internet Archive copies are used, judged by the release rule for "
+     "military publications (military_release.py: with or without Distribution Statement A since 22 November "
+     "2026)."),
     ("UK Ministry of Defence and Maritime and Coastguard Agency, other documents", "gov.uk: \"All content is "
      "available under the Open Government Licence v3.0, except where otherwise stated\". Allowed; the MOD publishes "
      "few non-combat training documents there (most are policy). Two are built; more can be added to PDF_DOCS."),
