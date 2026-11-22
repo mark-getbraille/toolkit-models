@@ -618,3 +618,9 @@ CATEGORIES["firearms"]["ia_exclude"] = f"{FIREARMS_EXCLUDE}|{NOT_A_MANUAL}|{_MIL
 from troubleshooting import CATEGORIES as _TROUBLESHOOTING  # noqa: E402
 
 CATEGORIES.update(_TROUBLESHOOTING)
+
+# Home upkeep and the textile crafts (the owner's request of 2026-11-22): bicycles, small engines, and knitting
+# machines, spinning wheels, looms and old sewing machines; every maker link-only: manuals/home_crafts_manuals.py.
+from home_crafts_manuals import CATEGORIES as _HOME_CRAFTS  # noqa: E402
+
+CATEGORIES.update({k: v for k, v in _HOME_CRAFTS.items() if k not in CATEGORIES})
