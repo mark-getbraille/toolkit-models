@@ -72,9 +72,11 @@ import ocr  # noqa: E402
 import readers_scanned  # noqa: E402
 import sources_more  # noqa: E402
 import sources_audio  # noqa: E402
+import sources_newspapers  # noqa: E402
 
 READER_MODULES = (readers, readers_more, readers_meetings, readers_business, readers_litigation, readers_creative,
-                  readers_scanned, sources_more, sources_audio)
+                  readers_scanned, sources_more, sources_audio, sources_newspapers)
+OPT_IN = sources_audio.OPT_IN | sources_newspapers.OPT_IN     # left out unless named in --sources
 GROUPED = {"enron", "w3c", "usenet", "irc", "debian", "scotus", "hearings", "hansard", "idl", "scanned_federal",
            "scanned_state", "govinfo_exhibits"}   # sources read mailbox by mailbox or list by list
 GROUPED |= sources_more.GROUPED
@@ -183,6 +185,7 @@ def examples_from_record(record, source, privacy=OWNER):
         text = record["response"] if record.get("unchanged") else protect(record["response"], privacy)
         details = {k: record.get(k, "") for k in ("kind", "form", "tone", "audience")}
         details["length"] = instructions.length_word(text)
+        details.update(record.get("extra") or {})        # source-specific fields (for example a newspaper's date)
         return [(make_row(record["instruction"], text, details, source), "")]
     text = protect(record.get("text", ""), privacy)
     if privacy == STRICT and scrub.sensitive_reason(text):
@@ -500,6 +503,11 @@ def main(argv=None):
                                                                          "PDF in the scanned folder (0: all)")
     parser.add_argument("--audio-pairs", type=int, default=200, help="at most this many audio and text pairs from "
                                                                       "each audio source (saved in audio_text)")
+    parser.add_argument("--newspaper-folder", default="newspapers", help="where build_newspapers.py keeps the "
+                                                                         "American Stories year files (a sample is "
+                                                                         "read from them)")
+    parser.add_argument("--newspaper-years", default="", help="years for the newspaper sample, for example "
+                                                              "1850-1869,1900,1920s (default: every year)")
     parser.add_argument("--privacy", choices=[OWNER, STRICT], default=OWNER,
                         help="owner (the default): keep every message whole and mask only Social Security, card, "
                              "bank and account numbers and passwords; strict: also replace names and personal "
@@ -516,7 +524,7 @@ def main(argv=None):
                                                                      else [])
     known = writing_sources.by_key()
     keys = [k.strip() for k in args.sources.split(",") if k.strip()] or \
-        ([] if args.scanned_folder else [s.key for s in writing_sources.SOURCES if s.key not in sources_audio.OPT_IN])
+        ([] if args.scanned_folder else [s.key for s in writing_sources.SOURCES if s.key not in OPT_IN])
     unknown = [k for k in keys if k not in known]
     if unknown:
         parser.error("unknown source: " + ", ".join(unknown) + ". Known: " + ", ".join(known))
@@ -535,7 +543,8 @@ def main(argv=None):
     seen, rows, counts, page_log = set(), [], {}, []
     for source in used:
         say(f"Reading {source.name} ({source.licence_class}).")
-        options = {"page_log": page_log, "scanned_max_mb": args.scanned_max_mb, "audio_pairs": args.audio_pairs}
+        options = {"page_log": page_log, "scanned_max_mb": args.scanned_max_mb, "audio_pairs": args.audio_pairs,
+                   "newspaper_folder": args.newspaper_folder, "newspaper_years": args.newspaper_years}
         if source.key == "scanned_folder":
             options["folder"], options["max_pages"] = args.scanned_folder, args.scanned_max_pages
         if source.key == "enron" and args.enron_file:

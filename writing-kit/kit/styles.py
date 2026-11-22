@@ -61,6 +61,12 @@ import sources_audio as _audio  # noqa: E402
 STYLES.update(_audio.STYLES)
 FORMAL_STYLES |= _audio.FORMAL
 CASUAL_STYLES |= _audio.CASUAL
+# ... and with sources_newspapers.py (historical newspapers: news, editorials, advertisements, letters, notices,
+# serial fiction and poetry).
+import sources_newspapers as _papers  # noqa: E402
+STYLES.update(_papers.STYLES)
+FORMAL_STYLES |= _papers.FORMAL
+CASUAL_STYLES |= _papers.CASUAL
 
 BY_SOURCE = {
     "enron": "email_business", "idl": "email_business", "doj_google": "email_business", "w3c": "email_business",

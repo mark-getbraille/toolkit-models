@@ -225,3 +225,81 @@ class Fetcher:
         """An open response for url (for large official files read as they arrive), after the same checks."""
         self.check(url)
         return self._get(url, self._site(url), stream=True)
+
+    def download(self, url, dest, size=None, sha256=None, say=None, chunk=1 << 20, tries=6,
+                 report_every=250_000_000, sleep=time.sleep):
+        """Save the file at url as dest, resuming where an earlier try stopped. Returns "already" when dest is
+        already complete, otherwise "downloaded".
+
+        How it works, in plain words: the bytes go into dest + ".part". If that file is already there (a download
+        that was stopped or cut off), the kit asks the site only for the rest (an HTTP "Range" request) and adds it
+        to the end; a site that sends the whole file again instead is written from the start. When size is given
+        the download is complete only at exactly that many bytes; when sha256 is given the finished file must also
+        have that checksum, or it is deleted and an error raised. Only then is ".part" renamed to dest. A line goes
+        to say every report_every bytes. Network errors are retried (tries times, waiting longer each time); robots.txt
+        is obeyed as for every other request."""
+        say = say or self.say
+        if os.path.exists(dest) and (size is None or os.path.getsize(dest) == size):
+            return "already"
+        self.check(url)
+        part, site = dest + ".part", self._site(url)
+        delay = self.robots[site].delay if site in self.robots else DEFAULT_DELAY
+        os.makedirs(os.path.dirname(os.path.abspath(dest)), exist_ok=True)
+        for attempt in range(tries):
+            have = os.path.getsize(part) if os.path.exists(part) else 0
+            if size is not None and have > size:          # longer than the file can be: start again
+                os.remove(part)
+                have = 0
+            if size is not None and have == size:
+                break
+            headers = {"User-Agent": USER_AGENT, **self.extra_headers}
+            if have:
+                headers["Range"] = f"bytes={have}-"
+            self._wait(site, delay)
+            try:
+                resp = self.opener.open(urllib.request.Request(url, headers=headers), timeout=60)
+                status = getattr(resp, "status", None) or resp.getcode()
+                if have and status != 206:                # the site ignored the Range request: start again
+                    have = 0
+                if have:
+                    say(f"  resuming at {have / 1e9:.2f} GB")
+                next_report = (have // report_every + 1) * report_every
+                with open(part, "ab" if have else "wb") as f:
+                    while True:
+                        block = resp.read(chunk)
+                        if not block:
+                            break
+                        f.write(block)
+                        have += len(block)
+                        if have >= next_report:
+                            total = f" of {size / 1e9:.2f} GB ({100 * have // size}%)" if size else " GB"
+                            say(f"  {have / 1e9:.2f}{total}")
+                            next_report += report_every
+                resp.close()
+                if size is None or have >= size:
+                    break
+            except urllib.error.HTTPError as err:
+                if err.code == 416 and size is not None and have == size:
+                    break
+                if err.code == 416:                       # the part file does not fit the file any more
+                    os.remove(part)
+                elif err.code in (404, 410, 403, 401) or attempt == tries - 1:
+                    raise
+            except (urllib.error.URLError, OSError):
+                if attempt == tries - 1:
+                    raise
+            if attempt < tries - 1:
+                sleep(10 * (attempt + 1))
+        got = os.path.getsize(part) if os.path.exists(part) else 0
+        if size is not None and got != size:
+            raise OSError(f"{url}: only {got} of {size} bytes arrived; run again to resume")
+        if sha256:
+            digest = hashlib.sha256()
+            with open(part, "rb") as f:
+                for block in iter(lambda: f.read(1 << 20), b""):
+                    digest.update(block)
+            if digest.hexdigest() != sha256.lower():
+                os.remove(part)
+                raise ValueError(f"{url}: the downloaded file's checksum does not match; it was deleted, run again")
+        os.replace(part, dest)
+        return "downloaded"

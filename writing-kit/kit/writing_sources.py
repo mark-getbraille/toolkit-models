@@ -603,6 +603,13 @@ import sources_audio  # noqa: E402
 SOURCES += sources_audio.sources(Source, OPEN, SHARE_ALIKE, PERSONAL)
 NOT_USED += sources_audio.NOT_USED
 
+# Historical US newspapers (American Stories, from the Library of Congress's Chronicling America scans):
+# sources_newspapers.py; the whole corpus is downloaded and built by build_newspapers.py.
+import sources_newspapers  # noqa: E402
+
+SOURCES += sources_newspapers.sources(Source, OPEN, SHARE_ALIKE, PERSONAL)
+NOT_USED += sources_newspapers.NOT_USED
+
 
 def by_key():
     """{key: Source}."""
