@@ -50,6 +50,7 @@ MODULES = [
     "midwifery",            # CDC Hear Her, maternal and infant health, NHS after-birth pages (birth:)
     "instrument_care",      # old public-domain piano tuning and violin making books (instr:)
     "outdoor_cooking",      # emergency, camp and outdoor cooking: CDC, Ready.gov, USFA, CPSC, USFS, NPS, EPA, Army (outcook:)
+    "vision_living",        # blind and low-vision living: the index, Orca, NLS, BEP, Access Board, EEOC, RSA, APH (vision:)
 ]
 
 _loaded = {}
