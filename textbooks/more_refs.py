@@ -49,6 +49,9 @@ MODULES = [
     "eyecare_products",     # eye medicines by use (DailyMed) and eye care device records (openFDA) (eyeprod:)
     "midwifery",            # CDC Hear Her, maternal and infant health, NHS after-birth pages (birth:)
     "instrument_care",      # old public-domain piano tuning and violin making books (instr:)
+    # emergency preparedness and radio communications (the owner's request of 2026-11-22)
+    "disaster_ready",       # Ready.gov, NRC, CISA, ASPR and emPOWER, SBA, EPA disasters and smoke, links (ready:)
+    "radio_books",          # radio rules, NCVEC question pools, AUXCOMM, military radio manuals, mesh radio docs (radio:)
 ]
 
 _loaded = {}
