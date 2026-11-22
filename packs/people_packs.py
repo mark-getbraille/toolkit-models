@@ -3,7 +3,7 @@ veterans, and immigration documents. Used by build_packs.py in the same way as i
 build_<key>(limit) and returns [(file name, JPEG bytes or None, row)]; the limit counts pictures.
 
 Why: the owner is blind and wants the picture describer (and his offline assistant) to recognise the things around
-disabled people other than blind ones (manual and sports wheelchairs, braces, accessible taxis, hearing loops,
+disabled people other than blind ones (manual and sports wheelchairs, braces, hearing loops,
 hearing tests, captions, accessibility symbols, picture cards for communication), the medals, badges and grave
 markers of veterans, and the immigration documents people carry, each with a short note of what to do or where to
 get help.
@@ -19,8 +19,8 @@ ends with the note that fits it:
                     beware of notarios; and "General information, not legal advice ...".
 
 The packs (PEOPLE_PACKS), all Wikimedia Commons files CC0, public domain or CC BY only (each credited):
-  commons_mobility_aids          manual and sports wheelchairs, orthoses and leg braces, wheelchair accessible taxis
-                                 and the walking and transfer aids no other pack asks about;
+  commons_mobility_aids          manual and sports wheelchairs, orthoses and leg braces (wheelchair accessible taxis
+                                 are the driving packs');
   commons_hearing_communication  hearing induction loops, hearing tests (audiometry) and audiograms, captioning and
                                  subtitles, TTYs and videophones, accessibility symbols, picture exchange cards
                                  (PECS) and sensory rooms;
@@ -77,8 +77,6 @@ MOBILITY_AIDS = [
                       "is fitted by an orthotist"),
     thing("Leg braces", "a leg brace, an orthosis that supports the knee, ankle or the whole leg; it is fitted by an "
                         "orthotist"),
-    thing("Wheelchair accessible taxis", "a wheelchair accessible taxi, with a ramp or lift so a wheelchair user can "
-                                         "ride in their chair", ACCESS_NOTE, True),
 ]
 
 # ----------------------------------------------------------------- Commons: hearing and communication access
@@ -172,7 +170,7 @@ COMMONS_LICENCE = ("Wikimedia Commons (https://commons.wikimedia.org): files CC0
                    "below) of {what} categories.")
 PEOPLE_PACKS = {
     "commons_mobility_aids": (build_commons_mobility_aids, COMMONS_LICENCE.format(
-        what="manual and sports wheelchair, orthosis, leg brace and accessible taxi")),
+        what="manual and sports wheelchair, orthosis and leg brace")),
     "commons_hearing_communication": (build_commons_hearing_communication, COMMONS_LICENCE.format(
         what="hearing loop, audiometry, audiogram, captioning, subtitle, TTY, videophone, accessibility symbol, PECS "
              "and sensory room")),

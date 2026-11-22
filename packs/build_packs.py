@@ -1935,10 +1935,17 @@ for _packs, _commons in ((MONEY_WORK_PACKS, MONEY_WORK_COMMONS_KEYS), (TRAVEL_PA
                          (CIVICS_PACKS, CIVICS_COMMONS_KEYS)):
     PACKS.update(_packs)
     COMMONS_KEYS = COMMONS_KEYS | frozenset(_commons)
+# Practical life (packs/practical_packs.py gathers six files, the owner's request of 2026-11-22): driving and road
+# rules, computer and phone basics, cleaning and household management, knots and outdoor skills, pool equipment, and
+# motorcycles, RVs and trailers. Every answer carries its safety note (seat belts, never mixing cleaners or pool
+# chemicals, drowning prevention, rope and sharp tools, towing, helmets).
+from practical_packs import PRACTICAL_PACKS, PRACTICAL_COMMONS_KEYS
+PACKS.update(PRACTICAL_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(PRACTICAL_COMMONS_KEYS)
 # Disabilities other than blindness, veterans and immigration documents (packs/people_packs.py): Commons manual and
-# sports wheelchairs, braces, accessible taxis, hearing loops, hearing tests, captions, accessibility symbols, PECS
-# cards, US military decorations, dog tags, burial flags, national cemetery headstones and immigration document
-# specimens; every answer ends with its ADA, hearing, VA or USCIS note.
+# sports wheelchairs, braces, hearing loops, hearing tests, captions, TTYs, accessibility symbols, PECS cards, US
+# military ribbon bars and decorations, dog tags, folded flags, passports, visas and Social Security cards; every
+# answer ends with its ADA, hearing, VA or USCIS note.
 from people_packs import PEOPLE_PACKS, PEOPLE_COMMONS_KEYS
 PACKS.update(PEOPLE_PACKS)
 COMMONS_KEYS = COMMONS_KEYS | frozenset(PEOPLE_COMMONS_KEYS)

@@ -694,6 +694,13 @@ from voting_equipment import CATEGORY as _VOTING_EQUIPMENT  # noqa: E402
 
 CATEGORIES.update({"money_devices": _MONEY_DEVICES, "travel_devices": _TRAVEL_DEVICES,
                    "voting_equipment": _VOTING_EQUIPMENT})
+# Practical life (manuals/practical_manuals.py gathers six files, the owner's request of 2026-11-22): driver, CDL and
+# motorcycle handbooks (every state and province, links), computer and phone getting-started guides, cleaning machines
+# and household management, outdoor tools (axes, saws, knives, compasses, rope), pools, spas and hot tubs, and RVs,
+# trailers, towing and motorcycle gear; every maker link-only, with each category's safety notice and guidance.
+from practical_manuals import CATEGORIES as _PRACTICAL  # noqa: E402
+
+CATEGORIES.update(_PRACTICAL)
 # Disabilities other than blindness (the owner's request of 2026-11-22): hearing aids, cochlear implants, assistive
 # listening, captioned phones and AAC devices; wheelchairs, scooters, lifts and accessible vehicles. Makers link-only,
 # the US government's guides in full: manuals/disability_devices.py.

@@ -89,7 +89,7 @@ def prepare_people_commons_sa(source, data_dir, work, cap):
 
 PEOPLE_SOURCES = [
     Source("commons_mobility_aids", "Mobility aids: manual and sports wheelchairs, orthoses and leg braces, "
-                                    "wheelchair accessible taxis, with the ADA note (Wikimedia Commons, ready-made "
+                                    "with the ADA note (Wikimedia Commons, ready-made "
                                     "pack)",
            COMMONS_OPEN, COMMONS_CREDIT, "permissive", 400, 5, prepare_pack, "about 90 MB"),
     Source("commons_hearing_communication", "Hearing and communication access: hearing loops, hearing tests, "
@@ -119,8 +119,8 @@ PEOPLE_NOT_INCLUDED = {
         "Rollators, Crutches, Walking sticks, Limb prostheses, Hearing aids and Hearing aid types (with "
         "Behind-the-ear hearing aids), Cochlear implants, Wheelchair ramps and lifts, Accessibility signs, "
         "Augmentative and alternative communication (disability_packs); Sign language interpreters "
-        "(sign_language_packs); Grab bars (building_packs), Knee scooters (med_vet_packs) and Patient lifts (the "
-        "aging and care packs): not asked twice.",
+        "(sign_language_packs); Grab bars (building_packs), Knee scooters (med_vet_packs), Patient lifts (the "
+        "aging and care packs) and Wheelchair accessible taxis (driving_packs): not asked twice.",
     "Commons categories that do not exist or hold no files under the names tried (November 2026)": "Walkers "
         "(mobility aids), Walking frames, Quad canes, Transfer boards, Shower chairs, Wheelchair accessible vans and "
         "vehicles, Hand controls, Wheelchair cushions, Stair-climbing wheelchairs, Hearing aid batteries, "
