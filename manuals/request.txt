@@ -6,4 +6,5 @@
 # 21 November (2): and the household chemicals, pesticide labels and chemical safety collections.
 # 21 November (3): the new manual categories from the reference inventory, and firearms and chemical safety with their new Internet Archive collections.
 # 22 November: appliance error codes and troubleshooting, and release notes (NVDA, Orca, BRLTTY, Android, OpenWrt in full; makers as links).
-appliance_troubleshooting,release_notes
+# 22 November (2): at-home health tests (FDA device records, makers' instructions as links, safety notice first).
+home_health_tests
