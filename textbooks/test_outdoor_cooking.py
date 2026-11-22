@@ -5,7 +5,7 @@ It checks that the module is registered once under its request word (at most 256
 every web guide has a licence the toolkit may repackage, a notice with the safety words (carbon monoxide, 911, soapy
 water, USDA temperatures), a description, a licence page and line, and a page pattern that matches its own addresses;
 that CDC's books are kept whole with CDC's conditions in the notice; that the EPA book is personal use only; that the
-Army manuals are checked for Distribution Statement A; that pages are read in the order listed; and that every row of
+Army manuals have their distribution statement read by the builder; that pages are read in the order listed; and that every row of
 NOT_INCLUDED says where to find the source.
 
 Run it from the repository's folder:   python3 -m pytest textbooks/test_outdoor_cooking.py

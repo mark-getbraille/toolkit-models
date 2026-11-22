@@ -16,7 +16,7 @@ What this module builds, in plain words, each IN FULL (every page of the guide, 
   - the US Forest Service's camping, food, bear and responsible recreation pages, and the National Park Service's
     cooking in camp, backcountry camping and bear-safe food storage pages;
   - the EPA's emergency disinfection of drinking water (personal use only: EPA's non-commercial terms);
-  - two US Army manuals from the Internet Archive (Distribution Statement A checked by the builder): Field Hygiene and
+  - two US Army manuals from the Internet Archive (their front pages' distribution statement read by the builder): Field Hygiene and
     Sanitation (TC 4-02.3, 2015: water purification and food safety in the field) and Basic Doctrine for Army Field
     Feeding (FM 10-23, 1996).
   Every book carries SAFETY in its notice: carbon monoxide (never use grills, camp stoves, charcoal or generators
@@ -288,7 +288,7 @@ PDFS = [
                          "drinking water in the field (purifying water in canteens and bags with chlorine or "
                          "iodine), food safety and field food service sanitation, waste disposal, insects and pests, "
                          "and heat and cold injuries.",
-             notice=f"A work of the US Army (public domain), approved for public release. {SAFETY}"),
+             notice=f"A work of the US Army (public domain); the builder says what its own front pages print about distribution. {SAFETY}"),
     K.us_pdf(FIELD, name="army_fm_10_23_field_feeding", title="Basic Doctrine for Army Field Feeding and Class I "
              "Operations Management (FM 10-23, 1996)", subject="Field feeding",
              publisher="Headquarters, Department of the Army", archive="FM_10_23_B_D_A_F_F_C_I_O_M_1996",
@@ -297,7 +297,7 @@ PDFS = [
              description="The US Army's manual on feeding people in the field: field kitchens and their equipment, "
                          "rations (MREs, heat-and-serve and cook-prepared meals), menus, food safety and sanitation, "
                          "water, and planning food for many people away from a fixed kitchen.",
-             notice=f"A work of the US Army (public domain), approved for public release. 1996 edition: some "
+             notice=f"A work of the US Army (public domain); the builder says what its own front pages print about distribution. 1996 edition: some "
                     f"equipment and rations have changed. {SAFETY}"),
 ]
 
@@ -324,9 +324,10 @@ LICENCE_LINES = {
     "outcook_epa": "epa.gov/web-policies-and-procedures/epa-disclaimers (checked at every build): \"These documents "
                    "may be freely distributed and used for non-commercial, scientific and educational purposes\": "
                    "personal use only.",
-    "outcook_army": "TC 4-02.3 (2015) and FM 10-23 (1996): works of the US Army; the builder keeps each only when its "
-                    "own front pages say \"Approved for public release; distribution is unlimited\"; read from the "
-                    "Internet Archive because armypubs.army.mil shuts out automated readers.",
+    "outcook_army": "TC 4-02.3 (2015) and FM 10-23 (1996): works of the US Army, read from the Internet Archive "
+                    "because armypubs.army.mil shuts out automated readers; the builder reads each one's front pages "
+                    "and follows the shared distribution rule (both printed \"Approved for public release; "
+                    "distribution is unlimited\" when built on 2026-11-22).",
 }
 NOT_INCLUDED = [
     ("USDA Food Safety and Inspection Service (FSIS): safe minimum internal temperatures, food safety in a power "
