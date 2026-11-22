@@ -577,6 +577,12 @@ from home_health_tests import CATEGORY as _HOME_TESTS  # noqa: E402
 
 CATEGORIES["home_health_tests"] = _HOME_TESTS
 
+# Grills, smokers, camp stoves and emergency cookers (the owner's request of 2026-11-22): the Internet Archive words,
+# the makers as links and the safety guidance are in manuals/outdoor_cooking.py.
+from outdoor_cooking import CATEGORY as _OUTDOOR_COOKING  # noqa: E402
+
+CATEGORIES["outdoor_cooking"] = _OUTDOOR_COOKING
+
 # Hardware, tools and shop equipment: their makers, access decisions, safety notices and public-domain guides are in
 # manuals/hardware_tools.py. Its new categories are added, and power_tools, hand_tools and lawn_garden are extended
 # (more Internet Archive words, the makers' libraries, a safety notice and the guides).
