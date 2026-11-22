@@ -158,7 +158,7 @@ jobs:
                    "commons_emergency_kits_power", "commons_warnings_shelters", "commons_emergency_signs_maps", "commons_disaster_types", "open_images_disasters",
                    "commons_radios", "commons_antennas_station", "commons_radio_cards_charts", "commons_mesh_data_radio", "open_images_radio",
                    "commons_braille_writing", "commons_tactile_access", "commons_mobility_deafblind",
-                   "nmah_vision_objects", "aph_museum_objects"]
+                   "aph_museum_objects"]
           words = [w for w in sys.argv[1].split(",") if w]
           # "key+" is a top-up pass of key and "key?" a needs-only run (kept with the mark, which the build job reads);
           # "all?" asks for a needs-only run of every pack.

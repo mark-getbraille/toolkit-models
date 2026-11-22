@@ -5,8 +5,7 @@ internet.
 It checks that:
   - every braille writer answer ends with the care note, in the packs and the kit alike, with the same words, and
     that answers start "This is" and name nothing beyond the category (no made-up numbers or parts);
-  - the NMAH reader takes only records whose own words say they are for blind people, names the object as its
-    record does and adds the care note only to braille writers;
+  - the APH Museum reader names each item by its own title and quotes the museum's subtitles;
   - no Commons category of these packs is named by another pack file, nor twice here;
   - every pack is wired: in build_packs.PACKS, the Commons ones in COMMONS_KEYS (and only those), in the workflows'
     known list and limit lines, in the kit's sources (packs "permissive", prepare_pack), picture-making only for the
@@ -49,35 +48,6 @@ def test_answers_and_care_note():
     assert all(q == v.ASK_DOING for spec in v.MOBILITY_DEAFBLIND[:3] for q, _a in spec[2])
 
 
-def record(object_name, title, notes="", access="CC0", maker="", date="", place=""):
-    """A made-up NMAH open-access record."""
-    free = {"objectType": [{"label": "Object Name", "content": object_name}],
-            "notes": [{"label": "General History", "content": notes}] if notes else [],
-            "name": [{"label": "maker", "content": maker}] if maker else [],
-            "date": [{"label": "date made", "content": date}] if date else [],
-            "place": [{"label": "place made", "content": place}] if place else []}
-    return {"title": title, "content": {"freetext": free, "descriptiveNonRepeating": {
-        "record_ID": "nmah_0001", "guid": "http://n2t.net/ark:/65665/ng0000",
-        "online_media": {"media": [{"type": "Images", "content": "https://ids.si.edu/ids/deliveryService?id=X",
-                                    "usage": {"access": access}}]}}}}
-
-
-def test_nmah_reader():
-    got = v.nmah_vision_row(record("braillewriter", "Perkins Brailler", maker="Howe Press", date="1951",
-                                   place="United States: Massachusetts, Watertown"))
-    assert got and got[0].endswith("&max=2048")
-    answer = got[1][0]["answer"]
-    assert answer.startswith("This is a braille writer") and "Howe Press" in answer and "1951" in answer
-    assert "Massachusetts, Watertown" in answer and answer.endswith(v.BRAILLER_NOTE)
-    slate = v.nmah_vision_row(record("slate", "Braille slate and stylus"))
-    assert slate and "braille slate" in slate[1][0]["answer"] and v.BRAILLER_NOTE not in slate[1][0]["answer"]
-    # a walking cane with no word about blind people, a window blind, and a picture that is not CC0: left out
-    assert v.nmah_vision_row(record("cane", "Walking cane")) is None
-    assert v.nmah_vision_row(record("window blind", "Venetian blinds")) is None
-    assert v.nmah_vision_row(record("braillewriter", "Perkins Brailler", access="Usage conditions apply")) is None
-    assert v.nmah_vision_row(record("cane", "Cane", notes="A long cane used by a blind traveller.")) is not None
-
-
 def test_no_commons_category_is_used_by_another_pack():
     """No category of these packs is named (in quotes) by another pack file, nor twice here."""
     others = ""
@@ -104,7 +74,7 @@ def test_kit_notes_match():
 
 def test_wiring():
     keys = set(v.VISION_PACKS)
-    assert keys == set(v.VISION_LIMITS) and len(keys) == 5
+    assert keys == set(v.VISION_LIMITS) and len(keys) == 4
     assert keys <= set(build_packs.PACKS)
     assert set(v.VISION_COMMONS_KEYS) <= build_packs.COMMONS_KEYS
     assert not (keys - set(v.VISION_COMMONS_KEYS)) & build_packs.COMMONS_KEYS

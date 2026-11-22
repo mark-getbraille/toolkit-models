@@ -41,10 +41,6 @@ The packs (VISION_PACKS):
                            canes, guide horses, simulated visual impairment (training with blindfolds or simulation
                            glasses), visual impairment awareness events, deafblind people and the Lorm hand alphabet.
                            People are in these photos: describing only, never picture-making.
-  nmah_vision_objects      The Smithsonian's National Museum of American History (open-access records, CC0): braille
-                           writers, slates and styluses, talking book machines, reading machines, canes and other
-                           things made for blind people, named from each record's own words (a fair share for each
-                           kind of object).
   aph_museum_objects       The Museum of the American Printing House for the Blind's own items on the Internet
                            Archive that APH marked with the Public Domain Mark (braille writers such as a Russian
                            braillewriter and the Possum Moon writer, talking book phonograph needles, a CCTV, braille
@@ -60,7 +56,7 @@ import re
 import sys
 
 import build_packs  # noqa: F401 - loaded first: the other pack files and build_packs import each other
-from build_packs import session, say, clean, pass_random, listing_out_of_time, fetch_all, SI_BUCKET, si_keys
+from build_packs import session, say, clean, listing_out_of_time, fetch_all
 
 ASK_WHAT = "What is this?"
 ASK_DOING = "What is happening here?"
@@ -204,116 +200,6 @@ def build_commons_mobility_deafblind(limit):
     return build_commons_topic(MOBILITY_DEAFBLIND, limit, "vismobility")
 
 
-# ----------------------------------------------------------------- Smithsonian NMAH: things made for blind people (CC0)
-
-# Object names (the record's "Object Name" or title) with the plain name the answer gives; the first that matches.
-NMAH_VISION_NAMES = [(re.compile(p, re.I), n, care) for p, n, care in [
-    (r"\bbraille ?writers?\b|\bbraillewriters?\b|\bbraillers?\b|\bbraille typewriters?\b|\bwriters?,? braille\b",
-     "a braille writer (a machine for typing braille)", True),
-    (r"\bslates?\b", "a braille slate (a frame for writing braille by hand with a stylus)", False),
-    (r"\bstyl(us|i|uses)\b", "a braille stylus (a pointed tool for punching braille dots by hand)", False),
-    (r"\btalking[- ]book\b|\btalking[- ]book (machine|player|phonograph)s?\b", "a talking book machine or record",
-     False),
-    (r"\boptacon\b", "an Optacon (a reading device that turned print into a pattern of vibrating pins)", False),
-    (r"\bkurzweil\b|\breading machines?\b", "a reading machine for blind people", False),
-    (r"\bcanes?\b", "a cane", False),
-    (r"\bwatch(es)?\b|\bclocks?\b", "a watch or clock made for blind people", False),
-    (r"\bmaps?\b|\bglobes?\b", "a tactile (raised) map or globe", False),
-    (r"\btypewriters?\b", "a typewriter made for blind people", False),
-    (r"\bbooks?\b|\bprimers?\b|\breaders?\b", "a book in braille or raised type", False),
-]]
-# Only records whose own words say they are for blind people.
-NMAH_VISION_WORDS = re.compile(r"braille|\bblind\b|visually impaired|visual impairment|talking book|optacon|kurzweil|"
-                               r"moon type|new york point|raised (type|print|letters?)", re.I)
-NMAH_VISION_NOT = re.compile(r"\b(photograph|print|poster|lithograph|negative|postcard|stamp|coin|medal|button|pin|"
-                             r"advertis\w*|trade card|catalog(ue)?|sheet music|label|flag|banner|blinds?\b.*window|"
-                             r"venetian|window blinds?)\b", re.I)
-
-
-def nmah_vision_row(record):
-    """(picture address, rows) for an NMAH record of a thing made for blind people with a CC0 picture, or None. The
-    answer gives the object's own name, maker, date and place as catalogued (textile_crafts_packs.nmah_textile_row
-    does the same for sewing things)."""
-    content = record.get("content") or {}
-    title = clean(record.get("title") or "")
-    free = content.get("freetext") or {}
-    names = [clean(o.get("content")) for o in free.get("objectType") or [] if o.get("label") == "Object Name"]
-    object_name = names[0] if names else title
-    notes = " ".join(clean(n.get("content")) for n in free.get("notes") or [])
-    words = f"{object_name} {title} {notes}"
-    if not NMAH_VISION_WORDS.search(words) or NMAH_VISION_NOT.search(f"{object_name} {title}"):
-        return None
-    found = next(((n, care) for p, n, care in NMAH_VISION_NAMES if p.search(object_name)), None) or \
-        next(((n, care) for p, n, care in NMAH_VISION_NAMES if p.search(title)), None)
-    if not found:
-        return None
-    plain, care = found
-    media = ((content.get("descriptiveNonRepeating") or {}).get("online_media") or {}).get("media") or []
-    picture = next((m for m in media if (m.get("usage") or {}).get("access") == "CC0" and m.get("type") == "Images"
-                    and m.get("content")), None)
-    if not picture:
-        return None
-    makers = [clean(n.get("content")) for n in free.get("name") or [] if "maker" in (n.get("label") or "").lower()
-              or "manufacturer" in (n.get("label") or "").lower()]
-    makers = [m for m in makers if not re.match(r"^(unknown|unidentified|anonymous)\b", m, re.I)]
-    dates = [clean(d.get("content")) for d in free.get("date") or [] if "made" in (d.get("label") or "").lower()]
-    places = [clean(p.get("content")) for p in free.get("place") or [] if "made" in (p.get("label") or "").lower()]
-    answer = f"This is {plain}"
-    if title and title.lower() not in plain.lower():
-        answer += f" (its record calls it \"{title}\")"
-    if makers:
-        answer += f", made by {makers[0]}"
-    if places:
-        answer += (" in " if makers else ", made in ") + places[0].replace("United States: ", "")
-    if dates:
-        answer += f", {dates[0]}"
-    answer += "."
-    if care:
-        answer += f" {BRAILLER_NOTE}"
-    nr = content.get("descriptiveNonRepeating") or {}
-    credit = (f"National Museum of American History, Smithsonian Institution, CC0: {title} "
-              f"({nr.get('record_ID', '')}), {nr.get('guid', '')}")
-    return picture["content"] + "&max=2048", [{"question": ASK_WHAT, "answer": answer, "credit": credit}]
-
-
-def build_nmah_vision_objects(limit, most_files=None):
-    """The NMAH records of things made for blind people with a CC0 picture, read from the Smithsonian open-access
-    bucket (the museum's metadata files in a fixed shuffled order, a quick word check before each record is read),
-    until enough are found or half the time limit is spent; each kind of object gets a fair share. most_files: read
-    at most so many metadata files (a quick live check)."""
-    s, by_kind = session(), {}
-    keys = si_keys("nmah")
-    pass_random("nmah-vision").shuffle(keys)
-    found = 0
-    for key in keys[:most_files] if most_files else keys:
-        if listing_out_of_time() or found >= limit * 2:
-            break
-        try:
-            text = s.get(f"{SI_BUCKET}/{key}", timeout=300).content.decode("utf-8", "replace")
-        except Exception:  # noqa: BLE001 - next file
-            continue
-        for line in text.splitlines():
-            if '"CC0"' not in line or not NMAH_VISION_WORDS.search(line):
-                continue
-            try:
-                got = nmah_vision_row(json.loads(line))
-            except ValueError:
-                continue
-            if got:
-                url, rows = got
-                kind = rows[0]["answer"].split(" (", 1)[0].split(",", 1)[0].split(".", 1)[0]
-                by_kind.setdefault(kind, []).append((url, rows))
-                found += 1
-        say(f"  NMAH {key.rsplit('/', 1)[-1]}: {found} records so far")
-    items, share = [], max(10, int(limit * 1.2) // max(1, len(by_kind)))
-    for kind in sorted(by_kind):
-        items += by_kind[kind][:share]
-    pass_random("nmah-vision-order").shuffle(items)
-    from food_packs import with_twins
-    named = [(f"nmah-vis-{i:05d}.jpg", url, rows) for i, (url, rows) in enumerate(items[:int(limit * 1.1) + 2])]
-    return with_twins(fetch_all(named, workers=6, pause=0.1)[:limit])
-
-
 # ----------------------------------------------------------------- APH Museum (Internet Archive, Public Domain Mark)
 
 IA_SEARCH = "https://archive.org/advancedsearch.php"
@@ -407,9 +293,6 @@ def build_aph_museum_objects(limit):
 
 COMMONS_LICENCE = ("Wikimedia Commons (https://commons.wikimedia.org): files CC0, public domain or CC BY (credited "
                    "below) of {what} categories.")
-NMAH_LICENCE = ("Smithsonian National Museum of American History, Smithsonian Open Access, CC0 "
-                "(https://www.si.edu/openaccess): records and pictures of things made for blind people, each record "
-                "credited below. Changes: pictures made smaller; answers written from each record's own words.")
 VISION_PACKS = {
     "commons_braille_writing": (build_commons_braille_writing, COMMONS_LICENCE.format(
         what="braille writer, braille chart, braille music, tactile watch, DAISY and tactile writing system")),
@@ -417,7 +300,6 @@ VISION_PACKS = {
         what="tactile graphic, tactile model, large print, reading machine, eye chart and accessible place")),
     "commons_mobility_deafblind": (build_commons_mobility_deafblind, COMMONS_LICENCE.format(
         what="orientation and mobility, sighted guide, cane, guide horse, awareness and deafblind")),
-    "nmah_vision_objects": (build_nmah_vision_objects, NMAH_LICENCE),
     "aph_museum_objects": (build_aph_museum_objects, f"{APH_MUSEUM}, its own items on the Internet Archive marked "
                                                      "with the Public Domain Mark 1.0 by APH "
                                                      "(https://archive.org/details/aphmigel; checked item by item), "
@@ -428,7 +310,6 @@ VISION_LIMITS = {
     "commons_braille_writing": 400,       # 23 small categories (Perkins 17 files, the charts and New York Point most)
     "commons_tactile_access": 600,        # 24 categories; the scale models and eye charts have most files
     "commons_mobility_deafblind": 150,    # 8 small categories
-    "nmah_vision_objects": 120,           # few NMAH records are CC0 and made for blind people
     "aph_museum_objects": 80,             # about 80 of the museum's own items carry the Public Domain Mark
 }
 # The packs that read Wikimedia Commons (build_packs.COMMONS_KEYS).
@@ -443,12 +324,8 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="Try a blind and low-vision living pack builder.")
     parser.add_argument("key", choices=sorted(VISION_PACKS))
     parser.add_argument("--limit", type=int, default=8)
-    parser.add_argument("--files", type=int, default=None, help="NMAH: read at most so many metadata files")
     args = parser.parse_args(argv)
-    if args.key == "nmah_vision_objects":
-        entries = build_nmah_vision_objects(args.limit, args.files)
-    else:
-        entries = VISION_PACKS[args.key][0](args.limit)
+    entries = VISION_PACKS[args.key][0](args.limit)
     for name, data, row in entries:
         print(name, "(picture)" if data else "", json.dumps(row, ensure_ascii=False)[:400])
     print(f"{sum(1 for _, d, _ in entries if d)} pictures, {len(entries)} rows")

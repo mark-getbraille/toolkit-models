@@ -273,8 +273,6 @@ SECTIONS = [
         ("key", "elec:acl_assistive_technology", "State Assistive Technology Act programmes: device loans, reuse and "
                                                  "repair help"),
         ("pack", "commons_braille_writing", "Pictures: Perkins and other braille writers, manual embossers"),
-        ("pack", "nmah_vision_objects", "Pictures: braille writers, slates and styluses in the Smithsonian's "
-                                        "collection"),
         ("pack", "aph_museum_objects", "Pictures: the APH Museum's own items marked public domain (braille writers, "
                                        "the Moon writer)"),
         ("link", "Perkins Brailler support, parts and repair (Perkins Solutions)", "https://brailler.perkins.org/",

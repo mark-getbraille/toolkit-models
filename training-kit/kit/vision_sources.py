@@ -1,8 +1,8 @@
 """BLIND AND LOW-VISION LIVING for the Picture Model Training Kit (the owner's request of 2026-11-22, a section of
 its own with the topic add-on "vision"). This file lists:
   - the ready-made packs built in packs/vision_packs.py (group "permissive"; the kit downloads them with
-    prepare_pack): commons_braille_writing, commons_tactile_access, commons_mobility_deafblind,
-    nmah_vision_objects and aph_museum_objects;
+    prepare_pack): commons_braille_writing, commons_tactile_access, commons_mobility_deafblind and
+    aph_museum_objects;
   - the share-alike Commons files of the same braille writer, braille and tactile categories (group "share-alike":
     only with the share-alike choice, --with-wikipedia; an add-on trained with them is CC BY-SA);
   - the sources looked at for these subjects and left out, with the reason (VISION_NOT_INCLUDED).
@@ -16,7 +16,7 @@ braille writer answer ends with the care note (BRAILLER_NOTE, the same words as 
 packs/test_vision.py checks).
 
 Picture-making (VISION_PICTURE_MAKING_OK): only the braille writers, braille charts and tactile things, which show
-no people (commons_braille_writing, nmah_vision_objects and the share-alike entry); sources.py puts the other keys
+no people (commons_braille_writing and the share-alike entry); sources.py puts the other keys
 in NOT_FOR_PICTURE_MAKING (orientation and mobility, guiding and deafblind photos show people, and the tactile
 collection holds parks, museums and libraries with visitors).
 
@@ -43,8 +43,6 @@ BRAILLER_NOTE = ("Care: follow the maker's care guide, keep it covered and free 
 
 COMMONS_OPEN = "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0"
 COMMONS_CREDIT = "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org"
-NMAH_OPEN = "CC0 (Smithsonian Open Access), each record credited in CREDITS.txt"
-NMAH_CREDIT = "National Museum of American History, Smithsonian Institution, https://www.si.edu/openaccess"
 SA_TERMS = "https://creativecommons.org/licenses/by-sa/4.0/"
 SA_SUMMARY = "CC BY-SA (or GFDL): use with credit, and anything made from it keeps the same licence."
 SA_LICENCE = "Each file CC BY-SA or GFDL (its Commons page); captions CC0"
@@ -101,9 +99,6 @@ VISION_SOURCES = [
                                          "horses, awareness events, deafblind people and the Lorm alphabet "
                                          "(Wikimedia Commons, ready-made pack)",
            COMMONS_OPEN, COMMONS_CREDIT, "permissive", 150, 3, prepare_pack, "about 35 MB"),
-    Source("nmah_vision_objects", "Braille writers, slates, styluses, talking book machines, reading machines and "
-                                  "other things made for blind people (Smithsonian NMAH, ready-made pack)",
-           NMAH_OPEN, NMAH_CREDIT, "permissive", 120, 3, prepare_pack, "about 30 MB"),
     Source("aph_museum_objects", "The APH Museum's own items marked public domain: braille writers, the Moon writer, "
                                  "talking book things, a CCTV and tactile games, with the museum's own words "
                                  "(Internet Archive, ready-made pack)",
@@ -117,9 +112,8 @@ VISION_SOURCES = [
            terms=SA_TERMS, terms_summary=SA_SUMMARY),
 ]
 
-# The collections a picture-making model may learn from: things only (braille writers, braille, tactile writing and
-# museum objects); never the mobility and deafblind photos or the tactile places, which show people.
-VISION_PICTURE_MAKING_OK = {"commons_braille_writing", "nmah_vision_objects", "vision_commons_sa"}
+# The collections a picture-making model may learn from: things only (braille writers, braille and tactile writing); never the mobility and deafblind photos or the tactile places, which show people.
+VISION_PICTURE_MAKING_OK = {"commons_braille_writing", "vision_commons_sa"}
 
 # The collections the topic add-on "vision" gathers from other files (topics.py names them; the self-test checks
 # that each is a collection of the kit).
@@ -153,6 +147,9 @@ VISION_NOT_INCLUDED = {
         "manual collection vision_devices.",
     "HathiTrust": "catalog.hathitrust.org and www.hathitrust.org answer programs with a challenge page (Cloudflare), "
                   "so nothing is read; link-only.",
+    "Smithsonian NMAH open-access records": "Read on 2026-11-22: only 3 records naming braille in 12 of the "
+        "museum's 257 metadata files, and none with a picture (Braille Scrabble, a braille printing plate); a pack "
+        "would come out nearly empty, so none is built.",
     "Open Images": "no label for white canes, guide dogs, braille or braille writers (disability_packs' search of the "
                    "class list).",
     "Be My Eyes, Seeing AI, Aira and other describer apps' pictures": "the companies' copyright; never used.",

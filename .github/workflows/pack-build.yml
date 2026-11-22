@@ -503,7 +503,6 @@ jobs:
             commons_braille_writing) limit=400 ;;
             commons_tactile_access) limit=600 ;;
             commons_mobility_deafblind) limit=150 ;;
-            nmah_vision_objects) limit=120 ;;
             aph_museum_objects) limit=80 ;;
           esac
           mode=""
