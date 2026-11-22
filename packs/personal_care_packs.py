@@ -186,6 +186,9 @@ def met_themed(o):
     return bool(MET_WORDS.search(o.get("objectName") or ""))
 
 
+MET_MOST = 3000            # object ids read from each Met search at most
+
+
 def met_search_items(searches, keep, want, prefix):
     """(file name, picture address, rows) of Met objects found by the searches whose record keep() accepts:
     public domain with a picture, not a highlight (the kit's met), musical instrument, nude or erotica
@@ -197,10 +200,17 @@ def met_search_items(searches, keep, want, prefix):
     from service_packs import safety
     from body_packs import MINOR
     s, rng, ids = session(), pass_random(prefix), []
-    for q in searches:
-        found = (get_json(s, MET + "v1/search", params={"q": q, "hasImages": "true"}) or {}).get("objectIDs") or []
-        ids += [i for i in found if i not in ids]
-        time.sleep(0.5)
+    for q in searches:                       # the v1.1 search, paged (v1/search was retired on 2026-10-01)
+        offset = 0
+        while offset < MET_MOST:
+            page = get_json(s, MET + "v1.1/search", params={"q": q, "hasImages": "true", "limit": 100,
+                                                             "offset": offset}) or {}
+            found = page.get("objectIDs") or []
+            ids += [i for i in found if i not in ids]
+            offset += len(found)
+            if not found or offset >= (page.get("total") or 0):
+                break
+            time.sleep(0.3)
     rng.shuffle(ids)
     items = []
     for oid in ids:
