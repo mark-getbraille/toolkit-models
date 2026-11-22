@@ -265,9 +265,21 @@ TRAVEL_SPECS = [
 
 def build_commons_travel_signs(limit):
     """The commons_travel_signs pack (see the module docstring)."""
-    from home_packs import build_commons_topic
+    import home_packs
     specs = aiga_specs() + TRAVEL_SPECS
-    return build_commons_topic(specs, limit, "travelsign")
+    # The AIGA specs all read one category: its member list is asked of Commons once, not once per sign.
+    members, asked = home_packs.commons_members, {}
+
+    def once(s, category, kind):
+        """commons_members, remembered for this pack's build."""
+        if (category, kind) not in asked:
+            asked[(category, kind)] = list(members(s, category, kind))
+        return list(asked[(category, kind)])
+    home_packs.commons_members = once
+    try:
+        return home_packs.build_commons_topic(specs, limit, "travelsign")
+    finally:
+        home_packs.commons_members = members
 
 
 # ----------------------------------------------------------------- the packs
