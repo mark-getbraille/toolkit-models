@@ -113,7 +113,7 @@ PHOTOGRAPHY_SOURCES = [
                                       "(Wikimedia Commons, ready-made pack)",
            COMMONS_OPEN, COMMONS_CREDIT, "permissive", 1200, 15, prepare_pack, "about 260 MB"),
     Source("commons_film_darkroom", "Film and the darkroom: darkrooms, enlargers, safelights, film formats, film "
-                                    "canisters, contact sheets, glass plate negatives, nitrate film, photograms, slide "
+                                    "canisters, contact sheets, glass plate negatives, photograms, slide "
                                     "projectors, light tables, film scanners and studios, with darkroom safety notes "
                                     "(Wikimedia Commons, ready-made pack)",
            COMMONS_OPEN, COMMONS_CREDIT, "permissive", 1100, 15, prepare_pack, "about 240 MB"),
@@ -162,7 +162,7 @@ PHOTOGRAPHY_NOT_INCLUDED = {
         "negatives, Photographic paper, Photographic enlargers, Developing tanks, Photographic trays, Softboxes, "
         "Photographic reflectors, Leaf shutters, Focal-plane shutters, Sheet film, Roll film, Dry plates, "
         "Photographic slides, Union cases, Salted paper prints, Palladium prints, Carbon prints, Woodburytypes, "
-        "Wet plate collodion, Kallitypes, Lumen prints and Vandyke brown prints; Action cameras, Camera lenses, "
+        "Wet plate collodion, Cellulose nitrate film, Kallitypes, Lumen prints and Vandyke brown prints; Action cameras, Camera lenses, "
         "Flash (photography), Photogravures, Stereographs and Lantern slides exist but hold no files. The packs use "
         "the categories that hold files (SLR cameras, Digital SLR cameras, Enlargers, Salt prints, Collodion "
         "process, Stereo cards ...).",

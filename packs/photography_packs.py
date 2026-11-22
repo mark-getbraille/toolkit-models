@@ -190,7 +190,7 @@ FILM_DARKROOM = [
           DARKROOM_NOTE, True),
     thing("Safelights", "a safelight, a dim coloured darkroom lamp that does not fog photographic paper",
           DARKROOM_NOTE),
-    thing("35 mm film", "35 mm film", deeper=True),
+    thing("35 mm film", "35 mm film", NITRATE_NOTE, True),
     thing("120 film", "120 roll film, the medium format film", deeper=True),
     thing("135 film", "135 film, 35 mm film in a cassette", deeper=True),
     thing("110 film", "110 film, a small cartridge film", deeper=True),
@@ -202,7 +202,6 @@ FILM_DARKROOM = [
           deeper=True),
     thing("Glass plate negatives", "a glass plate negative, a photographic negative on a sheet of glass: hold it "
                                    "by its edges", "", True, NOT_MEMORIAL),
-    thing("Cellulose nitrate film", "cellulose nitrate film", NITRATE_NOTE, True),
     thing("Photograms", "a photogram, a picture made by laying things on photographic paper and exposing it to "
                         "light, without a camera", deeper=True),
     thing("Slide projectors", "a slide projector", deeper=True),

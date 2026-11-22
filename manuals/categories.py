@@ -787,3 +787,14 @@ CATEGORIES["canning_preserving"] = _CANNING_PRESERVING
 from sports_manuals import CATEGORY as _SPORTS_EQUIPMENT  # noqa: E402
 
 CATEGORIES["sports_equipment"] = _SPORTS_EQUIPMENT
+# Photography (the owner's request of 2026-11-22, manuals/photography_manuals.py): film cameras and darkroom equipment
+# (with the US Army's camera and darkroom manuals of the 1940s and Mike Butkus's library as a link) and digital cameras,
+# lenses and flashes; every maker link-only. They and the darkroom chemicals collection photo_chemicals go under the
+# "Arts and crafts" heading (photography_manuals.HEADING_KEYS); keys unchanged.
+from photography_manuals import CATEGORIES as _PHOTOGRAPHY, HEADING as _PHOTO_HEADING  # noqa: E402
+from photography_manuals import HEADING_KEYS as _PHOTO_KEYS  # noqa: E402
+
+CATEGORIES.update(_PHOTOGRAPHY)
+for _key in _PHOTO_KEYS:
+    if _key in CATEGORIES:
+        CATEGORIES[_key]["heading"] = _PHOTO_HEADING

@@ -126,7 +126,10 @@ def test_arts_and_crafts_heading(tmp_path):
         assert C.CATEGORIES[key]["heading"] == "Arts and crafts", key
     for key in ("printers_3d", "laser_cnc_making", "woodshop_machines", "metal_shop_welding"):
         assert C.CATEGORIES[key]["heading"] == "Home manufacturing and making", key
-    assert sum(1 for c in C.CATEGORIES.values() if c.get("heading") == "Arts and crafts") == len(CM.HEADING_KEYS)
+    # the photography collections and the darkroom chemicals join the heading too (photography_manuals.py)
+    import photography_manuals as PM
+    assert sum(1 for c in C.CATEGORIES.values() if c.get("heading") == "Arts and crafts") == \
+        len(CM.HEADING_KEYS) + len(PM.HEADING_KEYS)
     manifest = B.write("pottery_kilns", [], str(tmp_path))
     index = json.loads(gzip.decompress((tmp_path / manifest["file"]).read_bytes()))
     assert index["heading"] == manifest["heading"] == "Arts and crafts"
