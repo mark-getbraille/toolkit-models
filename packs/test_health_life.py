@@ -108,6 +108,8 @@ def test_safety_filters():
     rescue = next(s for s in WF.WILDERNESS_RESCUE if s[0] == "Mountain rescue")[3]
     assert rescue.search("Mountain rescue team training with a stretcher")
     assert not rescue.search("Injured climber evacuated after accident") and not rescue.search("Body recovered")
+    assert not rescue.search("Ouch (49350088282).jpg")              # a live build found this title on a rescue sled
+    assert next(s for s in WF.WILDERNESS_RESCUE if s[0] == "Rescue sleds")[3] is rescue
 
 
 def test_no_commons_category_is_used_by_another_pack():

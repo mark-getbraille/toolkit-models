@@ -40,7 +40,7 @@ WILD_NOTE = ("General information, not training, medical advice or a diagnosis. 
 ASK_WHAT = "What is this?"
 # Rescue photos: never one whose own words name an injury, blood, a body or a death.
 NO_GORE = re.compile(r"^(?!.*\b(blood\w*|bleed\w*|wound\w*|injur\w*|corpse\w*|bod(y|ies)|dead|death|died|killed|"
-                     r"fatal\w*|victims?|accident\w*|crash\w*)\b)", re.I | re.S)
+                     r"fatal\w*|victims?|accident\w*|crash\w*|ouch|hurt|pain\w*|casualt\w*)\b)", re.I | re.S)
 
 
 def thing(category, words, deeper=False, pattern=None):
@@ -53,7 +53,7 @@ def thing(category, words, deeper=False, pattern=None):
 WILDERNESS_RESCUE = [
     thing("Mountain rescue", "mountain rescue: trained rescuers reaching, treating and carrying out people in the "
                              "mountains", pattern=NO_GORE),
-    thing("Rescue sleds", "a rescue sled, a sled for carrying an injured person over snow"),
+    thing("Rescue sleds", "a rescue sled, a sled for carrying an injured person over snow", pattern=NO_GORE),
     thing("Avalanche transceivers", "an avalanche transceiver (beacon), worn by each person in avalanche terrain: it "
                                     "sends a signal, and the others switch theirs to search to find someone buried"),
     thing("Trauma shears", "trauma shears, blunt-tipped scissors for cutting away clothing and bandages", True),
