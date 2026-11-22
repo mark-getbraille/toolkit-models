@@ -204,6 +204,44 @@ GUIDES += [
             follow=r"^https://nida\.nih\.gov/research-topics/parents-educators/[a-z0-9-]+$", limit=80),
 ]
 
+# ====================================================================== CPSC child safety
+
+# CPSC's copyright notice (on its privacy page, checked at every build): "Web page text, brochures, and posters
+# presented on CPSC websites are public information. You may freely distribute ..." with credit to CPSC and no
+# suggestion of CPSC's endorsement; pictures may belong to others, and the builder leaves pictures out.
+CPSC = "https://www.cpsc.gov"
+CPSC_TERMS = CPSC + "/About-CPSC/Policies-Statements-and-Directives/Privacy-Policy"
+CPSC_TEXT = r"Web page text, brochures, and posters presented on CPSC websites are public information"
+CPSC_CENTRES = ("Button-Cell-Coin-Battery-Information-Center|In-Home-Drowning-Safety-Information-Center|Magnets|"
+                "Poison-Prevention-Information-Center|Toys|Water-Beads-Information-Center")
+CPSC_GUIDE_WORDS = r"[A-Za-z-]*(Kids|Babies|Baby|Crib|Toy|Furniture|Window|Batter|Child|Nursery)[A-Za-z-]*"
+GUIDES.append(dict(
+    K.guide(GROUP, "cpsc_child_safety", "Child safety at home: safe sleep, cribs, toys, tip-overs and batteries (CPSC "
+            "and Anchor It)", "Child product safety", "US Consumer Product Safety Commission (CPSC)",
+            [CPSC + "/SafeSleep"] + [f"{CPSC}/Safety-Education/Safety-Education-Centers/{c}"
+                                     for c in CPSC_CENTRES.split("|")] +
+            [CPSC + "/Safety-Education/Safety-Guides/Home-Indoors-Home-Kids-and-Babies-Furniture-Furnishings-and-"
+             "Decorations-Electronics-and-Electrical/Get-On-Top-of-It-Before-They-Do", "https://www.anchorit.gov/"],
+            rf"^https://(www\.cpsc\.gov/(SafeSleep|Safety-Education/Safety-Education-Centers/({CPSC_CENTRES})"
+            rf"(/[A-Za-z0-9-]+)*|Safety-Education/Safety-Guides/{CPSC_GUIDE_WORDS}/[A-Za-z0-9-]+)|www\.anchorit\.gov/"
+            r"(?!wp-|feed|news-press|espanol|privacy-policy|contact-us)([a-z0-9-]+/)*)$",
+            "The CPSC's child safety guides, every page: safe sleep for babies (cribs, bassinets and play yards, a "
+            "bare sleep space, infant products to avoid), the ABCs of baby safety and getting ready for a baby, toy "
+            "safety (age labels, small parts and choking, magnets, water beads), button and coin batteries, poison "
+            "prevention and child-resistant packaging, drowning at home (pools, bathtubs, buckets), and furniture and TV tip-overs with Anchor It (how to anchor furniture and TVs, what you'll "
+            "need, installing an anchoring kit).",
+            "From the US Consumer Product Safety Commission (cpsc.gov, anchorit.gov): public information, freely "
+            "distributed with credit to CPSC; this copy does not suggest CPSC's endorsement. Pictures are left out. "
+            "To report an unsafe product or a child's injury: SaferProducts.gov or 1-800-638-2772. Check recalls at "
+            "cpsc.gov/Recalls.", depth=2,
+            follow=rf"^https://www\.cpsc\.gov/Safety-Education/Safety-Education-Centers/({CPSC_CENTRES})$",
+            units=[(r"/SafeSleep|Crib|Bab", "Safe sleep and baby products"), (r"anchorit|Furniture|Get-On-Top",
+                                                                               "Furniture and TV tip-overs"),
+                   (r"Toys|Magnets|Water-Beads", "Toys, magnets and water beads"),
+                   (r"Batter", "Button and coin batteries"), (r"Poison", "Poison prevention"),
+                   (r"Drowning", "Drowning at home"), (r".", "More child safety")], limit=200),
+    licence_page=CPSC_TERMS, licence_text=CPSC_TEXT))
+
 COLLECTION = K.Collection("parent", GROUP, guides=GUIDES,
                           words={"parenting": lambda: [f"parent:{g['name']}" for g in GUIDES]})
 
@@ -221,6 +259,12 @@ LICENCE_LINES["parenting_childwelfare"] = (
 LICENCE_LINES["parenting_nih"] = (
     "www.nichd.nih.gov and nida.nih.gov: works of the US government (17 U.S.C. 105, checked on govinfo.gov's "
     "policies page at every build); robots.txt allows the pages; no AI rules (checked 2026-11-22).")
+LICENCE_LINES["parenting_cpsc"] = (
+    "www.cpsc.gov/About-CPSC/Policies-Statements-and-Directives/Privacy-Policy (checked at every build): \"Web page "
+    "text, brochures, and posters presented on CPSC websites are public information. You may freely distribute\" "
+    "them, crediting CPSC and not suggesting CPSC's endorsement (both in the notice); pictures, which may belong to "
+    "others, are left out. robots.txt of cpsc.gov and anchorit.gov allows the pages; no AI rules (checked "
+    "2026-11-22).")
 LICENCE_LINES["parenting_cpir"] = (
     "www.parentcenterhub.org (every page, checked on each page read): \"This product is public domain. "
     "Authorization to reproduce it in whole or in part is granted. While permission to reprint material from this "
@@ -228,6 +272,11 @@ LICENCE_LINES["parenting_cpir"] = (
     "Crawl-delay 600 (the builder waits 60 seconds, its longest pause), nothing else refused; no AI rules (checked "
     "2026-11-22).")
 NOT_INCLUDED = [
+    ("CPSC window covering (blind cord) safety guide", "CPSC's consumer guide to corded window coverings is not "
+     "linked from its safety education pages or listed in its sitemap (only rulemaking papers are, checked "
+     "2026-11-22); the safety rules for cords are in the CPSC's other child safety pages built here. Link-only: the "
+     "industry's own safety site is copyright. Index: https://www.cpsc.gov/Safety-Education and "
+     "https://windowcoverings.org/"),
     ("Child Welfare Information Gateway publications (factsheets for families, bulletins, state statutes series) as "
      "PDFs", "Freely reproducible, but the PDFs are on artifacts.childwelfare.gov, whose robots.txt answers \"403 "
      "Forbidden\" (checked 2026-11-22), so programs may not read them; the topic pages are built "
