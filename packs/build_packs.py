@@ -2012,6 +2012,16 @@ from nasa_library_packs import NASA_LIBRARY_PACKS
 from nps_library_packs import NPS_LIBRARY_PACKS
 PACKS.update(NASA_LIBRARY_PACKS)
 PACKS.update(NPS_LIBRARY_PACKS)
+# Personal care and beauty products, toys and children's products, and foreign banknotes and coins (the owner's
+# request of 2026-11-22), one file each: packs/personal_care_packs.py, packs/toys_packs.py (products only, never a
+# child in the photo) and packs/world_money_packs.py (old money only: central banks restrict pictures of current money).
+from personal_care_packs import PERSONAL_CARE_PACKS, PERSONAL_CARE_COMMONS_KEYS
+from toys_packs import TOYS_PACKS, TOYS_COMMONS_KEYS
+from world_money_packs import WORLD_MONEY_PACKS, WORLD_MONEY_COMMONS_KEYS
+for _packs, _commons in ((PERSONAL_CARE_PACKS, PERSONAL_CARE_COMMONS_KEYS), (TOYS_PACKS, TOYS_COMMONS_KEYS),
+                         (WORLD_MONEY_PACKS, WORLD_MONEY_COMMONS_KEYS)):
+    PACKS.update(_packs)
+    COMMONS_KEYS = COMMONS_KEYS | frozenset(_commons)
 # Home manufacturing and making (packs/making_packs.py, the owner's request of 2026-11-22): Commons 3D printers, prints
 # and 3D design, cutting machines, heat presses and lasers, CNC and small lathe and mill tooling, moulding, casting and
 # makerspaces, circuit board fabrication, and Open Images machine tools and workshops; every answer ends with its
