@@ -11,7 +11,6 @@ What this module builds, in plain words, each IN FULL:
     flash cards, from the Government Publishing Office's copy in the Internet Archive;
   - how government works: USA.gov's pages on the branches of government, how laws are made, voting and elections,
     contacting elected officials and citizenship; and Ben's Guide to the US Government (GPO), every page;
-  - jury service: the US Courts' pages (qualifications, exemptions and excuses, selection, pay, scams);
   - landmark Supreme Court cases, each the Court's own opinion as printed in the United States Reports (govinfo.gov,
     public domain), with its syllabus (the plain summary printed at its head); a case later overruled says so in
     the book's description;
@@ -19,8 +18,9 @@ What this module builds, in plain words, each IN FULL:
     use (canada.ca's terms allow non-commercial copies), with a note that it is Canadian, not US, material.
   Every book about the law ends its notice with NOT_ADVICE.
 
-Already in the library and not repeated: the EAC's voter guide and accessible voting (civic:eac_voters), the US
-Code (us-code), the CFR (laws), the United States Government Manual (pub:us_government_manual), the government group
+Already in the library and not repeated: the US Courts' jury service pages (dir:uscourts_self_help), the EAC's voter
+guide and accessible voting (civic:eac_voters), the US Code (us-code), the CFR (laws), the United States Government
+Manual (pub:us_government_manual), the government group
 (group:government), and Project Gutenberg's Federalist Papers in the Kiwix library.
 
 Not built (NOT_INCLUDED, link-only): Vote.gov, uscis.gov's web pages and Oyez (refuse programs, or CC BY-NC: Oyez's
@@ -29,7 +29,7 @@ whose congress.gov family shuts out AI companies' readers), and the Federalist P
 
 Licences: works of the US government (17 U.S.C. 105, the line checked on govinfo.gov's policies page at every build);
 canada.ca's terms line checked at every build for Discover Canada. robots.txt of archives.gov (10 seconds between
-pages), usa.gov (10 seconds), bensguide.gpo.gov, uscourts.gov, govinfo.gov and archive.org allow the pages; none has
+pages), usa.gov (10 seconds), bensguide.gpo.gov, govinfo.gov and archive.org allow the pages; none has
 AI rules (checked 2026-11-22).
 
 Run from the repository's folder:
@@ -132,7 +132,6 @@ USA_NOT_CIVICS = ("about|about-the-us|accessibility-policy|agency-index|benefits
 BEN = "https://bensguide.gpo.gov"
 BEN_NOT = ("about-ben-and-gpo|about-this-site|feedback-suggestions|for-parents-and-educators|games|legal|"
            "ben-libraries")
-COURTS = "https://www.uscourts.gov/court-programs/jury-service"
 
 GUIDES = [
     dict(K.us_web(GROUP, name="archives_founding_documents", title="The Constitution, the Bill of Rights, the "
@@ -173,15 +172,6 @@ GUIDES = [
             "Rights) and the glossary.", f"A work of the US Government Publishing Office (public domain). "
                                          f"{NOT_ADVICE}", depth=2,
             follow=rf"^https://bensguide\.gpo\.gov/(?!(?:{BEN_NOT})(?:/|$))[a-z0-9-]+$", limit=150),
-    K.guide(GROUP, "uscourts_jury_service", "Jury service: qualifications, excuses, selection and pay (US Courts)",
-            "Jury duty", "Administrative Office of the US Courts (uscourts.gov)", COURTS,
-            r"^https://www\.uscourts\.gov/court-programs/jury-service(/[a-z0-9-]+)*$",
-            "The federal courts' pages on jury service: who may serve, exemptions and excuses (including how to ask "
-            "for one), how jurors are chosen, grand and trial juries, what to expect when summoned, juror pay and "
-            "jury scams (courts never ask for money or personal details by phone or email).",
-            f"A work of the federal judiciary (public domain). State courts have their own jury rules: read your "
-            f"summons. {NOT_ADVICE}", depth=2, follow=r"^https://www\.uscourts\.gov/court-programs/jury-service"
-                                                      r"(/[a-z0-9-]+)?$", limit=30),
 ]
 
 # ====================================================================== landmark Supreme Court cases (United States Reports)
@@ -247,7 +237,7 @@ COLLECTION = K.Collection("civ", GROUP, guides=GUIDES, pdfs=PDFS,
                                  ["civ:supreme_court_cases"]})
 
 LICENCE_LINES = {
-    "civ_us_gov": "archives.gov, usa.gov, bensguide.gpo.gov, uscourts.gov and govinfo.gov: works of the US government "
+    "civ_us_gov": "archives.gov, usa.gov, bensguide.gpo.gov and govinfo.gov: works of the US government "
                   "(17 U.S.C. 105, checked on govinfo.gov's policies page at every build); archives.gov and usa.gov "
                   "ask 10 seconds between pages, which the builder keeps; no AI rules (checked 2026-11-22).",
     "civ_uscis_wayback": "USCIS's PDFs: works of the US government, read from the Wayback Machine's captures of their "
@@ -275,6 +265,9 @@ NOT_INCLUDED = [
      "(civ:archives_founding_documents). Index: https://constitution.congress.gov/"),
     ("The Federalist Papers", "Public domain; already in the Kiwix library (Project Gutenberg, eBook 1404), so not "
      "built again. Index: https://www.gutenberg.org/ebooks/1404"),
+    ("US Courts' jury service pages (qualifications, excuses, selection, juror pay, jury scams)", "Already built in "
+     "full with the courts' self-help pages (dir:uscourts_self_help), so not built again. Index: "
+     "https://www.uscourts.gov/court-programs/jury-service"),
     ("State and local government guides (contacting state legislators, local elections)", "Each state's own site; "
      "link-only. Index: https://www.usa.gov/state-governments"),
 ]

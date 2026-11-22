@@ -249,13 +249,22 @@ The topics:
 - Home and household (home): appliances and their controls, kitchens, laundry and care labels, cleaning products
   and hazards, home repair, locks, heating and emergency lighting, building work and ramps, pests, baby products,
   sewing and crafts, first aid, dental and eye care, and emergency kits, warnings, shelters and disasters.
+- Power and electrical (power): generators and their safety labels, solar panels, charge controllers and
+  connectors, battery banks, wind turbines, water wheels and turbines, fuel, power lines, and home wiring, outlets,
+  breakers, plugs, cables and circuits (with the carbon monoxide, back-feeding, solar and battery safety notes).
 - Radio communications (radio): ham, GMRS, FRS, CB, marine and scanner radios, weather radios, antennas, towers,
   connectors and meters, Morse keys, ham stations, QSL cards and frequency charts, and off-grid mesh and data radio
   (Meshtastic, LoRa, APRS).
+- Privacy, security and digital safety (privacy): security keys, code tokens, routers, home cameras and webcam
+  covers, sign-in and padlock screens, password and authenticator apps, and made-up scam texts, phishing emails and
+  fake pop-ups with their warning signs.
 - Art and museum objects (art): museum descriptions written for blind visitors, famous works, instruments, crafts.
 - Documents, maps and signs (documents): letters, forms, receipts, tables, charts, maps, sheet music, road and
   safety signs, phone screens.
 - Plants, animals and nature (nature): plants, animals and breeds, crops and their diseases, weather, landscapes.
+- Blind and low-vision living (vision): braille and braille writers (Perkins Braillers), slates, white canes,
+  guide dogs, tactile paving and graphics, braille signs, reading machines, magnifiers, eye charts, sighted guiding,
+  deafblind communication, money by touch.
 - Nudity in art and photography (nudity): sensitive. Nudes in art and non-sexual photographic studies of adults.
 - Sexual content (sexual): sensitive, and always for personal use only. Erotic art showing adults, and checked
   pictures of your adult review collections.

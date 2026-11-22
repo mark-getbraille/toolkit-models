@@ -40,7 +40,9 @@ def test_makers_are_link_only():
             assert m["category"] == key
             keys.append((key, m["key"]))
     assert len(keys) == len(set(keys))
-    assert "Orbit Research (iBill)" in [m["maker"] for m in money_devices.MAKERS]
+    assert "Cassida" in [m["maker"] for m in money_devices.MAKERS]
+    taken = {m["maker"] for k, c in C.CATEGORIES.items() if k not in MODULES for m in c.get("makers") or []}
+    assert not {m["maker"] for mod in MODULES.values() for m in mod.MAKERS} & taken
 
 
 def test_documents():

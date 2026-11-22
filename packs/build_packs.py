@@ -1902,6 +1902,28 @@ from radio_packs import RADIO_PACKS, RADIO_COMMONS_KEYS
 for _packs, _commons in ((PREPAREDNESS_PACKS, PREPAREDNESS_COMMONS_KEYS), (RADIO_PACKS, RADIO_COMMONS_KEYS)):
     PACKS.update(_packs)
     COMMONS_KEYS = COMMONS_KEYS | frozenset(_commons)
+# Privacy, security and digital safety (packs/privacy_packs.py: Commons security keys, code tokens, fingerprint
+# scanners, webcam covers, routers, cameras, card skimmers, phishing, HTTPS, ransomware, CAPTCHAs, sign-in screens and
+# privacy tools, each with its safety note; packs/synthetic_scams_packs.py: COMPUTER-MADE scam and safe message
+# examples with made-up names, .example addresses and 555-01xx numbers, each marked EXAMPLE, never for picture-making).
+from privacy_packs import PRIVACY_PACKS, PRIVACY_COMMONS_KEYS
+from synthetic_scams_packs import SYNTHETIC_SCAMS_PACKS, SYNTHETIC_SCAMS_COMMONS_KEYS
+for _packs, _commons in ((PRIVACY_PACKS, PRIVACY_COMMONS_KEYS), (SYNTHETIC_SCAMS_PACKS, SYNTHETIC_SCAMS_COMMONS_KEYS)):
+    PACKS.update(_packs)
+    COMMONS_KEYS = COMMONS_KEYS | frozenset(_commons)
+# Blind and low-vision living (packs/vision_packs.py): Commons braille writers (Perkins and the others) with their care
+# note, braille charts, tactile writing systems, tactile graphics and models, reading machines, eye charts, sighted
+# guiding, orientation and mobility and deafblind life, and NMAH's things made for blind people (CC0).
+from vision_packs import VISION_PACKS, VISION_COMMONS_KEYS
+PACKS.update(VISION_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(VISION_COMMONS_KEYS)
+# Power and electrical (packs/power_packs.py, the owner's request of 2026-11-22): engine generators and their carbon
+# monoxide labels, dynamos, solar cells and mounts, MC4 connectors, charge controllers and batteries, wind turbines,
+# wind pumps, water wheels and water turbines, and Open Images solar, wind, fuel, battery, electrical and power line
+# things; every answer ends with its generator, back-feeding, fuel, solar, battery, turbine or wiring note.
+from power_packs import POWER_PACKS, POWER_COMMONS_KEYS
+PACKS.update(POWER_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(POWER_COMMONS_KEYS)
 # Money and work, travel, and citizenship and civics (the owner's request of 2026-11-22), one pack file each:
 # computer-made SPECIMEN pay stubs and W-2s (packs/money_work_packs.py), SPECIMEN passports and boarding passes with the
 # Commons travel signs (packs/travel_packs.py), and SPECIMEN sample ballots and jury summonses (packs/civics_packs.py);

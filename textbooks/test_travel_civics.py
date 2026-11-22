@@ -67,8 +67,7 @@ def test_page_patterns():
     assert gov.match("https://www.usa.gov/how-to-vote") and not gov.match("https://www.usa.gov/travel")
     ben = re.compile(C.COLLECTION.guides["bens_guide"]["pages"])
     assert ben.match("https://bensguide.gpo.gov/a-how-made") and not ben.match("https://bensguide.gpo.gov/games")
-    jury = re.compile(C.COLLECTION.guides["uscourts_jury_service"]["pages"])
-    assert jury.match("https://www.uscourts.gov/court-programs/jury-service/juror-pay")
+    assert "uscourts_jury_service" not in C.COLLECTION.guides          # already dir:uscourts_self_help
 
 
 def test_uscis_pdfs_from_wayback_copies():

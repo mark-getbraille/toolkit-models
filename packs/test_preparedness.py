@@ -209,5 +209,5 @@ def test_wiring():
     no_making = set(s.NOT_FOR_PICTURE_MAKING)
     assert {"commons_disaster_types", "commons_warnings_shelters", "open_images_disasters"} <= no_making
     assert "commons_emergency_signs_maps" not in no_making
-    assert {"home", "nature", "documents"} == set(k.PREPAREDNESS_TOPICS)
+    assert {"home", "nature", "documents", "power"} == set(k.PREPAREDNESS_TOPICS)
     assert "Pictures of injured or dead people" in k.PREPAREDNESS_NOT_INCLUDED
