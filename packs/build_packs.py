@@ -1673,6 +1673,12 @@ PACKS.update(GAP_COLLECTION_PACKS)
 # safety notes on home distilling.
 from drinks_packs import DRINKS_PACKS
 PACKS.update(DRINKS_PACKS)
+# Reading pictures (November 2026; the kit's picture_reading_sources.py lists what was left out): handwriting
+# (packs/handwriting_packs.py: Bentham Papers pages with their transcriptions, Commons handwriting and signatures).
+# Answers give a transcription only where the dataset gives one. Never for picture-making (no learning to write
+# someone's signature).
+from handwriting_packs import HANDWRITING_PACKS
+PACKS.update(HANDWRITING_PACKS)
 
 
 # The packs whose builder reads the Wikimedia Commons API (commons_get, commons_members, commons_entries,
@@ -1736,6 +1742,8 @@ COMMONS_KEYS = frozenset({
     # drinks (drinks_packs.py; the Open Images and Europeana drinks packs do not read Commons)
     "commons_alcoholic_drinks", "commons_bar_glassware", "commons_brewing_winemaking", "commons_distilling",
     "commons_soft_drinks",
+    # reading pictures (handwriting_packs.py; bentham_pages reads Zenodo, not Commons)
+    "commons_handwriting",
 })
 
 

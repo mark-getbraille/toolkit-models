@@ -152,7 +152,7 @@ TOPICS = [
           ("textvqa", "textocr", "coco_text", "cord", "doclaynet", "plotqa", "loc_letters", "owid_charts",
            "pubtabnet_tables", "us_federal_forms", "open_images_cards_documents", "loc_maps", "safety_signs", "commons_hazard_symbols", "us_road_signs",
            "ca_road_signs",
-           "deepscores_sheet_music", "field_manual_figures",
+           "deepscores_sheet_music", "field_manual_figures", "bentham_pages", "commons_handwriting",
            # share-alike
            "hiertext", "mapqa",
            # non-commercial and research-only (personal use)
