@@ -20,5 +20,5 @@
 # 21 November (6): tomato, avocado and banana ripeness, fruit quality, hazmat placards, domestic animal breeds (fixed), disasters (FEMA categories).
 # 21 November (7): with the fruit and hazmat packs (one waiting run replaces another), the top-50 picture gaps from the category inventory.
 # 21 November (8): and the drinks packs (alcohol, bar and glassware, brewing and winemaking, distilling, soft drinks).
-# 22 November: handwriting, charts and figures, date codes, sign language, weather maps and hurricane cones.
-bentham_pages,commons_handwriting,openstax_figures,commons_charts,commons_date_codes,commons_sign_language,wpc_surface_maps,nhc_forecast_cones
+# 22 November: inside buildings, appliance controls, medicine labels, care labels, bills, household hazards, home tests, baby products.
+commons_indoor_wayfinding,open_images_indoor,commons_appliance_controls,open_images_appliance_controls,commons_medication_labels,synthetic_bills,laundry_care_labels,commons_household_hazards,open_images_household_hazards,lfa_covid_tests,commons_home_health_tests,commons_baby_products,open_images_baby_products,abo_baby_products
