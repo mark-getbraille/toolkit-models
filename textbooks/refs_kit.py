@@ -235,6 +235,8 @@ class Collection:
                 book.pages = book.pages[:limit]
         if book is None:
             return None
+        if not book.name.startswith(self.prefix + "_"):      # one name space per module: "mlp_health_topics"
+            book.name = f"{self.prefix}_{book.name}"
         book.version = entry.get("version", "")
         if name in self.guides:              # a web guide: the edition is the day its pages were read
             book.version = (book.version + ", " if book.version else "") + \
