@@ -64,6 +64,8 @@ jobs:
               python -m pip install "matplotlib==3.11.2" ;;
             chem_structures)
               python -m pip install "rdkit==2026.9.2" ;;
+            denpar_dental_xrays)
+              python -m pip install "openpyxl==3.1.5" ;;
             us_federal_forms|field_manual_figures)
               python -m pip install "pypdfium2==5.15.2" ;;
             seoul_sidewalks|urine_samples)
