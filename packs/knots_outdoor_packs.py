@@ -12,11 +12,14 @@ that knot), and the use given is the knot's standard use as the public-domain kn
 and the cutting tools, end with ROPE_NOTE or TOOL_NOTE (the same words as the kit's practical_sources.py).
 
 The packs (KNOTS_OUTDOOR_PACKS):
-  commons_knots            Wikimedia Commons (CC0, public domain or CC BY files only): about thirty-five knots by
+  commons_knots            Wikimedia Commons (CC0, public domain or CC BY files only): about forty-five knots by
                            name (loops, hitches, bends, stoppers, binding knots, splices and whippings), each in its
-                           own Commons category.
+                           own Commons category, and (since 2026-11-22) lashings (only files whose words name one),
+                           the diamond hitch, seizings, the long splice, the sailmaker's whipping and wall and crown
+                           knots.
   commons_outdoor_skills   Commons: baseplate, lensatic and magnetic compasses; felling axes and hatchets; crosscut
-                           and bow saws; whetstones and knife sharpeners; bivouac shelters.
+                           and bow saws; whetstones and knife sharpeners; bivouac shelters; and (since 2026-11-22)
+                           marlinespikes, fids, ropewalks and rope making (only files whose words name rope).
   open_images_knots_outdoor Open Images V7 (labels CC BY 4.0; photos CC BY, CC0 or the Public Domain Mark): wire
                            rope, carabiners, tarpaulins, saws (bow saw, crosscut saw, two-man saw,
                            hatchet) and sharpening (sharpening stone, knife sharpener). No label is asked twice
@@ -30,6 +33,7 @@ kits, water). Hangman's nooses and other knots in BDSM or punishment categories 
     python packs/knots_outdoor_packs.py commons_knots --limit 8
 """
 
+import re
 import sys
 
 import build_packs  # noqa: F401 - loaded first: the other pack files and build_packs import each other
@@ -105,6 +109,22 @@ KNOTS = [
     knot("Short splices", "a short splice, which joins two ropes by weaving their strands together"),
     knot("Back splices", "a back splice, which stops a rope's end from unravelling"),
     knot("Common whippings", "a common whipping, thin cord bound round a rope's end so it does not fray"),
+    # lashings, seizings and more splices (added 2026-11-22 with the military and bushcraft books; the Commons has
+    # no separate categories for the square, diagonal, shear or tripod lashings, so their files are in Lashing knots)
+    # Lashing knots also holds baskets, museum pieces and book pages, so only files whose own words name a lashing
+    # are taken (Kreuzbund, Bund and amarra are the German and Spanish words). Spanish windlasses is not used: it
+    # also holds surgical tourniquets.
+    knot("Lashing knots", "a lashing, rope or cord wound tightly round poles or other things to bind them together, "
+                          "as in the square, diagonal, shear and tripod lashings used for camp structures")
+    + (re.compile(r"lash|bund\b|kreuzbund|amarra|brelage|sjorring|surliure", re.I),),
+    knot("Diamond hitches", "a diamond hitch, the hitch packers use to tie a load onto a pack saddle"),
+    knot("Seizings", "a seizing, turns of thin line that bind two ropes, or two parts of one rope, together",
+         deeper=True),
+    knot("Long splices", "a long splice, which joins two ropes without making them much thicker, so the rope still "
+                         "runs through a block"),
+    knot("Sailmaker's whippings", "a sailmaker's whipping, a lasting whipping stitched through a rope's end"),
+    knot("Wall and crown knots", "a wall knot or a crown knot, the knots worked with a rope's own strands that "
+                                 "start many stopper knots and the back splice"),
 ]
 
 
@@ -131,6 +151,15 @@ OUTDOOR_SKILLS = [
     thing("Whetstones", "a whetstone (sharpening stone) for sharpening blades", TOOL_NOTE),
     thing("Knife sharpeners", "a knife sharpener", TOOL_NOTE),
     thing("Bivouac shelters", "a bivouac shelter, a small simple shelter for a night outdoors"),
+    # rope tools and rope making (added 2026-11-22)
+    thing("Marline spikes", "a marlinespike, a pointed tool for opening the strands of a rope when splicing and for "
+                            "loosening knots"),
+    thing("Fids", "a fid, a tapered tool for opening a rope's strands or passing braided rope through itself when "
+                  "splicing"),
+    thing("Ropewalks", "a ropewalk, a long building or path where rope was made by twisting strands along its "
+                       "length"),
+    thing("Ropemaking", "rope making: fibres or yarns being twisted into rope", pattern=re.compile(
+        r"rope|seil|corde|touw|cordage|reep|twist|yarn", re.I)),
 ]
 
 
@@ -163,14 +192,16 @@ OI_LICENCE = ("Google Open Images V7 (https://storage.googleapis.com/openimages/
               "each photo under its own licence (CC BY, CC0 or the Public Domain Mark, checked photo by photo), "
               "photographer credited below.")
 KNOTS_OUTDOOR_PACKS = {
-    "commons_knots": (build_commons_knots, COMMONS_LICENCE.format(what="knot (by name), splice and whipping")),
+    "commons_knots": (build_commons_knots, COMMONS_LICENCE.format(what="knot (by name), lashing, seizing, splice and "
+                                                                        "whipping")),
     "commons_outdoor_skills": (build_commons_outdoor_skills, COMMONS_LICENCE.format(
-        what="compass, axe, hatchet, crosscut and bow saw, whetstone, knife sharpener and bivouac shelter")),
+        what="compass, axe, hatchet, crosscut and bow saw, whetstone, knife sharpener, bivouac shelter, marlinespike, "
+             "fid, ropewalk and rope making")),
     "open_images_knots_outdoor": (build_open_images_knots_outdoor, OI_LICENCE),
 }
 KNOTS_OUTDOOR_LIMITS = {
-    "commons_knots": 1500,               # 36 knots, most with 10 to 120 files
-    "commons_outdoor_skills": 700,       # 10 categories
+    "commons_knots": 1500,               # 43 knots and lashings, most with 10 to 120 files
+    "commons_outdoor_skills": 700,       # 14 categories
     "open_images_knots_outdoor": 800,    # 9 labels
 }
 KNOTS_OUTDOOR_COMMONS_KEYS = ("commons_knots", "commons_outdoor_skills")

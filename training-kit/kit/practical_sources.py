@@ -158,10 +158,11 @@ PRACTICAL_SOURCES = [
                                     "Images, ready-made pack)", 800, 10, "about 160 MB"),
     # knots and outdoor skills
     pack("commons_knots", "Knots by name: bowline, clove hitch, square knot, sheet bend, figure eight, taut-line and "
-                          "trucker's hitches, Prusik, splices, whippings and about twenty-five more, with their uses "
-                          "(Wikimedia Commons, ready-made pack)", 1500, 15, "about 250 MB"),
+                          "trucker's hitches, Prusik, splices, whippings, lashings, seizings and about thirty more, "
+                          "with their uses (Wikimedia Commons, ready-made pack)", 1500, 15, "about 250 MB"),
     pack("commons_outdoor_skills", "Outdoor tools: compasses, felling axes and hatchets, crosscut and bow saws, "
-                                   "whetstones, knife sharpeners and bivouac shelters, with sharp-tool notes "
+                                   "whetstones, knife sharpeners, bivouac shelters, marlinespikes, fids and rope "
+                                   "making, with sharp-tool notes "
                                    "(Wikimedia Commons, ready-made pack)", 700, 10, "about 150 MB"),
     oi_pack("open_images_knots_outdoor", "Wire rope, carabiners, tarps, bow and crosscut saws, hatchets and sharpening "
                                          "stones (Open Images, ready-made pack)", 800, 10, "about 160 MB"),

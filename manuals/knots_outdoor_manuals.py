@@ -4,23 +4,30 @@ CATEGORIES.
 
 What it lists, in plain words (an INDEX of facts and links only; each manual belongs to its maker):
   ia        the Internet Archive's manual collections, searched by the words in IA_WORDS (axes and hatchets, folding
-            and bow saws, pocket knives and multi-tools, knife sharpeners, compasses, climbing rope and harnesses);
+            and bow saws, pocket knives and multi-tools, knife sharpeners, compasses, climbing rope and harnesses,
+            and since 2026-11-22 blocks and tackle, marlinespikes, rope splicing and pack saddles);
   makers    the axe, saw, knife, compass and rope makers (Fiskars, Gränsfors Bruk, Estwing, Silky, Bahco, Victorinox,
-            Leatherman, Work Sharp, Suunto, Silva, Brunton, Petzl, Black Diamond): by the owner's rule LINK-ONLY, for
+            Leatherman, Work Sharp, Suunto, Silva, Brunton, Petzl, Black Diamond, and the rope makers Samson, New
+            England Ropes and Sterling): by the owner's rule LINK-ONLY, for
             the person (or the personal assistant) to open in a browser or fetch with Program Downloader;
   guidance  the guides the reference library builds in full (the Forest Service's axe and crosscut saw manuals,
-            the Army's rigging and land navigation manuals) and the knot sites that are copyright, as links.
+            the Army's rigging and land navigation manuals, the Coast Guard's marlinspike seamanship handbook, the
+            Marine Corps mountain leader's rope chapters, the Army's pack manual and the bushcraft index) and the
+            knot sites that are copyright, as links.
 
 The safety notice is said first (NOTICE): sharp tools and rope that holds people.
 """
 
 NOTICE = ("Cut away from your body, keep people at least two tool lengths away, wear eye protection and sturdy boots, "
-          "and keep blades covered. A knot weakens a rope: for climbing, lifting or rescue use rated gear and learn "
-          "from a qualified instructor.")
+          "and keep blades covered. A knot weakens a rope: never load a rope beyond its working load limit, and for "
+          "climbing, lifting or rescue use rated gear and learn from a qualified instructor. Know and follow local "
+          "rules on fires and cutting.")
 
 IA_WORDS = ["hatchet", "felling axe", "splitting axe", "folding saw", "bow saw", "pocket knife", "multi-tool",
             "multitool", "knife sharpener", "sharpening system", "baseplate compass", "lensatic compass",
-            "climbing rope", "climbing harness"]
+            "climbing rope", "climbing harness",
+            # knots and rigging (added 2026-11-22 with the military and bushcraft books)
+            "block and tackle", "marlinspike", "rope splicing", "pack saddle"]
 
 RULE = ("by the owner's rule the maker's own manuals and guides are link-only: nothing is read from its site; its "
         "page is listed for the person to open or fetch with Program Downloader")
@@ -50,6 +57,13 @@ MAKERS = [dict(_COMMON, **m) for m in [
          library="https://www.petzl.com/", site="petzl.com"),
     dict(key="black-diamond", maker="Black Diamond", type="climbing gear (instructions)",
          library="https://www.blackdiamondequipment.com/", site="blackdiamondequipment.com"),
+    # rope makers (splicing guides and working loads), added 2026-11-22
+    dict(key="samson-rope", maker="Samson Rope", type="synthetic rope (splicing guides and rope care)",
+         library="https://www.samsonrope.com/", site="samsonrope.com"),
+    dict(key="new-england-ropes", maker="New England Ropes", type="rope and cordage (splicing instructions)",
+         library="https://www.neropes.com/", site="neropes.com"),
+    dict(key="sterling-rope", maker="Sterling Rope", type="climbing and rescue rope (use and care)",
+         library="https://sterlingrope.com/", site="sterlingrope.com"),
 ]]
 
 GUIDANCE = [
@@ -64,14 +78,29 @@ GUIDANCE = [
          by="the US Army"),
     dict(title="Map Reading and Land Navigation (Army FM 3-25.26; in the reference library: "
                "pdf:army_fm_3_25_26_map_reading)", url="https://archive.org/details/FM3-25x26", by="the US Army"),
+    dict(title="Boat Crew Handbook: Seamanship Fundamentals, marlinspike seamanship (US Coast Guard; in the reference "
+               "library: kmil:uscg_bch_seamanship_fundamentals)",
+         url="https://archive.org/details/boat-crew-handbook-seamanship-fundamentals", by="the US Coast Guard"),
+    dict(title="Mountain Leader's Guide: rope management, knots, anchors and rescue (US Marine Corps MCRP 12-10A.3; "
+               "its technical chapters in the reference library: kmil:usmc_mcrp_12_10a3_mountain_rope_work)",
+         url="https://archive.org/details/mountain-leaders-guide-to-mountain-warfare-operations-mcrp-12-10-a.-3",
+         by="the US Marine Corps"),
+    dict(title="Manual of Pack Transportation: lash ropes and the diamond hitch (US Army, 1917; in the reference "
+               "library: kmil:army_manual_pack_transportation_1917)",
+         url="https://archive.org/details/packtransport00unitrich", by="the US Army"),
+    dict(title="Bushcraft and woodcraft: a guide to the library (bush:index), with New Zealand's Department of "
+               "Conservation outdoor safety pages (bush:nz_doc_outdoor_safety)",
+         url="https://www.doc.govt.nz/parks-and-recreation/know-before-you-go/",
+         by="the Department of Conservation (New Zealand)"),
     dict(title="Animated Knots (copyright; open it in a browser)", url="https://www.animatedknots.com/",
          by="Animated Knots by Grog"),
 ]
 
 CATEGORY = dict(
     name="Outdoor tools: axes, saws, knives, compasses and rope (manuals)",
-    description="Axes and hatchets, folding and bow saws, pocket knives and multi-tools, sharpeners, compasses and "
-                "climbing rope and harnesses: the Internet Archive's manuals, the makers' pages (links) and the "
-                "government's axe, saw, rigging and land navigation guides. Links only.",
+    description="Axes and hatchets, folding and bow saws, pocket knives and multi-tools, sharpeners, compasses, "
+                "climbing rope and harnesses, blocks and tackle, rope splicing and pack saddles: the Internet "
+                "Archive's manuals, the makers' and rope makers' pages (links) and the government's axe, saw, "
+                "rigging, marlinspike, mountain rope and land navigation guides. Links only.",
     kind="manuals", licence="CC0 (facts and links); each manual belongs to its maker",
     ia=IA_WORDS, makers=MAKERS, guidance=GUIDANCE, notice=NOTICE)
