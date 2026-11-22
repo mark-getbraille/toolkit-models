@@ -113,7 +113,8 @@ GUIDES = [
                drop=K.DROP + [r'<p class="breadcrumbs".*?</p>'],
                units=[(r"/playlist/", "Playlists"), (r"/glossary/", "Glossary")], limit=400),
     open_guide("tor_manual", "Tor Browser and Tor: the manual (Tor Project)", "Anonymous browsing (Tor)",
-               "The Tor Project, Inc.", "International", CC_BY, CC_BY_URL, "https://www.torproject.org/about/trademark/",
+               "The Tor Project, Inc.", "International", CC_BY, CC_BY_URL,
+               "https://www.torproject.org/about/trademark/",
                r"Creative Commons Attribution 4\.0 International License", "https://tb-manual.torproject.org/",
                r"^https://tb-manual\.torproject\.org/(?!(ar|de|es|fa|fr|ga|hu|id|it|ja|ka|ko|pl|pt-BR|ro|ru|sv|th|tr|"
                r"uk|zh-CN|zh-TW|static|fonts)/)[a-z0-9-]+(/[a-z0-9-]+)*/?$",
@@ -194,7 +195,7 @@ GUIDES.append(open_guide(
     "gnupg_manual", "Using the GNU Privacy Guard (the GnuPG manual)", "Email and file encryption (GnuPG)",
     "The GnuPG project (g10 Code GmbH, Werner Koch and the Free Software Foundation)", "International", GPL3,
     GPL3_URL, GNUPG, r"under the terms of the GNU General Public License as published by the Free Software "
-                     r"Foundation; either version 3", GNUPG,
+                     r"Foundation; either version 3", GNUPG + "index.html",
     r"^https://www\.gnupg\.org/documentation/manuals/gnupg/[A-Za-z0-9_.-]+\.html$",
     "The GnuPG manual, every page: what GnuPG is, invoking gpg and its commands and options for encrypting, "
     "signing and checking files and email, managing keys and trust, the agent and smart cards, S/MIME (gpgsm), "
@@ -235,18 +236,20 @@ GUIDES.append(page_list_book(
     units=[(r"/govern/", "Govern"), (r"/map/", "Map"), (r"/measure/", "Measure"), (r"/manage/", "Manage"),
            (r".", "About the Playbook")]))
 
-DOJ = "https://www.justice.gov"
-DOJ_PAGES = [DOJ + "/stopelderfraud"] + [DOJ + "/program/stop-elder-fraud/" + p for p in (
-    "about-hotline", "common-scams-and-warning-signs", "faqs", "resources", "providing-help-restoring-hope")]
+# justice.gov/stopelderfraud is served by the Office for Victims of Crime's site (ovc.ojp.gov), where its pages live.
+OVC = "https://ovc.ojp.gov/program/stop-elder-fraud/"
+DOJ_PAGES = [OVC + p for p in ("overview", "about-hotline", "common-scams-and-warning-signs", "faqs", "resources",
+                               "providing-help-restoring-hope")]
 GUIDES.append(page_list_book(
     "doj_stop_elder_fraud", "Stop Elder Fraud and the National Elder Fraud Hotline (US Department of Justice)",
     "Elder fraud", "US Department of Justice, Office for Victims of Crime", DOJ_PAGES,
-    r"^https://www\.justice\.gov/(stopelderfraud|program/stop-elder-fraud/[a-z0-9-]+)$",
+    r"^https://ovc\.ojp\.gov/program/stop-elder-fraud/[a-z0-9-]+$",
     "The Justice Department's Stop Elder Fraud pages: the National Elder Fraud Hotline (1-833-FRAUD-11, "
     "1-833-372-8311: who answers, when, and how they help), common scams against older adults and their warning "
     "signs (government impersonation, tech support, romance, grandparent, lottery and sweepstakes scams), "
     "questions and answers, and where to get help and report.",
-    "From the US Department of Justice (justice.gov): a US government work (public domain)."))
+    "From the US Department of Justice's Office for Victims of Crime (ovc.ojp.gov): a US government work (public "
+    "domain)."))
 
 ED = "https://studentprivacy.ed.gov"
 ED_PAGES = [ED + "/ferpa", ED + "/faq/what-ferpa",
@@ -521,7 +524,8 @@ LICENCE_LINES = {
                            "cheatsheetseries.owasp.org (each page's footer): CC BY-SA 4.0; the GnuPG manual: GNU GPL "
                            "version 3 or later (its title page). Share-alike: a book made from them keeps the "
                            "licence. robots.txt allows all four; no AI rules (checked 2026-11-22).",
-    "privacy_us_gov": "cisa.gov, nvlpubs.nist.gov, airc.nist.gov, ic3.gov, justice.gov and studentprivacy.ed.gov: works "
+    "privacy_us_gov": "cisa.gov, nvlpubs.nist.gov, airc.nist.gov, ic3.gov, ovc.ojp.gov and studentprivacy.ed.gov: "
+                      "works "
                       "of the US government (17 U.S.C. 105, checked on govinfo.gov's policies page at every build). "
                       "csrc.nist.gov's robots.txt shuts out AI companies' readers, so NIST's PDFs are read from "
                       "nvlpubs.nist.gov, which has no such rule. The FTC's booklet is read from the Internet Archive "

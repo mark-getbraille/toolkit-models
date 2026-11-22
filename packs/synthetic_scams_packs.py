@@ -237,7 +237,8 @@ def template(rng, kind):
                         "shop's own address"],
                  steps=["Do not click the link or pay anything.", "Delete the email or mark it as spam."])
     elif kind == "password_email":
-        org = f"{rng.choice(('Greenfield', 'Westbrook', 'Oakridge', 'Pinecrest'))} {rng.choice(('School', 'Library', 'Office', 'Council'))}"
+        org = (f"{rng.choice(('Greenfield', 'Westbrook', 'Oakridge', 'Pinecrest'))} "
+               f"{rng.choice(('School', 'Library', 'Office', 'Council'))}")
         d.update(frame="email", sender=f"IT Helpdesk <support@mail-{rng.randint(100, 999)}.example>",
                  subject="Your mailbox password expires today",
                  words="an email that pretends to be from an IT helpdesk about a password",
@@ -271,7 +272,7 @@ def template(rng, kind):
                  words="an email that pretends to be from your boss, asking for gift cards",
                  lines=[f"Hi {first},", f"I'm in a meeting and need you to buy 5 {store} gift cards of $200 each "
                         "for a client.", "Scratch off the backs and send me photos of the codes. Keep this between "
-                        f"us for now.", f"Thanks, {boss}"],
+                        "us for now.", f"Thanks, {boss}"],
                  verdict="scam",
                  signs=["it asks for gift cards and photos of their codes", "it asks you to keep it secret",
                         "it comes from a free email address, not a work address", "the sender says they cannot "
@@ -348,7 +349,8 @@ def template(rng, kind):
         d.update(frame="text", sender=phone(rng, "+1 469")[3:],
                  words="a text message offering a work-from-home job",
                  lines=["Hi, we saw your resume! Remote job: $900/week for 1 hour a day, reshipping packages.",
-                        f"Pay {money(rng, 49, 99)} for your starter kit to begin: https://jobs-{rng.randint(10, 99)}.example"],
+                        f"Pay {money(rng, 49, 99)} for your starter kit to begin: "
+                        f"https://jobs-{rng.randint(10, 99)}.example"],
                  verdict="scam",
                  signs=["a job offer you did not apply for", "high pay for little work", "you must pay to start",
                         "reshipping packages can make you part of a crime"],
