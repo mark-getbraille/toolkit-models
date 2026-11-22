@@ -362,9 +362,10 @@ NOT_INCLUDED = [
      "Masterbuilt, Pit Boss, Jetboil, MSR, Primus, Solo Stove, BioLite, Sun Oven, GoSun)", "The makers' copyright; "
      "listed as links in the manual collection outdoor_cooking for the owner to fetch himself. Index: "
      "https://www.weber.com/US/en/customer-service/ and https://www.coleman.com/"),
-    ("Air Force SERE handbook (AFH 10-644) and the old Army survival manual (FM 21-76)", "The Army's current survival "
-     "manual ATP 3-50.21 is already in the library (fieldmanuals); AFH 10-644 mixes survival with evasion and "
-     "resistance (tactics, left out by the field manual rule). Index: https://archive.org/search?query=AFH+10-644"),
+    ("Air Force SERE handbook (AFH 10-644) and the old Army survival manual (FM 21-76)", "Already in the library, not "
+     "repeated: AFH 10-644 is built whole in military_whole.py (milw:usaf_afh_10_644_sere_2017, the owner's rule of "
+     "22 November 2026), FM 21-76 in the field manuals (pdf:army_fm_21_76_survival_1992), and ATP 3-50.21 too. "
+     "Index: https://archive.org/search?query=AFH+10-644"),
     ("Wikibooks Cookbook (CC BY-SA)", "Already in the Kiwix library (wikibooks_en_all); not built again. Index: "
      "https://en.wikibooks.org/wiki/Cookbook:Table_of_Contents"),
     ("Pre-1900 camp and outdoor cookery books", "Not wanted for this collection (the owner prefers modern equipment "

@@ -67,7 +67,10 @@ def test_pdf_entries():
         assert e.get("pdf", "").startswith("https://") or e.get("archive"), e["name"]
         assert e.get("licence_page") or e.get("distribution_a"), e["name"]
         assert e["group"] in sources.GROUPS and e["description"] and e["subject"]
-        assert not re.search(r"gunner|combat|weapon|rifle|pistol|sniper|ranger", e["title"], re.I), e["title"]
+        # manuals are read whole (the owner's rule of 22 November 2026): a military title may name weapons or
+        # combat, but then the builder must cut its explosives parts (distribution_a) or judge it (military)
+        if re.search(r"gunner|combat|weapon|rifle|pistol|sniper|ranger", e["title"], re.I):
+            assert e.get("distribution_a") or e.get("military"), e["title"]
     for e in R.NAVY_RATE_MANUALS + R.ARMY_MANUALS:
         assert e["distribution_a"] is True
     assert all(e["pdf"].startswith("https://www.faa.gov/") for e in R.FAA_HANDBOOKS)

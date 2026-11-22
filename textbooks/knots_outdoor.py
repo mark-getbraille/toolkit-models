@@ -237,8 +237,8 @@ NOT_INCLUDED = [
      "TC+3-25.26"),
     ("Navy Boatswain's Mate and Seaman rate training manuals after 1944 (marlinspike seamanship)", "The Internet "
      "Archive's Seaman (1981) and Boatswain's Mate 3 & 2 (1959) are lending-library scans that cannot be downloaded "
-     "(searched 2026-11-22), and the 1944 Boatswain's Mate 2c cannot have its gunnery chapter cut out "
-     "(knots_military.py says why); the Coast Guard's Boat Crew Handbook is built (kmil:). Index: https://archive.org/search?query=boatswain%27s+mate"),
+     "(searched 2026-11-22); the 1944 Boatswain's Mate 2c is built whole, gunnery chapter included as history, and so "
+     "is the Coast Guard's Boat Crew Handbook (both kmil:). Index: https://archive.org/search?query=boatswain%27s+mate"),
     ("Finding and treating water, shelters and survival kits", "The preparedness and disaster collections and the "
      "field manuals cover them; not repeated. Index: https://www.ready.gov/water"),
 ]

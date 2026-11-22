@@ -20,5 +20,5 @@
 # 21 November (6): tomato, avocado and banana ripeness, fruit quality, hazmat placards, domestic animal breeds (fixed), disasters (FEMA categories).
 # 21 November (7): with the fruit and hazmat packs (one waiting run replaces another), the top-50 picture gaps from the category inventory.
 # 21 November (8): and the drinks packs (alcohol, bar and glassware, brewing and winemaking, distilling, soft drinks).
-# 22 November (14): again after the big run: home repair (Commons refused it; it now keeps what it finds), and the knot and outdoor skills packs with their new lashing, splice and rope-making categories.
-commons_home_repair,commons_knots,commons_outdoor_skills
+# 22 November (17): home repair again, knots and outdoor skills, NASA and Park Service photo libraries, small boats, and specimen government forms (with the waiting run).
+commons_home_repair,commons_knots,commons_outdoor_skills,nasa_space_astronauts,nasa_aircraft,nasa_earth_from_space,nasa_planets_telescopes,nasa_rockets_launch,nasa_people_at_work,npgallery_accessibility,npgallery_facilities,npgallery_historic_buildings,npgallery_wildlife_more,npgallery_landscapes_more,commons_small_boats,synthetic_gov_forms
