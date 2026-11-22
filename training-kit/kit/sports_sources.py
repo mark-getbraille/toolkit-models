@@ -99,9 +99,11 @@ SPORTS_SOURCES = [
                                     "Commons, ready-made pack)",
            COMMONS_OPEN, COMMONS_CREDIT, "permissive", 1300, 15, prepare_pack, "about 290 MB"),
     Source("commons_sports_action", "Athletes in action, adults only: high jump, long jump, javelin, shot put, "
-                                    "discus, hammer, hurdling, and football, volleyball, field hockey, rugby, "
-                                    "baseball and tennis matches (Wikimedia Commons, ready-made pack)",
-           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 900, 10, prepare_pack, "about 110 MB"),
+                                    "discus, hammer, hurdling, football, volleyball, field hockey, rugby, "
+                                    "baseball and tennis matches, and para sports: para ice hockey, powerchair and "
+                                    "amputee football, para table tennis "
+                                    "(Wikimedia Commons, ready-made pack)",
+           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 1100, 10, prepare_pack, "about 110 MB"),
     Source("open_images_sports", "Sports being played, combat sports, races, winter and athletics events, para sports, "
                                  "balls, bats and sticks, protective gear, sports shoes and skates, sports places, "
                                  "racing vehicles and officials, adults only (Open Images, ready-made pack)",
@@ -148,9 +150,10 @@ SPORTS_NOT_INCLUDED = {
                                             "the repository never stores; left out of the packs.",
     "USABA, IBSA, NBBA and the IPC photos": "Copyright of each organisation (and usaba.org's robots.txt shuts out "
                                             "AI companies' readers); not used.",
-    "Para sports categories on Commons (wheelchair fencing, para athletics, para swimming, para ice hockey, "
-    "wheelchair curling and others)": "Their category names could not be confirmed on 2026-11-22 (Commons kept "
-        "answering 429); not asked. The para sports are in open_images_sports and the existing adaptive packs.",
+    "Para sports categories on Commons with no files under the names tried": "Para athletics, Para swimming, Para "
+        "badminton and Para alpine skiing (2026-11-22); Wheelchair curling and Wheelchair fencing are named by "
+        "disability_packs (its Open Images labels), so not asked here; the para sports that have categories are in "
+        "commons_sports_action.",
     "Cheerleading and youth leagues": "Mostly children: left out (the owner's rule: no minors-focused files).",
 }
 

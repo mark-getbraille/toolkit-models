@@ -29,8 +29,9 @@ The packs (SPORTS_PACKS):
                              running and athletics tracks, velodromes, bowling alleys, ski jumping hills, golf courses,
                              driving ranges, diving platforms, cricket pitches and grandstands.
   commons_sports_action      Commons: athletics events in action (high jump, long jump, javelin, shot put, discus,
-                             hammer, hurdling) and football, volleyball, field hockey, rugby, baseball and tennis
-                             matches (SPORTS_ACTION). Adults only: files whose own
+                             hammer, hurdling), football, volleyball, field hockey, rugby, baseball and tennis
+                             matches, and para sports (para ice hockey, powerchair and amputee football, para table
+                             tennis) (SPORTS_ACTION). Adults only: files whose own
                              words name a child, youth, junior, school or an age group are left out. People-heavy:
                              describing only, never for picture-making.
   open_images_sports         Open Images V7 (labels CC BY 4.0; each photo CC BY, CC0 or the Public Domain Mark):
@@ -202,6 +203,11 @@ SPORTS_ACTION = [
     action("Rugby union matches", "a rugby union match", deeper=True),
     action("Baseball games", "a baseball game"),
     action("Tennis matches", "a tennis match"),
+    # para sports not in fitness_nutrition_packs or disability_packs (Commons, checked 2026-11-22)
+    action("Para ice hockey", "para ice hockey (sledge hockey): players sit on sledges and use two short sticks"),
+    action("Powerchair football", "powerchair football, football played in power wheelchairs with a large ball"),
+    action("Amputee football", "amputee football: outfield players use crutches, goalkeepers have one arm"),
+    action("Para table tennis", "para table tennis, table tennis for disabled players"),
 ]
 
 def build_commons_sports_equipment(limit):
@@ -324,14 +330,14 @@ SPORTS_PACKS = {
     "commons_sports_venues": (build_commons_sports_venues, COMMONS_LICENCE.format(
         what="sports court, rink, field, track, velodrome, golf course and grandstand")),
     "commons_sports_action": (build_commons_sports_action, COMMONS_LICENCE.format(
-        what="athletics events and team sports matches in action (adults only)")),
+        what="athletics events, team sports matches and para sports in action (adults only)")),
     "open_images_sports": (build_open_images_sports, OI_LICENCE),
 }
 SPORTS_LIMITS = {
     "commons_sports_equipment": 900,       # 20 categories
     "commons_sports_gear": 1500,           # 28 categories
     "commons_sports_venues": 1300,         # 23 categories
-    "commons_sports_action": 900,          # 13 categories, deeper
+    "commons_sports_action": 1100,         # 17 categories, deeper
     "open_images_sports": 3000,            # 97 labels; Soccer has most photos
 }
 # The packs that read Wikimedia Commons (build_packs.COMMONS_KEYS).

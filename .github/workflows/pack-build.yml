@@ -574,7 +574,7 @@ jobs:
             commons_sports_equipment) limit=900 ;;
             commons_sports_gear) limit=1500 ;;
             commons_sports_venues) limit=1300 ;;
-            commons_sports_action) limit=900 ;;
+            commons_sports_action) limit=1100 ;;
             open_images_sports) limit=3000 ;;
             commons_3d_printing) limit=1200 ;;
             commons_cutting_lasers) limit=900 ;;
