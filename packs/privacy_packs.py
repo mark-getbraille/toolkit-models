@@ -115,8 +115,8 @@ SECURITY_THINGS = [
     thing("Security cameras", "a security camera (CCTV camera), which records video of a place"),
     thing("Security camera warning signs", "a sign warning that security cameras (CCTV) record in this area", "",
           True),
-    thing("Google Nest", "a Google Nest smart home device (Google Nest makes smart speakers, displays, thermostats "
-                         "and cameras)", CAMERA_NOTE, True),
+    thing("Google Nest", "a Google Nest smart home device (Google Nest makes smart speakers, displays, thermostats, "
+                         "cameras and smoke alarms)", CAMERA_NOTE, True),
     thing("Ring (company)", "a Ring device (Ring makes video doorbells and home security cameras)", CAMERA_NOTE,
           True),
     thing("Access control systems", "an access control system: a keypad, card reader or electronic lock that "
