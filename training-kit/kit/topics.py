@@ -99,7 +99,7 @@ TOPICS = [
            "open_images_food", "open_images_food_more", "grocery_store", "fish_eyes", "commons_food",
            "meatscan", "eggs", "beef", "abo_packaged_goods", "abo_pet_supplies", "open_images_packaged_goods", "commons_packaging",
            "locbeef", "fish_freshness", "horse_mackerel", "fish_eyes_stages", "chicken_breast", "food_packaging",
-           "packeat", "cerrado_fruits",
+           "packeat", "cerrado_fruits", "commons_date_codes",
            # share-alike
            "openfoodfacts", "openfoodfacts_labels", "commons_food_sa", "openfacts_us", "openfacts_ca",
            # research-only (personal use)

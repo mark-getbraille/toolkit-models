@@ -164,3 +164,35 @@ def test_charts_wired():
     assert listed["tqa_diagrams"].group == "noncommercial"
     import topics
     assert {"openstax_figures", "commons_charts", "tqa_diagrams"} <= set(topics.find("documents").keys)
+
+
+# ----------------------------------------------------------------- date codes
+
+def test_dates_only_where_the_file_says():
+    import date_code_packs as dc
+    rows = dc.date_rows("File:Milk.jpg", "Milk carton with best before 03/2021 printed on the top.")
+    assert rows == [(dc.ASK_MARK, "It shows a best-before date."),
+                    ("What is the best-before date on this package?", "The best-before date shown is 03/2021.")]
+    assert dc.date_rows("File:Can.jpg", "Use by 2 JAN 2015")[1][1] == "The use-by date shown is 2 JAN 2015."
+    assert dc.date_rows("File:Box.jpg", "Medicine box, EXP 05/2023")[1][1] == "The expiry date shown is 05/2023."
+    assert dc.date_rows("File:Pills.jpg", "Lot number: A12B34, on a medicine box")[1][1] == \
+        "The lot number shown is A12B34."
+    # the mark named, but no date in the file's own words: only what kind of mark it is
+    assert dc.date_rows("File:Best before date on yoghurt.jpg", "") == [(dc.ASK_MARK, "It shows a best-before date.")]
+    # a date in the title only is not read (titles carry upload dates and catalogue numbers)
+    assert len(dc.date_rows("File:Best before 2019-01-01.jpg", "")) == 1
+    # not a date mark, or not packaging
+    assert dc.date_rows("File:Kids.jpg", "A lot of children use by the river.") == []
+    assert dc.date_rows("File:Passport.jpg", "Passport expiry date 2020") == []
+    assert dc.date_rows("File:Card.jpg", "A credit card with its expiration date: 05/24") == []
+    assert dc.date_rows("File:Lot.jpg", "A parking lot in Ohio") == []
+
+
+def test_dates_wired():
+    import date_code_packs as dc
+    check_wired(dc.DATE_CODE_PACKS, dc.DATE_CODE_LIMITS, dc.DATE_CODE_COMMONS_KEYS,
+                no_picture_making=dc.DATE_CODE_PACKS)
+    import picture_reading_sources as k
+    assert "ExpDate (Seker and Ahn, 2022, CC BY 4.0)" in k.DATE_NOT_INCLUDED
+    import topics
+    assert "commons_date_codes" in topics.find("food").keys

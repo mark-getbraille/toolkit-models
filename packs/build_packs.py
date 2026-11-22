@@ -1683,6 +1683,10 @@ PACKS.update(HANDWRITING_PACKS)
 # CC BY 4.0 versions on GitHub) and Commons charts with their descriptions.
 from chart_packs import CHART_PACKS
 PACKS.update(CHART_PACKS)
+# Date codes on packaging (packs/date_code_packs.py): best-before, use-by and expiry dates, lot and batch numbers,
+# the date said only where the file's own words give it. Never for picture-making (no learning to print dates).
+from date_code_packs import DATE_CODE_PACKS
+PACKS.update(DATE_CODE_PACKS)
 
 
 # The packs whose builder reads the Wikimedia Commons API (commons_get, commons_members, commons_entries,
@@ -1750,6 +1754,8 @@ COMMONS_KEYS = frozenset({
     "commons_handwriting",
     # (chart_packs.py; openstax_figures reads GitHub, not Commons)
     "commons_charts",
+    # (date_code_packs.py)
+    "commons_date_codes",
 })
 
 
