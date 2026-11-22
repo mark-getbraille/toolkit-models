@@ -1759,6 +1759,12 @@ COMMONS_KEYS = COMMONS_KEYS | frozenset(APPLIANCE_CONTROLS_COMMONS_KEYS)
 from synthetic_bills_packs import SYNTHETIC_BILLS_PACKS, SYNTHETIC_BILLS_COMMONS_KEYS
 PACKS.update(SYNTHETIC_BILLS_PACKS)
 COMMONS_KEYS = COMMONS_KEYS | frozenset(SYNTHETIC_BILLS_COMMONS_KEYS)
+# Medicine names and strengths on packages (packs/medication_label_packs.py): Commons photos of medicine packages whose
+# OWN title or description names the medicine and its strength, found with Commons search, with the check-with-your-
+# pharmacist note; files the medicine packs already show are left out. Never for picture-making.
+from medication_label_packs import MEDICATION_PACKS, MEDICATION_COMMONS_KEYS
+PACKS.update(MEDICATION_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(MEDICATION_COMMONS_KEYS)
 
 
 def pack_lanes(keys):

@@ -27,6 +27,7 @@ import build_packs  # noqa: E402,F401 - loaded first, as the builders expect
 import gaps_oi_packs as g  # noqa: E402
 import indoor_packs as indoor  # noqa: E402
 import appliance_controls_packs as appl  # noqa: E402
+import medication_label_packs as med  # noqa: E402
 import synthetic_bills_packs as bills  # noqa: E402
 
 REPO = os.path.dirname(HERE)
@@ -37,6 +38,7 @@ MODULES = [
      [indoor.INDOOR_OI]),
     (appl, appl.APPLIANCE_CONTROLS_PACKS, appl.APPLIANCE_CONTROLS_LIMITS, appl.APPLIANCE_CONTROLS_COMMONS_KEYS,
      appl.CONTROL_SPECS, [appl.CONTROLS_OI]),
+    (med, med.MEDICATION_PACKS, med.MEDICATION_LIMITS, med.MEDICATION_COMMONS_KEYS, [], []),
     (bills, bills.SYNTHETIC_BILLS_PACKS, bills.SYNTHETIC_BILLS_LIMITS, bills.SYNTHETIC_BILLS_COMMONS_KEYS, [], []),
 ]
 
@@ -133,6 +135,28 @@ def test_synthetic_bills_are_made_up_and_exact():
     assert bills.money(128407) == "$1,284.07" and bills.page_part(1000, 100, 1240, 1754) == "near the top right"
 
 
+# ----------------------------------------------------------------- medication labels
+
+def test_medicine_name_and_strength_only_from_the_words():
+    got = med.name_and_strength
+    assert got("File:Ibuprofen 400 mg tablets.jpg") == ("ibuprofen", "400 mg", "tablets")
+    assert got("File:Lantus 100 units/ml insulin pen.jpg") == ("Lantus (insulin glargine)", "100 units/ml",
+                                                               "insulin pen")
+    assert got("File:Ventolin inhaler 100mcg per dose.JPG") == ("Ventolin (salbutamol)", "100 mcg/dose", "inhaler")
+    assert got("File:Timolol 0,5% eye drops.jpg") == ("timolol", "0.5%", "eye drops")
+    assert got("File:Aspirin bottle.jpg") is None                         # no strength: no answer
+    assert got("File:Paracetamol 500mg and ibuprofen 200mg.jpg") is None  # two medicines
+    assert got("File:Amoxicillin 500 mg 250 mg.jpg") is None             # two strengths
+    assert got("File:Lithium battery 2000 mAh.jpg") is None
+    rows = med.medicine_rows("File:Metformin 850mg.jpg", "", "c")
+    assert rows[0]["answer"] == ("This looks like metformin 850 mg, going by the photo's own title. "
+                                 + med.PHARMACIST_NOTE)
+    assert "pharmacist" in med.PHARMACIST_NOTE
+    rows = med.medicine_rows("File:IMG_2041.jpg", "A box of Sertraline 50 mg tablets on a table.", "c")
+    assert "going by the photo's own description" in rows[0]["answer"] and "sertraline 50 mg" in rows[0]["answer"]
+    assert med.medicine_rows("File:Pills.jpg", "Some pills.", "c") == []
+
+
 # ----------------------------------------------------------------- shared checks
 
 def asked_elsewhere():
@@ -222,4 +246,5 @@ def test_wiring():
     assert set(indoor.INDOOR_PACKS) <= no_making
     assert "commons_appliance_controls" not in no_making and "open_images_appliance_controls" in no_making
     assert listed["appliance_commons_sa"].group == "share-alike"
+    assert "commons_medication_labels" in no_making and "commons_medication_labels" in topics.find("medicines").keys
     assert "synthetic_bills" in no_making and "synthetic_bills" in topics.find("documents").keys

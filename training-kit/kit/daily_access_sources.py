@@ -3,6 +3,7 @@ everyday-access packs made with it (see DAILY_ACCESS_SOURCES). This file lists:
   - the ready-made packs built in packs/ (group "permissive"; the kit downloads them with prepare_pack):
       indoor_packs.py              commons_indoor_wayfinding, open_images_indoor
       appliance_controls_packs.py  commons_appliance_controls, open_images_appliance_controls
+      medication_label_packs.py    commons_medication_labels
       synthetic_bills_packs.py     synthetic_bills (computer-made, made-up details)
   - the share-alike Commons files of the same Commons categories (group "share-alike": only with the share-alike
     choice, --with-wikipedia; an add-on trained with them is CC BY-SA);
@@ -120,6 +121,12 @@ DAILY_ACCESS_SOURCES = [
            "CC0 (drawn by packs/synthetic_bills_packs.py from a fixed seed; no real person's documents)",
            "Computer-made by the kit's makers (packs/synthetic_bills_packs.py)", "permissive", 4000, 40, prepare_pack,
            "about 600 MB"),
+    # ---- ready-made pack (packs/medication_label_packs.py)
+    Source("commons_medication_labels", "Medicine packages, bottles, inhalers, pens and eye drops whose own record "
+                                        "names the medicine and its strength, with the check-with-your-pharmacist note "
+                                        "(Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain, CC BY or an open government licence (credited in CREDITS.txt); captions CC0",
+           COMMONS_CREDIT, "permissive", 300, 5, prepare_pack, "about 70 MB"),
     # ---- share-alike
     Source("appliance_commons_sa", "Wikimedia Commons: rotary switches, air-conditioner remotes, smart thermostats and "
                                    "cooktops, files under CC BY-SA or GFDL (share-alike)",
@@ -163,6 +170,17 @@ DAILY_ACCESS_SIGN_UP = {
 }
 
 DAILY_ACCESS_NOT_INCLUDED = {
+    "FDA and DailyMed package and label pictures (as open packs)":
+        "the package and label art is the drug makers' (NLM: content 'licensed from private individuals, companies, "
+        "or organizations that may be protected'), so they stay the kit's research entries dailymed_human_labels and "
+        "dailymed_vet_labels (med_vet_sources.py), which already take each label's package, carton, bottle or "
+        "container picture. Not an open pack.",
+    "Mobile-Captured Drug Packs (Mendeley Data bsmy5jjysy, CC BY 4.0)":
+        "2,000 phone photos of 166 drug packs, but no names or strengths are given with them (the files are numbered "
+        "photos only), so no answer could come from label data.",
+    "Italian OTC medicines (mennox on Hugging Face, tagged Apache-2.0)":
+        "718 packaging pictures with names, but the page does not say where the pictures come from (they look like "
+        "shop catalogue images, whose rights the uploader may not hold). Not used.",
     "Appliance Knobs (Codatta / Humanbased-AI on Hugging Face)":
         "408 front and side photo pairs of appliance knobs, but under the OpenRAIL licence (use restrictions, not an "
         "open data licence), with no setting or angle labels and no statement of where the photos come from.",
@@ -188,7 +206,8 @@ DAILY_ACCESS_NOT_INCLUDED = {
     "Commons categories with no files (November 2026)":
         "Lobbies, Elevator lobbies, Hallways, Moving walkways, Gender-neutral toilet signs, Information signs, "
         "Lifts (the spellings Corridors, Entrance halls, Foyers, Interiors of elevators, Moving ramps and Unisex "
-        "toilet signs do have files and are used); no category exists for building directories, indoor 'you are here' maps, "
+        "toilet signs do have files and are used); no category exists for building directories, indoor 'you are "
+        "here' maps, "
         "boarding gates, security checkpoints or fare gates (Wayfinding signs, Tactile maps, Airport gates and "
         "Ticket barriers are the nearest and are used).",
 }

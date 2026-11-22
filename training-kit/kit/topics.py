@@ -77,7 +77,7 @@ TOPICS = [
           "home: bandages, syringes, insulin pens, inhalers, instruments, and animal medicines.",
           ("taiwan_pills", "pharmassist", "mediseg", "medpack_id", "scoa_blister", "med_commons_supplies",
            "med_commons_instruments", "med_commons_medicines", "vet_commons_medicine", "dental_instruments",
-           "open_images_medical", "cdc_phil_supplies",
+           "open_images_medical", "cdc_phil_supplies", "commons_medication_labels",
            # share-alike (with Wikipedia ticked)
            "med_vet_commons_sa", "openfacts_supplements",
            # research-only (personal use)
@@ -153,7 +153,8 @@ TOPICS = [
           ("textvqa", "textocr", "coco_text", "cord", "doclaynet", "plotqa", "loc_letters", "owid_charts",
            "pubtabnet_tables", "us_federal_forms", "open_images_cards_documents", "loc_maps", "safety_signs", "commons_hazard_symbols", "us_road_signs",
            "ca_road_signs",
-           "deepscores_sheet_music", "field_manual_figures", "commons_indoor_wayfinding", "open_images_indoor", "synthetic_bills",
+           "deepscores_sheet_music", "field_manual_figures", "commons_indoor_wayfinding", "open_images_indoor",
+           "synthetic_bills",
            # share-alike
            "hiertext", "mapqa", "indoor_commons_sa",
            # non-commercial and research-only (personal use)
