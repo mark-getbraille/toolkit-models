@@ -1998,6 +1998,12 @@ from nasa_library_packs import NASA_LIBRARY_PACKS
 from nps_library_packs import NPS_LIBRARY_PACKS
 PACKS.update(NASA_LIBRARY_PACKS)
 PACKS.update(NPS_LIBRARY_PACKS)
+# Sports, a top-level section (packs/sports_packs.py, the owner's request of 2026-11-22): Commons sports equipment,
+# protective gear, skates, goals and racing gear, courts, fields, rinks and tracks, athletes in action (adults only),
+# and Open Images sports, events, gear, places and officials; protective gear answers end with the concussion note.
+from sports_packs import SPORTS_PACKS, SPORTS_COMMONS_KEYS
+PACKS.update(SPORTS_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(SPORTS_COMMONS_KEYS)
 # Home manufacturing and making (packs/making_packs.py, the owner's request of 2026-11-22): Commons 3D printers, prints
 # and 3D design, cutting machines, heat presses and lasers, CNC and small lathe and mill tooling, moulding, casting and
 # makerspaces, circuit board fabrication, and Open Images machine tools and workshops; every answer ends with its

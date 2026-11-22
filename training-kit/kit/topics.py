@@ -340,7 +340,7 @@ TOPICS = [
            "open_images_clothing", "commons_uniformed", "commons_religious_life", "commons_us_holidays",
            "commons_ca_holidays", "commons_ca_daily_life", "nara_events", "open_images_outings",
            "commons_college_streams", "commons_state_community", "loc_fsa", "nara", "nasa_people_at_work",
-           "commons_mobility_deafblind", "commons_adaptive_sports",
+           "commons_mobility_deafblind", "commons_adaptive_sports", "commons_sports_action",
            # share-alike
            "commons_daily_life_sa", "coco_actions_sa", "commons_hairstyles_sa", "hagrid", "commons_uniformed_sa",
            # non-commercial and research-only (personal use)
@@ -361,6 +361,7 @@ TOPICS = [
            "commons_ca_eating_out", "commons_us_getting_around", "commons_ca_getting_around", "wikidata_landmarks",
            "wikidata_architecture", "gldv2_landmarks", "wikidata_worship", "commons_state_outdoors",
            "work_commons_workplaces", "loc_highsmith", "loc_world", "newberry_library", "dollar_street",
+           "commons_sports_venues",
            # share-alike
            "indoor_commons_sa", "street_scene_commons_sa", "gldv2_sa", "commons_us_sa", "commons_ca_sa",
            "work_commons_sa", "hypersim",
@@ -394,6 +395,15 @@ TOPICS = [
     # papers moved to "money", the screens to "screens", the travel documents to "transport", the indoor photos to
     # "places" and the hearing access pictures to "health" (22 November 2026); the road, travel and water signs and
     # the wayfinding signs stay here for reading too.
+    # Sports (the owner's request of 22 November 2026: a top-level section): equipment, gear, places, athletes in action
+    # and the sports of the world, with the adaptive and blind sports of the health collections.
+    Topic("sports", "Sports",
+          "Sports equipment and protective gear, courts, fields, rinks, tracks and stadiums, athletes in action, the "
+          "sports of the world, and blind and adaptive sports such as goalball, guide running and sitting volleyball.",
+          ("commons_sports_equipment", "commons_sports_gear", "commons_sports_venues", "commons_sports_action",
+           "open_images_sports", "wikidata_sports", "commons_adaptive_sports",
+           # share-alike
+           "sports_commons_sa")),
     Topic("documents", "Documents, maps and signs",
           "Reading text and making sense of pages: letters, handwriting, document pages, tables, charts, diagrams, "
           "maps, weather maps, sheet music, cards, mail, and road, safety, travel, emergency and indoor signs, buoys "

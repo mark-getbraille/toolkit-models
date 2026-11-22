@@ -3619,3 +3619,19 @@ PERSONAL_PICTURE_MAKING_OK |= _making_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in MAKING_SOURCES
                                                                if s.key not in _making_ok)
 _add_collections(MAKING_SOURCES)
+# Sports, a top-level section with its own topic add-on (sports_sources.py, the owner's request of 2026-11-22): the
+# ready-made packs (equipment, gear, venues, athletes in action, Open Images sports), their share-alike Commons files,
+# and the sources looked at and left out; the file may be missing. Only the keys in SPORTS_PICTURE_MAKING_OK may be
+# used for picture-making.
+try:
+    import sports_sources as _sports  # noqa: E402
+except ImportError as _e:
+    _sports = None
+    if getattr(_e, "name", None) != "sports_sources":
+        say(f"(The sports collections could not be loaded: {_e}. They are left out.)")
+SPORTS_SOURCES = list(getattr(_sports, "SPORTS_SOURCES", []) or [])
+_sports_ok = set(getattr(_sports, "SPORTS_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _sports_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in SPORTS_SOURCES
+                                                               if s.key not in _sports_ok)
+_add_collections(SPORTS_SOURCES)

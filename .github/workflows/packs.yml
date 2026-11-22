@@ -182,7 +182,8 @@ jobs:
                    "npgallery_historic_buildings", "npgallery_wildlife_more", "npgallery_landscapes_more",
                    "commons_small_boats",
                    "commons_3d_printing", "commons_cutting_lasers", "commons_cnc_machining",
-                   "commons_moulding_casting", "commons_pcb_fabrication", "open_images_making"]
+                   "commons_moulding_casting", "commons_pcb_fabrication", "open_images_making",
+                   "commons_sports_equipment", "commons_sports_gear", "commons_sports_venues", "commons_sports_action", "open_images_sports"]
           words = [w for w in sys.argv[1].split(",") if w]
           # "key+" is a top-up pass of key and "key?" a needs-only run (kept with the mark, which the build job reads);
           # "all?" asks for a needs-only run of every pack.

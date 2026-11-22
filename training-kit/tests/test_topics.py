@@ -29,8 +29,8 @@ KNOWN = {s.key: s for s in sources.SOURCES}
 def test_the_owners_topics_are_there():
     assert [t.id for t in topics.TOPICS] == ["medicines", "health", "drugs", "firearms", "food", "drinks", "alcohol",
                                              "machines", "transport", "home", "power", "radio", "privacy", "screens",
-                                             "money", "people", "places", "art", "documents", "nature", "vision",
-                                             "nudity", "sexual"]
+                                             "money", "people", "places", "art", "sports", "documents", "nature",
+                                             "vision", "nudity", "sexual"]
     for topic in topics.TOPICS:
         assert topic.title and topic.description.endswith(".") and len(topic.description) < 300
         assert topics.find(topic.id.upper()) is topic

@@ -275,6 +275,8 @@ The topics:
 - Places and buildings (places): streets, pavements and crossings, houses and rooms, shops and public places,
   stations, lobbies and corridors, workplaces, landmarks, places of worship, architecture, historic buildings.
 - Art and museum objects (art): museum descriptions written for blind visitors, famous works, instruments, crafts.
+- Sports (sports): sports equipment and protective gear, courts, fields, rinks and stadiums, athletes in action,
+  and blind and adaptive sports.
 - Documents, maps and signs (documents): letters, handwriting, document pages, tables, charts, diagrams, maps,
   sheet music, cards and mail, and road, safety, travel and indoor signs.
 - Plants, animals and nature (nature): plants, animals and breeds, crops and their diseases, weather, landscapes.

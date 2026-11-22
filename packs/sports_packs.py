@@ -17,8 +17,8 @@ end with GEAR_NOTE (the same words in the kit's sports_sources.py):
 The packs (SPORTS_PACKS):
   commons_sports_equipment   Wikimedia Commons (CC0, public domain or CC BY files only): cricket, field hockey and
                              rugby balls, cricket, softball and table tennis bats, field hockey and lacrosse sticks,
-                             boxing and batting gloves, bowling pins, curling stones, épées, javelins, starting blocks,
-                             hurdles, home plates, batting tees, pitching machines and stopwatches.
+                             boxing and batting gloves, bowling pins, curling stones, épées, javelins, starting
+                             blocks, hurdles, home plates, batting tees, pitching machines and stopwatches.
   commons_sports_gear        Commons: American football, batting, ice hockey, ski and racing helmets, shoulder pads,
                              shin guards, cricket pads, goaltender equipment, fencing masks, inline, figure and ice
                              hockey skates, ski boots, bindings and poles, goals and nets (football, ice hockey,
@@ -29,12 +29,10 @@ The packs (SPORTS_PACKS):
                              running and athletics tracks, velodromes, bowling alleys, ski jumping hills, golf courses,
                              driving ranges, diving platforms, cricket pitches and grandstands.
   commons_sports_action      Commons: athletics events in action (high jump, long jump, javelin, shot put, discus,
-                             hammer, hurdling) and matches of team sports (SPORTS_ACTION). Adults only: files whose own
+                             hammer, hurdling) and football, volleyball, field hockey, rugby, baseball and tennis
+                             matches (SPORTS_ACTION). Adults only: files whose own
                              words name a child, youth, junior, school or an age group are left out. People-heavy:
                              describing only, never for picture-making.
-  commons_adaptive_sports_more  Commons: para sports not in fitness_nutrition_packs (commons_adaptive_sports) or
-                             disability_packs (goalball, blind football, wheelchair basketball, rugby, racing and
-                             tennis): see ADAPTIVE_MORE. Describing only.
   open_images_sports         Open Images V7 (labels CC BY 4.0; each photo CC BY, CC0 or the Public Domain Mark):
                              sports being played (soccer, handball, rugby, lacrosse, softball, field hockey, water polo,
                              beach volleyball, netball, Gaelic games and others), combat sports, racing, winter
@@ -198,12 +196,13 @@ SPORTS_ACTION = [
     action("Discus throw", "the discus throw, an athletics event"),
     action("Hammer throw", "the hammer throw, an athletics event: athletes swing and throw a metal ball on a wire"),
     action("Hurdling", "hurdling, racing over hurdles"),
+    action("Association football matches", "a football (soccer) match"),
+    action("Volleyball matches", "a volleyball match"),
+    action("Field hockey matches", "a field hockey match"),
+    action("Rugby union matches", "a rugby union match", deeper=True),
+    action("Baseball games", "a baseball game"),
+    action("Tennis matches", "a tennis match"),
 ]
-
-# ----------------------------------------------------------------- Commons: more para sports (describing only)
-
-ADAPTIVE_MORE = []                       # filled with the categories that hold files (see the kit's NOT_INCLUDED)
-
 
 def build_commons_sports_equipment(limit):
     """The commons_sports_equipment pack (see the module docstring)."""
@@ -227,12 +226,6 @@ def build_commons_sports_action(limit):
     """The commons_sports_action pack (see the module docstring): adults only."""
     from home_packs import build_commons_topic
     return build_commons_topic(SPORTS_ACTION, limit, "sportaction", adults_only=True)
-
-
-def build_commons_adaptive_sports_more(limit):
-    """The commons_adaptive_sports_more pack (see the module docstring): adults only."""
-    from home_packs import build_commons_topic
-    return build_commons_topic(ADAPTIVE_MORE, limit, "adaptmore", adults_only=True)
 
 
 # ----------------------------------------------------------------- Open Images
@@ -261,9 +254,8 @@ SPORTS_OI = [
           {"Pole vault": "the pole vault", "Shot put": "the shot put", "Javelin throw": "the javelin throw",
            "Discus throw": "the discus throw", "Weightlifting": "weightlifting"}),
     group("What para sport is this?",
-          {"Disabled sports": "a sport for disabled athletes (para sport)", "Para table tennis": "para table tennis",
-           "Para-alpine skiing": "para-alpine skiing", "Sitting volleyball": "sitting volleyball",
-           "Sledge hockey": "sledge hockey (para ice hockey)", "Goalball": "goalball"}),
+          {"Para table tennis": "para table tennis",
+           "Para-alpine skiing": "para-alpine skiing", "Sledge hockey": "sledge hockey (para ice hockey)"}),
     group("What balls, bats or sticks are in this picture?",
           {"Basketball (Ball)": "a basketball", "Soccer ball": "a soccer ball", "Lacrosse stick": "a lacrosse stick",
            "Lacrosse ball": "a lacrosse ball", "Golf club": "a golf club", "Golf bag": "a golf bag",
@@ -332,21 +324,21 @@ SPORTS_PACKS = {
     "commons_sports_venues": (build_commons_sports_venues, COMMONS_LICENCE.format(
         what="sports court, rink, field, track, velodrome, golf course and grandstand")),
     "commons_sports_action": (build_commons_sports_action, COMMONS_LICENCE.format(
-        what="athletics events in action (adults only)")),
+        what="athletics events and team sports matches in action (adults only)")),
     "open_images_sports": (build_open_images_sports, OI_LICENCE),
 }
 SPORTS_LIMITS = {
     "commons_sports_equipment": 900,       # 20 categories
     "commons_sports_gear": 1500,           # 28 categories
     "commons_sports_venues": 1300,         # 23 categories
-    "commons_sports_action": 500,          # 7 categories, deeper
+    "commons_sports_action": 900,          # 13 categories, deeper
     "open_images_sports": 3000,            # 97 labels; Soccer has most photos
 }
 # The packs that read Wikimedia Commons (build_packs.COMMONS_KEYS).
 SPORTS_COMMONS_KEYS = ("commons_sports_equipment", "commons_sports_gear", "commons_sports_venues",
                        "commons_sports_action")
 # The Commons category specs of the packs (for the self-test).
-SPORTS_SPECS = EQUIPMENT + GEAR + VENUES + SPORTS_ACTION + ADAPTIVE_MORE
+SPORTS_SPECS = EQUIPMENT + GEAR + VENUES + SPORTS_ACTION
 
 
 def main(argv=None):
