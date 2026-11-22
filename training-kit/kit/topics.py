@@ -134,6 +134,8 @@ TOPICS = [
            "locbeef", "fish_freshness", "horse_mackerel", "fish_eyes_stages", "chicken_breast", "food_packaging",
            "packeat", "cerrado_fruits", "commons_date_codes",
            "commons_barbecue_food", "commons_food_guides",
+           # restaurant menus (menus_sources.py)
+           "nypl_menus", "synthetic_menus",
            # share-alike
            "openfoodfacts", "openfoodfacts_labels", "commons_food_sa", "openfacts_us", "openfacts_ca",
            # research-only (personal use)
@@ -310,6 +312,8 @@ TOPICS = [
           "displays.",
           ("commons_screens", "commons_privacy_screens", "synthetic_scam_examples", "commons_computer_basics",
            "open_images_computer_basics", "seven_segment",
+           # computer-made screens read in order (screens_sources.py)
+           "synthetic_screens",
            # research-only (personal use)
            "rico_screens", "screenqa_rico", "rico_widgets")),
     # Money and paperwork (the owner's decision of 22 November 2026): money, bills, receipts, forms and specimen papers,
@@ -341,6 +345,8 @@ TOPICS = [
            "commons_ca_holidays", "commons_ca_daily_life", "nara_events", "open_images_outings",
            "commons_college_streams", "commons_state_community", "loc_fsa", "nara", "nasa_people_at_work",
            "commons_mobility_deafblind", "commons_adaptive_sports",
+           # stills from public-domain films (film_stills_sources.py, also in "art")
+           "pd_film_stills",
            # share-alike
            "commons_daily_life_sa", "coco_actions_sa", "commons_hairstyles_sa", "hagrid", "commons_uniformed_sa",
            # non-commercial and research-only (personal use)
@@ -388,6 +394,8 @@ TOPICS = [
            "commons_paper_crafts", "commons_candle_soap", "commons_glass_carving", "commons_art_supplies",
            "commons_models_resin", "museum_glass_crafts", "open_images_crafts",
            "pottery_commons_sa", "jewellery_commons_sa", "crafts_commons_sa",
+           # public-domain film stills and Golden Age comics (film_stills_sources.py, comics_sources.py)
+           "pd_film_stills", "commons_golden_age_comics",
            # non-commercial and research-only (personal use)
            "vam", "mimo_instruments", "princeton_general_personal", "turkish_instruments")),
     # Documents, maps and signs: reading text and making sense of pages. The receipts, forms, bills, pay and civic
@@ -407,11 +415,13 @@ TOPICS = [
            "commons_emergency_signs_maps", "commons_radio_cards_charts",
            # national park visitor facilities and signs (photo_library_sources.py; also in "places")
            "npgallery_facilities",
+           # restaurant menus (menus_sources.py, also in "food"), maths and science notation (math_notation_sources.py)
+           "nypl_menus", "synthetic_menus", "synthetic_formulas", "chem_structures",
            # share-alike
            "hiertext", "mapqa", "indoor_commons_sa",
            # non-commercial and research-only (personal use)
            "dvqa", "chartqa", "scienceqa", "ai2d", "streetsignset", "fintabnet_tables", "tqa_diagrams",
-           "commons_mail_parcels")),
+           "commons_mail_parcels", "im2latex_formulas")),
     Topic("nature", "Plants, animals and nature",
           "Plants, mushrooms, insects, birds and other animals by name, household pests and pest control, pet and "
           "farm breeds and animals, crops and their diseases, weeds, poisonous plants, mushrooms and wild plants, "

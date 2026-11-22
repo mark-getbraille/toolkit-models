@@ -104,7 +104,10 @@ def latex(node):
         return f"{latex(node[1])} {kind} {latex(node[2])}"
     if kind == "*":
         a, b = latex(node[1]), latex(node[2])
-        return f"{a} \\cdot {b}" if node[2][0] == "n" or (node[1][0] == "n" and b[:1].isdigit()) else f"{a}{b}"
+        if node[2][0] == "n" or (node[1][0] == "n" and b[:1].isdigit()):
+            return f"{a} \\cdot {b}"
+        # a command such as \pi needs a space before a letter ("\pi r", never "\pir")
+        return f"{a} {b}" if re.search(r"\\[A-Za-z]+$", a) and b[:1].isalpha() else f"{a}{b}"
     if kind == "x":
         return f"{latex(node[1])} \\times {latex(node[2])}"
     if kind == "/":
