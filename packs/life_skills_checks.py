@@ -7,7 +7,8 @@ pack file's tables.
   check_categories(specs, ours)    no Commons category of these specs is named (in quotes) by another pack file
   check_wiring(...)                the packs are in build_packs.PACKS, the Commons ones in COMMONS_KEYS, in the
                                    workflows' known list and limit lines, in the kit's sources (permissive, read with
-                                   prepare_pack), in a topic, never for picture-making unless the kit module says so,
+                                   prepare_pack), in a topic (a medical one only in health), never for picture-making
+                                   unless the kit module says so,
                                    and the kit module listed twice as a hidden import
 """
 
@@ -99,13 +100,20 @@ def check_wiring(packs, limits, commons_keys, kit_module, kit_sources, picture_o
     assert not (keys - set(commons_keys)) & build_packs.COMMONS_KEYS
     listed = {s.key: s for s in sources.SOURCES}
     in_topics = {key for t in topics.TOPICS for key in t.keys}
+    outside_health = {key for t in topics.TOPICS if t.id != "health" for key in t.keys}
     no_making = set(sources.NOT_FOR_PICTURE_MAKING)
     for key, limit in limits.items():
         assert f'"{key}"' in packs_yml, key
         assert re.search(rf"^\s*{key}\) limit={limit} ;;$", build_yml, re.M), key
         assert listed[key].group == "permissive" and listed[key].prepare is sources.prepare_pack, key
     for s in kit_sources:
-        assert s.key in listed and (s.key in in_topics) == (s.content == ""), s.key   # medical: no topic
+        # every collection without a content mark is in a topic; a medical one only in the health topic (used there
+        # only with medical pictures ticked); any other content mark in no topic
+        assert s.key in listed, s.key
+        if s.content == "":
+            assert s.key in in_topics, s.key
+        else:
+            assert s.key not in outside_health and (s.content == "medical" or s.key not in in_topics), s.key
         assert (s.group == "permissive") == (s.key in keys), s.key
         assert (s.key in no_making) == (s.key not in picture_ok or s.key in bodily), s.key
     assert keys <= {s.key for s in kit_sources}
