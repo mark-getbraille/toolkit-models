@@ -129,6 +129,8 @@ MODULES = [
     "court_opinions",       # Supreme Court opinions by volume and landmark cases by subject, from govinfo (court:)
     "patents",              # famous patents (Wikisource), assistive and household patents (USPTO, sign-up) (pat:)
     "quotations",           # Bartlett, Hoyt, Brewer, proverb and idiom books, Wikiquote from its dump (quote:)
+    # official copies for the thin sections, from GovInfo, agency sites and the Internet Archive (2026-11-22)
+    "govinfo_fill",         # NHTSA, FEMA, SAMHSA, NIA, CMS, VA, NARA, CDC, CPSC, EPA booklets; Army and Navy manuals (gpo:)
 ]
 
 _loaded = {}
