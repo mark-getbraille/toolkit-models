@@ -1911,6 +1911,12 @@ from synthetic_scams_packs import SYNTHETIC_SCAMS_PACKS, SYNTHETIC_SCAMS_COMMONS
 for _packs, _commons in ((PRIVACY_PACKS, PRIVACY_COMMONS_KEYS), (SYNTHETIC_SCAMS_PACKS, SYNTHETIC_SCAMS_COMMONS_KEYS)):
     PACKS.update(_packs)
     COMMONS_KEYS = COMMONS_KEYS | frozenset(_commons)
+# Blind and low-vision living (packs/vision_packs.py): Commons braille writers (Perkins and the others) with their care
+# note, braille charts, tactile writing systems, tactile graphics and models, reading machines, eye charts, sighted
+# guiding, orientation and mobility and deafblind life, and NMAH's things made for blind people (CC0).
+from vision_packs import VISION_PACKS, VISION_COMMONS_KEYS
+PACKS.update(VISION_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(VISION_COMMONS_KEYS)
 # Power and electrical (packs/power_packs.py, the owner's request of 2026-11-22): engine generators and their carbon
 # monoxide labels, dynamos, solar cells and mounts, MC4 connectors, charge controllers and batteries, wind turbines,
 # wind pumps, water wheels and water turbines, and Open Images solar, wind, fuel, battery, electrical and power line

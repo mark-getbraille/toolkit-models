@@ -3458,3 +3458,18 @@ PERSONAL_PICTURE_MAKING_OK |= _privacy_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in PRIVACY_SOURCES
                                                                if s.key not in _privacy_ok)
 _add_collections(PRIVACY_SOURCES)
+# Blind and low-vision living (vision_sources.py): the ready-made packs (braille writers, braille and tactile things,
+# mobility and deafblind life, APH Museum objects), their share-alike Commons files, and the sources looked at and left
+# out; the file may be missing. Only the keys in VISION_PICTURE_MAKING_OK may be used for picture-making.
+try:
+    import vision_sources as _vision  # noqa: E402
+except ImportError as _e:
+    _vision = None
+    if getattr(_e, "name", None) != "vision_sources":
+        say(f"(The blind and low-vision living collections could not be loaded: {_e}. They are left out.)")
+VISION_SOURCES = list(getattr(_vision, "VISION_SOURCES", []) or [])
+_vision_ok = set(getattr(_vision, "VISION_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _vision_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in VISION_SOURCES
+                                                               if s.key not in _vision_ok)
+_add_collections(VISION_SOURCES)

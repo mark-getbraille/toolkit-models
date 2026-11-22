@@ -585,6 +585,13 @@ from outdoor_cooking import CATEGORY as _OUTDOOR_COOKING  # noqa: E402
 
 CATEGORIES["outdoor_cooking"] = _OUTDOOR_COOKING
 
+# Blind and low-vision living (the owner's request of 2026-11-22, a heading of its own): braille writers with their
+# care and repair, displays, embossers, magnifiers, screen reader software, talking devices, canes and describer apps;
+# the Internet Archive words, the makers as links, the care documents and the programmes are in manuals/vision_devices.py.
+from vision_devices import CATEGORY as _VISION_DEVICES  # noqa: E402
+
+CATEGORIES["vision_devices"] = _VISION_DEVICES
+
 # Hardware, tools and shop equipment: their makers, access decisions, safety notices and public-domain guides are in
 # manuals/hardware_tools.py. Its new categories are added, and power_tools, hand_tools and lawn_garden are extended
 # (more Internet Archive words, the makers' libraries, a safety notice and the guides).
