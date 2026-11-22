@@ -94,7 +94,8 @@ def prepare_preparedness_commons_sa(source, data_dir, work, cap):
 # ----------------------------------------------------------------- the table
 
 PREPAREDNESS_SOURCES = [
-    Source("commons_emergency_kits_power", "Emergency kits and backup power: go-bags, survival equipment, whistles, N95 respirators, potassium iodide, dry bags, tarps, "
+    Source("commons_emergency_kits_power", "Emergency kits and backup power: go-bags, survival equipment, "
+                                           "whistles, N95 respirators, potassium iodide, dry bags, tarps, "
                                            "fuel containers, generators and UPS units, with the safety notes "
                                            "(Wikimedia Commons, ready-made pack)",
            COMMONS_OPEN, COMMONS_CREDIT, "permissive", 1000, 10, prepare_pack, "about 230 MB"),

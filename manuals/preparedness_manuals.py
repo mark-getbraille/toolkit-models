@@ -43,7 +43,7 @@ GEAR_NOTICE = ("Check kits twice a year (water, food, medicines, batteries). An 
                "from a ground-floor window first. " + OFFICIALS_NOTE + " In danger, call 911.")
 
 POWER_WORDS = ["inverter generator", "standby generator", "home standby", "transfer switch", "interlock kit",
-               "generator transfer", "uninterruptible power supply", "battery backup", "ups battery", "home battery",
+               "generator transfer", "uninterruptible power supply", "ups battery backup", "ups battery", "home battery",
                "solar power station", "portable generator", "dual fuel generator", "generator manual"]
 GEAR_WORDS = ["emergency kit", "survival kit", "fire escape ladder", "escape ladder", "n95", "bed shaker",
               "vibrating alarm", "strobe alarm", "emergency whistle", "go bag", "weather alert receiver for deaf",
@@ -121,7 +121,8 @@ CATEGORIES = {
                     "computers and medical equipment: the Internet Archive's manuals, the makers' manual pages as "
                     "links, and the safety guidance.",
         kind="manuals", licence=LICENCE, any_year=True, ia=POWER_WORDS, makers=POWER_MAKERS, notice=POWER_NOTICE,
-        ia_exclude=r"\b(sega|video game|game manual|signal generator|function generator|lucas ?arts)\b",
+        ia_exclude=r"\b(sega|video game|game manual|signal generator|function generator|lucas ?arts|imac|macbook|"
+                   r"iphone|ipad|laptop)\b",
         guidance=[dict(title="Power outages (Ready.gov; in the reference library: ready:ready_gov)",
                        url="https://www.ready.gov/power-outages", by="the Federal Emergency Management Agency"),
                   dict(title="Fire safety in severe weather and power outages, generators (US Fire Administration; in "

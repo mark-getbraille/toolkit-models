@@ -29,8 +29,9 @@ bodies, casualties, the injured or blood (NO_HARM), and the disaster and shelter
 name a child (home_packs.build_commons_topic adults_only); the kit packs mark such rows "child".
 
 The packs (all open: CC0, public domain or CC BY, checked file by file; Open Images labels CC BY 4.0):
-  commons_emergency_kits_power  Wikimedia Commons: bug-out bags, everyday carry, survival equipment, whistles, particulate (N95) respirators, potassium iodide, multi-tools, ferrocerium
-                                fire starters, dry bags, tarpaulins, sleeping bags, fuel containers; mobile
+  commons_emergency_kits_power  Wikimedia Commons: bug-out bags, everyday carry, survival equipment, whistles,
+                                particulate (N95) respirators, potassium iodide, multi-tools, ferrocerium fire
+                                starters, dry bags, tarpaulins, sleeping bags, fuel containers; mobile
                                 engine-generators, emergency power systems and uninterruptible power supplies.
   commons_warnings_shelters     Commons: warning sirens (Whelen, Thunderbolt), mobile public warning systems, tsunami
                                 warning systems, emergency telephones, tornado shelters, storm cellars and safe rooms,
@@ -162,7 +163,7 @@ EMERGENCY_KITS_POWER = [
     spec("Sleeping bags", "a sleeping bag", KIT_NOTE),
     spec("Fuel containers", "a fuel container", "Store fuel only in approved containers, outdoors or in a detached "
                                                 "shed, away from the home and from anything that can spark. " +
-         GENERATOR_NOTE),
+         GENERATOR_NOTE, must=only(r"cans?|containers?|canisters?|jerr\w*|jugs?|tanks?")),
     spec("Mobile engine-generators", "a portable or mobile generator: an engine that makes electricity",
          GENERATOR_NOTE, ASK_KIND, deeper=True),
     spec("Emergency power system", "an emergency power system: backup power for when the mains fail",
