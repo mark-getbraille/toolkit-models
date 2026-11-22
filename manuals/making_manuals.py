@@ -1,7 +1,10 @@
 """Manual collections for HOME MANUFACTURING AND MAKING, under their own heading (the owner's request of 2026-11-22:
 3D printers, cutting machines and heat presses, laser engravers and CNC machines, small lathes and mills, and moulding
 and casting). categories.py adds them to CATEGORIES with the field "heading": "Home manufacturing and making"
-(build_manuals.write puts it in the index and the manifest, so the toolkit can list them together).
+(build_manuals.write puts it in the index and the manifest, so the toolkit can list them together). heat_press_vinyl
+is then listed under "Arts and crafts" instead (categories.py, crafts_manuals.HEADING_KEYS: the owner's request of 22
+November 2026 made arts and crafts a heading of its own, and heat presses and vinyl are mostly craft use); its key and
+contents do not change.
 
   printers_3d         FDM (FFF) and resin 3D printers, their filament and resin: the Internet Archive's manuals
                       searched with PRINTER_WORDS, the makers' pages as links (Prusa, Bambu Lab, Creality, Elegoo,

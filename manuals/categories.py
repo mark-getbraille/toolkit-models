@@ -750,14 +750,24 @@ CATEGORIES["small_boats"] = _SMALL_BOATS
 # 3D printers, heat presses and vinyl cutters, laser engravers and desktop CNC, mini lathes and mills, and moulding and
 # casting; every maker link-only, each with its safety notice said first. Cricut and Silhouette stay in craft_machines,
 # Glowforge, Shapeoko and the CNC routers in woodshop_machines, metal lathes and the machinist manuals in
-# metal_shop_welding. Those three existing collections are listed under the same heading too (the owner's request of
-# 22 November 2026); their keys do not change.
+# metal_shop_welding. The woodshop and metal shop collections are listed under the same heading too (the owner's
+# request of 22 November 2026; craft_machines and heat_press_vinyl moved on to "Arts and crafts" below); their keys do
+# not change.
 from making_manuals import CATEGORIES as _MAKING, HEADING as _MAKING_HEADING  # noqa: E402
 
 CATEGORIES.update(_MAKING)
-for _key in ("craft_machines", "woodshop_machines", "metal_shop_welding"):
+for _key in ("woodshop_machines", "metal_shop_welding"):
     if _key in CATEGORIES:
         CATEGORIES[_key]["heading"] = _MAKING_HEADING
+# Arts and crafts, under its own heading (the owner's request of 22 November 2026: a top-level section): sewing
+# machines, textile craft tools, art and craft supplies, pottery kilns, jewellery tools, craft machines (Cricut,
+# Silhouette; moved here from the making heading) and heat presses and vinyl cutters (crafts_manuals.HEADING_KEYS;
+# the reason is written there). Keys unchanged; only the heading field is set, after the making heading above.
+from crafts_manuals import HEADING as _CRAFTS_HEADING, HEADING_KEYS as _CRAFTS_KEYS  # noqa: E402
+
+for _key in _CRAFTS_KEYS:
+    if _key in CATEGORIES:
+        CATEGORIES[_key]["heading"] = _CRAFTS_HEADING
 
 # Reference gaps (the owner's request of 2026-11-22): audio recorders, podcast microphones and recording gear
 # (manuals/audio_gear_manuals.py, every maker link-only). Pet supplies are already the collection
