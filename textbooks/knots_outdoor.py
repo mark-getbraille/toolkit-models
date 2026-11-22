@@ -13,8 +13,15 @@ What this module builds, in plain words:
     marlinespike seamanship (1918), Paul Hasluck's Knotting and Splicing Ropes and Cordage (1907), the Boy Scouts of
     America's Official Handbook for Boys (1914 printing: knots, camping, first aid, woodcraft and signalling) and
     Warren Miller's Camp Craft (1915). Each old book's description says what is out of date in it.
-  Every book carries OUTDOOR_SAFETY in its notice (sharp tools, rope that holds people, fire, and telling someone
-  where you are going).
+  Every book carries OUTDOOR_SAFETY in its notice (sharp tools, rope that holds people and its working load, fire and
+  local rules on fires and cutting, and telling someone where you are going).
+  Two more old knot books were added with the sibling modules (2026-11-22): J. Tom Burgess's Knots, Ties and Splices
+  (1884) and George Russell Shaw's Knots, Useful and Ornamental (1924).
+
+Sibling modules in the same group (each with its own request word): knots_military.py (kmil:, knots-military: the
+Coast Guard, Navy, Army and Marine Corps knot, rope, pack and mountain manuals) and bushcraft.py (bush:, bushcraft:
+the old woodcraft classics, New Zealand's Department of Conservation outdoor safety pages and the bushcraft index).
+The index here (knot:index) links their books by key.
 
 Already in the library and not repeated: the Army's rigging manual (FM 5-125: knots, hitches, splices, lashings and
 lifting), map reading and land navigation (FM 3-25.26), the survival manuals (ATP 3-50.21, FM 21-76 and others) and
@@ -42,11 +49,13 @@ GROUP = "knots"
 GROUPS = {GROUP: "Reference, knots and outdoor skills"}
 
 # The same safety words as packs/knots_outdoor_packs.py ROPE_NOTE and TOOL_NOTE, written for a book.
-OUTDOOR_SAFETY = ("Safety: a knot weakens a rope and some knots slip or jam, so for climbing, lifting or rescue use "
-                  "rated gear and learn from a qualified instructor. With axes, saws and knives, cut away from your "
+OUTDOOR_SAFETY = ("Safety: a knot weakens a rope and some knots slip or jam, so never load a rope beyond its working "
+                  "load limit, and for climbing, lifting or rescue use rated gear and learn from a qualified "
+                  "instructor (climbing needs proper training). With axes, saws and knives, cut away from your "
                   "body, keep people at least two tool lengths away, wear eye protection and sturdy boots, and keep "
-                  "blades covered. Check fire restrictions before lighting any fire and put it out cold. Tell someone "
-                  "where you are going and when you will be back.")
+                  "blades covered. Check fire restrictions before lighting any fire and put it out cold; know and "
+                  "follow local rules on fires and cutting. Tell someone where you are going and when you will be "
+                  "back.")
 OLD_OUTDOOR_NOTE = ("Published in {year}: an old book. Its knots and rope work are still tied the same way, but "
                     "natural-fibre ropes have given way to nylon and polyester (which need different knots for "
                     "slippery line), and its camping advice is out of date (cutting live trees for beds and shelters, "
@@ -112,6 +121,18 @@ PDFS = [
                "Camping and woodcraft", "Warren H. Miller (Charles Scribner's Sons)", "campcraftmodernp00millrich",
                1915, "Camping as practised in 1915: tents and shelters, bedding, packs, camp cooking and fires, axes "
                      "and knives, canoe and pack trips.", OLD_OUTDOOR_NOTE.format(year=1915)),
+    # Added with the military and bushcraft books (knots_military.py, bushcraft.py), 2026-11-22.
+    X.old_book(GROUP, "burgess_knots_ties_splices_1884", "Knots, Ties and Splices (J. Tom Burgess, 1884)",
+               "Knots and splices", "J. Tom Burgess (George Routledge and Sons, London)", "cu31924014519940", 1884,
+               "A handbook for seafarers, travellers and all who use cordage: the simple knots, bends and hitches, "
+               "loops and nooses for work, splices and seizings, knots for fishing lines, and the history and "
+               "heraldry of knots.", OLD_OUTDOOR_NOTE.format(year=1884), country="United Kingdom"),
+    X.old_book(GROUP, "shaw_knots_useful_ornamental_1924", "Knots, Useful and Ornamental (George Russell Shaw, "
+               "1924)", "Knots and splices", "George Russell Shaw (Houghton Mifflin Company)",
+               "bwb_S0-ACD-595", 1924,
+               "An architect's carefully drawn book of knots: the elements of a knot, knots and hitches for every "
+               "use, bends, loops, splices, sennits (braided cords), and ornamental knots and mats, each drawing "
+               "described by its caption.", OLD_OUTDOOR_NOTE.format(year=1924)),
 ]
 # The old books carry the safety notice too (after the scan notice).
 for _p in PDFS:
@@ -124,8 +145,14 @@ SECTIONS = [
     ("Knots by name and use", "Loops, hitches, bends, stoppers and binding knots: which knot for which job.", [
         ("key", "knot:verrill_knots_splices_1912", "Knots, Splices and Rope Work (Verrill, 1912)"),
         ("key", "knot:aldridge_knots_marlinespike_1918", "Knots: marlinespike seamanship (Aldridge, 1918)"),
+        ("key", "knot:burgess_knots_ties_splices_1884", "Knots, Ties and Splices (Burgess, 1884)"),
+        ("key", "knot:shaw_knots_useful_ornamental_1924", "Knots, Useful and Ornamental (Shaw, 1924)"),
         ("key", "pdf:army_fm_5_125_rigging", "The Army's rigging manual: knots, hitches, splices and lashings "
                                              "(FM 5-125)"),
+        ("key", "kmil:uscg_bch_seamanship_fundamentals", "The Coast Guard's Boat Crew Handbook: marlinspike "
+                                                         "seamanship, line handling and splices"),
+        ("key", "pdf:knight_modern_seamanship_1921", "Modern Seamanship (Knight, 1921): rope and knots on ships"),
+        ("word", "knots-military", "Every military and Coast Guard knot, rope and pack manual (request word)"),
         ("pack", "commons_knots", "Knots by name, for the picture describer"),
         ("link", "The Ashley Book of Knots", "https://archive.org/details/ashleybookofknot00ashl",
          "Clifford Ashley's 1944 book is still in copyright; borrow it from a library"),
@@ -133,7 +160,21 @@ SECTIONS = [
     ("Splicing, lashings, rope types and care", "Joining and finishing rope, lashing poles, and looking after rope.", [
         ("key", "knot:hasluck_knotting_splicing_1907", "Knotting and Splicing (Hasluck, 1907)"),
         ("key", "pdf:army_fm_5_125_rigging", "Fibre and wire rope, their care and inspection (FM 5-125)"),
+        ("key", "kmil:army_manual_pack_transportation_1917", "Lash ropes, slings and the diamond hitch: the "
+                                                             "Army's Manual of Pack Transportation (1917)"),
+        ("key", "kmil:army_fm_25_7_pack_transportation_1944", "Lashed loads and pack hitches (FM 25-7, 1944)"),
+        ("key", "bush:beard_shelters_shacks_shanties_1914", "Lashed shelters and camp building (Beard, 1914)"),
+        ("pack", "commons_knots", "Lashings, seizings, splices, rope making and marlinespikes, for the picture "
+                                  "describer"),
         ("pack", "open_images_knots_outdoor", "Wire rope, carabiners and tarps")]),
+    ("Climbing, mountain and snow rope work", "Rope management, anchors, rappelling, rescue systems, avalanches "
+     "and snow shelters. Learn these from a qualified instructor before you rely on them.", [
+        ("key", "pdf:army_tc_3_97_61_mountaineering", "Military Mountaineering (TC 3-97.61)"),
+        ("key", "kmil:usmc_mcrp_12_10a3_mountain_rope_work", "The Marine Corps mountain leader's rope, climbing, "
+                                                             "rescue and survival chapters"),
+        ("key", "kmil:usmc_mcrp_12_10a2_winter_operations", "The Marine Corps mountain leader's avalanche, ice, "
+                                                            "skiing and snow shelter chapters"),
+        ("word", "wilderness-first-aid", "Wilderness first aid and backcountry safety (request word)")]),
     ("Map and compass", "Reading a map, taking a bearing and finding your way.", [
         ("key", "pdf:army_fm_3_25_26_map_reading", "Map Reading and Land Navigation (FM 3-25.26)"),
         ("key", "pdf:usgs_topographic_map_symbols", "Topographic Map Symbols (USGS)"),
@@ -143,6 +184,9 @@ SECTIONS = [
         ("key", "pdf:army_atp_3_50_21_survival", "The Army's survival manual: fire, shelter and water (ATP 3-50.21)"),
         ("key", "knot:boy_scouts_handbook_1914", "The Official Handbook for Boys (1914): campcraft"),
         ("key", "knot:miller_camp_craft_1915", "Camp Craft (1915)"),
+        ("key", "bush:index", "Bushcraft and woodcraft: a guide to the old woodcraft classics and the survival "
+                              "manuals' fire, shelter, water and navigation chapters"),
+        ("word", "bushcraft", "The bushcraft and woodcraft books (request word)"),
         ("word", "preparedness", "Emergency preparedness books: water, shelter and kits"),
         ("link", "Leave No Trace Seven Principles", "https://lnt.org/why/7-principles/",
          "copyright of the Leave No Trace Center; open it in a browser")]),
@@ -191,9 +235,10 @@ NOT_INCLUDED = [
     ("Army TC 3-25.26 (2013) Map Reading and Land Navigation", "No Internet Archive copy was found (searched "
      "2026-11-22); FM 3-25.26 (2001), which it replaced, is in the library. Index: https://archive.org/search?query="
      "TC+3-25.26"),
-    ("Navy Boatswain's Mate and seamanship manuals (marlinespike seamanship)", "Not found as downloadable copies with "
-     "text on the Internet Archive (as recorded in sources.py). Index: https://archive.org/search?query=boatswain%27s"
-     "+mate"),
+    ("Navy Boatswain's Mate and Seaman rate training manuals after 1944 (marlinspike seamanship)", "The Internet "
+     "Archive's Seaman (1981) and Boatswain's Mate 3 & 2 (1959) are lending-library scans that cannot be downloaded "
+     "(searched 2026-11-22), and the 1944 Boatswain's Mate 2c cannot have its gunnery chapter cut out "
+     "(knots_military.py says why); the Coast Guard's Boat Crew Handbook is built (kmil:). Index: https://archive.org/search?query=boatswain%27s+mate"),
     ("Finding and treating water, shelters and survival kits", "The preparedness and disaster collections and the "
      "field manuals cover them; not repeated. Index: https://www.ready.gov/water"),
 ]
