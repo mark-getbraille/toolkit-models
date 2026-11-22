@@ -153,11 +153,12 @@ TOPICS = [
            "pubtabnet_tables", "us_federal_forms", "open_images_cards_documents", "loc_maps", "safety_signs", "commons_hazard_symbols", "us_road_signs",
            "ca_road_signs",
            "deepscores_sheet_music", "field_manual_figures", "bentham_pages", "commons_handwriting",
+           "openstax_figures", "commons_charts",
            # share-alike
            "hiertext", "mapqa",
            # non-commercial and research-only (personal use)
            "sroie", "wildreceipt", "dvqa", "funsd", "xfund", "chartqa", "scienceqa", "ai2d", "streetsignset",
-           "fintabnet_tables", "cra_forms", "screenqa_rico", "rico_screens", "rico_widgets",
+           "fintabnet_tables", "cra_forms", "screenqa_rico", "rico_screens", "rico_widgets", "tqa_diagrams",
            "commons_mail_parcels", "commons_screens")),
     Topic("nature", "Plants, animals and nature",
           "Plants, mushrooms, insects, birds and other animals by name, pet and farm breeds, crops and their "

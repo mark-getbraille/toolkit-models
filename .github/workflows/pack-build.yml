@@ -242,6 +242,8 @@ jobs:
             open_images_soft_drinks) limit=2500 ;;
             bentham_pages) limit=700 ;;
             commons_handwriting) limit=1500 ;;
+            openstax_figures) limit=3000 ;;
+            commons_charts) limit=1500 ;;
             clock_times) limit=1300 ;;
             seven_segment) limit=3333 ;;
             open_images_home) limit=3900 ;;

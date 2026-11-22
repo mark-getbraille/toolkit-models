@@ -94,3 +94,73 @@ def test_handwriting_wired():
     documents = topics.find("documents")
     assert {"bentham_pages", "commons_handwriting"} <= set(documents.keys)
     assert sources.SOURCES  # loaded
+
+
+# ----------------------------------------------------------------- charts and diagrams
+
+def test_openstax_figures_parsed_and_checked():
+    import chart_packs as ch
+    cnxml = ('<figure id="F1"><title>The Budget <emphasis>Constraint</emphasis></title>'
+             '<media id="m1" alt="The graph shows a downward-sloping budget line from 5 burgers to 20 tickets.">'
+             '<image mime-type="image/jpg" src="../../media/CNX_Econ_C02_001.jpg"/></media>'
+             '<caption>Each point costs $10 in all.</caption></figure>'
+             '<figure id="F2"><media id="m2" alt="A photograph of people riding camels near two pyramids.">'
+             '<image src="../../media/photo.jpg"/></media><caption>A command economy. (credit: "Pyramids" by '
+             'Someone/Flickr, CC BY 2.0)</caption></figure>'
+             '<figure id="F3"><media alt="x"><image src="../../media/a.jpg"/></media><media alt="y">'
+             '<image src="../../media/b.jpg"/></media></figure>'
+             '<figure id="F4"><media alt="A diagram of the female reproductive system with its parts named.">'
+             '<image src="../../media/r.jpg"/></media><caption>The reproductive system.</caption></figure>'
+             '<figure id="F5"><media alt="A graph of prices against quantity with two curves crossing.">'
+             '<image src="../../media/g.jpg"/></media><caption>Supply and demand meet here. (credit: modification '
+             'of work by Jane Roe, all rights reserved)</caption></figure>')
+    figs = ch.cnxml_figures(cnxml)
+    assert [f[0] for f in figs] == ["F1", "F2", "F4", "F5"]
+    assert figs[0][1] == "The Budget Constraint" and figs[0][5] == "CNX_Econ_C02_001.jpg" and figs[0][3] == ""
+    assert figs[1][3].startswith("credit:") and figs[1][2] == "A command economy."
+    rows = ch.figure_rows(figs[0], "Principles of Economics 3e", "page")
+    assert rows[0] == {"question": ch.DESCRIBE, "answer": "The graph shows a downward-sloping budget line from 5 "
+                       "burgers to 20 tickets.", "credit": "OpenStax, Principles of Economics 3e (page), figure F1, "
+                       "CC BY 4.0"}
+    assert rows[1]["answer"] == "The Budget Constraint: Each point costs $10 in all."
+    assert ch.figure_rows(figs[1], "b", "p") == []          # a credited photo, not a chart
+    assert ch.figure_rows(figs[2], "b", "p") == []          # reproduction: left out
+    assert ch.figure_rows(figs[3], "b", "p") == []          # all rights reserved
+    assert all(len(commit) == 40 for _r, commit, _s, _n in ch.OPENSTAX_BOOKS)
+    assert ch.CC_BY_4.search('<md:license url="http://creativecommons.org/licenses/by/4.0/"/>')
+    assert not ch.CC_BY_4.search('<md:license url="http://creativecommons.org/licenses/by-nc-sa/4.0/">')
+
+
+def test_commons_charts_need_a_description():
+    import chart_packs as ch
+    rows_for = ch.chart("a pie chart")
+    assert rows_for("File:Pie.svg", "Too short.") == []
+    text = "Share of electricity generation in Germany by source in 2020, from official statistics."
+    assert rows_for("File:Pie.svg", text) == [(ch.CHART_KIND, "This is a pie chart."), (ch.CHART_SHOWS, text)]
+
+
+def test_tqa_rows():
+    import picture_reading_sources as k
+    lessons = [{"instructionalDiagrams": {"a": {"imagePath": "teaching_images/earth.png",
+                                                "processedText": "The diagram shows the different layers of the "
+                                                                 "earth: the crust, the mantle and the core"},
+                                          "b": {"imagePath": "teaching_images/x.png", "processedText": "Too short"}},
+                "topics": {"t": {"content": {"figures": [{"imagePath": "textbook_images/f.png",
+                                                          "caption": "A volcano erupting ash into the sky"},
+                                                         {"imagePath": "textbook_images/g.png", "caption": "Ash"}]}}}}]
+    rows = k.tqa_rows(lessons, "train")
+    assert rows == [("tqa_train_val_test/train/teaching_images/earth.png",
+                     {"question": k.EXPLAIN, "answer": "The diagram shows the different layers of the earth: the "
+                                                       "crust, the mantle and the core.", "split": ""}),
+                    ("tqa_train_val_test/train/textbook_images/f.png",
+                     {"question": k.FIGURE_SHOWS, "answer": "A volcano erupting ash into the sky.", "split": ""})]
+
+
+def test_charts_wired():
+    import chart_packs as ch
+    import sources
+    check_wired(ch.CHART_PACKS, ch.CHART_LIMITS, ch.CHART_COMMONS_KEYS, no_picture_making=("openstax_figures",))
+    listed = {s.key: s for s in sources.SOURCES}
+    assert listed["tqa_diagrams"].group == "noncommercial"
+    import topics
+    assert {"openstax_figures", "commons_charts", "tqa_diagrams"} <= set(topics.find("documents").keys)

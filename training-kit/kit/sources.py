@@ -2384,6 +2384,10 @@ SOURCES = [
            "CC BY 4.0 (Zenodo record 248733)", "Bentham Papers, University College London, transcribed by Transcribe Bentham volunteers; ICDAR 2015 HTRtS dataset (Sanchez, Toselli, Romero and Vidal, 2015, tranScriptorium), CC BY 4.0, https://zenodo.org/records/248733", "permissive", 700, 10, prepare_pack, "about 250 MB"),
     Source("commons_handwriting", "Handwriting, handwritten letters, signs and shopping lists, and signatures named by their file (Wikimedia Commons, ready-made pack)",
            "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1500, 15, prepare_pack, "about 250 MB"),
+    Source("openstax_figures", "Textbook graphs, charts and diagrams explained in OpenStax's own alt text and captions: economics, statistics, biology, chemistry, physics, astronomy (ready-made pack)",
+           "CC BY 4.0 (the versions OpenStax published before its 2026 change to CC BY-NC-SA)", "OpenStax, Rice University (each figure credited in CREDITS.txt), https://github.com/openstax", "permissive", 3000, 20, prepare_pack, "about 250 MB"),
+    Source("commons_charts", "Pie, bar and line charts, histograms, Venn diagrams, population pyramids, organisation charts and timelines, with their own descriptions (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1500, 15, prepare_pack, "about 150 MB"),
     Source('skin_lesion_photos', 'Skin spots photographed with a phone, adults (PAD-UFES-20, ready-made pack)',
            'CC BY 4.0 (Mendeley Data zr7vgbcyr2)',
            'PAD-UFES-20 (Pacheco et al., 2020), CC BY 4.0', "permissive", 2000, 20, prepare_pack, 'about 400 MB', content="medical"),
@@ -2613,6 +2617,8 @@ PEOPLE_AND_BODILY_PACK_KEYS = (
     # reading pictures (picture_reading_sources.py): signatures and handwriting are never for picture-making (a
     # picture-making model must not learn to write someone's hand or signature)
     "bentham_pages", "commons_handwriting",
+    # chart_packs.py: OpenStax figures include photographs of people (the Commons charts are drawings and are used)
+    "openstax_figures",
 )
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + PEOPLE_AND_BODILY_PACK_KEYS
 # The drug and firearm packs (packs/drug_firearm_packs.py): describing only, never for picture-making, whether or not

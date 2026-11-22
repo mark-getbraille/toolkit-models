@@ -1679,6 +1679,10 @@ PACKS.update(DRINKS_PACKS)
 # someone's signature).
 from handwriting_packs import HANDWRITING_PACKS
 PACKS.update(HANDWRITING_PACKS)
+# Charts and diagrams with their own explanations (packs/chart_packs.py): OpenStax figures with their alt text (the
+# CC BY 4.0 versions on GitHub) and Commons charts with their descriptions.
+from chart_packs import CHART_PACKS
+PACKS.update(CHART_PACKS)
 
 
 # The packs whose builder reads the Wikimedia Commons API (commons_get, commons_members, commons_entries,
@@ -1744,6 +1748,8 @@ COMMONS_KEYS = frozenset({
     "commons_soft_drinks",
     # reading pictures (handwriting_packs.py; bentham_pages reads Zenodo, not Commons)
     "commons_handwriting",
+    # (chart_packs.py; openstax_figures reads GitHub, not Commons)
+    "commons_charts",
 })
 
 
