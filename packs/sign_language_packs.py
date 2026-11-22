@@ -46,6 +46,11 @@ SIGN_FOR = re.compile(r"\bsign(?:ing)?\s+for\s+(?:the\s+word\s+)?[\"'“]?([A-Za
                       r"(?:\s+in\s+(?:ASL|American Sign Language|BSL|British Sign Language))?\s*$", re.I)
 
 
+# The file's own words must be about signing (subcategories also hold magazine covers, buildings and events).
+ABOUT_SIGNING = re.compile(r"\b(sign(s|ing|ed)?|signers?|asl|bsl|deaf|fingerspell\w*|interpret\w*|"
+                           r"gestures?|hand ?shapes?|i love you)\b", re.I)
+
+
 def language_of(category, title):
     """"British Sign Language" for the BSL category or a title naming it, else "American Sign Language"."""
     return "British Sign Language" if re.search(r"\b(bsl|british)\b", f"{category} {title}", re.I) \
@@ -84,7 +89,7 @@ def signing_rows(category):
         letter_rows = alphabet_rows(category)(title, text)
         if letter_rows:
             return letter_rows
-        if text and len(text.split()) >= 5:
+        if text and len(text.split()) >= 5 and ABOUT_SIGNING.search(f"{words} {text}"):
             return [(ASK_WHAT, f"This shows {language}.")]
         return []
     return rows_for

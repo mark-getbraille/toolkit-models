@@ -218,6 +218,7 @@ def test_signs_named_only_where_labelled():
     assert signing("File:ASL sign for love.jpg", "") == [(sl.ASK_SIGN, "It is the American Sign Language sign for "
                                                                        "\"love\".")]
     assert signing("File:Hello.jpg", "A woman signing for \"hello\" in ASL")[0][1].endswith("for \"hello\".")
+    assert signing("File:Cover 15.jpg", "Cover of a Soviet magazine, issue 15 of 1930") == []
     assert signing("File:Event.jpg", "People at a deaf community event in Ohio") == [
         (sl.ASK_WHAT, "This shows American Sign Language.")]
     assert signing("File:Event.jpg", "") == []
