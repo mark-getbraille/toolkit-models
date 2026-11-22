@@ -1900,6 +1900,8 @@ COMMONS_KEYS = COMMONS_KEYS | frozenset(OUTDOOR_COOKING_COMMONS_KEYS)
 from preparedness_packs import PREPAREDNESS_PACKS, PREPAREDNESS_COMMONS_KEYS
 from radio_packs import RADIO_PACKS, RADIO_COMMONS_KEYS
 for _packs, _commons in ((PREPAREDNESS_PACKS, PREPAREDNESS_COMMONS_KEYS), (RADIO_PACKS, RADIO_COMMONS_KEYS)):
+    PACKS.update(_packs)
+    COMMONS_KEYS = COMMONS_KEYS | frozenset(_commons)
 # Privacy, security and digital safety (packs/privacy_packs.py: Commons security keys, code tokens, fingerprint
 # scanners, webcam covers, routers, cameras, card skimmers, phishing, HTTPS, ransomware, CAPTCHAs, sign-in screens and
 # privacy tools, each with its safety note; packs/synthetic_scams_packs.py: COMPUTER-MADE scam and safe message
