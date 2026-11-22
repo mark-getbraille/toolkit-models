@@ -233,33 +233,37 @@ BOATING = [
 ]
 
 # ---------------------------------------------------------------------- sewing, knitting and needlework (had 1)
+# In "Reference, arts and crafts" (the group of crafts_books.py), the one top-level group for crafts (the owner's
+# request of 22 November 2026); they keep the request words of their old group "reference" (word_group, as
+# power_books.py does), so group:reference still asks for them.
+CRAFTS = "crafts"
 SEWING = [
     _old("carens_dressmaking_self_taught_1911", "Dressmaking Self Taught in Twenty Complete Lessons (Edith Marie "
-         "Carens, 1911)", "Sewing and dressmaking", "reference", "Edith Marie Carens (Toledo, Ohio)",
+         "Carens, 1911)", "Sewing and dressmaking", CRAFTS, "Edith Marie Carens (Toledo, Ohio)",
          "dressmakingselft00care", 1911,
          "Twenty lessons in dressmaking: tools, taking measures, drafting and cutting patterns, stitches, seams, "
-         "fitting and finishing.", note=OLD_SEWING_NOTE),
+         "fitting and finishing.", note=OLD_SEWING_NOTE, word_group="reference"),
     _old("allington_practical_sewing_dressmaking_1913", "Practical Sewing and Dressmaking (Sara May Allington, 1913)",
-         "Sewing and dressmaking", "reference", "Sara May Allington (Dana Estes and Company)",
+         "Sewing and dressmaking", CRAFTS, "Sara May Allington (Dana Estes and Company)",
          "practicalsewingd00alli", 1913,
          "Hand and machine sewing from the first stitches: seams, hems, buttonholes, patching and darning, and "
-         "making garments.", note=OLD_SEWING_NOTE),
+         "making garments.", note=OLD_SEWING_NOTE, word_group="reference"),
     _old("butterick_new_dressmaker_1921", "The New Dressmaker (Butterick Publishing Company, 1921)", "Sewing and "
-         "dressmaking", "reference", "Butterick Publishing Company", "newdressmakerwit00butt", 1921,
+         "dressmaking", CRAFTS, "Butterick Publishing Company", "newdressmakerwit00butt", 1921,
          "Complete instructions on every point of dressmaking: stitches, seams, fitting, collars, sleeves, "
-         "fastenings and children's clothes.", note=OLD_SEWING_NOTE),
+         "fastenings and children's clothes.", note=OLD_SEWING_NOTE, word_group="reference"),
     _old("butterick_art_of_knitting_1892", "The Art of Knitting (Butterick Publishing Company, 1892)", "Knitting",
-         "reference", "Butterick Publishing Company", "artofknitting00butt", 1892,
+         CRAFTS, "Butterick Publishing Company", "artofknitting00butt", 1892,
          "Knitting from casting on: the stitches, then patterns for stockings, mittens, shawls, children's clothes "
-         "and lace, each worked out row by row.", note=OLD_SEWING_NOTE),
+         "and lace, each worked out row by row.", note=OLD_SEWING_NOTE, word_group="reference"),
     _old("perkins_embroidery_crochet_knitting_1899", "A Treatise on Embroidery, Crochet and Knitting (George C. "
-         "Perkins, 1899)", "Needlework (embroidery, crochet, knitting)", "reference",
+         "Perkins, 1899)", "Needlework (embroidery, crochet, knitting)", CRAFTS,
          "George C. Perkins (M. Heminway and Sons Silk Company)", "treatiseonembroi00perk", 1899,
-         "The stitches of embroidery, crochet and knitting with silk, with patterns.", note=OLD_SEWING_NOTE),
+         "The stitches of embroidery, crochet and knitting with silk, with patterns.", note=OLD_SEWING_NOTE, word_group="reference"),
     _old("robinson_priscilla_filet_crochet_1915", "The Priscilla Filet Crochet Book (Belle Robinson, 1915)",
-         "Crochet", "reference", "Belle Robinson (Priscilla Publishing Company)", "priscillafiletc00robi", 1915,
+         "Crochet", CRAFTS, "Belle Robinson (Priscilla Publishing Company)", "priscillafiletc00robi", 1915,
          "How to work filet crochet, with designs for edgings, insertions and pieces; the designs themselves are "
-         "pictures of squares, described only by their captions.", note=OLD_SEWING_NOTE),
+         "pictures of squares, described only by their captions.", note=OLD_SEWING_NOTE, word_group="reference"),
 ]
 
 # ---------------------------------------------------------------------- taxes (had 3, one for disability)

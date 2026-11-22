@@ -2,7 +2,7 @@
 nothing is downloaded.
 
 It checks that every book is registered once under its request word "home-crafts" (at most 256 jobs) and reaches
-sources.py with its group "Reference, home repair, pests and handcrafts"; that every book has a licence the toolkit
+sources.py with its groups "Reference, home repair and pests" and (the craft books) "Reference, arts and crafts"; that every book has a licence the toolkit
 may repackage, a notice, a description and a licence page and line (the old books: the before-1931 check instead);
 that the EPA books are personal use only with the pesticide safety note; that every old book says what is out of
 date in it, and the ones naming chemicals or finishes warn about them; that the web guides' page patterns take their
@@ -28,7 +28,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 def test_registered():
     assert "home_crafts" in more_refs.MODULES and H in more_refs.modules()
-    assert sources.GROUPS["homecraft"] == "Reference, home repair, pests and handcrafts"
+    assert sources.GROUPS["homecraft"] == "Reference, home repair and pests"
+    assert sources.GROUPS[H.CRAFT_GROUP] == "Reference, arts and crafts"
     keys = sources.expand_keys(["home-crafts"])
     c = H.COLLECTION
     assert keys == c.expand_keys(["home-crafts"]) and len(keys) == len(set(keys)) <= 256
@@ -40,7 +41,7 @@ def test_registered():
 
 def test_every_book_has_its_licence_and_notice():
     for g in H.GUIDES + H.PDFS:
-        assert g["group"] == "homecraft", g["name"]
+        assert g["group"] in ("homecraft", H.CRAFT_GROUP), g["name"]
         short = g["licence"] if g["licence"] in sources.NO_CHANGES else B.licence_short(g["licence"])
         assert B.licence_kind(short, bool(g.get("unchanged"))), g["name"]
         assert g["notice"] and g["description"] and g["title"] and g["subject"], g["name"]
@@ -128,3 +129,19 @@ def test_old_book_refused_after_1930(monkeypatch, tmp_path):
     entry = dict(H.COLLECTION.pdfs["webster_quilts_1915"], archive="madeupitem")
     assert B.pdfdoc_book(entry, str(tmp_path), None, left_out) is None
     assert "before 1931" in left_out[0]["reason"]
+
+
+def test_craft_books_in_the_arts_and_crafts_group():
+    """The textile craft books moved to "Reference, arts and crafts" (keys unchanged); the home repair, pest, heating,
+    stain, mending and shoe repair books stayed in "Reference, home repair and pests"."""
+    group = {g["name"]: g["group"] for g in H.GUIDES + H.PDFS}
+    crafts = {"webster_quilts_1915", "christie_embroidery_tapestry_1906", "hooper_hand_loom_weaving_1910",
+              "atwater_shuttle_craft_1928", "hutton_wool_carding_spinning_1912", "mairet_vegetable_dyes_1916",
+              "butterick_tatting_netting_1895", "sylvia_macrame_lace_1890", "hale_plain_needlework_1879",
+              "nicoll_knitting_sewing_1918", "hasluck_upholstery_1904", "johnson_furniture_upholstery_1919",
+              "mickel_leather_work_1915"}
+    assert {n for n, g in group.items() if g == "crafts"} == crafts
+    for name in ("epa_safe_pest_control", "epa_burn_wise", "usda_removing_stains_1965", "leland_manual_of_mending_1896",
+                 "hasluck_boot_making_mending_1898", "bower_practical_shoe_repairing_1923"):
+        assert group[name] == "homecraft", name
+    assert "craft:webster_quilts_1915" in sources.expand_keys(["home-crafts"])            # keys and word unchanged

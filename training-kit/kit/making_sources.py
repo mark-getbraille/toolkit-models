@@ -20,8 +20,11 @@ heat presses, molten metal and soldering. The notes are the same words as the pa
 
 Picture-making (MAKING_PICTURE_MAKING_OK): the Commons machine, tooling and circuit board collections (things);
 sources.py puts every other key in NOT_FOR_PICTURE_MAKING (makerspaces, blacksmithing and the Open Images photos
-show people). Topics: no new topic add-on; everything is in "machines" (Vehicles, machines and devices) and "home"
-(Home and household), and the circuit board fabrication pack also in "power" (Power and electrical).
+show people). Topics: no topic add-on of its own; everything is in "machines" (Machines, tools and devices) and
+"home" (Home and household), the circuit board fabrication pack also in "power" (Power and electrical), and the
+cutting machine pack (vinyl cutters, Cricut-style cutting machines, heat presses, screen printing and machine
+embroidery, which are mostly craft use; its lasers and engravers stay in machines and home) also in "crafts" (Arts and
+crafts). 3D printing, CNC, moulding and casting stay with machines and home.
 
     python -c "import sources, making_sources"      (from the kit folder: checks the file loads)
 """
@@ -171,12 +174,14 @@ MAKING_SOURCES = [
 MAKING_PICTURE_MAKING_OK = {"commons_3d_printing", "commons_cutting_lasers", "commons_cnc_machining",
                             "commons_pcb_fabrication", "making_commons_sa"}
 
-# Which topic add-ons hold each collection (topics.py lists the same keys; packs/test_making.py checks). No new topic:
-# the owner's rule is to add a topic only when needed.
+# Which topic add-ons hold each collection (topics.py lists the same keys; packs/test_making.py checks). No topic of
+# its own: the owner's rule is to add a topic only when needed.
 MAKING_TOPICS = {
     "machines": tuple(s.key for s in MAKING_SOURCES),
     "home": tuple(s.key for s in MAKING_SOURCES),
     "power": ("commons_pcb_fabrication",),
+    # vinyl cutters, cutting machines, heat presses, screen printing and machine embroidery: mostly craft use
+    "crafts": ("commons_cutting_lasers",),
 }
 
 MAKING_NOT_INCLUDED = {

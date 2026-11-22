@@ -2043,6 +2043,13 @@ COMMONS_KEYS = COMMONS_KEYS | frozenset(SPORTS_COMMONS_KEYS)
 from making_packs import MAKING_PACKS, MAKING_COMMONS_KEYS
 PACKS.update(MAKING_PACKS)
 COMMONS_KEYS = COMMONS_KEYS | frozenset(MAKING_COMMONS_KEYS)
+# Photography (packs/photography_packs.py, the owner's request of 2026-11-22): Commons cameras by type and by maker,
+# lenses, lighting and camera supports, film and the darkroom, historic photographic processes as objects, NMAH's
+# photographic history objects (CC0) and Open Images cameras, accessories, darkroom things and kinds of photograph;
+# darkroom, historic process (mercury, cyanide), UV, nitrate film and flash powder notes where they fit.
+from photography_packs import PHOTOGRAPHY_PACKS, PHOTOGRAPHY_COMMONS_KEYS
+PACKS.update(PHOTOGRAPHY_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(PHOTOGRAPHY_COMMONS_KEYS)
 
 
 def pack_lanes(keys):

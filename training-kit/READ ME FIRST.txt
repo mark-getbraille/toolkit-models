@@ -255,7 +255,7 @@ The topics:
   passports and boarding passes (made-up examples), buoys and trail markers.
 - Home and household (home): appliances and their controls, kitchens, laundry and care labels, cleaning products
   and hazards, home repair, locks, heating and emergency lighting, building work and ramps, pests, baby products,
-  sewing and crafts, fitness equipment, games and clothes, and emergency kits, warnings, shelters and disasters.
+  sewing and mending, fitness equipment, games and clothes, and emergency kits, warnings, shelters and disasters.
 - Power and electrical (power): generators and their safety labels, solar panels, charge controllers and
   connectors, battery banks, wind turbines, water wheels and turbines, fuel, power lines, and home wiring, outlets,
   breakers, plugs, cables and circuits (with the carbon monoxide, back-feeding, solar and battery safety notes).
@@ -274,7 +274,12 @@ The topics:
   holidays, ceremonies, events and crowds, facial expressions, gestures and sign language, hairstyles and clothes.
 - Places and buildings (places): streets, pavements and crossings, houses and rooms, shops and public places,
   stations, lobbies and corridors, workplaces, landmarks, places of worship, architecture, historic buildings.
-- Art and museum objects (art): museum descriptions written for blind visitors, famous works, instruments, crafts.
+- Art and museum objects (art): museum descriptions written for blind visitors, famous works, museum ceramics,
+  jewellery, glass and textiles, instruments.
+- Arts and crafts (crafts): knitting, crochet, lace, quilting, embroidery, weaving, sewing, upholstery, leather and
+  fabrics, pottery, jewellery and beading, paper crafts, candles and soap, glass and carving, art supplies, models
+  and resin, and craft cutting machines and heat presses (with the kiln, lye, hot-wax, glass, resin and blade
+  safety notes).
 - Sports (sports): sports equipment and protective gear, courts, fields, rinks and stadiums, athletes in action,
   and blind and adaptive sports.
 - Documents, maps and signs (documents): letters, handwriting, document pages, tables, charts, diagrams, maps,

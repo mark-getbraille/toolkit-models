@@ -35,10 +35,11 @@ MODULES = [
     "parenting",            # parenting and family: CDC, Child Welfare Information Gateway, CPIR, CPSC ... (parent:)
     "early_childhood",      # child care, pregnancy, newborns and infant feeding: ChildCare.gov, OWH, CDC, WIC, NHS (early:)
     "read_aloud",           # picture books (Book Dash, African Storybook) and old nursery rhymes (readaloud:)
-    "home_crafts",          # home repair, pest control and textile crafts: EPA, USDA stains, old craft books (craft:)
+    "home_crafts",          # home repair and pests (EPA, USDA stains); textile craft books in the arts and crafts group (craft:)
     "electronics_books",    # electronics repair and assistive-technology care: Kuphaldt, NEETS, NLS, VA, Wikibooks (elec:)
     "building_books",       # light construction: Army carpentry and masonry, Navy builder, OSHA, Wood Handbook (build:)
     "crafts_books",         # arts and crafts: Wikibooks origami and bookbinding, old pottery, jewellery, glass books (craft:)
+    "arts_crafts_index",    # arts and crafts, a top-level section: the guide to every craft book, manual and pack (arts:)
     # life skills (the owner's request of 2026-11-22)
     "car_care",             # old public-domain car care books (car:)
     "gardening",            # USDA hardiness zones, NRCS soil health, lawn weeds, old gardening books (garden:)
@@ -129,6 +130,10 @@ MODULES = [
     "court_opinions",       # Supreme Court opinions by volume and landmark cases by subject, from govinfo (court:)
     "patents",              # famous patents (Wikisource), assistive and household patents (USPTO, sign-up) (pat:)
     "quotations",           # Bartlett, Hoyt, Brewer, proverb and idiom books, Wikiquote from its dump (quote:)
+    # photography, its own group (the owner's request of 2026-11-22)
+    "photography",          # cameras, darkroom, historic processes: Navy and Army manuals, LoC, NARA, NPS, FADGI, darktable, GIMP, old books (photo:)
+    # old public-domain and open books for nine thin life-skills groups (the owner's request of 2026-11-22)
+    "oldbooks_life",        # household, instruments, garden, outdoors, science, computer, typing, media, genealogy, etiquette (olife:)
     # history, travel and education (the owner's request of 2026-11-22; shared helpers in govinfo_kit.py)
     "history",              # history by era and region: NARA, LoC, Public Papers, NPS handbooks, CMH, old books (hist:)
     "travel_more",          # travel: Wayback copies of DOT, TSA, CBP, State; govinfo sign-up; old guidebooks (tripmore:)
@@ -155,11 +160,18 @@ def modules():
 
 
 def module_for(word):
-    """The module whose key prefix or request word this is, or None."""
+    """The module whose key prefix or request word this is, or None. Two modules may share a key prefix (home_crafts
+    and crafts_books both use "craft:"): when the first one by prefix does not really have the key (its own_keys),
+    another module with the same prefix that has it is chosen."""
     for m in modules():
         c = m.COLLECTION
-        if c.owns(word) or word in c.words:
+        if word in c.words:
             return m
+        if c.owns(word):
+            sharers = [o for o in modules() if o is not m and o.COLLECTION.owns(word)]
+            if not sharers or word in c.own_keys():     # own_keys only asked when a prefix is shared
+                return m
+            return next((o for o in sharers if word in o.COLLECTION.own_keys()), m)
     return None
 
 

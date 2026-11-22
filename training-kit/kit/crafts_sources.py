@@ -7,7 +7,9 @@ the owner asked. This file lists:
     jewellery and glass records (CC0); Open Images crafts;
   - the share-alike Commons files of the main pottery, jewellery and craft categories (group "share-alike");
   - what was looked at and left out (CRAFTS_NOT_INCLUDED) and the sign-up and research collections
-    (CRAFTS_SIGN_UP).
+    (CRAFTS_SIGN_UP);
+  - which topic add-ons hold them (CRAFTS_TOPICS): "crafts" (Arts and crafts) holds every one, and "art" also the
+    museum ceramics, jewellery and glass.
 
 Nothing here is re-shared by the kit's makers: each collection is downloaded by the kit on the user's own computer,
 only when the user ticks its choice. Answers say only what the Commons category, the file's own words, the museum's
@@ -174,6 +176,13 @@ CRAFTS_PACK_KEYS = ("commons_pottery_ceramics", "museum_ceramics", "commons_jewe
 # The two collections the owner asked for by name.
 POTTERY_KIT_KEYS = ("commons_pottery_ceramics", "museum_ceramics", "pottery_commons_sa")
 JEWELLERY_KIT_KEYS = ("commons_jewellery_beading", "museum_jewellery", "jewellery_commons_sa")
+# The kit topics each collection belongs to (topics.py lists them; packs/test_crafts.py checks they match): every
+# collection here is in "crafts" (Arts and crafts, the owner's request of 22 November 2026: a top-level section), and
+# the museum ceramics, jewellery and glass are also in "art" (Art and museum objects) as museum art objects.
+CRAFTS_TOPICS = {
+    "crafts": CRAFTS_PACK_KEYS + ("pottery_commons_sa", "jewellery_commons_sa", "crafts_commons_sa"),
+    "art": ("museum_ceramics", "museum_jewellery", "museum_glass_crafts"),
+}
 # Things, not people: museum objects, art supplies, paper crafts and models.
 CRAFTS_PICTURE_MAKING_OK = {"museum_ceramics", "museum_jewellery", "museum_glass_crafts", "commons_art_supplies",
                             "commons_paper_crafts", "commons_models_resin"}
