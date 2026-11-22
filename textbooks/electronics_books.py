@@ -10,7 +10,7 @@ What this module builds, each IN FULL:
     magnetic recording), Distribution Statement A in their own front matter (checked at every build), from the
     Internet Archive's copies with their words (sources.NEETS has the other modules);
   - Wikibooks' electronics and computer books (Electronics, Practical Electronics, Electronics Handbook, Circuit
-    Theory, How To Assemble A Desktop PC, Computer Hardware), CC BY-SA 4.0 (share-alike), every page;
+    Theory, How To Assemble A Desktop PC), CC BY-SA 4.0 (share-alike), every page;
   - the National Library Service for the Blind and Print Disabled (Library of Congress): its Digital Talking Book
     Machine library manual and technician's service manual (cleaning, cartridges, batteries, faults and their
     remedies), and its pages on the DA2 player (getting started and the full user guide) and the commercial players
@@ -216,9 +216,6 @@ GUIDES += [
              "(Wikibooks)", "Computer repair and building", "Wikibooks' guide to building and upgrading a desktop "
              "computer: choosing parts, static safety, fitting the processor, memory, drives, cards and power "
              "supply, first start-up and troubleshooting.", MAINS_NOTE),
-    wikibook(GROUP, "wikibooks_computer_hardware", "Computer_Hardware", "Computer Hardware (Wikibooks)",
-             "Computer repair and building", "Wikibooks' book on what is inside a computer: the processor, memory, "
-             "motherboard, storage, expansion cards, power supply and ports.", MAINS_NOTE),
 ]
 
 # ====================================================================== old public-domain radio books (before 1931)
@@ -275,6 +272,9 @@ LICENCE_LINES = {
                              "the item's year is checked at every build, build_textbooks.archive_year).",
 }
 NOT_INCLUDED = [
+    ("Wikibooks: Computer Hardware", "CC BY-SA, but its contents page links no pages of the book the reader can "
+     "follow (no pages could be read on 2026-11-22); How To Assemble A Desktop PC is built instead. Index: "
+     "https://en.wikibooks.org/wiki/Computer_Hardware"),
     ("iFixit repair guides (phones, tablets, laptops, consoles, TVs, assistive devices)", "CC BY-NC-SA, but its "
      "robots.txt says ai-train=no and its Terms of Use allow programs only through its API, keep API answers 24 hours "
      "at most and forbid putting them in indexes or datasets (read 2026-11-21). Link-only, personal use. Index: "
