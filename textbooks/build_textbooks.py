@@ -2454,6 +2454,10 @@ def build(keys, out_dir, cache=None, pictures=False, local_osbooks=None, date=No
             import writing_business              # here, not at the top: writing_business imports this module
             manifests.update(writing_business.build_writing([key], out_dir, cache, date))
             continue
+        import more_refs                         # the reference sources added 2026-11-22 (more_refs.MODULES)
+        if more_refs.owns(key):
+            manifests.update(more_refs.build([key], out_dir, cache, date))
+            continue
         if key.startswith("pub:"):               # periodicals, journals, reports, news, history (periodicals.py)
             import periodicals                   # here, not at the top: periodicals imports this module
             # "pub:voa:recent+pub:voa:2026": pieces built one after another in this one job

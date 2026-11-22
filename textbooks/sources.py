@@ -1111,6 +1111,12 @@ def expand_keys(words):
         elif w == "publications" or w.startswith("pub:"):
             import periodicals                    # here, not at the top: periodicals imports the builder
             keys += periodicals.expand_keys(["pub:all" if w == "publications" else w])
+            if w == "pub:daily":                  # the daily refresh also rebuilds this month's FDA recalls
+                keys += _more.daily_keys()
+        elif _more.expand_keys(w) is not None:
+            # The reference sources added 2026-11-22 (more_refs.MODULES: food data, recalls, MedlinePlus, AT docs,
+            # laws, legal help, preparedness, money, transport, government help, work, voting and housing)
+            keys += _more.expand_keys(w)
         else:
             keys.append(w)
     return list(dict.fromkeys(keys))
@@ -2033,3 +2039,16 @@ GROUPS.update(_wb.GROUPS)
 LICENCE_LINES.update(_wb.LICENCE_LINES)
 NOT_INCLUDED = NOT_INCLUDED + _wb.NOT_INCLUDED
 PRACTICE_SUBJECTS[:0] = _wb.PRACTICE_SUBJECTS
+
+
+# ====================================================================== reference sources added 2026-11-22
+# FoodData Central, FDA recalls, MedlinePlus, NVDA and liblouis docs, the US Code and state codes, legal help,
+# emergency preparedness, money, transport, government help, disability and work, voting and housing: entries,
+# checks and reasons are in the modules of more_refs.MODULES (they build their own keys; only the records are here).
+import more_refs as _more  # noqa: E402
+
+_g, _l, _n, _p = _more.records()
+GROUPS.update(_g)
+LICENCE_LINES.update(_l)
+NOT_INCLUDED = NOT_INCLUDED + _n
+PRACTICE_SUBJECTS[:0] = _p
