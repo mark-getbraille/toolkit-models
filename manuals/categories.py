@@ -662,3 +662,10 @@ from radio_manuals import CATEGORIES as _RADIO  # noqa: E402
 
 CATEGORIES.update(_PREPAREDNESS)
 CATEGORIES.update(_RADIO)
+# Practical life (manuals/practical_manuals.py gathers six files, the owner's request of 2026-11-22): driver, CDL and
+# motorcycle handbooks (every state and province, links), computer and phone getting-started guides, cleaning machines
+# and household management, outdoor tools (axes, saws, knives, compasses, rope), pools, spas and hot tubs, and RVs,
+# trailers, towing and motorcycle gear; every maker link-only, with each category's safety notice and guidance.
+from practical_manuals import CATEGORIES as _PRACTICAL  # noqa: E402
+
+CATEGORIES.update(_PRACTICAL)
