@@ -16,7 +16,10 @@ kept elsewhere by official or library hands that do let programs in:
 How the books were found: GovInfo's sitemaps list every GOVPUB package; a package's name starts with the
 publisher's Superintendent of Documents class (TD 8 is NHTSA, HS 5 is FEMA, HE 20.8100 is NIMH, HE 20.400 is SAMHSA,
 VA is Veterans Affairs and so on), so the packages of the agencies that refused were picked out and each one's
-MODS record (title, date, pages) read once, by hand, on 2026-11-22. The books below are the ones a person would
+MODS record (title, date, pages, publishers) read once by a one-off research script on 2026-11-22 (not part of the
+build). Every chosen PDF was then opened to check its text layer, its publishers (a book made with an organisation
+outside the federal government, or holding someone else's copyrighted text, was left out and is listed in
+NOT_INCLUDED) and the words of its description. The books below are the ones a person would
 want (guides and booklets for the public, not research notes or reports to Congress).
 
 Every book is a work of the US government (public domain, 17 U.S.C. 105; the builder checks govinfo's quotation of
@@ -82,17 +85,17 @@ API = GK.GOVINFO_API + "/search"
 # Superintendent of Documents classes its sign-up book searches on GovInfo)
 AREAS = {
     "car": ("gpo-car", CC.GROUP, "Car care and driving",
-            CC.SAFETY + " " + DV.DRIVE_SAFETY, ["TD8", "TD2_300", "TD2"]),
+            CC.SAFETY + " " + DV.DRIVE_SAFETY, ["TD8", "TD2_300"]),
     "drive": ("gpo-car", DV.GROUP, "Driving and road rules", DV.DRIVE_SAFETY, []),     # car's list covers it
     "motor": ("gpo-motor", MR.GROUP, "Motorcycles, RVs and trailers", MR.ROAD_SAFETY, ["TD8"]),
     "pools": ("gpo-pools", PS.GROUP, "Pools and spas", PS.POOL_SAFETY, ["Y3_C76_3", "HE20_7000"]),
-    "recycle": ("gpo-recycling", RC.GROUP, "Recycling and waste", RC.NOTE, ["EP", "EP1", "EP4_50"]),
+    "recycle": ("gpo-recycling", RC.GROUP, "Recycling and waste", RC.NOTE, ["EP", "EP4_50"]),
     "ready": ("gpo-ready", DR.GROUP, "Emergency preparedness and disasters", DR.SAFETY_NOTE,
               ["HS5", "HS5_100", "HS5_200", "FEM1"]),
     "mind": ("gpo-mind", MH.GROUP, "Mental health and wellbeing", MH.HEALTH_NOTE,
              ["HE20_400", "HE20_8100", "HE20_100"]),
     "aging": ("gpo-aging", AG.GROUP, "Aging and end of life", AG.NOTE, ["HE20_3850", "HE22", "SSA1"]),
-    "veterans": ("gpo-veterans", VT.GROUP, "Veterans", VT.CRISIS + " " + VT.LEGAL, ["VA", "D1"]),
+    "veterans": ("gpo-veterans", VT.GROUP, "Veterans", VT.CRISIS + " " + VT.LEGAL, ["VA"]),
     "gen": ("gpo-genealogy", GE.GROUP, "Genealogy", GE.NOTE, ["AE", "C3"]),
     "relate": ("gpo-relate", RL.GROUP, "Communication and relationships", RL.HOTLINES, ["HE25", "HE24"]),
 }
@@ -170,7 +173,8 @@ def archive(area, name, title, subject, publisher, item, published, description,
 # ---------------------------------------------------------------------- the sign-up books (GovInfo's search API)
 
 def api_search(key, docclass, size=100):
-    """The newest GovInfo GOVPUB publications of one Superintendent of Documents class, from GovInfo's search API:
+    """The newest GovInfo GOVPUB publications of one Superintendent of Documents class (GovInfo's "docClass", such as
+    "TD8" or "HS5_100"; the query form was tried against the live API on 2026-11-22), from GovInfo's search API:
     [{title, packageId, dateIssued, governmentAuthor}], newest first. The key goes in the X-Api-Key header (never in
     the address, so it is not written to any log). Raises urllib.error.HTTPError when the API refuses."""
     import build_textbooks as B
