@@ -733,3 +733,10 @@ from wilderness_manuals import CATEGORY as _WILDERNESS  # noqa: E402
 CATEGORIES.update({"sleep_relaxation": _SLEEP_RELAXATION, "fitness_equipment": _FITNESS,
                    "contraceptive_products": _CONTRACEPTIVE, "aging_in_place": _AGING,
                    "wilderness_first_aid": _WILDERNESS})
+
+# Hair styling tools, shavers, trimmers and personal care appliances (the owner's request of 2026-11-22 for personal
+# care and beauty products): the Internet Archive words, the makers as links and the FDA guidance are in
+# manuals/personal_care_manuals.py.
+from personal_care_manuals import CATEGORY as _PERSONAL_CARE  # noqa: E402
+
+CATEGORIES["personal_care_appliances"] = _PERSONAL_CARE
