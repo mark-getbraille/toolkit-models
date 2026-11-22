@@ -73,17 +73,22 @@ FOLDERS = [
      "The ones that may not be downloaded are listed in \"Links to open yourself.html\" at the top of the folder; "
      "print-disabled books from the Internet Archive go in its printdisabled folder, marked personal use only."),
     ("Software", "B:\\Software",
-     "The programs: the newest version of each program the owner uses (the Digital Accessibility Toolkit and his "
-     "other programs from GitHub, the Picture Model Training Kit, the Writing Kit) and their installers."),
-    ("Kiwix", "B:\\Kiwix",
-     "The Kiwix offline libraries (.zim files): Wikipedia, Wiktionary, Wikibooks, Project Gutenberg, Stack Exchange "
-     "sites, iFixit and the rest of the Kiwix catalogue, opened with the toolkit or the free Kiwix apps."),
+     "Offline installers, every version kept and checked against each project's checksum (Program Downloader 1.5): "
+     "NVDA first, then eSpeak NG, the public JAWS and ZoomText installers, 7-Zip, Firefox ESR, Python 3.12, "
+     "LibreOffice, VLC, Audacity, Thorium Reader, Tesseract OCR, Kiwix, llama.cpp, CHIRP, Meshtastic, OpenSCAD, "
+     "FreeCAD, Inkscape, OsmAnd, and the owner's own programs. README.txt gives the install order for a fresh "
+     "computer; add more in \"My extra software.txt\"."),
+    ("Kiwix", "B:\\Data packs\\Kiwix",
+     "The Kiwix offline libraries (.zim files) chosen in Program Downloader's list: Wikipedia with pictures, "
+     "Wiktionary, Wikivoyage, Wikibooks, Wikisource, Project Gutenberg, Khan Academy and every library the toolkit's "
+     "catalogue names (the Stack Exchange sites are for reading only). The newest and the previous file of each."),
     ("AI models", "B:\\AI models",
-     "The original AI models from Hugging Face that the toolkit's models are converted from (the Qwen3 and Qwen3-VL "
-     "models, the OPUS-MT and MADLAD-400 translation models in plan.json), kept so they can be converted again."),
+     "The Qwen3-VL model files (4B and 8B) the toolkit and the topic add-ons run on, the same files the toolkit "
+     "downloads, so the AI works without the internet."),
     ("Radio", "B:\\Radio",
-     "The radio communications material: radio programs and their data, kept apart from the books and manuals of "
-     "the radio groups (which stay in Data packs and Original sources)."),
+     "Personal use: the FCC's weekly amateur licence database with \"Look up a call sign.cmd\" for offline call-sign "
+     "lookup, and repeater lists from frequency coordinators that publish free lists (add more in \"Coordinator "
+     "sites.txt\"). RepeaterBook exports and the ARRL directory are on the To do yourself list."),
 ]
 
 # Where each part of the library lands on B: (release tags are matched by their first words).
@@ -104,9 +109,9 @@ LANDS = [
     ("Converted AI models", "B:\\Data packs\\toolkit-models\\engine-models\\", "zips, big ones in numbered parts"),
     ("Original AI models", "B:\\AI models\\", "one folder per Hugging Face model"),
     ("Place packs (maps)", "B:\\Data packs\\place-packs\\<release>\\", ".osmpack files"),
-    ("Kiwix libraries", "B:\\Kiwix\\", ".zim files"),
-    ("Programs and kits", "B:\\Software\\", "each program's newest version"),
-    ("Radio material", "B:\\Radio\\", "radio programs and data"),
+    ("Kiwix libraries", "B:\\Data packs\\Kiwix\\", ".zim files"),
+    ("Software installers", "B:\\Software\\", "every version, with README.txt"),
+    ("Radio data", "B:\\Radio\\", "FCC licence database and repeater lists (personal use)"),
     ("Writing Kit data", "the folder you choose when you run the Writing Kit (for example B:\\Writing data\\)",
      "the newspapers alone need about 340 GB to download and about 190 GB for the built data"),
 ]
