@@ -69,8 +69,9 @@ BOAT_TYPES = [
     thing("Drift boats", "a drift boat, a rowing boat with a flat bottom and raised ends, used to fish rivers",
           BOAT_NOTE),
     thing("Racing shells", "a racing shell, a long, narrow rowing boat for racing", BOAT_NOTE),
-    thing("Pontoon boats", "a pontoon boat, a flat deck carried on two or more floating tubes", f"{BOAT_NOTE} "
-                                                                                                 f"{ENGINE_NOTE}"),
+    # Commons files pontoon boats with the pontoons of military bridges and ferries: the answer fits both.
+    thing("Pontoon boats", "a pontoon boat or pontoon, a craft that floats on pontoons (hollow floats or tubes)",
+          BOAT_NOTE),
     thing("Inflatable boats", "an inflatable boat", BOAT_NOTE),
     thing("Rigid-hulled inflatable boats", "a rigid-hulled inflatable boat (RIB), a solid hull with inflatable tubes "
                                            "around it", f"{BOAT_NOTE} {ENGINE_NOTE}"),

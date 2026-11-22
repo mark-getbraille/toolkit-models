@@ -54,7 +54,7 @@ def test_every_answer_carries_its_note():
     for category, answer in answers():
         assert answer.startswith("This is ") and answer.endswith("."), category
         assert any(n in answer for n in (sb.BOAT_NOTE, sb.ENGINE_NOTE, sb.LINE_NOTE, sb.WORKSHOP_NOTE)), category
-        if re.search(r"engine|motorboat|sterndrive|pontoon|RIB", answer.split(".")[0]):
+        if re.search(r"engine|motorboat|sterndrive|RIB", answer.split(".")[0]):
             assert sb.ENGINE_NOTE in answer, category
     said = dict(answers())
     for category in ("Cleats", "Rowlocks", "Fairleads", "Mooring lines"):
