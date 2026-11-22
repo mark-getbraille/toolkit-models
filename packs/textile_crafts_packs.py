@@ -123,7 +123,7 @@ KNIT_CROCHET_LACE = [
     what("Yarn shops", "a yarn shop"),
 ]
 
-# ----------------------------------------------------------------- Commons: quilting, embroidery, weaving, spinning, dyeing
+# ----------------------------------------------------------------- Commons: quilting, embroidery, weaving, dyeing
 
 QUILT_EMBROIDERY_WEAVING = [
     craft("Quilting", "quilting: stitching layers of fabric and padding together"),

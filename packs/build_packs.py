@@ -1840,6 +1840,20 @@ COMMONS_KEYS = COMMONS_KEYS | frozenset(HOME_UPKEEP_COMMONS_KEYS)
 from textile_crafts_packs import TEXTILE_CRAFTS_PACKS, TEXTILE_CRAFTS_COMMONS_KEYS
 PACKS.update(TEXTILE_CRAFTS_PACKS)
 COMMONS_KEYS = COMMONS_KEYS | frozenset(TEXTILE_CRAFTS_COMMONS_KEYS)
+# Emergency and secondary heating (packs/heating_packs.py, added to the same request): Commons fireplaces, heating,
+# coal and tiled stoves, gas, kerosene, oil and patio heaters, dampers, stovepipes, fire bricks, chimney fires,
+# creosote, ash buckets, pellets and coal, firewood, woodpiles and splitting tools, and Open Images stoves, hearths,
+# coal, mauls and grills; every heater answer ends with the carbon monoxide, 3-feet and gas-professional note.
+from heating_packs import HEATING_PACKS, HEATING_COMMONS_KEYS
+PACKS.update(HEATING_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(HEATING_COMMONS_KEYS)
+# Emergency and backup lighting (packs/lighting_packs.py, beside the heating packs): Commons flashlights, emergency
+# lights, glow sticks and batteries, kerosene, hurricane, gas and carbide lamps, mantles and wicks, old lamps as
+# history, candles and holders, and Open Images headlamps, oil lamps, candle holders and matches; every fuel answer
+# ends with the fire, carbon monoxide, ventilation and never-refuel-hot note, every candle answer with the candle note.
+from lighting_packs import LIGHTING_PACKS, LIGHTING_COMMONS_KEYS
+PACKS.update(LIGHTING_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(LIGHTING_COMMONS_KEYS)
 
 
 def pack_lanes(keys):

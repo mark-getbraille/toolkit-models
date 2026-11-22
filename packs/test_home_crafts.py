@@ -1,11 +1,15 @@
-"""A self-test of the home repair, pest control and textile crafts packs (packs/home_upkeep_packs.py and
-packs/textile_crafts_packs.py) and the kit's collections for them (training-kit/kit/home_crafts_sources.py), with
-made-up labels and records only: nothing is downloaded from the internet.
+"""A self-test of the home repair, pest control, heating and textile crafts packs (packs/home_upkeep_packs.py,
+packs/heating_packs.py and packs/textile_crafts_packs.py) and the kit's collections for them
+(training-kit/kit/home_crafts_sources.py), with made-up labels and records only: nothing is downloaded from the
+internet.
 
 It checks that:
   - answers about roofs, gutters and chimneys carry the ladder and roof note, engines the engine note, poisons and
     traps the pesticide and trap notes, wasps the sting note, power strips and wiring the electrical note, boilers the
     gas note, old paint and finishes the lead note, damp the mould note (the same words in the packs and the kit);
+  - every heater, stove, fireplace, fuel, chimney and ash answer ends with the carbon monoxide, 3-feet and
+    gas-professional note, kerosene answers say 1-K only and never gasoline, patio heaters and grills say outdoors
+    only, and firewood answers carry the don't-move-firewood note;
   - the pest pack leaves out files whose words speak of dissection, blood or a carcass;
   - Open Images rows say only what the labels say, and no label of these packs is asked by another pack, nor by both;
   - no Commons category of these packs is named by another pack file, nor twice here;
@@ -31,6 +35,8 @@ sys.path.insert(0, HERE)
 sys.path.insert(1, os.path.join(HERE, "..", "training-kit", "kit"))
 import build_packs  # noqa: E402,F401 - loaded first, as the builders expect
 import gaps_oi_packs as g  # noqa: E402
+import heating_packs as w  # noqa: E402
+import lighting_packs as li  # noqa: E402
 import home_upkeep_packs as h  # noqa: E402
 import textile_crafts_packs as t  # noqa: E402
 
@@ -40,6 +46,8 @@ MODULES = [
     (h, h.HOME_UPKEEP_PACKS, h.HOME_UPKEEP_LIMITS, h.HOME_UPKEEP_COMMONS_KEYS, h.HOME_UPKEEP_SPECS, [h.UPKEEP_OI]),
     (t, t.TEXTILE_CRAFTS_PACKS, t.TEXTILE_CRAFTS_LIMITS, t.TEXTILE_CRAFTS_COMMONS_KEYS, t.TEXTILE_CRAFTS_SPECS,
      [t.TEXTILE_OI]),
+    (w, w.HEATING_PACKS, w.HEATING_LIMITS, w.HEATING_COMMONS_KEYS, w.HEATING_SPECS, [w.HEATING_OI]),
+    (li, li.LIGHTING_PACKS, li.LIGHTING_LIMITS, li.LIGHTING_COMMONS_KEYS, li.LIGHTING_SPECS, [li.LIGHTING_OI]),
 ]
 
 
@@ -91,6 +99,80 @@ def test_open_images_notes_and_rows():
     said = {r["question"]: r["answer"] for r in oi_rows({"Embroidery": 1, "Lace": 1}, t.TEXTILE_OI)}
     assert said["What needlework or textile craft is in this picture?"] == "I can see embroidery and lace."
     assert oi_rows({"Quilt": 1, "Nudity": 1}, t.TEXTILE_OI) == []
+
+
+def test_heating_notes():
+    for spec in w.HOME_HEATING:
+        answer = spec[2][0][1]
+        assert answer.endswith(w.HEAT_SAFETY), spec[0]
+    for words in ("carbon monoxide", "3 feet", "911", "grills or generators indoors", "qualified professional"):
+        assert words in w.HEAT_SAFETY, words
+    kerosene = answer_of(w.HOME_HEATING, "Kerosene heaters")
+    assert w.KEROSENE_NOTE in kerosene and "1-K" in w.KEROSENE_NOTE and "never gasoline" in w.KEROSENE_NOTE
+    assert w.OUTDOOR_ONLY in answer_of(w.HOME_HEATING, "Patio heaters")
+    assert w.ASH_NOTE in answer_of(w.HOME_HEATING, "Ash buckets") and "metal can" in w.ASH_NOTE
+    assert w.CHIMNEY_NOTE in answer_of(w.HOME_HEATING, "Chimney fires")
+    assert w.ELECTRIC_NOTE in answer_of(w.HOME_HEATING, "Electric fireplaces")
+    for category in ("Firewood", "Woodpiles", "Moisture meters"):
+        assert answer_of(w.FIREWOOD, category).endswith(w.FIREWOOD_NOTE), category
+    assert "emerald ash borer" in w.FIREWOOD_NOTE and "APHIS" in w.FIREWOOD_NOTE
+    for category in ("Splitting mauls", "Splitting wedges"):
+        assert answer_of(w.FIREWOOD, category).endswith(w.SPLITTING_NOTE)
+    # the word filters keep hearth files and leave out pianos, ducts and wood preservative
+    damper = next(spec for spec in w.HOME_HEATING if spec[0] == "Dampers")[3]
+    assert damper.search("Cast iron chimney damper") and not damper.search("Piano damper felt")
+    creosote = next(spec for spec in w.HOME_HEATING if spec[0] == "Creosote")[3]
+    assert creosote.search("Creosote build-up in a stovepipe")
+    assert not creosote.search("Creosote-treated railway sleepers")
+    said = {r["question"]: r["answer"] for r in oi_rows({"Wood-burning stove": 1, "Barbecue grill": 1}, w.HEATING_OI)}
+    assert said["What heating things are in this picture?"] == f"I can see a wood-burning stove. {w.HEAT_SAFETY}"
+    assert "outdoors only" in said["Is there a grill in this picture?"]
+
+
+def test_lighting_notes():
+    """Every fuel lamp answer ends with the fuel note (or carries it), every candle answer with the candle note."""
+    fuel = re.compile(r"\b(kerosene|hurricane|gas|carbide|safety lamp|oil lamp|lantern|wick|Betty|whale|Argand)",
+                      re.I)
+    for spec in li.EMERGENCY_LIGHTING:
+        answer = spec[2][0][1]
+        if re.search(r"candle|tealight", spec[0], re.I):
+            assert answer.endswith(li.CANDLE_NOTE), spec[0]
+        elif fuel.search(spec[0]):
+            assert li.FUEL_LIGHT_NOTE in answer, spec[0]
+        elif re.search(r"batter", spec[0], re.I):
+            assert li.BATTERY_NOTE in answer, spec[0]
+    for words in ("carbon monoxide", "ventilation", "never refuel", "hot or lit", "only the fuel"):
+        assert words in li.FUEL_LIGHT_NOTE, words
+    assert "unattended" in li.CANDLE_NOTE and "battery lights" in li.CANDLE_NOTE
+    lantern = next(spec for spec in li.EMERGENCY_LIGHTING if spec[0] == "Lanterns")[3]
+    assert lantern.search("Old kerosene lantern") and not lantern.search("Red paper lanterns at the Lantern Festival")
+    glow = next(spec for spec in li.EMERGENCY_LIGHTING if spec[0] == "Chemiluminescence")[3]
+    assert glow.search("Green glow sticks") and not glow.search("Luminol reaction in a flask")
+    # nothing from before 1900, and no street lamps
+    assert li.NOT_OLD.search("Petromax HK500 kerosene pressure lantern, lit")
+    for words in ("Antique kerosene lamp", "Oil lamp, 1865", "Roman oil lamp in a museum"):
+        assert not li.NOT_OLD.search(words), words
+    assert not li.NOT_OLD_OR_STREET.search("Gas lamps on a street in London")
+    assert not any(spec[0] in ("Gas lanterns", "Gas lamps") for spec in li.EMERGENCY_LIGHTING)    # street lamps
+    assert not lantern.search("Victorian storm lantern")
+    coleman = next(spec for spec in li.EMERGENCY_LIGHTING if spec[0] == "Coleman Company")[3]
+    assert coleman.search("Coleman dual fuel lantern") and not coleman.search("Coleman cooler")
+    assert not any(re.search(r"carbide|whale|betty|argand", spec[0], re.I) for spec in li.EMERGENCY_LIGHTING)
+    said = {r["question"]: r["answer"] for r in oi_rows({"Oil lamp": 1}, li.LIGHTING_OI)}
+    assert said["What fuel lamps are in this picture?"] == f"I can see an oil lamp. {li.FUEL_LIGHT_NOTE}"
+
+
+def test_kit_heating_notes_match():
+    import sources  # noqa: F401
+    import home_crafts_sources as k
+    assert (k.HEAT_SAFETY, k.FIREWOOD_NOTE) == (w.HEAT_SAFETY, w.FIREWOOD_NOTE)
+    assert (k.FUEL_LIGHT_NOTE, k.CANDLE_NOTE) == (li.FUEL_LIGHT_NOTE, li.CANDLE_NOTE)
+    # the reference books say the same heating words
+    sys.path.insert(2, os.path.join(REPO, "textbooks"))
+    import home_crafts as books
+    assert books.HEAT_SAFETY == w.HEAT_SAFETY
+    for category, _q, answer, _d in k.HOME_HEATING_SA:
+        assert answer.endswith(k.HEAT_SAFETY) or answer.endswith(k.FIREWOOD_NOTE), category
 
 
 def test_pest_pack_leaves_out_gore():
@@ -209,7 +291,7 @@ def test_kit_notes_match():
     assert sa["Rat traps"].endswith(k.TRAP_NOTE) and k.PESTICIDE_NOTE in sa["Rodenticides"]
     # every share-alike category is one of the packs' own categories
     pack_categories = {spec[0] for m in MODULES for spec in m[4]}
-    for category, _q, _a, _d in k.HOME_UPKEEP_SA + k.TEXTILE_CRAFTS_SA:
+    for category, _q, _a, _d in k.HOME_UPKEEP_SA + k.TEXTILE_CRAFTS_SA + k.HOME_HEATING_SA + k.EMERGENCY_LIGHTING_SA:
         assert category in pack_categories, category
     assert "Ravelry (patterns, yarns and project photos)" in k.HOME_CRAFTS_NOT_INCLUDED
     assert "Pinterest" in k.HOME_CRAFTS_NOT_INCLUDED
@@ -247,7 +329,8 @@ def test_wiring():
     for s in k.HOME_CRAFTS_SOURCES:
         assert s.key in listed
         assert (s.group == "permissive") == (s.key in all_keys), s.key
-    assert {"home_upkeep_commons_sa", "textile_crafts_commons_sa"} <= kit_keys
+    assert {"home_upkeep_commons_sa", "textile_crafts_commons_sa", "home_heating_commons_sa",
+            "emergency_lighting_commons_sa"} <= kit_keys
     assert listed["home_upkeep_commons_sa"].group == "share-alike"
     # the topics: exactly as the kit module says, and every collection in at least one
     in_topics = set()
@@ -261,5 +344,5 @@ def test_wiring():
         assert {key for key in topic.keys if key in mine} <= set(k.HOME_CRAFTS_TOPICS.get(topic.id, ())), topic.id
     # pests and poisons, people at work and Open Images photos are never for picture-making
     assert {"commons_pest_control", "open_images_home_upkeep", "open_images_textile_crafts",
-            "commons_home_repair"} <= no_making
+            "commons_home_repair", "commons_home_heating", "open_images_home_heating"} <= no_making
     assert "commons_fabrics_fibres" not in no_making

@@ -132,10 +132,12 @@ TOPICS = [
            "open_images_appliance_controls",
            "commons_baby_products", "open_images_baby_products", "abo_baby_products", "commons_household_hazards", "open_images_household_hazards",
            "commons_home_repair", "commons_locks_engines_bikes", "open_images_home_upkeep", "commons_sewing_mending",
-           "commons_upholstery_leather_shoes",
+           "commons_upholstery_leather_shoes", "commons_home_heating", "commons_firewood", "open_images_home_heating",
+           "commons_emergency_lighting", "open_images_emergency_lighting",
            # share-alike
            "commons_mechanical_sa", "dashboard_symbols_sa", "device_models_sa", "farm_mech_commons_sa",
            "commons_airplanes_sa", "chemical_commons_sa", "appliance_commons_sa", "home_upkeep_commons_sa",
+           "home_heating_commons_sa", "emergency_lighting_commons_sa",
            # non-commercial and research-only (personal use)
            "autovi", "dashboard_warning_icons", "car_parts_damage", "car_parts_dsmlr", "car_damage_views",
            "mechanical_parts_2022", "co3d_devices", "stanford_cars", "fgvc_aircraft", "museums_victoria",

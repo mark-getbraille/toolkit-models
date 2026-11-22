@@ -438,6 +438,11 @@ jobs:
             commons_fabrics_fibres) limit=1000 ;;
             open_images_textile_crafts) limit=2000 ;;
             nmah_textiles_sewing) limit=1000 ;;
+            commons_home_heating) limit=1000 ;;
+            commons_firewood) limit=400 ;;
+            open_images_home_heating) limit=800 ;;
+            commons_emergency_lighting) limit=1200 ;;
+            open_images_emergency_lighting) limit=800 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in

@@ -141,7 +141,9 @@ jobs:
                    "open_images_home_upkeep",
                    "commons_knit_crochet_lace", "commons_quilt_embroidery_weaving", "commons_sewing_mending",
                    "commons_upholstery_leather_shoes", "commons_fabrics_fibres", "open_images_textile_crafts",
-                   "nmah_textiles_sewing"]
+                   "nmah_textiles_sewing",
+                   "commons_home_heating", "commons_firewood", "open_images_home_heating",
+                   "commons_emergency_lighting", "open_images_emergency_lighting"]
           words = [w for w in sys.argv[1].split(",") if w]
           # "key+" is a top-up pass of key and "key?" a needs-only run (kept with the mark, which the build job reads);
           # "all?" asks for a needs-only run of every pack.

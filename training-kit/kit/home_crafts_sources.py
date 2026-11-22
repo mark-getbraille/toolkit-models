@@ -6,6 +6,10 @@
       textile_crafts_packs.py  commons_knit_crochet_lace, commons_quilt_embroidery_weaving, commons_sewing_mending,
                                commons_upholstery_leather_shoes, commons_fabrics_fibres, open_images_textile_crafts,
                                nmah_textiles_sewing
+      heating_packs.py         commons_home_heating, commons_firewood, open_images_home_heating (emergency and
+                               secondary heating, added to the request the same day)
+      lighting_packs.py        commons_emergency_lighting, open_images_emergency_lighting (emergency and backup
+                               lighting, added the same day)
   - the share-alike Commons files of the same Commons categories (group "share-alike": only with the share-alike
     choice, --with-wikipedia; an add-on trained with them is CC BY-SA);
   - the sign-up collections and the sources looked at and left out, with the reason (HOME_CRAFTS_SIGN_UP,
@@ -56,6 +60,21 @@ TRAP_NOTE = ("Set traps and bait stations where children and pets cannot reach t
 MOULD_NOTE = ("Fix the source of the moisture first; the EPA advises that mould covering more than about 10 square "
               "feet is best cleaned up by a professional.")
 
+HEAT_SAFETY = ("Heating safety: keep anything that can burn at least 3 feet (1 metre) away. Stoves, fireplaces and "
+               "fuel-burning heaters make carbon monoxide, which can kill: have a working carbon monoxide alarm, "
+               "never use outdoor heaters, grills or generators indoors, and if the alarm sounds or anyone feels ill "
+               "(headache, dizziness, nausea), get everyone out and call 911. Gas lines, gas appliances and stove "
+               "installation are work for a qualified professional.")
+FIREWOOD_NOTE = ("Burn only dry, seasoned wood and keep the woodpile at least 3 feet from the stove. Don't move "
+                 "firewood: buy or gather it near where you burn it, so pests such as the emerald ash borer are not "
+                 "spread (USDA APHIS).")
+FUEL_LIGHT_NOTE = ("Fuel lamp safety: fuel lanterns and lamps can start fires and make carbon monoxide, which can "
+                   "kill. Use them outdoors or with good ventilation, as the maker says; never refuel one that is hot "
+                   "or lit; use only the fuel the lamp is made for; keep it away from children, pets and curtains. "
+                   "Battery lights are safer indoors during a power cut.")
+CANDLE_NOTE = ("Candle safety: never leave a candle burning unattended or while you sleep; use a sturdy holder and keep "
+               "it at least 1 foot (30 cm) from anything that can burn and away from children and pets. During a "
+               "power cut, use battery lights instead of candles (CDC, FEMA and Red Cross advice).")
 
 def thing(category, words, note="", deeper=False):
     """(category, question, answer, deeper) for home_sources.commons_sa_items: "This is <words>." and the note."""
@@ -114,6 +133,31 @@ TEXTILE_CRAFTS_SA = [
 ]
 
 
+# The main categories of packs/heating_packs.py (the ones needing a word filter are left out).
+HOME_HEATING_SA = [
+    thing("Fireplaces", "a fireplace", HEAT_SAFETY),
+    thing("Heating stoves", "a heating stove, which burns wood, coal or another fuel to heat a room", HEAT_SAFETY,
+          deeper=True),
+    thing("Coal stoves", "a coal stove", HEAT_SAFETY, deeper=True),
+    thing("Tiled stoves", "a tiled stove (a masonry heater or Kachelofen)", HEAT_SAFETY, deeper=True),
+    thing("Gas heaters", "a gas heater", HEAT_SAFETY, deeper=True),
+    thing("Stovepipes", "a stovepipe, the metal pipe that carries smoke from a stove to the chimney", HEAT_SAFETY,
+          deeper=True),
+    thing("Firewood", "firewood", FIREWOOD_NOTE),
+    thing("Woodpiles", "a woodpile: firewood stacked to dry", FIREWOOD_NOTE, deeper=True),
+]
+
+# The main categories of packs/lighting_packs.py (the ones needing a word filter are left out).
+EMERGENCY_LIGHTING_SA = [
+    thing("Flashlights", "a flashlight (torch)"),
+    thing("Kerosene lamps", "a kerosene lamp, with a wick and a glass chimney", FUEL_LIGHT_NOTE, deeper=True),
+    thing("Hurricane lamps", "a hurricane lamp (storm lantern)", FUEL_LIGHT_NOTE, deeper=True),
+    thing("Gas mantles", "a gas mantle for a gas or pressure lantern", FUEL_LIGHT_NOTE, deeper=True),
+    thing("Petromax lamps", "a Petromax pressure lantern", FUEL_LIGHT_NOTE),
+    thing("Candles", "a candle", CANDLE_NOTE),
+    thing("Candle holders", "a candle holder", CANDLE_NOTE),
+]
+
 def prepare_home_upkeep_commons_sa(source, data_dir, work, cap):
     """Commons home repair, lock, engine, bicycle tool and pest control categories, files under CC BY-SA or GFDL."""
     items = commons_sa_items(HOME_UPKEEP_SA, cap, source.test, "upkeep-sa")
@@ -126,6 +170,19 @@ def prepare_textile_crafts_commons_sa(source, data_dir, work, cap):
     items = commons_sa_items(TEXTILE_CRAFTS_SA, cap, source.test, "textile-sa")
     return fetch_shared(items, os.path.join(data_dir, source.key), workers=2)
 
+
+
+def prepare_home_heating_commons_sa(source, data_dir, work, cap):
+    """Commons fireplace, stove, gas heater, stovepipe and firewood categories, files under CC BY-SA or GFDL."""
+    items = commons_sa_items(HOME_HEATING_SA, cap, source.test, "heating-sa")
+    return fetch_shared(items, os.path.join(data_dir, source.key), workers=2)
+
+
+def prepare_emergency_lighting_commons_sa(source, data_dir, work, cap):
+    """Commons flashlight, kerosene and hurricane lamp, mantle, pressure lantern and candle categories, files under
+    CC BY-SA or GFDL."""
+    items = commons_sa_items(EMERGENCY_LIGHTING_SA, cap, source.test, "light-sa")
+    return fetch_shared(items, os.path.join(data_dir, source.key), workers=2)
 
 # ----------------------------------------------------------------- the table
 
@@ -181,6 +238,29 @@ HOME_CRAFTS_SOURCES = [
                                    "record (Smithsonian National Museum of American History, ready-made pack)",
            "CC0 (Smithsonian Open Access)", "National Museum of American History, Smithsonian Institution, CC0, "
            "https://www.si.edu/openaccess", "permissive", 1000, 10, prepare_pack, "about 250 MB"),
+    # ---- ready-made packs (packs/heating_packs.py)
+    Source("commons_home_heating", "Emergency and secondary heating: fireplaces, wood, coal and tiled stoves, gas, "
+                                   "kerosene, oil and patio heaters, dampers, stovepipes, fire bricks, chimney fires, "
+                                   "creosote, ash buckets, pellets and coal, each with the carbon monoxide and "
+                                   "3-feet safety note (Wikimedia Commons, ready-made pack)",
+           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 1000, 10, prepare_pack, "about 230 MB"),
+    Source("commons_firewood", "Firewood, woodpiles, splitting mauls and wedges, firewood processors and moisture "
+                               "meters, with the don't-move-firewood note (Wikimedia Commons, ready-made pack)",
+           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 400, 5, prepare_pack, "about 90 MB"),
+    Source("open_images_home_heating", "Wood-burning stoves, hearths, fire screens, bellows, coal, splitting mauls, "
+                                       "sawhorses and grills (outdoors only), with the safety notes (Open Images, "
+                                       "ready-made pack)",
+           OI_OPEN, OI_CREDIT, "permissive", 800, 10, prepare_pack, "about 160 MB"),
+    # ---- ready-made packs (packs/lighting_packs.py)
+    Source("commons_emergency_lighting", "Emergency and backup lighting: flashlights, emergency lights, glow sticks, "
+                                         "power stations and batteries, Coleman, Petromax and Tilley pressure lanterns, "
+                                         "kerosene, hurricane and gas lamps, mantles and wicks, candles and holders, with "
+                                         "the fire, carbon monoxide and candle safety notes (Wikimedia Commons, "
+                                         "ready-made pack)",
+           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 1200, 15, prepare_pack, "about 270 MB"),
+    Source("open_images_emergency_lighting", "Headlamps, oil lamps, candle holders and matches, with the safety notes "
+                                             "(Open Images, ready-made pack)",
+           OI_OPEN, OI_CREDIT, "permissive", 800, 10, prepare_pack, "about 160 MB"),
     # ---- share-alike
     Source("home_upkeep_commons_sa", "Wikimedia Commons: toilet tanks, aerators, gutters, roofs, floors, damp, locks, "
                                      "key blanks, small engines, bicycle tools, rat traps, rodenticides and bat houses, "
@@ -193,6 +273,16 @@ HOME_CRAFTS_SOURCES = [
                                         "(share-alike)",
            SA_LICENCE, SA_CREDIT, "share-alike", 1000, 10, prepare_textile_crafts_commons_sa,
            "about 220 MB of pictures", terms=SA_TERMS, terms_summary=SA_SUMMARY),
+    Source("home_heating_commons_sa", "Wikimedia Commons: fireplaces, heating, coal and tiled stoves, gas heaters, "
+                                      "stovepipes, firewood and woodpiles, with the safety notes, files under CC BY-SA "
+                                      "or GFDL (share-alike)",
+           SA_LICENCE, SA_CREDIT, "share-alike", 500, 5, prepare_home_heating_commons_sa, "about 110 MB of pictures",
+           terms=SA_TERMS, terms_summary=SA_SUMMARY),
+    Source("emergency_lighting_commons_sa", "Wikimedia Commons: flashlights, kerosene and hurricane lamps, gas mantles, "
+                                            "Petromax lanterns, candles and candle holders, with the safety notes, files "
+                                            "under CC BY-SA or GFDL (share-alike)",
+           SA_LICENCE, SA_CREDIT, "share-alike", 400, 5, prepare_emergency_lighting_commons_sa,
+           "about 90 MB of pictures", terms=SA_TERMS, terms_summary=SA_SUMMARY),
 ]
 
 # The collections a picture-making model may learn from: cloth and fibre close up and the museum's textiles and tools
@@ -205,7 +295,9 @@ HOME_CRAFTS_PICTURE_MAKING_OK = {"commons_fabrics_fibres", "nmah_textiles_sewing
 # crafts, quilts and fabrics with art and museum objects.
 HOME_CRAFTS_TOPICS = {
     "machines": ("commons_home_repair", "commons_locks_engines_bikes", "open_images_home_upkeep",
-                 "commons_sewing_mending", "commons_upholstery_leather_shoes", "home_upkeep_commons_sa"),
+                 "commons_sewing_mending", "commons_upholstery_leather_shoes", "home_upkeep_commons_sa",
+                 "commons_home_heating", "commons_firewood", "open_images_home_heating", "home_heating_commons_sa",
+                 "commons_emergency_lighting", "open_images_emergency_lighting", "emergency_lighting_commons_sa"),
     "nature": ("commons_pest_control", "open_images_home_upkeep", "home_upkeep_commons_sa"),
     "art": ("commons_knit_crochet_lace", "commons_quilt_embroidery_weaving", "commons_fabrics_fibres",
             "open_images_textile_crafts", "nmah_textiles_sewing", "textile_crafts_commons_sa"),
@@ -273,6 +365,29 @@ HOME_CRAFTS_NOT_INCLUDED = {
         "repair, Bicycle repair stands, Bicycle chains, Bicycle tires, Flat tires, Bicycle brakes, Mousetraps, "
         "Insecticides, Pesticides, Pesticide application, Insect traps, Knitting, Sewing, Weaving, Knots, Thimbles, "
         "Tape measures, Singer sewing machines, Satin, Shoeshiners, Deadbolts: not repeated.",
+    "Heating pictures not found as open categories (November 2026)":
+        "Commons has no category for fireplace inserts, gas fireplaces, multi-fuel or pellet stoves beyond Pellet "
+        "stoves (already device_packs'), masonry heaters by that name (Tiled stoves is used), outdoor wood boilers, "
+        "propane, infrared or diesel heaters, oil-filled radiators, firewood racks, log carriers, kerosene cans or "
+        "chimney liners; Open Images has no Kerosene heater, Pellet stove or Woodpile label people checked (Kerosene, "
+        "Firewood, Patio heater and Carbon monoxide detector are labels without checked boxes). The EPA's Burn Wise, "
+        "CPSC and NIST photo pages were not read: CPSC answers this machine 403, and the EPA's Burn Wise pictures are "
+        "few and mixed with makers' product photos.",
+    "Open Images Fire, Flame, Ash, Charcoal, Poker, Bonfire, Campfire and Lumberjack (for heating)":
+        "left out: Fire and Flame cover every fire (and Flame is already used by home_packs to tell a lit burner), "
+        "Ash is also the tree, Charcoal also the drawing stick, Poker the card game, bonfires and campfires are "
+        "outdoor fires, and Lumberjack judges a person by trade.",
+    "Lighting pictures not found as open categories or labels (November 2026)":
+        "Commons has no category for head torches, LED, solar or camping lanterns, hand-crank or dynamo lights, night "
+        "lights, power banks (the category is empty), Coleman products (Coleman Company is used for its lanterns), "
+        "Dietz or Feuerhand lanterns, Aladdin or mantle lamps, lamp "
+        "chimneys, leaking batteries, emergency or taper candles, white gas or Coleman fuel; Open Images' Flashlight, "
+        "Lantern, Candle, Lamp, Battery and Chandelier are asked by other packs, and Emergency light, Tealight and "
+        "Votive candle have no checked boxes. Lamps from before 1900 (carbide, whale oil, Betty and Argand lamps, "
+        "antique oil lamps and museum pieces) are left out by the owner's choice; Commons' Gas lanterns and Gas "
+        "lamps hold street lamps (checked in a live build), so they are not used. Solar lamps, solar chargers, battery sizes and exit signs are other "
+        "packs' (not repeated). FEMA's and CPSC's photo libraries were not read (CPSC answers this machine 403; "
+        "FEMA's photos on Commons are found by category).",
     "Woodworking, woodcarving, tiling, insulation and light construction":
         "covered by another helper's packs (the building and arts-and-crafts collection), so not built here.",
 }
