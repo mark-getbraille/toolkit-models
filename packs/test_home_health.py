@@ -92,4 +92,5 @@ def test_wiring():
     import topics
     listed = {s.key: s for s in sources.SOURCES}
     assert listed["scin_skin_conditions"].content == "medical"
-    assert set(h.HOME_HEALTH_PACKS) - {"scin_skin_conditions"} <= set(topics.find("medicines").keys)
+    assert set(h.HOME_HEALTH_PACKS) - {"scin_skin_conditions", "denpar_dental_xrays"} <= set(topics.find("home").keys)
+    assert "denpar_dental_xrays" in topics.find("medicines").keys

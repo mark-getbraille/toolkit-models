@@ -244,9 +244,12 @@ The topics:
 - Drinks (no alcohol) (drinks): soft drinks, energy drinks, juices, water, iced tea and coffee drinks, plant milks.
 - Alcoholic drinks, brewing and distilling (alcohol): wine, beer, spirits, cocktails, glassware and bar tools, and
   brewing, winemaking and distilling (with the legal and safety notes).
-- Vehicles, machines and household equipment (machines): vehicle models, car and machine parts, dashboard symbols,
-  tools, appliances and their controls, plugs, clocks, displays.
-- Art and museum objects (art): museum descriptions written for blind visitors, famous works, instruments.
+- Vehicles, machines and devices (machines): vehicle models, car and machine parts, dashboard symbols, tools,
+  plugs, clocks, displays, electronic parts and repair, assistive devices.
+- Home and household (home): appliances and their controls, kitchens, laundry and care labels, cleaning products
+  and hazards, home repair, locks, heating and emergency lighting, building work and ramps, pests, baby products,
+  sewing and crafts.
+- Art and museum objects (art): museum descriptions written for blind visitors, famous works, instruments, crafts.
 - Documents, maps and signs (documents): letters, forms, receipts, tables, charts, maps, sheet music, road and
   safety signs, phone screens.
 - Plants, animals and nature (nature): plants, animals and breeds, crops and their diseases, weather, landscapes.

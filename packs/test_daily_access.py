@@ -360,7 +360,7 @@ def test_wiring():
     assert listed["appliance_commons_sa"].group == "share-alike"
     assert set(baby.BABY_PACKS) <= no_making
     assert {"commons_household_hazards", "open_images_household_hazards"} <= no_making
-    assert "laundry_care_labels" not in no_making and "laundry_care_labels" in topics.find("machines").keys
+    assert "laundry_care_labels" not in no_making and "laundry_care_labels" in topics.find("home").keys
     assert "commons_home_health_tests" in no_making and "lfa_covid_tests" not in no_making
     assert {"lfa_covid_tests", "commons_home_health_tests"} <= set(topics.find("medicines").keys)
     assert "commons_medication_labels" in no_making and "commons_medication_labels" in topics.find("medicines").keys

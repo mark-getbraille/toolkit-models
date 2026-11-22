@@ -78,12 +78,10 @@ TOPICS = [
           ("taiwan_pills", "pharmassist", "mediseg", "medpack_id", "scoa_blister", "med_commons_supplies",
            "med_commons_instruments", "med_commons_medicines", "vet_commons_medicine", "dental_instruments",
            "open_images_medical", "cdc_phil_supplies", "commons_medication_labels", "lfa_covid_tests", "commons_home_health_tests",
-           # home health care: first aid, dental, eye and birth supplies, dental X-rays (SCIN is medical: no topic)
-           "commons_first_aid_supplies", "commons_first_aid_skills", "commons_dental_care", "commons_eye_care",
+           # dental X-rays with the teeth they show (home health care; SCIN is medical: no topic)
            "denpar_dental_xrays",
-           "open_images_home_health",
            # share-alike (with Wikipedia ticked)
-           "med_vet_commons_sa", "openfacts_supplements", "home_health_commons_sa",
+           "med_vet_commons_sa", "openfacts_supplements",
            # research-only (personal use)
            "dailymed_human_labels", "dailymed_vet_labels", "c3pi_pills")),
     Topic("drugs", "Drugs and paraphernalia",
@@ -121,42 +119,87 @@ TOPICS = [
            "open_images_bar_drinks", "europeana_drinks_history",
            # share-alike
            "drinks_alcohol_commons_sa")),
-    Topic("machines", "Vehicles, machines and household equipment",
-          "Cars, bikes, aircraft and other vehicles by model, car and machine parts, engine bays and dashboard "
-          "symbols, tools, appliances and their controls, plugs, clocks and displays, and everyday household "
-          "devices.",
+    Topic("machines", "Vehicles, machines and devices",
+          "Vehicles and their parts and dashboard symbols, machine parts, tools, plugs, clocks and displays, "
+          "electronic devices, electronic parts and repair, assistive devices and building-site safety.",
           ("wikidata_vehicle_models", "commons_vehicle_kinds", "commons_us_cars", "commons_ca_cars",
            "commons_airplanes", "commons_car_parts", "commons_cycle_parts", "commons_machine_parts",
            "commons_engine_bays", "iso_machine_symbols", "corolla_engine_bay", "tyre_condition",
-           "spark_plug_condition", "planetary_gearbox", "commons_appliances", "commons_connectors",
-           "laundry_symbols", "laundry_care_labels", "commons_tools", "commons_kitchen", "clock_times", "seven_segment", "abo_products",
-           "commons_things", "open_images_tech", "commons_us_controls", "wikidata_devices", "commons_devices",
-           "nmah_devices", "farm_commons_equipment", "mech_commons_building", "open_images_objects", "core50",
-           "gso_objects", "commons_household_chemicals", "commons_finishes_in_use", "commons_appliance_controls",
-           "open_images_appliance_controls",
-           "commons_baby_products", "open_images_baby_products", "abo_baby_products", "commons_household_hazards", "open_images_household_hazards",
-           # car care: wipers, fluids, tyres, jacks, roadside safety, EV connectors, dashboard lights
+           "spark_plug_condition", "planetary_gearbox", "commons_connectors", "commons_tools", "clock_times",
+           "seven_segment", "abo_products", "commons_things", "open_images_tech", "commons_us_controls",
+           "wikidata_devices", "commons_devices", "nmah_devices", "farm_commons_equipment", "mech_commons_building",
+           "open_images_objects", "core50", "gso_objects",
+           # electronics repair, assistive devices and building-site safety (electronics_sources.py, building_sources.py)
+           "commons_electronic_parts", "commons_cables_connectors", "commons_electronics_repair",
+           "commons_assistive_devices", "commons_circuit_diagrams", "open_images_electronics",
+           "commons_construction_safety", "electronics_commons_sa",
+           # car care: wipers, tyres, jacks, roadside help, EV connectors, dashboard lights
            "commons_car_care", "commons_ev_charging", "commons_dashboard_lights", "open_images_car_care",
            # share-alike
+           "car_care_commons_sa",
            "commons_mechanical_sa", "dashboard_symbols_sa", "device_models_sa", "farm_mech_commons_sa",
-           "commons_airplanes_sa", "chemical_commons_sa", "appliance_commons_sa", "car_care_commons_sa",
+           "commons_airplanes_sa",
            # non-commercial and research-only (personal use)
            "autovi", "dashboard_warning_icons", "car_parts_damage", "car_parts_dsmlr", "car_damage_views",
            "mechanical_parts_2022", "co3d_devices", "stanford_cars", "fgvc_aircraft", "museums_victoria",
-           "cpsc_recalls", "stanford_products")),
+           "stanford_products")),
+    # Home and household (the owner's decision of 22 November 2026): everything about running and keeping a home in
+    # one add-on. The household collections moved here from "machines"; the craft collections are also in "art" and
+    # the household pests also in "nature", so those add-ons keep them.
+    Topic("home", "Home and household",
+          "Appliances and their controls, kitchens, laundry and care labels, cleaning products and hazards, home "
+          "repair, locks, heating and lighting, building work and ramps, pests, baby products, sewing and crafts, "
+          "first aid supplies, and dental and eye care things.",
+          ("commons_appliances", "commons_appliance_controls", "open_images_appliance_controls", "commons_kitchen",
+           "laundry_symbols", "laundry_care_labels", "commons_household_chemicals", "commons_finishes_in_use",
+           "commons_household_hazards", "open_images_household_hazards",
+           "commons_baby_products", "open_images_baby_products", "abo_baby_products",
+           # home repair, locks, small engines and bicycles, pests (home_crafts_sources.py)
+           "commons_home_repair", "commons_locks_engines_bikes", "open_images_home_upkeep", "commons_pest_control",
+           # heating, firewood and emergency lighting
+           "commons_home_heating", "commons_firewood", "open_images_home_heating", "commons_emergency_lighting",
+           "open_images_emergency_lighting",
+           # light construction and home access (building_sources.py)
+           "commons_light_construction", "commons_home_access_building", "open_images_building",
+           # sewing, mending and the textile crafts
+           "commons_sewing_mending", "commons_upholstery_leather_shoes", "commons_knit_crochet_lace",
+           "commons_quilt_embroidery_weaving", "commons_fabrics_fibres", "open_images_textile_crafts",
+           "nmah_textiles_sewing",
+           # other crafts (crafts_sources.py)
+           "commons_pottery_ceramics", "commons_jewellery_beading", "commons_paper_crafts", "commons_candle_soap",
+           "commons_glass_carving", "commons_art_supplies", "commons_models_resin", "open_images_crafts",
+           # home health care: first aid supplies and skills, dental and eye care things
+           "commons_first_aid_supplies", "commons_first_aid_skills", "commons_dental_care", "commons_eye_care",
+           "open_images_home_health",
+           # share-alike
+           "home_health_commons_sa",
+           "commons_home_sa", "home_safety_commons_sa", "chemical_commons_sa", "appliance_commons_sa",
+           "home_upkeep_commons_sa", "home_heating_commons_sa", "emergency_lighting_commons_sa", "building_commons_sa",
+           "textile_crafts_commons_sa", "pottery_commons_sa", "jewellery_commons_sa", "crafts_commons_sa",
+           # non-commercial and research-only (personal use)
+           "cpsc_recalls")),
     Topic("art", "Art and museum objects",
-          "Paintings, prints, sculpture, design and museum objects, described the way museums write for blind "
-          "visitors, with famous works by name and musical instruments of every culture.",
+          "Paintings, sculpture and museum objects, described the way museums write for blind visitors, musical "
+          "instruments of every culture, and crafts: quilts, knitting, crochet, lace, weaving, fabrics, pottery, "
+          "jewellery, paper, glass and carving.",
           ("cooper_hewitt", "art_institute", "met", "met_collection", "aic_collection", "cleveland_collection",
            "europeana_fashion_archaeology", "europeana", "canterbury", "auckland",
            "wellcome", "smithsonian", "tepapa", "japan_search", "ksamsok", "rijksmuseum", "getty_museum", "smk",
            "nypl", "europeana_fi", "europeana_cs", "europeana_hu", "europeana_el", "europeana_no", "europeana_pl",
            "met_instruments", "wikidata_instruments",
+           "commons_knit_crochet_lace", "commons_quilt_embroidery_weaving", "commons_fabrics_fibres",
+           "open_images_textile_crafts", "nmah_textiles_sewing",
            # instrument care: parts, tuning and repair
            "commons_string_instrument_parts", "commons_wind_percussion_parts", "commons_piano_parts",
            "commons_instrument_care", "open_images_instrument_care",
            # share-alike
            "instrument_care_commons_sa",
+           "textile_crafts_commons_sa",
+           # arts and crafts: pottery, jewellery, paper, glass, carving, art supplies, models (crafts_sources.py)
+           "commons_pottery_ceramics", "museum_ceramics", "commons_jewellery_beading", "museum_jewellery",
+           "commons_paper_crafts", "commons_candle_soap", "commons_glass_carving", "commons_art_supplies",
+           "commons_models_resin", "museum_glass_crafts", "open_images_crafts",
+           "pottery_commons_sa", "jewellery_commons_sa", "crafts_commons_sa",
            # non-commercial and research-only (personal use)
            "vam", "mimo_instruments", "princeton_general_personal", "turkish_instruments")),
     Topic("documents", "Documents, maps and signs",
@@ -176,20 +219,22 @@ TOPICS = [
            "fintabnet_tables", "cra_forms", "screenqa_rico", "rico_screens", "rico_widgets", "tqa_diagrams",
            "commons_mail_parcels", "commons_screens")),
     Topic("nature", "Plants, animals and nature",
-          "Plants, mushrooms, insects, birds and other animals by name, pet and farm breeds, crops and their "
-          "diseases, weeds, clouds and weather, and landscapes seen from the ground and from space.",
+          "Plants, mushrooms, insects, birds and other animals by name, household pests and pest control, pet and "
+          "farm breeds, crops and their diseases, weeds, clouds and weather, and landscapes seen from the ground and from space.",
           ("inaturalist", "lila_camera_traps", "gbif_species", "commons_breeds", "cattle_health",
            "agml_plant_health", "agml_weeds", "agml_harvest", "agrob_tomato", "gwhd_wheat", "inat_crops", "ccsn_clouds",
            "weather_images", "eurosat", "inaturalist_us", "inaturalist_ca", "earth_observatory", "usgs",
            "npgallery", "na_wild_mammals", "na_birds", "na_herps_fish", "na_insects", "na_invertebrates",
            "na_animal_signs", "noaa_fisheries_species", "na_domestic_animals", "commons_sky_weather",
            "commons_rocks_fossils", "commons_nara_aerial", "cdc_phil_algae",
+           "commons_pest_control", "open_images_home_upkeep",
            # gardening and lawn care
            "commons_garden_growing", "commons_garden_care", "commons_lawn_care", "commons_plant_problems",
            "open_images_garden",
            # share-alike
+           "garden_commons_sa",
            "oxford_pets", "plantvillage", "plantnet_sa", "commons_breeds_sa", "inaturalist_us_sa",
-           "inaturalist_ca_sa", "plant_seedlings_sa", "gaps_rocks_commons_sa", "garden_commons_sa",
+           "inaturalist_ca_sa", "plant_seedlings_sa", "gaps_rocks_commons_sa", "home_upkeep_commons_sa",
            # non-commercial and research-only (personal use)
            "inaturalist_us_nc", "inaturalist_ca_nc", "plantnet_nc", "cub200", "plantdoc", "stanford_dogs",
            "soybean_weeds_nc", "weed_growth_stage_nc", "cropandweed_nc")),

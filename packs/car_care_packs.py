@@ -32,7 +32,7 @@ The packs (all open: CC0, public domain or CC BY files; Open Images labels CC BY
                             what the driver should do, as car handbooks
                             give it), else the file is left out. Light colours are said only where the words say
                             them (red: stop safely; amber: check soon; green or blue: a system is on).
-  open_images_car_care      Open Images V7: tyres, treads, rims and alloy wheels, hubcaps, headlamps and car lights,
+  open_images_car_care      Open Images V7: tyres, treads, rims and alloy wheels, hubcaps, car lights,
                             motor oil and antifreeze, gauges (speedometer, odometer, tachometer), steering wheels and
                             gear shifts, electric cars, tow trucks, car washes, traffic cones.
 
@@ -287,7 +287,7 @@ CAR_OI = [
     group("What car parts or car care things are in this picture?",
           {"Tire": "a tyre", "Automotive tire": "a car tyre", "Tread": "a tyre tread", "Rim": "a wheel rim",
            "Alloy wheel": "an alloy wheel", "Hubcap": "a hubcap", "Auto part": "a car part",
-           "Headlamp": "a headlamp", "Automotive lighting": "car lights", "Motor oil": "motor oil",
+           "Automotive lighting": "car lights", "Motor oil": "motor oil",
            "Antifreeze": "antifreeze (coolant)", "Bumper": "a bumper",
            "Vehicle registration plate": "a number plate (licence plate)"}),
     group("What car controls or gauges are in this picture?",

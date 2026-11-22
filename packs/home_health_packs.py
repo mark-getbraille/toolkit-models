@@ -42,7 +42,7 @@ The packs (Commons files CC0, public domain or CC BY; Open Images labels CC BY 4
                                recovery position and first aid classes (adults only; describing only).
   commons_dental_care          Commons: water flossers, interdental brushes, tongue scrapers, clear aligners,
                                mouthguards, implants, bridges and sealants.
-  commons_eye_care             Commons: magnifying glasses, magnifiers, loupes and monoculars, pinhole glasses,
+  commons_eye_care             Commons: magnifying glasses, magnifiers, loupes, pinhole glasses,
                                reading glasses, bifocals, glasses frames, contact lenses and their cases, Snellen
                                charts and slit lamps.
   scin_skin_conditions         SCIN (Skin Condition Image Network, Google Research and Stanford Medicine, 2024; the
@@ -154,7 +154,6 @@ DENTAL = [
 EYE = [
     item("Magnifying glasses", "a magnifying glass, a handheld lens that makes small print look bigger", EYE_NOTE),
     item("Loupes", "a loupe, a small strong magnifier held close to the eye", EYE_NOTE),
-    item("Monoculars", "a monocular, a small telescope for seeing far things, such as signs", EYE_NOTE),
     item("Reading glasses", "a pair of reading glasses, which magnify for close work", EYE_NOTE),
     item("Magnifiers", "a magnifier: a lens, stand or dome that makes print and small things look bigger", EYE_NOTE),
     item("Pinhole glasses", "pinhole glasses: glasses with many tiny holes instead of lenses", EYE_NOTE),

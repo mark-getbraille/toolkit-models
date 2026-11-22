@@ -98,7 +98,7 @@ HOME_HEALTH_SOURCES = [
                                   "aligners, mouthguards and implants, with the dental note (Wikimedia Commons, "
                                   "ready-made pack)",
            COMMONS_OPEN, COMMONS_CREDIT, "permissive", 600, 10, prepare_pack, "about 130 MB"),
-    Source("commons_eye_care", "Eye care: magnifying glasses, magnifiers, loupes and monoculars, pinhole glasses, "
+    Source("commons_eye_care", "Eye care: magnifying glasses, magnifiers, loupes, pinhole glasses, "
                                "reading glasses, bifocals, frames, contact lenses and their cases, Snellen charts "
                                "and slit lamps, with the eye note (Wikimedia Commons, ready-made pack)",
            COMMONS_OPEN, COMMONS_CREDIT, "permissive", 900, 10, prepare_pack, "about 200 MB"),

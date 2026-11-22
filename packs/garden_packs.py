@@ -30,7 +30,7 @@ The packs (all open: CC0, public domain or CC BY files; Open Images labels CC BY
   open_images_garden       Open Images V7: gardens, lawns and grass, compost, mulch and soil, seedlings, seeds,
                            greenhouses, herbs (basil, rosemary, thyme, sage, parsley, chives, oregano, dill), garden
                            flowers (roses, tulips, sunflowers, hydrangeas), hedges, moss, groundcover, succulents,
-                           cacti and bonsai, pruning shears and garden tools, weeds and dandelions, fruit trees.
+                           cacti and bonsai, pruning shears, weeds and dandelions, fruit trees.
 
 Commons has no category with free files for raised beds, container gardening, sprinklers, soaker hoses, rain
 barrels, lawn weeds, downy mildew, blossom end rot or the USDA zone maps (checked 2026-11-22): the kit's
@@ -222,7 +222,7 @@ GARDEN_OI = [
     group("What garden things are in this picture?",
           {"Garden": "a garden", "Lawn": "a lawn", "Grass": "grass", "Compost": "compost", "Mulch": "mulch",
            "Soil": "soil", "Seedling": "seedlings", "Seed": "seeds", "Greenhouse": "a greenhouse",
-           "Hedge": "a hedge", "Moss": "moss", "Groundcover": "groundcover plants", "Garden tool": "a garden tool",
+           "Hedge": "a hedge", "Moss": "moss", "Groundcover": "groundcover plants",
            "Pruning shears": "pruning shears", "Fruit tree": "a fruit tree"}),
     group("What herbs are in this picture?",
           {"Herb": "herbs", "Basil": "basil", "Rosemary": "rosemary", "Thyme": "thyme", "Sage": "sage",
