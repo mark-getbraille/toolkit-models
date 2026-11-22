@@ -662,3 +662,17 @@ from radio_manuals import CATEGORIES as _RADIO  # noqa: E402
 
 CATEGORIES.update(_PREPAREDNESS)
 CATEGORIES.update(_RADIO)
+# Health and life (the owner's request of 2026-11-22), one file each, every maker link-only and the health note said
+# first: light therapy lamps, sound machines and wake-up lights (manuals/sleep_relaxation_manuals.py), fitness
+# equipment and trackers (manuals/fitness_manuals.py), contraceptive and period products
+# (manuals/sexual_health_manuals.py), medical alerts, hearing amplifiers and pill dispensers (manuals/aging_manuals.py) and wilderness first aid kits,
+# splints and avalanche transceivers (manuals/wilderness_manuals.py; beacons and messengers stay in the radio section).
+from sleep_relaxation_manuals import CATEGORY as _SLEEP_RELAXATION  # noqa: E402
+from fitness_manuals import CATEGORY as _FITNESS  # noqa: E402
+from sexual_health_manuals import CATEGORY as _CONTRACEPTIVE  # noqa: E402
+from aging_manuals import CATEGORY as _AGING  # noqa: E402
+from wilderness_manuals import CATEGORY as _WILDERNESS  # noqa: E402
+
+CATEGORIES.update({"sleep_relaxation": _SLEEP_RELAXATION, "fitness_equipment": _FITNESS,
+                   "contraceptive_products": _CONTRACEPTIVE, "aging_in_place": _AGING,
+                   "wilderness_first_aid": _WILDERNESS})
