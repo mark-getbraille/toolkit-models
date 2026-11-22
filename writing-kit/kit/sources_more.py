@@ -1391,9 +1391,6 @@ NOT_USED = [
     ("CFPB consumer complaint narratives",
      "The Consumer Financial Protection Bureau's public complaint API no longer includes the consumers' own words, "
      "only the categories."),
-    ("USPTO patent full texts",
-     "The old bulk site (bulkdata.uspto.gov) is gone; the new Open Data Portal needs a key tied to an identity check, "
-     "and its weekly full-text files are zip files of a gigabyte or more that cannot be read in part. Not built yet."),
     ("Kiwix copies of Wikivoyage and Wikiquote (download.kiwix.org)",
      "Its robots.txt turns programs away; the kit reads Wikimedia's own dumps instead."),
     ("Yelp and BAWE downloads by program",

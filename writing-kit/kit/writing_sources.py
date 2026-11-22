@@ -512,10 +512,6 @@ NOT_USED = [
      "hearings and EDGAR sources cover formal American writing. The plainlanguage.gov examples and the IRS notice "
      "explanations are now used (source gov_letters, sources_audio.py); SSA's notices are not (ssa.gov refuses "
      "programs)."),
-    ("CourtListener bulk data and Supreme Court opinions",
-     "Court opinions are public domain, but courtlistener.com refused this kit's requests (403), its API needs a "
-     "token and its bulk files are many gigabytes; Supreme Court opinions were not built in this round (its oral "
-     "arguments are used)."),
     ("Wikipedia featured articles",
      "CC BY-SA, but they need the full English Wikipedia dump (over 20 GB) or page-by-page requests; not built in "
      "this round."),
@@ -545,8 +541,9 @@ NOT_USED = [
      "ones you want and use --scanned-folder (they are marked government works when their pages carry federal "
      "stamps or the folder name says so). Hearing records on GovInfo are read by the GovInfo exhibits source."),
     ("FTC v. Meta, Epic v. Apple, Oracle v. Google, Waymo v. Uber and Theranos trial exhibits",
-     "Published as PDFs on court and agency pages or on CourtListener, which refused this kit (403) and whose API "
-     "needs a token; not built in this round. US v. Google's DOJ exhibits are used."),
+     "Published as PDFs on court and agency pages or on CourtListener, whose website refuses programs and whose API "
+     "needs a token; not built in this round. US v. Google's DOJ exhibits are used. (CourtListener's court opinions "
+     "come from its bulk data: source courtlistener_opinions.)"),
     ("FBI Vault and agency FOIA reading rooms (DHS, HHS, EPA) on the agencies' own sites, and congressional "
      "releases about Hunter Biden",
      "Federal records released as scanned PDF pages one release at a time, with no list a program can follow. "
@@ -609,6 +606,19 @@ import sources_newspapers  # noqa: E402
 
 SOURCES += sources_newspapers.sources(Source, OPEN, SHARE_ALIKE, PERSONAL)
 NOT_USED += sources_newspapers.NOT_USED
+
+
+# US court opinions (CourtListener's bulk data): sources_courts.py, built in full by build_court_opinions.py.
+import sources_courts  # noqa: E402
+
+SOURCES += sources_courts.sources(Source, OPEN, SHARE_ALIKE, PERSONAL)
+NOT_USED += sources_courts.NOT_USED
+
+# US patents (HUPD and the USPTO's full-text files): sources_patents.py, built year by year by build_patents.py.
+import sources_patents  # noqa: E402
+
+SOURCES += sources_patents.sources(Source, OPEN, SHARE_ALIKE, PERSONAL)
+NOT_USED += sources_patents.NOT_USED
 
 
 def by_key():

@@ -67,6 +67,14 @@ import sources_newspapers as _papers  # noqa: E402
 STYLES.update(_papers.STYLES)
 FORMAL_STYLES |= _papers.FORMAL
 CASUAL_STYLES |= _papers.CASUAL
+# ... and with sources_courts.py (court opinions: majority, concurrence, dissent, combined, other) and
+# sources_patents.py (patent abstracts, claims and descriptions).
+import sources_courts as _courts  # noqa: E402
+import sources_patents as _patents  # noqa: E402
+for _m in (_courts, _patents):
+    STYLES.update(_m.STYLES)
+    FORMAL_STYLES |= _m.FORMAL
+    CASUAL_STYLES |= _m.CASUAL
 
 BY_SOURCE = {
     "enron": "email_business", "idl": "email_business", "doj_google": "email_business", "w3c": "email_business",

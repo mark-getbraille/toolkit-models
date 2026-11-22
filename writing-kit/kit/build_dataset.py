@@ -73,10 +73,13 @@ import readers_scanned  # noqa: E402
 import sources_more  # noqa: E402
 import sources_audio  # noqa: E402
 import sources_newspapers  # noqa: E402
+import sources_courts  # noqa: E402
+import sources_patents  # noqa: E402
 
 READER_MODULES = (readers, readers_more, readers_meetings, readers_business, readers_litigation, readers_creative,
-                  readers_scanned, sources_more, sources_audio, sources_newspapers)
-OPT_IN = sources_audio.OPT_IN | sources_newspapers.OPT_IN     # left out unless named in --sources
+                  readers_scanned, sources_more, sources_audio, sources_newspapers, sources_courts, sources_patents)
+# left out unless named in --sources (the big corpora have their own commands)
+OPT_IN = sources_audio.OPT_IN | sources_newspapers.OPT_IN | sources_courts.OPT_IN | sources_patents.OPT_IN
 GROUPED = {"enron", "w3c", "usenet", "irc", "debian", "scotus", "hearings", "hansard", "idl", "scanned_federal",
            "scanned_state", "govinfo_exhibits"}   # sources read mailbox by mailbox or list by list
 GROUPED |= sources_more.GROUPED
@@ -508,6 +511,10 @@ def main(argv=None):
                                                                          "read from them)")
     parser.add_argument("--newspaper-years", default="", help="years for the newspaper sample, for example "
                                                               "1850-1869,1900,1920s (default: every year)")
+    parser.add_argument("--court-folder", default="court_opinions", help="where build_court_opinions.py keeps the "
+                                                                         "CourtListener files (a sample is read)")
+    parser.add_argument("--patent-folder", default="patents", help="where build_patents.py keeps the patent files "
+                                                                   "(a sample is read)")
     parser.add_argument("--privacy", choices=[OWNER, STRICT], default=OWNER,
                         help="owner (the default): keep every message whole and mask only Social Security, card, "
                              "bank and account numbers and passwords; strict: also replace names and personal "
@@ -544,7 +551,8 @@ def main(argv=None):
     for source in used:
         say(f"Reading {source.name} ({source.licence_class}).")
         options = {"page_log": page_log, "scanned_max_mb": args.scanned_max_mb, "audio_pairs": args.audio_pairs,
-                   "newspaper_folder": args.newspaper_folder, "newspaper_years": args.newspaper_years}
+                   "newspaper_folder": args.newspaper_folder, "newspaper_years": args.newspaper_years,
+                   "court_folder": args.court_folder, "patent_folder": args.patent_folder}
         if source.key == "scanned_folder":
             options["folder"], options["max_pages"] = args.scanned_folder, args.scanned_max_pages
         if source.key == "enron" and args.enron_file:

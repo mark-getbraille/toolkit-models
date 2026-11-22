@@ -33,13 +33,16 @@ Go to the writing-kit folder, then type one of these:
 --enron-file uses a copy of the Enron file you already have instead of downloading it.
 --oanc-file uses the Open American National Corpus file you downloaded in your browser (see below).
 
-Settings for three sources (they stay in your computer, never in these files)
+Settings for some sources (they stay in your computer, never in these files)
 To add a setting: press the Windows key, type "environment variables", choose "Edit environment variables for your
 account", choose New, and type the name and the value. Without a setting, that source is skipped and the build
 says so.
 REGULATIONS_GOV_API_KEY: a free key from api.data.gov, for the regulations.gov public comments.
 SEC_USER_AGENT: your name and email address, for example "Your Name you@example.com". The SEC's EDGAR system
   asks every program to say who is asking, and refuses programs that do not. It is used only in requests to EDGAR.
+USPTO_ODP_API_KEY: a free key from the USPTO's Open Data Portal, for the USPTO's granted patents (see "Patents"
+  below). Make it at data.uspto.gov under "API key management" (the USPTO asks you to confirm who you are first).
+  It is sent only to the USPTO's own address, api.uspto.gov.
 The Open American National Corpus: its official download is on GitHub, and GitHub's robots.txt does not let
   programs download release files. So download OANC-1.0.1-UTF8.zip once in your web browser from
   anc.org/data/oanc/download/ (330 MB), and add --oanc-file followed by where you saved it, for example
@@ -90,6 +93,10 @@ The styles:
     newspaper_notice_historical and newspaper_fiction_poetry_historical: historical US newspapers (news reports,
     editorials and opinion, advertisements, letters to the editor, notices and legal notices, serial fiction and
     poetry); see "Historical newspapers" below.
+  court_opinion_majority, court_opinion_concurrence, court_opinion_dissent, court_opinion_combined and
+    court_opinion_other: US court opinions (majority, concurring and dissenting opinions, the opinions of a case
+    printed together, and other opinions such as rehearings); see "Court opinions" below.
+  patent_abstract, patent_claims and patent_description: US patents (technical writing); see "Patents" below.
 
 What you get, in the out folder
 train.jsonl: the training examples, one per line.
@@ -220,8 +227,9 @@ minutes. Ontario's Hansard refuses programs. Other provincial Hansards and the S
 Recent investigations and lawsuits: congress.gov blocks AI training; the committee releases (Boeing 737 MAX, tech
 antitrust, January 6 and others), FTC v. Meta, Epic v. Apple, Oracle v. Google, Waymo v. Uber and Theranos exhibits,
 and the FBI Vault and agency FOIA rooms on the agencies' own sites have no list a program can follow, so the kit
-does not fetch them: download the ones you want and read them with --scanned-folder (below). CourtListener refused
-this kit; MuckRock and DocumentCloud say no AI training.
+does not fetch them: download the ones you want and read them with --scanned-folder (below). CourtListener's website
+refuses programs (its court opinions come from its bulk files: see "Court opinions"); MuckRock and DocumentCloud
+say no AI training.
 Creative writing: Archive of Our Own (its terms forbid AI training and its authors object), FanFiction.Net and
 Wattpad (their robots.txt says no AI training), Reddit WritingPrompts (Reddit's terms), machine-written story sets,
 and openly licensed fan fiction (none found with a bulk download).
@@ -229,7 +237,8 @@ Business: the Avocado email collection (sold by the LDC), TweetSumm (its tweets 
 support set (machine-written), earnings call transcripts (copyrighted), USAJOBS (needs a key and email, not built
 yet), court and investigation exhibits (scanned PDFs inside dockets).
 Modern writing: The Conversation and NPR (their robots.txt blocks AI training), Stack Exchange (terms), YouTube
-captions (terms), Amazon Reviews 2023 (no licence stated), CourtListener (refused this kit), and several public
+captions (terms), Amazon Reviews 2023 (no licence stated), CourtListener's website (refuses programs; its bulk
+files are used), and several public
 domain government sites with no bulk download (plain language examples, press releases, sample letters), which were
 not built yet.
 Machine-written email sets on Hugging Face, and sets that are non-commercial or have no licence.
@@ -288,9 +297,8 @@ archive), the Trump and Biden archived social media (no download files; the Nati
 programs), Founders Online (a browser check stops programs; non-commercial terms), the By the People website
 (refuses programs; its datasets on loc.gov are used instead), 20th-century letters at the Library of Congress
 (may still be under copyright), MICUSP (no download; its site does not answer), the ASAP essays (Kaggle's rules),
-Mozilla's Bugzilla and mailing lists (closed to programs), the CFPB complaint stories (no longer published), USPTO
-patent texts (needs an identity-checked key and gigabyte files; not built yet) and the Kiwix copies (refuse
-programs; Wikimedia's own dumps are used).
+Mozilla's Bugzilla and mailing lists (closed to programs), the CFPB complaint stories (no longer published) and the
+Kiwix copies (refuse programs; Wikimedia's own dumps are used). USPTO patent texts are now used (see "Patents").
 
 Audio with matching text, and government form letters (added late November 2026)
 These are kept in their own file, kit\sources_audio.py.
@@ -370,6 +378,91 @@ each file is downloaded, and it is not kept).
 Checked and not built yet: the Library of Congress's own page-by-page OCR files (public domain, about 2.5 TB). Its
 Chronicling America site is moving into loc.gov, it asks programs for 5 seconds between requests, and its text is
 whole pages without articles. It could later add the pages American Stories missed; see sources-not-used.txt.
+
+Court opinions, all US courts (added 22 November 2026)
+What it is: the opinions of US federal and state courts that CourtListener (run by the Free Law Project, a
+non-profit) has gathered: the Supreme Court since 1790s, the federal courts of appeals and district courts, every
+state's supreme and appeals courts, and more, about ten million opinions. Source name: courtlistener_opinions.
+Licence: open. CourtListener says its bulk files are "free of known copyright restrictions" (the Public Domain
+Mark), and court opinions are public records. No key or sign-up is needed.
+How it is downloaded: CourtListener no longer offers a file for each court or year; it offers one big file of every
+opinion, made again every three months, beside smaller files that say which court and date each case belongs to.
+The kit downloads five files and then sorts the opinions by court and year itself:
+  the courts (a tiny file), the citations (0.13 GB), the cases (2.5 GB), the dockets (5.1 GB) and the opinions
+  (55 GB): 63 GB in all (the files of 30 September 2026).
+How long: downloading takes about 1 and a half hours at 100 megabits a second, or about 6 hours at 25 megabits a
+second. Then the kit makes a small database that joins each case to its court and date (about 10 GB, an hour or
+two), and then reads the opinions file once from start to end and writes the examples. That last step is slow:
+allow about a day for everything. You can choose courts and years, which saves disk space, but the whole opinions
+file is still read, so it does not save much time.
+Disk space: about 63 GB for the downloads, 10 GB for the database and about 100 GB for the finished examples (a
+guess: opinions are long), so allow about 180 GB.
+How to run it: press Enter on "Build Court Opinion Data.cmd" in the writing-kit folder. It asks two questions:
+  which courts: press Enter for every court, or type CourtListener's short names separated by commas, for example
+    scotus (the Supreme Court of the United States), ca9 (the Ninth Circuit), cal (the Supreme Court of
+    California); COURT-OPINIONS-REPORT.txt lists every court's short name after a build;
+  which years: press Enter for every year, or type years, ranges and decades, for example 1950-1999,2010s.
+It says how big the download is and how long it takes, then each file's size as it downloads. You can close the
+window at any time: start it again and it carries on where it stopped, the download, the database and the
+building (the building saves its place every 20,000 opinions).
+From a command prompt, in the writing-kit folder:
+  python kit\build_court_opinions.py                              (everything)
+  python kit\build_court_opinions.py --list                       (the five files, their sizes and what you have)
+  python kit\build_court_opinions.py --courts scotus,ca9 --years 1950-
+  python kit\build_court_opinions.py --download-only              (download now, build later)
+  python kit\build_court_opinions.py --build-only                 (build what is downloaded; no internet needed)
+  python kit\build_court_opinions.py --styles court_opinion_dissent,court_opinion_concurrence
+What you get: out\court_opinions has one folder per court, in it one folder per decade and one per year, and in
+each year folder two files per style, for example court_opinion_dissent-train.jsonl.gz and
+court_opinion_dissent-validation.jsonl.gz. README.txt, COURT-OPINIONS-REPORT.txt and ATTRIBUTION.txt are in
+out\court_opinions. Each example also has: court, court_name, court_type, year, date_filed, case_name,
+docket_number, citation, opinion_type, author, per_curiam, precedential_status and word_count.
+The styles come from CourtListener's own label on each opinion, so nothing is guessed: majority (also unanimous,
+plurality and per curiam opinions), concurrence, dissent, combined (the court's opinions printed together as one
+text, which is how most older cases and most state cases are stored, so a combined example can hold a majority
+with its dissents) and other (rehearings, addenda, trial court opinions).
+Privacy: court opinions are public, but modern ones sometimes quote Social Security, card, bank or account numbers.
+Your rule applies: only those numbers and passwords are masked; everything else is kept as the court wrote it.
+In the ordinary build it is left out unless you name it. Adding --sources courtlistener_opinions to
+build_dataset.py takes a small sample instead: the first opinions of your downloaded file, or, if you have none,
+from the start of the newest opinions file (only its first part is downloaded; without the other files the
+sample does not name the courts).
+Checked and not used: CourtListener's website and its programming interface (its robots.txt shuts programs out of
+the website and points them to the bulk files), the Caselaw Access Project's downloads (its robots.txt closes them
+to programs) and COLD Cases (the same opinions, but in a format that needs an extra library).
+
+Patents (added 22 November 2026)
+What it is: the text of US patents, written by inventors and patent lawyers: technical and precise. Every patent
+gives three examples: its abstract (a short summary), its claims (exactly what is protected, one numbered sentence
+each) and its description (how the invention is made and works). Two sources:
+  hupd_patents: the Harvard USPTO Patent Dataset, every utility patent application filed with the USPTO from 2004
+    to 2018 (about 4.5 million). Licence: CC BY-SA 4.0, share-alike (the patents themselves are public domain, but
+    the dataset's makers put their collection under that licence). No key or sign-up is needed. 15 files, one per
+    year, 61.76 GB in all: 2.6 GB for 2004, rising to 5.6 GB for 2016; 2018 is small (0.5 GB).
+  uspto_patent_grants: the USPTO's own files of every granted patent, 1976 to now, one file a week. Licence: open
+    (public domain). It needs your own free key in the setting USPTO_ODP_API_KEY (see "Settings" above). The USPTO
+    gives each file's size in its list, so the kit tells you the exact size of the years you choose before it
+    downloads anything (type --list to see every year). As a rough guide, a recent year is several gigabytes and
+    an old year much less.
+How long: HUPD takes about 1 and a half hours to download at 100 megabits a second, or about 5 and a half hours at
+25 megabits a second; building it takes a few hours (four years are built at a time). Allow about 62 GB for the
+downloads and about 60 GB more for the finished examples.
+How to run it: press Enter on "Build Patent Data.cmd" in the writing-kit folder. It asks which source (1 for HUPD,
+2 for the USPTO's granted patents), which years (press Enter for every year, or type years, ranges and decades,
+for example 2010-2014 or 1980s) and the most gigabytes to download (press Enter for no limit). The oldest of the
+chosen years come first. You can close the window at any time and start it again to carry on.
+From a command prompt, in the writing-kit folder:
+  python kit\build_patents.py                                     (HUPD, every year)
+  python kit\build_patents.py --list                              (each year's size and what you have)
+  python kit\build_patents.py --years 2010-2014 --max-gb 20
+  python kit\build_patents.py --source uspto --years 1976-1980     (needs USPTO_ODP_API_KEY)
+  python kit\build_patents.py --styles patent_claims
+What you get: out\patents has one folder per source, one per decade and one per year, and in each year folder two
+files per style, for example patent_claims-train.jsonl.gz. Each example also has: year, application_number,
+patent_number, title, filing_date, grant_date, main_cpc (the patent's main class), decision (for HUPD: accepted,
+rejected or pending), section and word_count. A patent whose text carries a copyright notice is left out (that
+part of a patent can be under copyright). Your privacy rule applies as everywhere.
+In the ordinary build both are left out unless you name them; --sources hupd_patents reads a small sample.
 
 Privacy: your rule
 You asked to keep everything: the full text of every message, people's names, signatures, the earlier messages
