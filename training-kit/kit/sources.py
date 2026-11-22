@@ -3341,3 +3341,48 @@ PERSONAL_PICTURE_MAKING_OK |= _home_crafts_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in HOME_CRAFTS_SOURCES
                                                                if s.key not in _home_crafts_ok)
 _add_collections(HOME_CRAFTS_SOURCES)
+# The electronics repair and assistive technology collections (electronics_sources.py, the owner's request of 2026-11-22): the ready-made packs, their
+# share-alike Commons files and the sources looked at and left out; the file may be missing. Only the keys in
+# ELECTRONICS_PICTURE_MAKING_OK may be used for picture-making.
+try:
+    import electronics_sources as _electronics  # noqa: E402
+except ImportError as _e:
+    _electronics = None
+    if getattr(_e, "name", None) != "electronics_sources":
+        say(f"(The electronics repair and assistive technology collections could not be loaded: {_e}. They are left out.)")
+ELECTRONICS_SOURCES = list(getattr(_electronics, "ELECTRONICS_SOURCES", []) or [])
+_electronics_ok = set(getattr(_electronics, "ELECTRONICS_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _electronics_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in ELECTRONICS_SOURCES
+                                                               if s.key not in _electronics_ok)
+_add_collections(ELECTRONICS_SOURCES)
+# The light construction collections (building_sources.py, the owner's request of 2026-11-22): the ready-made packs, their
+# share-alike Commons files and the sources looked at and left out; the file may be missing. Only the keys in
+# BUILDING_PICTURE_MAKING_OK may be used for picture-making.
+try:
+    import building_sources as _building  # noqa: E402
+except ImportError as _e:
+    _building = None
+    if getattr(_e, "name", None) != "building_sources":
+        say(f"(The light construction collections could not be loaded: {_e}. They are left out.)")
+BUILDING_SOURCES = list(getattr(_building, "BUILDING_SOURCES", []) or [])
+_building_ok = set(getattr(_building, "BUILDING_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _building_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in BUILDING_SOURCES
+                                                               if s.key not in _building_ok)
+_add_collections(BUILDING_SOURCES)
+# The arts and crafts collections (crafts_sources.py, the owner's request of 2026-11-22): the ready-made packs, their
+# share-alike Commons files and the sources looked at and left out; the file may be missing. Only the keys in
+# CRAFTS_PICTURE_MAKING_OK may be used for picture-making.
+try:
+    import crafts_sources as _crafts  # noqa: E402
+except ImportError as _e:
+    _crafts = None
+    if getattr(_e, "name", None) != "crafts_sources":
+        say(f"(The arts and crafts collections could not be loaded: {_e}. They are left out.)")
+CRAFTS_SOURCES = list(getattr(_crafts, "CRAFTS_SOURCES", []) or [])
+_crafts_ok = set(getattr(_crafts, "CRAFTS_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _crafts_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in CRAFTS_SOURCES
+                                                               if s.key not in _crafts_ok)
+_add_collections(CRAFTS_SOURCES)

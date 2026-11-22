@@ -118,9 +118,9 @@ TOPICS = [
            # share-alike
            "drinks_alcohol_commons_sa")),
     Topic("machines", "Vehicles, machines and household equipment",
-          "Cars, bikes, aircraft and other vehicles by model, car and machine parts, engine bays and dashboard "
-          "symbols, tools, appliances and their controls, plugs and displays, household devices, and home repair: "
-          "plumbing, roofs, floors, locks, small engines, bicycle tools, sewing and mending.",
+          "Vehicles and their parts and dashboard symbols, tools, appliances and their controls, plugs and "
+          "displays, home repair (plumbing, roofs, locks, small engines, bikes, sewing), heating and lighting, "
+          "electronics and repair, assistive devices and building work.",
           ("wikidata_vehicle_models", "commons_vehicle_kinds", "commons_us_cars", "commons_ca_cars",
            "commons_airplanes", "commons_car_parts", "commons_cycle_parts", "commons_machine_parts",
            "commons_engine_bays", "iso_machine_symbols", "corolla_engine_bay", "tyre_condition",
@@ -134,6 +134,11 @@ TOPICS = [
            "commons_home_repair", "commons_locks_engines_bikes", "open_images_home_upkeep", "commons_sewing_mending",
            "commons_upholstery_leather_shoes", "commons_home_heating", "commons_firewood", "open_images_home_heating",
            "commons_emergency_lighting", "open_images_emergency_lighting",
+           # electronics repair, assistive devices and light construction (electronics_sources.py, building_sources.py)
+           "commons_electronic_parts", "commons_cables_connectors", "commons_electronics_repair",
+           "commons_assistive_devices", "commons_circuit_diagrams", "open_images_electronics",
+           "commons_light_construction", "commons_home_access_building", "commons_construction_safety",
+           "open_images_building", "electronics_commons_sa", "building_commons_sa",
            # share-alike
            "commons_mechanical_sa", "dashboard_symbols_sa", "device_models_sa", "farm_mech_commons_sa",
            "commons_airplanes_sa", "chemical_commons_sa", "appliance_commons_sa", "home_upkeep_commons_sa",
@@ -143,9 +148,9 @@ TOPICS = [
            "mechanical_parts_2022", "co3d_devices", "stanford_cars", "fgvc_aircraft", "museums_victoria",
            "cpsc_recalls", "stanford_products")),
     Topic("art", "Art and museum objects",
-          "Paintings, prints, sculpture, design and museum objects, described the way museums write for blind "
-          "visitors, with famous works by name, musical instruments of every culture, and the textile crafts: "
-          "quilts, embroidery, knitting, crochet, lace, weaving, spinning and fabrics by name.",
+          "Paintings, sculpture and museum objects, described the way museums write for blind visitors, musical "
+          "instruments of every culture, and crafts: quilts, knitting, crochet, lace, weaving, fabrics, pottery, "
+          "jewellery, paper, glass and carving.",
           ("cooper_hewitt", "art_institute", "met", "met_collection", "aic_collection", "cleveland_collection",
            "europeana_fashion_archaeology", "europeana", "canterbury", "auckland",
            "wellcome", "smithsonian", "tepapa", "japan_search", "ksamsok", "rijksmuseum", "getty_museum", "smk",
@@ -155,6 +160,11 @@ TOPICS = [
            "open_images_textile_crafts", "nmah_textiles_sewing",
            # share-alike
            "textile_crafts_commons_sa",
+           # arts and crafts: pottery, jewellery, paper, glass, carving, art supplies, models (crafts_sources.py)
+           "commons_pottery_ceramics", "museum_ceramics", "commons_jewellery_beading", "museum_jewellery",
+           "commons_paper_crafts", "commons_candle_soap", "commons_glass_carving", "commons_art_supplies",
+           "commons_models_resin", "museum_glass_crafts", "open_images_crafts",
+           "pottery_commons_sa", "jewellery_commons_sa", "crafts_commons_sa",
            # non-commercial and research-only (personal use)
            "vam", "mimo_instruments", "princeton_general_personal", "turkish_instruments")),
     Topic("documents", "Documents, maps and signs",

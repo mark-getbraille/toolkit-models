@@ -624,3 +624,14 @@ CATEGORIES.update(_TROUBLESHOOTING)
 from home_crafts_manuals import CATEGORIES as _HOME_CRAFTS  # noqa: E402
 
 CATEGORIES.update({k: v for k, v in _HOME_CRAFTS.items() if k not in CATEGORIES})
+# Electronics repair, light construction and arts and crafts (the owner's request of 2026-11-22): electronics service
+# manuals and iFixit links, test equipment, assistive technology care and repair (manuals/electronics_manuals.py);
+# decking, sheds, concrete, insulation, ramps and stairlifts (manuals/building_manuals.py); pottery kilns and wheels,
+# jewellery and lapidary tools, craft machines (manuals/crafts_manuals.py).
+from electronics_manuals import CATEGORIES as _ELECTRONICS  # noqa: E402
+from building_manuals import CATEGORIES as _BUILDING  # noqa: E402
+from crafts_manuals import CATEGORIES as _CRAFTS  # noqa: E402
+
+CATEGORIES.update(_ELECTRONICS)
+CATEGORIES.update(_BUILDING)
+CATEGORIES.update(_CRAFTS)

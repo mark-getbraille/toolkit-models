@@ -91,7 +91,7 @@ EMERGENCY_LIGHTING = [
                                      "ports, often charged by solar panels, that can run lights and small devices",
           BATTERY_NOTE, deeper=True, question=ASK_WHAT),
     light("Battery banks", "a battery bank: batteries joined to store power", BATTERY_NOTE, question=ASK_WHAT),
-    light("Battery packs", "a battery pack", BATTERY_NOTE, deeper=True, question=ASK_WHAT),
+    # The battery packs category is asked by packs/electronics_packs.py (with the lithium note), so it is not repeated.
     light("Rechargeable batteries", "rechargeable batteries", BATTERY_NOTE, question=ASK_WHAT),
     light("Lithium batteries", "lithium batteries", BATTERY_NOTE + " Never put lithium batteries in a fire.",
           question=ASK_WHAT),

@@ -143,7 +143,10 @@ jobs:
                    "commons_upholstery_leather_shoes", "commons_fabrics_fibres", "open_images_textile_crafts",
                    "nmah_textiles_sewing",
                    "commons_home_heating", "commons_firewood", "open_images_home_heating",
-                   "commons_emergency_lighting", "open_images_emergency_lighting"]
+                   "commons_emergency_lighting", "open_images_emergency_lighting",
+                   "commons_electronic_parts", "commons_cables_connectors", "commons_electronics_repair", "commons_assistive_devices", "commons_circuit_diagrams", "open_images_electronics",
+                   "commons_light_construction", "commons_home_access_building", "commons_construction_safety", "open_images_building",
+                   "commons_pottery_ceramics", "museum_ceramics", "commons_jewellery_beading", "museum_jewellery", "commons_paper_crafts", "commons_candle_soap", "commons_glass_carving", "commons_art_supplies", "commons_models_resin", "museum_glass_crafts", "open_images_crafts"]
           words = [w for w in sys.argv[1].split(",") if w]
           # "key+" is a top-up pass of key and "key?" a needs-only run (kept with the mark, which the build job reads);
           # "all?" asks for a needs-only run of every pack.
