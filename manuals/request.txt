@@ -6,5 +6,5 @@
 # 21 November (2): and the household chemicals, pesticide labels and chemical safety collections.
 # 21 November (3): the new manual categories from the reference inventory, and firearms and chemical safety with their new Internet Archive collections.
 # 22 November: appliance error codes and troubleshooting, and release notes (NVDA, Orca, BRLTTY, Android, OpenWrt in full; makers as links).
-# 22 November (18): home manufacturing and making: 3D printers, heat press and vinyl, laser and CNC, small machining, moulding and casting.
-printers_3d,heat_press_vinyl,laser_cnc_making,small_machining,moulding_casting
+# 22 November (19): audio recorders, podcast microphones and recording gear.
+audio_gear
