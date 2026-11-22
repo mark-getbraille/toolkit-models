@@ -182,6 +182,14 @@ TOPICS = [
            "textile_crafts_commons_sa", "pottery_commons_sa", "jewellery_commons_sa", "crafts_commons_sa",
            # non-commercial and research-only (personal use)
            "cpsc_recalls")),
+    # Privacy, security and digital safety (the owner's request of 22 November 2026): security keys and devices,
+    # security screens and tools, and computer-made scam and safe message examples (privacy_sources.py).
+    Topic("privacy", "Privacy, security and digital safety",
+          "Security keys, code tokens, routers, home cameras and webcam covers, sign-in and padlock screens, password "
+          "and authenticator apps, and made-up scam texts, phishing emails and fake pop-ups with their warning signs.",
+          ("commons_privacy_security", "commons_privacy_screens", "synthetic_scam_examples",
+           # share-alike
+           "privacy_commons_sa")),
     Topic("art", "Art and museum objects",
           "Paintings, sculpture and museum objects, described the way museums write for blind visitors, musical "
           "instruments of every culture, and crafts: quilts, knitting, crochet, lace, weaving, fabrics, pottery, "

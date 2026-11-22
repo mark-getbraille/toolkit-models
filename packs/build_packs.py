@@ -1891,6 +1891,15 @@ for _packs, _commons in ((CAR_CARE_PACKS, CAR_CARE_COMMONS_KEYS), (GARDEN_PACKS,
 from outdoor_cooking_packs import OUTDOOR_COOKING_PACKS, OUTDOOR_COOKING_COMMONS_KEYS
 PACKS.update(OUTDOOR_COOKING_PACKS)
 COMMONS_KEYS = COMMONS_KEYS | frozenset(OUTDOOR_COOKING_COMMONS_KEYS)
+# Privacy, security and digital safety (packs/privacy_packs.py: Commons security keys, code tokens, fingerprint
+# scanners, webcam covers, routers, cameras, card skimmers, phishing, HTTPS, ransomware, CAPTCHAs, sign-in screens and
+# privacy tools, each with its safety note; packs/synthetic_scams_packs.py: COMPUTER-MADE scam and safe message
+# examples with made-up names, .example addresses and 555-01xx numbers, each marked EXAMPLE, never for picture-making).
+from privacy_packs import PRIVACY_PACKS, PRIVACY_COMMONS_KEYS
+from synthetic_scams_packs import SYNTHETIC_SCAMS_PACKS, SYNTHETIC_SCAMS_COMMONS_KEYS
+for _packs, _commons in ((PRIVACY_PACKS, PRIVACY_COMMONS_KEYS), (SYNTHETIC_SCAMS_PACKS, SYNTHETIC_SCAMS_COMMONS_KEYS)):
+    PACKS.update(_packs)
+    COMMONS_KEYS = COMMONS_KEYS | frozenset(_commons)
 
 
 def pack_lanes(keys):
