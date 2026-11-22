@@ -1691,6 +1691,10 @@ PACKS.update(DATE_CODE_PACKS)
 # Commons, a letter or sign named only where the file says it. People's hands: never for picture-making.
 from sign_language_packs import SIGN_LANGUAGE_PACKS
 PACKS.update(SIGN_LANGUAGE_PACKS)
+# Weather maps and forecast graphics (packs/weather_map_packs.py): WPC surface analyses (with the radar and satellite
+# composites) and NHC forecast cones, explained from the product, its time, its legend and the advisory's own words.
+from weather_map_packs import WEATHER_MAP_PACKS
+PACKS.update(WEATHER_MAP_PACKS)
 
 
 # The packs whose builder reads the Wikimedia Commons API (commons_get, commons_members, commons_entries,

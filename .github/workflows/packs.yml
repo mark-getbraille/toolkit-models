@@ -128,7 +128,7 @@ jobs:
                    "commons_distilling", "open_images_bar_drinks", "europeana_drinks_history", "commons_soft_drinks",
                    "open_images_soft_drinks",
                    "bentham_pages", "commons_handwriting", "openstax_figures", "commons_charts",
-                   "commons_date_codes", "commons_sign_language"]
+                   "commons_date_codes", "commons_sign_language", "wpc_surface_maps", "nhc_forecast_cones"]
           words = [w for w in sys.argv[1].split(",") if w]
           # "key+" is a top-up pass of key and "key?" a needs-only run (kept with the mark, which the build job reads);
           # "all?" asks for a needs-only run of every pack.

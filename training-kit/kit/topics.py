@@ -153,7 +153,7 @@ TOPICS = [
            "pubtabnet_tables", "us_federal_forms", "open_images_cards_documents", "loc_maps", "safety_signs", "commons_hazard_symbols", "us_road_signs",
            "ca_road_signs",
            "deepscores_sheet_music", "field_manual_figures", "bentham_pages", "commons_handwriting",
-           "openstax_figures", "commons_charts",
+           "openstax_figures", "commons_charts", "wpc_surface_maps", "nhc_forecast_cones",
            # share-alike
            "hiertext", "mapqa",
            # non-commercial and research-only (personal use)

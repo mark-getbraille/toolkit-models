@@ -224,3 +224,55 @@ def test_sign_language_wired():
     check_wired(sl.SIGN_LANGUAGE_PACKS, sl.SIGN_LANGUAGE_LIMITS, sl.SIGN_LANGUAGE_COMMONS_KEYS,
                 no_picture_making=sl.SIGN_LANGUAGE_PACKS)
     assert "commons_sign_language" in sources.PEOPLE_AND_BODILY_PACK_KEYS
+
+
+# ----------------------------------------------------------------- weather maps
+
+ADVISORY = """<pre>Tropical Storm Idalia Advisory Number  10
+NWS National Hurricane Center Miami FL       AL102023
+SUMMARY OF 1000 PM CDT...0300 UTC...INFORMATION
+-----------------------------------------------
+LOCATION...22.0N 85.0W
+ABOUT 10 MI...15 KM NW OF THE WESTERN TIP OF CUBA
+MAXIMUM SUSTAINED WINDS...70 MPH...110 KM/H
+PRESENT MOVEMENT...N OR 10 DEGREES AT 8 MPH...13 KM/H
+MINIMUM CENTRAL PRESSURE...983 MB...29.03 INCHES
+
+WATCHES AND WARNINGS
+--------------------
+</pre>"""
+
+
+def test_weather_maps_explained_not_read():
+    import datetime
+    import weather_map_packs as w
+    rows = w.wpc_rows("radsfcus_exp", datetime.datetime(2024, 1, 1, 12))
+    assert "12:00 UTC on Monday 1 January 2024" in rows[0]["answer"] and w.FRONTS in rows[0]["answer"]
+    assert "radar echoes" in rows[0]["answer"] and rows[0]["answer"].endswith(w.NOT_READ)
+    assert rows[1]["answer"] == "It is the surface analysis for 12:00 UTC on Monday 1 January 2024."
+    assert "public domain" in rows[0]["credit"]
+    items = w.wpc_items(10, seed="test")
+    assert len({i[0] for i in items}) == 10 and all(i[1].startswith(w.WPC_ARCHIVE) for i in items)
+    heading, lines = w.advisory_summary(ADVISORY)
+    assert heading == "Tropical Storm Idalia Advisory Number 10"
+    assert lines == ["the centre is at 22.0 degrees north, 85.0 degrees west",
+                     "about 10 miles (15 km) north-west of the Western Tip of Cuba",
+                     "its strongest sustained winds are 70 mph (110 km/h)",
+                     "it is moving north (10 degrees) at 8 mph (13 km/h)",
+                     "its lowest central pressure is 983 mb (29.03 inches)"]
+    rows = w.cone_rows("AL102023", "Hurricane IDALIA", "10", ADVISORY, 2023)
+    assert rows[0]["answer"].startswith("This is the National Hurricane Center's five-day forecast cone graphic for "
+                                        "Tropical Storm Idalia, advisory 10, in the 2023 Atlantic")
+    assert w.CONE_LEGEND in rows[0]["answer"] and "al102023.public.010.shtml" in rows[0]["credit"]
+    # without the advisory's words, nothing is said about where the storm is
+    rows = w.cone_rows("EP012023", "Hurricane ADRIAN", "3", "", 2023)
+    assert len(rows) == 1 and "Hurricane Adrian" in rows[0]["answer"] and "degrees" not in rows[0]["answer"]
+
+
+def test_weather_maps_wired():
+    import weather_map_packs as w
+    check_wired(w.WEATHER_MAP_PACKS, w.WEATHER_MAP_LIMITS, ())
+    import picture_reading_sources as k
+    assert any("Storm Prediction Center" in key for key in k.WEATHER_NOT_INCLUDED)
+    import topics
+    assert {"wpc_surface_maps", "nhc_forecast_cones"} <= set(topics.find("documents").keys)
