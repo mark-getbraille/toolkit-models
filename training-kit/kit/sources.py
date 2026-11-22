@@ -3424,6 +3424,22 @@ PERSONAL_PICTURE_MAKING_OK |= _outdoor_cooking_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in OUTDOOR_COOKING_SOURCES
                                                                if s.key not in _outdoor_cooking_ok)
 _add_collections(OUTDOOR_COOKING_SOURCES)
+# Emergency preparedness and disasters (preparedness_sources.py) and radio communications (radio_sources.py), the owner's
+# request of 2026-11-22: their ready-made packs, share-alike Commons files and what was left out. Each file may be
+# missing. Only the keys in each file's *_PICTURE_MAKING_OK may be used for picture-making.
+for _prep_name, _prep_prefix in (("preparedness_sources", "PREPAREDNESS"), ("radio_sources", "RADIO")):
+    try:
+        _prep = __import__(_prep_name)
+    except ImportError as _e:
+        _prep = None
+        if getattr(_e, "name", None) != _prep_name:
+            say(f"(The {_prep_name.replace('_sources', '')} collections could not be loaded: {_e}. They are left out.)")
+    _prep_sources = list(getattr(_prep, f"{_prep_prefix}_SOURCES", []) or [])
+    _prep_ok = set(getattr(_prep, f"{_prep_prefix}_PICTURE_MAKING_OK", ()) or ())
+    PERSONAL_PICTURE_MAKING_OK |= _prep_ok
+    NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in _prep_sources
+                                                                   if s.key not in _prep_ok)
+    _add_collections(_prep_sources)
 # Privacy, security and digital safety (privacy_sources.py): the ready-made packs (Commons security things and
 # screens, and the computer-made scam and safe message examples), their share-alike Commons files, and the sources
 # looked at and left out; the file may be missing. Only the keys in PRIVACY_PICTURE_MAKING_OK may be used for

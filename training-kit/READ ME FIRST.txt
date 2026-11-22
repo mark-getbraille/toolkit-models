@@ -248,6 +248,10 @@ The topics:
   plugs, clocks, displays, electronic parts and repair, assistive devices.
 - Home and household (home): appliances and their controls, kitchens, laundry and care labels, cleaning products
   and hazards, home repair, locks, heating and emergency lighting, building work and ramps, pests, baby products,
+  sewing and crafts, first aid, dental and eye care, and emergency kits, warnings, shelters and disasters.
+- Radio communications (radio): ham, GMRS, FRS, CB, marine and scanner radios, weather radios, antennas, towers,
+  connectors and meters, Morse keys, ham stations, QSL cards and frequency charts, and off-grid mesh and data radio
+  (Meshtastic, LoRa, APRS).
   sewing and crafts.
 - Privacy, security and digital safety (privacy): security keys, code tokens, routers, home cameras and webcam
   covers, sign-in and padlock screens, password and authenticator apps, and made-up scam texts, phishing emails and
