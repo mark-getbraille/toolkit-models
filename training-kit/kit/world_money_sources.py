@@ -18,8 +18,9 @@ under CC BY 4.0, the European Central Bank and the Bank of Canada under their at
 commons_us_money and commons_money_sides, Canadian money in commons_ca_money and commons_money_sides.
 
 Picture-making: never (sources.py puts every key in NOT_FOR_PICTURE_MAKING): a model that makes pictures of money is
-not wanted. Topics: "documents" (Documents, maps and signs), as the US bills and synthetic bills are; the
-accessible-money facts are in the vision topic's books, not here.
+not wanted. Topic: "money" (Money and paperwork), beside the US and Canadian money packs. They are not in the
+"vision" topic: no picture here says how money feels (old money has no tactile marks); the central banks' tactile
+features are in the reference library's world-money books (group "Reference, blind and low-vision living").
 
     python -c "import sources, world_money_sources"      (from the kit folder: checks the file loads)
 """

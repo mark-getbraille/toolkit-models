@@ -24,8 +24,10 @@ What this module builds, in plain words, each IN FULL:
     owner's rule (2026-11-22) a military publication found openly on archive.org is kept whether or not it prints
     Distribution Statement A, with a truthful notice (military_book); a copy that prints a restricted marking
     (Distribution B to F, FOUO, CUI, NOFORN, an export-control warning) is personal use only; one with a classified
-    marking (Confidential, Secret) is kept only when it also shows that it was declassified or released; and parts
-    about weapons, tactics or harm are always left out.
+    marking (Confidential, Secret) is kept only when it also shows that it was declassified or released; manuals are
+    read whole (the owner's rule of 22 November 2026), so Tactical Radio Operations (FM 6-02.53, 2009) and its
+    successor Techniques for Tactical Radios and Retransmission (ATP 6-02.53, July 2025) are here too; only parts about
+    explosives, demolition, mines, grenades and booby traps are left out.
   - "Radio links to fetch yourself": a short book written here (CC0) of what could not be copied (the FCC's service
     pages, which refused the builder on 2026-11-22; ARRL, RSGB and
     QST material; AREDN's documentation, CC BY-NC-ND; Reticulum's manual, whose licence forbids use in AI training
@@ -261,7 +263,8 @@ PDFS = [
 #     export-control warning) and found only on a non-government host such as archive.org: personal use only;
 #   - printing a classified marking (Confidential, Secret, Top Secret): kept only when the text also shows it was
 #     declassified or released; otherwise left out (leaked, never-released material stays out);
-#   - parts about weapons, tactics or harm (build_textbooks.NOT_FIELD_SAFE) are always left out.
+#   - parts about explosives, demolition, mines, grenades and booby traps (build_textbooks.NOT_FIELD_SAFE) are
+#     always left out; weapons and tactics are kept as history (the owner's rule of 22 November 2026).
 CLASSIFIED = re.compile(r"\b(TOP\s+SECRET|SECRET|CONFIDENTIAL)\b")             # capitals, as markings are printed
 DECLASSIFIED = re.compile(r"declassified|unclassified|approved\s+for\s+(public\s+)?release|released\s+under|"
                           r"downgraded|declassification", re.I)
@@ -301,6 +304,24 @@ MILITARY_MANUALS = [
          "repairs. Published in 1953: its equipment is old, but the physics has not changed."),
 ]
 
+# Read whole under the owner's rule of 22 November 2026 (their titles name tactics, which the old rule never chose).
+# Both print Distribution Statement A (read 2026-11-22); no part of either is about explosives.
+MILITARY_MANUALS += [
+    _mil("army_fm_6_02_53_tactical_radio_2009", "Tactical Radio Operations (FM 6-02.53, 2009)", "Radio operating",
+         "Headquarters, Department of the Army", "FM6-02x53", "2009-08",
+         "The Army's 2009 manual of tactical radios, read whole: applications, HF, VHF and UHF radios, single-channel "
+         "satellite and airborne radios, antennas, communications security management, electronic protection, radio "
+         "operating procedures, FM radio networks, single-channel radio principles, antenna selection, "
+         "communications in unusual environments (jungle, desert, mountains, cold, cities), time conversion, "
+         "compromise recovery, data and co-site interference."),
+    _mil("army_atp_6_02_53_tactical_radios_2025", "Techniques for Tactical Radios and Retransmission (ATP 6-02.53, "
+         "2025)", "Radio operating", "Headquarters, Department of the Army",
+         "techniques-for-tactical-radios-and-retransmission-atp-6-02.53", "2025-07",
+         "The successor of FM 6-02.53, read whole: tactical radio employment and planning, recognising and "
+         "responding to electromagnetic attack, retransmission team training, waveforms, HF radio networks, time "
+         "conversion, communications in adverse conditions, antenna selection and techniques, and radio platforms."),
+]
+
 
 def military_book(name, work, cache=None, left_out=None, limit=None):
     """One military manual (MILITARY_MANUALS) read whole by build_textbooks.pdfdoc_book, then judged by its own front
@@ -322,7 +343,7 @@ def military_book(name, work, cache=None, left_out=None, limit=None):
     book.personal_use = verdict == "restricted"
     kept = [p for p in book.pages if not B.NOT_FIELD_SAFE.search(p.title)]
     if len(kept) < len(book.pages):
-        book.description += " Parts about weapons, tactics or harm are left out."
+        book.description += " Parts about explosives, demolition, mines or booby traps are left out."
     book.pages = kept[:limit] if limit else kept
     return book
 

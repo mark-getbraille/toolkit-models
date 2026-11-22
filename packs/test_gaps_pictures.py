@@ -248,7 +248,7 @@ def test_wiring():
     import world_money_sources as kw
     listed = {s.key: s for s in sources.SOURCES}
     no_making = set(sources.NOT_FOR_PICTURE_MAKING)
-    home, documents = set(topics.find("home").keys), set(topics.find("documents").keys)
+    home, money = set(topics.find("home").keys), set(topics.find("money").keys)
     for s in kp.PERSONAL_CARE_SOURCES + kt.TOYS_SOURCES + kw.WORLD_MONEY_SOURCES:
         assert s.key in listed and s.key in no_making, s.key
         assert s.key in keys or s.group == "share-alike", s.key
@@ -257,5 +257,5 @@ def test_wiring():
     for s in kp.PERSONAL_CARE_SOURCES + kt.TOYS_SOURCES:
         assert s.key in home, s.key
     for s in kw.WORLD_MONEY_SOURCES:
-        assert s.key in documents, s.key
+        assert s.key in money, s.key
     assert not (kp.PERSONAL_CARE_PICTURE_MAKING_OK or kt.TOYS_PICTURE_MAKING_OK or kw.WORLD_MONEY_PICTURE_MAKING_OK)

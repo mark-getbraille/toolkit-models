@@ -20,9 +20,9 @@ Picture-making (PHOTO_LIBRARY_PICTURE_MAKING_OK): only the planets, Earth-from-s
 sources.py puts every other key in NOT_FOR_PICTURE_MAKING, and the packs that are mostly people (astronauts, NASA
 people at work, launch crews, visitors using accessibility features and facilities) are PHOTO_LIBRARY_BODILY_KEYS,
 added to sources.PEOPLE_AND_BODILY_PACK_KEYS.
-Topics (topics.py): aircraft and rockets in "machines"; Earth from space, planets and telescopes, wildlife and
-landscapes in "nature"; visitor facilities and signs in "documents"; accessibility features in "vision"; the
-astronaut, people-at-work and historic-building packs in no topic.
+Topics (topics.py): aircraft and rockets in "transport"; Earth from space, planets and telescopes, wildlife and
+landscapes in "nature"; visitor facilities and signs in "documents" and "places"; accessibility features in "vision";
+people at work in "people"; historic buildings in "places"; the astronaut pack in no topic.
 
     python -c "import sources, photo_library_sources"      (from the kit folder: checks the file loads)
 """

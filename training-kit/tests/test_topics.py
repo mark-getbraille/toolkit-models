@@ -27,8 +27,10 @@ KNOWN = {s.key: s for s in sources.SOURCES}
 # ----------------------------------------------------------------- the topics and their collections
 
 def test_the_owners_topics_are_there():
-    assert [t.id for t in topics.TOPICS] == ["medicines", "drugs", "firearms", "food", "drinks", "alcohol", "machines", "home", "power", "radio", "privacy", "art",
-                                             "documents", "nature", "vision", "nudity", "sexual"]
+    assert [t.id for t in topics.TOPICS] == ["medicines", "health", "drugs", "firearms", "food", "drinks", "alcohol",
+                                             "machines", "transport", "home", "power", "radio", "privacy", "screens",
+                                             "money", "people", "places", "art", "documents", "nature", "vision",
+                                             "nudity", "sexual"]
     for topic in topics.TOPICS:
         assert topic.title and topic.description.endswith(".") and len(topic.description) < 300
         assert topics.find(topic.id.upper()) is topic
@@ -55,7 +57,8 @@ def test_every_topic_has_open_collections():
 
 def test_topic_collections_fit_their_topic():
     """The packs land where they belong: pills in medicines, drug and firearm packs apart, nudes and erotic art only
-    in the sensitive topics, and no medical-picture, graphic or sexual collection in an everyday topic."""
+    in the sensitive topics, medical-picture collections only in the health topic (used there only with medical
+    pictures ticked), and no graphic, nudity or sexual collection in an everyday topic."""
     by_id = {t.id: set(t.keys) for t in topics.TOPICS}
     assert {"taiwan_pills", "pharmassist", "c3pi_pills", "dailymed_human_labels"} <= by_id["medicines"]
     assert set(sources.DRUG_FIREARM_PACK_KEYS) <= by_id["drugs"] | by_id["firearms"]
@@ -65,8 +68,24 @@ def test_topic_collections_fit_their_topic():
     for topic in topics.TOPICS:
         if topic.id in ("nudity", "sexual"):
             continue
+        allowed = ("", "medical") if topic.id == "health" else ("",)
         for key in topic.keys:
-            assert KNOWN[key].content == "", (topic.id, key)
+            assert KNOWN[key].content in allowed, (topic.id, key)
+    health = topics.find("health")
+    assert not health.sensitive and not health.needs and not health.personal_only
+    assert {"scin_skin_conditions", "denpar_dental_xrays", "commons_first_aid_supplies"} <= by_id["health"]
+    used, left_out, _m = topics.topic_sources(health, sources)
+    assert "scin_skin_conditions" in {s.key for s in left_out}                 # medical: only with its box ticked
+    used, _l, _m = topics.topic_sources(health, sources, choices={"with_medical": True})
+    assert "scin_skin_conditions" in {s.key for s in used}
+    assert {"commons_car_parts", "commons_small_boats"} <= by_id["transport"] and \
+        "commons_car_parts" not in by_id["machines"]
+    assert {"commons_screens", "rico_screens"} <= by_id["screens"] and "commons_screens" not in by_id["documents"]
+    assert {"cord", "synthetic_bills", "commons_us_money"} <= by_id["money"] and "cord" not in by_id["documents"]
+    assert {"open_images_activities", "commons_daily_life"} <= by_id["people"]
+    assert {"open_images_indoor", "wikidata_landmarks"} <= by_id["places"]
+    for key in by_id["people"] | by_id["places"]:
+        assert key in sources.NOT_FOR_PICTURE_MAKING or key not in sources.PEOPLE_AND_BODILY_PACK_KEYS, key
 
 
 def test_only_the_sensitive_topics_are_sensitive():

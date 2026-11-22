@@ -3500,7 +3500,7 @@ _add_collections(VISION_SOURCES)
 # signs) and what was left out. Each file may be missing; none of their keys may be used for picture-making unless the
 # file's *_PICTURE_MAKING_OK names it (none does).
 for _mwc_name, _mwc_prefix in (("money_work_sources", "MONEY_WORK"), ("travel_sources", "TRAVEL"),
-                               ("civics_sources", "CIVICS")):
+                               ("civics_sources", "CIVICS"), ("gov_forms_sources", "GOV_FORMS")):
     try:
         _mwc = __import__(_mwc_name)
     except ImportError as _e:
@@ -3569,6 +3569,21 @@ for _hl_name, _hl_prefix in (("mental_health_sources", "MENTAL_HEALTH"),
     NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in _hl_sources
                                                                    if s.key not in _hl_ok or s.key in _hl_bodily)
     _add_collections(_hl_sources)
+# Small boats (the owner's request of 2026-11-22, small_boats_sources.py): the ready-made Commons pack of boat types,
+# parts, fittings and engines, and the sources looked at and left out; the file may be missing. None of its keys may
+# be used for picture-making (SMALL_BOATS_PICTURE_MAKING_OK is empty: boat photos show the people aboard).
+try:
+    import small_boats_sources as _small_boats  # noqa: E402
+except ImportError as _e:
+    _small_boats = None
+    if getattr(_e, "name", None) != "small_boats_sources":
+        say(f"(The small boats collections could not be loaded: {_e}. They are left out.)")
+SMALL_BOATS_SOURCES = list(getattr(_small_boats, "SMALL_BOATS_SOURCES", []) or [])
+_small_boats_ok = set(getattr(_small_boats, "SMALL_BOATS_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _small_boats_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in SMALL_BOATS_SOURCES
+                                                               if s.key not in _small_boats_ok)
+_add_collections(SMALL_BOATS_SOURCES)
 # Large public-domain US government photo libraries (photo_library_sources.py, the owner's request of 2026-11-22): the
 # NASA Image and Video Library and NPGallery packs by theme, and what was left out; the file may be missing. Only the
 # keys in PHOTO_LIBRARY_PICTURE_MAKING_OK may be used for picture-making; the packs that are mostly people
@@ -3606,3 +3621,19 @@ for _gp_name, _gp_prefix in (("personal_care_sources", "PERSONAL_CARE"), ("toys_
     PERSONAL_PICTURE_MAKING_OK |= _gp_ok
     NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in _gp_sources if s.key not in _gp_ok)
     _add_collections(_gp_sources)
+# Home manufacturing and making (making_sources.py, the owner's request of 2026-11-22): the ready-made packs (3D
+# printing, cutting machines and lasers, CNC and small machining, moulding and casting, circuit board fabrication, Open
+# Images machine tools and workshops), their share-alike Commons files, and the sources looked at and left out; the
+# file may be missing. Only the keys in MAKING_PICTURE_MAKING_OK may be used for picture-making.
+try:
+    import making_sources as _making  # noqa: E402
+except ImportError as _e:
+    _making = None
+    if getattr(_e, "name", None) != "making_sources":
+        say(f"(The home manufacturing and making collections could not be loaded: {_e}. They are left out.)")
+MAKING_SOURCES = list(getattr(_making, "MAKING_SOURCES", []) or [])
+_making_ok = set(getattr(_making, "MAKING_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _making_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in MAKING_SOURCES
+                                                               if s.key not in _making_ok)
+_add_collections(MAKING_SOURCES)

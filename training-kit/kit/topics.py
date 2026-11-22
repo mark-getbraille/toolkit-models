@@ -73,17 +73,48 @@ class Topic:
 
 TOPICS = [
     Topic("medicines", "Medicines and medical supplies",
-          "Pills, capsules and their imprints, blister packs, medicine boxes and labels, and medical supplies at "
-          "home: bandages, syringes, insulin pens, inhalers, instruments, and animal medicines.",
+          "Pills, capsules and their imprints, blister packs, medicine boxes and labels, medical supplies and "
+          "instruments at home such as bandages, syringes, insulin pens and inhalers, home health tests, and animal "
+          "medicines.",
           ("taiwan_pills", "pharmassist", "mediseg", "medpack_id", "scoa_blister", "med_commons_supplies",
            "med_commons_instruments", "med_commons_medicines", "vet_commons_medicine", "dental_instruments",
-           "open_images_medical", "cdc_phil_supplies", "commons_medication_labels", "lfa_covid_tests", "commons_home_health_tests",
-           # dental X-rays with the teeth they show (home health care; SCIN is medical: no topic)
-           "denpar_dental_xrays",
+           "open_images_medical", "cdc_phil_supplies", "commons_medication_labels",
+           # home health tests: also in "health" (real_questions.py tests them with both add-ons)
+           "lfa_covid_tests", "commons_home_health_tests",
            # share-alike (with Wikipedia ticked)
            "med_vet_commons_sa", "openfacts_supplements",
            # research-only (personal use)
            "dailymed_human_labels", "dailymed_vet_labels", "c3pi_pills")),
+    # Health and medical pictures (the owner's decision of 22 November 2026): home health care in one add-on of its
+    # own, gathered from "home" (first aid, dental and eye care, daily-living, wellbeing and rescue things), "machines"
+    # (mobility aids), "documents" (hearing and communication access) and "medicines" (dental X-rays), with the
+    # skin-condition, birth and feeding and contraception and period product packs that had no topic before. The only
+    # topic that may hold medical-content collections ("medical"): those are used only when the person ticks "Include
+    # medical and anatomy pictures". Nothing with nudity or sexual content; not sensitive. Never used for
+    # picture-making, like every add-on.
+    Topic("health", "Health and medical pictures",
+          "First aid supplies and skills, dental and eye care, home health tests, dental X-rays, skin conditions, "
+          "mobility, daily-living and wellbeing aids, wilderness rescue, hearing and sign language, pregnancy and "
+          "feeding, and contraception and period products.",
+          ("commons_first_aid_supplies", "commons_first_aid_skills", "commons_dental_care", "commons_eye_care",
+           "open_images_home_health", "lfa_covid_tests", "commons_home_health_tests", "denpar_dental_xrays",
+           "open_images_medical",
+           # mobility, daily-living, wellbeing and rescue (people_sources.py, aging_care_sources.py,
+           # mental_health_sources.py, wilderness_first_aid_sources.py)
+           "commons_mobility_aids", "open_images_disability", "commons_daily_living_aids", "commons_wellbeing_aids",
+           "commons_wilderness_rescue", "cdc_phil_health_behaviour",
+           # hearing and communication access, sign language
+           "commons_hearing_communication", "commons_sign_language",
+           # contraception and period products (sexual_health_sources.py: products only, no content mark)
+           "commons_contraception_menstrual",
+           # medical content: used only with medical pictures ticked (birth_and_feeding is marked "medical", not
+           # "nudity"; it keeps only respectful care scenes)
+           "scin_skin_conditions", "birth_and_feeding",
+           # share-alike
+           "home_health_commons_sa", "people_commons_sa",
+           # non-commercial and research-only (personal use); scin, ham10000 and isic_nc are medical content
+           "scin", "ham10000", "isic_nc", "wheelchair_types", "mobility_aids", "visible_disability",
+           "wheelchair_detection")),
     Topic("drugs", "Drugs and paraphernalia",
           "Street drugs and counterfeit pills, drug seizures, and paraphernalia such as pipes, bongs, vapes, rolling "
           "papers and grinders, named plainly.",
@@ -120,51 +151,74 @@ TOPICS = [
            "open_images_bar_drinks", "europeana_drinks_history",
            # share-alike
            "drinks_alcohol_commons_sa")),
-    Topic("machines", "Vehicles, machines and devices",
-          "Vehicles and their parts and dashboard symbols, machine parts, tools, plugs, clocks and displays, "
-          "electronic devices, electronic parts and repair, assistive devices, radios and antennas, "
-          "building-site safety, car controls and roads, computer and phone parts, motorcycles, RVs, trailers "
-          "and boats.",
-          ("wikidata_vehicle_models", "commons_vehicle_kinds", "commons_us_cars", "commons_ca_cars",
-           "commons_airplanes", "commons_car_parts", "commons_cycle_parts", "commons_machine_parts",
-           "commons_engine_bays", "iso_machine_symbols", "corolla_engine_bay", "tyre_condition",
-           "spark_plug_condition", "planetary_gearbox", "commons_connectors", "commons_tools", "clock_times",
-           "seven_segment", "abo_products", "commons_things", "open_images_tech", "commons_us_controls",
-           "wikidata_devices", "commons_devices", "nmah_devices", "farm_commons_equipment", "mech_commons_building",
-           "open_images_objects", "core50", "gso_objects",
+    # Machines, tools and devices: the vehicles, car parts, boats and aircraft moved to "transport", the mobility aids
+    # to "health" and the seven-segment displays to "screens" (22 November 2026).
+    Topic("machines", "Machines, tools and devices",
+          "Machine parts and symbols, tools, plugs and connectors, clocks, household and electronic devices by make "
+          "and model, electronic parts and repair, assistive devices, radios and antennas, generators, farm "
+          "equipment, building-site safety, and computer and phone parts.",
+          ("commons_cycle_parts", "commons_machine_parts", "iso_machine_symbols", "planetary_gearbox",
+           "commons_connectors", "commons_tools", "clock_times", "abo_products", "commons_things", "open_images_tech",
+           "commons_us_controls", "wikidata_devices", "commons_devices", "nmah_devices", "farm_commons_equipment",
+           "mech_commons_building", "open_images_objects", "core50", "gso_objects",
            # electronics repair, assistive devices and building-site safety (electronics_sources.py, building_sources.py)
            "commons_electronic_parts", "commons_cables_connectors", "commons_electronics_repair",
            "commons_assistive_devices", "commons_circuit_diagrams", "open_images_electronics",
-           "commons_mobility_aids",
            "commons_construction_safety", "electronics_commons_sa",
-           # car care: wipers, tyres, jacks, roadside help, EV connectors, dashboard lights
-           "commons_car_care", "commons_ev_charging", "commons_dashboard_lights", "open_images_car_care",
-           # boats and paddling (outdoors_sources.py)
-           "commons_boating_paddling",
            # radios, antennas and mesh radio devices (radio_sources.py; also in the radio topic)
            "commons_radios", "commons_antennas_station", "commons_mesh_data_radio", "open_images_radio",
            # generators, dynamos and wind and water turbines (power_sources.py; also in the power topic)
            "commons_generators_power", "commons_wind_water_power",
-           # driving, computer and phone basics, motorcycles, RVs and trailers (practical_sources.py)
-           "commons_driving", "open_images_driving", "commons_computer_basics", "open_images_computer_basics",
-           "commons_trailers_rvs", "commons_motorcycle_gear", "open_images_motorcycles_rvs",
+           # computer and phone basics (practical_sources.py; also in the screens topic)
+           "commons_computer_basics", "open_images_computer_basics",
+           # home manufacturing and making: 3D printers, cutters and lasers, CNC, lathes and mills, moulding and
+           # casting, circuit board fabrication (making_sources.py; also in the home topic)
+           "commons_3d_printing", "commons_cutting_lasers", "commons_cnc_machining", "commons_moulding_casting",
+           "commons_pcb_fabrication", "open_images_making",
            # share-alike
-           "car_care_commons_sa", "radio_commons_sa", "people_commons_sa",
-           "commons_mechanical_sa", "dashboard_symbols_sa", "device_models_sa", "farm_mech_commons_sa",
-           "commons_airplanes_sa",
-           # NASA aircraft and rockets (photo_library_sources.py)
-           "nasa_aircraft", "nasa_rockets_launch",
+           "radio_commons_sa", "making_commons_sa", "commons_mechanical_sa", "device_models_sa",
+           "farm_mech_commons_sa",
+           # non-commercial and research-only (personal use)
+           "mechanical_parts_2022", "co3d_devices", "museums_victoria", "stanford_products")),
+    # Transport and travel (the owner's decision of 22 November 2026): vehicles of every kind and getting around, in
+    # one add-on, gathered from "machines" (vehicles, car parts and care, boats, aircraft and rockets, driving) and
+    # "documents" (travel documents; the road, travel and water signs also stay in "documents" for reading), with the
+    # transit and road-scene packs that had no topic before.
+    Topic("transport", "Transport and travel",
+          "Cars, trucks, motorcycles, RVs, trailers, boats, aircraft and rockets, car parts, tyres, dashboard lights, "
+          "EV charging, driving and road scenes, transit and airports, road and travel signs, passports and boarding "
+          "passes, buoys and trail markers.",
+          ("wikidata_vehicle_models", "commons_vehicle_kinds", "commons_us_cars", "commons_ca_cars",
+           "commons_airplanes", "commons_car_parts", "commons_cycle_parts", "commons_engine_bays",
+           "iso_machine_symbols", "corolla_engine_bay", "tyre_condition", "spark_plug_condition",
+           # car care: wipers, tyres, jacks, roadside help, EV connectors, dashboard lights (car_care_sources.py)
+           "commons_car_care", "commons_ev_charging", "commons_dashboard_lights", "open_images_car_care",
+           # driving, motorcycles, RVs and trailers (practical_sources.py)
+           "commons_driving", "open_images_driving", "commons_trailers_rvs", "commons_motorcycle_gear",
+           "open_images_motorcycles_rvs",
+           # boats and paddling, small boats, buoys and trail markers (outdoors_sources.py, small_boats_sources.py)
+           "commons_boating_paddling", "commons_small_boats", "commons_water_trail_markers",
+           # aircraft and rockets (photo_library_sources.py and the Smithsonian air and space pack)
+           "nasa_aircraft", "nasa_rockets_launch", "nasm_aircraft",
+           # transit, roads and travel (travel_sources.py and the street and getting-around packs)
+           "commons_us_getting_around", "commons_ca_getting_around", "commons_state_roads",
+           "commons_streets_roads_na", "us_dot_street_photos", "caltrans_cctv", "tripcheck_cameras",
+           "us_road_signs", "ca_road_signs", "commons_travel_signs", "synthetic_travel_documents",
+           # share-alike
+           "car_care_commons_sa", "commons_mechanical_sa", "dashboard_symbols_sa", "commons_airplanes_sa",
+           "streetsurfacevis", "arc_d_asphalt",
            # non-commercial and research-only (personal use)
            "autovi", "dashboard_warning_icons", "car_parts_damage", "car_parts_dsmlr", "car_damage_views",
-           "mechanical_parts_2022", "co3d_devices", "stanford_cars", "fgvc_aircraft", "museums_victoria",
-           "stanford_products")),
+           "stanford_cars", "fgvc_aircraft", "streetsignset", "lisa_traffic_signs", "mapillary_signs", "bdd100k",
+           "bosch_traffic_lights", "lisa_traffic_lights")),
     # Home and household (the owner's decision of 22 November 2026): everything about running and keeping a home in
     # one add-on. The household collections moved here from "machines"; the craft collections are also in "art" and
-    # the household pests also in "nature", so those add-ons keep them.
+    # the household pests also in "nature", so those add-ons keep them. The home health collections moved on to
+    # "health" (22 November 2026).
     Topic("home", "Home and household",
           "Appliances, kitchens, laundry, cleaning and hazards, home repair, heating, lighting, building, pests, "
-          "baby things, sewing, crafts, first aid, dental and eye care, emergency kits, pools, knots, camp, "
-          "homestead and outdoor gear, fishing, games, toys, personal care products and clothes.",
+          "baby things, sewing, crafts, emergency kits, pools, knots, camp, homestead and outdoor gear, fishing, "
+          "fitness equipment, games, toys, personal care products, clothes, 3D printing, lasers and CNC.",
           ("commons_appliances", "commons_appliance_controls", "open_images_appliance_controls", "commons_kitchen",
            "laundry_symbols", "laundry_care_labels", "commons_household_chemicals", "commons_finishes_in_use",
            "commons_household_hazards", "open_images_household_hazards",
@@ -183,9 +237,6 @@ TOPICS = [
            # other crafts (crafts_sources.py)
            "commons_pottery_ceramics", "commons_jewellery_beading", "commons_paper_crafts", "commons_candle_soap",
            "commons_glass_carving", "commons_art_supplies", "commons_models_resin", "open_images_crafts",
-           # home health care: first aid supplies and skills, dental and eye care things
-           "commons_first_aid_supplies", "commons_first_aid_skills", "commons_dental_care", "commons_eye_care",
-           "open_images_home_health",
            # emergency cooking, camp stoves, grills and smokers (outdoor_cooking_sources.py)
            "commons_camp_cooking", "commons_emergency_cooking", "commons_grills_smokers",
            "open_images_outdoor_cooking",
@@ -194,7 +245,7 @@ TOPICS = [
            "commons_outdoor_gear", "open_images_outdoors", "commons_card_games", "commons_board_games_world",
            "commons_puzzles_hobbies", "open_images_games", "commons_clothing_more", "open_images_clothing",
            # share-alike
-           "home_health_commons_sa", "outdoor_cooking_commons_sa",
+           "outdoor_cooking_commons_sa",
            "homestead_commons_sa", "outdoors_commons_sa", "games_commons_sa", "clothing_commons_sa",
            "commons_home_sa", "home_safety_commons_sa", "chemical_commons_sa", "appliance_commons_sa",
            "home_upkeep_commons_sa", "home_heating_commons_sa", "emergency_lighting_commons_sa", "building_commons_sa",
@@ -207,10 +258,11 @@ TOPICS = [
            # cleaning tools, pool equipment, knots and outdoor tools (practical_sources.py)
            "commons_cleaning_tools", "open_images_cleaning", "commons_pool_equipment", "commons_knots",
            "commons_outdoor_skills", "open_images_knots_outdoor", "knots_commons_sa",
-           # health and life: wellbeing aids, fitness equipment and adaptive sports, daily-living aids and wilderness
-           # rescue gear (the sexual health products are in no topic, by the owner's choice)
-           "commons_wellbeing_aids", "commons_fitness_equipment", "commons_adaptive_sports",
-           "commons_daily_living_aids", "commons_wilderness_rescue",
+           # fitness equipment and adaptive sports (fitness_nutrition_sources.py)
+           "commons_fitness_equipment", "commons_adaptive_sports",
+           # home manufacturing and making (making_sources.py; also in the machines topic)
+           "commons_3d_printing", "commons_cutting_lasers", "commons_cnc_machining", "commons_moulding_casting",
+           "commons_pcb_fabrication", "open_images_making", "making_commons_sa",
            # personal care and beauty products, and toys and children's products (personal_care_sources.py,
            # toys_sources.py)
            "commons_personal_care_products", "commons_historic_cosmetics", "met_historic_cosmetics",
@@ -231,6 +283,8 @@ TOPICS = [
            "commons_home_repair", "open_images_home_upkeep", "commons_plumbing_electrical", "commons_connectors",
            "commons_electronic_parts", "commons_cables_connectors", "commons_circuit_diagrams",
            "open_images_electronics", "commons_emergency_lighting", "commons_emergency_kits_power",
+           # circuit board fabrication (making_sources.py; also in machines and home)
+           "commons_pcb_fabrication",
            # share-alike
            "power_commons_sa", "home_upkeep_commons_sa")),
     # Radio communications (the owner's decision of 22 November 2026): ham and other two-way radio, antennas and
@@ -245,13 +299,81 @@ TOPICS = [
            # share-alike
            "radio_commons_sa")),
     # Privacy, security and digital safety (the owner's request of 22 November 2026): security keys and devices,
-    # security screens and tools, and computer-made scam and safe message examples (privacy_sources.py).
+    # security screens and tools, and computer-made scam and safe message examples (privacy_sources.py; the screens
+    # and scam examples are also in "screens").
     Topic("privacy", "Privacy, security and digital safety",
           "Security keys, code tokens, routers, home cameras and webcam covers, sign-in and padlock screens, password "
           "and authenticator apps, and made-up scam texts, phishing emails and fake pop-ups with their warning signs.",
           ("commons_privacy_security", "commons_privacy_screens", "synthetic_scam_examples",
            # share-alike
            "privacy_commons_sa")),
+    # Screens and apps (the owner's decision of 22 November 2026): reading phone and computer screens, gathered from
+    # "documents" (screens and app screenshots), "privacy" (security screens and scam examples, which stay there too)
+    # and "machines" (computer basics, which stay there too; the seven-segment displays moved here).
+    Topic("screens", "Screens and apps",
+          "Phone and computer screens and screenshots: apps and their buttons, error messages, dialog boxes, sign-in "
+          "and lock screens, made-up scam messages, computer and phone basics, and the numbers on LED and LCD "
+          "displays.",
+          ("commons_screens", "commons_privacy_screens", "synthetic_scam_examples", "commons_computer_basics",
+           "open_images_computer_basics", "seven_segment",
+           # research-only (personal use)
+           "rico_screens", "screenqa_rico", "rico_widgets")),
+    # Money and paperwork (the owner's decision of 22 November 2026): money, bills, receipts, forms and specimen papers,
+    # gathered from "documents" and "vision" (money by its sides, which stays there too), with the currency packs that
+    # had no topic before.
+    Topic("money", "Money and paperwork",
+          "US, Canadian, foreign and old banknotes and coins, bills and statements, pay stubs and W-2s, receipts, price tags, "
+          "blank and filled-in government and tax forms, ballots and jury summonses, and specimen papers such as "
+          "visas and Social Security cards.",
+          ("commons_us_money", "commons_ca_money", "commons_money_sides", "banknotes", "ghana_money", "bd_taka",
+           # bills, pay, civics and government forms (daily_access_sources.py, money_work_sources.py,
+           # civics_sources.py, gov_forms_sources.py, people_sources.py)
+           "synthetic_bills", "synthetic_pay_documents", "synthetic_civic_documents", "synthetic_gov_forms",
+           "us_federal_forms", "commons_immigration_documents", "cord",
+           # foreign banknotes and coins: old coins and notes, museum coins, money in photos (world_money_sources.py)
+           "commons_world_money", "met_world_coins", "open_images_money",
+           # non-commercial and research-only (personal use)
+           "sroie", "wildreceipt", "funsd", "xfund", "cra_forms", "gothenburg_price_tags")),
+    # People and everyday activities (the owner's decision of 22 November 2026): what people are doing, gathered from
+    # the people and activity packs that had no topic (people_activity_sources.py among them), with the clothing,
+    # deafblind communication and adaptive sports packs, which stay in their own topics too. Nothing nude or sexual
+    # (those stay only in the sensitive topics); the people packs stay never-for-picture-making.
+    Topic("people", "People and everyday activities",
+          "What people are doing: cooking, shopping, working, eating, reading, playing, holidays, ceremonies, events "
+          "and crowds, facial expressions, gestures and sign language, hairstyles, and what people wear, from "
+          "everyday photos and documentary archives.",
+          ("open_images_activities", "commons_daily_life", "dollar_street_routines", "open_images_in_use",
+           "commons_in_use", "vcoco_actions", "vg_people_actions", "oi_expressions", "commons_expressions",
+           "bice_gestures", "vqa_expressions", "commons_sign_language", "fashionpedia", "commons_hairstyles",
+           "open_images_clothing", "commons_uniformed", "commons_religious_life", "commons_us_holidays",
+           "commons_ca_holidays", "commons_ca_daily_life", "nara_events", "open_images_outings",
+           "commons_college_streams", "commons_state_community", "loc_fsa", "nara", "nasa_people_at_work",
+           "commons_mobility_deafblind", "commons_adaptive_sports",
+           # share-alike
+           "commons_daily_life_sa", "coco_actions_sa", "commons_hairstyles_sa", "hagrid", "commons_uniformed_sa",
+           # non-commercial and research-only (personal use)
+           "coco_actions_nc", "stanford40_actions", "swig_situations", "har_actions", "epic_kitchens", "charades",
+           "how2sign", "ravdess", "jaffe", "ifeed", "navarasa", "flickr30k")),
+    # Places and buildings (the owner's decision of 22 November 2026): streets, buildings inside and out, landmarks and
+    # facilities, gathered from "documents" (the indoor photos; the wayfinding signs and park facilities stay there
+    # too) and the street, house, landmark and historic building packs that had no topic before.
+    Topic("places", "Places and buildings",
+          "Streets, pavements and crossings, neighbourhoods, houses and rooms, shops, restaurants and public places, "
+          "stations, lobbies and corridors, workplaces, landmarks, places of worship, architecture, historic "
+          "buildings and park facilities.",
+          ("open_images_street", "outdoor_navigation", "seoul_sidewalks", "walkway_dhaka", "ptl_crossings",
+           "uroac_crossings", "commons_indoor_wayfinding", "open_images_indoor", "commons_us_streets",
+           "commons_ca_streets", "commons_neighbourhoods_na", "commons_streets_roads_na", "commons_us_homes",
+           "commons_ca_homes", "loc_habs_houses", "loc_haer", "npgallery_historic_buildings", "npgallery_facilities",
+           "commons_us_public_places", "commons_ca_public_places", "commons_ca_shops", "commons_us_eating_out",
+           "commons_ca_eating_out", "commons_us_getting_around", "commons_ca_getting_around", "wikidata_landmarks",
+           "wikidata_architecture", "gldv2_landmarks", "wikidata_worship", "commons_state_outdoors",
+           "work_commons_workplaces", "loc_highsmith", "loc_world", "newberry_library", "dollar_street",
+           # share-alike
+           "indoor_commons_sa", "street_scene_commons_sa", "gldv2_sa", "commons_us_sa", "commons_ca_sa",
+           "work_commons_sa", "hypersim",
+           # non-commercial and research-only (personal use)
+           "indoor_scenes", "rotterdam_accessibility", "mapillary_vistas", "accessparkcv")),
     Topic("art", "Art and museum objects",
           "Paintings, sculpture and museum objects, described the way museums write for blind visitors, musical "
           "instruments of every culture, and crafts: quilts, knitting, crochet, lace, weaving, fabrics, pottery, "
@@ -276,32 +398,28 @@ TOPICS = [
            "pottery_commons_sa", "jewellery_commons_sa", "crafts_commons_sa",
            # non-commercial and research-only (personal use)
            "vam", "mimo_instruments", "princeton_general_personal", "turkish_instruments")),
+    # Documents, maps and signs: reading text and making sense of pages. The receipts, forms, bills, pay and civic
+    # papers moved to "money", the screens to "screens", the travel documents to "transport", the indoor photos to
+    # "places" and the hearing access pictures to "health" (22 November 2026); the road, travel and water signs and
+    # the wayfinding signs stay here for reading too.
     Topic("documents", "Documents, maps and signs",
-          "Reading text and making sense of pages: letters, forms, receipts, pay stubs, passports, boarding passes, "
-          "ballots, tables, charts, maps, sheet music, road, safety, travel and indoor signs, buoys, trail markers, "
-          "foreign money and phone screens.",
-          ("textvqa", "textocr", "coco_text", "cord", "doclaynet", "plotqa", "loc_letters", "owid_charts",
-           "pubtabnet_tables", "us_federal_forms", "open_images_cards_documents", "loc_maps", "safety_signs", "commons_hazard_symbols", "us_road_signs",
-           "ca_road_signs",
+          "Reading text and making sense of pages: letters, handwriting, document pages, tables, charts, diagrams, "
+          "maps, weather maps, sheet music, cards, mail, and road, safety, travel, emergency and indoor signs, buoys "
+          "and trail markers.",
+          ("textvqa", "textocr", "coco_text", "doclaynet", "plotqa", "loc_letters", "owid_charts",
+           "pubtabnet_tables", "open_images_cards_documents", "loc_maps", "safety_signs", "commons_hazard_symbols",
+           "us_road_signs", "ca_road_signs",
            "deepscores_sheet_music", "field_manual_figures", "bentham_pages", "commons_handwriting",
            "openstax_figures", "commons_charts", "wpc_surface_maps", "nhc_forecast_cones",
-           "commons_indoor_wayfinding", "open_images_indoor",
-           "commons_water_trail_markers",
+           "commons_indoor_wayfinding", "commons_water_trail_markers", "commons_travel_signs",
            "commons_emergency_signs_maps", "commons_radio_cards_charts",
-           "synthetic_bills",
-           # money and work, travel, citizenship and civics (money_work_sources.py, travel_sources.py, civics_sources.py)
-           "synthetic_pay_documents", "synthetic_travel_documents", "commons_travel_signs", "synthetic_civic_documents",
-           "commons_hearing_communication", "commons_immigration_documents",
-           # national park visitor facilities and signs (photo_library_sources.py)
+           # national park visitor facilities and signs (photo_library_sources.py; also in "places")
            "npgallery_facilities",
-           # foreign banknotes and coins (world_money_sources.py)
-           "commons_world_money", "met_world_coins", "open_images_money",
            # share-alike
            "hiertext", "mapqa", "indoor_commons_sa",
            # non-commercial and research-only (personal use)
-           "sroie", "wildreceipt", "dvqa", "funsd", "xfund", "chartqa", "scienceqa", "ai2d", "streetsignset",
-           "fintabnet_tables", "cra_forms", "screenqa_rico", "rico_screens", "rico_widgets", "tqa_diagrams",
-           "commons_mail_parcels", "commons_screens")),
+           "dvqa", "chartqa", "scienceqa", "ai2d", "streetsignset", "fintabnet_tables", "tqa_diagrams",
+           "commons_mail_parcels")),
     Topic("nature", "Plants, animals and nature",
           "Plants, mushrooms, insects, birds and other animals by name, household pests and pest control, pet and "
           "farm breeds and animals, crops and their diseases, weeds, poisonous plants, mushrooms and wild plants, "

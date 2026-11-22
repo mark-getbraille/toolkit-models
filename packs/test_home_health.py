@@ -92,5 +92,8 @@ def test_wiring():
     import topics
     listed = {s.key: s for s in sources.SOURCES}
     assert listed["scin_skin_conditions"].content == "medical"
-    assert set(h.HOME_HEALTH_PACKS) - {"scin_skin_conditions", "denpar_dental_xrays"} <= set(topics.find("home").keys)
-    assert "denpar_dental_xrays" in topics.find("medicines").keys
+    # every pack in the health topic (SCIN, medical content, only with medical pictures ticked); none left in home
+    health = set(topics.find("health").keys)
+    assert set(h.HOME_HEALTH_PACKS) | {"home_health_commons_sa"} <= health
+    assert not set(h.HOME_HEALTH_PACKS) & set(topics.find("home").keys)
+    assert "denpar_dental_xrays" not in topics.find("medicines").keys

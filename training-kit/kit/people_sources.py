@@ -20,9 +20,9 @@ not-legal-advice line).
 Picture-making (PEOPLE_PICTURE_MAKING_OK): none of these. The mobility, hearing and veterans collections show
 disabled people, veterans and graves, and a picture-making model must never learn to make identity or immigration
 documents; sources.py puts every key here in NOT_FOR_PICTURE_MAKING.
-Topics: the mobility aids in the machines topic (Vehicles, machines and devices); the hearing and communication
-access pictures (loops, captions, symbols, picture cards) and the immigration documents in the documents topic
-(Documents, maps and signs); the veterans pack in no topic (it is used in the general describer).
+Topics: the mobility aids, the hearing and communication access pictures (loops, captions, symbols, picture cards)
+and their share-alike files in the health topic (Health and medical pictures); the immigration documents in the money
+topic (Money and paperwork); the veterans pack in no topic (it is used in the general describer).
 
     python -c "import sources, people_sources"      (from the kit folder: checks the file loads)
 """

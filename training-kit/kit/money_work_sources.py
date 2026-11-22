@@ -6,7 +6,7 @@ and the sources looked at and left out, with the reason (MONEY_WORK_NOT_INCLUDED
                            are never issued; never usable as real documents).
 
 Tax answers end with "General information, not tax or legal advice; check the current rules or ask a professional."
-Topic: documents (Documents, maps and signs). Picture-making (MONEY_WORK_PICTURE_MAKING_OK): none (a model must never
+Topic: money (Money and paperwork). Picture-making (MONEY_WORK_PICTURE_MAKING_OK): none (a model must never
 learn to draw convincing pay or tax documents).
 
     python -c "import sources, money_work_sources"      (from the kit folder: checks the file loads)

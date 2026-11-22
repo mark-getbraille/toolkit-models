@@ -165,6 +165,7 @@ POWER_TOPIC_EXISTING = (
     "open_images_electronics",        # electronic and electrical things
     "commons_emergency_lighting",     # portable power stations, battery banks and batteries
     "commons_emergency_kits_power",   # backup power: mobile generators, emergency power and UPS units
+    "commons_pcb_fabrication",        # circuit board making: PCB milling, stencils and reflow (making_sources.py)
 )
 
 POWER_NOT_INCLUDED = {

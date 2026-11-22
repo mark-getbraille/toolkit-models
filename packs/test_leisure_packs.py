@@ -230,7 +230,7 @@ def test_wiring():
         for s in kit_sources:
             assert s.key in listed and any(s.key in t for t in every_topic.values()), s.key
             assert s.key in keys or s.group == "share-alike", s.key
-    assert "commons_boating_paddling" in every_topic["machines"]
+    assert "commons_boating_paddling" in every_topic["transport"]
     assert "commons_water_trail_markers" in every_topic["documents"]
     assert "commons_poisonous_plants" in every_topic["nature"] and "open_images_homestead" in every_topic["nature"]
     assert "open_images_clothing" in every_topic["home"] and "commons_card_games" in every_topic["home"]

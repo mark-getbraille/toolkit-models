@@ -20,8 +20,8 @@ monoxide, and motorcycle helmets. The notes are the same words as the packs' (pa
 Picture-making (PRACTICAL_PICTURE_MAKING_OK): only the collections of things (computer parts, cleaning tools, knots,
 outdoor tools, pool equipment, trailers and RVs); sources.py puts every other key in NOT_FOR_PICTURE_MAKING (the
 driving, motorcycle and Open Images collections show people, children among them).
-Topics: driving, computers, motorcycles, RVs and trailers in the machines topic; cleaning, pools, knots and outdoor
-tools in the home topic.
+Topics: driving, motorcycles, RVs and trailers in the transport topic; computer and phone basics in the screens and
+machines topics; cleaning, pools, knots and outdoor tools in the home topic (PRACTICAL_TOPICS).
 
     python -c "import sources, practical_sources"      (from the kit folder: checks the file loads)
 """
@@ -196,8 +196,12 @@ PRACTICAL_PICTURE_MAKING_OK = {"commons_computer_basics", "commons_cleaning_tool
 
 # The topic each collection belongs to (topics.py lists the same keys; packs/test_practical.py checks).
 PRACTICAL_TOPICS = {
-    "machines": ("commons_driving", "open_images_driving", "commons_computer_basics", "open_images_computer_basics",
-                 "commons_trailers_rvs", "commons_motorcycle_gear", "open_images_motorcycles_rvs"),
+    # driving, motorcycles, RVs and trailers in "transport"; computer and phone basics in "screens" and "machines"
+    # (the owner's decision of 22 November 2026)
+    "transport": ("commons_driving", "open_images_driving", "commons_trailers_rvs", "commons_motorcycle_gear",
+                  "open_images_motorcycles_rvs"),
+    "screens": ("commons_computer_basics", "open_images_computer_basics"),
+    "machines": ("commons_computer_basics", "open_images_computer_basics"),
     "home": ("commons_cleaning_tools", "open_images_cleaning", "commons_knots", "commons_outdoor_skills",
              "open_images_knots_outdoor", "commons_pool_equipment", "knots_commons_sa"),
 }

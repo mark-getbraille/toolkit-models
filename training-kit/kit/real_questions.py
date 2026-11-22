@@ -96,8 +96,10 @@ ASK_SHORT = ("Answer the question using a single word or phrase. When the pictur
 ANSWER_TOKENS = 40
 EVERYDAY = "everyday"
 # A group of its own, not a topic add-on: home health tests (pregnancy, COVID-19 and other rapid tests, ovulation
-# tests), whose result lines blind people ask about. It is tested with the medicines topic and with every test.
+# tests), whose result lines blind people ask about. It is tested with the medicines and health topics (both hold the
+# home health test packs) and with every test.
 HOME_TESTS = "home_tests"
+HOME_TEST_TOPICS = ("medicines", "health")
 HOME_TEST_WORDS = re.compile(r"(?<![a-z0-9])(pregnan\w*|ovulat\w*|covid|coronavirus|rapid test|antigen|lateral flow|"
                              r"test strips?|home test|flu test|strep test|positive or negative|negative or positive)"
                              r"(?![a-z0-9])")
@@ -507,11 +509,11 @@ def load_set(path=SET_FILE):
 
 
 def for_topic(rows, topic_id=""):
-    """The rows to test for a topic: its own questions and the everyday ones, and for medicines the home health tests
-    too (all rows when no topic is given)."""
+    """The rows to test for a topic: its own questions and the everyday ones, and for medicines and health the home
+    health tests too (all rows when no topic is given)."""
     if not topic_id:
         return list(rows)
-    wanted = {topic_id, EVERYDAY} | ({HOME_TESTS} if topic_id == "medicines" else set())
+    wanted = {topic_id, EVERYDAY} | ({HOME_TESTS} if topic_id in HOME_TEST_TOPICS else set())
     return [r for r in rows if r["topic"] in wanted]
 
 
@@ -740,13 +742,13 @@ def report_lines(name, results, missing=0, topic_id=""):
 
 def compare_lines(topic, before, after):
     """The topic add-on report's lines on the real questions: before and after on the topic's own real questions and
-    the everyday ones (and the home health tests for medicines), in plain words. before and after: scored rows from
-    answer_all, or their summarise() already made."""
+    the everyday ones (and the home health tests for medicines and health), in plain words. before and after:
+    scored rows from answer_all, or their summarise() already made."""
     lines = ["  On blind people's real questions (VizWiz and ORBIT photos, never trained on):"]
     b = before if isinstance(before, dict) else summarise(before)
     a = after if isinstance(after, dict) else summarise(after)
     shown = False
-    groups = [(topic.id, "this topic")] + ([(HOME_TESTS, "home health tests")] if topic.id == "medicines" else [])
+    groups = [(topic.id, "this topic")] + ([(HOME_TESTS, "home health tests")] if topic.id in HOME_TEST_TOPICS else [])
     for group, name in groups + [(EVERYDAY, "everyday questions")]:
         if group not in b or group not in a:
             if group == topic.id:
