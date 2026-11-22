@@ -171,14 +171,16 @@ def test_wiring():
     import money_work_sources
     import travel_sources
     listed = {s.key: s for s in sources.SOURCES}
-    documents = set(topics.find("documents").keys)
+    # pay and civic papers in money, travel documents and signs in transport (the signs also in documents)
+    placed = set(topics.find("money").keys) | set(topics.find("transport").keys)
     kit = money_work_sources.MONEY_WORK_SOURCES + travel_sources.TRAVEL_SOURCES + civics_sources.CIVICS_SOURCES
     assert {s.key for s in kit} == keys
     for key in keys:
         assert listed[key].group == "permissive" and listed[key].prepare is sources.prepare_pack, key
-        assert key in documents, key
+        assert key in placed, key
         assert key in sources.NOT_FOR_PICTURE_MAKING and key not in sources.PERSONAL_PICTURE_MAKING_OK, key
         assert listed[key].cap == ALL_LIMITS[key], key
+    assert "commons_travel_signs" in topics.find("documents").keys
     for mod in (money_work_sources, travel_sources, civics_sources):
         not_included = [v for k, v in vars(mod).items() if k.endswith("_NOT_INCLUDED")][0]
         assert not_included and all(not_included.values())

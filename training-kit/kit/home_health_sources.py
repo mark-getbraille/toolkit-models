@@ -23,6 +23,8 @@ skin, never the genitals, groin or buttocks) are describing only: HOME_HEALTH_BO
 PEOPLE_AND_BODILY_PACK_KEYS. SCIN's rows carry "content": "medical", so they are used only when the training ticks
 medical pictures.
 
+Topics: every pack here in the health topic (Health and medical pictures); SCIN only with medical pictures ticked.
+
 Picture-making (HOME_HEALTH_PICTURE_MAKING_OK): only the dental and eye packs (things); never the first aid
 supplies (tick removal and oral rehydration show people), the people, skin, X-ray or Open Images packs.
 

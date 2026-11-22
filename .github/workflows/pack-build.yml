@@ -586,6 +586,12 @@ jobs:
             npgallery_historic_buildings) limit=3000 ;;
             npgallery_wildlife_more) limit=3000 ;;
             npgallery_landscapes_more) limit=3000 ;;
+            commons_3d_printing) limit=1200 ;;
+            commons_cutting_lasers) limit=900 ;;
+            commons_cnc_machining) limit=900 ;;
+            commons_moulding_casting) limit=700 ;;
+            commons_pcb_fabrication) limit=120 ;;
+            open_images_making) limit=1500 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in

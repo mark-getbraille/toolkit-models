@@ -94,8 +94,25 @@ MODULES = [
     "sexual_health",        # CDC contraception, STIs, HIV, violence; OPA, OWH, FDA, NIDDK, help lines (sexhealth:)
     "aging_end_of_life",    # ACL long-term care, VA geriatrics, NCI end of life, NIDCD, IRS, VA burial, DOJ (aging:)
     "wilderness_first_aid", # NPS and USFS backcountry safety, NIOSH outdoor hazards, CDC, NOAA SARSAT, TB MEDs (wild:)
+    # Kiwix references, sheet music, newspapers and old-time radio (the owner's request of 2026-11-22)
+    "stack_exchange",       # Stack Exchange how-to sites in the Kiwix library, REFERENCE ONLY, never training (se:)
+    "a11y_community",       # accessibility communities: GNOME, ArchWiki and KDE accessibility pages, index (a11yc:)
+    "sheet_music",          # Mutopia scores (LilyPond and PDF), NLS braille music catalogues, IMSLP links (music:)
+    "newspapers",           # Chronicling America: front pages of history and state books around major events (news:)
+    "old_radio",            # old-time radio scripts: USDA and wartime government radio, index of links (otr:)
     # small boats (the owner's request of 2026-11-22)
     "small_boats",          # Navigation Rules, boating CFR, Coast Guard and Army boat manuals, NOAA, NWS, old boat books (boat:)
+    # home manufacturing and making (the owner's request of 2026-11-22), its own group
+    "making_books",         # 3D printing, lasers, CNC, lathes: Klipper, FreeCAD, LinuxCNC, OpenSCAD, FDA, NIST (make:)
+    # reference gaps (the owner's request of 2026-11-22), each in its own group
+    "geography",            # the CIA World Factbook (last edition, by continent) and a geography index (geo:)
+    "pet_care",             # pet care: CDC Healthy Pets, FDA CVM pet food and poisons, old dog and cat books (pet:)
+    "genealogy",            # genealogy: NARA guides, Census Bureau family history, CDC vital records offices (gen:)
+    "audio_media",          # audio and media: Audacity Manual, OSARA, W3C WAI media guide, LoC AV formats (media:)
+    "typing_skills",        # typing: old public-domain touch typing courses and a keyboard skills index (typing:)
+    "recycling",            # recycling and waste: EPA (personal use), FDA medicine disposal, DEA take-back (recycle:)
+    "game_fish",            # game and fish: CDC game diseases, APHIS and USGS CWD, FDA and EPA fish advice (gamefish:)
+    "holiday_observances",  # holidays: OPM, CRS histories, Wikipedia observances, UK and Canada holidays (holiday:)
 ]
 
 _loaded = {}

@@ -110,10 +110,10 @@ def test_wiring():
         assert re.search(rf"^\s*{key}\) limit={limit} ;;$", build_yml, re.M), key
     assert kit_yml.count("--hidden-import small_boats_sources ") == 2
     listed = {s.key: s for s in sources.SOURCES}
-    machines = {t.id: set(t.keys) for t in topics.TOPICS}["machines"]
+    transport = {t.id: set(t.keys) for t in topics.TOPICS}["transport"]
     for s in kit.SMALL_BOATS_SOURCES:
         assert s.key in keys and listed[s.key].group == "permissive" and listed[s.key].prepare is sources.prepare_pack
         assert s.key in sources.NOT_FOR_PICTURE_MAKING and s.key not in kit.SMALL_BOATS_PICTURE_MAKING_OK
-        assert s.key in machines, s.key
+        assert s.key in transport, s.key
         assert s.cap == sb.SMALL_BOATS_LIMITS[s.key], s.key
     assert all(reason for reason in kit.SMALL_BOATS_NOT_INCLUDED.values())
