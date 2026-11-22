@@ -29,6 +29,7 @@ import urllib.parse
 REGISTRY = {
     "ben": "benefits_manuals",       # SSA POMS, CMS manuals, the IRS Internal Revenue Manual
     "rcl": "recalls",                # NHTSA vehicle recalls and service bulletins, CPSC product recalls
+    "dict": "wordnet_dict",          # Open English WordNet (dictionary and thesaurus)
 }
 
 
