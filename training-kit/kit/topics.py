@@ -102,7 +102,7 @@ TOPICS = [
            "meatscan", "eggs", "beef", "abo_packaged_goods", "abo_pet_supplies", "open_images_packaged_goods", "commons_packaging",
            "locbeef", "fish_freshness", "horse_mackerel", "fish_eyes_stages", "chicken_breast", "food_packaging",
            "packeat", "cerrado_fruits", "commons_date_codes",
-           "commons_barbecue_food",
+           "commons_barbecue_food", "commons_food_guides",
            # share-alike
            "openfoodfacts", "openfoodfacts_labels", "commons_food_sa", "openfacts_us", "openfacts_ca",
            # research-only (personal use)
@@ -186,6 +186,10 @@ TOPICS = [
            # emergency preparedness and disasters (preparedness_sources.py)
            "commons_emergency_kits_power", "commons_warnings_shelters", "commons_emergency_signs_maps",
            "commons_disaster_types", "open_images_disasters", "preparedness_commons_sa",
+           # health and life: wellbeing aids, fitness equipment and adaptive sports, daily-living aids and wilderness
+           # rescue gear (the sexual health products are in no topic, by the owner's choice)
+           "commons_wellbeing_aids", "commons_fitness_equipment", "commons_adaptive_sports",
+           "commons_daily_living_aids", "commons_wilderness_rescue",
            # non-commercial and research-only (personal use)
            "cpsc_recalls")),
     # Radio communications (the owner's decision of 22 November 2026): ham and other two-way radio, antennas and

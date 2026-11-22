@@ -3440,3 +3440,28 @@ for _prep_name, _prep_prefix in (("preparedness_sources", "PREPAREDNESS"), ("rad
     NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in _prep_sources
                                                                    if s.key not in _prep_ok)
     _add_collections(_prep_sources)
+# Health and life (the owner's request of 2026-11-22): mental health and wellbeing aids (mental_health_sources.py),
+# fitness equipment, adaptive sports and food guides (fitness_nutrition_sources.py), contraceptive and period products
+# (sexual_health_sources.py), daily-living aids (aging_care_sources.py) and wilderness rescue gear
+# (wilderness_first_aid_sources.py): their ready-made packs and what was left out. Each file may be missing. Only the
+# keys in each file's *_PICTURE_MAKING_OK may be used for picture-making; the packs that show people
+# (*_BODILY_KEYS) are added to PEOPLE_AND_BODILY_PACK_KEYS.
+for _hl_name, _hl_prefix in (("mental_health_sources", "MENTAL_HEALTH"),
+                             ("fitness_nutrition_sources", "FITNESS_NUTRITION"),
+                             ("sexual_health_sources", "SEXUAL_HEALTH"), ("aging_care_sources", "AGING_CARE"),
+                             ("wilderness_first_aid_sources", "WILDERNESS_FIRST_AID")):
+    try:
+        _hl = __import__(_hl_name)
+    except ImportError as _e:
+        _hl = None
+        if getattr(_e, "name", None) != _hl_name:
+            say(f"(The {_hl_name.replace('_sources', '').replace('_', ' ')} collections could not be loaded: {_e}. "
+                "They are left out.)")
+    _hl_sources = list(getattr(_hl, f"{_hl_prefix}_SOURCES", []) or [])
+    _hl_ok = set(getattr(_hl, f"{_hl_prefix}_PICTURE_MAKING_OK", ()) or ())
+    _hl_bodily = tuple(getattr(_hl, f"{_hl_prefix}_BODILY_KEYS", ()) or ())
+    PEOPLE_AND_BODILY_PACK_KEYS = PEOPLE_AND_BODILY_PACK_KEYS + _hl_bodily
+    PERSONAL_PICTURE_MAKING_OK |= _hl_ok - set(_hl_bodily)
+    NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in _hl_sources
+                                                                   if s.key not in _hl_ok or s.key in _hl_bodily)
+    _add_collections(_hl_sources)
