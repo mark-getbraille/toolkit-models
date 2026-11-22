@@ -3588,3 +3588,21 @@ NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in PH
                                                                if s.key not in _photo_library_ok
                                                                or s.key in _photo_library_bodily)
 _add_collections(PHOTO_LIBRARY_SOURCES)
+# Personal care and beauty products (personal_care_sources.py), toys and children's products (toys_sources.py) and
+# foreign banknotes and coins (world_money_sources.py), the owner's request of 2026-11-22: their ready-made packs,
+# share-alike collections and what was left out. Each file may be missing. None of their keys is for picture-making
+# (each file's *_PICTURE_MAKING_OK is empty), so all go to NOT_FOR_PICTURE_MAKING.
+for _gp_name, _gp_prefix in (("personal_care_sources", "PERSONAL_CARE"), ("toys_sources", "TOYS"),
+                             ("world_money_sources", "WORLD_MONEY")):
+    try:
+        _gp = __import__(_gp_name)
+    except ImportError as _e:
+        _gp = None
+        if getattr(_e, "name", None) != _gp_name:
+            say(f"(The {_gp_name.replace('_sources', '').replace('_', ' ')} collections could not be loaded: {_e}. "
+                "They are left out.)")
+    _gp_sources = list(getattr(_gp, f"{_gp_prefix}_SOURCES", []) or [])
+    _gp_ok = set(getattr(_gp, f"{_gp_prefix}_PICTURE_MAKING_OK", ()) or ())
+    PERSONAL_PICTURE_MAKING_OK |= _gp_ok
+    NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in _gp_sources if s.key not in _gp_ok)
+    _add_collections(_gp_sources)

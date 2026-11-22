@@ -164,7 +164,7 @@ TOPICS = [
     Topic("home", "Home and household",
           "Appliances, kitchens, laundry, cleaning and hazards, home repair, heating, lighting, building, pests, "
           "baby things, sewing, crafts, first aid, dental and eye care, emergency kits, pools, knots, camp, "
-          "homestead and outdoor gear, fishing, games and clothes.",
+          "homestead and outdoor gear, fishing, games, toys, personal care products and clothes.",
           ("commons_appliances", "commons_appliance_controls", "open_images_appliance_controls", "commons_kitchen",
            "laundry_symbols", "laundry_care_labels", "commons_household_chemicals", "commons_finishes_in_use",
            "commons_household_hazards", "open_images_household_hazards",
@@ -211,6 +211,12 @@ TOPICS = [
            # rescue gear (the sexual health products are in no topic, by the owner's choice)
            "commons_wellbeing_aids", "commons_fitness_equipment", "commons_adaptive_sports",
            "commons_daily_living_aids", "commons_wilderness_rescue",
+           # personal care and beauty products, and toys and children's products (personal_care_sources.py,
+           # toys_sources.py)
+           "commons_personal_care_products", "commons_historic_cosmetics", "met_historic_cosmetics",
+           "open_images_personal_care", "commons_toys_by_type", "commons_ride_ons_playgrounds",
+           "commons_nursery_more", "commons_museum_toys", "met_toys", "open_images_toys",
+           "personal_care_commons_sa", "toys_commons_sa",
            # non-commercial and research-only (personal use)
            "cpsc_recalls")),
     # Power and electrical (the owner's decision of 22 November 2026): backup generators, solar, batteries, small wind
@@ -272,8 +278,8 @@ TOPICS = [
            "vam", "mimo_instruments", "princeton_general_personal", "turkish_instruments")),
     Topic("documents", "Documents, maps and signs",
           "Reading text and making sense of pages: letters, forms, receipts, pay stubs, passports, boarding passes, "
-          "ballots, tables, charts, maps, sheet music, road, safety, travel and indoor signs, buoys, trail markers "
-          "and phone screens.",
+          "ballots, tables, charts, maps, sheet music, road, safety, travel and indoor signs, buoys, trail markers, "
+          "foreign money and phone screens.",
           ("textvqa", "textocr", "coco_text", "cord", "doclaynet", "plotqa", "loc_letters", "owid_charts",
            "pubtabnet_tables", "us_federal_forms", "open_images_cards_documents", "loc_maps", "safety_signs", "commons_hazard_symbols", "us_road_signs",
            "ca_road_signs",
@@ -288,6 +294,8 @@ TOPICS = [
            "commons_hearing_communication", "commons_immigration_documents",
            # national park visitor facilities and signs (photo_library_sources.py)
            "npgallery_facilities",
+           # foreign banknotes and coins (world_money_sources.py)
+           "commons_world_money", "met_world_coins", "open_images_money",
            # share-alike
            "hiertext", "mapqa", "indoor_commons_sa",
            # non-commercial and research-only (personal use)
