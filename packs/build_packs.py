@@ -1891,6 +1891,12 @@ for _packs, _commons in ((CAR_CARE_PACKS, CAR_CARE_COMMONS_KEYS), (GARDEN_PACKS,
 from outdoor_cooking_packs import OUTDOOR_COOKING_PACKS, OUTDOOR_COOKING_COMMONS_KEYS
 PACKS.update(OUTDOOR_COOKING_PACKS)
 COMMONS_KEYS = COMMONS_KEYS | frozenset(OUTDOOR_COOKING_COMMONS_KEYS)
+# Blind and low-vision living (packs/vision_packs.py): Commons braille writers (Perkins and the others) with their care
+# note, braille charts, tactile writing systems, tactile graphics and models, reading machines, eye charts, sighted
+# guiding, orientation and mobility and deafblind life, and NMAH's things made for blind people (CC0).
+from vision_packs import VISION_PACKS, VISION_COMMONS_KEYS
+PACKS.update(VISION_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(VISION_COMMONS_KEYS)
 
 
 def pack_lanes(keys):

@@ -242,6 +242,21 @@ TOPICS = [
            # non-commercial and research-only (personal use)
            "inaturalist_us_nc", "inaturalist_ca_nc", "plantnet_nc", "cub200", "plantdoc", "stanford_dogs",
            "soybean_weeds_nc", "weed_growth_stage_nc", "cropandweed_nc")),
+    # Blind and low-vision living (the owner's request of 22 November 2026): the things of blind and low-vision life
+    # in one add-on, gathered from vision_sources.py and the packs other files already had (vision_sources.
+    # VISION_TOPIC_KEYS_ELSEWHERE). Kept before the sensitive topics, which stay last.
+    Topic("vision", "Blind and low-vision living",
+          "Braille, braille writers such as the Perkins Brailler, slates, white canes, guide dogs, tactile paving and "
+          "graphics, braille signs, reading machines, magnifiers, eye charts, sighted guiding, deafblind "
+          "communication, and money by touch.",
+          ("commons_braille_writing", "commons_tactile_access", "commons_mobility_deafblind", "nmah_vision_objects",
+           # gathered from other files
+           "commons_disability", "tapad_tactile_paving", "commons_access_features", "commons_assistive_devices",
+           "commons_eye_care", "commons_crosswalks_signals", "commons_indoor_wayfinding", "commons_money_sides",
+           # share-alike
+           "vision_commons_sa", "commons_disability_sa",
+           # research-only (personal use): photos and scans of braille pages
+           "angelina_braille", "dsbi_braille")),
     Topic("nudity", "Nudity in art and photography",
           "Sensitive. Nude people in paintings, drawings, sculpture and non-sexual photographic studies of adults, "
           "described plainly and without anything sexual. No children.",

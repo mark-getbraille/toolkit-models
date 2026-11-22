@@ -490,6 +490,10 @@ jobs:
             commons_grills_smokers) limit=900 ;;
             commons_barbecue_food) limit=900 ;;
             open_images_outdoor_cooking) limit=1200 ;;
+            commons_braille_writing) limit=400 ;;
+            commons_tactile_access) limit=600 ;;
+            commons_mobility_deafblind) limit=150 ;;
+            nmah_vision_objects) limit=120 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in
