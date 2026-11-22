@@ -320,3 +320,28 @@ change `on` to `off` and commit to main; change it back to start again.
 change_note), newest first; the newest is also in the entry's own fields. A rebuild with the same text adds no
 version. When a release nears GitHub's limit of 1,000 files, its oldest versions move to yearly archive releases
 (`textbooks-archive-2026`, `publications-voa-archive-2026`, ...) and their addresses in the list follow.
+
+## Your whole library: the master guide, the size plan and the health check
+
+Three tools let you see the whole library in one place. They read only the code and the public releases.
+
+- **The master guide** (`textbooks/library_guide.py`, request word `library-guide`, key `libguide:my_library`) is one
+  book in the reference library ("Reference, my library guide"). It is made from the code every time it is built, so
+  it never goes out of date. It has a Start here page with links to every page, and one page each for: the reference
+  book groups (and a page per group listing every book with what it covers, its size and its licence class: open,
+  share-alike, personal use or link-only), the books checked and not built, the manual collections by heading, the
+  training kit's topic add-ons (each collection's licence class and whether picture-making may learn from it), the
+  picture packs, the Writing Kit's sources, Program Downloader's folders on B:, where each thing lands on B:, the
+  size plan and the build health check.
+- **The size plan** (`python3 tools/size_plan.py --out build/library-reports`) adds up everything: the data releases
+  of this repository and place-packs (every version kept, and newest only), the Kiwix libraries (from the official
+  mirror ftp.fau.de, because download.kiwix.org's robots.txt turns programs away; English by default,
+  `--all-languages` for every language), the original AI models on Hugging Face that `plan.json` converts, and the
+  Writing Kit's big corpora (the newspapers, the court opinions). It says what drives to buy.
+- **The health check** (`python3 tools/health_check.py --out build/library-reports`) lists every picture pack, book
+  and manual collection that failed, is still building, came out nearly empty (under 10 pictures, under 3 pages,
+  under 10 entries) or is not built yet, grouped by cause (too many requests 429, refused 403, robots.txt, ...).
+
+To refresh both reports, run **Actions > Library reports > Run workflow** (`.github/workflows/library-health.yml`).
+It attaches `size-plan.txt`, `health-check.txt` and their JSON to the release **library-reports**, where the master
+guide reads them the next time it is built.
