@@ -28,6 +28,7 @@ import urllib.parse
 # The word before the first ":" of a build key -> the module that builds it. A module is listed here when it is added.
 REGISTRY = {
     "ben": "benefits_manuals",       # SSA POMS, CMS manuals, the IRS Internal Revenue Manual
+    "rcl": "recalls",                # NHTSA vehicle recalls and service bulletins, CPSC product recalls
 }
 
 
