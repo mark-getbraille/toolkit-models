@@ -19,7 +19,7 @@ temperatures and safe water. The notes are the same words as the packs' (packs/t
 
 Picture-making (OUTDOOR_COOKING_PICTURE_MAKING_OK): only the Commons camp gear and grills (things); sources.py puts
 every other key in NOT_FOR_PICTURE_MAKING (field kitchens, barbecues and the Open Images photos show people).
-Topics: the gear is in the machines topic (household equipment), the barbecue food in the food topic.
+Topics: the gear is in the home topic (Home and household), the barbecue food in the food topic.
 
     python -c "import sources, outdoor_cooking_sources"      (from the kit folder: checks the file loads)
 """
@@ -155,8 +155,8 @@ OUTDOOR_COOKING_NOT_INCLUDED = {
     "Open Images labels asked elsewhere": "Barbecue, Tent, Sleeping bag, Lantern, Camping, Backpacking, Hiking "
         "equipment, Thermometer, Infrared thermometer, Skewer, Kebab, Sausage, Hot dog, Hamburger, Picnic, Picnic "
         "basket, Fireplace, Water bottle, Frying pan, Stock pot, Kettle, Coffee percolator, Stove, Gas stove, Steak, "
-        "Meat, Bottled water: asked by other packs, never twice. Fire, Flame and Smoke are too general (house fires) "
-        "and are left out.",
+        "Meat, Bottled water, Match: asked by other packs, never twice (Commons Coleman Company is the lighting "
+        "pack's). Fire, Flame and Smoke are too general (house fires) and are left out.",
     "USDA FSIS, USDA ARS and USFS photo galleries": "fsis.usda.gov refuses programs (403, robots.txt included); the "
         "ARS gallery has no listing a program can read by subject; the Forest Service's and Park Service's own "
         "public-domain photos that people copied to Commons are reached through the Commons categories.",

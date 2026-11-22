@@ -12,7 +12,7 @@ It checks that:
   - no Commons category of these packs is named by another pack file, nor twice here;
   - every pack is wired: in build_packs.PACKS, the Commons ones in COMMONS_KEYS (and only those), in the workflows'
     known list and limit lines, in the kit's sources (packs "permissive", prepare_pack), picture-making only for the
-    keys the kit module allows, in the machines or food topic, and the guarded kit module listed twice as a hidden
+    keys the kit module allows, in the home or food topic, and the guarded kit module listed twice as a hidden
     import.
 
 Run it from the repository's folder:   python3 -m pytest packs/test_outdoor_cooking.py
@@ -187,9 +187,8 @@ def test_wiring():
     import outdoor_cooking_sources as k
     listed = {s.key: s for s in sources.SOURCES}
     no_making = set(sources.NOT_FOR_PICTURE_MAKING)
-    # The gear in the machines topic (household equipment) and the barbecue food in the food topic: the owner's topic
-    # list is unchanged.
-    topic = set(topics.find("machines").keys) | set(topics.find("food").keys)
+    # The gear in the home topic (Home and household) and the barbecue food in the food topic.
+    topic = set(topics.find("home").keys) | set(topics.find("food").keys)
     for key in keys:
         assert listed[key].group == "permissive" and listed[key].prepare is sources.prepare_pack, key
         assert key in topic, key
@@ -200,4 +199,4 @@ def test_wiring():
     assert listed["outdoor_cooking_commons_sa"].group == "share-alike"
     assert "open_images_outdoor_cooking" in no_making and "commons_barbecue_food" in no_making
     assert "commons_grills_smokers" not in no_making
-    assert "commons_barbecue_food" in topics.find("food").keys and "commons_grills_smokers" in topics.find("machines").keys
+    assert "commons_barbecue_food" in topics.find("food").keys and "commons_grills_smokers" in topics.find("home").keys

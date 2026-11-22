@@ -624,3 +624,30 @@ CATEGORIES["firearms"]["ia_exclude"] = f"{FIREARMS_EXCLUDE}|{NOT_A_MANUAL}|{_MIL
 from troubleshooting import CATEGORIES as _TROUBLESHOOTING  # noqa: E402
 
 CATEGORIES.update(_TROUBLESHOOTING)
+
+# Home upkeep and the textile crafts (the owner's request of 2026-11-22): bicycles, small engines, and knitting
+# machines, spinning wheels, looms and old sewing machines; every maker link-only: manuals/home_crafts_manuals.py.
+from home_crafts_manuals import CATEGORIES as _HOME_CRAFTS  # noqa: E402
+
+CATEGORIES.update({k: v for k, v in _HOME_CRAFTS.items() if k not in CATEGORIES})
+# Electronics repair, light construction and arts and crafts (the owner's request of 2026-11-22): electronics service
+# manuals and iFixit links, test equipment, assistive technology care and repair (manuals/electronics_manuals.py);
+# decking, sheds, concrete, insulation, ramps and stairlifts (manuals/building_manuals.py); pottery kilns and wheels,
+# jewellery and lapidary tools, craft machines (manuals/crafts_manuals.py).
+from electronics_manuals import CATEGORIES as _ELECTRONICS  # noqa: E402
+from building_manuals import CATEGORIES as _BUILDING  # noqa: E402
+from crafts_manuals import CATEGORIES as _CRAFTS  # noqa: E402
+
+CATEGORIES.update(_ELECTRONICS)
+CATEGORIES.update(_BUILDING)
+CATEGORIES.update(_CRAFTS)
+# Life skills (the owner's request of 2026-11-22): car care, garden and lawn care, the home health care categories
+# (first aid and home care devices, dental care devices, eye care and optical aids, birth and newborn care devices) and
+# musical instrument care, each with its notice, makers (link-only), public guides and guidance, in its own file.
+from car_maintenance import CATEGORY as _CAR_CARE  # noqa: E402
+from garden_care import CATEGORY as _GARDEN_CARE  # noqa: E402
+from home_health_care import CATEGORIES as _HOME_HEALTH_CARE  # noqa: E402
+from instrument_care import CATEGORY as _INSTRUMENT_CARE  # noqa: E402
+
+CATEGORIES.update({"car_care": _CAR_CARE, "garden_care": _GARDEN_CARE, "instrument_care": _INSTRUMENT_CARE})
+CATEGORIES.update(_HOME_HEALTH_CARE)

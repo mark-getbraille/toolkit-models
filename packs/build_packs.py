@@ -1824,6 +1824,66 @@ COMMONS_KEYS = COMMONS_KEYS | frozenset(HAZARD_COMMONS_KEYS)
 from baby_packs import BABY_PACKS, BABY_COMMONS_KEYS
 PACKS.update(BABY_PACKS)
 COMMONS_KEYS = COMMONS_KEYS | frozenset(BABY_COMMONS_KEYS)
+# Home repair and upkeep, and pest control (packs/home_upkeep_packs.py, the owner's request of 2026-11-22): Commons
+# repair, plumbing, roofing and gutter, flooring, damp and cleaning categories, locks and locksmithing, small engines and
+# bicycle repair tools, traps, pesticide labels and the household pests commons_pests does not ask about, and Open Images
+# house parts, plumbing, wiring, finishes, bicycle parts and pests; safety notes on electrical work, gas, ladders and
+# roofs, engines, pesticides and traps, stings, lead and mould. The people-at-work packs are describing only.
+from home_upkeep_packs import HOME_UPKEEP_PACKS, HOME_UPKEEP_COMMONS_KEYS
+PACKS.update(HOME_UPKEEP_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(HOME_UPKEEP_COMMONS_KEYS)
+# The textile crafts and mending (packs/textile_crafts_packs.py, the same request): Commons knitting, crochet, lace,
+# macramé and yarn; quilting, embroidery, weaving, spinning, dyeing and felting; sewing notions, patterns, mending and
+# darning; upholstery, leatherwork, shoe repair and furniture restoration; fabrics and fibres by name; Open Images
+# needlework, notions and fabrics; and the Smithsonian NMAH's quilts, samplers, lace and sewing, spinning and weaving
+# tools (CC0, named from each record).
+from textile_crafts_packs import TEXTILE_CRAFTS_PACKS, TEXTILE_CRAFTS_COMMONS_KEYS
+PACKS.update(TEXTILE_CRAFTS_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(TEXTILE_CRAFTS_COMMONS_KEYS)
+# Emergency and secondary heating (packs/heating_packs.py, added to the same request): Commons fireplaces, heating,
+# coal and tiled stoves, gas, kerosene, oil and patio heaters, dampers, stovepipes, fire bricks, chimney fires,
+# creosote, ash buckets, pellets and coal, firewood, woodpiles and splitting tools, and Open Images stoves, hearths,
+# coal, mauls and grills; every heater answer ends with the carbon monoxide, 3-feet and gas-professional note.
+from heating_packs import HEATING_PACKS, HEATING_COMMONS_KEYS
+PACKS.update(HEATING_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(HEATING_COMMONS_KEYS)
+# Emergency and backup lighting (packs/lighting_packs.py, beside the heating packs): Commons flashlights, emergency
+# lights, glow sticks and batteries, kerosene, hurricane, gas and carbide lamps, mantles and wicks, old lamps as
+# history, candles and holders, and Open Images headlamps, oil lamps, candle holders and matches; every fuel answer
+# ends with the fire, carbon monoxide, ventilation and never-refuel-hot note, every candle answer with the candle note.
+from lighting_packs import LIGHTING_PACKS, LIGHTING_COMMONS_KEYS
+PACKS.update(LIGHTING_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(LIGHTING_COMMONS_KEYS)
+# Electronics repair, light construction and arts and crafts (the owner's request of 2026-11-22). Electronics
+# (packs/electronics_packs.py): parts by name with a value only where the file states it, cables and connectors,
+# soldering and test equipment, devices opened for repair, assistive and low-vision devices, circuit diagrams; mains,
+# lithium and soldering safety notes. Light construction (packs/building_packs.py): framing, decks, sheds, fences,
+# concrete, masonry, tiling, insulation, stairs, ramps and home access modifications, construction safety.
+# Arts and crafts (packs/crafts_packs.py): pottery and jewellery (each with a museum pack from Cleveland and
+# Chicago), paper crafts and calligraphy, candles and soap, glass and carving, art supplies, models and resin.
+from electronics_packs import ELECTRONICS_PACKS, ELECTRONICS_COMMONS_KEYS
+PACKS.update(ELECTRONICS_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(ELECTRONICS_COMMONS_KEYS)
+from building_packs import BUILDING_PACKS, BUILDING_COMMONS_KEYS
+PACKS.update(BUILDING_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(BUILDING_COMMONS_KEYS)
+from crafts_packs import CRAFTS_PACKS, CRAFTS_COMMONS_KEYS
+PACKS.update(CRAFTS_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(CRAFTS_COMMONS_KEYS)
+# Life skills (the owner's request of 2026-11-22), one pack file each, with the keys of those that read Commons: car
+# care (packs/car_care_packs.py: wipers, fluids, tyres and their markings, jacks, roadside safety, EV connectors,
+# dashboard lights by their files' own words), gardening and lawn care (packs/garden_packs.py), home health care
+# (packs/home_health_packs.py: first aid, home care, dental, eye and birth supplies, SCIN skin conditions, DenPAR
+# dental X-rays; every answer ends with the emergency note) and musical instrument care (packs/instrument_care_packs.py).
+from car_care_packs import CAR_CARE_PACKS, CAR_CARE_COMMONS_KEYS
+from garden_packs import GARDEN_PACKS, GARDEN_COMMONS_KEYS
+from home_health_packs import HOME_HEALTH_PACKS, HOME_HEALTH_COMMONS_KEYS
+from instrument_care_packs import INSTRUMENT_CARE_PACKS, INSTRUMENT_CARE_COMMONS_KEYS
+for _packs, _commons in ((CAR_CARE_PACKS, CAR_CARE_COMMONS_KEYS), (GARDEN_PACKS, GARDEN_COMMONS_KEYS),
+                         (HOME_HEALTH_PACKS, HOME_HEALTH_COMMONS_KEYS),
+                         (INSTRUMENT_CARE_PACKS, INSTRUMENT_CARE_COMMONS_KEYS)):
+    PACKS.update(_packs)
+    COMMONS_KEYS = COMMONS_KEYS | frozenset(_commons)
 # Emergency cooking, camp cooking, and grills and smokers (packs/outdoor_cooking_packs.py): Commons camp stoves, mess
 # kits, coolers, Dutch ovens, solar cookers, hayboxes, canned heat, grills, kamados, pellet grills, smokehouses,
 # griddles, chimney starters, propane cylinders and barbecue food, and Open Images grilling, campfires and camp kitchen

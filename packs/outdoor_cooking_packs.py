@@ -23,7 +23,7 @@ outdoor_cooking_sources.py):
 
 The packs (OUTDOOR_COOKING_PACKS):
   commons_camp_cooking        Wikimedia Commons (CC0, public domain or CC BY files only): camp and backpacking stoves
-                              (Primus, Optimus, Svea, Trangia, Esbit, cassette gas stoves, Campingaz, Coleman), mess
+                              (Primus, Optimus, Svea, Trangia, Esbit, cassette gas stoves, Campingaz), mess
                               kits, billycans and canteens, coolers, Dutch ovens and cast-iron cookware, campfire
                               cooking and cooking cranes, campfires, and portable water filters and purification
                               tablets.
@@ -36,7 +36,7 @@ The packs (OUTDOOR_COOKING_PACKS):
   commons_barbecue_food       Commons: barbecue as a cooking method, grilled meats, smoked meat, pork and sausages,
                               pulled pork, ribs, burnt ends, Texas barbecue, Argentine asado and parrillas.
   open_images_outdoor_cooking Open Images V7 (labels CC BY 4.0; each photo CC BY, CC0 or the Public Domain Mark):
-                              grilling, campfires and bonfires, charcoal, lighters and matches, camp kitchen things
+                              grilling, campfires and bonfires, charcoal and lighters, camp kitchen things
                               (cooler, vacuum flask, picnic table, tongs, foil, cookware, cast iron, Dutch oven,
                               griddle, canteen), campfire treats, grilled and smoked foods, and water and food
                               storage. No label is asked twice (packs/test_outdoor_cooking.py checks).
@@ -44,8 +44,9 @@ The packs (OUTDOOR_COOKING_PACKS):
 Not repeated here: device_packs (Gas grills, Barbecues), chemical_packs (Propane cylinders, Charcoal briquettes, Gas
 cylinders), things_packs (Rocket stoves, Kerosene and Charcoal stoves), home_packs and home_safety_packs (Meat
 thermometers, Boiling water), us_modern_packs (Barbecue in the United States), and the Open Images labels other packs
-ask (Barbecue, Tent, Sleeping bag, Lantern, Camping, Backpacking, Thermometer, Skewer, Kebab and others). Heating
-stoves and lanterns belong to another collection. What was looked at and left out is in the kit's
+ask (Barbecue, Tent, Sleeping bag, Lantern, Match, Camping, Backpacking, Thermometer, Skewer, Kebab and others).
+Heating stoves, firewood, lanterns and the Commons Coleman Company category (its lanterns) belong to the heating and lighting
+packs. What was looked at and left out is in the kit's
 outdoor_cooking_sources.py (OUTDOOR_COOKING_NOT_INCLUDED).
 
     python packs/outdoor_cooking_packs.py commons_grills_smokers --limit 8      (prints a few rows: a quick check)
@@ -112,7 +113,6 @@ CAMP_COOKING = [
     thing("Cassette gas stoves", "a cassette gas stove, a tabletop stove that runs on a butane cartridge",
           STOVE_NOTES),
     thing("Campingaz", "Campingaz camping gear (gas cartridges and stoves)", f"{STOVE_NOTES} {PROPANE_NOTE}"),
-    thing("Coleman Company", "Coleman camping gear (Coleman makes camp stoves, lanterns and coolers)", STOVE_NOTES),
     thing("Storm kettles", "a storm kettle (Kelly kettle), a kettle with a chimney that boils water over a small "
                            "fire inside it", STOVE_NOTES),
     thing("Mess kits", "a mess kit: nesting pots, a pan and a plate for eating in camp or in the field"),
@@ -234,7 +234,7 @@ OUTDOOR_OI = [
     group("Is someone grilling in this picture?", {"Grilling": "grilling, cooking food on a grill"}, GRILL_NOTES),
     group("What fire is in this picture?", {"Campfire": "a campfire", "Bonfire": "a bonfire"}, CAMPFIRE_NOTE),
     group("What fire-lighting things are in this picture?",
-          {"Charcoal": "charcoal", "Lighter (Device)": "a lighter", "Match": "matches"}, f"{CO_NOTE} {FIRE_NOTE}"),
+          {"Charcoal": "charcoal", "Lighter (Device)": "a lighter"}, f"{CO_NOTE} {FIRE_NOTE}"),
     group("What camp kitchen things are in this picture?",
           {"Cooler": "a cooler", "Vacuum flask": "a vacuum flask (thermos)", "Picnic table": "a picnic table",
            "Tongs": "tongs", "Aluminium foil": "aluminium foil", "Cookware and bakeware": "cookware",
@@ -287,11 +287,11 @@ OUTDOOR_COOKING_PACKS = {
     "open_images_outdoor_cooking": (build_open_images_outdoor_cooking, OI_LICENCE),
 }
 OUTDOOR_COOKING_LIMITS = {
-    "commons_camp_cooking": 900,           # 21 categories, few files in some
+    "commons_camp_cooking": 900,           # 20 categories, few files in some
     "commons_emergency_cooking": 500,      # 9 categories
     "commons_grills_smokers": 900,         # 12 categories
     "commons_barbecue_food": 900,          # 11 categories
-    "open_images_outdoor_cooking": 1200,   # 32 labels; Grilling has most photos
+    "open_images_outdoor_cooking": 1200,   # 31 labels; Grilling has most photos
 }
 # The packs that read Wikimedia Commons (build_packs.COMMONS_KEYS).
 OUTDOOR_COOKING_COMMONS_KEYS = ("commons_camp_cooking", "commons_emergency_cooking", "commons_grills_smokers",
