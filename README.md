@@ -108,18 +108,25 @@ and why):
   Initiative's Curricula on Web Accessibility (CC BY 4.0). Each guide's licence page is checked at every build, and a
   page without the guide's licence line is left out.
 - **Reference, field manuals** (group `fieldmanual`): US military manuals on survival, first aid, map reading,
-  rigging, field sanitation, cold weather and mountaineering, US government works (public domain), only when their
-  own front matter says "Approved for public release; distribution is unlimited" (Distribution Statement A) and
-  shows no restricted marking; chapters about weapons or tactics are left out. Copies from the Internet Archive
+  rigging, field sanitation, cold weather and mountaineering, US government works (public domain), judged by the
+  release rule for military publications (`military_release.py`, the same file in packs, textbooks, manuals and the
+  training kit; the owner's decision of 22 November 2026): a copy from the Internet Archive, a government (.gov,
+  .mil) or a museum site comes in with or without Distribution Statement A, and its notice says truthfully which; a
+  copy printing a restricted marking (Distribution B to F, FOUO, CUI, NOFORN, export control) is published only when
+  the government itself publishes it openly, else it is personal use only (the owner fetches it himself); an old
+  classification marking only when declassified and released, never from a leak site; a third-party site's copy
+  still needs the statement. Chapters about weapons or tactics are left out. Copies from the Internet Archive
   (armypubs.army.mil's robots.txt shuts out automated readers). Also two UK documents under the Open Government
   Licence v3.0 from gov.uk: the Maritime and Coastguard Agency's Survival at Sea notice (MSN 1560) and the Ministry
   of Defence's first-aid chapter of JSP 375. Since November 2026 also two Army field hygiene manuals (FM 21-10, TC
-  4-02.3), under the same Distribution Statement A check (`textbooks/reference_more.py`).
-- **Courses** (group `course`): US Navy nonresident training courses with Distribution Statement A: sixteen modules
+  4-02.3), and since 22 November 2026, under the new rule, FM 4-25.10, FM 21-76 (1992), FM 31-70, FM 10-23, FM 3-4,
+  FM 24-18 (1965) and AFR 64-4 (`textbooks/reference_more.py`).
+- **Courses** (group `course`): US Navy nonresident training courses (the same release rule): sixteen modules
   of the Navy Electricity and Electronics Training Series (NEETS), Basic Machines, Culinary Specialist and Hospital
   Corpsman (US government works), and six more Navy rate training manuals (Military Requirements for Petty Officer
   Third Class, Quartermaster, Construction Mechanic, Equipment Operator, Alternating Current and Transformers,
-  Opticalman). PDFs that are scans without words are refused.
+  Opticalman), and since 22 November 2026 the 1970s rate training manuals for Construction Electrician,
+  Utilitiesman, Engineman, Electrician's Mate and Fireman. PDFs that are scans without words are refused.
 - **Reference, governments** (group `government`): Government of Alberta publications under the Open Government
   Licence - Alberta (the Driver's Guide, seniors' safety guides, power-outage preparedness), the newest official PDF;
   the FAA's aviation handbooks (Pilot's Handbook of Aeronautical Knowledge, Airplane Flying, Instrument Flying,

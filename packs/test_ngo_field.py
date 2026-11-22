@@ -5,8 +5,11 @@ nothing is downloaded from the internet.
 It checks that:
   - an Our World in Data chart's rows say its kind, title, subtitle (links reduced to their words) and places, and
     its citation; unpublished charts and table-only charts are left out;
-  - a field manual is kept only with Distribution Statement A and no restricted marking (a made-up PDF made with
-    pypdfium2 when it is installed);
+  - a field manual follows the release rule (military_release.py; a made-up PDF made with pypdfium2 when it is
+    installed): an Internet Archive copy is kept with or without Distribution Statement A, with a truthful release
+    line; a restricted marking leaves it out of this open pack unless a government site publishes that copy; a
+    classified marking leaves it out unless declassified and released; a third-party copy still needs the
+    statement;
   - figure captions are read, list-of-figures lines are not, unsafe captions are recognised, first-aid words make a
     row "medical", and the box of a drawing stops at body text and never reaches into its caption;
   - the kit's non-profit notes load, with no collection used for picture-making.
@@ -80,8 +83,9 @@ def test_figure_box():
 
 
 def test_distribution_check_on_a_made_up_pdf():
-    """A made-up PDF that says Distribution Statement A passes; one that says Distribution C does not (only when
-    pypdfium2 is installed)."""
+    """The release rule on made-up PDFs (only when pypdfium2 is installed): Distribution Statement A passes, a missing
+    statement passes from the Internet Archive with a truthful line, a restricted marking passes only from a
+    government site, classified never, and a third-party copy needs the statement."""
     try:
         import pypdfium2 as pdfium
         import pypdfium2.raw as pdfium_c
@@ -104,9 +108,22 @@ def test_distribution_check_on_a_made_up_pdf():
         out = io.BytesIO()
         doc.save(out)
         return pdfium.PdfDocument(out.getvalue())
-    assert fm.distribution_ok(pdf("Approved for public release; distribution is unlimited.")) == ""
-    assert "restricted" in fm.distribution_ok(pdf("DISTRIBUTION STATEMENT C: authorized to DOD only."))
-    assert "does not say" in fm.distribution_ok(pdf("Survival manual."))
+    ia = "https://archive.org/download/x/x.pdf"
+    why, line = fm.distribution_ok(pdf("Approved for public release; distribution is unlimited."), ia)
+    assert why == "" and line.startswith("Distribution Statement A")
+    why, line = fm.distribution_ok(pdf("Survival manual."), ia)
+    assert why == "" and "print no distribution statement" in line and "approved for public release" not in line
+    why, line = fm.distribution_ok(pdf("DISTRIBUTION STATEMENT C: authorized to DOD only."), ia)
+    assert "restricted" in why and "personal use only" in why and line == ""
+    why, line = fm.distribution_ok(pdf("DISTRIBUTION STATEMENT C: authorized to DOD only."),
+                                   "https://armypubs.army.mil/epubs/x.pdf")
+    assert why == "" and "publishes it openly at https://armypubs.army.mil/epubs/x.pdf" in line
+    assert "classified" in fm.distribution_ok(pdf("SECRET"), ia)[0]           # live marking, no release shown
+    why, line = fm.distribution_ok(pdf("SECRET DECLASSIFIED by made-up authority"), ia)
+    assert why == "" and "Originally classified SECRET; declassified" in line
+    assert fm.distribution_ok(pdf("Survival manual."), "https://example.com/x.pdf")[0]
+    assert fm.distribution_ok(pdf("Approved for public release; distribution is unlimited."),
+                              "https://example.com/x.pdf")[0] == ""
 
 
 def test_tables_and_kit_notes():
@@ -158,3 +175,11 @@ def test_unsafe_pages_reads_pypdfium2_5_bookmarks():
     for kind in (New, Old):
         doc = Doc([kind("Chapter 1. Shelters", 0), kind("Chapter 2. Weapons", 10), kind("Chapter 3. Knots", 20)])
         assert fm.unsafe_pages(doc) == set(range(10, 20)), kind
+
+
+def test_field_manual_release_rule_additions():
+    """The manuals added under the release rule of 22 November 2026 are in the pack's list once each."""
+    ids = [m[0] for m in fm.MANUALS]
+    assert len(ids) == len(set(ids)) and all(m in fm.MANUALS for m in fm.MANUALS_RELEASE_RULE)
+    assert ("milmanual-st-31-91b--us-army-special-forces-medical-handbook" in ids and
+            dict((m[0], m[2]) for m in fm.MANUALS)["milmanual-st-31-91b--us-army-special-forces-medical-handbook"])

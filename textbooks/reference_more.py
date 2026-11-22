@@ -10,7 +10,8 @@ texts, Canadian Open Government Licence publications, GOV.UK guides and UK safet
 are in publications_more.py.
 
 Every source was checked by hand on 2026-11-21; the builder checks the licence again at every build (the licence
-page's line, the PDF's Distribution Statement A for military manuals) and obeys each site's robots.txt.
+page's line; for military manuals, the release rule of military_release.py on the PDF's front matter) and obeys
+each site's robots.txt.
 """
 
 # These names are the same as in sources.py (this module is imported at its end, so it cannot import them).
@@ -106,12 +107,13 @@ FAA_HANDBOOKS = [
 
 # ---------------------------------------------------------------------- US Navy rate training manuals (item 10)
 # Internet Archive copies with a text layer (the ERIC and Digital Library of India scans have their OCR words).
-# Like the Navy courses already built, each is kept ONLY when its own front matter prints Distribution Statement A
-# and no restricted marking (distribution_a, checked by the builder at every build); a manual that does not print
-# it is left out and the reason is said in the catalogue. US government works (17 U.S.C. 105). Checked on
-# 2026-11-21: the six below print it; the 1970s ERIC copies of Builder, Construction Electrician, Utilitiesman,
-# Engineman, Electrician's Mate and Fireman do not, so they are not listed (NOT_INCLUDED). Seaman, Damage Controlman
-# and Basic Military Requirements were not found on the Internet Archive with a text layer.
+# Like the Navy courses already built, each is judged at every build by the release rule for military publications
+# (distribution_a; military_release.py, the owner's decision of 22 November 2026): built with or without
+# Distribution Statement A, its notice saying truthfully which; a restricted marking only when the government
+# publishes that copy itself. US government works (17 U.S.C. 105). Checked on 2026-11-21: the six below print the
+# statement; the 1970s ERIC copies (Builder, Construction Electrician, Utilitiesman, Engineman, Electrician's Mate,
+# Fireman) do not, and come in under the new rule (NAVY_RATE_MANUALS_NO_STATEMENT below). Seaman, Damage
+# Controlman and Basic Military Requirements were not found on the Internet Archive with a text layer.
 COURSE = dict(group="course", country="United States", licence=US_GOV, licence_url=US_GOV_URL, distribution_a=True,
               publisher="Naval Education and Training Command (US Navy)")
 
@@ -147,9 +149,10 @@ NAVY_RATE_MANUALS = [
 ]
 
 # ---------------------------------------------------------------------- Army field manuals, non-weapon (item 11)
-# The Kiwix catalogue already offers the whole Army Publishing Directorate (armypubs_en_all). These are public-release
-# copies (Distribution Statement A in their front matter, checked 2026-11-21 and again at every build) of field
-# hygiene manuals not already built; weapons and tactics parts are left out by the builder (NOT_FIELD_SAFE).
+# The Kiwix catalogue already offers the whole Army Publishing Directorate (armypubs_en_all). These are Internet
+# Archive copies (Distribution Statement A in their front matter, checked 2026-11-21; judged again at every build by
+# the release rule, military_release.py) of field hygiene manuals not already built; weapons and tactics parts are
+# left out by the builder (NOT_FIELD_SAFE).
 FIELD = dict(group="fieldmanual", country="United States", licence=US_GOV, licence_url=US_GOV_URL,
              distribution_a=True, publisher="Headquarters, Department of the Army")
 ARMY_MANUALS = [
@@ -215,7 +218,88 @@ STATUTE_COMPILATIONS = [
            "amended, with the Act's own section numbers (sections 1900 to 1946)."),
 ]
 
-PDF_DOCS = FAA_HANDBOOKS + NAVY_RATE_MANUALS + ARMY_MANUALS + NIST_HANDBOOKS + STATUTE_COMPILATIONS
+# ---------------------------------------------------------------------- added under the release rule (2026-11-22)
+# The owner's decision of 22 November 2026 (military_release.py): a military publication from the Internet Archive or
+# a government or museum site comes in without Distribution Statement A, its notice saying so truthfully. These were
+# left out (or never listed) under the old rule. Each Internet Archive item was read on 2026-11-22: a text layer,
+# its front matter judged by military_release.release_rule (said in each comment), and judged again at every build.
+# Weapons, tactics and harm parts are still cut by the builder (NOT_FIELD_SAFE). Kept apart from the lists above so
+# that merges with other branches are easy.
+NAVY_RATE_MANUALS_NO_STATEMENT = [
+    # 1970s ERIC copies; their front matter prints no distribution statement (was NOT_INCLUDED until 2026-11-22).
+    _navy("navy_construction_electrician_3_2_1976", "Construction Electrician 3 & 2 (rate training manual, 1976)",
+          "ERIC_ED132306", "Electrical construction", "The Seabee electrician's course: electrical theory, wiring "
+          "and installation, power distribution, generators, lighting, telephones and safety.", "1976"),
+    _navy("navy_utilitiesman_3_2_1973", "Utilitiesman 3 and 2 (rate training manual, 1973)", "ERIC_ED097442",
+          "Plumbing, heating and water supply", "The Seabee utilitiesman's course: plumbing, water supply and "
+          "treatment, sewage, heating, boilers, air conditioning and refrigeration.", "1973"),
+    _navy("navy_engineman_3_2_1979", "Engineman 3 & 2 (rate training manual, 1979)", "ERIC_ED178727",
+          "Diesel and gasoline engines", "The Navy engineman's course: internal combustion engines, fuel, "
+          "lubrication and cooling systems, transmissions, pumps, compressors and maintenance.", "1979"),
+    _navy("navy_electricians_mate_3_2_1981", "Electrician's Mate 3 & 2 (rate training manual, 1981)",
+          "ERIC_ED203163", "Electricity", "The Navy electrician's course: electrical safety, motors and "
+          "generators, controllers, distribution systems, lighting, batteries and test equipment.", "1981"),
+    _navy("navy_fireman_1976", "Fireman (naval rate training manual, 1976)", "ERIC_ED126343",
+          "Engineering and machinery", "The Navy's course for firemen (engineering apprentices): ship's machinery, "
+          "boilers, pumps, valves and piping, engines, electricity, tools and engineering safety.", "1976"),
+]
+
+FIELD_RELEASE_RULE = dict(FIELD)          # Headquarters, Department of the Army, group "fieldmanual"
+ARMY_MANUALS_RELEASE_RULE = [
+    # No distribution statement printed (was NOT_INCLUDED: "FM 4-25.10 (2004) prints no distribution statement").
+    dict(FIELD_RELEASE_RULE, name="army_fm_4_25_10_field_hygiene_2004", title="Field Hygiene and Sanitation (FM "
+         "4-25.10, 2004)", subject="Field hygiene and sanitation", archive="fm-4-25-10-field-hygiene-and-"
+         "sanitation-2004", published="2004", description="The 2004 Army field hygiene manual: personal hygiene, "
+         "safe water and food, waste disposal, insects and rodents, and heat and cold injuries."),
+    # No distribution statement printed (the 1992 Army and Marine Corps survival manual).
+    dict(FIELD_RELEASE_RULE, name="army_fm_21_76_survival_1992", title="Survival (FM 21-76 / MCRP 3-02F, 1992)",
+         subject="Survival", archive="MCRP_3-02F_FM_21-76_Survival", published="1992",
+         publisher="Headquarters, Department of the Army and the US Marine Corps",
+         description="The classic Army and Marine Corps survival manual: survival medicine, water, food, fire, "
+                     "shelter, plants and animals, direction finding, and survival in cold, hot, sea and jungle "
+                     "areas."),
+    # Distribution Statement A printed.
+    dict(FIELD_RELEASE_RULE, name="army_fm_31_70_cold_weather_1968", title="Basic Cold Weather Manual (FM 31-70, "
+         "1968)", subject="Cold-weather safety and survival", archive="fm-31-70-basic-cold-weather-manual-1968",
+         published="1968", description="The Army's basic cold-weather manual: the cold environment, clothing, "
+                                       "shelters, cold injuries and first aid, moving on snow and ice, and living "
+                                       "in the field in winter."),
+    # Distribution Statement A printed. Field feeding (other branches may add field-cooking manuals beside it).
+    dict(FIELD_RELEASE_RULE, name="army_fm_10_23_field_feeding_1996", title="Basic Doctrine for Army Field Feeding "
+         "and Class I Operations Management (FM 10-23, 1996)", subject="Cooking and food service",
+         archive="FM_10_23_B_D_A_F_F_C_I_O_M_1996", published="1996",
+         description="How the Army feeds soldiers in the field: rations, field kitchens, food safety and "
+                     "sanitation, water, and planning meals."),
+    # Distribution Statement A printed (this copy; another copy of the same manual prints a restricted marking and
+    # is not used). Protective measures; operational parts are cut by NOT_FIELD_SAFE.
+    dict(FIELD_RELEASE_RULE, name="army_fm_3_4_nbc_protection_1992", title="NBC Protection (FM 3-4, 1992, with "
+         "changes to 1996)", subject="Chemical, biological and nuclear protection", archive="FM_3_4_NBC_P_1992",
+         published="1996-02", description="Protection against chemical, biological and nuclear hazards: "
+         "protective masks and clothing, decontamination of people and equipment, and recognising hazards."),
+    # No distribution statement printed. Radio (other branches may add radio manuals beside it).
+    dict(FIELD_RELEASE_RULE, name="army_fm_24_18_field_radio_1965", title="Field Radio Techniques (FM 24-18, 1965)",
+         subject="Radio and antennas", archive="fm-24-18-field-radio-techniques-usarmy-1965", published="1965",
+         description="Radio fundamentals for field use: how radio works, power sources, propagation, antennas and "
+                     "how to build field antennas, and getting a signal through."),
+    # No distribution statement printed. The US Air Force survival regulation.
+    dict(FIELD_RELEASE_RULE, name="usaf_afr_64_4_survival_1985", title="Survival Training (AFR 64-4, volume 1, "
+         "1985)", subject="Survival", archive="Afr64-4352-481Survivalmanual", published="1985-07",
+         publisher="Headquarters, US Air Force", work="a work of the US Air Force",
+         description="The Air Force's survival textbook: the will to survive, medicine, shelter, fire, water, food, "
+                     "clothing, travel and signalling, in cold, hot, tropical and sea conditions."),
+    # Print a restricted marking ("Distribution authorized to ..."), and no open copy on a government site was
+    # found (searched 2026-11-22); the builder puts them in left_out with their address, personal use, for the
+    # owner's Program Downloader "To do yourself" list. Never built into a book.
+    dict(FIELD_RELEASE_RULE, name="army_fm_3_05_70_survival_2002", title="Survival (FM 3-05.70, 2002)",
+         subject="Survival", archive="fm-3-05.70-survival-2002", published="2002-05",
+         description="The 2002 Army survival manual (personal use only: it prints a restricted marking)."),
+    dict(FIELD_RELEASE_RULE, name="army_fm_21_11_first_aid_1989", title="First Aid for Soldiers (FM 21-11, 1989)",
+         subject="First aid", archive="fm-21-11-first-aid-for-soldier-1989", published="1989",
+         description="The 1989 Army first-aid manual (personal use only: it prints a restricted marking)."),
+]
+
+PDF_DOCS = (FAA_HANDBOOKS + NAVY_RATE_MANUALS + ARMY_MANUALS + NIST_HANDBOOKS + STATUTE_COMPILATIONS
+            + NAVY_RATE_MANUALS_NO_STATEMENT + ARMY_MANUALS_RELEASE_RULE)
 
 # ---------------------------------------------------------------------- more CFR parts (item 16)
 # govinfo.gov annual editions (checked 2026-11-21: every part below is in the 2025 edition at these volumes).
@@ -292,8 +376,9 @@ LICENCE_LINES = {
                      "of its own, so govinfo.gov's quotation of 17 U.S.C. 105 is the line checked, as for the IRS "
                      "and Medicare books.",
     "navy_rate_manuals": "Internet Archive copies (ERIC and Digital Library of India scans with OCR text) of Navy rate "
-                         "training manuals; US government works; each kept only when its front matter prints "
-                         "Distribution Statement A (checked by the builder).",
+                         "training manuals; US government works; each judged by the builder with the release rule "
+                         "for military publications (military_release.py): built with or without Distribution "
+                         "Statement A, the notice saying truthfully which.",
     "nist_handbooks": "nvlpubs.nist.gov: NIST Handbooks 44, 130 and 133 (2025 editions), works of the US government "
                       "(17 U.S.C. 105).",
     "tna_teaching_resources": "www.nationalarchives.gov.uk footer: \"All content is available under the Open "
@@ -326,13 +411,23 @@ NOT_INCLUDED = [
      "No Internet Archive copy with a text layer was found (netc.navy.mil refuses programs)."),
     ("Navy Gunner's Mate and Seabee Combat Handbook copies on the Internet Archive", "Weapons and combat: never "
      "chosen."),
-    ("Navy rate training manuals of the 1970s on the Internet Archive (ERIC copies): Builder 3 & 2, Construction "
-     "Electrician 3 & 2, Utilitiesman 3 and 2, Engineman 3 & 2, Electrician's Mate 3 & 2, Fireman", "Their front "
-     "matter does not print Distribution Statement A (checked 2026-11-21), which the owner's rule requires for "
-     "military manuals."),
     ("Army FM 3-05.70 Survival (2002) and FM 21-11 First Aid for Soldiers (1989) copies", "Their front matter says "
-     "\"Distribution authorized to ...\" (restricted); FM 4-25.10 (2004) prints no distribution statement. Not "
-     "built."),
+     "\"Distribution authorized to ...\" (restricted), and no open copy on a government site was found (searched "
+     "2026-11-22): by the release rule of 22 November 2026 they are personal use only, never built into a book; "
+     "their entries (pdf:army_fm_3_05_70_survival_2002, pdf:army_fm_21_11_first_aid_1989) put them in the "
+     "catalogue's left_out with their address, for the owner to fetch himself. Index: "
+     "https://archive.org/details/fm-3-05.70-survival-2002 and "
+     "https://archive.org/details/fm-21-11-first-aid-for-soldier-1989"),
+    ("FM 6-02.53 Tactical Radio Operations (2009), AFH 10-644 Survival, Evasion, Resistance, Escape (2017) and FM "
+     "24-18 Tactical Single-Channel Radio Communications Techniques (1987)", "Their titles name tactics, evasion "
+     "or resistance, which the field-manual rule never chooses (NOT_FIELD_SAFE); FM 24-18 (1987) also prints "
+     "\"Distribution authorized to ...\". Field Radio Techniques (FM 24-18, 1965) and AFR 64-4 (1985) are built "
+     "instead."),
+    ("Ranger Medic Handbook (75th Ranger Regiment, 2007 and 2022 editions on the Internet Archive)", "The 2007 "
+     "edition prints no distribution statement, so the release rule of 22 November 2026 would allow it, but it is "
+     "a combat casualty care handbook of a combat unit, and the field-manual rule never chooses combat or Ranger "
+     "titles; the 2022 edition is also a private publisher's reprint (\"Copyright © 2022 Breakaway Media, LLC ... "
+     "All rights reserved\"). Not built. Index: https://archive.org/details/ranger-medic-handbook-2007"),
     ("Old UK National Archives education pages (/education/resources/...)", "Gone from the site (410, or moved to "
      "the new teaching resources, which are built); the UK Government Web Archive keeps them, and its own terms were "
      "not checked."),

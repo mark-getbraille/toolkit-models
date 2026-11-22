@@ -77,8 +77,9 @@ WIKIDATA_WORDS = {"personal_electronics": ["laptop", "computer", "keyboard", "mo
 # and weapon parts kits; magazine extensions and capacity kits; bump stocks; forced-reset and binary triggers;
 # solvent traps sold as cleaning accessories; short-barrelled rifles and shotguns and other NFA firearms; and
 # AUTOMATIC firearms (machine guns, submachine guns, select-fire rifles), with their makers' manuals where openly
-# published and US military manuals ONLY when publicly released (Distribution Statement A printed on the document
-# itself, checked again at every build: PUBLIC_MANUALS).
+# published and US military manuals ONLY by name on PUBLIC_MANUALS, judged at every build by the release rule for
+# military publications (military_release.py: Distribution Statement A, or an Internet Archive or government copy
+# without it; link only and personal use when a restricted marking is printed).
 #
 # Never in this collection (FIREARMS_EXCLUDE, checked on every product and document name and kind): anything for
 # MAKING a suppressor (suppressor or baffle kits and parts, pre-drilled or indexed cups and cones, fuel or oil filter
@@ -376,11 +377,12 @@ MAKERS = [
          reason="the site refuses programs (a browser check)"),
 ]
 
-# Automatic firearms: US military manuals, ONLY when publicly released (the owner's decision of November 2026). Each
-# is the Internet Archive's copy (armypubs.army.mil's robots.txt shuts out programs) and is put in the index only
-# when the front of its text says "Approved for public release; distribution is unlimited" (Distribution Statement
-# A) and shows no restricted marking (Distribution B to F, FOUO, CUI ...): build_manuals.public_manual_entries
-# checks it at every build. Checked by hand on 2026-11-19: all three print Distribution Statement A.
+# Automatic firearms: US military manuals, ONLY these by name (the owner's decision of November 2026). Each is the
+# Internet Archive's copy (armypubs.army.mil's robots.txt shuts out programs) and is judged at every build by the
+# release rule for military publications (military_release.py, the owner's decision of 22 November 2026;
+# build_manuals.public_manual_entries): indexed with a truthful release line; link only and personal use when the
+# front of its text prints a restricted marking (Distribution B to F, FOUO, CUI ...); left out when classified.
+# Checked by hand on 2026-11-19: all three print Distribution Statement A.
 PUBLIC_MANUALS = [
     dict(ia="tc-3-22.249-light-machine-gun-m-249-series-2017", brand="US Army", model="M249",
          name="TC 3-22.249, Light Machine Gun M249 Series (2017)"),
