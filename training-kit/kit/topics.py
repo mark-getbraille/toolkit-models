@@ -78,8 +78,12 @@ TOPICS = [
           ("taiwan_pills", "pharmassist", "mediseg", "medpack_id", "scoa_blister", "med_commons_supplies",
            "med_commons_instruments", "med_commons_medicines", "vet_commons_medicine", "dental_instruments",
            "open_images_medical", "cdc_phil_supplies", "commons_medication_labels", "lfa_covid_tests", "commons_home_health_tests",
+           # home health care: first aid, dental, eye and birth supplies, dental X-rays (SCIN is medical: no topic)
+           "commons_first_aid_supplies", "commons_first_aid_skills", "commons_dental_care", "commons_eye_care",
+           "commons_birth_care", "denpar_dental_xrays",
+           "open_images_home_health",
            # share-alike (with Wikipedia ticked)
-           "med_vet_commons_sa", "openfacts_supplements",
+           "med_vet_commons_sa", "openfacts_supplements", "home_health_commons_sa",
            # research-only (personal use)
            "dailymed_human_labels", "dailymed_vet_labels", "c3pi_pills")),
     Topic("drugs", "Drugs and paraphernalia",
@@ -131,9 +135,11 @@ TOPICS = [
            "gso_objects", "commons_household_chemicals", "commons_finishes_in_use", "commons_appliance_controls",
            "open_images_appliance_controls",
            "commons_baby_products", "open_images_baby_products", "abo_baby_products", "commons_household_hazards", "open_images_household_hazards",
+           # car care: wipers, fluids, tyres, jacks, roadside safety, EV connectors, dashboard lights
+           "commons_car_care", "commons_ev_charging", "commons_dashboard_lights", "open_images_car_care",
            # share-alike
            "commons_mechanical_sa", "dashboard_symbols_sa", "device_models_sa", "farm_mech_commons_sa",
-           "commons_airplanes_sa", "chemical_commons_sa", "appliance_commons_sa",
+           "commons_airplanes_sa", "chemical_commons_sa", "appliance_commons_sa", "car_care_commons_sa",
            # non-commercial and research-only (personal use)
            "autovi", "dashboard_warning_icons", "car_parts_damage", "car_parts_dsmlr", "car_damage_views",
            "mechanical_parts_2022", "co3d_devices", "stanford_cars", "fgvc_aircraft", "museums_victoria",
@@ -146,6 +152,11 @@ TOPICS = [
            "wellcome", "smithsonian", "tepapa", "japan_search", "ksamsok", "rijksmuseum", "getty_museum", "smk",
            "nypl", "europeana_fi", "europeana_cs", "europeana_hu", "europeana_el", "europeana_no", "europeana_pl",
            "met_instruments", "wikidata_instruments",
+           # instrument care: parts, tuning and repair
+           "commons_string_instrument_parts", "commons_wind_percussion_parts", "commons_piano_parts",
+           "commons_instrument_care", "open_images_instrument_care",
+           # share-alike
+           "instrument_care_commons_sa",
            # non-commercial and research-only (personal use)
            "vam", "mimo_instruments", "princeton_general_personal", "turkish_instruments")),
     Topic("documents", "Documents, maps and signs",
@@ -173,9 +184,12 @@ TOPICS = [
            "npgallery", "na_wild_mammals", "na_birds", "na_herps_fish", "na_insects", "na_invertebrates",
            "na_animal_signs", "noaa_fisheries_species", "na_domestic_animals", "commons_sky_weather",
            "commons_rocks_fossils", "commons_nara_aerial", "cdc_phil_algae",
+           # gardening and lawn care
+           "commons_garden_growing", "commons_garden_care", "commons_lawn_care", "commons_plant_problems",
+           "open_images_garden",
            # share-alike
            "oxford_pets", "plantvillage", "plantnet_sa", "commons_breeds_sa", "inaturalist_us_sa",
-           "inaturalist_ca_sa", "plant_seedlings_sa", "gaps_rocks_commons_sa",
+           "inaturalist_ca_sa", "plant_seedlings_sa", "gaps_rocks_commons_sa", "garden_commons_sa",
            # non-commercial and research-only (personal use)
            "inaturalist_us_nc", "inaturalist_ca_nc", "plantnet_nc", "cub200", "plantdoc", "stanford_dogs",
            "soybean_weeds_nc", "weed_growth_stage_nc", "cropandweed_nc")),

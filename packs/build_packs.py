@@ -1824,6 +1824,20 @@ COMMONS_KEYS = COMMONS_KEYS | frozenset(HAZARD_COMMONS_KEYS)
 from baby_packs import BABY_PACKS, BABY_COMMONS_KEYS
 PACKS.update(BABY_PACKS)
 COMMONS_KEYS = COMMONS_KEYS | frozenset(BABY_COMMONS_KEYS)
+# Life skills (the owner's request of 2026-11-22), one pack file each, with the keys of those that read Commons: car
+# care (packs/car_care_packs.py: wipers, fluids, tyres and their markings, jacks, roadside safety, EV connectors,
+# dashboard lights by their files' own words), gardening and lawn care (packs/garden_packs.py), home health care
+# (packs/home_health_packs.py: first aid, home care, dental, eye and birth supplies, SCIN skin conditions, DenPAR
+# dental X-rays; every answer ends with the emergency note) and musical instrument care (packs/instrument_care_packs.py).
+from car_care_packs import CAR_CARE_PACKS, CAR_CARE_COMMONS_KEYS
+from garden_packs import GARDEN_PACKS, GARDEN_COMMONS_KEYS
+from home_health_packs import HOME_HEALTH_PACKS, HOME_HEALTH_COMMONS_KEYS
+from instrument_care_packs import INSTRUMENT_CARE_PACKS, INSTRUMENT_CARE_COMMONS_KEYS
+for _packs, _commons in ((CAR_CARE_PACKS, CAR_CARE_COMMONS_KEYS), (GARDEN_PACKS, GARDEN_COMMONS_KEYS),
+                         (HOME_HEALTH_PACKS, HOME_HEALTH_COMMONS_KEYS),
+                         (INSTRUMENT_CARE_PACKS, INSTRUMENT_CARE_COMMONS_KEYS)):
+    PACKS.update(_packs)
+    COMMONS_KEYS = COMMONS_KEYS | frozenset(_commons)
 
 
 def pack_lanes(keys):

@@ -427,6 +427,28 @@ jobs:
             commons_baby_products) limit=800 ;;
             open_images_baby_products) limit=1500 ;;
             abo_baby_products) limit=80 ;;
+            commons_car_care) limit=1800 ;;
+            commons_ev_charging) limit=600 ;;
+            commons_dashboard_lights) limit=400 ;;
+            open_images_car_care) limit=2500 ;;
+            commons_garden_growing) limit=1600 ;;
+            commons_garden_care) limit=1200 ;;
+            commons_lawn_care) limit=800 ;;
+            commons_plant_problems) limit=250 ;;
+            open_images_garden) limit=3000 ;;
+            commons_first_aid_supplies) limit=500 ;;
+            commons_first_aid_skills) limit=500 ;;
+            commons_dental_care) limit=600 ;;
+            commons_eye_care) limit=1200 ;;
+            commons_birth_care) limit=500 ;;
+            scin_skin_conditions) limit=3000 ;;
+            denpar_dental_xrays) limit=1000 ;;
+            open_images_home_health) limit=1500 ;;
+            commons_string_instrument_parts) limit=1600 ;;
+            commons_wind_percussion_parts) limit=1100 ;;
+            commons_piano_parts) limit=700 ;;
+            commons_instrument_care) limit=800 ;;
+            open_images_instrument_care) limit=2500 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in

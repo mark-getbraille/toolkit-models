@@ -3325,3 +3325,26 @@ PERSONAL_PICTURE_MAKING_OK |= _daily_access_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in DAILY_ACCESS_SOURCES
                                                                if s.key not in _daily_access_ok)
 _add_collections(DAILY_ACCESS_SOURCES)
+# Life skills (the owner's request of 2026-11-22): car care (car_care_sources.py), gardening and lawn care
+# (garden_sources.py), home health care with dental, eye and birth care (home_health_sources.py) and musical
+# instrument care (instrument_care_sources.py): their ready-made packs, share-alike Commons files and what was left
+# out. Each file may be missing. Only the keys in each file's *_PICTURE_MAKING_OK may be used for picture-making; the
+# home health packs that show people's bodies are added to PEOPLE_AND_BODILY_PACK_KEYS.
+for _life_name, _life_prefix in (("car_care_sources", "CAR_CARE"), ("garden_sources", "GARDEN"),
+                                 ("home_health_sources", "HOME_HEALTH"),
+                                 ("instrument_care_sources", "INSTRUMENT_CARE")):
+    try:
+        _life = __import__(_life_name)
+    except ImportError as _e:
+        _life = None
+        if getattr(_e, "name", None) != _life_name:
+            say(f"(The {_life_name.replace('_sources', '').replace('_', ' ')} collections could not be loaded: {_e}. "
+                "They are left out.)")
+    _life_sources = list(getattr(_life, f"{_life_prefix}_SOURCES", []) or [])
+    _life_ok = set(getattr(_life, f"{_life_prefix}_PICTURE_MAKING_OK", ()) or ())
+    _life_bodily = tuple(getattr(_life, f"{_life_prefix}_BODILY_KEYS", ()) or ())
+    PEOPLE_AND_BODILY_PACK_KEYS = PEOPLE_AND_BODILY_PACK_KEYS + _life_bodily
+    PERSONAL_PICTURE_MAKING_OK |= _life_ok - set(_life_bodily)
+    NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in _life_sources
+                                                                   if s.key not in _life_ok or s.key in _life_bodily)
+    _add_collections(_life_sources)
