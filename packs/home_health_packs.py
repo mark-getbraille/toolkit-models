@@ -40,7 +40,7 @@ The packs (Commons files CC0, public domain or CC BY; Open Images labels CC BY 4
                                own.
   commons_first_aid_skills     Commons: CPR and chest compressions, abdominal thrusts (the Heimlich manoeuvre), the
                                recovery position and first aid classes (adults only; describing only).
-  commons_dental_care          Commons: water flossers, interdental brushes, tongue scrapers, braces, clear aligners,
+  commons_dental_care          Commons: water flossers, interdental brushes, tongue scrapers, clear aligners,
                                mouthguards, implants, bridges and sealants.
   commons_eye_care             Commons: magnifying glasses, magnifiers, loupes and monoculars, pinhole glasses,
                                reading glasses, bifocals, glasses frames, contact lenses and their cases, Snellen
@@ -141,7 +141,6 @@ DENTAL = [
          DENTAL_NOTE),
     item("Interdental brushes", "an interdental brush, a tiny brush for cleaning between the teeth", DENTAL_NOTE),
     item("Tongue scrapers", "a tongue scraper", DENTAL_NOTE),
-    item("Dental braces", "dental braces, which slowly straighten the teeth", DENTAL_NOTE),
     item("Clear aligners", "clear aligners, see-through trays that straighten teeth", DENTAL_NOTE),
     item("Mouthguards", "a mouthguard, which protects the teeth in sport or from grinding", DENTAL_NOTE),
     item("Dental implants", "a dental implant, a metal post that holds a false tooth", DENTAL_NOTE),

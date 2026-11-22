@@ -69,7 +69,6 @@ HOME_HEALTH_SA = [
     thing("CPR masks", "a CPR mask (pocket mask), used to give rescue breaths without touching the person's mouth"),
     thing("Compression stockings", "compression stockings, which squeeze the legs to help blood flow"),
     thing("Interdental brushes", "an interdental brush, a tiny brush for cleaning between the teeth", DENTAL_NOTE),
-    thing("Dental braces", "dental braces, which slowly straighten the teeth", DENTAL_NOTE),
     thing("Dental implants", "a dental implant, a metal post that holds a false tooth", DENTAL_NOTE),
     thing("Magnifying glasses", "a magnifying glass, a handheld lens that makes small print look bigger", EYE_NOTE),
     thing("Contact lenses", "a contact lens; never rinse or store lenses in tap water or saliva", EYE_NOTE),
@@ -95,7 +94,7 @@ HOME_HEALTH_SOURCES = [
                                        "position, and first aid classes, with the emergency note (Wikimedia Commons, "
                                        "ready-made pack)",
            COMMONS_OPEN, COMMONS_CREDIT, "permissive", 500, 10, prepare_pack, "about 110 MB"),
-    Source("commons_dental_care", "Dental care: water flossers, interdental brushes, tongue scrapers, braces, clear "
+    Source("commons_dental_care", "Dental care: water flossers, interdental brushes, tongue scrapers, clear "
                                   "aligners, mouthguards and implants, with the dental note (Wikimedia Commons, "
                                   "ready-made pack)",
            COMMONS_OPEN, COMMONS_CREDIT, "permissive", 600, 10, prepare_pack, "about 130 MB"),
@@ -121,7 +120,7 @@ HOME_HEALTH_SOURCES = [
                                       "mouthwash, dentures, braces and contact lenses (Open Images, ready-made pack)",
            OI_OPEN, OI_CREDIT, "permissive", 1500, 15, prepare_pack, "about 300 MB"),
     Source("home_health_commons_sa", "Wikimedia Commons: space blankets, CPR masks, compression stockings, "
-                                     "interdental brushes, braces, implants, magnifying glasses, contact lenses and "
+                                     "interdental brushes, implants, magnifying glasses, contact lenses and "
                                      "breast pumps, files under CC BY-SA or GFDL (share-alike)",
            SA_LICENCE, SA_CREDIT, "share-alike", 600, 10, prepare_home_health_commons_sa, "about 130 MB of pictures",
            terms=SA_TERMS, terms_summary=SA_SUMMARY),
@@ -160,6 +159,9 @@ HOME_HEALTH_SIGN_UP = {
 HOME_HEALTH_NOT_INCLUDED = {
     "American Red Cross and American Heart Association pictures and guides":
         "copyright of the Red Cross and the AHA (\"All rights reserved\"); link-only in the reference library.",
+    "Commons Dental braces":
+        "its photos show the wearers' faces (often young people's), and the owner's rule allows the mouth area only; "
+        "left out. Open Images' Dental braces label stays in the describing-only open_images_home_health.",
     "A second birth, breastfeeding, midwifery and newborn care photo pack":
         "Commons' Breastfeeding, Kangaroo care, Childbirth, Midwifery, Midwives, Prenatal care and Newborn babies "
         "categories are already the birth_and_feeding pack (medical_packs.py), which keeps only respectful care "
