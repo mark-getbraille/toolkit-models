@@ -180,12 +180,17 @@ def test_dates_only_where_the_file_says():
     # the mark named, but no date in the file's own words: only what kind of mark it is
     assert dc.date_rows("File:Best before date on yoghurt.jpg", "") == [(dc.ASK_MARK, "It shows a best-before date.")]
     # a date in the title only is not read (titles carry upload dates and catalogue numbers)
-    assert len(dc.date_rows("File:Best before 2019-01-01.jpg", "")) == 1
+    assert len(dc.date_rows("File:Best before 2019-01-01 milk.jpg", "")) == 1
     # not a date mark, or not packaging
     assert dc.date_rows("File:Kids.jpg", "A lot of children use by the river.") == []
     assert dc.date_rows("File:Passport.jpg", "Passport expiry date 2020") == []
     assert dc.date_rows("File:Card.jpg", "A credit card with its expiration date: 05/24") == []
     assert dc.date_rows("File:Lot.jpg", "A parking lot in Ohio") == []
+    # people checking shelves, chips' date codes and manuscripts are not packaging labels
+    assert dc.date_rows("File:Checking expiration dates.jpg", "Staff Sgt. Roe checks expiration dates on supplies "
+                                                              "and food packages.") == []
+    assert dc.date_rows("File:Numpad date code on IC.jpg", "Week 18 Year 1982 date code on IC.") == []
+    assert dc.date_rows("File:Theological miscellany.jpg", "Ms. codex. Lot: 34, a manuscript product") == []
 
 
 def test_dates_wired():

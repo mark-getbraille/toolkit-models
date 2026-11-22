@@ -13,7 +13,8 @@ The pack:
                       Commons' own search for "best before", "use by", "expiry date",
                       "expiration date", "best by", "lot number", "batch number" and "date code" (files only),
                       each file kept only when its own title or words name one of these marks (and no passport,
-                      card, licence, ticket or other document: only packaging).
+                      card, licence, ticket or other document; only files whose words name a pack or product,
+                      and no photos of people checking shelves).
 
 Already in the kit, not repeated: food_packaging (big_sources.py: Food Packaging OCR, the use-by date of about 350
 packs), and food_packs.py's Commons food pack ("Expiration dates": "It shows an expiry date"; this pack adds the
@@ -57,6 +58,13 @@ MARKS = [
 NOT_PACKAGING = re.compile(r"\b(passports?|credit cards?|debit cards?|bank cards?|licen[cs]es?|ID cards?|identity|"
                            r"visas?|certificates?|tickets?|permits?|domain names?|patents?|copyrights?|"
                            r"software|certificate|SSL|subscriptions?|membership)\b", re.I)
+# The file must be about a pack or a product's label, not a person checking shelves or a chip's date code.
+PACKAGING = re.compile(r"\b(packag\w*|packs?|labels?|cartons?|cans?|tins?|bottles?|jars?|boxe?s?|wrappers?|"
+                       r"bags?|tubs?|pots?|sachets?|blister\w*|containers?|food|milk|yog(h)?urt|cheese|meat|bread|"
+                       r"medicines?|drugs?|tablets?|pills?|vaccines?|cosmetics?|groceries|grocery|products?)\b", re.I)
+PEOPLE_AT_WORK = re.compile(r"\b(check(s|ing|ed)?|inspect\w*|sgt|sergeant|airman|airmen|sailors?|soldiers?|"
+                            r"specialists?|technicians?|staff|volunteers?|workers?|employees?|codex|manuscripts?|"
+                            r"auction\w*|circuits?|chips?|IC)\b", re.I)
 CODE = r"[A-Z0-9][A-Z0-9 ./-]{1,14}[A-Z0-9]"
 
 
@@ -86,7 +94,7 @@ def date_rows(title, text):
     """The rows of one file: what kind of mark it is, and its date or code where the file's own words state it;
     [] when neither its title nor its words name such a mark."""
     words = f"{file_words(title)} {text or ''}"
-    if NOT_PACKAGING.search(words):
+    if NOT_PACKAGING.search(words) or PEOPLE_AT_WORK.search(words) or not PACKAGING.search(words):
         return []
     mark = mark_of(words)
     if not mark:
