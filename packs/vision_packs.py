@@ -45,6 +45,12 @@ The packs (VISION_PACKS):
                            writers, slates and styluses, talking book machines, reading machines, canes and other
                            things made for blind people, named from each record's own words (a fair share for each
                            kind of object).
+  aph_museum_objects       The Museum of the American Printing House for the Blind's own items on the Internet
+                           Archive that APH marked with the Public Domain Mark (braille writers such as a Russian
+                           braillewriter and the Possum Moon writer, talking book phonograph needles, a CCTV, braille
+                           duplicators and tactile games): each item's picture with the item's own title (said as its title), and
+                           what the museum says about it in its video's subtitles. Museum staff appear in some
+                           pictures: describing only.
 
     python packs/vision_packs.py commons_braille_writing --limit 8      (prints a few rows: a quick check)
 """
@@ -308,6 +314,95 @@ def build_nmah_vision_objects(limit, most_files=None):
     return with_twins(fetch_all(named, workers=6, pause=0.1)[:limit])
 
 
+# ----------------------------------------------------------------- APH Museum (Internet Archive, Public Domain Mark)
+
+IA_SEARCH = "https://archive.org/advancedsearch.php"
+APH_QUERY = ('collection:aphmigel AND licenseurl:("https://creativecommons.org/publicdomain/mark/1.0/" OR '
+             '"http://creativecommons.org/publicdomain/mark/1.0/")')
+# Only APH's own work: the museum's items ("museum-...") whose creator is APH or its museum director (the same rule
+# as textbooks/vision_living.py); APH's mark on other people's work is not the author's own.
+APH_AUTHORS = re.compile(r"^(American Printing House for the Blind|M[Ii]ke Hudson|Mic(ha|he)al Hudson)$")
+APH_DATE = re.compile(r"^(museum\s+)?\d{4}[ -]\d{2}[ -]\d{1,2}\s+(\d{4}-\d{2}-\d{2}\s+)?", re.I)
+APH_GREETING = re.compile(r"^.*?(Director|Curator) of the Museum (of|at) the American Printing House for the "
+                          r"Blind[^.]*\.\s*", re.I | re.S)
+APH_MUSEUM = "Museum of the American Printing House for the Blind (APH)"
+
+
+def aph_title(title):
+    """An APH museum item's title without its leading date ("Museum 2022 02 21 Russian Braillewriter" -> "Russian
+    Braillewriter")."""
+    return APH_DATE.sub("", clean(title)).strip(" -") or clean(title)
+
+
+def aph_words(srt):
+    """The first words the museum says about the object in its video (the subtitles without numbers, times and
+    the greeting), at most about 60 words ending at a full stop, or ""."""
+    cues = [" ".join(ln.strip() for ln in block.splitlines() if ln.strip() and not ln.strip().isdigit() and
+                     "-->" not in ln) for block in re.split(r"\n\s*\n", (srt or "").replace("\r", ""))]
+    text = APH_GREETING.sub("", " ".join(c for c in cues if c)).strip()
+    words = text.split()
+    if len(words) < 12:
+        return ""
+    cut = " ".join(words[:60])
+    return cut[:cut.rfind(".") + 1] if "." in cut[40:] else ""
+
+
+def aph_row(ident, title, files, srt=""):
+    """(picture address, rows) of one APH museum item: its own JPEG (not a thumbnail), "What is this?" answered with
+    the item's own title (said as the item's title: the picture may be a still of a video about it), and what the museum says about it in its video's subtitles; or None without a JPEG."""
+    jpeg = next((f for f in files if f.lower().endswith((".jpg", ".jpeg")) and "thumb" not in f.lower()
+                 and "/" not in f), None)
+    if not jpeg:
+        return None
+    name = aph_title(title)
+    credit = f"{APH_MUSEUM}, Public Domain Mark 1.0: \"{clean(title)}\", https://archive.org/details/{ident}"
+    rows = [{"question": ASK_WHAT, "answer": f"It is a picture from the {APH_MUSEUM}'s item \"{name}\" (its own "
+                                             f"title for it).", "credit": credit}]
+    said = aph_words(srt)
+    if said:
+        rows.append({"question": "What does the museum say about this?", "answer": said, "credit": credit})
+    from urllib.parse import quote
+    return f"https://archive.org/download/{ident}/{quote(jpeg)}", rows
+
+
+def build_aph_museum_objects(limit):
+    """The aph_museum_objects pack: the APH Museum's own Internet Archive items marked with the Public Domain Mark,
+    each item's picture with its title and the first words of its video's subtitles."""
+    import urllib.parse
+    s = session()
+    q = urllib.parse.urlencode([("q", APH_QUERY), ("fl[]", "identifier"), ("fl[]", "title"), ("fl[]", "creator"),
+                                ("rows", "1000"), ("output", "json")])
+    docs = s.get(f"{IA_SEARCH}?{q}", timeout=120).json()["response"]["docs"]
+    items = []
+    for d in sorted(docs, key=lambda x: x["identifier"]):
+        creators = d.get("creator") if isinstance(d.get("creator"), list) else [d.get("creator") or ""]
+        if not d["identifier"].startswith("museum-") or not all(APH_AUTHORS.match(str(c).strip()) for c in creators):
+            continue
+        if len(items) >= limit * 1.2 or listing_out_of_time():
+            break
+        try:
+            meta = s.get(f"https://archive.org/metadata/{d['identifier']}", timeout=120).json()
+        except Exception:  # noqa: BLE001 - next item
+            continue
+        if "publicdomain/mark" not in str((meta.get("metadata") or {}).get("licenseurl", "")):
+            continue
+        files = [f.get("name", "") for f in meta.get("files") or []]
+        srt_file = next((f for f in files if f.endswith(".srt")), "")
+        srt = ""
+        if srt_file:
+            try:
+                srt = s.get(f"https://archive.org/download/{d['identifier']}/{urllib.parse.quote(srt_file)}",
+                            timeout=120).text
+            except Exception:  # noqa: BLE001 - the picture without the museum's words
+                srt = ""
+        got = aph_row(d["identifier"], str(d.get("title") or d["identifier"]), files, srt)
+        if got:
+            items.append((f"aph-{len(items):04d}.jpg", got[0], got[1]))
+    say(f"APH Museum: {len(items)} items with a picture")
+    from food_packs import with_twins
+    return with_twins(fetch_all(items, workers=2, pause=1.0)[:limit])
+
+
 # ----------------------------------------------------------------- the packs
 
 COMMONS_LICENCE = ("Wikimedia Commons (https://commons.wikimedia.org): files CC0, public domain or CC BY (credited "
@@ -323,12 +418,18 @@ VISION_PACKS = {
     "commons_mobility_deafblind": (build_commons_mobility_deafblind, COMMONS_LICENCE.format(
         what="orientation and mobility, sighted guide, cane, guide horse, awareness and deafblind")),
     "nmah_vision_objects": (build_nmah_vision_objects, NMAH_LICENCE),
+    "aph_museum_objects": (build_aph_museum_objects, f"{APH_MUSEUM}, its own items on the Internet Archive marked "
+                                                     "with the Public Domain Mark 1.0 by APH "
+                                                     "(https://archive.org/details/aphmigel; checked item by item), "
+                                                     "each credited below. Changes: pictures made smaller; answers "
+                                                     "from each item's title and its video's subtitles."),
 }
 VISION_LIMITS = {
     "commons_braille_writing": 400,       # 23 small categories (Perkins 17 files, the charts and New York Point most)
     "commons_tactile_access": 600,        # 24 categories; the scale models and eye charts have most files
     "commons_mobility_deafblind": 150,    # 8 small categories
     "nmah_vision_objects": 120,           # few NMAH records are CC0 and made for blind people
+    "aph_museum_objects": 80,             # about 80 of the museum's own items carry the Public Domain Mark
 }
 # The packs that read Wikimedia Commons (build_packs.COMMONS_KEYS).
 VISION_COMMONS_KEYS = ("commons_braille_writing", "commons_tactile_access", "commons_mobility_deafblind")

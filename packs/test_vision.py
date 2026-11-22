@@ -104,7 +104,7 @@ def test_kit_notes_match():
 
 def test_wiring():
     keys = set(v.VISION_PACKS)
-    assert keys == set(v.VISION_LIMITS) and len(keys) == 4
+    assert keys == set(v.VISION_LIMITS) and len(keys) == 5
     assert keys <= set(build_packs.PACKS)
     assert set(v.VISION_COMMONS_KEYS) <= build_packs.COMMONS_KEYS
     assert not (keys - set(v.VISION_COMMONS_KEYS)) & build_packs.COMMONS_KEYS
@@ -137,3 +137,23 @@ def test_wiring():
         assert key in listed and key in topic.keys, key
     assert listed["vision_commons_sa"].group == "share-alike"
     assert "commons_mobility_deafblind" in no_making and "commons_tactile_access" in no_making
+    assert "aph_museum_objects" in no_making
+
+
+def test_aph_museum_rows():
+    """The APH reader names the item by its own title, quotes the museum's subtitles without the greeting, and needs
+    a real picture (not a thumbnail)."""
+    assert v.aph_title("Museum 2022 02 21 Russian Braillewriter") == "Russian Braillewriter"
+    assert v.aph_title("2022-04-05 Possum Moon Writer") == "Possum Moon Writer"
+    assert v.aph_title("Museum 2022 01 11 2022-01-11 Early 1900s Paperweight") == "Early 1900s Paperweight"
+    srt = ("1\n00:00:00,000 --> 00:00:03,000\nHi I'm Mike Hudson, Director of the Museum of the American Printing "
+           "House for the Blind.\n\n2\n00:00:03,000 --> 00:00:09,000\nOur mystery object today is a made-up "
+           "braillewriter with six keys and a space bar, built long ago for a school.\n")
+    got = v.aph_row("museum-x", "Museum 2022 02 21 Russian Braillewriter",
+                    ["thing_thumb.jpg", "x.thumbs/a.jpg", "Russian braillewriter.jpg"], srt)
+    assert got and got[0].endswith("Russian%20braillewriter.jpg")
+    assert got[1][0]["answer"] == ("It is a picture from the Museum of the American Printing House for the Blind "
+                                   "(APH)'s item \"Russian Braillewriter\" (its own title for it).")
+    assert got[1][1]["answer"].startswith("Our mystery object today is a made-up braillewriter")
+    assert "Hudson" not in got[1][1]["answer"]
+    assert v.aph_row("museum-y", "No picture", ["a_thumb.jpg", "b.mp4"]) is None

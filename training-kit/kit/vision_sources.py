@@ -1,8 +1,8 @@
 """BLIND AND LOW-VISION LIVING for the Picture Model Training Kit (the owner's request of 2026-11-22, a section of
 its own with the topic add-on "vision"). This file lists:
   - the ready-made packs built in packs/vision_packs.py (group "permissive"; the kit downloads them with
-    prepare_pack): commons_braille_writing, commons_tactile_access, commons_mobility_deafblind and
-    nmah_vision_objects;
+    prepare_pack): commons_braille_writing, commons_tactile_access, commons_mobility_deafblind,
+    nmah_vision_objects and aph_museum_objects;
   - the share-alike Commons files of the same braille writer, braille and tactile categories (group "share-alike":
     only with the share-alike choice, --with-wikipedia; an add-on trained with them is CC BY-SA);
   - the sources looked at for these subjects and left out, with the reason (VISION_NOT_INCLUDED).
@@ -104,6 +104,12 @@ VISION_SOURCES = [
     Source("nmah_vision_objects", "Braille writers, slates, styluses, talking book machines, reading machines and "
                                   "other things made for blind people (Smithsonian NMAH, ready-made pack)",
            NMAH_OPEN, NMAH_CREDIT, "permissive", 120, 3, prepare_pack, "about 30 MB"),
+    Source("aph_museum_objects", "The APH Museum's own items marked public domain: braille writers, the Moon writer, "
+                                 "talking book things, a CCTV and tactile games, with the museum's own words "
+                                 "(Internet Archive, ready-made pack)",
+           "Public Domain Mark 1.0, put by the Museum of the American Printing House for the Blind on its own items "
+           "(checked item by item)", "Museum of the American Printing House for the Blind, "
+           "https://archive.org/details/aphmigel", "permissive", 80, 3, prepare_pack, "about 20 MB"),
     Source("vision_commons_sa", "Wikimedia Commons: braille writers, braille charts and music, Moon type, New York "
                                 "Point, tactile graphics and picture books, the Optacon and eye charts, files under "
                                 "CC BY-SA or GFDL (share-alike)",
@@ -137,9 +143,10 @@ VISION_NOT_INCLUDED = {
         "aids, Talking books and Touch tours; Tactile models exists but holds no files.",
     "Schools for the blind and Louis Braille on Commons": "Mostly buildings, portraits, statues and pupils by name "
         "(28 and 9 subcategories); not a subject of things to recognise, so left out.",
-    "APH Museum (American Printing House for the Blind) on the Internet Archive": "Of its 11,493 items only two "
-        "pictures are marked with the Public Domain Mark (checked 2026-11-22), too few for a pack; its museum "
-        "articles marked public domain are a book of the reference library (vision:aph_museum_articles).",
+    "APH Museum items not by APH": "The collection on the Internet Archive (aphmigel, 11,493 items) also marks other "
+        "people's work with the Public Domain Mark (AFB slides, Helen Keller's and John Macy's writings, letters, "
+        "scrapbooks) and leaves most items unmarked; only the museum's own marked items are used "
+        "(aph_museum_objects, and the book vision:aph_museum_articles).",
     "Perkins School for the Blind archives and the Perkins Brailler maintenance guides": "perkins.org refuses "
         "programs (403, checked 2026-11-22) and its archive photos' licences were not stated; the Perkins Brailler "
         "maintenance guide on the Internet Archive carries no licence (Perkins' copyright). Link-only in the "

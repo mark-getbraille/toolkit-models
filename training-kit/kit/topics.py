@@ -250,6 +250,7 @@ TOPICS = [
           "graphics, braille signs, reading machines, magnifiers, eye charts, sighted guiding, deafblind "
           "communication, and money by touch.",
           ("commons_braille_writing", "commons_tactile_access", "commons_mobility_deafblind", "nmah_vision_objects",
+           "aph_museum_objects",
            # gathered from other files
            "commons_disability", "tapad_tactile_paving", "commons_access_features", "commons_assistive_devices",
            "commons_eye_care", "commons_crosswalks_signals", "commons_indoor_wayfinding", "commons_money_sides",
