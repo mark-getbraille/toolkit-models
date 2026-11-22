@@ -662,3 +662,13 @@ from radio_manuals import CATEGORIES as _RADIO  # noqa: E402
 
 CATEGORIES.update(_PREPAREDNESS)
 CATEGORIES.update(_RADIO)
+# Power and electrical, under its own heading (manuals/power_manuals.py, the owner's request of 2026-11-22): backup,
+# PTO and welder generators and vehicle power, solar and battery power, small wind and micro-hydro, and home
+# electrical; every maker link-only. The existing electrical collections in power_manuals.HEADING_KEYS get the same
+# heading; their keys do not change.
+from power_manuals import CATEGORIES as _POWER, HEADING as _POWER_HEADING, HEADING_KEYS as _POWER_KEYS  # noqa: E402
+
+CATEGORIES.update(_POWER)
+for _key in _POWER_KEYS:
+    if _key in CATEGORIES:
+        CATEGORIES[_key]["heading"] = _POWER_HEADING
