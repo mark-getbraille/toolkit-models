@@ -1980,6 +1980,13 @@ for _packs, _commons in ((MENTAL_HEALTH_PACKS, MENTAL_HEALTH_COMMONS_KEYS),
                          (WILDERNESS_FIRST_AID_PACKS, WILDERNESS_FIRST_AID_COMMONS_KEYS)):
     PACKS.update(_packs)
     COMMONS_KEYS = COMMONS_KEYS | frozenset(_commons)
+# Home manufacturing and making (packs/making_packs.py, the owner's request of 2026-11-22): Commons 3D printers, prints
+# and 3D design, cutting machines, heat presses and lasers, CNC and small lathe and mill tooling, moulding, casting and
+# makerspaces, circuit board fabrication, and Open Images machine tools and workshops; every answer ends with its
+# safety note (hot nozzles, resin, laser eye safety and fumes, rotating machinery, blades, molten metal, soldering).
+from making_packs import MAKING_PACKS, MAKING_COMMONS_KEYS
+PACKS.update(MAKING_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(MAKING_COMMONS_KEYS)
 
 
 def pack_lanes(keys):
