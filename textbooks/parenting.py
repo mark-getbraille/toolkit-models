@@ -103,6 +103,41 @@ GUIDES = [
                     (r"/teen-drivers/", "Teen drivers"), (r".", "Child abuse and neglect prevention")]),
 ]
 
+# ====================================================================== Child Welfare Information Gateway
+
+# The Gateway (a service of the Children's Bureau, US Department of Health and Human Services) says on its list of
+# publications: "Publications may be freely reproduced and distributed. However, when doing so, please credit
+# Information Gateway." (checked at every build). Its topic pages for families are read; the publications' PDFs are
+# on artifacts.childwelfare.gov, whose robots.txt answers "403", so they are not read (NOT_INCLUDED).
+CWIG = "https://www.childwelfare.gov"
+CWIG_TERMS = CWIG + "/all-information-gateway-publications-and-resources/"
+CWIG_TEXT = r"Publications may be freely reproduced and distributed"
+CWIG_TOPICS = "parents-and-caregivers|prevention|permanency|safety-and-risk|well-being|youth"
+GUIDES.append(dict(
+    K.guide(GROUP, "cwig_family_topics", "Parenting, foster care, adoption, kinship care and abuse prevention (Child "
+            "Welfare Information Gateway)", "Child welfare for families", "Child Welfare Information Gateway "
+            "(Children's Bureau, US Department of Health and Human Services)",
+            [f"{CWIG}/topics/{t}/" for t in CWIG_TOPICS.split("|")],
+            rf"^https://www\.childwelfare\.gov/(topics/({CWIG_TOPICS})(/[a-z0-9-]+)?|how-report-child-abuse-and-"
+            r"neglect|find-help-personal-situation|state-child-abuse-and-neglect-reporting-numbers)/?$",
+            "The Child Welfare Information Gateway's topic pages for families and caregivers, every page: parents "
+            "and caregivers (fathers, birth parents, parenting supports), preventing child abuse and neglect "
+            "(protective factors, family support), permanency (adoption, foster care, kinship care by relatives, "
+            "adoption search and reunion, reunifying families, young people leaving foster care), safety and risk, "
+            "children's well-being and youth; with how to report child abuse and neglect, the state reporting "
+            "numbers and where to find help with a personal situation.",
+            "From Child Welfare Information Gateway (childwelfare.gov), a service of the Children's Bureau, US "
+            "Department of Health and Human Services: a US government work; its publications \"may be freely "
+            "reproduced and distributed\" with credit to Information Gateway. To report child abuse or neglect, "
+            "call your state's number or the Childhelp National Child Abuse Hotline, 1-800-422-4453.", depth=2,
+            follow=rf"^https://www\.childwelfare\.gov/topics/({CWIG_TOPICS})/?$",
+            units=[(r"/topics/parents-and-caregivers", "Parents and caregivers"), (r"/topics/prevention", "Prevention"),
+                   (r"/topics/permanency", "Adoption, foster care and kinship care"),
+                   (r"/topics/safety-and-risk", "Safety and risk"), (r"/topics/well-being", "Well-being"),
+                   (r"/topics/youth", "Youth"), (r".", "Getting help")], limit=150),
+    licence_page=CWIG_TERMS, licence_text=CWIG_TEXT,
+    urls=[CWIG + "/state-child-abuse-and-neglect-reporting-numbers/"]))
+
 COLLECTION = K.Collection("parent", GROUP, guides=GUIDES,
                           words={"parenting": lambda: [f"parent:{g['name']}" for g in GUIDES]})
 
@@ -112,7 +147,18 @@ LICENCE_LINES = {
                      "CDC's site), met in each CDC book's notice; the pages are kept whole. www.cdc.gov's robots.txt "
                      "allows the pages; no AI rules (checked 2026-11-22).",
 }
-NOT_INCLUDED = []
+LICENCE_LINES["parenting_childwelfare"] = (
+    "www.childwelfare.gov/all-information-gateway-publications-and-resources/ (checked at every build): "
+    "\"Publications may be freely reproduced and distributed. However, when doing so, please credit Information "
+    "Gateway\"; a US government work (Children's Bureau). robots.txt: \"User-agent: *\" \"Allow: /\"; no AI rules "
+    "(checked 2026-11-22).")
+NOT_INCLUDED = [
+    ("Child Welfare Information Gateway publications (factsheets for families, bulletins, state statutes series) as "
+     "PDFs", "Freely reproducible, but the PDFs are on artifacts.childwelfare.gov, whose robots.txt answers \"403 "
+     "Forbidden\" (checked 2026-11-22), so programs may not read them; the topic pages are built "
+     "(parent:cwig_family_topics). Link-only. Index: https://www.childwelfare.gov/find-resources/"
+     "explore-information-gateway-publication-series/"),
+]
 
 
 def main(argv=None):
