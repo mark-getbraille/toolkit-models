@@ -240,6 +240,14 @@ jobs:
             europeana_drinks_history) limit=400 ;;
             commons_soft_drinks) limit=1800 ;;
             open_images_soft_drinks) limit=2500 ;;
+            bentham_pages) limit=700 ;;
+            commons_handwriting) limit=1500 ;;
+            openstax_figures) limit=3000 ;;
+            commons_charts) limit=1500 ;;
+            commons_date_codes) limit=400 ;;
+            commons_sign_language) limit=500 ;;
+            wpc_surface_maps) limit=1200 ;;
+            nhc_forecast_cones) limit=400 ;;
             clock_times) limit=1300 ;;
             seven_segment) limit=3333 ;;
             open_images_home) limit=3900 ;;

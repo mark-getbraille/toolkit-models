@@ -171,8 +171,9 @@ def test_wiring():
     assert set(d.DRINKS_ALCOHOL_KEYS) <= no_making and "drinks_alcohol_commons_sa" in no_making
     assert "commons_soft_drinks" not in no_making and "drinks_soft_commons_sa" not in no_making
     assert "open_images_soft_drinks" in no_making
-    # The soft drinks are in the food topic; the alcohol collections are in no topic (the owner's ten topics stay as
-    # they are), so a topic add-on never learns alcohol by chance.
-    in_topics = {key for t in topics.TOPICS for key in t.keys}
-    assert set(d.DRINKS_SOFT_KEYS) | set(k.DRINKS_SOFT_KIT_KEYS) <= set(topics.find("food").keys)
-    assert not (set(d.DRINKS_ALCOHOL_KEYS) | set(k.DRINKS_ALCOHOL_KIT_KEYS)) & in_topics
+    # The soft drinks are in the drinks topic and the alcohol collections only in the alcohol topic (the owner's
+    # decision of 22 November 2026), so no other topic add-on learns alcohol by chance.
+    assert set(d.DRINKS_SOFT_KEYS) | set(k.DRINKS_SOFT_KIT_KEYS) <= set(topics.find("drinks").keys)
+    alcohol = set(d.DRINKS_ALCOHOL_KEYS) | set(k.DRINKS_ALCOHOL_KIT_KEYS)
+    assert alcohol <= set(topics.find("alcohol").keys)
+    assert not alcohol & {key for t in topics.TOPICS if t.id != "alcohol" for key in t.keys}

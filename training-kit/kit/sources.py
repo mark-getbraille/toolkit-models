@@ -2376,6 +2376,26 @@ SOURCES = [
            "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1800, 20, prepare_pack, "about 400 MB"),
     Source("open_images_soft_drinks", "Colas and sodas, juices, smoothies and milkshakes, plant milks, coffee and tea drinks, drink mixes and syrups (Open Images, ready-made pack)",
            "Labels CC BY 4.0 (Open Images V7); each photo CC BY, CC0 or Public Domain Mark (credited in CREDITS.txt)", "Google Open Images V7 (labels CC BY 4.0) and the photographers credited in CREDITS.txt, https://storage.googleapis.com/openimages/web/index.html", "permissive", 2500, 20, prepare_pack, "about 500 MB"),
+    # Reading pictures (the owner's request of 2026-11-21): handwriting, charts and diagrams, date codes on packaging,
+    # sign language and weather maps (packs/handwriting_packs.py and the others named below). Answers give a
+    # transcription, a date, a letter or a reading only where the source gives it. The personal-use collections and
+    # what was left out are in picture_reading_sources.py.
+    Source("bentham_pages", "Handwritten manuscript pages of the Bentham Papers, read out word for word (ICDAR 2015 HTRtS, ready-made pack)",
+           "CC BY 4.0 (Zenodo record 248733)", "Bentham Papers, University College London, transcribed by Transcribe Bentham volunteers; ICDAR 2015 HTRtS dataset (Sanchez, Toselli, Romero and Vidal, 2015, tranScriptorium), CC BY 4.0, https://zenodo.org/records/248733", "permissive", 700, 10, prepare_pack, "about 250 MB"),
+    Source("commons_handwriting", "Handwriting, handwritten letters, signs and shopping lists, and signatures named by their file (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1500, 15, prepare_pack, "about 250 MB"),
+    Source("openstax_figures", "Textbook graphs, charts and diagrams explained in OpenStax's own alt text and captions: economics, statistics, biology, chemistry, physics, astronomy (ready-made pack)",
+           "CC BY 4.0 (the versions OpenStax published before its 2026 change to CC BY-NC-SA)", "OpenStax, Rice University (each figure credited in CREDITS.txt), https://github.com/openstax", "permissive", 3000, 20, prepare_pack, "about 250 MB"),
+    Source("commons_charts", "Pie, bar and line charts, histograms, Venn diagrams, population pyramids, organisation charts and timelines, with their own descriptions (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1500, 15, prepare_pack, "about 150 MB"),
+    Source("commons_date_codes", "Best-before, use-by and expiry dates, lot and batch numbers on packaging, the date read only where the file's own words give it (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 400, 5, prepare_pack, "about 80 MB"),
+    Source("commons_sign_language", "Sign language: the American and British manual alphabets, fingerspelled letters and numbers, signs and interpreters, named only where the file says (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 500, 5, prepare_pack, "about 80 MB"),
+    Source("wpc_surface_maps", "Weather maps: the National Weather Service's surface analyses (fronts, pressure, station reports, radar and satellite composites), explained from the map's kind, time and legend (ready-made pack)",
+           "Public domain (works of the US government, 17 U.S.C. 105)", "NOAA/NWS Weather Prediction Center, surface analysis archive, https://www.wpc.ncep.noaa.gov/archives/web_pages/sfc/sfc_archive.php", "permissive", 1200, 10, prepare_pack, "about 200 MB"),
+    Source("nhc_forecast_cones", "Hurricane forecast cones from the National Hurricane Center, 2018 to 2024, with each advisory's summary and the legend (ready-made pack)",
+           "Public domain (works of the US government, 17 U.S.C. 105)", "NOAA/NWS National Hurricane Center archive, https://www.nhc.noaa.gov/archive/", "permissive", 400, 5, prepare_pack, "about 70 MB"),
     Source('skin_lesion_photos', 'Skin spots photographed with a phone, adults (PAD-UFES-20, ready-made pack)',
            'CC BY 4.0 (Mendeley Data zr7vgbcyr2)',
            'PAD-UFES-20 (Pacheco et al., 2020), CC BY 4.0', "permissive", 2000, 20, prepare_pack, 'about 400 MB', content="medical"),
@@ -2602,6 +2622,15 @@ PEOPLE_AND_BODILY_PACK_KEYS = (
     # soft drinks show people too (the Commons soft drinks are products and are used)
     "commons_alcoholic_drinks", "commons_bar_glassware", "commons_brewing_winemaking", "commons_distilling",
     "open_images_bar_drinks", "europeana_drinks_history", "open_images_soft_drinks",
+    # reading pictures (picture_reading_sources.py): signatures and handwriting are never for picture-making (a
+    # picture-making model must not learn to write someone's hand or signature)
+    "bentham_pages", "commons_handwriting",
+    # chart_packs.py: OpenStax figures include photographs of people (the Commons charts are drawings and are used)
+    "openstax_figures",
+    # date_code_packs.py: a picture-making model must not learn to print expiry dates on packs
+    "commons_date_codes",
+    # sign_language_packs.py: people's hands and people signing
+    "commons_sign_language",
 )
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + PEOPLE_AND_BODILY_PACK_KEYS
 # The drug and firearm packs (packs/drug_firearm_packs.py): describing only, never for picture-making, whether or not
@@ -3264,3 +3293,17 @@ _drinks_ok = set(getattr(_drinks, "DRINKS_PICTURE_MAKING_OK", ()) or ())
 PERSONAL_PICTURE_MAKING_OK |= _drinks_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in DRINKS_SOURCES if s.key not in _drinks_ok)
 _add_collections(DRINKS_SOURCES)
+# Reading pictures (picture_reading_sources.py): the personal-use collections of the handwriting, chart, date code,
+# sign language and weather map packs (TQA) and the sources looked at and left out; the file may be missing.
+try:
+    import picture_reading_sources as _reading  # noqa: E402
+except ImportError as _e:
+    _reading = None
+    if getattr(_e, "name", None) != "picture_reading_sources":
+        say(f"(The picture-reading collections could not be loaded: {_e}. They are left out.)")
+PICTURE_READING_SOURCES = list(getattr(_reading, "PICTURE_READING_SOURCES", []) or [])
+_reading_ok = set(getattr(_reading, "PICTURE_READING_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _reading_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in PICTURE_READING_SOURCES
+                                                               if s.key not in _reading_ok)
+_add_collections(PICTURE_READING_SOURCES)

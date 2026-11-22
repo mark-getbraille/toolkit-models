@@ -99,7 +99,7 @@ TOPICS = [
            "open_images_food", "open_images_food_more", "grocery_store", "fish_eyes", "commons_food",
            "meatscan", "eggs", "beef", "abo_packaged_goods", "abo_pet_supplies", "open_images_packaged_goods", "commons_packaging",
            "locbeef", "fish_freshness", "horse_mackerel", "fish_eyes_stages", "chicken_breast", "food_packaging",
-           "packeat", "cerrado_fruits",
+           "packeat", "cerrado_fruits", "commons_date_codes",
            # share-alike
            "openfoodfacts", "openfoodfacts_labels", "commons_food_sa", "openfacts_us", "openfacts_ca",
            # research-only (personal use)
@@ -152,12 +152,13 @@ TOPICS = [
           ("textvqa", "textocr", "coco_text", "cord", "doclaynet", "plotqa", "loc_letters", "owid_charts",
            "pubtabnet_tables", "us_federal_forms", "open_images_cards_documents", "loc_maps", "safety_signs", "commons_hazard_symbols", "us_road_signs",
            "ca_road_signs",
-           "deepscores_sheet_music", "field_manual_figures",
+           "deepscores_sheet_music", "field_manual_figures", "bentham_pages", "commons_handwriting",
+           "openstax_figures", "commons_charts", "wpc_surface_maps", "nhc_forecast_cones",
            # share-alike
            "hiertext", "mapqa",
            # non-commercial and research-only (personal use)
            "sroie", "wildreceipt", "dvqa", "funsd", "xfund", "chartqa", "scienceqa", "ai2d", "streetsignset",
-           "fintabnet_tables", "cra_forms", "screenqa_rico", "rico_screens", "rico_widgets",
+           "fintabnet_tables", "cra_forms", "screenqa_rico", "rico_screens", "rico_widgets", "tqa_diagrams",
            "commons_mail_parcels", "commons_screens")),
     Topic("nature", "Plants, animals and nature",
           "Plants, mushrooms, insects, birds and other animals by name, pet and farm breeds, crops and their "

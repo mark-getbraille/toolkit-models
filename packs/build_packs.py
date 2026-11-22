@@ -1673,6 +1673,28 @@ PACKS.update(GAP_COLLECTION_PACKS)
 # safety notes on home distilling.
 from drinks_packs import DRINKS_PACKS
 PACKS.update(DRINKS_PACKS)
+# Reading pictures (November 2026; the kit's picture_reading_sources.py lists what was left out): handwriting
+# (packs/handwriting_packs.py: Bentham Papers pages with their transcriptions, Commons handwriting and signatures).
+# Answers give a transcription only where the dataset gives one. Never for picture-making (no learning to write
+# someone's signature).
+from handwriting_packs import HANDWRITING_PACKS
+PACKS.update(HANDWRITING_PACKS)
+# Charts and diagrams with their own explanations (packs/chart_packs.py): OpenStax figures with their alt text (the
+# CC BY 4.0 versions on GitHub) and Commons charts with their descriptions.
+from chart_packs import CHART_PACKS
+PACKS.update(CHART_PACKS)
+# Date codes on packaging (packs/date_code_packs.py): best-before, use-by and expiry dates, lot and batch numbers,
+# the date said only where the file's own words give it. Never for picture-making (no learning to print dates).
+from date_code_packs import DATE_CODE_PACKS
+PACKS.update(DATE_CODE_PACKS)
+# Sign language (packs/sign_language_packs.py): manual alphabets, fingerspelled letters, signs and interpreters from
+# Commons, a letter or sign named only where the file says it. People's hands: never for picture-making.
+from sign_language_packs import SIGN_LANGUAGE_PACKS
+PACKS.update(SIGN_LANGUAGE_PACKS)
+# Weather maps and forecast graphics (packs/weather_map_packs.py): WPC surface analyses (with the radar and satellite
+# composites) and NHC forecast cones, explained from the product, its time, its legend and the advisory's own words.
+from weather_map_packs import WEATHER_MAP_PACKS
+PACKS.update(WEATHER_MAP_PACKS)
 
 
 # The packs whose builder reads the Wikimedia Commons API (commons_get, commons_members, commons_entries,
@@ -1736,6 +1758,14 @@ COMMONS_KEYS = frozenset({
     # drinks (drinks_packs.py; the Open Images and Europeana drinks packs do not read Commons)
     "commons_alcoholic_drinks", "commons_bar_glassware", "commons_brewing_winemaking", "commons_distilling",
     "commons_soft_drinks",
+    # reading pictures (handwriting_packs.py; bentham_pages reads Zenodo, not Commons)
+    "commons_handwriting",
+    # (chart_packs.py; openstax_figures reads GitHub, not Commons)
+    "commons_charts",
+    # (date_code_packs.py)
+    "commons_date_codes",
+    # (sign_language_packs.py)
+    "commons_sign_language",
 })
 
 
