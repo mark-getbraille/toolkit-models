@@ -3,6 +3,7 @@ everyday-access packs made with it (see DAILY_ACCESS_SOURCES). This file lists:
   - the ready-made packs built in packs/ (group "permissive"; the kit downloads them with prepare_pack):
       indoor_packs.py              commons_indoor_wayfinding, open_images_indoor
       appliance_controls_packs.py  commons_appliance_controls, open_images_appliance_controls
+      household_hazard_packs.py    commons_household_hazards, open_images_household_hazards
       care_label_packs.py          laundry_care_labels (computer-made labels and Commons photos)
       health_test_packs.py         lfa_covid_tests, commons_home_health_tests
       medication_label_packs.py    commons_medication_labels
@@ -19,9 +20,8 @@ the user ticks the matching choice. Every licence was checked at its source in N
 Answers say only what the source's own labels say (a Commons category's name, a label people checked); sign text is
 read only where a category names it (a room number, a men's, women's or all-gender toilet).
 
-Picture-making (DAILY_ACCESS_PICTURE_MAKING_OK): the indoor collections show public places with people in them and are
-for describing only, as are the Open Images appliance photos; the Commons appliance controls (things) may be used.
-sources.py puts every key not in DAILY_ACCESS_PICTURE_MAKING_OK in NOT_FOR_PICTURE_MAKING.
+Picture-making (DAILY_ACCESS_PICTURE_MAKING_OK): only the Commons appliance controls, the care labels and the
+figshare test cassettes (things only) may be used; sources.py puts every other key in NOT_FOR_PICTURE_MAKING.
 
     python -c "import sources, daily_access_sources"      (from the kit folder: checks the file loads)
 """
@@ -147,6 +147,16 @@ DAILY_ACCESS_SOURCES = [
            "Computer-made labels CC0 (packs/care_label_packs.py); Commons pictures CC0, public domain or CC BY "
            "(credited in CREDITS.txt); captions CC0", COMMONS_CREDIT + "; computer-made labels by the kit's makers",
            "permissive", 3000, 30, prepare_pack, "about 250 MB"),
+    # ---- ready-made packs (packs/household_hazard_packs.py)
+    Source("commons_household_hazards", "Household hazards stated by the photo's own words: frayed cords, overloaded "
+                                        "sockets, exposed wiring, mould, leaks, damaged smoke alarms, spent "
+                                        "extinguishers, blocked exits, trip hazards, heaters too close, with safety "
+                                        "notes (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain (US government works, CPSC and NIST among them) or CC BY (credited in "
+           "CREDITS.txt); captions CC0", COMMONS_CREDIT, "permissive", 200, 5, prepare_pack, "about 45 MB"),
+    Source("open_images_household_hazards", "Leaks, space heaters and heaters, fire sprinklers and fire alarms, with "
+                                            "safety notes (Open Images, ready-made pack)",
+           OI_OPEN, OI_CREDIT, "permissive", 1500, 15, prepare_pack, "about 300 MB"),
     # ---- share-alike
     Source("appliance_commons_sa", "Wikimedia Commons: rotary switches, air-conditioner remotes, smart thermostats and "
                                    "cooktops, files under CC BY-SA or GFDL (share-alike)",
@@ -159,9 +169,11 @@ DAILY_ACCESS_SOURCES = [
            terms=SA_TERMS, terms_summary=SA_SUMMARY),
 ]
 
-# The collections a picture-making model may learn from: the Commons appliance controls (things); not the indoor
-# collections or the Open Images photos (people).
-DAILY_ACCESS_PICTURE_MAKING_OK = {"commons_appliance_controls", "appliance_commons_sa", "laundry_care_labels", "lfa_covid_tests"}
+# The collections a picture-making model may learn from: the Commons appliance controls, the care labels and the
+# figshare test cassettes (things only); never the indoor, medicine-label, bill, hazard, home-test or baby collections,
+# nor the Open Images photos (people, children, private papers).
+DAILY_ACCESS_PICTURE_MAKING_OK = {"commons_appliance_controls", "appliance_commons_sa", "laundry_care_labels",
+                                  "lfa_covid_tests"}
 
 DAILY_ACCESS_SIGN_UP = {
     "Roboflow Universe laundry-symbol and care-label sets (several CC BY 4.0 or MIT)":
@@ -198,6 +210,14 @@ DAILY_ACCESS_SIGN_UP = {
 }
 
 DAILY_ACCESS_NOT_INCLUDED = {
+    "CPSC and NIST photo galleries (cpsc.gov, nist.gov, their Flickr streams)":
+        "CPSC's recall photos are the recalling firms' own pictures (not public domain; see packaged_goods_sources.py) "
+        "and the agencies' Flickr streams fall under Flickr's API terms (no storing). Their own public-domain photos "
+        "that people copied to Commons are found by commons_household_hazards' searches, each file's licence checked.",
+    "Commons categories for household hazards (November 2026)":
+        "none exists for overloaded sockets, frayed or damaged cords, exposed wiring, blocked exits, trip hazards, "
+        "expired extinguishers or damaged smoke alarms; Commons search finds the files whose own words say so. Mould, "
+        "water damage, smoke alarms and extinguisher gauges are home_safety_packs' (not repeated).",
     "FDA at-home test pages and EUA instructions (fda.gov)":
         "the pictures on FDA's at-home COVID-19 test pages are the makers' packaging, shown as small thumbnails, and "
         "the EUA 'instructions for use' are the makers' own documents (as with DailyMed's labels: the makers' "

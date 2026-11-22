@@ -27,6 +27,7 @@ import build_packs  # noqa: E402,F401 - loaded first, as the builders expect
 import gaps_oi_packs as g  # noqa: E402
 import indoor_packs as indoor  # noqa: E402
 import appliance_controls_packs as appl  # noqa: E402
+import household_hazard_packs as hazard  # noqa: E402
 import care_label_packs as care  # noqa: E402
 import health_test_packs as health  # noqa: E402
 import medication_label_packs as med  # noqa: E402
@@ -40,6 +41,7 @@ MODULES = [
      [indoor.INDOOR_OI]),
     (appl, appl.APPLIANCE_CONTROLS_PACKS, appl.APPLIANCE_CONTROLS_LIMITS, appl.APPLIANCE_CONTROLS_COMMONS_KEYS,
      appl.CONTROL_SPECS, [appl.CONTROLS_OI]),
+    (hazard, hazard.HAZARD_PACKS, hazard.HAZARD_LIMITS, hazard.HAZARD_COMMONS_KEYS, [], [hazard.HAZARD_OI]),
     (care, care.CARE_LABEL_PACKS, care.CARE_LABEL_LIMITS, care.CARE_LABEL_COMMONS_KEYS, [], []),
     (health, health.HEALTH_TEST_PACKS, health.HEALTH_TEST_LIMITS, health.HEALTH_TEST_COMMONS_KEYS,
      [(health.TEST_CATEGORY[0], False, [])], []),
@@ -211,6 +213,22 @@ def test_care_labels_are_exact_and_repeatable():
     assert meanings <= known, meanings - known
 
 
+# ----------------------------------------------------------------- household hazards
+
+def test_hazards_only_where_the_words_say_them():
+    rows = hazard.hazard_rows("File:Frayed power cord behind a sofa.jpg", "", "c")
+    assert rows[0]["answer"].startswith("Yes: the photo's own words (its title or description) say it shows a "
+                                        "damaged or frayed electrical cord.") and hazard.CORD_NOTE in rows[0]["answer"]
+    rows = hazard.hazard_rows("File:IMG_1.jpg", "A space heater placed too close to the curtains.", "c")
+    assert hazard.HEATER_NOTE in rows[0]["answer"] and rows[1]["question"] == build_packs.ALT_TEXT
+    two = hazard.hazard_rows("File:Overloaded power strip and a trip hazard in the office.jpg", "", "c")[0]["answer"]
+    assert "overloaded" in two and "tripping hazard" in two
+    assert hazard.hazard_rows("File:Living room.jpg", "A tidy living room.", "c") == []
+    assert hazard.hazard_rows("File:Blocked fire exit.jpg", "Two people were killed.", "c") == []
+    assert hazard.hazards_said("blocked fire exit")[0][0] == "a blocked exit"
+    assert hazard.hazards_said("Fire extinguisher, expired in 2019")[0][1] == hazard.EXTINGUISHER_NOTE
+
+
 # ----------------------------------------------------------------- shared checks
 
 def asked_elsewhere():
@@ -300,6 +318,7 @@ def test_wiring():
     assert set(indoor.INDOOR_PACKS) <= no_making
     assert "commons_appliance_controls" not in no_making and "open_images_appliance_controls" in no_making
     assert listed["appliance_commons_sa"].group == "share-alike"
+    assert {"commons_household_hazards", "open_images_household_hazards"} <= no_making
     assert "laundry_care_labels" not in no_making and "laundry_care_labels" in topics.find("machines").keys
     assert "commons_home_health_tests" in no_making and "lfa_covid_tests" not in no_making
     assert {"lfa_covid_tests", "commons_home_health_tests"} <= set(topics.find("medicines").keys)

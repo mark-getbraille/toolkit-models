@@ -1779,6 +1779,13 @@ COMMONS_KEYS = COMMONS_KEYS | frozenset(HEALTH_TEST_COMMONS_KEYS)
 from care_label_packs import CARE_LABEL_PACKS, CARE_LABEL_COMMONS_KEYS
 PACKS.update(CARE_LABEL_PACKS)
 COMMONS_KEYS = COMMONS_KEYS | frozenset(CARE_LABEL_COMMONS_KEYS)
+# Common household hazards (packs/household_hazard_packs.py): Commons photos, CPSC and NIST ones among them, whose OWN
+# words state a frayed cord, an overloaded socket, exposed wiring, mould, a leak, a damaged smoke alarm, a spent
+# extinguisher, a blocked exit, a trip hazard or a heater too close to things, each with a short safety note; Open
+# Images leaks, heaters and fire sprinklers and alarms. Describing only.
+from household_hazard_packs import HAZARD_PACKS, HAZARD_COMMONS_KEYS
+PACKS.update(HAZARD_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(HAZARD_COMMONS_KEYS)
 
 
 def pack_lanes(keys):
