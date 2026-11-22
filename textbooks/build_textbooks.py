@@ -1901,12 +1901,14 @@ class PdfText:
 
 def archive_pdf(identifier, cache=None):
     """(download address, item page) of the PDF of an Internet Archive item (its metadata lists the files; the
-    "Text PDF", the one with the words, is preferred)."""
+    "Text PDF", the one with the words, is preferred, then an "Additional Text PDF", which some items have instead
+    beside a scanned "Image Container PDF")."""
     meta = json.loads(fetch(f"https://archive.org/metadata/{identifier}", cache))
     files = [f for f in meta.get("files", []) if f.get("name", "").lower().endswith(".pdf")]
     if not files:
         raise ValueError("the item has no PDF")
-    files.sort(key=lambda f: (f.get("format") != "Text PDF", -int(f.get("size") or 0)))
+    files.sort(key=lambda f: ({"Text PDF": 0, "Additional Text PDF": 1}.get(f.get("format"), 2),
+                              -int(f.get("size") or 0)))
     name = files[0]["name"]
     return (f"https://archive.org/download/{identifier}/{urllib.parse.quote(name)}",
             f"https://archive.org/details/{identifier}")

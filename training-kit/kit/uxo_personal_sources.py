@@ -976,7 +976,8 @@ def make_review_workspace(folder, source, say):
 
 
 def download_pdf(identifier, session=None):
-    """(PDF bytes, address) of an Internet Archive item's PDF (its "Text PDF" first), or (None, reason)."""
+    """(PDF bytes, address) of an Internet Archive item's PDF (its "Text PDF" first, then an "Additional Text PDF",
+    which some items have beside a scanned "Image Container PDF"), or (None, reason)."""
     import requests
     from urllib.parse import quote
     s = session or requests.Session()
@@ -985,7 +986,8 @@ def download_pdf(identifier, session=None):
     files = [f for f in meta.get("files", []) if f.get("name", "").lower().endswith(".pdf")]
     if not files:
         return None, "the Internet Archive item has no PDF"
-    files.sort(key=lambda f: (f.get("format") != "Text PDF", -int(f.get("size") or 0)))
+    files.sort(key=lambda f: ({"Text PDF": 0, "Additional Text PDF": 1}.get(f.get("format"), 2),
+                              -int(f.get("size") or 0)))
     url = f"{ARCHIVE}/download/{identifier}/{quote(files[0]['name'])}"
     for attempt in range(3):
         r = s.get(url, timeout=600)
