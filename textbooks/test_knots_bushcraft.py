@@ -74,7 +74,7 @@ def test_old_book_notes_and_exclusions():
         assert "outdated and offensive" in pdfs[name]["description"], name
     assert pdfs["baden_powell_scouting_for_boys_1915"]["country"] == "United Kingdom"
     keys = " ".join(sources.expand_keys(["bushcraft"]) + sources.expand_keys(["knots-military"]))
-    for left_out in ("pig", "sticking", "evasion", "10_644", "3_02h", "31_27", "3_05_213", "admiralty"):
+    for left_out in ("pig", "sticking", "evasion", "10_644", "3_02h", "31_27", "3_05_213", "seamanship_1951", "seamanship_1964", "seamanship_1972"):
         assert left_out not in keys, left_out
     rows = " ".join(r[0] + " " + r[1] for r in knots_military.NOT_INCLUDED + bushcraft.NOT_INCLUDED)
     for words in ("1 January 1996", "Pig-Sticking", "Kochanski", "Evasion", "FM 31-27", "Down But Not Out",

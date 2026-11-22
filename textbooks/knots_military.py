@@ -140,6 +140,15 @@ PDFS += [
                   "kept as history.", note="Published in {year}: its rules, first aid and equipment are those of "
                   "its day.", notice=KO.OUTDOOR_SAFETY)),   # published by the Naval Institute (not a government work):
                                                                 # public domain as published before 1931
+    old_book(GROUP, "admiralty_manual_of_seamanship_1915", "Manual of Seamanship, Volume 1 (Admiralty, UK, 1908, "
+             "revised and reprinted 1915)", "Seamanship, knots, splices and rigging", "Admiralty (Great Britain)",
+             "manual-seamanship-1915", 1915,
+             "The Royal Navy's manual of seamanship, volume 1: the parts of a ship, knots, bends, hitches, splices "
+             "and fancy work, blocks and tackles, rigging, anchors and cables, boats under oars and sail, the "
+             "compass and lead line, signals, and ship's routine. Public domain in the UK (Crown copyright ended 50 "
+             "years after publication) and in the US (published before 1931).",
+             note="Published in {year}: the ships, gear and rules are those of its day.",
+             notice=KO.OUTDOOR_SAFETY, country="United Kingdom"),
 ]
 
 COLLECTION = K.Collection("kmil", GROUP, pdfs=PDFS,
@@ -158,8 +167,12 @@ NOT_INCLUDED = [
     ("Admiralty Manual of Seamanship (UK, BR 67), 1951, 1964, 1967 and 1972 editions", "Crown copyright in published "
      "works lasts 50 years from publication, so they are public domain in the UK; but they were still in copyright "
      "there on 1 January 1996, so the US may have restored their copyright (the URAA restoration of foreign works, 95 "
-     "years from publication): link-only for the owner to read himself. Index: "
-     "https://archive.org/details/manual-seamanship-1951-v1 and https://archive.org/details/admiralty-manual-sea-v1"),
+     "years from publication): link-only for the owner to fetch himself (Program Downloader). The downloadable copies: "
+     "https://archive.org/details/manual-seamanship-1951-v1, https://archive.org/details/manual-seamanship-1951-v2, "
+     "https://archive.org/details/manual-seamanship-1951-v3, https://archive.org/details/admiralty-manual-sea-v1, "
+     "https://archive.org/details/admiralty-manual-sea-v2, https://archive.org/details/admiralty-manual-sea-v3 and "
+     "https://archive.org/details/admiraltymanualseamanshipv1-1972. The 1908 edition (revised 1915) is built in full. "
+     "Index: https://archive.org/details/manual-seamanship-1951-v1"),
     ("Admiralty Manual of Seamanship (UK), 1932 and 1937 editions", "Public domain in the UK and in the US (their "
      "Crown copyright had ended before 1996, so nothing was restored), but the Internet Archive's copies are "
      "lending-library scans that cannot be downloaded (checked 2026-11-22). Index: "
