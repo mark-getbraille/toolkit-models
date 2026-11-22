@@ -92,7 +92,7 @@ DIGITAL_MAKERS = _makers("digital_cameras", "dc", [
          library="https://help.na.panasonic.com/", site="panasonic.com"),
     dict(key="ricoh-pentax", maker="Ricoh Imaging (Pentax and Ricoh)", type="Pentax and Ricoh GR cameras",
          library="https://www.ricoh-imaging.com/", site="ricoh-imaging.com"),
-    dict(key="om-system", maker="OM Digital Solutions (OM System and Olympus)", type="OM System and Olympus cameras",
+    dict(key="om-system-cameras", maker="OM Digital Solutions (OM System and Olympus)", type="OM System and Olympus cameras",
          library="https://explore.omsystem.com/", site="omsystem.com"),
     dict(key="gopro", maker="GoPro", type="action cameras", library="https://community.gopro.com/", site="gopro.com"),
     dict(key="dji-cameras", maker="DJI", type="camera gimbals and pocket cameras", library="https://www.dji.com/support",
