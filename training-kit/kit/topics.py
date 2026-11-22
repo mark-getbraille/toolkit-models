@@ -411,8 +411,7 @@ TOPICS = [
     Topic("crafts", "Arts and crafts",
           "Knitting, crochet, lace, quilting, embroidery, weaving, sewing, upholstery, leather and fabrics, pottery, "
           "jewellery and beading, paper crafts, candles and soap, glass and carving, art supplies, models and "
-          "resin, craft cutters and heat presses, and photography: cameras, lenses, film, the darkroom and historic "
-          "photographic processes.",
+          "resin, craft cutters and heat presses, and photography.",
           (# textile crafts (home_crafts_sources.py)
            "commons_knit_crochet_lace", "commons_quilt_embroidery_weaving", "commons_sewing_mending",
            "commons_upholstery_leather_shoes", "commons_fabrics_fibres", "open_images_textile_crafts",

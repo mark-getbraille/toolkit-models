@@ -130,6 +130,8 @@ MODULES = [
     "court_opinions",       # Supreme Court opinions by volume and landmark cases by subject, from govinfo (court:)
     "patents",              # famous patents (Wikisource), assistive and household patents (USPTO, sign-up) (pat:)
     "quotations",           # Bartlett, Hoyt, Brewer, proverb and idiom books, Wikiquote from its dump (quote:)
+    # photography, its own group (the owner's request of 2026-11-22)
+    "photography",          # cameras, darkroom, historic processes: Navy and Army manuals, LoC, NARA, NPS, FADGI, darktable, GIMP, old books (photo:)
 ]
 
 _loaded = {}
