@@ -10,8 +10,6 @@ What this module builds, in plain words, each IN FULL from the publisher's own s
     fam:nimh_publications: not repeated;
   - CDC's mental health and suicide prevention pages (coping with stress, caring for your mental health, the help
     lines, warning signs and how to help), kept whole with their text unchanged as CDC's terms ask;
-  - the VA National Center for PTSD (understanding PTSD, its treatments: talk therapy such as CPT, PE and EMDR, and
-    medicines; getting help, self-help and coping, families);
   - the Office on Women's Health's mental health pages (stress, depression, anxiety, eating disorders ...);
   - CDC's alcohol and tobacco pages (drinking less, alcohol's effects, quitting smoking and vaping, the quitline
     1-800-QUIT-NOW), kept whole;
@@ -23,7 +21,8 @@ What this module builds, in plain words, each IN FULL from the publisher's own s
   - "Help lines": a page written for this library with the help numbers (Crisis Text Line, the Veterans Crisis
     Line, the Disaster Distress Helpline, SAMHSA's National Helpline, the quitline, the problem gambling helpline),
     each checked on an official page at every build: a number whose words are gone is not stated.
-  (The 988 crisis numbers are fam:crisis_lines; MedlinePlus's summaries are mlp:health_topics; the medicines'
+  (The VA National Center for PTSD is veteran:ptsd_national_center, VA mental health veteran:va_mental_health and the
+  Veterans Crisis Line veteran:veterans_crisis_line; the 988 crisis numbers are fam:crisis_lines; MedlinePlus's summaries are mlp:health_topics; the medicines'
   own labels are the med: books: not repeated.)
 
 Every book's notice ends with the health note: general information, not medical advice or a diagnosis; in an
@@ -232,20 +231,6 @@ GUIDES = [
              "Locator), mental health conditions and their treatment, the warning signs of suicide, how to help "
              "someone in crisis and how to prevent suicide.",
              units=[(r"/suicide/", "Suicide prevention"), (r".", "Mental health and coping")], note=HEALTH_NOTE),
-    K.guide(GROUP, "va_ptsd", "PTSD: understanding it, its treatments and getting help (VA National Center for PTSD)",
-            "PTSD and trauma", "National Center for PTSD, US Department of Veterans Affairs",
-            "https://www.ptsd.va.gov/understand/index.asp",
-            r"^https://www\.ptsd\.va\.gov/PTSD/(understand|understand_tx|gethelp|family)/([a-z_]+/)?[a-z_]+\.asp$",
-            "The National Center for PTSD's pages for the public: what PTSD is, its kinds (after combat, violence and "
-            "abuse, disasters), common reactions after trauma, how it is measured, PTSD in adults, veterans, "
-            "children and teens, related problems (substance use, anger, chronic pain, depression, grief, moral "
-            "injury, sleep problems, suicide, traumatic brain injury), the treatments (talk therapies such as "
-            "cognitive processing therapy, prolonged exposure and EMDR, and medicines), choosing a treatment, "
-            "finding a therapist, crisis help, self-help and coping, and help for families.",
-            f"A work of the US Department of Veterans Affairs (public domain). {HEALTH_NOTE} Veterans: dial 988 then "
-            f"press 1.", depth=1,
-            units=[(r"/understand_tx/", "Treatment"), (r"/gethelp/", "Getting help"), (r"/family/", "Families"),
-                   (r".", "Understanding PTSD")], limit=80, content=VA_CONTENT),
     owh_book(GROUP, "owh_mental_health", "Mental health, stress and wellbeing (Office on Women's Health)",
              "Mental health and wellbeing", ["mental-health"],
              "The Office on Women's Health's mental health pages, every page: good mental health and stress, "
@@ -311,7 +296,7 @@ LICENCE_LINES = {
                 "on four conditions (credit CDC, no endorsement, no change to the substance, free on CDC's site), met "
                 "in each CDC book's notice; the pages are kept whole. robots.txt allows the pages; no AI rules "
                 "(checked 2026-11-22).",
-    "mind_nimh_nida_va": "www.nimh.nih.gov, nida.nih.gov and www.ptsd.va.gov: works of the US government (17 U.S.C. "
+    "mind_nimh_nida_va": "www.nimh.nih.gov and nida.nih.gov: works of the US government (17 U.S.C. "
                          "105, checked on govinfo.gov's policies page at every build); robots.txt allows the pages; "
                          "no AI rules (checked 2026-11-22).",
     "mind_nci": "www.cancer.gov/policies/copyright-reuse (checked at every build): \"all text within National Cancer "
@@ -325,6 +310,9 @@ LICENCE_LINES = {
                        "allows them; no AI rules). Only the facts (the numbers and how to reach them) are stated.",
 }
 NOT_INCLUDED = [
+    ("VA National Center for PTSD, VA mental health and the Veterans Crisis Line", "Already built by the people "
+     "collection: veteran:ptsd_national_center, veteran:va_mental_health and veteran:veterans_crisis_line; not "
+     "repeated. Index: https://www.ptsd.va.gov/"),
     ("SAMHSA publications, the SAMHSA Library and FindTreatment.gov's guides", "Public domain, but www.samhsa.gov "
      "and library.samhsa.gov refuse programs (\"Access Denied\", robots.txt included; checked again 2026-11-22). "
      "SAMHSA's help line numbers are stated in mind:help_lines from CDC's page. Link-only. Index: "

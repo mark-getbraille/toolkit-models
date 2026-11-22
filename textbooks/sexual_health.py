@@ -12,7 +12,7 @@ What this module builds, in plain words, each IN FULL from the publisher's own s
   - the Office on Women's Health's menstrual cycle, menopause and relationships and safety pages (periods and
     period problems, menopause symptoms and treatment, healthy relationships, domestic and intimate partner
     violence, sexual assault, getting help);
-  - CDC's intimate partner violence and sexual violence prevention pages, kept whole;
+  - CDC's sexual violence prevention pages, kept whole (its partner violence pages are relate:cdc_partner_violence);
   - FDA's birth control and menopause pages, and FDA's Birth Control Chart (2024), the whole PDF;
   - NIDDK's erectile dysfunction pages (causes, diagnosis, treatment);
   - "Help lines": a page written for this library with the National Domestic Violence Hotline and the National
@@ -109,12 +109,12 @@ GUIDES = [
                "relationships, domestic and intimate partner violence, sexual assault and rape, how to get help, "
                "leaving safely).",
                NOTE + " If you are being hurt: the National Domestic Violence Hotline, 1-800-799-7233.", limit=250),
-    M.cdc_book(GROUP, "cdc_violence_prevention", "Intimate partner violence and sexual violence (CDC)",
-               "Healthy relationships and violence prevention", ["intimate-partner-violence", "sexual-violence"],
-               "CDC's pages on intimate partner violence and sexual violence, every page: what they are, the signs, "
-               "risk and protective factors, healthy relationships and consent, how to prevent them, and where to "
-               "get help.", units=[(r"/sexual-violence/", "Sexual violence"), (r".", "Intimate partner violence")],
-               note=NOTE),
+    M.cdc_book(GROUP, "cdc_sexual_violence", "Sexual violence: prevention and getting help (CDC)",
+               "Consent and violence prevention", ["sexual-violence"],
+               "CDC's sexual violence prevention pages, every page: what sexual violence is, consent, the risk and "
+               "protective factors, how to prevent it, and where to get help. (CDC's intimate partner violence and "
+               "teen dating violence pages are relate:cdc_partner_violence.)",
+               units=[(r".", "Sexual violence")], note=NOTE),
     dict(M.pages_book(GROUP, "fda_birth_control_menopause", "Birth control and menopause (FDA Office of Women's "
                       "Health)", "Contraception and menopause", "US Food and Drug Administration (FDA)",
                       ["https://www.fda.gov/consumers/womens-health-topics/birth-control",
@@ -168,6 +168,8 @@ NOT_INCLUDED = [
      "the robots.txt standard (a \"#\" begins a comment), as \"Disallow: *\": every page is refused (checked "
      "2026-11-22). CDC's HIV pages are built (sexhealth:cdc_sti_hiv). Link-only. Index: "
      "https://www.hiv.gov/hiv-basics"),
+    ("CDC intimate partner violence and teen dating violence pages", "Already built by the people collection "
+     "(relate:cdc_partner_violence); not repeated. Index: https://www.cdc.gov/intimate-partner-violence/"),
     ("RAINN (rainn.org): sexual assault information and the hotline's own pages", "rainn.org answers programs \"403 "
      "Forbidden\" (checked 2026-11-22), and its pages are copyright; the hotline's number is stated from CDC's page "
      "(sexhealth:help_lines). Link-only. Index: https://rainn.org/"),

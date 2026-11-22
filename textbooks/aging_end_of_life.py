@@ -137,7 +137,7 @@ GUIDES = [
                                       "captions-deaf-and-hard-hearing-viewers", "telecomm", "tinnitus",
                                       "sudden-deafness", "menieres-disease", "balance", "how-do-we-hear")],
                  r"^https://www\.nidcd\.nih\.gov/health/[a-z0-9-]+$",
-                 "NIDCD's pages on hearing, each whole: age-related hearing loss, hearing aids (styles, how they "
+                 "NIDCD's pages on hearing, each whole (FDA's hearing aid pages are dis:fda_hearing_aids): age-related hearing loss, hearing aids (styles, how they "
                  "work, getting used to them) and over-the-counter hearing aids, who can help with hearing loss, "
                  "adult hearing health care, assistive devices (hearing loops, alerting devices, amplified phones), "
                  "captions, telecommunications relay services, tinnitus, sudden deafness, Meniere's disease, "

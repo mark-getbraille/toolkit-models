@@ -103,9 +103,6 @@ def test_page_patterns():
     nida = re.compile(M.COLLECTION.guides["nida_drug_topics"]["pages"])
     assert nida.match("https://nida.nih.gov/research-topics/fentanyl")
     assert not nida.match("https://nida.nih.gov/research-topics/parents-educators")     # parent:nida_parents_teens
-    ptsd = re.compile(M.COLLECTION.guides["va_ptsd"]["pages"])
-    assert ptsd.match("https://www.ptsd.va.gov/PTSD/understand_tx/talk_therapy.asp")
-    assert not ptsd.match("https://www.ptsd.va.gov/PTSD/professional/assessment/overview/index.asp")
     grief = re.compile(M.COLLECTION.guides["nci_grief_caregivers"]["pages"])
     end = re.compile(A.COLLECTION.guides["nci_end_of_life"]["pages"])
     caregivers = "https://www.cancer.gov/about-cancer/advanced-cancer/caregivers/planning/bereavement-pdq"
