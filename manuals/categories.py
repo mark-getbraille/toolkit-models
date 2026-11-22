@@ -733,3 +733,11 @@ from wilderness_manuals import CATEGORY as _WILDERNESS  # noqa: E402
 CATEGORIES.update({"sleep_relaxation": _SLEEP_RELAXATION, "fitness_equipment": _FITNESS,
                    "contraceptive_products": _CONTRACEPTIVE, "aging_in_place": _AGING,
                    "wilderness_first_aid": _WILDERNESS})
+# Home manufacturing and making, under its own heading (manuals/making_manuals.py, the owner's request of 2026-11-22):
+# 3D printers, heat presses and vinyl cutters, laser engravers and desktop CNC, mini lathes and mills, and moulding and
+# casting; every maker link-only, each with its safety notice said first. Cricut and Silhouette stay in craft_machines,
+# Glowforge, Shapeoko and the CNC routers in woodshop_machines, metal lathes and the machinist manuals in
+# metal_shop_welding (their keys and headings do not change).
+from making_manuals import CATEGORIES as _MAKING  # noqa: E402
+
+CATEGORIES.update(_MAKING)
