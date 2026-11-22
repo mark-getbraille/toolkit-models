@@ -92,6 +92,9 @@ def met_excluded(o):
         return "a musical instrument (met_instruments)"
     if NOT_HERE.search(words) or NUDITY_WORDS.search(words) or "Nudes" in tags:
         return "a nude or erotica (the nude and erotic packs)"
+    for module in ("personal_care_packs", "toys_packs", "world_money_packs"):
+        if getattr(__import__(module), "met_themed")(o):
+            return f"a themed object ({module})"
     return ""
 
 

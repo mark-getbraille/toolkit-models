@@ -3500,7 +3500,12 @@ _add_collections(VISION_SOURCES)
 # signs) and what was left out. Each file may be missing; none of their keys may be used for picture-making unless the
 # file's *_PICTURE_MAKING_OK names it (none does).
 for _mwc_name, _mwc_prefix in (("money_work_sources", "MONEY_WORK"), ("travel_sources", "TRAVEL"),
-                               ("civics_sources", "CIVICS"), ("gov_forms_sources", "GOV_FORMS")):
+                               ("civics_sources", "CIVICS"), ("gov_forms_sources", "GOV_FORMS"),
+                               # pictures for the picture describer (the owner's request of 2026-11-22): menus, maths
+                               # and science notation, screens, public-domain film stills and Golden Age comics
+                               ("menus_sources", "MENUS"), ("math_notation_sources", "MATH"),
+                               ("screens_sources", "SCREENS"), ("film_stills_sources", "FILM_STILLS"),
+                               ("comics_sources", "COMICS")):
     try:
         _mwc = __import__(_mwc_name)
     except ImportError as _e:
@@ -3603,6 +3608,24 @@ NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in PH
                                                                if s.key not in _photo_library_ok
                                                                or s.key in _photo_library_bodily)
 _add_collections(PHOTO_LIBRARY_SOURCES)
+# Personal care and beauty products (personal_care_sources.py), toys and children's products (toys_sources.py) and
+# foreign banknotes and coins (world_money_sources.py), the owner's request of 2026-11-22: their ready-made packs,
+# share-alike collections and what was left out. Each file may be missing. None of their keys is for picture-making
+# (each file's *_PICTURE_MAKING_OK is empty), so all go to NOT_FOR_PICTURE_MAKING.
+for _gp_name, _gp_prefix in (("personal_care_sources", "PERSONAL_CARE"), ("toys_sources", "TOYS"),
+                             ("world_money_sources", "WORLD_MONEY")):
+    try:
+        _gp = __import__(_gp_name)
+    except ImportError as _e:
+        _gp = None
+        if getattr(_e, "name", None) != _gp_name:
+            say(f"(The {_gp_name.replace('_sources', '').replace('_', ' ')} collections could not be loaded: {_e}. "
+                "They are left out.)")
+    _gp_sources = list(getattr(_gp, f"{_gp_prefix}_SOURCES", []) or [])
+    _gp_ok = set(getattr(_gp, f"{_gp_prefix}_PICTURE_MAKING_OK", ()) or ())
+    PERSONAL_PICTURE_MAKING_OK |= _gp_ok
+    NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in _gp_sources if s.key not in _gp_ok)
+    _add_collections(_gp_sources)
 # Home manufacturing and making (making_sources.py, the owner's request of 2026-11-22): the ready-made packs (3D
 # printing, cutting machines and lasers, CNC and small machining, moulding and casting, circuit board fabrication, Open
 # Images machine tools and workshops), their share-alike Commons files, and the sources looked at and left out; the

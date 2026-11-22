@@ -134,6 +134,8 @@ TOPICS = [
            "locbeef", "fish_freshness", "horse_mackerel", "fish_eyes_stages", "chicken_breast", "food_packaging",
            "packeat", "cerrado_fruits", "commons_date_codes",
            "commons_barbecue_food", "commons_food_guides",
+           # restaurant menus (menus_sources.py)
+           "nypl_menus", "synthetic_menus",
            # share-alike
            "openfoodfacts", "openfoodfacts_labels", "commons_food_sa", "openfacts_us", "openfacts_ca",
            # research-only (personal use)
@@ -218,7 +220,7 @@ TOPICS = [
     Topic("home", "Home and household",
           "Appliances, kitchens, laundry, cleaning and hazards, home repair, heating, lighting, building, pests, "
           "baby things, sewing, crafts, emergency kits, pools, knots, camp, homestead and outdoor gear, fishing, "
-          "fitness equipment, games, clothes, 3D printing, lasers and CNC.",
+          "fitness equipment, games, toys, personal care products, clothes, 3D printing, lasers and CNC.",
           ("commons_appliances", "commons_appliance_controls", "open_images_appliance_controls", "commons_kitchen",
            "laundry_symbols", "laundry_care_labels", "commons_household_chemicals", "commons_finishes_in_use",
            "commons_household_hazards", "open_images_household_hazards",
@@ -263,6 +265,12 @@ TOPICS = [
            # home manufacturing and making (making_sources.py; also in the machines topic)
            "commons_3d_printing", "commons_cutting_lasers", "commons_cnc_machining", "commons_moulding_casting",
            "commons_pcb_fabrication", "open_images_making", "making_commons_sa",
+           # personal care and beauty products, and toys and children's products (personal_care_sources.py,
+           # toys_sources.py)
+           "commons_personal_care_products", "commons_historic_cosmetics", "met_historic_cosmetics",
+           "open_images_personal_care", "commons_toys_by_type", "commons_ride_ons_playgrounds",
+           "commons_nursery_more", "commons_museum_toys", "met_toys", "open_images_toys",
+           "personal_care_commons_sa", "toys_commons_sa",
            # non-commercial and research-only (personal use)
            "cpsc_recalls")),
     # Power and electrical (the owner's decision of 22 November 2026): backup generators, solar, batteries, small wind
@@ -310,13 +318,15 @@ TOPICS = [
           "displays.",
           ("commons_screens", "commons_privacy_screens", "synthetic_scam_examples", "commons_computer_basics",
            "open_images_computer_basics", "seven_segment",
+           # computer-made screens read in order (screens_sources.py)
+           "synthetic_screens",
            # research-only (personal use)
            "rico_screens", "screenqa_rico", "rico_widgets")),
     # Money and paperwork (the owner's decision of 22 November 2026): money, bills, receipts, forms and specimen papers,
     # gathered from "documents" and "vision" (money by its sides, which stays there too), with the currency packs that
     # had no topic before.
     Topic("money", "Money and paperwork",
-          "US, Canadian and other banknotes and coins, bills and statements, pay stubs and W-2s, receipts, price tags, "
+          "US, Canadian, foreign and old banknotes and coins, bills and statements, pay stubs and W-2s, receipts, price tags, "
           "blank and filled-in government and tax forms, ballots and jury summonses, and specimen papers such as "
           "visas and Social Security cards.",
           ("commons_us_money", "commons_ca_money", "commons_money_sides", "banknotes", "ghana_money", "bd_taka",
@@ -324,6 +334,8 @@ TOPICS = [
            # civics_sources.py, gov_forms_sources.py, people_sources.py)
            "synthetic_bills", "synthetic_pay_documents", "synthetic_civic_documents", "synthetic_gov_forms",
            "us_federal_forms", "commons_immigration_documents", "cord",
+           # foreign banknotes and coins: old coins and notes, museum coins, money in photos (world_money_sources.py)
+           "commons_world_money", "met_world_coins", "open_images_money",
            # non-commercial and research-only (personal use)
            "sroie", "wildreceipt", "funsd", "xfund", "cra_forms", "gothenburg_price_tags")),
     # People and everyday activities (the owner's decision of 22 November 2026): what people are doing, gathered from
@@ -341,6 +353,8 @@ TOPICS = [
            "commons_ca_holidays", "commons_ca_daily_life", "nara_events", "open_images_outings",
            "commons_college_streams", "commons_state_community", "loc_fsa", "nara", "nasa_people_at_work",
            "commons_mobility_deafblind", "commons_adaptive_sports", "commons_sports_action",
+           # stills from public-domain films (film_stills_sources.py, also in "art")
+           "pd_film_stills",
            # share-alike
            "commons_daily_life_sa", "coco_actions_sa", "commons_hairstyles_sa", "hagrid", "commons_uniformed_sa",
            # non-commercial and research-only (personal use)
@@ -389,6 +403,8 @@ TOPICS = [
            "commons_paper_crafts", "commons_candle_soap", "commons_glass_carving", "commons_art_supplies",
            "commons_models_resin", "museum_glass_crafts", "open_images_crafts",
            "pottery_commons_sa", "jewellery_commons_sa", "crafts_commons_sa",
+           # public-domain film stills and Golden Age comics (film_stills_sources.py, comics_sources.py)
+           "pd_film_stills", "commons_golden_age_comics",
            # non-commercial and research-only (personal use)
            "vam", "mimo_instruments", "princeton_general_personal", "turkish_instruments")),
     # Documents, maps and signs: reading text and making sense of pages. The receipts, forms, bills, pay and civic
@@ -417,11 +433,13 @@ TOPICS = [
            "commons_emergency_signs_maps", "commons_radio_cards_charts",
            # national park visitor facilities and signs (photo_library_sources.py; also in "places")
            "npgallery_facilities",
+           # restaurant menus (menus_sources.py, also in "food"), maths and science notation (math_notation_sources.py)
+           "nypl_menus", "synthetic_menus", "synthetic_formulas", "chem_structures",
            # share-alike
            "hiertext", "mapqa", "indoor_commons_sa",
            # non-commercial and research-only (personal use)
            "dvqa", "chartqa", "scienceqa", "ai2d", "streetsignset", "fintabnet_tables", "tqa_diagrams",
-           "commons_mail_parcels")),
+           "commons_mail_parcels", "im2latex_formulas")),
     Topic("nature", "Plants, animals and nature",
           "Plants, mushrooms, insects, birds and other animals by name, household pests and pest control, pet and "
           "farm breeds and animals, crops and their diseases, weeds, poisonous plants, mushrooms and wild plants, "

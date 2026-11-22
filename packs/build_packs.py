@@ -1952,6 +1952,20 @@ for _packs, _commons in ((MONEY_WORK_PACKS, MONEY_WORK_COMMONS_KEYS), (TRAVEL_PA
                          (CIVICS_PACKS, CIVICS_COMMONS_KEYS), (GOV_FORMS_PACKS, GOV_FORMS_COMMONS_KEYS)):
     PACKS.update(_packs)
     COMMONS_KEYS = COMMONS_KEYS | frozenset(_commons)
+# Pictures for the picture describer (the owner's request of 2026-11-22): restaurant menus (packs/menus_packs.py: NYPL
+# "What's on the Menu?" and made-up modern menus), maths and science notation (packs/math_notation_packs.py: typeset
+# formulas with their LaTeX and RDKit chemical structures), computer and phone screens (packs/screens_packs.py),
+# public-domain film stills (packs/film_stills_packs.py) and public-domain Golden Age comics (packs/comics_packs.py).
+from menus_packs import MENUS_PACKS, MENUS_COMMONS_KEYS
+from math_notation_packs import MATH_PACKS, MATH_COMMONS_KEYS
+from screens_packs import SCREENS_PACKS, SCREENS_COMMONS_KEYS
+from film_stills_packs import FILM_STILLS_PACKS, FILM_STILLS_COMMONS_KEYS
+from comics_packs import COMICS_PACKS, COMICS_COMMONS_KEYS
+for _packs, _commons in ((MENUS_PACKS, MENUS_COMMONS_KEYS), (MATH_PACKS, MATH_COMMONS_KEYS),
+                         (SCREENS_PACKS, SCREENS_COMMONS_KEYS), (FILM_STILLS_PACKS, FILM_STILLS_COMMONS_KEYS),
+                         (COMICS_PACKS, COMICS_COMMONS_KEYS)):
+    PACKS.update(_packs)
+    COMMONS_KEYS = COMMONS_KEYS | frozenset(_commons)
 # Practical life (packs/practical_packs.py gathers six files, the owner's request of 2026-11-22): driving and road
 # rules, computer and phone basics, cleaning and household management, knots and outdoor skills, pool equipment, and
 # motorcycles, RVs and trailers. Every answer carries its safety note (seat belts, never mixing cleaners or pool
@@ -1998,6 +2012,16 @@ from nasa_library_packs import NASA_LIBRARY_PACKS
 from nps_library_packs import NPS_LIBRARY_PACKS
 PACKS.update(NASA_LIBRARY_PACKS)
 PACKS.update(NPS_LIBRARY_PACKS)
+# Personal care and beauty products, toys and children's products, and foreign banknotes and coins (the owner's
+# request of 2026-11-22), one file each: packs/personal_care_packs.py, packs/toys_packs.py (products only, never a
+# child in the photo) and packs/world_money_packs.py (old money only: central banks restrict pictures of current money).
+from personal_care_packs import PERSONAL_CARE_PACKS, PERSONAL_CARE_COMMONS_KEYS
+from toys_packs import TOYS_PACKS, TOYS_COMMONS_KEYS
+from world_money_packs import WORLD_MONEY_PACKS, WORLD_MONEY_COMMONS_KEYS
+for _packs, _commons in ((PERSONAL_CARE_PACKS, PERSONAL_CARE_COMMONS_KEYS), (TOYS_PACKS, TOYS_COMMONS_KEYS),
+                         (WORLD_MONEY_PACKS, WORLD_MONEY_COMMONS_KEYS)):
+    PACKS.update(_packs)
+    COMMONS_KEYS = COMMONS_KEYS | frozenset(_commons)
 # Sports, a top-level section (packs/sports_packs.py, the owner's request of 2026-11-22): Commons sports equipment,
 # protective gear, skates, goals and racing gear, courts, fields, rinks and tracks, athletes in action (adults only),
 # and Open Images sports, events, gear, places and officials; protective gear answers end with the concussion note.
