@@ -560,6 +560,10 @@ jobs:
             commons_daily_living_aids) limit=150 ;;
             commons_wilderness_rescue) limit=200 ;;
             commons_small_boats) limit=900 ;;
+            commons_wild_food_plants) limit=1500 ;;
+            commons_wild_mushrooms) limit=800 ;;
+            commons_home_preserving) limit=900 ;;
+            inat_wild_edibles) limit=1600 ;;
             nasa_space_astronauts) limit=3000 ;;
             nasa_aircraft) limit=2500 ;;
             nasa_earth_from_space) limit=3000 ;;

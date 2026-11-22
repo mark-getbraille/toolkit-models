@@ -103,6 +103,8 @@ TOPICS = [
            "locbeef", "fish_freshness", "horse_mackerel", "fish_eyes_stages", "chicken_breast", "food_packaging",
            "packeat", "cerrado_fruits", "commons_date_codes",
            "commons_barbecue_food", "commons_food_guides",
+           # home food preserving: jars, pickles, ferments, jams, dried and salted food (foraging_preserving_sources.py)
+           "commons_home_preserving",
            # share-alike
            "openfoodfacts", "openfoodfacts_labels", "commons_food_sa", "openfacts_us", "openfacts_ca",
            # research-only (personal use)
@@ -313,6 +315,8 @@ TOPICS = [
            # farm animals, science instruments and plant identification (the leisure collections)
            "open_images_homestead", "commons_science_instruments", "open_images_science", "commons_poisonous_plants",
            "commons_mushrooms_id", "commons_wild_plants_bark",
+           # edible wild plants, wild mushrooms and their lookalikes (foraging_preserving_sources.py)
+           "commons_wild_food_plants", "commons_wild_mushrooms", "inat_wild_edibles",
            # NASA Earth from space, planets and telescopes, more park wildlife and landscapes (photo_library_sources.py)
            "nasa_earth_from_space", "nasa_planets_telescopes", "npgallery_wildlife_more", "npgallery_landscapes_more",
            # share-alike
