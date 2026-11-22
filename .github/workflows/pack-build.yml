@@ -500,6 +500,10 @@ jobs:
             commons_radio_cards_charts) limit=300 ;;
             commons_mesh_data_radio) limit=250 ;;
             open_images_radio) limit=400 ;;
+            commons_generators_power) limit=500 ;;
+            commons_solar_batteries) limit=900 ;;
+            commons_wind_water_power) limit=1200 ;;
+            open_images_power) limit=1500 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in

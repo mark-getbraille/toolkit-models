@@ -137,6 +137,8 @@ PREPAREDNESS_TOPICS = {
              "commons_disaster_types", "open_images_disasters", "preparedness_commons_sa"),
     "nature": ("commons_disaster_types", "open_images_disasters"),
     "documents": ("commons_emergency_signs_maps",),
+    # the backup power kit pictures also in "power" (Power and electrical, power_sources.py)
+    "power": ("commons_emergency_kits_power",),
 }
 
 PREPAREDNESS_NOT_INCLUDED = {

@@ -139,6 +139,8 @@ TOPICS = [
            "commons_car_care", "commons_ev_charging", "commons_dashboard_lights", "open_images_car_care",
            # radios, antennas and mesh radio devices (radio_sources.py; also in the radio topic)
            "commons_radios", "commons_antennas_station", "commons_mesh_data_radio", "open_images_radio",
+           # generators, dynamos and wind and water turbines (power_sources.py; also in the power topic)
+           "commons_generators_power", "commons_wind_water_power",
            # share-alike
            "car_care_commons_sa", "radio_commons_sa",
            "commons_mechanical_sa", "dashboard_symbols_sa", "device_models_sa", "farm_mech_commons_sa",
@@ -186,8 +188,24 @@ TOPICS = [
            # emergency preparedness and disasters (preparedness_sources.py)
            "commons_emergency_kits_power", "commons_warnings_shelters", "commons_emergency_signs_maps",
            "commons_disaster_types", "open_images_disasters", "preparedness_commons_sa",
+           # generators, solar panels and batteries (power_sources.py; also in the power topic)
+           "commons_generators_power", "commons_solar_batteries", "open_images_power", "power_commons_sa",
            # non-commercial and research-only (personal use)
            "cpsc_recalls")),
+    # Power and electrical (the owner's decision of 22 November 2026): backup generators, solar, batteries, small wind
+    # and water power, and the kit's electrical collections (wiring, outlets, panels, plugs, cables, circuits), in one
+    # add-on of its own; those collections also stay in "home" and "machines" (power_sources.POWER_TOPIC_EXISTING).
+    Topic("power", "Power and electrical",
+          "Generators and their safety labels, solar panels, charge controllers and connectors, battery banks, wind "
+          "turbines, water wheels and turbines, fuel, power lines, and home wiring, outlets, breakers, plugs, cables "
+          "and circuits.",
+          ("commons_generators_power", "commons_solar_batteries", "commons_wind_water_power", "open_images_power",
+           # the kit's electrical and backup power collections (also in home or machines)
+           "commons_home_repair", "open_images_home_upkeep", "commons_plumbing_electrical", "commons_connectors",
+           "commons_electronic_parts", "commons_cables_connectors", "commons_circuit_diagrams",
+           "open_images_electronics", "commons_emergency_lighting", "commons_emergency_kits_power",
+           # share-alike
+           "power_commons_sa", "home_upkeep_commons_sa")),
     # Radio communications (the owner's decision of 22 November 2026): ham and other two-way radio, antennas and
     # station gear, QSL cards and charts, and off-grid mesh and data radio, in one add-on of its own (the radios,
     # antennas and mesh devices are also in "machines", the cards and charts also in "documents").

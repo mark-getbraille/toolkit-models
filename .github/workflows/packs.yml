@@ -156,7 +156,8 @@ jobs:
                    "commons_camp_cooking", "commons_emergency_cooking", "commons_grills_smokers",
                    "commons_barbecue_food", "open_images_outdoor_cooking",
                    "commons_emergency_kits_power", "commons_warnings_shelters", "commons_emergency_signs_maps", "commons_disaster_types", "open_images_disasters",
-                   "commons_radios", "commons_antennas_station", "commons_radio_cards_charts", "commons_mesh_data_radio", "open_images_radio"]
+                   "commons_radios", "commons_antennas_station", "commons_radio_cards_charts", "commons_mesh_data_radio", "open_images_radio",
+                   "commons_generators_power", "commons_solar_batteries", "commons_wind_water_power", "open_images_power"]
           words = [w for w in sys.argv[1].split(",") if w]
           # "key+" is a top-up pass of key and "key?" a needs-only run (kept with the mark, which the build job reads);
           # "all?" asks for a needs-only run of every pack.

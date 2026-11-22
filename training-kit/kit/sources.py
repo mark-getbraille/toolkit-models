@@ -3427,7 +3427,9 @@ _add_collections(OUTDOOR_COOKING_SOURCES)
 # Emergency preparedness and disasters (preparedness_sources.py) and radio communications (radio_sources.py), the owner's
 # request of 2026-11-22: their ready-made packs, share-alike Commons files and what was left out. Each file may be
 # missing. Only the keys in each file's *_PICTURE_MAKING_OK may be used for picture-making.
-for _prep_name, _prep_prefix in (("preparedness_sources", "PREPAREDNESS"), ("radio_sources", "RADIO")):
+# Power and electrical (power_sources.py, the owner's request of 2026-11-22) is loaded the same way.
+for _prep_name, _prep_prefix in (("preparedness_sources", "PREPAREDNESS"), ("radio_sources", "RADIO"),
+                                 ("power_sources", "POWER")):
     try:
         _prep = __import__(_prep_name)
     except ImportError as _e:

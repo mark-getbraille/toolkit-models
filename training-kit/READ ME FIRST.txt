@@ -249,6 +249,9 @@ The topics:
 - Home and household (home): appliances and their controls, kitchens, laundry and care labels, cleaning products
   and hazards, home repair, locks, heating and emergency lighting, building work and ramps, pests, baby products,
   sewing and crafts, first aid, dental and eye care, and emergency kits, warnings, shelters and disasters.
+- Power and electrical (power): generators and their safety labels, solar panels, charge controllers and
+  connectors, battery banks, wind turbines, water wheels and turbines, fuel, power lines, and home wiring, outlets,
+  breakers, plugs, cables and circuits (with the carbon monoxide, back-feeding, solar and battery safety notes).
 - Radio communications (radio): ham, GMRS, FRS, CB, marine and scanner radios, weather radios, antennas, towers,
   connectors and meters, Morse keys, ham stations, QSL cards and frequency charts, and off-grid mesh and data radio
   (Meshtastic, LoRa, APRS).

@@ -1902,6 +1902,13 @@ from radio_packs import RADIO_PACKS, RADIO_COMMONS_KEYS
 for _packs, _commons in ((PREPAREDNESS_PACKS, PREPAREDNESS_COMMONS_KEYS), (RADIO_PACKS, RADIO_COMMONS_KEYS)):
     PACKS.update(_packs)
     COMMONS_KEYS = COMMONS_KEYS | frozenset(_commons)
+# Power and electrical (packs/power_packs.py, the owner's request of 2026-11-22): engine generators and their carbon
+# monoxide labels, dynamos, solar cells and mounts, MC4 connectors, charge controllers and batteries, wind turbines,
+# wind pumps, water wheels and water turbines, and Open Images solar, wind, fuel, battery, electrical and power line
+# things; every answer ends with its generator, back-feeding, fuel, solar, battery, turbine or wiring note.
+from power_packs import POWER_PACKS, POWER_COMMONS_KEYS
+PACKS.update(POWER_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(POWER_COMMONS_KEYS)
 
 
 def pack_lanes(keys):
