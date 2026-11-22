@@ -751,3 +751,10 @@ CATEGORIES.update(_MAKING)
 for _key in ("craft_machines", "woodshop_machines", "metal_shop_welding"):
     if _key in CATEGORIES:
         CATEGORIES[_key]["heading"] = _MAKING_HEADING
+
+# Reference gaps (the owner's request of 2026-11-22): audio recorders, podcast microphones and recording gear
+# (manuals/audio_gear_manuals.py, every maker link-only). Pet supplies are already the collection
+# pet_livestock_supplies, so no new pet collection is added.
+from audio_gear_manuals import CATEGORY as _AUDIO_GEAR  # noqa: E402
+
+CATEGORIES["audio_gear"] = _AUDIO_GEAR

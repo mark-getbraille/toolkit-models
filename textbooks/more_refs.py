@@ -104,6 +104,15 @@ MODULES = [
     "small_boats",          # Navigation Rules, boating CFR, Coast Guard and Army boat manuals, NOAA, NWS, old boat books (boat:)
     # home manufacturing and making (the owner's request of 2026-11-22), its own group
     "making_books",         # 3D printing, lasers, CNC, lathes: Klipper, FreeCAD, LinuxCNC, OpenSCAD, FDA, NIST (make:)
+    # reference gaps (the owner's request of 2026-11-22), each in its own group
+    "geography",            # the CIA World Factbook (last edition, by continent) and a geography index (geo:)
+    "pet_care",             # pet care: CDC Healthy Pets, FDA CVM pet food and poisons, old dog and cat books (pet:)
+    "genealogy",            # genealogy: NARA guides, Census Bureau family history, CDC vital records offices (gen:)
+    "audio_media",          # audio and media: Audacity Manual, OSARA, W3C WAI media guide, LoC AV formats (media:)
+    "typing_skills",        # typing: old public-domain touch typing courses and a keyboard skills index (typing:)
+    "recycling",            # recycling and waste: EPA (personal use), FDA medicine disposal, DEA take-back (recycle:)
+    "game_fish",            # game and fish: CDC game diseases, APHIS and USGS CWD, FDA and EPA fish advice (gamefish:)
+    "holiday_observances",  # holidays: OPM, CRS histories, Wikipedia observances, UK and Canada holidays (holiday:)
 ]
 
 _loaded = {}
