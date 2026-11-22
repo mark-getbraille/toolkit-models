@@ -299,7 +299,7 @@ def test_build_saves_audio_folder(tmp_path, monkeypatch):
                         lambda source, *a, **k: (seen.append(source.key), ([], build_dataset.Counter()))[1])
     monkeypatch.setattr(build_dataset, "write_outputs", lambda *a, **k: ([], []))
     build_dataset.main(["--out", str(tmp_path / "out")])
-    assert "librivox" not in seen and "librispeech" in seen
+    assert "librivox" in seen and "librispeech" in seen
     seen.clear()
     build_dataset.main(["--out", str(tmp_path / "out"), "--sources", "librivox"])
     assert seen == ["librivox"]
