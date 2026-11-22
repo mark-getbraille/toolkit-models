@@ -5,4 +5,5 @@
 # 21 November: hardware, tools and shop equipment manuals, plus firearms, smoking and pet-livestock supplies.
 # 21 November (2): and the household chemicals, pesticide labels and chemical safety collections.
 # 21 November (3): the new manual categories from the reference inventory, and firearms and chemical safety with their new Internet Archive collections.
-baby_gear,home_medical,ham_radio,musical_instruments,video_games,powersports,marine_electronics,farm_equipment,camping_outdoor,software,vintage_computers,firearms,chemical_safety
+# 22 November: appliance error codes and troubleshooting, and release notes (NVDA, Orca, BRLTTY, Android, OpenWrt in full; makers as links).
+appliance_troubleshooting,release_notes
