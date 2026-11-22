@@ -498,22 +498,33 @@ def build_commons_topic(specs, limit, prefix, adults_only=False):
         queues.append([spec[0], spec[1], spec[2], None, spec[3] if len(spec) > 3 else None])
     want = int(limit * 1.15) + 2
     rounds = 0
-    while len(items) < want and queues and rounds < 50:
+    refused = False
+    while len(items) < want and queues and rounds < 50 and not refused:
         rounds += 1
         for q in list(queues):
             if len(items) >= want:
                 break
             category, deeper, rows, titles, must = q
-            if titles is None:
-                titles = [t for t in category_files(s, category, deeper) if t not in seen]
-                pass_random(category).shuffle(titles)
-                say(f"Commons {category}: {len(titles)} files")
-            batch, q[3] = titles[:max(3, share) * 2], titles[max(3, share) * 2:]
-            if not batch:
-                queues.remove(q)
-                continue
+            try:
+                if titles is None:
+                    titles = [t for t in category_files(s, category, deeper) if t not in seen]
+                    pass_random(category).shuffle(titles)
+                    say(f"Commons {category}: {len(titles)} files")
+                batch, q[3] = titles[:max(3, share) * 2], titles[max(3, share) * 2:]
+                if not batch:
+                    queues.remove(q)
+                    continue
+                entries = list(home_entries(s, batch))
+            except RuntimeError as e:
+                # Commons kept refusing (429) after its waits: keep the pictures already found rather than lose
+                # hours of work; with none found yet, the pack fails as before.
+                if not items:
+                    raise
+                say(f"(Commons stopped answering ({e}); keeping the {len(items)} pictures already found.)")
+                refused = True
+                break
             got = 0
-            for title, url, credit, text in home_entries(s, batch):
+            for title, url, credit, text in entries:
                 if got >= share or title in seen:
                     continue
                 words = f"{title} {text}"
