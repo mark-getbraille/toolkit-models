@@ -85,9 +85,13 @@ Sources, and why each may be used by a program:
       Microsoft, Apple, router, phone and speaker makers, and iFixit, whose terms keep API answers 24 hours only
       and out of indexes: NO_AUTOMATED_DOWNLOAD) are never downloaded by a program.
   US military manuals of automatic firearms (category firearms, categories.PUBLIC_MANUALS)   the Internet Archive's
-      copies of Army training circulars, each put in the index only when the front of its own text says "Approved
-      for public release; distribution is unlimited" (Distribution Statement A) and shows no restricted marking
-      (public_manual_entries, checked at every build).
+      copies of Army training circulars, judged at every build by the release rule for military publications
+      (military_release.py, the owner's decision of 22 November 2026; public_manual_entries): put in the index
+      with a truthful "release" line whether or not the front of its own text prints Distribution Statement A
+      ("Approved for public release; distribution is unlimited"); a copy that prints a restricted marking
+      (Distribution B to F, FOUO, CUI, NOFORN, export control) and is not published by the government itself is
+      listed as a link-only, PERSONAL USE ONLY entry that the owner fetches himself (Program Downloader's "To do
+      yourself" list); a classified marking leaves it out.
   Not used: ManualsLib and other manual-copying sites (their terms forbid automated use), nor the Internet Archive's
       copies of them (items such as manualsbase-id-2170, manualsonline-id-..., manualzilla-id-..., manualsplus_...:
       COPY_SITE_ITEMS, or an item whose metadata names one of NEVER_SITES): never put into any index (the owner's
@@ -123,6 +127,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import categories as C  # noqa: E402
 import chemical_labels as L  # noqa: E402
+import military_release as R  # noqa: E402
 
 USER_AGENT = ("DigitalAccessibilityToolkit-ManualsBuilder/1.0 (github.com/mark-getbraille/toolkit-models; "
               "one request at a time)")
@@ -250,6 +255,22 @@ class Fetcher:
             return int(r.headers.get("Content-Length") or 0) if r.status_code == 200 else 0
         except Exception:  # noqa: BLE001 - the size is only a help
             return 0
+        finally:
+            self.last[host] = time.monotonic()
+            self.requests += 1
+
+    def answers(self, url):
+        """True when url (a government address) answers without a login right now: a HEAD request, following
+        redirects, judged by military_release.answers_without_login; False when it cannot be reached."""
+        host = (urllib.parse.urlsplit(url).hostname or "").lower()
+        if out_of_time():
+            return False
+        self._wait(host)
+        try:
+            r = self.session.head(url, timeout=TIMEOUT, allow_redirects=True)
+            return R.answers_without_login(r.status_code, r.url, r.headers.get("Content-Type", ""))
+        except Exception:  # noqa: BLE001 - not reached: not open now
+            return False
         finally:
             self.last[host] = time.monotonic()
             self.requests += 1
@@ -1122,31 +1143,61 @@ def maker_entries(fetch, makers, exclude=None, sizes=True):
     return entries, notes
 
 
-# Distribution Statement A, and the markings that refuse a document even when it is also printed (the same rule as
-# training-kit/kit/uxo_personal_sources.py).
-DISTRIBUTION_A = re.compile(r"approved\s+for\s+public\s+release\s*[;,.:]?\s*distribution\s+is\s+unlimited", re.I)
-RESTRICTED = re.compile(r"distribution\s*(?:statement\s*)?[B-F]\s*[:.\-–—]|distribution\s+statement\s+[B-F]\b|"
-                        r"distribution\s+authori[sz]ed\s+to|for\s+official\s+use\s+only|\bFOUO\b|\bCUI\b|"
-                        r"controlled\s+unclassified|\bNOFORN\b|export[- ]controlled|warning:?\s+this\s+document\s+"
-                        r"contains\s+technical\s+data\s+whose\s+export", re.I)
+# The release rule for US military publications (military_release.py, the same file in every part of this
+# repository; the owner's decision of 22 November 2026). Its markings are kept under the old names here.
+DISTRIBUTION_A = R.DISTRIBUTION_A
+RESTRICTED = R.RESTRICTED
 FRONT_CHARS = 12000
+BEFORE_STATEMENTS = 1964        # distribution statements were not printed on publications before about this year
 
 
-def public_release(front_text):
-    """(True, "") when the front of a document's text says Distribution Statement A and shows no restricted
-    marking; else (False, why)."""
-    text = " ".join(str(front_text or "").split())
-    bad = RESTRICTED.search(text)
-    if bad:
-        return False, f"a restricted marking ({bad.group(0)})"
-    if not DISTRIBUTION_A.search(text):
-        return False, "no Distribution Statement A on its front pages"
-    return True, ""
+def gov_copy_answers(fetch, gov):
+    """Whether the government's own open copy of a publication (gov: its address, a doc's "gov" field) answers
+    without a login now: None when there is none or its site's robots.txt does not allow this builder to ask
+    (armypubs.army.mil shuts out programs), else fetch.answers(gov)."""
+    if not gov or fetch is None or not hasattr(fetch, "answers"):
+        return None
+    try:
+        if not robots_allows(fetch, gov):
+            return None
+    except Exception:  # noqa: BLE001 - robots.txt not read: not asked
+        return None
+    return bool(fetch.answers(gov))
+
+
+def public_release(front_text, source, year=0, fetch=None, gov=""):
+    """The release verdict of a US military publication (a military_release.Release) from the front of its own text
+    and the address its copy comes from (source): "public" (indexed as usual, with its truthful release line),
+    "personal" (a restricted marking on a copy the government does not publish itself: a link-only, personal-use
+    entry) or "out". year: the year it was printed; a publication from before 1964 without a statement gets that
+    said in its release line, since distribution statements were not printed then. gov: the address where the
+    government itself publishes it, if one is known (a doc's "gov" field); asked at build time (gov_copy_answers)
+    only when the copy prints a restricted marking, and when it answers without a login the publication is
+    "public" with a notice naming that address."""
+    rule = R.release_rule(front_text, source)
+    if rule.verdict == "personal" and gov:
+        rule = R.release_rule(front_text, source, gov_address=gov, gov_answers=gov_copy_answers(fetch, gov))
+    if rule.verdict == "public" and not rule.statement and year and int(year) < BEFORE_STATEMENTS:
+        rule = rule._replace(release=rule.release.rstrip(".") + f" (printed in {year}, before distribution "
+                                                                 "statements were used).")
+    return rule
+
+
+def release_fields(rule):
+    """The fields a manual gets from its release verdict: always its "release" line; for a personal-use one also
+    link_only (never downloaded by a program: the owner fetches it himself with Program Downloader), personal_use
+    and link_reason (the words of Program Downloader's "To do yourself" list)."""
+    fields = {"release": rule.release}
+    if rule.verdict == "personal":
+        fields.update(link_only=True, personal_use=True, link_reason=rule.reason)
+    return fields
 
 
 def public_manual_entries(fetch, docs):
-    """The index entries of publicly released military manuals (categories.PUBLIC_MANUALS): each Internet Archive
-    item's PDF, kept only when the front of its own text passes public_release. Returns (entries, notes)."""
+    """The index entries of military manuals of automatic firearms (categories.PUBLIC_MANUALS): each Internet Archive
+    item's PDF, judged by the front of its own text (public_release): indexed when "public"; a link-only,
+    PERSONAL USE ONLY entry when "personal"; left out (said in notes) when "out" or without a PDF. Returns
+    (entries, notes)."""
     entries, notes = [], []
     for doc in docs:
         if listing_out_of_time():
@@ -1158,30 +1209,32 @@ def public_manual_entries(fetch, docs):
         except (RuntimeError, OutOfTime, ValueError, CopySite) as e:
             notes.append(f"{doc['name']}: {e}")
             continue
-        ok, why = public_release(front)
-        if not ok or not pdf:
-            notes.append(f"{doc['name']}: left out ({why or 'no PDF'})")
+        rule = public_release(front, base, doc.get("year", 0), fetch, doc.get("gov", ""))
+        if rule.verdict == "out" or not pdf:
+            notes.append(f"{doc['name']}: left out ({rule.reason or 'no PDF'})")
             continue
+        if rule.verdict == "personal":
+            notes.append(f"{doc['name']}: link only, personal use ({rule.reason})")
+        page = f"https://archive.org/details/{urllib.parse.quote(doc['ia'])}"
         entries.append({"id": f"fa-public-{doc['ia']}", "brand": doc["brand"], "model": doc["model"],
                         "name": doc["name"], "type": "automatic", "category": "firearms", "barcodes": [],
-                        "fcc_ids": [], "ic_ids": [], "source": "Internet Archive",
-                        "page": f"https://archive.org/details/{urllib.parse.quote(doc['ia'])}",
-                        "manuals": [{"title": doc["name"], "url": base + urllib.parse.quote(pdf),
-                                     "page": f"https://archive.org/details/{urllib.parse.quote(doc['ia'])}",
+                        "fcc_ids": [], "ic_ids": [], "source": "Internet Archive", "page": page,
+                        **({"access": "link", "access_reason": rule.reason} if rule.verdict == "personal" else {}),
+                        "manuals": [{"title": doc["name"], "url": base + urllib.parse.quote(pdf), "page": page,
                                      "kind": "pdf", "ia": doc["ia"], "size": size, "document": "manual",
                                      "text_url": base + urllib.parse.quote(text) if text else "",
-                                     "release": "Distribution Statement A: approved for public release; "
-                                                "distribution is unlimited",
+                                     **release_fields(rule),
                                      "rights": "a US government work (public domain)",
                                      "source": "Internet Archive"}]})
     return entries, notes
 
 
 def public_guide_entries(fetch, guides, key):
-    """The index entries of a category's public-domain guides (hardware_tools.GUIDES: US government works, each the
-    Internet Archive's copy): kept only when the item has a PDF; a military training manual only when the front of
-    its own text says it is approved for public release (or it is from before 1964, long before distribution
-    statements were printed) and shows no restricted marking. Returns (entries, notes)."""
+    """The index entries of a category's public-domain guides (hardware_tools.GUIDES and the like: US government
+    works, each the Internet Archive's copy): kept only when the item has a PDF. A military manual (doc["military"])
+    is judged by the front of its own text (public_release): indexed with its truthful release line when "public"
+    (with or without Distribution Statement A, by the owner's decision of 22 November 2026); a link-only, PERSONAL
+    USE ONLY entry when it prints a restricted marking; left out when classified. Returns (entries, notes)."""
     entries, notes = [], []
     for doc in guides:
         if listing_out_of_time():
@@ -1196,23 +1249,24 @@ def public_guide_entries(fetch, guides, key):
         if not pdf:
             notes.append(f"{doc['title']}: left out (no PDF in the Internet Archive item)")
             continue
-        release = ""
+        fields, extra = {}, {}
         if doc.get("military"):
-            ok, why = public_release(front)
-            old = doc.get("year") and int(doc["year"]) < 1964 and not RESTRICTED.search(" ".join(front.split()))
-            if not ok and not old:
-                notes.append(f"{doc['title']}: left out ({why})")
+            rule = public_release(front, base, doc.get("year", 0), fetch, doc.get("gov", ""))
+            if rule.verdict == "out":
+                notes.append(f"{doc['title']}: left out ({rule.reason})")
                 continue
-            release = ("Distribution Statement A: approved for public release; distribution is unlimited" if ok
-                       else f"printed in {doc['year']}, before distribution statements; no restricted marking")
+            if rule.verdict == "personal":
+                notes.append(f"{doc['title']}: link only, personal use ({rule.reason})")
+                extra = {"access": "link", "access_reason": rule.reason}
+            fields = release_fields(rule)
         page = f"https://archive.org/details/{urllib.parse.quote(doc['ia'])}"
         entries.append({"id": f"guide-{key}-{doc['ia']}", "brand": doc["by"], "model": "", "name": doc["title"],
                         "type": "guide", "category": key, "barcodes": [], "fcc_ids": [], "ic_ids": [],
-                        "source": "Internet Archive", "page": page,
+                        "source": "Internet Archive", "page": page, **extra,
                         "manuals": [{"title": doc["title"], "url": base + urllib.parse.quote(pdf), "page": page,
                                      "kind": "pdf", "ia": doc["ia"], "size": size, "document": "guide",
                                      "text_url": base + urllib.parse.quote(text) if text else "",
-                                     **({"release": release} if release else {}),
+                                     **fields,
                                      "rights": "a US government work (public domain)",
                                      "source": "Internet Archive"}]})
     return entries, notes
@@ -1562,13 +1616,14 @@ def download_permission(url, rights, robots=None):
 def entry_originals(entry, robots=None):
     """The "originals" of one index entry: each manual's file (or page) and its text file, the product's page and its
     thumbnail's source, each {url, kind, size, sha256 (""), licence, may_download, why} (download_permission);
-    an address is listed once. A link-only document (document_entries) is never marked for downloading."""
-    candidates, link_only = [], set()
+    an address is listed once. A link-only document (document_entries, or a personal-use military manual whose
+    link_reason says why) is never marked for downloading."""
+    candidates, link_only = [], {}
     for m in entry.get("manuals") or []:
         rights = m.get("rights", "")
         url = m.get("url") or m.get("page") or ""
         if m.get("link_only"):
-            link_only.add(url)
+            link_only[url] = m.get("link_reason", "")
         candidates.append((url, original_kind(url, m.get("kind", "")), int(m.get("size") or 0), rights))
         if m.get("text_url"):
             candidates.append((m["text_url"], "txt", 0, rights))
@@ -1586,7 +1641,10 @@ def entry_originals(entry, robots=None):
         seen.add(url)
         may, why = download_permission(url, rights, robots)
         if url in link_only:
-            may, why = False, "Link only (the maker's or author's own page); open the link in a browser."
+            # A personal-use military manual says why (its restricted marking); every other link-only one is the
+            # maker's or author's own page.
+            may, why = False, (link_only[url][0].upper() + link_only[url][1:] + "." if link_only[url] else
+                               "Link only (the maker's or author's own page); open the link in a browser.")
         out.append({"url": url, "kind": kind, "size": size, "sha256": "", "licence": rights or "not stated",
                     "may_download": may, "why": why})
     return out

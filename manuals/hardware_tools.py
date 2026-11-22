@@ -18,9 +18,10 @@ with the builder's own User-Agent (the same rules as the firearms makers, catego
 
 Public-domain guides (public_guides): US government works, each the Internet Archive's copy (osha.gov and fema.gov
 refuse programs, and research.fs.usda.gov's robots.txt disallows everything), kept in the index only when the item
-has a PDF; a military training manual (army or navy) only when the front of its own text says "Approved for public
-release; distribution is unlimited" or it is older than 1964, and shows no restricted marking (checked at every
-build: build_manuals.public_guide_entries). The official pages of OSHA, FEMA, NIOSH and the Forest Products Laboratory
+has a PDF; a military training manual (army or navy) is judged at every build by the release rule for military
+publications (military_release.py, the owner's decision of 22 November 2026; build_manuals.public_guide_entries):
+indexed with or without Distribution Statement A, with a truthful release line; a link-only, personal-use entry when
+the front of its own text prints a restricted marking; left out when classified. The official pages of OSHA, FEMA, NIOSH and the Forest Products Laboratory
 are linked as guidance for the person to open.
 
 The safety notice ("notice") of each category is written into its index, for the toolkit to say first.
@@ -674,7 +675,7 @@ _PPE = [
 
 def _guide(ia, title, by, year, military=False):
     """One public-domain guide: an Internet Archive item, its title, who wrote it, its year, and whether it is a
-    military training manual (whose front text must say it is approved for public release)."""
+    military training manual (judged by the release rule for military publications (military_release.py, the owner's decision of 22 November 2026); build_manuals.public_guide_entries)."""
     return dict(ia=ia, title=title, by=by, year=year, military=military)
 
 

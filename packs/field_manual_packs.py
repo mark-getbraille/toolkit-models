@@ -9,12 +9,18 @@ is {"question", "answer", "credit"}, plus "content": "medical" for first-aid and
 pictures.
 
 WHERE THE MANUALS COME FROM. The manuals are works of the US government (17 U.S.C. 105: not subject to copyright).
-Only manuals whose own front matter says "Approved for public release; distribution is unlimited" (Distribution
-Statement A) are used, and the builder checks this again in every PDF it reads; a manual that also shows a restricted
-marking (Distribution B to F, FOUO, CUI, NOFORN) is left out. The official site (armypubs.army.mil) shuts out
-automated readers in its robots.txt, and marines.mil, the Coast Guard's and FEMA's sites refuse automated requests,
-so the copies on the Internet Archive are used (its robots.txt allows them); each row names that copy. The same
-manuals are in the toolkit's offline library as text (textbooks/sources.py PDF_DOCS, "Reference, field manuals").
+The builder reads each PDF's front pages and judges it with the repository's release rule (military_release.py,
+the owner's decision of 22 November 2026): a manual whose copy comes from the Internet Archive or a government or
+museum site is used whether or not it prints Distribution Statement A, and each row's credit says truthfully which
+(the statement when printed; otherwise "published openly by <the host>; its front pages print no distribution
+statement"). A manual that prints a restricted marking (Distribution B to F, FOUO, CUI, NOFORN, export control) is
+used only when the government itself publishes it openly at the address it was read from; this pack is published
+openly and has no personal-use route, so an Internet Archive copy of such a manual is left out (its reason says
+"personal use only, fetch it yourself"). A classified marking always leaves it out. The official site
+(armypubs.army.mil) shuts out automated readers in its robots.txt, and marines.mil, the Coast Guard's and FEMA's
+sites refuse automated requests, so the copies on the Internet Archive are used (its robots.txt allows them); each
+row names that copy. The same manuals are in the toolkit's offline library as text (textbooks/sources.py PDF_DOCS,
+"Reference, field manuals").
 
 HOW A FIGURE IS FOUND (pypdfium2, Apache/BSD, as us_modern_packs.form_pages uses): on each page, every caption line
 "Figure 4-12. <title>" (not the list of figures, whose lines end in dot leaders and page numbers) is located; the
@@ -47,15 +53,15 @@ import re
 import sys
 
 import build_packs  # noqa: F401 - loaded first, as the other pack modules do
+import military_release
 from build_packs import session, say, considered, needs_description, pass_random, listing_out_of_time
 
 DRAWING_Q = "What does this picture show?"
-PD_CREDIT = "a US government work, not subject to copyright (17 U.S.C. 105); Distribution Statement A, approved for " \
-            "public release"
+PD_CREDIT = "a US government work, not subject to copyright (17 U.S.C. 105)"     # the release line follows it
 
 # The manuals (Internet Archive item, title as said in an answer, publisher, medical: every drawing is medical).
 # Checked by hand on 2026-11-18: each front page reads "DISTRIBUTION RESTRICTION: Approved for public release;
-# distribution is unlimited." (and the builder checks again).
+# distribution is unlimited." (the builder checks each PDF again with military_release.release_rule).
 MANUALS = [
     ("survival-atp-3-50-21", "the US Army's survival manual (ATP 3-50.21, 2018)", False),
     ("FM4-25x11", "the US armed forces' first-aid manual (FM 4-25.11, 2002)", True),
@@ -82,10 +88,9 @@ MANUALS = [
                       (14, "microelectronics"), (16, "test equipment"), (19, "the technician's handbook"),
                       (22, "digital computers"), (24, "fiber optics"))]
 
-DISTRIBUTION_A = re.compile(r"approved\s+for\s+public\s+release\s*[;:,.]?\s*distribution\s+is\s+unlimited", re.I)
-RESTRICTED = re.compile(r"distribution\s+(statement\s+)?[B-F]\b|distribution\s+authorized\s+to|authorized\s+to\s+U\.?\s?"
-                        r"S\.?\s+Government\s+agencies|for\s+official\s+use\s+only|\bFOUO\b|controlled\s+unclassified"
-                        r"|\bCUI\b|\bNOFORN\b|export[- ]controlled", re.I)
+# The release markings, from the shared rule (military_release.py), kept under these names for the tests.
+DISTRIBUTION_A = military_release.DISTRIBUTION_A
+RESTRICTED = military_release.RESTRICTED
 NOT_SAFE = re.compile(r"\b(weapons?|rifles?|pistols?|guns?|firing|fire\s+team|marksmanship|ammunition|rounds?\s+of|"
                       r"bayonets?|knife\s+fighting|explosives?|demolitions?|mines?|grenades?|booby|traps?\s+for\s+"
                       r"(people|enemy)|ambush\w*|tactic\w*|combat\s+operations?|enemy|sniper|kill\w*|evasion|"
@@ -114,16 +119,17 @@ def manual_pdf(identifier, s):
             f"https://archive.org/details/{identifier}")
 
 
-def distribution_ok(doc, pages=12):
-    """"" when the manual's first pages show Distribution Statement A and no restricted marking, else the reason it is
-    left out."""
+def distribution_ok(doc, source="https://archive.org/", pages=12):
+    """(reason, release line) for a manual's PDF: reason is "" when this open pack may use it, else why it is left
+    out. The words of its first pages are judged by the shared release rule (military_release.release_rule) with
+    the address its copy was read from (source). This pack has no personal-use route, so a "personal" verdict (a
+    restricted marking on a copy the government does not publish itself) leaves it out too. The release line is
+    the truthful line for the credit."""
     words = " ".join(" ".join(doc[n].get_textpage().get_text_range().split()) for n in range(min(pages, len(doc))))
-    bad = RESTRICTED.search(words)
-    if bad:
-        return f"its front matter shows a restricted marking ({bad.group(0)})"
-    if not DISTRIBUTION_A.search(words):
-        return "its front matter does not say it is approved for public release (Distribution Statement A)"
-    return ""
+    rule = military_release.release_rule(words, source)
+    if rule.verdict != "public":
+        return f"its front matter {rule.reason}", ""
+    return "", rule.release
 
 
 def unsafe_pages(doc):
@@ -255,13 +261,13 @@ def manual_figures(data, identifier, manual, medical, pdf_url, page_url):
     with too little caption are set aside (needs_description)."""
     import pypdfium2 as pdfium
     doc = pdfium.PdfDocument(data)
-    why = distribution_ok(doc)
+    why, release = distribution_ok(doc, pdf_url)
     if why:
         considered(identifier, pdf_url, why)
         return []
     skip = unsafe_pages(doc)
     who = "the US Navy" if "Navy" in manual else "Headquarters, Department of the Army"
-    credit = f"Figure from {manual}, {who}; {PD_CREDIT}; copy at {page_url}"
+    credit = f"Figure from {manual}, {who}; {PD_CREDIT}; {release.rstrip(".")}; copy at {page_url}"
     base = re.sub(r"[^a-z0-9]+", "_", identifier.lower()).strip("_")[:40]
     out, seen = [], set()
     for n in range(len(doc)):
@@ -345,8 +351,9 @@ def build_field_manual_figures(limit):
 
 FIELD_MANUAL_PACKS = {
     "field_manual_figures": (build_field_manual_figures,
-                             "Drawings from US military field manuals and Navy training courses with Distribution "
-                             "Statement A (approved for public release): survival, first aid, map reading, rigging, "
+                             "Drawings from US military field manuals and Navy training courses published openly "
+                             "(Distribution Statement A, or openly published by a government site or the Internet "
+                             "Archive; each credit says which): survival, first aid, map reading, rigging, "
                              "field sanitation, cold weather, mountaineering, electricity and electronics, machines, "
                              "cooking and hospital care; US government works, public domain (17 U.S.C. 105). "
                              "Copies from the Internet Archive, https://archive.org"),

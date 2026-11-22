@@ -89,7 +89,7 @@ SERVICE_DOCUMENTS = [
 
 def _guide(ia, title, by, year, military=False):
     """One public-domain guide: an Internet Archive item, its title, who wrote it, its year, and whether it is a
-    military training manual (whose front text must say it is approved for public release)."""
+    military training manual (judged by the release rule for military publications (military_release.py, the owner's decision of 22 November 2026); build_manuals.public_guide_entries)."""
     return dict(ia=ia, title=title, by=by, year=year, military=military)
 
 

@@ -2124,7 +2124,7 @@ SOURCES = [
     Source("owid_charts", "Charts from Our World in Data: what each chart shows and where its data come from (ready-made pack)",
            "CC BY 4.0 (https://ourworldindata.org/faqs)", "Our World in Data (Global Change Data Lab), CC BY 4.0 (each chart's page in CREDITS.txt)", "permissive", 3000, 20, prepare_pack, "about 250 MB"),
     Source("field_manual_figures", "Drawings from US Army field manuals and Navy training courses: knots, shelters, compasses, maps, machines, circuits, first aid (ready-made pack)",
-           "Public domain (US government works, Distribution Statement A)", "US Army and US Navy; copies from the Internet Archive (credited in CREDITS.txt)", "permissive", 2500, 20, prepare_pack, "about 200 MB"),
+           "Public domain (US government works, published openly; each credit says whether Distribution Statement A is printed)", "US Army and US Navy; copies from the Internet Archive (credited in CREDITS.txt)", "permissive", 2500, 20, prepare_pack, "about 200 MB"),
     # Open sets from big technology companies (packs/bigtech_packs.py); none shows people. The research entries
     # (ScreenQA, PixMo, FinTabNet) are in bigtech_sources.py.
     Source("gso_objects", "What is this? Real products scanned in 3D by Google, computer-made views (Google Scanned Objects, ready-made pack)",
