@@ -196,6 +196,9 @@ def fingerprint(key):
         if kind == "wb":                         # writing and business guides (writing_business.py)
             import writing_business              # here, not at the top: writing_business imports the builder
             return writing_business.sign(key)
+        import more_refs                         # the reference sources added 2026-11-22 (more_refs.MODULES)
+        if more_refs.owns(key):
+            return more_refs.sign(key)
         if kind == "med":
             import medications                   # here, not at the top: medications imports the builder
             return medications.sign(key)

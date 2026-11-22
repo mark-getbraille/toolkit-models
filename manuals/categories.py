@@ -571,6 +571,12 @@ from pet_livestock_supplies import CATEGORY as _PET_LIVESTOCK  # noqa: E402
 
 CATEGORIES["pet_livestock_supplies"] = _PET_LIVESTOCK
 
+# Home health tests (instructions for use; the owner's request of 2026-11-22): makers (link-only), the FDA's device
+# records and guidance are in manuals/home_health_tests.py.
+from home_health_tests import CATEGORY as _HOME_TESTS  # noqa: E402
+
+CATEGORIES["home_health_tests"] = _HOME_TESTS
+
 # Hardware, tools and shop equipment: their makers, access decisions, safety notices and public-domain guides are in
 # manuals/hardware_tools.py. Its new categories are added, and power_tools, hand_tools and lawn_garden are extended
 # (more Internet Archive words, the makers' libraries, a safety notice and the guides).
