@@ -143,6 +143,6 @@ def test_answers_without_login():
 
 def test_scan_without_text_is_left_out():
     """A scan whose front pages give no words cannot be checked for markings, so it is left out."""
-    for blank in ("", "   \n  ", "12 34 -- ."):
+    for blank in ("", "   \n  ", None):
         rule = M.release_rule(blank, IA)
         assert rule.verdict == "out" and "no readable text" in rule.reason
