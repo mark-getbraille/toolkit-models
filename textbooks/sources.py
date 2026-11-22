@@ -223,7 +223,9 @@ LICENCE_LINES = {
     "field_manuals": "Each manual's own front page, for example ATP 3-50.21: \"DISTRIBUTION RESTRICTION: Approved "
                      "for public release; distribution is unlimited.\"; the Navy courses: \"DISTRIBUTION STATEMENT "
                      "A: Approved for public release; distribution is unlimited.\" US government works (17 U.S.C. "
-                     "105).",
+                     "105). Since 22 November 2026 (the owner's decision) a military manual from the Internet "
+                     "Archive or a government site is built also without the statement, its notice saying so "
+                     "(military_release.py).",
     "gov_uk": "Each gov.uk publication page: \"All content is available under the Open Government Licence v3.0, "
               "except where otherwise stated\"; MSN 1560: \"© Crown copyright 1994\".",
     "alberta": "Each open.alberta.ca publication page: \"Usage / Licence ... Open Government Licence - Alberta\".",
@@ -321,10 +323,15 @@ NONPROFIT = [
 # ("fieldmanual" or "government"), licence, licence_url, description, and where the PDF is:
 #   archive          an Internet Archive item holding a copy of a US military manual (the official site,
 #                    armypubs.army.mil, shuts out automated readers in its robots.txt; marines.mil, the Coast Guard's
-#                    and FEMA's sites refuse automated requests). distribution_a: True makes the builder read the
-#                    manual's own front matter and keep it only when it says "Approved for public release;
-#                    distribution is unlimited" (Distribution Statement A) and shows no restricted marking
-#                    (Distribution B to F, FOUO, CUI); its parts about weapons, tactics or harm are left out.
+#                    and FEMA's sites refuse automated requests). distribution_a: True makes the builder judge the
+#                    manual's own front matter by the release rule for military publications (military_release.py,
+#                    the owner's decision of 22 November 2026): built with or without Distribution Statement A from
+#                    an Internet Archive or government copy, its notice saying truthfully which; a restricted
+#                    marking only when the government publishes that copy itself (else left out for the owner to
+#                    fetch himself); its parts about weapons, tactics or harm are left out. gov: the government's
+#                    own open address of a restricted-marked manual, checked at build time. work: how the notice
+#                    names it ("a work of the US Navy"). military: True for a military publication that is not a
+#                    field manual (the release rule, but no parts cut out).
 #   page + licence_text + pdf_pattern   an official publication page that must still state licence_text (a regular
 #                    expression, checked at every build); its newest PDF matching pdf_pattern is used.
 # The field manuals were checked by hand on 2026-11-18: each front page reads "DISTRIBUTION RESTRICTION: Approved

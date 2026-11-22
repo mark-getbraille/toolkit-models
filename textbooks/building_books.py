@@ -5,8 +5,9 @@ What this module builds, each IN FULL (US government works and Wikibooks, read w
   - the US Army's Carpentry (FM 5-426, 1995: lumber, framing, floors, walls, roofs, stairs, doors and windows,
     decks and wood structures) and Concrete and Masonry (FM 5-428, 1998: concrete mixing, forms, placing and
     finishing, brick, block and stone masonry), and Use and Care of Hand Tools and Measuring Tools (TM 9-243, 1983:
-    rules and tapes, squares, levels, plumb bobs and every hand tool), from the Internet Archive's copies, each kept
-    only when its own front matter says Distribution Statement A (checked at every build);
+    rules and tapes, squares, levels, plumb bobs and every hand tool), from the Internet Archive's copies, each
+    judged at every build by the release rule for military publications (military_release.py: with or without
+    Distribution Statement A, its notice saying truthfully which);
   - the US Navy's Blueprint Reading and Sketching (NAVEDTRA 14040: reading building and machine drawings, lines,
     symbols, dimensions and scales), with the same check;
   - OSHA's A Guide to Scaffold Use in the Construction Industry (OSHA 3150) and Fall Protection in Construction
@@ -42,12 +43,14 @@ SAFETY_NOTE = ("Safety: building work usually needs a permit and must meet local
 ARMY = "Headquarters, Department of the Army"
 NAVY = "Naval Education and Training Professional Development and Technology Center (US Navy)"
 OSHA = "US Occupational Safety and Health Administration (OSHA)"
-MILITARY_NOTICE = "A work of the US armed forces (public domain), approved for public release; distribution is " \
-                  "unlimited. " + SAFETY_NOTE
+# The builder puts the truthful release line first (build_textbooks.military_notice), so this notice holds only the
+# safety words.
+MILITARY_NOTICE = SAFETY_NOTE
 
 
 def military(name, title, subject, publisher, archive, published, description):
-    """A US military manual from the Internet Archive, kept only with Distribution Statement A in its front matter."""
+    """A US military manual from the Internet Archive, judged by the release rule (military_release.py) on its own
+    front matter at every build (distribution_a)."""
     return K.us_pdf(GROUP, name=name, title=title, subject=subject, publisher=publisher, archive=archive,
                     distribution_a=True, published=published, version=f"{published} edition",
                     description=description, notice=MILITARY_NOTICE)
@@ -112,8 +115,9 @@ COLLECTION = K.Collection("build", GROUP, guides=GUIDES, pdfs=PDFS,
 
 LICENCE_LINES = {
     "building_military": "US Army field and technical manuals and US Navy training courses: works of the US "
-                         "government (17 U.S.C. 105), each kept only when its own front matter says \"Approved for "
-                         "public release; distribution is unlimited\" (checked in the PDF at every build); the "
+                         "government (17 U.S.C. 105), each judged in the PDF at every build by the release rule for "
+                         "military publications (military_release.py: with or without Distribution Statement A, "
+                         "the notice saying truthfully which); the "
                          "Internet Archive's copies (armypubs.army.mil's robots.txt shuts out automated readers).",
     "building_osha_fpl": "OSHA's guides (the Defense Technical Information Center's copies on the Internet Archive; "
                          "osha.gov refuses programs) and the Forest Products Laboratory's Wood Handbook "

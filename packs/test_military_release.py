@@ -139,3 +139,10 @@ def test_answers_without_login():
     assert not M.answers_without_login(200, "https://login.made-up.mil/cac?next=x")
     assert not M.answers_without_login(200, APD, "text/html", '<form><input type="password" name="p"></form>')
     assert not M.answers_without_login(403, APD) and not M.answers_without_login(0)
+
+
+def test_scan_without_text_is_left_out():
+    """A scan whose front pages give no words cannot be checked for markings, so it is left out."""
+    for blank in ("", "   \n  ", "12 34 -- ."):
+        rule = M.release_rule(blank, IA)
+        assert rule.verdict == "out" and "no readable text" in rule.reason

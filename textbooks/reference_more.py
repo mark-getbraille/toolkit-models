@@ -10,7 +10,8 @@ texts, Canadian Open Government Licence publications, GOV.UK guides and UK safet
 are in publications_more.py.
 
 Every source was checked by hand on 2026-11-21; the builder checks the licence again at every build (the licence
-page's line, the PDF's Distribution Statement A for military manuals) and obeys each site's robots.txt.
+page's line; for military manuals, the release rule of military_release.py on the PDF's front matter) and obeys
+each site's robots.txt.
 """
 
 # These names are the same as in sources.py (this module is imported at its end, so it cannot import them).
@@ -106,12 +107,13 @@ FAA_HANDBOOKS = [
 
 # ---------------------------------------------------------------------- US Navy rate training manuals (item 10)
 # Internet Archive copies with a text layer (the ERIC and Digital Library of India scans have their OCR words).
-# Like the Navy courses already built, each is kept ONLY when its own front matter prints Distribution Statement A
-# and no restricted marking (distribution_a, checked by the builder at every build); a manual that does not print
-# it is left out and the reason is said in the catalogue. US government works (17 U.S.C. 105). Checked on
-# 2026-11-21: the six below print it; the 1970s ERIC copies of Builder, Construction Electrician, Utilitiesman,
-# Engineman, Electrician's Mate and Fireman do not, so they are not listed (NOT_INCLUDED). Seaman, Damage Controlman
-# and Basic Military Requirements were not found on the Internet Archive with a text layer.
+# Like the Navy courses already built, each is judged at every build by the release rule for military publications
+# (distribution_a; military_release.py, the owner's decision of 22 November 2026): built with or without
+# Distribution Statement A, its notice saying truthfully which; a restricted marking only when the government
+# publishes that copy itself. US government works (17 U.S.C. 105). Checked on 2026-11-21: the six below print the
+# statement; the 1970s ERIC copies (Builder, Construction Electrician, Utilitiesman, Engineman, Electrician's Mate,
+# Fireman) do not, and come in under the new rule (NAVY_RATE_MANUALS_NO_STATEMENT below). Seaman, Damage
+# Controlman and Basic Military Requirements were not found on the Internet Archive with a text layer.
 COURSE = dict(group="course", country="United States", licence=US_GOV, licence_url=US_GOV_URL, distribution_a=True,
               publisher="Naval Education and Training Command (US Navy)")
 
@@ -147,9 +149,10 @@ NAVY_RATE_MANUALS = [
 ]
 
 # ---------------------------------------------------------------------- Army field manuals, non-weapon (item 11)
-# The Kiwix catalogue already offers the whole Army Publishing Directorate (armypubs_en_all). These are public-release
-# copies (Distribution Statement A in their front matter, checked 2026-11-21 and again at every build) of field
-# hygiene manuals not already built; weapons and tactics parts are left out by the builder (NOT_FIELD_SAFE).
+# The Kiwix catalogue already offers the whole Army Publishing Directorate (armypubs_en_all). These are Internet
+# Archive copies (Distribution Statement A in their front matter, checked 2026-11-21; judged again at every build by
+# the release rule, military_release.py) of field hygiene manuals not already built; weapons and tactics parts are
+# left out by the builder (NOT_FIELD_SAFE).
 FIELD = dict(group="fieldmanual", country="United States", licence=US_GOV, licence_url=US_GOV_URL,
              distribution_a=True, publisher="Headquarters, Department of the Army")
 ARMY_MANUALS = [
@@ -292,8 +295,9 @@ LICENCE_LINES = {
                      "of its own, so govinfo.gov's quotation of 17 U.S.C. 105 is the line checked, as for the IRS "
                      "and Medicare books.",
     "navy_rate_manuals": "Internet Archive copies (ERIC and Digital Library of India scans with OCR text) of Navy rate "
-                         "training manuals; US government works; each kept only when its front matter prints "
-                         "Distribution Statement A (checked by the builder).",
+                         "training manuals; US government works; each judged by the builder with the release rule "
+                         "for military publications (military_release.py): built with or without Distribution "
+                         "Statement A, the notice saying truthfully which.",
     "nist_handbooks": "nvlpubs.nist.gov: NIST Handbooks 44, 130 and 133 (2025 editions), works of the US government "
                       "(17 U.S.C. 105).",
     "tna_teaching_resources": "www.nationalarchives.gov.uk footer: \"All content is available under the Open "

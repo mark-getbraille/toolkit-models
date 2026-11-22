@@ -58,7 +58,8 @@ So a US military publication is judged like this (release_rule):
   4. No marking, from any other host (a third-party website): the old rule. Kept only when Distribution Statement A
      is printed.
 
-Every other check (the weapons and explosives safety rules, licences of works that are not the government's,
+A copy whose front pages have no readable text (a scan without a text layer) is left out: its markings cannot be
+checked. Every other check (the weapons and explosives safety rules, licences of works that are not the government's,
 robots.txt and terms of use, the text-layer checks) stays in the builders, unchanged.
 
 Some Army PDFs print their cover in a font whose letters come out moved by 29 places (",675,%87,21" for
@@ -115,6 +116,10 @@ NAMED_HOSTS = [
 ]
 # Museums that are not under .gov, .mil or si.edu (add a museum's own host here when one is used).
 MUSEUM_HOSTS = ("nationalww2museum.org", "theworldwar.org", "metmuseum.org", "navalunderseamuseum.org")
+
+# Fewer words than this on the front pages: a scan without a text layer, whose markings cannot be read, so it is
+# left out (a missing statement may only be accepted when the program could see there is no marking).
+MIN_WORDS = 1
 
 Release = namedtuple("Release", "verdict release reason statement host")
 # verdict    "public" (may go into the open collections), "personal" (personal use only, never republished) or
@@ -257,6 +262,11 @@ def release_rule(front_text, source, work="a work of the US armed forces", gov_a
       released_by  for a classified-marked copy from the Internet Archive or a museum: the releasing agency or NARA
                    as its own record names it (point 1 b)"""
     host = open_host(source)
+    words_seen = max(len(re.findall(r"[A-Za-z]{2,}", form)) for form in (str(front_text or ""),
+                                                                         unshifted(str(front_text or ""))))
+    if words_seen < MIN_WORDS:
+        return Release("out", "", "its front pages have no readable text (a scan without a text layer), so its "
+                       "markings cannot be checked", False, host)
     kind, words = marking(front_text)
     statement = has_statement_a(front_text)
     if kind == "classified":
