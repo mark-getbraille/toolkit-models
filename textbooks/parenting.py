@@ -3,17 +3,32 @@ owner's request of 2026-11-22). Keys: parenting (every book), parent:<name>.
 
 What this module builds, in plain words, each IN FULL (every page of the guide, read from the publisher's own site):
   - CDC's parenting pages, kept whole with their text unchanged as CDC's terms ask: Positive Parenting Tips by age,
-    the Essentials for Parenting toddlers and teens, CDC's parent information by age (infants, children, teens)
-    and the child development pages; the childhood vaccine pages for parents with the child and teen immunization
-    schedules (the easy-to-read one for parents and the official one with its notes); children's mental health
-    and adverse childhood experiences; and the injury pages for children (car seats and child passenger safety,
-    drowning, teen drivers, child abuse and neglect prevention).
+    the Essentials for Parenting toddlers and teens, CDC's parent information by age and the child development
+    pages; the childhood vaccine pages with the child and teen immunization schedules (the easy-to-read one for
+    parents and the official one with its notes); children's mental health and adverse childhood experiences; and
+    the injury pages for children (car seats, drowning, teen drivers, child abuse and neglect prevention);
+  - the Child Welfare Information Gateway's topic pages for families (parenting, prevention, adoption, foster and
+    kinship care, safety, youth, how to report abuse);
+  - the Center for Parent Information and Resources' parent guides (disability fact sheets, early intervention, the
+    IEP, parent rights and disagreements), public domain by its own statement;
+  - NICHD's health topics and NIDA's pages for parents and teens;
+  - CPSC's child safety guides (safe sleep and cribs, toys, magnets, water beads, button batteries, poison
+    prevention, drowning at home) and Anchor It (furniture and TV tip-overs);
+  - the Public Health Agency of Canada's pregnancy, baby and parenting pages (personal use only, non-US note);
+  - the National Council on Disability's report on parents with disabilities, Rocking the Cradle (2012), whole.
   (The family health books already in family_health.py, CDC's Learn the Signs. Act Early., Safe to Sleep and the
-  crisis lines, are not repeated here.)
+  crisis lines, are not repeated. Child care, pregnancy and infant feeding are in early_childhood.py, and books to
+  read aloud to children in read_aloud.py, in the same group.)
 
-Licences: works of the US government (17 U.S.C. 105); CDC's "Use of Agency Materials" page is checked at every
-build for its public-domain line, and its conditions (credit CDC, no endorsement, no change to the substance, say
-it is free on CDC's site) are met in the notice; the pages are kept whole.
+Not built (NOT_INCLUDED, link-only for the owner's personal assistant): Head Start's ECLKC, the Department of
+Education's parent and IDEA pages, StopBullying.gov, the FTC's and FBI's online safety pages (all answer programs
+"403"), MyPlate (not reachable), the Gateway's publication PDFs (their host's robots.txt answers "403"),
+HealthyChildren.org and Common Sense Media (copyright; AI readers shut out), ZERO TO THREE, Safe Kids Worldwide, the
+NFB, APH, Perkins and AFB (copyright).
+
+Licences: works of the US government (17 U.S.C. 105, the line checked on govinfo.gov's policies page at every
+build); CDC's, the Gateway's, CPSC's and CPIR's own statements are checked at every build and their conditions met in
+each book's notice; canada.ca's terms allow non-commercial reproduction (personal use only).
 
 Run from the repository's folder:
   python3 textbooks/parenting.py parent:cdc_parenting --out build/textbooks --limit 5
@@ -332,6 +347,40 @@ LICENCE_LINES["parenting_cpir"] = (
     "Crawl-delay 600 (the builder waits 60 seconds, its longest pause), nothing else refused; no AI rules (checked "
     "2026-11-22).")
 NOT_INCLUDED = [
+    ("Head Start Early Childhood Learning and Knowledge Center (ECLKC, now headstart.gov)", "Public domain, but "
+     "eclkc.ohs.acf.hhs.gov and headstart.gov answer programs \"403 Forbidden\" (checked 2026-11-22). Link-only. "
+     "Index: https://headstart.gov/"),
+    ("US Department of Education parent guides and the IDEA special education parent pages", "Public domain, but "
+     "www.ed.gov and sites.ed.gov answer programs \"403 Forbidden\", robots.txt included (checked 2026-11-22). The "
+     "Center for Parent Information and Resources (funded by the Department) is built (parent:cpir_parent_guides). "
+     "Link-only. Index: https://www.ed.gov/parents and https://sites.ed.gov/idea/parents-families/"),
+    ("StopBullying.gov", "Public domain, but www.stopbullying.gov answers programs \"403 Forbidden\", robots.txt "
+     "included (checked 2026-11-22). Link-only. Index: https://www.stopbullying.gov/"),
+    ("FTC kids online safety (consumer.ftc.gov; OnGuardOnline now leads there) and the FBI's Safe Online Surfing",
+     "Public domain, but consumer.ftc.gov and sos.fbi.gov answer programs \"403 Forbidden\", robots.txt included "
+     "(checked 2026-11-22). Link-only. Index: https://consumer.ftc.gov/features/protecting-kids-online and "
+     "https://sos.fbi.gov/"),
+    ("USDA MyPlate for kids (myplate.gov)", "Public domain, but www.myplate.gov could not be reached from the build "
+     "machine (502 upstream, again on 2026-11-22). WIC's pages are built (early:wic_breastfeeding). Link-only. "
+     "Index: https://www.myplate.gov/life-stages/kids"),
+    ("HealthyChildren.org (American Academy of Pediatrics) and Common Sense Media", "Copyright of the AAP and of "
+     "Common Sense Media, and both sites' robots.txt shut out AI companies' readers (checked 2026-11-22), so they "
+     "are not read. Link-only. Index: https://www.healthychildren.org/ and https://www.commonsensemedia.org/"),
+    ("ZERO TO THREE and Safe Kids Worldwide", "\"©2026 ZERO TO THREE\" and \"© Safe Kids Worldwide\"; not openly "
+     "licensed (checked 2026-11-22). Link-only. Index: https://www.zerotothree.org/resource/ and "
+     "https://www.safekids.org/safetytips"),
+    ("Blind parents: NFB's blind parents community and guides, APH, Perkins and the American Foundation for the "
+     "Blind", "\"Copyright © 2026 National Federation of the Blind\", \"Copyright © 2026 American Printing House\", "
+     "\"© 2026 Perkins School for the Blind\" and \"© Copyright 2026 American Foundation for the Blind\" (checked "
+     "2026-11-22); not openly licensed. The National Council on Disability's report on parents with disabilities "
+     "is built (parent:ncd_rocking_the_cradle). Link-only. Index: https://nfb.org/our-community/blind-parents, "
+     "https://nfb.org/programs-services/advocacy/advocacy-resources/blind-parents-essential-guide-effective-"
+     "communication, https://www.perkins.org/resources/ and https://www.afb.org/"),
+    ("Guides for blind and visually impaired parents on the Internet Archive", "The guides found (Off to a Good "
+     "Start, Parenting Preschoolers, Talk to Me, ERIC documents) are for parents OF blind children and are in "
+     "copyright or lending-only; the open ones are older than 1931 and out of date (Light on Dark Paths, 1883); "
+     "no open guide on parenting with a visual impairment was found (checked 2026-11-22). Index: "
+     "https://archive.org/search?query=blind+parents"),
     ("CPSC window covering (blind cord) safety guide", "CPSC's consumer guide to corded window coverings is not "
      "linked from its safety education pages or listed in its sitemap (only rulemaking papers are, checked "
      "2026-11-22), and no other open guide to it was found. Link-only: the industry's own safety site is "
