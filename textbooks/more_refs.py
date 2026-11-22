@@ -29,6 +29,9 @@ MODULES = [
     "gov_help",             # digital.gov, USA.gov, Benefits.gov, Medicare, SSA (help:)
     "work_disability",      # JAN, ADA National Network, ODEP, Ticket to Work, AbleData (work:)
     "civic_help",           # voting (EAC, Vote.gov) and housing (HUD) (civic:)
+    "family_health",        # parenting, aging and caregiving, mental health, crisis lines (fam:)
+    "pets_home",            # pets (APHIS) and home health (EPA, personal use) (home:)
+    "home_tests",           # at-home medical tests: FDA guides, test lists and device records (hometest:)
 ]
 
 _loaded = {}
