@@ -662,6 +662,12 @@ from radio_manuals import CATEGORIES as _RADIO  # noqa: E402
 
 CATEGORIES.update(_PREPAREDNESS)
 CATEGORIES.update(_RADIO)
+# Password managers, security keys, routers, VPNs and home cameras (privacy, security and digital safety; the owner's
+# request of 2026-11-22): the Internet Archive words, the makers as links, KeePassXC's openly licensed guides and the
+# security guidance are in manuals/privacy_manuals.py.
+from privacy_manuals import CATEGORY as _PRIVACY_SECURITY  # noqa: E402
+
+CATEGORIES["privacy_security"] = _PRIVACY_SECURITY
 # Power and electrical, under its own heading (manuals/power_manuals.py, the owner's request of 2026-11-22): backup,
 # PTO and welder generators and vehicle power, solar and battery power, small wind and micro-hydro, and home
 # electrical; every maker link-only. The existing electrical collections in power_manuals.HEADING_KEYS get the same

@@ -3442,3 +3442,19 @@ for _prep_name, _prep_prefix in (("preparedness_sources", "PREPAREDNESS"), ("rad
     NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in _prep_sources
                                                                    if s.key not in _prep_ok)
     _add_collections(_prep_sources)
+# Privacy, security and digital safety (privacy_sources.py): the ready-made packs (Commons security things and
+# screens, and the computer-made scam and safe message examples), their share-alike Commons files, and the sources
+# looked at and left out; the file may be missing. Only the keys in PRIVACY_PICTURE_MAKING_OK may be used for
+# picture-making (never the scam examples or screenshots).
+try:
+    import privacy_sources as _privacy  # noqa: E402
+except ImportError as _e:
+    _privacy = None
+    if getattr(_e, "name", None) != "privacy_sources":
+        say(f"(The privacy and security collections could not be loaded: {_e}. They are left out.)")
+PRIVACY_SOURCES = list(getattr(_privacy, "PRIVACY_SOURCES", []) or [])
+_privacy_ok = set(getattr(_privacy, "PRIVACY_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _privacy_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in PRIVACY_SOURCES
+                                                               if s.key not in _privacy_ok)
+_add_collections(PRIVACY_SOURCES)

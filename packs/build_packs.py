@@ -1902,6 +1902,15 @@ from radio_packs import RADIO_PACKS, RADIO_COMMONS_KEYS
 for _packs, _commons in ((PREPAREDNESS_PACKS, PREPAREDNESS_COMMONS_KEYS), (RADIO_PACKS, RADIO_COMMONS_KEYS)):
     PACKS.update(_packs)
     COMMONS_KEYS = COMMONS_KEYS | frozenset(_commons)
+# Privacy, security and digital safety (packs/privacy_packs.py: Commons security keys, code tokens, fingerprint
+# scanners, webcam covers, routers, cameras, card skimmers, phishing, HTTPS, ransomware, CAPTCHAs, sign-in screens and
+# privacy tools, each with its safety note; packs/synthetic_scams_packs.py: COMPUTER-MADE scam and safe message
+# examples with made-up names, .example addresses and 555-01xx numbers, each marked EXAMPLE, never for picture-making).
+from privacy_packs import PRIVACY_PACKS, PRIVACY_COMMONS_KEYS
+from synthetic_scams_packs import SYNTHETIC_SCAMS_PACKS, SYNTHETIC_SCAMS_COMMONS_KEYS
+for _packs, _commons in ((PRIVACY_PACKS, PRIVACY_COMMONS_KEYS), (SYNTHETIC_SCAMS_PACKS, SYNTHETIC_SCAMS_COMMONS_KEYS)):
+    PACKS.update(_packs)
+    COMMONS_KEYS = COMMONS_KEYS | frozenset(_commons)
 # Power and electrical (packs/power_packs.py, the owner's request of 2026-11-22): engine generators and their carbon
 # monoxide labels, dynamos, solar cells and mounts, MC4 connectors, charge controllers and batteries, wind turbines,
 # wind pumps, water wheels and water turbines, and Open Images solar, wind, fuel, battery, electrical and power line
