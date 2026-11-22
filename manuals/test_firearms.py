@@ -11,8 +11,9 @@ It checks that:
     trap's instructions, an 80% lower jig's manual, a binary trigger's, a magazine extension's, an automatic
     firearm's manual) are kept, with their types;
   - robots.txt is obeyed: a page it disallows is not read, and a manual file it disallows is left out;
-  - a US military manual of an automatic firearm is indexed only when the front of its own text says Distribution
-    Statement A and shows no restricted marking;
+  - a US military manual of an automatic firearm follows the release rule (military_release.py): indexed with
+    Distribution Statement A or, from the Internet Archive, without it (a truthful release line); a restricted
+    marking makes it a link-only, personal-use entry; a classified marking leaves it out;
   - "link" and "mention" makers are never fetched: a link maker gets its library address, a mention maker only its
     site in words;
   - Wikidata rows of machine guns are now kept, while auto sears and suppressor kits are left out;
@@ -253,7 +254,9 @@ def test_index_exclusions():
         assert not rule.search(kept), kept
 
 
-def test_public_release_military_manuals_need_distribution_a():
+def test_public_release_military_manuals_follow_the_release_rule():
+    """Made-up front pages: Distribution A and no statement are indexed (truthfully), a restricted marking is link
+    only and personal use, a classified one is left out."""
     def item(ident):
         return {"metadata": {"title": ident}, "files": [{"name": f"{ident}.pdf", "source": "original",
                                                           "size": "1000"}, {"name": f"{ident}_djvu.txt"}]}
@@ -261,7 +264,8 @@ def test_public_release_military_manuals_need_distribution_a():
                      "unlimited. Headquarters, Department of the Army",
              "limited": "DISTRIBUTION RESTRICTION: Distribution C: authorized to US Government agencies only. "
                         "Approved for public release; distribution is unlimited",
-             "silent": "Headquarters, Department of the Army. Chapter 1."}
+             "silent": "Headquarters, Department of the Army. Chapter 1.",
+             "secret": "SECRET. Headquarters, Department of the Army."}
 
     class Fetch(FakeFetch):
         def json(self, url, headers=None):
@@ -269,10 +273,20 @@ def test_public_release_military_manuals_need_distribution_a():
     pages = {f"https://archive.org/download/{k}/{k}_djvu.txt": v for k, v in front.items()}
     docs = [dict(ia=k, brand="US Army", model=k, name=f"Manual {k}") for k in front]
     entries, notes = B.public_manual_entries(Fetch(pages), docs)
-    assert [e["model"] for e in entries] == ["open"]
-    assert entries[0]["type"] == "automatic" and entries[0]["manuals"][0]["kind"] == "pdf"
-    assert entries[0]["manuals"][0]["release"].startswith("Distribution Statement A")
-    assert any("restricted marking" in n for n in notes) and any("no Distribution Statement A" in n for n in notes)
+    by = {e["model"]: e for e in entries}
+    assert sorted(by) == ["limited", "open", "silent"]
+    assert by["open"]["type"] == "automatic" and by["open"]["manuals"][0]["kind"] == "pdf"
+    assert by["open"]["manuals"][0]["release"].startswith("Distribution Statement A")
+    assert not by["open"]["manuals"][0].get("link_only")
+    silent = by["silent"]["manuals"][0]
+    assert "print no distribution statement" in silent["release"] and "Internet Archive" in silent["release"]
+    assert "approved for public release" not in silent["release"].lower() and not silent.get("link_only")
+    limited = by["limited"]["manuals"][0]
+    assert limited["link_only"] and limited["personal_use"] and limited["release"].startswith("PERSONAL USE ONLY")
+    assert by["limited"]["access"] == "link" and "fetch it yourself" in by["limited"]["access_reason"]
+    original = [o for o in B.entry_originals(by["limited"]) if o["url"] == limited["url"]][0]
+    assert not original["may_download"] and "personal use only, fetch it yourself" in original["why"]
+    assert any("classified" in n and "secret" in n.lower() for n in notes)
     assert {d["ia"] for d in C.PUBLIC_MANUALS} == {"tc-3-22.249-light-machine-gun-m-249-series-2017",
                                                    "medium-machine-gun-tc-3-22.240",
                                                    "heavy-machine-gun-m-2-series-tc-3-22.50"}

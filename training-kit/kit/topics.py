@@ -122,7 +122,8 @@ TOPICS = [
            "drinks_alcohol_commons_sa")),
     Topic("machines", "Vehicles, machines and devices",
           "Vehicles and their parts and dashboard symbols, machine parts, tools, plugs, clocks and displays, "
-          "electronic devices, electronic parts and repair, assistive devices and building-site safety.",
+          "electronic devices, electronic parts and repair, assistive devices, radios and antennas, and "
+          "building-site safety.",
           ("wikidata_vehicle_models", "commons_vehicle_kinds", "commons_us_cars", "commons_ca_cars",
            "commons_airplanes", "commons_car_parts", "commons_cycle_parts", "commons_machine_parts",
            "commons_engine_bays", "iso_machine_symbols", "corolla_engine_bay", "tyre_condition",
@@ -136,8 +137,10 @@ TOPICS = [
            "commons_construction_safety", "electronics_commons_sa",
            # car care: wipers, tyres, jacks, roadside help, EV connectors, dashboard lights
            "commons_car_care", "commons_ev_charging", "commons_dashboard_lights", "open_images_car_care",
+           # radios, antennas and mesh radio devices (radio_sources.py; also in the radio topic)
+           "commons_radios", "commons_antennas_station", "commons_mesh_data_radio", "open_images_radio",
            # share-alike
-           "car_care_commons_sa",
+           "car_care_commons_sa", "radio_commons_sa",
            "commons_mechanical_sa", "dashboard_symbols_sa", "device_models_sa", "farm_mech_commons_sa",
            "commons_airplanes_sa",
            # non-commercial and research-only (personal use)
@@ -150,7 +153,7 @@ TOPICS = [
     Topic("home", "Home and household",
           "Appliances and their controls, kitchens, laundry and care labels, cleaning products and hazards, home "
           "repair, locks, heating and lighting, building work and ramps, pests, baby products, sewing and crafts, "
-          "first aid supplies, and dental and eye care things.",
+          "first aid, dental and eye care, and emergency kits, shelters and disasters.",
           ("commons_appliances", "commons_appliance_controls", "open_images_appliance_controls", "commons_kitchen",
            "laundry_symbols", "laundry_care_labels", "commons_household_chemicals", "commons_finishes_in_use",
            "commons_household_hazards", "open_images_household_hazards",
@@ -180,8 +183,22 @@ TOPICS = [
            "commons_home_sa", "home_safety_commons_sa", "chemical_commons_sa", "appliance_commons_sa",
            "home_upkeep_commons_sa", "home_heating_commons_sa", "emergency_lighting_commons_sa", "building_commons_sa",
            "textile_crafts_commons_sa", "pottery_commons_sa", "jewellery_commons_sa", "crafts_commons_sa",
+           # emergency preparedness and disasters (preparedness_sources.py)
+           "commons_emergency_kits_power", "commons_warnings_shelters", "commons_emergency_signs_maps",
+           "commons_disaster_types", "open_images_disasters", "preparedness_commons_sa",
            # non-commercial and research-only (personal use)
            "cpsc_recalls")),
+    # Radio communications (the owner's decision of 22 November 2026): ham and other two-way radio, antennas and
+    # station gear, QSL cards and charts, and off-grid mesh and data radio, in one add-on of its own (the radios,
+    # antennas and mesh devices are also in "machines", the cards and charts also in "documents").
+    Topic("radio", "Radio communications",
+          "Ham, GMRS, FRS, CB, marine and scanner radios, weather radios, antennas, towers, connectors and meters, "
+          "Morse keys, ham stations, QSL cards and frequency charts, and off-grid mesh and data radio such as "
+          "Meshtastic, LoRa and APRS.",
+          ("commons_radios", "commons_antennas_station", "commons_radio_cards_charts", "commons_mesh_data_radio",
+           "open_images_radio",
+           # share-alike
+           "radio_commons_sa")),
     Topic("art", "Art and museum objects",
           "Paintings, sculpture and museum objects, described the way museums write for blind visitors, musical "
           "instruments of every culture, and crafts: quilts, knitting, crochet, lace, weaving, fabrics, pottery, "
@@ -216,6 +233,7 @@ TOPICS = [
            "deepscores_sheet_music", "field_manual_figures", "bentham_pages", "commons_handwriting",
            "openstax_figures", "commons_charts", "wpc_surface_maps", "nhc_forecast_cones",
            "commons_indoor_wayfinding", "open_images_indoor",
+           "commons_emergency_signs_maps", "commons_radio_cards_charts",
            "synthetic_bills",
            # money and work, travel, citizenship and civics (money_work_sources.py, travel_sources.py, civics_sources.py)
            "synthetic_pay_documents", "synthetic_travel_documents", "commons_travel_signs", "synthetic_civic_documents",
@@ -235,6 +253,7 @@ TOPICS = [
            "na_animal_signs", "noaa_fisheries_species", "na_domestic_animals", "commons_sky_weather",
            "commons_rocks_fossils", "commons_nara_aerial", "cdc_phil_algae",
            "commons_pest_control", "open_images_home_upkeep",
+           "commons_disaster_types", "open_images_disasters",
            # gardening and lawn care
            "commons_garden_growing", "commons_garden_care", "commons_lawn_care", "commons_plant_problems",
            "open_images_garden",

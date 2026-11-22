@@ -7,8 +7,9 @@ What this module builds, each IN FULL:
     from the author's PDFs on ibiblio.org;
   - the US Navy's Electricity and Electronics Training Series modules the library did not have yet (microwave
     principles, modulation, synchros and servos, radio-frequency communications, radar, test methods and practices,
-    magnetic recording), Distribution Statement A in their own front matter (checked at every build), from the
-    Internet Archive's copies with their words (sources.NEETS has the other modules);
+    magnetic recording), judged at every build by the release rule for military publications (military_release.py;
+    their front matter prints Distribution Statement A), from the Internet Archive's copies with their words
+    (sources.NEETS has the other modules);
   - Wikibooks' electronics and computer books (Electronics, Practical Electronics, Electronics Handbook, Circuit
     Theory, How To Assemble A Desktop PC), CC BY-SA 4.0 (share-alike), every page;
   - the National Library Service for the Blind and Print Disabled (Library of Congress): its Digital Talking Book
@@ -102,8 +103,8 @@ PDFS += [
              publisher="Naval Education and Training Professional Development and Technology Center (US Navy)",
              description=f"Module {n} of the US Navy's Electricity and Electronics Training Series (NEETS), a "
                          f"self-study course: {words[0].lower() + words[1:]}.",
-             notice="A work of the US Navy (public domain), approved for public release; distribution is unlimited. "
-                    + MAINS_NOTE)
+             work="a work of the US Navy",          # the builder puts the truthful release line first
+             notice=MAINS_NOTE)
     for n, words, archive in NEETS_MORE
 ]
 

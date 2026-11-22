@@ -145,6 +145,23 @@ PDFS = [
                     "general information, not medical training."),
 ]
 
+# Restored under the release rule of 22 November 2026 (military_release.py): the Internet Archive's copy prints no
+# Distribution Statement A (refused on 2026-11-22 for that), so it now comes in with a truthful notice; its parts
+# about weapons, tactics or harm are cut (distribution_a: NOT_FIELD_SAFE).
+PDFS += [
+    K.us_pdf(GROUP, name="army_st_31_91b_special_forces_medical", title="Special Forces Medical Handbook (ST "
+             "31-91B, 1982)", subject="Medicine and first aid", publisher="US Army Institute for Military "
+             "Assistance (John F. Kennedy Special Warfare Center)",
+             archive="milmanual-st-31-91b--us-army-special-forces-medical-handbook", distribution_a=True,
+             published="1982", version="1982 edition",
+             description="The Special Forces medic's handbook for places far from a hospital: examination and "
+                         "diagnosis, common diseases by body system, infections, injuries, obstetrics, dentistry, "
+                         "anaesthesia, laboratory work, veterinary care and preventive medicine.",
+             notice="Written in 1982 for trained military medics far from a hospital: medicine has changed since; "
+                    "this is general information, not medical training or medical advice. In an emergency, call 911 "
+                    "(or your local emergency number)."),
+]
+
 COLLECTION = K.Collection("firstaid", GROUP, guides=GUIDES, pdfs=PDFS,
                           words={"first-aid": lambda: [f"firstaid:{g['name']}" for g in GUIDES + PDFS]})
 
@@ -178,10 +195,6 @@ NOT_INCLUDED = [
      "BY-NC-SA. Not read. Link-only. Index: https://wikem.org/ and https://www.who.int/publications"),
     ("Wikibooks: First Aid (CC BY-SA)", "Already in the toolkit's Kiwix library (Wikibooks in full), which the "
      "toolkit reads; not repeated. Index: https://en.wikibooks.org/wiki/First_Aid"),
-    ("US Army Special Forces Medical Handbook (ST 31-91B, 1982)", "The Internet Archive's copy "
-     "(milmanual-st-31-91b--us-army-special-forces-medical-handbook) does not show Distribution Statement A in its "
-     "front matter (the builder's check, 2026-11-22), so it is not copied. Link-only. Index: "
-     "https://archive.org/details/milmanual-st-31-91b--us-army-special-forces-medical-handbook"),
     ("US Army TC 4-02.1, First Aid (2016)", "No copy with a text layer and its front matter was found at the "
      "Internet Archive (checked 2026-11-22); FM 4-25.11 (2002) is already built (pdf:army_fm_4_25_11_first_aid). "
      "Index: https://armypubs.army.mil/"),

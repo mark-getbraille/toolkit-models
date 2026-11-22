@@ -56,6 +56,8 @@ def test_registered_once_in_the_writing_group():
     for e in W.PDFS:
         assert e.get("published") and (e.get("pdf") or e.get("archive")), e["name"]
         assert not e.get("distribution_a")         # these are not field manuals: no parts are cut out
+        if e.get("military"):                      # the release rule writes the release line: none claimed here
+            assert "approved for public release" not in e["notice"].lower() and not e.get("pdf_licence_text")
     assert set(W.LICENCE_LINES) <= set(sources.LICENCE_LINES)
     assert all(row in sources.NOT_INCLUDED for row in W.NOT_INCLUDED)
 
