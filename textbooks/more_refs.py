@@ -53,10 +53,11 @@ MODULES = [
     # leisure and learning (the owner's request of 2026-11-22)
     "homestead",            # homesteading and small livestock: EPA wells and septic, FDA eggs, old livestock books (homestead:)
     "outdoors",             # outdoor recreation: USCG boating, USFS, NPS, FWS, NOAA fish species, old woodcraft (outdoors:)
-    "games_hobbies",        # games and hobbies: Foster's Hoyle, go, chess, mah-jongg, checkers, puzzles, stamps (games:)
+    "games_hobbies",        # card and board games, puzzles, D&D SRD 5.1 and Fate SRD, music theory, stamps (games:)
     "sacred_texts",         # sacred and philosophical texts: public-domain translations, Wikipedia intros (sacred:)
     "science_use",          # science you can use: NIST units, USGS, NOAA, NASA (science:)
     "literature",           # literature and culture: novels, poetry, plays, myths, essays, history (lit:)
+    "plant_id",             # plant identification: Forest Service wildflowers, NCCIH herbs, invasives, old field guides (plantid:)
 ]
 
 _loaded = {}

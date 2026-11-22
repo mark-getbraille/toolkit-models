@@ -32,7 +32,10 @@ Run from the repository's folder:
   python3 textbooks/science_use.py --list science-use
 """
 
+import datetime
+import html
 import os
+import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -86,23 +89,6 @@ GUIDES = [
              description="NIST's pages on converting between metric and US customary units (length, area, volume, "
                          "weight, temperature, and cooking measures) and the SI units.",
              notice="A work of NIST (public domain)."),
-    K.us_web(GROUP, name="usgs_water_science_school", title="The USGS Water Science School", subject="Water science",
-             publisher="US Geological Survey (USGS)", source="https://www.usgs.gov/water-science-school",
-             sitemap="https://www.usgs.gov/sitemap.xml",
-             pages=r"^https://www\.usgs\.gov/(special-topics/)?water-science-school/science/[a-z0-9-]+$",
-             unit_rules=[(r"groundwater|aquifer|well", "Groundwater"), (r"quality|ph-|hardness|temperature|"
-                                                                        r"turbidity|nitrogen|bacteria", "Water quality"),
-                         (r"use|irrigation|domestic|industrial|thermoelectric", "Water use"),
-                         (r"flood|drought|stream|river|runoff", "Rivers, floods and droughts"),
-                         (r".", "The water cycle and water's properties")],
-             licence_page="https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits",
-             licence_text=r"the content of most USGS websites is in the U\.S\. Public Domain", limit=220,
-             description="The USGS's school of water for everyone, every page: the water cycle and where the "
-                         "world's water is, groundwater and wells, water properties (density, surface tension, "
-                         "hardness, pH), water quality, how much water people use at home, on farms and in industry, "
-                         "rivers, floods and droughts.",
-             notice="From the US Geological Survey: a US government work (public domain; pictures by others are left "
-                    "out)."),
     K.us_web(GROUP, name="usgs_earthquakes_for_everyone", title="Earthquakes for everyone: the science, facts and "
              "preparing (USGS)", subject="Earthquakes", publisher="US Geological Survey (USGS), Earthquake Hazards "
              "Program", source="https://www.usgs.gov/programs/earthquake-hazards/education",
@@ -141,8 +127,81 @@ GUIDES = [
          licence_text=r"generally are not subject to copyright in the United States"),
 ]
 
-COLLECTION = K.Collection("science", GROUP, guides=GUIDES, pdfs=PDFS,
-                          words={"science-use": lambda: [f"science:{g['name']}" for g in GUIDES + PDFS]})
+# ====================================================================== the USGS Water Science School (a maker)
+
+# Its pages are listed only near the end of usgs.gov's 77-part sitemap (past the 50 parts the shared reader looks at),
+# and the school has copies of many pages in other languages, so this module finds the English pages itself.
+USGS_SITEMAP = "https://www.usgs.gov/sitemap.xml"
+WSS_PAGES = r"^https://www\.usgs\.gov/water-science-school/science/[a-z0-9-]+$"
+# The language versions end with the language's name ("...-water-cycle-punjabi"); they are left out.
+WSS_LANGUAGE = re.compile(r"-(spanish|espanol|portuguese|french|german|italian|russian|ukrainian|polish|chinese|"
+                          r"japanese|korean|vietnamese|thai|indonesian|malay|tagalog|hindi|bengali|punjabi|urdu|"
+                          r"nepali|tamil|telugu|marathi|gujarati|kannada|malayalam|sinhala|burmese|khmer|lao|"
+                          r"mongolian|kazakh|uzbek|kyrgyz|tajik|turkmen|azerbaijani|armenian|georgian|turkish|"
+                          r"arabic|persian|farsi|pashto|hebrew|greek|amharic|somali|swahili|hausa|yoruba|igbo|zulu|"
+                          r"xhosa|afrikaans|dutch|swedish|norwegian|danish|finnish|icelandic|czech|slovak|slovenian|"
+                          r"croatian|serbian|bosnian|bulgarian|romanian|hungarian|albanian|macedonian|latvian|"
+                          r"lithuanian|estonian|belarusian|basque|catalan|galician|welsh|irish|maltese|haitian|"
+                          r"creole|hmong|samoan|maori|hawaiian|quechua|guarani|esperanto|latin|[a-z]+-language)$")
+WSS_ENTRY = K.us_web(
+    GROUP, name="usgs_water_science_school", title="The USGS Water Science School", subject="Water science",
+             publisher="US Geological Survey (USGS)", source="https://www.usgs.gov/water-science-school",
+             pages=WSS_PAGES,
+             unit_rules=[(r"groundwater|aquifer|well", "Groundwater"), (r"quality|ph-|hardness|temperature|"
+                                                                        r"turbidity|nitrogen|bacteria", "Water quality"),
+                         (r"use|irrigation|domestic|industrial|thermoelectric", "Water use"),
+                         (r"flood|drought|stream|river|runoff", "Rivers, floods and droughts"),
+                         (r".", "The water cycle and water's properties")],
+             licence_page="https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits",
+             licence_text=r"the content of most USGS websites is in the U\.S\. Public Domain", limit=220,
+             description="The USGS's school of water for everyone, every page: the water cycle and where the "
+                         "world's water is, groundwater and wells, water properties (density, surface tension, "
+                         "hardness, pH), water quality, how much water people use at home, on farms and in industry, "
+                         "rivers, floods and droughts.",
+             notice="From the US Geological Survey: a US government work (public domain; pictures by others are left "
+                    "out).")
+
+
+def water_science_urls(cache=None):
+    """The English Water Science School pages listed in usgs.gov's sitemap (every part of its index is read, one
+    request at a time)."""
+    import build_textbooks as B
+    pages, found = re.compile(WSS_PAGES), []
+    parts = re.findall(r"<loc>\s*([^<\s]+)\s*</loc>", B.fetch(USGS_SITEMAP, cache))
+    for part in parts:
+        for url in re.findall(r"<loc>\s*([^<\s]+)\s*</loc>", B.fetch(html.unescape(part), cache)):
+            if pages.match(url) and not WSS_LANGUAGE.search(url):
+                found.append(url)
+    return sorted(dict.fromkeys(found))
+
+
+def water_science_book(name, work, cache=None, left_out=None, limit=None):
+    """The Water Science School as one book: its English pages from the sitemap, read by directory_sources'
+    guide reader (which checks robots.txt and the USGS licence line at every build)."""
+    import directory_sources as D
+    urls = water_science_urls(cache)
+    if not urls:
+        (left_out if left_out is not None else []).append({"title": WSS_ENTRY["title"],
+                                                           "reason": "The sitemap listed no pages."})
+        return None
+    entry = dict(WSS_ENTRY, urls=urls[:WSS_ENTRY["limit"]], crawl=None, sitemap="", start=[])
+    book = D.guide_book(entry, cache, left_out, limit)
+    if book is not None:
+        book.name = "science_usgs_water_science_school"
+        book.version = f"pages read {datetime.date.today().isoformat()}"
+    return book
+
+
+def water_science_sign(name):
+    """The weekly check's sign for the Water Science School: the month, so it is read again once a month."""
+    import directory_sources as D
+    return D.month_token()
+
+
+COLLECTION = K.Collection(
+    "science", GROUP, guides=GUIDES, pdfs=PDFS,
+    makers={"usgs_water_science_school": (water_science_book, water_science_sign)},
+    words={"science-use": lambda: [f"science:{g['name']}" for g in GUIDES + PDFS] + ["science:usgs_water_science_school"]})
 
 LICENCE_LINES = {
     "scienceuse_nist": "nvlpubs.nist.gov and www.nist.gov: works of NIST (17 U.S.C. 105, checked on govinfo.gov's "

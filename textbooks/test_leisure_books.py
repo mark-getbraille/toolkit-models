@@ -1,5 +1,5 @@
 """Self-test of the leisure collections of the reference library (the owner's request of 2026-11-22):
-homestead.py, outdoors.py, games_hobbies.py, sacred_texts.py, science_use.py and literature.py, with MADE-UP data only:
+homestead.py, outdoors.py, games_hobbies.py, sacred_texts.py, science_use.py, literature.py and plant_id.py, with MADE-UP data only:
 nothing is downloaded.
 
 It checks that:
@@ -35,13 +35,14 @@ import games_hobbies  # noqa: E402
 import homestead  # noqa: E402
 import literature  # noqa: E402
 import outdoors  # noqa: E402
+import plant_id  # noqa: E402
 import read_aloud  # noqa: E402
 import sacred_texts  # noqa: E402
 import science_use  # noqa: E402
 
-MODULES = {homestead: ["homestead"], outdoors: ["outdoors"], games_hobbies: ["games-hobbies"],
+MODULES = {homestead: ["homestead"], outdoors: ["outdoors"], games_hobbies: ["card-games", "board-games", "games-hobbies"],
            sacred_texts: ["sacred-texts"], science_use: ["science-use"],
-           literature: ["literature"] + [w for w, _s, _r in literature.GENRES]}
+           literature: ["literature"] + [w for w, _s, _r in literature.GENRES], plant_id: ["plant-id"]}
 
 
 def books(m):
@@ -61,7 +62,7 @@ def test_registered_and_wired():
             keys = sources.expand_keys([word])
             assert keys == m.COLLECTION.expand_keys([word]) and len(keys) == len(set(keys)) <= 256, word
             assert all(m.COLLECTION.owns(k) for k in keys), word
-        everything = sources.expand_keys([words[0]])
+        everything = [k for w in words for k in sources.expand_keys([w])]
         names = {f"{m.COLLECTION.prefix}:{b['name']}" for b in books(m)}
         assert names <= set(everything), m.__name__
     prefixes = [m.COLLECTION.prefix for m in MODULES]
@@ -78,10 +79,11 @@ def test_every_book_has_an_allowed_licence():
             short = g["licence"] if g["licence"] in sources.NO_CHANGES else B.licence_short(g["licence"])
             assert B.licence_kind(short, bool(g.get("unchanged"))), (g["name"], short)
             assert g["description"] and g["notice"] and g["title"] and g["subject"], g["name"]
-            if g.get("archive"):
-                assert g.get("old_public_domain") or g.get("distribution_a"), g["name"]
+            if g.get("archive") and g["licence"].startswith("Public domain (published"):
+                assert g.get("old_public_domain"), g["name"]
                 assert int(g["published"][:4]) < 1931 and g["archive"] in g["version"], g["name"]
-                assert g["licence"] == "Public domain (published before 1931)", g["name"]
+            elif g.get("archive"):                  # a newer openly licensed or government book on the Archive
+                assert g["licence_page"] and g["licence_text"] or g["licence"].startswith("Public domain (US"), g["name"]
             elif g["name"] in m.COLLECTION.guides:
                 assert g["licence_page"] and g["licence_text"], g["name"]
                 pattern = re.compile(g["pages"])
@@ -92,6 +94,18 @@ def test_every_book_has_an_allowed_licence():
                     assert starts or g.get("urls"), g["name"]
             else:
                 assert g.get("pdf") and g.get("page"), g["name"]
+
+
+def test_games_words_and_open_rpg_rules():
+    cards, boards, rest = (set(sources.expand_keys([w])) for w in ("card-games", "board-games", "games-hobbies"))
+    assert not (cards & boards or cards & rest or boards & rest)
+    assert "games:fosters_complete_hoyle_1916" in cards and "games:smith_game_of_go_1908" in boards
+    srd = games_hobbies.COLLECTION.pdfs["dnd_srd_5_1_cc"]
+    assert srd["licence"] == "CC BY 4.0" and "Creative Commons Attribution 4.0" in srd["notice"]
+    fate = games_hobbies.COLLECTION.guides["fate_srd"]
+    assert fate["licence"] == "CC BY 3.0" and "Evil Hat Productions" in fate["notice"]
+    assert re.match(fate["pages"], "https://fate-srd.com/fate-core/aspects-fate-points")
+    assert not re.match(fate["pages"], "https://fate-srd.com/")
 
 
 def test_no_internet_archive_item_twice():
@@ -110,6 +124,13 @@ def test_safety_notes():
     for m, note in ((homestead, homestead.SAFETY), (outdoors, outdoors.SAFETY)):
         for g in books(m):
             assert note in g["notice"], g["name"]
+    for words in ("expert has identified it in person", "water hemlock", "death cap", "1-800-222-1222",
+                  "poison ivy"):
+        assert words in plant_id.SAFETY, words
+    for g in books(plant_id):
+        assert plant_id.SAFETY in g["notice"], g["name"]
+    herbs = plant_id.COLLECTION.guides["nccih_herbs_at_a_glance"]
+    assert "gives no doses" in herbs["notice"]
     sky = science_use.COLLECTION.guides["nasa_skywatching"]
     assert "Never look at the Sun" in sky["notice"] and "not subject to copyright" in sky["licence_text"]
     assert "drop, cover and hold on" in science_use.QUAKE_SAFETY
