@@ -128,7 +128,8 @@ FIRST_AID_SKILLS = [
                                           "the chest, about 100 to 120 times a minute, after calling 911",
          question=ASK_DOING),
     item("Chest compressions", "chest compressions, the main part of CPR", question=ASK_DOING),
-    item("Heimlich maneuver", "abdominal thrusts (the Heimlich manoeuvre) for a choking adult", question=ASK_DOING),
+    item("Heimlich maneuver", "abdominal thrusts (the Heimlich manoeuvre) for someone who is choking; babies under "
+                              "one year get back blows and chest thrusts instead", question=ASK_DOING),
     item("Recovery position", "the recovery position: a person who is breathing but not awake, laid on their side so "
                               "the airway stays open", question=ASK_DOING),
     item("First aid training", "a first aid class", question=ASK_DOING),
