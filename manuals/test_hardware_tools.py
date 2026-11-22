@@ -9,8 +9,9 @@ It checks that:
     firearms makers (but Master Lock, under its own id) or the smoking makers; no manual-copying site is named;
   - a "read" maker's page gives entries in its own category with the maker's own type (never a firearm word such as
     "laser" or "safe"), and robots.txt is obeyed;
-  - a public-domain guide is kept only with a PDF; a military manual only when its front text says Distribution
-    Statement A (or it is older than 1964) and shows no restricted marking;
+  - a public-domain guide is kept only with a PDF; a military manual follows the release rule (military_release.py):
+    kept with or without Distribution Statement A (a truthful release line), link only and personal use with a
+    restricted marking, left out with a classified one;
   - the written index carries the category's safety notice and guidance.
 
 Run it from the repository's folder:   python3 -m pytest manuals/test_hardware_tools.py
@@ -142,7 +143,7 @@ def test_public_guides_are_checked():
     items = {"navy_ok": "NAVEDTRA 14250 Approved for public release; distribution is unlimited.",
              "navy_b": "Distribution Statement B: authorized to US Government agencies only.",
              "army_none": "Lathe operations. Lesson 1.", "old_army": "War Department, 1941. The Machinist.",
-             "osha": "Hand and Power Tools. OSHA 3080."}
+             "osha": "Hand and Power Tools. OSHA 3080.", "navy_conf": "CONFIDENTIAL. Made-up course."}
     meta, pages = {}, {}
     for ident, front in items.items():
         m, p = ia_item(ident, front)
@@ -154,18 +155,55 @@ def test_public_guides_are_checked():
               H._guide("army_none", "Lathe", "the US Army", None, True),
               H._guide("old_army", "The Machinist", "the US Army", 1941, True),
               H._guide("osha", "Hand and Power Tools", "OSHA", 1998),
-              H._guide("no_pdf", "No PDF", "OSHA", 2000)]
+              H._guide("no_pdf", "No PDF", "OSHA", 2000),
+              H._guide("navy_conf", "Classified", "the US Navy", 1960, True)]
     entries, notes = B.public_guide_entries(FakeFetch(pages, meta), guides, "metal_shop_welding")
     kept = {e["name"]: e for e in entries}
-    assert set(kept) == {"Steelworker", "The Machinist", "Hand and Power Tools"}
+    assert set(kept) == {"Steelworker", "The Machinist", "Hand and Power Tools", "Lathe", "Restricted"}
     assert kept["Steelworker"]["manuals"][0]["release"].startswith("Distribution Statement A")
     assert "before distribution statements" in kept["The Machinist"]["manuals"][0]["release"]
+    assert "print no distribution statement" in kept["Lathe"]["manuals"][0]["release"]
+    assert "approved for public release" not in kept["Lathe"]["manuals"][0]["release"].lower()
+    restricted = kept["Restricted"]["manuals"][0]
+    assert restricted["link_only"] and restricted["personal_use"] and kept["Restricted"]["access"] == "link"
     assert "release" not in kept["Hand and Power Tools"]["manuals"][0]
     for e in entries:
         assert e["type"] == "guide" and e["category"] == "metal_shop_welding"
         assert e["manuals"][0]["rights"] == "a US government work (public domain)"
         assert e["manuals"][0]["url"].startswith("https://archive.org/download/")
-    assert len(notes) == 3 and any("restricted marking" in n for n in notes) and any("no PDF" in n for n in notes)
+    assert len(notes) == 3 and any("restricted marking" in n and "link only" in n for n in notes)
+    assert any("no PDF" in n for n in notes) and any("classified" in n for n in notes)
+
+
+def test_restricted_guide_with_an_open_government_copy():
+    """A restricted-marked Internet Archive copy whose government address answers without a login (checked at build
+    time, robots.txt allowing) is indexed openly, with a notice naming that address; when it does not answer, or
+    robots.txt forbids asking, it stays link only and personal use."""
+    gov = "https://www.made-up-agency.gov/library/navy-b.pdf"
+    meta, pages = ia_item("navy_b", "Distribution Statement B: authorized to US Government agencies only.")
+
+    class Fetch(FakeFetch):
+        open_now = True
+
+        def answers(self, url):
+            self.asked.append("ANSWERS " + url)
+            return self.open_now
+    guide = dict(H._guide("navy_b", "Restricted", "the US Navy", 1996, True), gov=gov)
+    fetch = Fetch(pages, {"navy_b": meta})
+    entries, notes = B.public_guide_entries(fetch, [guide], "metal_shop_welding")
+    manual = entries[0]["manuals"][0]
+    assert not manual.get("link_only") and f"publishes it openly at {gov}" in manual["release"]
+    assert "Distribution Statement B" in manual["release"] and "ANSWERS " + gov in fetch.asked
+    B._ROBOTS.clear()
+    fetch = Fetch(pages, {"navy_b": meta})
+    fetch.open_now = False
+    entries, notes = B.public_guide_entries(fetch, [guide], "metal_shop_welding")
+    assert entries[0]["manuals"][0]["link_only"] and "personal use" in notes[0]
+    B._ROBOTS.clear()
+    pages["https://www.made-up-agency.gov/robots.txt"] = "User-agent: *\nDisallow: /"
+    fetch = Fetch(pages, {"navy_b": meta})
+    entries, notes = B.public_guide_entries(fetch, [guide], "metal_shop_welding")
+    assert entries[0]["manuals"][0]["link_only"] and "ANSWERS " + gov not in fetch.asked
 
 
 def test_military_guides_are_marked():

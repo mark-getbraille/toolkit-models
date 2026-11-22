@@ -6,8 +6,9 @@ It checks that each category is listed under its key with a plain name, a kind, 
 Internet Archive words; that every maker is link-only (nothing read) with its reason, an https address and no
 manual-copying site, and no maker id is used twice; that no Internet Archive word repeats a word of the categories
 these sit beside (cars, lawn_garden, musical_instruments, baby_gear, home_medical, home_health_tests); that the home
-health notices name 911 and say they are not a diagnosis; and that a military public guide is kept only when its own
-front text shows it is approved for public release (made-up item).
+health notices name 911 and say they are not a diagnosis; and that a military public guide follows the release rule
+(military_release.py): indexed with or without Distribution Statement A, link only and personal use when its own
+front text prints a restricted marking (made-up item).
 
 Run it from the repository's folder:   python3 -m pytest manuals/test_life_skills.py
 """
@@ -74,7 +75,7 @@ class FakeFetch:
         return 1000
 
 
-def test_military_guides_need_public_release():
+def test_military_guides_follow_the_release_rule():
     guide = C.CATEGORIES["eye_care_optics"]["public_guides"][0]
     assert guide["military"]
     files = [{"name": "x.pdf", "format": "Text PDF", "size": "100"}, {"name": "x_djvu.txt", "format": "DjVuTXT"}]
@@ -83,4 +84,7 @@ def test_military_guides_need_public_release():
     assert len(got) == 1 and got[0]["manuals"][0]["rights"] == "a US government work (public domain)"
     restricted = FakeFetch(files, "OPTICALMAN 3 & 2 ... Distribution authorized to DoD components only.")
     got, notes = B.public_guide_entries(restricted, [guide], "eye_care_optics")
-    assert got == [] and notes
+    assert len(got) == 1 and got[0]["manuals"][0]["link_only"] and "personal use" in notes[0]
+    silent = FakeFetch(files, "OPTICALMAN 3 & 2 ... Chapter 1.")
+    got, notes = B.public_guide_entries(silent, [guide], "eye_care_optics")
+    assert "print no distribution statement" in got[0]["manuals"][0]["release"] and not notes

@@ -1562,7 +1562,7 @@ PACKS.update(BIGTECH_PACKS)
 from ngo_packs import NGO_PACKS
 PACKS.update(NGO_PACKS)
 
-# Drawings from US Army field manuals and Navy courses with Distribution Statement A (packs/field_manual_packs.py).
+# Drawings from US Army field manuals and Navy courses published openly (packs/field_manual_packs.py, military_release.py).
 from field_manual_packs import FIELD_MANUAL_PACKS
 PACKS.update(FIELD_MANUAL_PACKS)
 

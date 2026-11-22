@@ -10,7 +10,8 @@ It checks that:
   - iFixit's pages are link only with their non-commercial rights; NLS's, the VA's and ACL's pages are "full" (US
     government works) and the FCC's and the makers' Braille eReader guides are link only;
   - the Internet Archive service-manual search pairs a kind of device with a kind of service paper and leaves out
-    sales papers and ham transceivers; military public guides need Distribution Statement A;
+    sales papers and ham transceivers; military public guides are marked military (so the release rule of
+    military_release.py judges them);
   - a written index carries the collection's notice and guidance.
 
 Run it from the repository's folder:   python3 -m pytest manuals/test_repair_build_crafts.py
