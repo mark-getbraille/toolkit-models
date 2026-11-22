@@ -283,6 +283,7 @@ TOPICS = [
            "synthetic_bills",
            # money and work, travel, citizenship and civics (money_work_sources.py, travel_sources.py, civics_sources.py)
            "synthetic_pay_documents", "synthetic_travel_documents", "commons_travel_signs", "synthetic_civic_documents",
+           "synthetic_gov_forms",
            "commons_hearing_communication", "commons_immigration_documents",
            # share-alike
            "hiertext", "mapqa", "indoor_commons_sa",

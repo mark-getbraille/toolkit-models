@@ -534,6 +534,7 @@ jobs:
             synthetic_travel_documents) limit=3000 ;;
             commons_travel_signs) limit=600 ;;
             synthetic_civic_documents) limit=1500 ;;
+            synthetic_gov_forms) limit=2000 ;;
             commons_driving) limit=900 ;;
             open_images_driving) limit=1500 ;;
             commons_computer_basics) limit=900 ;;

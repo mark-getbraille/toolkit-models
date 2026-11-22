@@ -3500,7 +3500,7 @@ _add_collections(VISION_SOURCES)
 # signs) and what was left out. Each file may be missing; none of their keys may be used for picture-making unless the
 # file's *_PICTURE_MAKING_OK names it (none does).
 for _mwc_name, _mwc_prefix in (("money_work_sources", "MONEY_WORK"), ("travel_sources", "TRAVEL"),
-                               ("civics_sources", "CIVICS")):
+                               ("civics_sources", "CIVICS"), ("gov_forms_sources", "GOV_FORMS")):
     try:
         _mwc = __import__(_mwc_name)
     except ImportError as _e:

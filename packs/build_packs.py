@@ -1946,8 +1946,10 @@ COMMONS_KEYS = COMMONS_KEYS | frozenset(POWER_COMMONS_KEYS)
 from money_work_packs import MONEY_WORK_PACKS, MONEY_WORK_COMMONS_KEYS
 from travel_packs import TRAVEL_PACKS, TRAVEL_COMMONS_KEYS
 from civics_packs import CIVICS_PACKS, CIVICS_COMMONS_KEYS
+# Filled-in government forms (packs/gov_forms_packs.py): SPECIMEN forms laid out like the W-4, W-9, 1099-NEC and SS-5.
+from gov_forms_packs import GOV_FORMS_PACKS, GOV_FORMS_COMMONS_KEYS
 for _packs, _commons in ((MONEY_WORK_PACKS, MONEY_WORK_COMMONS_KEYS), (TRAVEL_PACKS, TRAVEL_COMMONS_KEYS),
-                         (CIVICS_PACKS, CIVICS_COMMONS_KEYS)):
+                         (CIVICS_PACKS, CIVICS_COMMONS_KEYS), (GOV_FORMS_PACKS, GOV_FORMS_COMMONS_KEYS)):
     PACKS.update(_packs)
     COMMONS_KEYS = COMMONS_KEYS | frozenset(_commons)
 # Practical life (packs/practical_packs.py gathers six files, the owner's request of 2026-11-22): driving and road
