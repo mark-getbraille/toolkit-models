@@ -85,7 +85,9 @@ def section_pages(text):
         head = re.search(r'<h3 class="section-head">(.*?)</h3>', body, re.S)
         title = " ".join(html.unescape(re.sub(r"<[^>]+>", " ", head.group(1))).split()) if head else path[-1]
         body = re.sub(r'<h3 class="section-head">.*?</h3>', "", body, count=1, flags=re.S)
-        out.append((title.replace("§", "Section "), chapter.title() if chapter.isupper() else chapter, body))
+        m = re.match(r"^(\w+ [\w.]+)-(.*)$", chapter)
+        chapter = f"{m.group(1).title()}: {m.group(2).capitalize()}" if m and chapter.isupper() else chapter
+        out.append((title.replace("§", "Section "), chapter, body))
     return out
 
 
