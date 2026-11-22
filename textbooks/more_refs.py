@@ -96,6 +96,10 @@ MODULES = [
     "wilderness_first_aid", # NPS and USFS backcountry safety, NIOSH outdoor hazards, CDC, NOAA SARSAT, TB MEDs (wild:)
     # small boats (the owner's request of 2026-11-22)
     "small_boats",          # Navigation Rules, boating CFR, Coast Guard and Army boat manuals, NOAA, NWS, old boat books (boat:)
+    # court opinions, patents, quotations and proverbs (the owner's request of 2026-11-22)
+    "court_opinions",       # Supreme Court opinions by volume and landmark cases by subject, from govinfo (court:)
+    "patents",              # famous patents (Wikisource), assistive and household patents (USPTO, sign-up) (pat:)
+    "quotations",           # Bartlett, Hoyt, Brewer, proverb and idiom books, Wikiquote from its dump (quote:)
 ]
 
 _loaded = {}
@@ -168,6 +172,15 @@ def allowed():
     out = {}
     for m in modules():
         out.update(getattr(m, "ALLOWED", {}))
+    return out
+
+
+def kiwix_labels():
+    """The labels these modules give Kiwix files of the toolkit's Kiwix library ({ZIM name: licence words}), such as
+    Wikiquote's (quotations.py)."""
+    out = {}
+    for m in modules():
+        out.update(getattr(m, "KIWIX_LABELS", {}))
     return out
 
 

@@ -2768,6 +2768,7 @@ def merge(manifest_paths, existing=None, robots=None):
     import cookbooks                             # (the same)
     import drinks_reference                      # (the same)
     import open_catalogues                       # (the same)
+    import more_refs                             # Kiwix labels of the reference modules (Wikiquote)
     return {"built": datetime.date.today().isoformat(), "release": RELEASE,
             "books": sorted(books.values(), key=lambda b: (b["group"], b["title"].casefold())),
             "left_out": left, "not_included": [{"title": t, "reason": r} for t, r in sources.NOT_INCLUDED +
@@ -2781,7 +2782,7 @@ def merge(manifest_paths, existing=None, robots=None):
                               **open_catalogues.LICENCE_LINES},
             "groups": sources.GROUPS, "group_notes": {**periodicals.GROUP_NOTES, **medications.GROUP_NOTES,
                                                       **courses.GROUP_NOTES, **cookbooks.GROUP_NOTES},
-            "kiwix_labels": {**courses.KIWIX_LABELS, **cookbooks.KIWIX_LABELS},
+            "kiwix_labels": {**courses.KIWIX_LABELS, **cookbooks.KIWIX_LABELS, **more_refs.kiwix_labels()},
             "pieces_done": sorted(done),
             "pieces_failed": {k: n for k, n in sorted(failed.items()) if k not in done}}
 
