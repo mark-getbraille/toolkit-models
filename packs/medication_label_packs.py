@@ -18,8 +18,8 @@ before taking any medicine: a photo cannot show the whole label." Two different 
 ("Lantus (insulin glargine) 100 units/ml").
 
 The pack (open, checked at the source in November 2026):
-  commons_medication_labels  Wikimedia Commons, found with Commons search (srsearch intitle:<medicine name> and a unit
-                             of strength, files only): files CC0, public domain, CC BY or an open government
+  commons_medication_labels  Wikimedia Commons, found with Commons search (srsearch intitle:<medicine name>, files
+                             only): files CC0, public domain, CC BY or an open government
                              licence (each file's licence checked on its own page; never BY-SA, NC or ND); captions
                              CC0. Files that sit in a category med_vet_packs.med_commons_medicines or
                              med_commons_supplies reads (or one of its subcategories) are left out: those packs
@@ -196,11 +196,10 @@ def file_categories(s, titles):
 
 
 def search_titles(s, name, most=100):
-    """Commons file titles whose title contains the medicine's name and whose words have a unit of strength (Commons
-    search, files only)."""
+    """Commons file titles whose title contains the medicine's name (Commons search, files only)."""
     from food_packs import commons_get
     data = commons_get(s, {"action": "query", "list": "search", "srnamespace": 6, "srlimit": most,
-                           "srsearch": f'intitle:"{name}" (mg OR mcg OR ml OR units OR IU) filetype:bitmap'})
+                           "srsearch": f'intitle:"{name}" filetype:bitmap'})
     return [r["title"] for r in (data.get("query") or {}).get("search") or []]
 
 
