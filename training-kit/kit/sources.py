@@ -3569,3 +3569,18 @@ for _hl_name, _hl_prefix in (("mental_health_sources", "MENTAL_HEALTH"),
     NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in _hl_sources
                                                                    if s.key not in _hl_ok or s.key in _hl_bodily)
     _add_collections(_hl_sources)
+# Small boats (the owner's request of 2026-11-22, small_boats_sources.py): the ready-made Commons pack of boat types,
+# parts, fittings and engines, and the sources looked at and left out; the file may be missing. None of its keys may
+# be used for picture-making (SMALL_BOATS_PICTURE_MAKING_OK is empty: boat photos show the people aboard).
+try:
+    import small_boats_sources as _small_boats  # noqa: E402
+except ImportError as _e:
+    _small_boats = None
+    if getattr(_e, "name", None) != "small_boats_sources":
+        say(f"(The small boats collections could not be loaded: {_e}. They are left out.)")
+SMALL_BOATS_SOURCES = list(getattr(_small_boats, "SMALL_BOATS_SOURCES", []) or [])
+_small_boats_ok = set(getattr(_small_boats, "SMALL_BOATS_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _small_boats_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in SMALL_BOATS_SOURCES
+                                                               if s.key not in _small_boats_ok)
+_add_collections(SMALL_BOATS_SOURCES)

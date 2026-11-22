@@ -1980,6 +1980,13 @@ for _packs, _commons in ((MENTAL_HEALTH_PACKS, MENTAL_HEALTH_COMMONS_KEYS),
                          (WILDERNESS_FIRST_AID_PACKS, WILDERNESS_FIRST_AID_COMMONS_KEYS)):
     PACKS.update(_packs)
     COMMONS_KEYS = COMMONS_KEYS | frozenset(_commons)
+# Small boats (packs/small_boats_packs.py, the owner's request of 2026-11-22): Commons boat types (rowboats, dinghies,
+# dories, punts, jon boats, pontoon boats, inflatables, catamarans, sailboats, keelboats, motorboats, wooden boats,
+# life rafts), parts and fittings (cleats, rowlocks, oars, fairleads, keels, centreboards, sails, fenders, mooring
+# lines), boat engines and boatbuilders; every answer ends with its boating, engine, line or workshop note.
+from small_boats_packs import SMALL_BOATS_PACKS, SMALL_BOATS_COMMONS_KEYS
+PACKS.update(SMALL_BOATS_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(SMALL_BOATS_COMMONS_KEYS)
 
 
 def pack_lanes(keys):

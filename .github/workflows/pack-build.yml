@@ -558,6 +558,7 @@ jobs:
             commons_contraception_menstrual) limit=400 ;;
             commons_daily_living_aids) limit=150 ;;
             commons_wilderness_rescue) limit=200 ;;
+            commons_small_boats) limit=900 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in
