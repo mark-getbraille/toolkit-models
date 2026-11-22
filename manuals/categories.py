@@ -739,3 +739,9 @@ CATEGORIES.update({"sleep_relaxation": _SLEEP_RELAXATION, "fitness_equipment": _
 from small_boats_manuals import CATEGORY as _SMALL_BOATS  # noqa: E402
 
 CATEGORIES["small_boats"] = _SMALL_BOATS
+# Home food preserving (the owner's request of 2026-11-22, manuals/preserving_manuals.py): pressure, water-bath and
+# steam canners, canning jars, freeze dryers and fermentation crocks, with the canner, dehydrator, vacuum sealer and
+# freeze dryer makers link-only, the USDA Complete Guide to Home Canning and the preserving safety notice said first.
+from preserving_manuals import CATEGORY as _CANNING_PRESERVING  # noqa: E402
+
+CATEGORIES["canning_preserving"] = _CANNING_PRESERVING
