@@ -2390,6 +2390,8 @@ SOURCES = [
            "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 1500, 15, prepare_pack, "about 150 MB"),
     Source("commons_date_codes", "Best-before, use-by and expiry dates, lot and batch numbers on packaging, the date read only where the file's own words give it (Wikimedia Commons, ready-made pack)",
            "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 400, 5, prepare_pack, "about 80 MB"),
+    Source("commons_sign_language", "Sign language: the American and British manual alphabets, fingerspelled letters and numbers, signs and interpreters, named only where the file says (Wikimedia Commons, ready-made pack)",
+           "Pictures CC0, public domain or CC BY (credited in CREDITS.txt); captions CC0", "Wikimedia Commons contributors (credited in CREDITS.txt), https://commons.wikimedia.org", "permissive", 500, 5, prepare_pack, "about 80 MB"),
     Source('skin_lesion_photos', 'Skin spots photographed with a phone, adults (PAD-UFES-20, ready-made pack)',
            'CC BY 4.0 (Mendeley Data zr7vgbcyr2)',
            'PAD-UFES-20 (Pacheco et al., 2020), CC BY 4.0', "permissive", 2000, 20, prepare_pack, 'about 400 MB', content="medical"),
@@ -2623,6 +2625,8 @@ PEOPLE_AND_BODILY_PACK_KEYS = (
     "openstax_figures",
     # date_code_packs.py: a picture-making model must not learn to print expiry dates on packs
     "commons_date_codes",
+    # sign_language_packs.py: people's hands and people signing
+    "commons_sign_language",
 )
 NOT_FOR_PICTURE_MAKING = NOT_FOR_PICTURE_MAKING + PEOPLE_AND_BODILY_PACK_KEYS
 # The drug and firearm packs (packs/drug_firearm_packs.py): describing only, never for picture-making, whether or not

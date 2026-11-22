@@ -245,6 +245,7 @@ jobs:
             openstax_figures) limit=3000 ;;
             commons_charts) limit=1500 ;;
             commons_date_codes) limit=400 ;;
+            commons_sign_language) limit=500 ;;
             clock_times) limit=1300 ;;
             seven_segment) limit=3333 ;;
             open_images_home) limit=3900 ;;

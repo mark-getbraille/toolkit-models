@@ -196,3 +196,31 @@ def test_dates_wired():
     assert "ExpDate (Seker and Ahn, 2022, CC BY 4.0)" in k.DATE_NOT_INCLUDED
     import topics
     assert "commons_date_codes" in topics.find("food").keys
+
+
+# ----------------------------------------------------------------- sign language
+
+def test_signs_named_only_where_labelled():
+    import sign_language_packs as sl
+    letters = sl.alphabet_rows("ASL letters")
+    assert letters("File:Sign language A.svg", "")[0] == (sl.ASK_LETTER, "The letter A, in the American Sign "
+                                                                         "Language manual alphabet.")
+    assert letters("File:ASL number 5.jpg", "") == [(sl.ASK_NUMBER, "The number 5, in American Sign Language.")]
+    assert letters("File:BSL letter Q.jpg", "")[0][1].endswith("British Sign Language manual alphabet.")
+    assert letters("File:Asl alphabet gallaudet.svg", "")[0][1].startswith("This is a chart of the American")
+    assert letters("File:Hand photo.jpg", "") == []
+    signing = sl.signing_rows("American Sign Language")
+    assert signing("File:ASL sign for love.jpg", "") == [(sl.ASK_SIGN, "It is the American Sign Language sign for "
+                                                                       "\"love\".")]
+    assert signing("File:Hello.jpg", "A woman signing for \"hello\" in ASL")[0][1].endswith("for \"hello\".")
+    assert signing("File:Event.jpg", "People at a deaf community event in Ohio") == [
+        (sl.ASK_WHAT, "This shows American Sign Language.")]
+    assert signing("File:Event.jpg", "") == []
+
+
+def test_sign_language_wired():
+    import sign_language_packs as sl
+    import sources
+    check_wired(sl.SIGN_LANGUAGE_PACKS, sl.SIGN_LANGUAGE_LIMITS, sl.SIGN_LANGUAGE_COMMONS_KEYS,
+                no_picture_making=sl.SIGN_LANGUAGE_PACKS)
+    assert "commons_sign_language" in sources.PEOPLE_AND_BODILY_PACK_KEYS

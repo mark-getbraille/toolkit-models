@@ -1687,6 +1687,10 @@ PACKS.update(CHART_PACKS)
 # the date said only where the file's own words give it. Never for picture-making (no learning to print dates).
 from date_code_packs import DATE_CODE_PACKS
 PACKS.update(DATE_CODE_PACKS)
+# Sign language (packs/sign_language_packs.py): manual alphabets, fingerspelled letters, signs and interpreters from
+# Commons, a letter or sign named only where the file says it. People's hands: never for picture-making.
+from sign_language_packs import SIGN_LANGUAGE_PACKS
+PACKS.update(SIGN_LANGUAGE_PACKS)
 
 
 # The packs whose builder reads the Wikimedia Commons API (commons_get, commons_members, commons_entries,
@@ -1756,6 +1760,8 @@ COMMONS_KEYS = frozenset({
     "commons_charts",
     # (date_code_packs.py)
     "commons_date_codes",
+    # (sign_language_packs.py)
+    "commons_sign_language",
 })
 
 
