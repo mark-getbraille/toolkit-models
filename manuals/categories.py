@@ -618,3 +618,14 @@ CATEGORIES["firearms"]["ia_exclude"] = f"{FIREARMS_EXCLUDE}|{NOT_A_MANUAL}|{_MIL
 from troubleshooting import CATEGORIES as _TROUBLESHOOTING  # noqa: E402
 
 CATEGORIES.update(_TROUBLESHOOTING)
+
+# Life skills (the owner's request of 2026-11-22): car care, garden and lawn care, the home health care categories
+# (first aid and home care devices, dental care devices, eye care and optical aids, birth and newborn care devices) and
+# musical instrument care, each with its notice, makers (link-only), public guides and guidance, in its own file.
+from car_maintenance import CATEGORY as _CAR_CARE  # noqa: E402
+from garden_care import CATEGORY as _GARDEN_CARE  # noqa: E402
+from home_health_care import CATEGORIES as _HOME_HEALTH_CARE  # noqa: E402
+from instrument_care import CATEGORY as _INSTRUMENT_CARE  # noqa: E402
+
+CATEGORIES.update({"car_care": _CAR_CARE, "garden_care": _GARDEN_CARE, "instrument_care": _INSTRUMENT_CARE})
+CATEGORIES.update(_HOME_HEALTH_CARE)
