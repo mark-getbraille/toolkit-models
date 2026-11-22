@@ -42,6 +42,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import knots_outdoor as KO  # noqa: E402
 import refs_kit as K  # noqa: E402
+from old_ia_books import old_book  # noqa: E402
 
 GROUP = KO.GROUP                       # "knots": the same group as knots_outdoor.py
 GROUPS = dict(KO.GROUPS)               # {"knots": "Reference, knots and outdoor skills"}
@@ -121,6 +122,26 @@ PDFS = [
          work="a work of the US Marine Corps"),
 ]
 
+# Whole Navy manuals, gunnery and small-arms chapters included (the owner's decision of 22 November 2026: the
+# historical naval gunnery and small arms of these manuals are of historical interest and no one has that hardware).
+PDFS += [
+    _mil("navy_boatswains_mate_2c_1944", "Boatswain's Mate 2c (US Navy, NAVPERS 10005, 1944)",
+         "Deck seamanship and marlinspike work", "Bureau of Naval Personnel (US Navy)", "BoatswainsMate2cNAVPERS",
+         "1944",
+         "The Navy's 1944 rate training manual for boatswain's mates, read whole: deck seamanship, marlinspike "
+         "work (line, knots, splices and rigging), ground tackle, boats, cargo handling, the boatswain's mate as a "
+         "gunner, and the duties of the rate. A historical manual: its gunnery chapter describes Second World War "
+         "ship's guns, kept as history.", work="a work of the US Navy"),
+    dict(old_book(GROUP, "bluejackets_manual_1917", "The Bluejacket's Manual (US Navy, 1917)",
+                  "Seamanship, knots and boats", "United States Naval Institute", "bluejacketsmanua0000norm", 1917,
+                  "The classic handbook for sailors of the US Navy, read whole: knots, bends, hitches and splices, "
+                  "boats and boat handling, the compass and navigation basics, signals, ship's routine and customs, "
+                  "first aid, swimming, and the infantry drill, small arms and landing-force chapters of its day, "
+                  "kept as history.", note="Published in {year}: its rules, first aid and equipment are those of "
+                  "its day.", notice=KO.OUTDOOR_SAFETY)),   # published by the Naval Institute (not a government work):
+                                                                # public domain as published before 1931
+]
+
 COLLECTION = K.Collection("kmil", GROUP, pdfs=PDFS,
                           words={"knots-military": lambda: [f"kmil:{p['name']}" for p in PDFS]})
 
@@ -151,17 +172,9 @@ NOT_INCLUDED = [
     ("US Navy Seaman (1981) and Boatswain's Mate 3 & 2 (1959) rate training manuals", "Lending-library scans on the "
      "Internet Archive that cannot be downloaded (checked 2026-11-22). Index: "
      "https://archive.org/details/seaman00nava"),
-    ("US Navy Boatswain's Mate 2c (NAVPERS 10005, 1944)", "A US government work on the Internet Archive with a text "
-     "layer, but its chapter 6 (\"The Bosun's Mate as a gunner\") is not bookmarked apart from the deck seamanship "
-     "chapter, so the builder cannot leave the gunnery out; and its rope work is only a part of one chapter. Not "
-     "built; the Coast Guard's Boat Crew Handbook covers marlinspike seamanship. Index: "
-     "https://archive.org/details/BoatswainsMate2cNAVPERS"),
     ("US Navy NAVEDTRA Seaman (14067) and Boatswain's Mate (14343) courses; Naval Ships' Technical Manual chapter 613 "
      "(wire and fibre rope)", "No copy with a text layer was found on the Internet Archive (searched 2026-11-22), "
      "and navsea.navy.mil refuses automated requests (403). Index: https://archive.org/search?query=NAVEDTRA+seaman"),
-    ("The Bluejacket's Manual (US Naval Institute, 1902 to 1928 editions)", "Public domain (published before 1931), "
-     "but its knot and boat chapters sit among infantry drill, small arms and landing-force chapters that the "
-     "builder cannot cut from an old scan; the Coast Guard handbook is built instead. Index: https://archive.org/details/bluejacketsmanua0000norm"),
     ("US Coast Guard Boat Crew Seamanship Manual (COMDTINST M16114.5C) and the Coast Guard Auxiliary's seamanship "
      "courses", "uscg.mil, dco.uscg.mil and media.defense.gov refuse automated requests (403, checked 2026-11-22); "
      "the Boat Crew Handbook series took over its seamanship parts, and its Seamanship Fundamentals is built "
