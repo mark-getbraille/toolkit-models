@@ -1891,6 +1891,17 @@ for _packs, _commons in ((CAR_CARE_PACKS, CAR_CARE_COMMONS_KEYS), (GARDEN_PACKS,
 from outdoor_cooking_packs import OUTDOOR_COOKING_PACKS, OUTDOOR_COOKING_COMMONS_KEYS
 PACKS.update(OUTDOOR_COOKING_PACKS)
 COMMONS_KEYS = COMMONS_KEYS | frozenset(OUTDOOR_COOKING_COMMONS_KEYS)
+# Emergency preparedness and disasters (packs/preparedness_packs.py, the owner's request of 2026-11-22): kits, supplies,
+# respirators, potassium iodide and backup power; warning sirens, shelters, safe rooms, response and FEMA mitigation and
+# recovery; emergency signs and warning maps; the disasters commons_disasters lacks (volcanoes, tsunamis, drought, ice,
+# hail, heat, smoke, dust, wind, lightning, avalanches, mudflows, flash floods); Open Images disasters. And radio
+# communications as its own section (packs/radio_packs.py): radios, antennas and station gear, QSL cards and charts,
+# mesh and data radio, Open Images two-way radios. Every answer carries its safety note.
+from preparedness_packs import PREPAREDNESS_PACKS, PREPAREDNESS_COMMONS_KEYS
+from radio_packs import RADIO_PACKS, RADIO_COMMONS_KEYS
+for _packs, _commons in ((PREPAREDNESS_PACKS, PREPAREDNESS_COMMONS_KEYS), (RADIO_PACKS, RADIO_COMMONS_KEYS)):
+    PACKS.update(_packs)
+    COMMONS_KEYS = COMMONS_KEYS | frozenset(_commons)
 
 
 def pack_lanes(keys):

@@ -653,3 +653,12 @@ from instrument_care import CATEGORY as _INSTRUMENT_CARE  # noqa: E402
 
 CATEGORIES.update({"car_care": _CAR_CARE, "garden_care": _GARDEN_CARE, "instrument_care": _INSTRUMENT_CARE})
 CATEGORIES.update(_HOME_HEALTH_CARE)
+# Emergency preparedness (manuals/preparedness_manuals.py: generators, transfer switches, power stations and battery
+# backups; kits, escape ladders, respirators and alerts for deaf and blind people) and radio communications, with its
+# own heading (manuals/radio_manuals.py: two-way radios, weather alert radios, amateur radio makers, mesh and satellite
+# messengers, military radio manuals), the owner's request of 2026-11-22; every maker link-only.
+from preparedness_manuals import CATEGORIES as _PREPAREDNESS  # noqa: E402
+from radio_manuals import CATEGORIES as _RADIO  # noqa: E402
+
+CATEGORIES.update(_PREPAREDNESS)
+CATEGORIES.update(_RADIO)
