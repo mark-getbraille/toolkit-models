@@ -18,6 +18,7 @@ answer about a machine ends with the safety notes that fit it (the same words in
   MACHINE_NOTE   rotating machinery: safety glasses; no gloves, loose sleeves, jewellery or long hair near spinning
                  parts; chuck key out, guards on, stop before measuring.
   BLADE_NOTE     cutting machines: sharp blades, fingers clear of the moving carriage.
+  CUT_NOTE       cutting tools in Open Images photos: sharp, cut away from yourself.
   HEAT_NOTE      heat presses: hot platen, gloves, never left on alone.
   CASTING_NOTE   molten metal and water, protective gear; resins and silicone need gloves and ventilation.
   SOLDER_NOTE    soldering and reflow: hot, fume extractor, wash hands after solder.
@@ -90,6 +91,7 @@ MACHINE_NOTE = ("Rotating machinery: wear safety glasses; no gloves, loose sleev
                 "machine before measuring or clearing chips.")
 BLADE_NOTE = ("Blades: cutting-machine and weeding blades are very sharp: change them with care and keep fingers "
               "clear of the carriage while it moves.")
+CUT_NOTE = "Sharp edges: cutting tools are sharp: cut away from yourself and keep your other hand behind the blade."
 HEAT_NOTE = ("Heat press: the plate is hot enough to burn: keep hands clear when closing it, use heat-resistant "
              "gloves, and never leave it switched on alone.")
 CASTING_NOTE = ("Casting: molten metal burns and can explode when it meets water or a damp mould: keep everything "
@@ -106,7 +108,7 @@ FORGE_NOTE = ("Hot metal: it burns and looks the same as cold, so treat all meta
               "safety glasses, leather gloves, apron and boots, and keep water and a fire extinguisher close.")
 
 LASER_NOTES = f"{LASER_NOTE} {FUME_NOTE}"
-NOTES = (PRINTER_NOTE, RESIN_NOTE, LASER_NOTE, FUME_NOTE, MACHINE_NOTE, BLADE_NOTE, HEAT_NOTE, CASTING_NOTE,
+NOTES = (PRINTER_NOTE, RESIN_NOTE, LASER_NOTE, FUME_NOTE, MACHINE_NOTE, BLADE_NOTE, CUT_NOTE, HEAT_NOTE, CASTING_NOTE,
          SOLDER_NOTE, FORMING_NOTE, PLASMA_NOTE, FORGE_NOTE)
 
 # ----------------------------------------------------------------- Commons: 3D printing and 3D design
@@ -280,8 +282,8 @@ MAKING_OI = [
            "Router (Tool)": "a router", "Router bit": "a router bit"}, MACHINE_NOTE),
     group("What measuring and holding tools are in this picture?", {"Calipers": "calipers", "Vise": "a vise"}),
     group("What kind of workroom is this?", {"Workshop": "a workshop", "Toolroom": "a toolroom"}),
-    group("What cutting things are in this picture?", {"Cutting mat": "a cutting mat", "Cutting tool": "a cutting tool"},
-          BLADE_NOTE),
+    group("What cutting things are in this picture?",
+          {"Cutting mat": "a cutting mat", "Cutting tool": "a cutting tool"}, CUT_NOTE),
     group("Is there casting or resin in this picture?", {"Casting": "casting", "Resin": "resin"}, CASTING_NOTE),
     group("Is there a laser in this picture?", {"Laser": "a laser"}, LASER_NOTE),
     group("What metalworking things are in this picture?",

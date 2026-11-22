@@ -29,8 +29,8 @@ import gaps_oi_packs as g  # noqa: E402
 import making_packs as m  # noqa: E402
 
 REPO = os.path.dirname(HERE)
-NOTE_NAMES = ("PRINTER_NOTE", "RESIN_NOTE", "LASER_NOTE", "FUME_NOTE", "MACHINE_NOTE", "BLADE_NOTE", "HEAT_NOTE",
-              "CASTING_NOTE", "SOLDER_NOTE", "FORMING_NOTE", "PLASMA_NOTE", "FORGE_NOTE")
+NOTE_NAMES = ("PRINTER_NOTE", "RESIN_NOTE", "LASER_NOTE", "FUME_NOTE", "MACHINE_NOTE", "BLADE_NOTE", "CUT_NOTE",
+              "HEAT_NOTE", "CASTING_NOTE", "SOLDER_NOTE", "FORMING_NOTE", "PLASMA_NOTE", "FORGE_NOTE")
 
 
 def answers(specs):

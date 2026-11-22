@@ -53,6 +53,7 @@ MACHINE_NOTE = ("Rotating machinery: wear safety glasses; no gloves, loose sleev
                 "machine before measuring or clearing chips.")
 BLADE_NOTE = ("Blades: cutting-machine and weeding blades are very sharp: change them with care and keep fingers "
               "clear of the carriage while it moves.")
+CUT_NOTE = "Sharp edges: cutting tools are sharp: cut away from yourself and keep your other hand behind the blade."
 HEAT_NOTE = ("Heat press: the plate is hot enough to burn: keep hands clear when closing it, use heat-resistant "
              "gloves, and never leave it switched on alone.")
 CASTING_NOTE = ("Casting: molten metal burns and can explode when it meets water or a damp mould: keep everything "
