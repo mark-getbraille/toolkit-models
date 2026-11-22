@@ -129,6 +129,10 @@ MODULES = [
     "court_opinions",       # Supreme Court opinions by volume and landmark cases by subject, from govinfo (court:)
     "patents",              # famous patents (Wikisource), assistive and household patents (USPTO, sign-up) (pat:)
     "quotations",           # Bartlett, Hoyt, Brewer, proverb and idiom books, Wikiquote from its dump (quote:)
+    # history, travel and education (the owner's request of 2026-11-22; shared helpers in govinfo_kit.py)
+    "history",              # history by era and region: NARA, LoC, Public Papers, NPS handbooks, CMH, old books (hist:)
+    "travel_more",          # travel: Wayback copies of DOT, TSA, CBP, State; govinfo sign-up; old guidebooks (tripmore:)
+    "education_more",       # education: ED booklets (ERIC copies), FAFSA form, old education classics (edumore:)
 ]
 
 _loaded = {}
