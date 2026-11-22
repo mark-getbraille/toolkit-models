@@ -27,7 +27,7 @@ label people confirmed, a dataset's own labels); NEVER a diagnosis. Every answer
   BIRTH_NOTE      pregnancy, birth and newborn supplies: 911 in an emergency; not medical advice or a diagnosis, ask
                   your midwife or doctor.
 
-People: the supply, dental, eye and birth packs show things and drawings (files whose words name a child are left
+People: the supply, dental and eye packs show things and drawings (files whose words name a child are left
 out). Two packs show people and are describing only (HOME_HEALTH_BODILY_KEYS, added to the kit's
 PEOPLE_AND_BODILY_PACK_KEYS): commons_first_aid_skills (adults doing CPR on each other or on manikins) and
 scin_skin_conditions (rows marked "content": "medical").
@@ -35,7 +35,9 @@ scin_skin_conditions (rows marked "content": "medical").
 The packs (Commons files CC0, public domain or CC BY; Open Images labels CC BY 4.0; the two datasets as named):
   commons_first_aid_supplies   Commons: space blankets, CPR masks, bag valve masks, Resusci Anne manikins, medical ID
                                tags, tick removal, oral rehydration, calamine lotion, heating pads, compression
-                               stockings and urinary catheters.
+                               stockings and urinary catheters; and the birth supplies and drawings (breast pumps,
+                               the Apgar score chart, drawings of fetal development), too few for a pack of their
+                               own.
   commons_first_aid_skills     Commons: CPR and chest compressions, abdominal thrusts (the Heimlich manoeuvre), the
                                recovery position and first aid classes (adults only; describing only).
   commons_dental_care          Commons: water flossers, interdental brushes, tongue scrapers, braces, clear aligners,
@@ -43,8 +45,6 @@ The packs (Commons files CC0, public domain or CC BY; Open Images labels CC BY 4
   commons_eye_care             Commons: magnifying glasses, magnifiers, loupes and monoculars, pinhole glasses,
                                reading glasses, bifocals, glasses frames, contact lenses and their cases, Snellen
                                charts and slit lamps.
-  commons_birth_care           Commons: breast pumps, fetoscopes and Pinard horns (for listening to the baby's heart),
-                               the Apgar score chart and drawings of fetal development (things and drawings only).
   scin_skin_conditions         SCIN (Skin Condition Image Network, Google Research and Stanford Medicine, 2024; the
                                SCIN Data Use License: attribution, adapting and sharing allowed): adults' own photos
                                of skin conditions with up to three dermatologists' labels. Photos of the genitals,
@@ -173,18 +173,16 @@ EYE = [
 
 BIRTH = [
     item("Breast pumps", "a breast pump, for expressing breast milk", BIRTH_NOTE),
-    item("Fetoscopes", "a fetoscope, for listening to a baby's heartbeat in the womb", BIRTH_NOTE),
-    item("Pinard horns", "a Pinard horn, a trumpet-shaped tube a midwife uses to listen to the baby's heartbeat",
-         BIRTH_NOTE),
     item("Apgar score", "a chart of the Apgar score: the newborn's appearance, pulse, grimace, activity and breathing, "
                         "each scored 0 to 2 at one and five minutes after birth", BIRTH_NOTE),
     item("Fetal development", "a drawing of a baby's development in the womb", BIRTH_NOTE),
 ]
 
 def build_commons_first_aid_supplies(limit):
-    """The commons_first_aid_supplies pack (see the module docstring); files naming a child are left out."""
+    """The commons_first_aid_supplies pack (see the module docstring), with the birth supplies and drawings (BIRTH,
+    too few free files for a pack of their own); files naming a child are left out."""
     from home_packs import build_commons_topic
-    return build_commons_topic(FIRST_AID, limit, "firstaid", adults_only=True)
+    return build_commons_topic(FIRST_AID + BIRTH, limit, "firstaid", adults_only=True)
 
 
 def build_commons_first_aid_skills(limit):
@@ -204,12 +202,6 @@ def build_commons_eye_care(limit):
     """The commons_eye_care pack (see the module docstring)."""
     from home_packs import build_commons_topic
     return build_commons_topic(EYE, limit, "eyecare", adults_only=True)
-
-
-def build_commons_birth_care(limit):
-    """The commons_birth_care pack: things and drawings only (files naming a child or a baby are left out)."""
-    from home_packs import build_commons_topic
-    return build_commons_topic(BIRTH, limit, "birthcare", adults_only=True)
 
 
 # ----------------------------------------------------------------- SCIN skin conditions
@@ -396,25 +388,22 @@ HOME_HEALTH_PACKS = {
         what="dental care product and dental appliance")),
     "commons_eye_care": (build_commons_eye_care, COMMONS_LICENCE.format(
         what="glasses, contact lens, eye drop, magnifier and eye examination")),
-    "commons_birth_care": (build_commons_birth_care, COMMONS_LICENCE.format(
-        what="birth and postpartum supply and pregnancy drawing")),
     "scin_skin_conditions": (build_scin_skin_conditions, SCIN_CREDIT + "; the dermatologists' labels are the "
                                                                        "dataset's own."),
     "denpar_dental_xrays": (build_denpar_dental_xrays, DENPAR_CREDIT + "; the teeth from the dataset's own table."),
     "open_images_home_health": (build_open_images_home_health, OI_LICENCE),
 }
 HOME_HEALTH_LIMITS = {
-    "commons_first_aid_supplies": 500,     # 11 categories, few files each
+    "commons_first_aid_supplies": 600,     # 14 categories (with the birth ones), few files each
     "commons_first_aid_skills": 500,       # 5 categories
     "commons_dental_care": 600,            # 7 categories
     "commons_eye_care": 900,               # 12 categories
-    "commons_birth_care": 200,             # 5 categories, few files each
     "scin_skin_conditions": 3000,          # about 5,000 cases, some left out
     "denpar_dental_xrays": 1000,           # 1,000 radiographs with a table row
     "open_images_home_health": 1500,       # 17 labels, few photos each
 }
 HOME_HEALTH_COMMONS_KEYS = ("commons_first_aid_supplies", "commons_first_aid_skills", "commons_dental_care",
-                            "commons_eye_care", "commons_birth_care")
+                            "commons_eye_care")
 # Packs that show people's bodies: describing only (the kit's PEOPLE_AND_BODILY_PACK_KEYS).
 HOME_HEALTH_BODILY_KEYS = ("commons_first_aid_skills", "scin_skin_conditions")
 

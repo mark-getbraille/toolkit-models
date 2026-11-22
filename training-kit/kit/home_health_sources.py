@@ -2,7 +2,7 @@
 treatment, long-term conditions, home nursing, dental care, midwifery and postpartum care, eye care). This file lists:
   - the ready-made packs built in packs/home_health_packs.py (group "permissive"; the kit downloads them with
     prepare_pack): commons_first_aid_supplies, commons_first_aid_skills, commons_dental_care, commons_eye_care,
-    commons_birth_care, scin_skin_conditions, denpar_dental_xrays, open_images_home_health;
+    scin_skin_conditions, denpar_dental_xrays, open_images_home_health;
   - the share-alike Commons files of the main categories (home_health_commons_sa: only with the share-alike choice);
   - the sign-up and research-only collections looked at (HOME_HEALTH_SIGN_UP) and the ones left out
     (HOME_HEALTH_NOT_INCLUDED), with the reason.
@@ -23,7 +23,7 @@ skin, never the genitals, groin or buttocks) are describing only: HOME_HEALTH_BO
 PEOPLE_AND_BODILY_PACK_KEYS. SCIN's rows carry "content": "medical", so they are used only when the training ticks
 medical pictures.
 
-Picture-making (HOME_HEALTH_PICTURE_MAKING_OK): the supply, dental, eye and birth-supply packs (things and drawings)
+Picture-making (HOME_HEALTH_PICTURE_MAKING_OK): the supply, dental and eye packs (things and drawings)
 and the share-alike things; never the people, skin, X-ray or Open Images packs.
 
     python -c "import sources, home_health_sources"      (from the kit folder: checks the file loads)
@@ -87,9 +87,10 @@ def prepare_home_health_commons_sa(source, data_dir, work, cap):
 HOME_HEALTH_SOURCES = [
     Source("commons_first_aid_supplies", "First aid and home treatment things: space blankets, CPR masks, bag valve "
                                          "masks, training manikins, medical ID tags, tick removal, oral rehydration, "
-                                         "calamine lotion, heating pads, compression stockings and catheters, each "
-                                         "with the emergency note (Wikimedia Commons, ready-made pack)",
-           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 500, 10, prepare_pack, "about 110 MB"),
+                                         "calamine lotion, heating pads, compression stockings and catheters, and "
+                                         "birth supplies and drawings (breast pumps, the Apgar chart, fetal "
+                                         "development), each with its note (Wikimedia Commons, ready-made pack)",
+           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 600, 10, prepare_pack, "about 130 MB"),
     Source("commons_first_aid_skills", "Adults doing CPR, chest compressions, abdominal thrusts and the recovery "
                                        "position, and first aid classes, with the emergency note (Wikimedia Commons, "
                                        "ready-made pack)",
@@ -102,9 +103,6 @@ HOME_HEALTH_SOURCES = [
                                "reading glasses, bifocals, frames, contact lenses and their cases, Snellen charts "
                                "and slit lamps, with the eye note (Wikimedia Commons, ready-made pack)",
            COMMONS_OPEN, COMMONS_CREDIT, "permissive", 900, 10, prepare_pack, "about 200 MB"),
-    Source("commons_birth_care", "Birth supplies and drawings: breast pumps, fetoscopes and Pinard horns, the Apgar "
-                                 "score chart and drawings of fetal development (Wikimedia Commons, ready-made pack)",
-           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 200, 5, prepare_pack, "about 40 MB"),
     Source("scin_skin_conditions", "Skin conditions in adults' own photos with up to three dermatologists' labels, "
                                    "never a diagnosis (SCIN, Google Research and Stanford Medicine, ready-made pack; "
                                    "medical)",
@@ -133,7 +131,7 @@ HOME_HEALTH_SOURCES = [
 HOME_HEALTH_BODILY_KEYS = ("commons_first_aid_skills", "scin_skin_conditions")
 # Things and drawings only.
 HOME_HEALTH_PICTURE_MAKING_OK = {"commons_first_aid_supplies", "commons_dental_care", "commons_eye_care",
-                                 "commons_birth_care", "home_health_commons_sa"}
+                                 "home_health_commons_sa"}
 
 HOME_HEALTH_SIGN_UP = {
     "Fitzpatrick17k (Groh et al., 2021)":
@@ -166,8 +164,8 @@ HOME_HEALTH_NOT_INCLUDED = {
     "A second birth, breastfeeding, midwifery and newborn care photo pack":
         "Commons' Breastfeeding, Kangaroo care, Childbirth, Midwifery, Midwives, Prenatal care and Newborn babies "
         "categories are already the birth_and_feeding pack (medical_packs.py), which keeps only respectful care "
-        "scenes and a baby only with a parent or carer; not repeated. commons_birth_care adds the supplies and "
-        "drawings.",
+        "scenes and a baby only with a parent or carer; not repeated. commons_first_aid_supplies adds the birth "
+        "supplies and drawings.",
     "CDC PHIL wound and rash photos":
         "many are graphic clinical photos (disease and injury), beyond what ordinary first-aid guides show; the "
         "kit's cdc_phil packs take supplies and health behaviours only.",
@@ -177,7 +175,8 @@ HOME_HEALTH_NOT_INCLUDED = {
         "alert bracelets, Eyewash stations, Stop the Bleed, Poison control, Mr. Yuk, FAST (stroke), Mental health "
         "first aid, Hand lenses, Progressive lenses, Eyeglass lenses, Nose pads, Glasses cases, Phoropters, "
         "Ophthalmoscopes, Human eye diagrams, Low vision aids, Nipple shields, Birthing pools, Umbilical cord clamps, "
-        "Baby thermometers, Maternity pads, Peri bottles, Peak flow meters, Inhaler spacers, Ostomy bags, Oxygen concentrators, Nasal cannulas, Hand "
+        "Baby thermometers, Maternity pads, Peri bottles, Fetoscopes, Pinard horns, Peak flow meters, Inhaler "
+        "spacers, Ostomy bags, Oxygen concentrators, Nasal cannulas, Hand "
         "sanitizer, Hot water bottles, Neti pots, Steri-Strips, Water flossers, Orthodontic retainers; Blood "
         "pressure monitors, Dentures, Gauze, Splinters, Eye patches and Nipple shields are empty.",
     "Commons first aid and home care categories other packs already use":

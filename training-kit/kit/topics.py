@@ -80,7 +80,7 @@ TOPICS = [
            "open_images_medical", "cdc_phil_supplies", "commons_medication_labels", "lfa_covid_tests", "commons_home_health_tests",
            # home health care: first aid, dental, eye and birth supplies, dental X-rays (SCIN is medical: no topic)
            "commons_first_aid_supplies", "commons_first_aid_skills", "commons_dental_care", "commons_eye_care",
-           "commons_birth_care", "denpar_dental_xrays",
+           "denpar_dental_xrays",
            "open_images_home_health",
            # share-alike (with Wikipedia ticked)
            "med_vet_commons_sa", "openfacts_supplements", "home_health_commons_sa",
