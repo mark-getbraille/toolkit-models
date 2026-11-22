@@ -78,8 +78,10 @@ def test_makers_are_link_only_and_not_repeated():
 def test_heading():
     for key in KEYS:
         assert C.CATEGORIES[key]["heading"] == "Home manufacturing and making", key
-    for key in ("craft_machines", "woodshop_machines", "metal_shop_welding", "sewing_textile"):
-        assert C.CATEGORIES[key].get("heading") != "Home manufacturing and making", key
+    # the existing craft, woodshop and metal shop collections are listed under the same heading (22 Nov 2026)
+    for key in ("craft_machines", "woodshop_machines", "metal_shop_welding"):
+        assert C.CATEGORIES[key]["heading"] == "Home manufacturing and making", key
+    assert C.CATEGORIES["sewing_textile"].get("heading") != "Home manufacturing and making"
 
 
 class FakeFetch:
