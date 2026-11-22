@@ -2460,9 +2460,12 @@ SOURCES = [
            "CREDITS.txt)", "Wellcome Collection, credited in CREDITS.txt", "permissive", 300, 5, prepare_pack,
            "about 60 MB", content="nudity"),
     Source("anatomy", "Anatomy figures: OpenStax Anatomy and Physiology and Gray's Anatomy plates (ready-made pack)",
-           "OpenStax figures CC BY 4.0 (first edition); Gray's Anatomy (1918) plates public domain",
+           "OpenStax figures CC BY 4.0 (first edition, the version published before OpenStax's 2026 change to "
+           "CC BY-NC-SA); Gray's Anatomy (1918) plates public domain",
            "OpenStax, Anatomy and Physiology (2013, first edition), Rice University, CC BY 4.0, "
-           "https://openstax.org/details/books/anatomy-and-physiology; Henry Gray, Anatomy of the Human Body (1918), "
+           "https://openstax.org/details/books/anatomy-and-physiology (read from "
+           "https://github.com/openstax/osbooks-anatomy-physiology at commit ccce780, the first edition as "
+           "published under CC BY 4.0, before OpenStax's 2026 change to CC BY-NC-SA); Henry Gray, Anatomy of the Human Body (1918), "
            "public domain, via Wikimedia Commons", "permissive", 1500, 10, prepare_pack, "about 200 MB",
            content="medical"),
     Source("concadia", "Concadia: Wikipedia pictures with their alt text",
