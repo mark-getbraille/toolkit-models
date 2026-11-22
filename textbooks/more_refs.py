@@ -56,6 +56,7 @@ MODULES = [
     "household",            # cleaning and household management: FDA, EPA Safer Choice, CPSC checklist, old books (house:)
     "knots_outdoor",        # knots and outdoor skills: Forest Service axe and saw manuals, old knot books (knot:)
     "knots_military",       # knots, rope, pack and mountain manuals: Coast Guard, Navy, Army, Marine Corps (kmil:)
+    "military_whole",       # whole military manuals: SERE, Ranger Handbook, desert/jungle/mountain, Seabee, BMR (milw:)
     "bushcraft",            # bushcraft and woodcraft: old woodcraft classics, NZ DOC outdoor safety, index (bush:)
     "pools_spas",           # pools, spas and hot tubs: CDC, Army TB MED 575, Navy NAVMED P-5010-4 (pool:)
     "motorcycles_rvs",      # motorcycles, RVs and trailers: Army trailer manual, NPS campgrounds, Motor Camping (rvs:)

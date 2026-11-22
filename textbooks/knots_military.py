@@ -27,9 +27,9 @@ Already in the library and not repeated: the Army's rigging manual FM 5-125 and 
 
 Not built (NOT_INCLUDED, with the reason and an address): the UK Admiralty Manual of Seamanship (the 1937 edition only
 as a lending-library scan; the 1951 to 1972 editions are public domain in the UK but may still be in copyright in the
-US by the 1996 restoration of foreign works, so link-only), FM 31-27 and FM 3-05.213 (restricted markings), MCRP
-3-02H and AFH 10-644 (evasion), Canada's Down But Not Out and B-GL-382-006 Survival (Crown copyright in force), and
-others listed below.
+US by the 1996 restoration of foreign works, so link-only), Canada's Down But Not Out and B-GL-382-006 Survival (Crown
+copyright in force), and others listed below. The survival, evasion and resistance manuals (MCRP 3-02H, AFH 10-644)
+and the restricted pack animal manuals (FM 31-27, FM 3-05.213, personal use) are in military_whole.py (milw:).
 
 Run from the repository's folder:
   python3 textbooks/knots_military.py kmil:army_fm_25_7_pack_transportation_1944 --out build/textbooks --limit 3
@@ -151,6 +151,23 @@ PDFS += [
              notice=KO.OUTDOOR_SAFETY, country="United Kingdom"),
 ]
 
+# The Bluejackets' Manual, seventh edition (revised May 1927), printed by the Government Printing Office in 1928: a
+# US Navy publication (17 U.S.C. 105) and also public domain as published before 1931. Read whole: its parts were
+# listed on 2026-11-22 and none is about explosives, mines or demolition (they are only named, as in "mine layers"),
+# so no part is cut (military=True: the release rule on its front pages, no parts cut).
+PDFS += [
+    _mil("bluejackets_manual_1927", "The Bluejackets' Manual (US Navy, 7th edition, revised 1927)",
+         "Seamanship, knots and boats", "Navy Department (US Navy); Government Printing Office, 1928",
+         "bwb_S0-EFZ-709", "1928",
+         "The sailor's handbook of 1927, read whole: the Navy as a career, clothing, rules and regulations, infantry "
+         "drill and the manual of arms, boats under oars, knots and splices and the lead line, the compass, visual "
+         "signals, swimming, the subjects every man on board should know (discipline, customs, ships, daily "
+         "routine, drills, hygiene and first aid, painting, life-saving, athletics), then rudimentary seamanship and "
+         "gunnery (boats, marlinespike seamanship, deck seamanship, ground tackle, steering, electricity, small arms "
+         "and artillery of its day, signals, physical drill and equipment). Published in 1928: its rules, first aid "
+         "and equipment are those of its day.", work="a work of the US Navy", old_public_domain=True),
+]
+
 COLLECTION = K.Collection("kmil", GROUP, pdfs=PDFS,
                           words={"knots-military": lambda: [f"kmil:{p['name']}" for p in PDFS]})
 
@@ -182,8 +199,10 @@ NOT_INCLUDED = [
      "lashings and spar chapters are good, but they sit among chapters on demolitions, explosives and field "
      "fortification, and the scans (122 MB and 657 MB) have no chapter bookmarks to cut those out safely: "
      "link-only. Index: https://archive.org/details/1914-uk-manual-of-field-engineering-1911"),
-    ("US Navy Seaman (1981) and Boatswain's Mate 3 & 2 (1959) rate training manuals", "Lending-library scans on the "
-     "Internet Archive that cannot be downloaded (checked 2026-11-22). Index: "
+    ("US Navy Seaman (1981) and Boatswain's Mate 3 & 2 (1959) rate training manuals", "Allowed whole by the rule, "
+     "but lending-library scans on the Internet Archive that cannot be downloaded (checked again 2026-11-22; no other "
+     "copy of a Seaman or Boatswain's Mate course was found; Basic Military Requirements (1992) is built in "
+     "military_whole.py). Index: "
      "https://archive.org/details/seaman00nava"),
     ("US Navy NAVEDTRA Seaman (14067) and Boatswain's Mate (14343) courses; Naval Ships' Technical Manual chapter 613 "
      "(wire and fibre rope)", "No copy with a text layer was found on the Internet Archive (searched 2026-11-22), "
@@ -194,13 +213,15 @@ NOT_INCLUDED = [
      "here. The Auxiliary's course books are sold by the Auxiliary and its own copyright. Index: "
      "https://www.dco.uscg.mil/Our-Organization/Assistant-Commandant-for-Response-Policy-CG-5R/"),
     ("FM 31-27 Pack Animals in Support of Army Special Operations Forces (2000) and FM 3-05.213 Special Forces Use of "
-     "Pack Animals (2004)", "FM 31-27's front page prints \"Distribution restricted to United States (U.S.) "
-     "Government agencies\" and a destruction notice, and no government site publishes it openly: never republished "
-     "(the 1917 and 1944 pack manuals are built instead). FM 3-05.213 is its Special Forces successor, not checked "
-     "further for the same reason. Index: https://archive.org/details/fm-31-27-pack-animals-in-support-of-army-sof-2000"),
-    ("MCRP 3-02H Survival, Evasion and Recovery; AFH 10-644 SERE Operations; SERE and resistance training", "Evasion, "
-     "resistance and escape are left out by the toolkit's rules; the survival manuals without evasion (FM 21-76 / "
-     "MCRP 3-02F, ATP 3-50.21, AFR 64-4) are in the library. Index: "
+     "Pack Animals (2004)", "Their front pages print restricted markings (FM 31-27: \"Distribution restricted to "
+     "United States (U.S.) Government agencies\"; FM 3-05.213: \"Distribution authorized to ...\"), and no government "
+     "site publishes them openly (searched 2026-11-22): personal use only, never built into a book; their entries "
+     "(milw:army_fm_31_27_pack_animals_2000, milw:army_fm_3_05_213_pack_animals_2004 in military_whole.py) put them "
+     "in the catalogue's left_out for the owner to fetch himself. The 1917 and 1944 pack manuals are built here. "
+     "Index: https://archive.org/details/fm-31-27-pack-animals-in-support-of-army-sof-2000"),
+    ("MCRP 3-02H Survival, Evasion and Recovery; AFH 10-644 SERE Operations", "Built whole since the owner's rule of "
+     "22 November 2026 (manuals are read whole; only explosives parts are cut), in military_whole.py: "
+     "milw:sere_fm_21_76_1_mcrp_3_02h_1999 and milw:usaf_afh_10_644_sere_2017. Index: "
      "https://archive.org/details/milmanual-mcrp-3-02h-survival-evasion-and-recovery"),
     ("FM 3-97.61 Military Mountaineering (2002)", "The edition before TC 3-97.61 (2025), which is already in the "
      "library (pdf:army_tc_3_97_61_mountaineering). Index: "

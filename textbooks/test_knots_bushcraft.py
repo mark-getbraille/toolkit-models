@@ -74,12 +74,20 @@ def test_old_book_notes_and_exclusions():
         assert "outdated and offensive" in pdfs[name]["description"], name
     assert pdfs["baden_powell_scouting_for_boys_1915"]["country"] == "United Kingdom"
     keys = " ".join(sources.expand_keys(["bushcraft"]) + sources.expand_keys(["knots-military"]))
-    for left_out in ("pig", "sticking", "evasion", "10_644", "3_02h", "31_27", "3_05_213", "seamanship_1951", "seamanship_1964", "seamanship_1972"):
+    for left_out in ("pig", "sticking", "seamanship_1951", "seamanship_1964", "seamanship_1972"):
         assert left_out not in keys, left_out
+    # The owner's rule of 22 November 2026: manuals are read whole, so the evasion and SERE manuals are built (in
+    # military_whole.py), and the restricted pack animal manuals have personal-use entries there (never a book).
+    whole = sources.expand_keys(["military-whole"])
+    for built in ("milw:usaf_afh_10_644_sere_2017", "milw:sere_fm_21_76_1_mcrp_3_02h_1999",
+                  "milw:army_fm_31_27_pack_animals_2000", "milw:army_fm_3_05_213_pack_animals_2004"):
+        assert built in whole, built
+    assert "kmil:bluejackets_manual_1927" in keys
     rows = " ".join(r[0] + " " + r[1] for r in knots_military.NOT_INCLUDED + bushcraft.NOT_INCLUDED)
-    for words in ("1 January 1996", "Pig-Sticking", "Kochanski", "Evasion", "FM 31-27", "Down But Not Out",
-                  "Australia", "New Zealand"):
+    for words in ("1 January 1996", "Pig-Sticking", "Kochanski", "milw:usaf_afh_10_644_sere_2017", "FM 31-27",
+                  "personal use", "Down But Not Out", "Australia", "New Zealand"):
         assert words in rows, words
+    assert "left out by the toolkit's rules" not in rows      # the old evasion rule is gone
 
 
 class FakeText:
