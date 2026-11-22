@@ -5,7 +5,8 @@ What it lists, in plain words (an INDEX of facts and links only; each manual bel
   ia        the Internet Archive's manual collections, searched by the words in IA_WORDS (travel trailers, campers,
             motorhomes, fifth wheels, trailer hitches and brake controllers, RV refrigerators, furnaces and water
             heaters, motorcycle helmets and intercoms; RV generators are the power collection's). The plain words
-            motorcycle, scooter, moped, ATV and snowmobile are already searched by the powersports collection, which has the motorcycle owner's
+            motorcycle, scooter, moped, ATV and snowmobile are already searched by the
+            powersports collection, which has the motorcycle owner's
             manuals, so they are not repeated here;
   makers    the motorcycle, RV, trailer, hitch and RV appliance makers (Harley-Davidson, Honda, Airstream, Winnebago,
             Thor, Forest River, Jayco, Dometic, Norcold, Suburban, Lippert, Curt, B&W, Equal-i-zer): by the owner's
