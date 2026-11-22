@@ -651,3 +651,12 @@ from instrument_care import CATEGORY as _INSTRUMENT_CARE  # noqa: E402
 
 CATEGORIES.update({"car_care": _CAR_CARE, "garden_care": _GARDEN_CARE, "instrument_care": _INSTRUMENT_CARE})
 CATEGORIES.update(_HOME_HEALTH_CARE)
+# Money and work, travel and language learning, and citizenship and civics (the owner's request of 2026-11-22): currency
+# readers and money counters, translators and travel gear, and accessible voting machines, each with its notice, makers
+# (link-only), government documents and guidance, in its own file.
+from money_devices import CATEGORY as _MONEY_DEVICES  # noqa: E402
+from travel_devices import CATEGORY as _TRAVEL_DEVICES  # noqa: E402
+from voting_equipment import CATEGORY as _VOTING_EQUIPMENT  # noqa: E402
+
+CATEGORIES.update({"money_devices": _MONEY_DEVICES, "travel_devices": _TRAVEL_DEVICES,
+                   "voting_equipment": _VOTING_EQUIPMENT})
