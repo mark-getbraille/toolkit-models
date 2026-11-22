@@ -206,9 +206,41 @@ def test_field_manual_rules():
     assert B.without_page_number("Chapter 3") == "Chapter 3"
 
 
+def test_military_release_rule(monkeypatch):
+    """The release rule for military manuals (military_release.py) with made-up front matter: a missing statement
+    on an Internet Archive copy is built with a truthful notice; a restricted marking is built only when the
+    government's own copy answers openly, else it is left out for the owner to fetch himself (personal use); a live
+    classified marking only when a government site publishes it; a third-party copy needs Distribution Statement
+    A."""
+    ia = "https://archive.org/download/made-up/made-up.pdf"
+    entry = {"name": "made_up", "distribution_a": True, "work": "a work of the US Navy"}
+    rule = B.military_release_of(entry, "Made-up course. Chapter 1.", ia)
+    assert rule.verdict == "public" and not rule.statement
+    notice = B.military_notice(rule.release, "A work of the US Navy (public domain), approved for public release; "
+                               "distribution is unlimited. Mains electricity can kill.")
+    assert notice.startswith("A work of the US Navy (public domain under 17 U.S.C. 105), published openly by the "
+                             "Internet Archive") and notice.endswith("Mains electricity can kill.")
+    assert "approved for public release" not in notice.lower()
+    rule = B.military_release_of(entry, "Approved for public release; distribution is unlimited.", ia)
+    assert B.military_notice(rule.release, "Safety first.") == ("Distribution Statement A: approved for public "
+                                                                "release; distribution is unlimited. Safety first.")
+    front = "DISTRIBUTION STATEMENT C. Distribution authorized to U.S. Government agencies only."
+    assert B.military_release_of(entry, front, ia).verdict == "personal"
+    gov = "https://www.made-up-agency.mil/library/course.pdf"
+    monkeypatch.setattr(B, "gov_copy_answers", lambda url, cache=None: url == gov)
+    rule = B.military_release_of(dict(entry, gov=gov), front, ia)
+    assert rule.verdict == "public" and f"publishes it openly at {gov}" in rule.release
+    monkeypatch.setattr(B, "gov_copy_answers", lambda url, cache=None: False)
+    assert B.military_release_of(dict(entry, gov=gov), front, ia).verdict == "personal"
+    assert B.military_release_of(entry, front, gov).verdict == "public"           # read from the .mil site itself
+    assert B.military_release_of(entry, "TOP SECRET", ia).verdict == "out"            # live marking, no release
+    assert B.military_release_of(entry, "TOP SECRET", gov).verdict == "public"        # a government site publishes it
+    assert B.military_release_of(entry, "Made-up course.", "https://example.com/x.pdf").verdict == "out"
+
+
 def test_reference_sources():
     """Every non-profit guide and official PDF has a unique name, an allowed licence (never NoDerivatives) and the
-    fields the builder needs; field manuals are checked for Distribution Statement A."""
+    fields the builder needs; military manuals are marked for the release rule (distribution_a)."""
     import sources
     names = [e["name"] for e in sources.NONPROFIT + sources.PDF_DOCS] + [d[2] for d in sources.DSPACE]
     assert len(names) == len(set(names))

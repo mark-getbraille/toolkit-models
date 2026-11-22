@@ -12,8 +12,22 @@ publications if posted by a government entity or a museum or archive.org. I cons
 
 So a US military publication is judged like this (release_rule):
   1. Classified: its front pages print CONFIDENTIAL, SECRET or TOP SECRET (in capitals, as markings are printed;
-     "UNCLASSIFIED" is not a classified marking) or "Classified by:". It is LEFT OUT entirely, wherever it comes
-     from. Verdict "out".
+     "UNCLASSIFIED" is not a classified marking) or "Classified by:". The owner's refinement (22 November 2026):
+     "Classified, Secret or Confidential is OK if published openly." So an old classification marking is accepted,
+     verdict "public", with the notice "Originally classified <level>; declassified and released by <who> (<the
+     declassification marking or the address>)", when there is evidence that the government declassified and
+     released it:
+       a. a US government entity publishes it openly on its own public site (.gov or .mil: the CIA's FOIA reading
+          room, the National Archives, presidential libraries, DTIC's public area, agency FOIA libraries), read
+          from that address at build time, or a separate government address checked to answer without a login; or
+       b. a copy from the Internet Archive or a museum that clearly is a declassified government release: a
+          declassification marking in its text (DECLASSIFIED, "Declassified by", "Authority NND ...", "Approved for
+          Release", "Sanitized Copy Approved for Release", a FOIA release stamp, an E.O. 13526 (or 12958, 12356)
+          declassification line), or its record names the releasing agency or NARA (released_by). Overstruck
+          markings cannot be seen in a text layer, so they count only through a. or a written marking.
+     Without such evidence (live markings), and always from a leak site (LEAK_HOSTS: WikiLeaks and the like) or any
+     other third-party host, it is LEFT OUT entirely: verdict "out". The builders' weapons, explosives, demolition,
+     sabotage, interrogation and tactics exclusions apply to declassified documents as to any other.
   2. Restricted: its front pages print a restricted marking (Distribution Statement B to F, "distribution authorized
      to ...", "distribution is limited to ...", FOUO, CUI, NOFORN, "not releasable to", ITAR or another
      export-control warning such as "WARNING: this document contains technical data whose export is restricted").
@@ -34,13 +48,13 @@ So a US military publication is judged like this (release_rule):
           marked PERSONAL USE ONLY (the training kit's personal-use collections, the textbooks' personal-use books,
           or a link-only entry the owner fetches himself with Program Downloader). From any other host it is left
           out, as before. Verdict "personal" or "out".
-  3. No marking, from an open host: a copy from a government website (.gov, .mil: a US government agency or library such as the
-     Library of Congress, DTIC, the Army Publishing Directorate or GPO), a museum, or the Internet Archive
-     (archive.org). A missing Distribution Statement A no longer leaves it out. Verdict "public", with a truthful
-     release line: when the statement is printed, it says so; when it is not, it says the publication is a work of
-     the US armed forces (public domain under 17 U.S.C. 105) published openly by that host, and that its front
-     pages print no distribution statement. It never claims "approved for public release" for a copy that does not
-     print it.
+  3. No marking, from an open host: a copy from a government website (.gov, .mil: a US government agency or
+     library such as the Library of Congress, DTIC, the Army Publishing Directorate or GPO), a museum, or the
+     Internet Archive (archive.org). A missing Distribution Statement A no longer leaves it out. Verdict "public",
+     with a truthful release line: when the statement is printed, it says so; when it is not, it says the
+     publication is a work of the US armed forces (public domain under 17 U.S.C. 105) published openly by that
+     host, and that its front pages print no distribution statement. It never claims "approved for public release"
+     for a copy that does not print it.
   4. No marking, from any other host (a third-party website): the old rule. Kept only when Distribution Statement A
      is printed.
 
@@ -73,6 +87,20 @@ RESTRICTED = re.compile(r"distribution\s*(?:statement\s*)?[B-F]\s*[:.\-–—]|d
 CLASSIFIED = re.compile(r"\b(?:TOP\s+SECRET|SECRET|CONFIDENTIAL)\b(?!\s+(?:SERVICE|SANTA))|"
                         r"(?i:\bclassified\s+by\s*:)")
 
+# Evidence that a classified document was declassified and released (point 1 b of the module docstring).
+DECLASSIFIED = re.compile(r"\bdeclassified\b|\bdeclassified\s+by\b|authority\s*:?\s*NND\s*-?\s*\d+|"
+                          r"(?<!public\s)approved\s+for\s+release|sanitized\s+copy\s+approved|"
+                          r"FOIA\s*(?:release|case|request|\(b\))|released\s+under\s+(?:the\s+)?(?:FOIA|freedom\s+of\s+"
+                          r"information)|E\.?\s?O\.?\s*(?:13526|12958|12356|12065)", re.I)
+# The classification levels, highest first.
+LEVELS = (("TOP SECRET", re.compile(r"\bTOP\s+SECRET\b")),
+          ("SECRET", re.compile(r"\bSECRET\b(?!\s+(?:SERVICE|SANTA))")),
+          ("CONFIDENTIAL", re.compile(r"\bCONFIDENTIAL\b")))
+# Sites that post leaked documents: never a release, whatever the document shows.
+LEAK_HOSTS = ("wikileaks.org", "wikileaks.ch", "wikileaks.de", "cryptome.org", "ddosecrets.com",
+              "distributeddenialofsecrets.com", "pastebin.com", "t.me", "telegram.me", "4chan.org", "discord.com",
+              "discordapp.com", "reddit.com", "x.com", "twitter.com")
+
 # Open hosts by the end of their address: (host ending, the words for it in a release line).
 NAMED_HOSTS = [
     ("archive.org", "the Internet Archive (archive.org)"),
@@ -82,6 +110,8 @@ NAMED_HOSTS = [
     ("govinfo.gov", "the US Government Publishing Office (govinfo.gov)"),
     ("gpo.gov", "the US Government Publishing Office (gpo.gov)"),
     ("si.edu", "the Smithsonian Institution (si.edu)"),
+    ("cia.gov", "the CIA's FOIA Electronic Reading Room (cia.gov)"),
+    ("archives.gov", "the National Archives (archives.gov)"),
 ]
 # Museums that are not under .gov, .mil or si.edu (add a museum's own host here when one is used).
 MUSEUM_HOSTS = ("nationalww2museum.org", "theworldwar.org", "metmuseum.org", "navalunderseamuseum.org")
@@ -181,7 +211,40 @@ def has_statement_a(front_text):
     return bool(_search(DISTRIBUTION_A, " ".join(str(front_text or "").split())))
 
 
-def release_rule(front_text, source, work="a work of the US armed forces", gov_address="", gov_answers=None):
+def level_of(front_text):
+    """The highest classification level printed in the front pages ("TOP SECRET", "SECRET", "CONFIDENTIAL"), else
+    "classified" (only "Classified by:" was found)."""
+    text = " ".join(str(front_text or "").split())
+    for name, pattern in LEVELS:
+        if _search(pattern, text):
+            return name
+    return "classified"
+
+
+def declassification(front_text):
+    """The words of a declassification marking in the front pages (point 1 b), or ""."""
+    found = _search(DECLASSIFIED, " ".join(str(front_text or "").split()))
+    return " ".join(found.group(0).split()) if found else ""
+
+
+def leak_host(source):
+    """True when the address or host is a site that posts leaked documents (LEAK_HOSTS)."""
+    host = host_of(source)
+    return any(host == h or host.endswith("." + h) for h in LEAK_HOSTS)
+
+
+def _gov_release(source, gov_address, gov_answers):
+    """The government address that publishes the copy openly (the source itself when it is a government site and
+    answered; else gov_address when it is a government site checked to answer), or ""."""
+    if is_government(source) and gov_answers is not False:
+        return source if "//" in str(source) else f"https://{host_of(source)}/"
+    if gov_address and is_government(gov_address) and gov_answers is True:
+        return gov_address
+    return ""
+
+
+def release_rule(front_text, source, work="a work of the US armed forces", gov_address="", gov_answers=None,
+                 released_by=""):
     """Judge one US military publication by the words of its front pages and where its copy comes from, as the
     module docstring says. Returns a Release.
       source       the address (or host) the copy was read from
@@ -190,19 +253,30 @@ def release_rule(front_text, source, work="a work of the US armed forces", gov_a
                    (when the copy was read from such an address, source is used and this may stay empty)
       gov_answers  whether that government address answered without a login when it was checked at build time
                    (answers_without_login). A copy read from a government source answered (the builder just read
-                   it) unless False is passed; a separate gov_address counts only when this is True."""
+                   it) unless False is passed; a separate gov_address counts only when this is True.
+      released_by  for a classified-marked copy from the Internet Archive or a museum: the releasing agency or NARA
+                   as its own record names it (point 1 b)"""
     host = open_host(source)
     kind, words = marking(front_text)
     statement = has_statement_a(front_text)
     if kind == "classified":
-        return Release("out", "", f"prints a classified marking ({words}): never included", statement, host)
+        level = level_of(front_text)
+        declassified = declassification(front_text)
+        address = "" if leak_host(source) else _gov_release(source, gov_address, gov_answers)
+        start = f"{work[0].upper()}{work[1:]} (public domain under 17 U.S.C. 105). Originally classified {level}"
+        if address:
+            evidence = f"{declassified}; " if declassified else ""
+            line = f"{start}; declassified and released by {open_host(address)} ({evidence}{address})."
+            return Release("public", line, "", statement, open_host(address))
+        if host and not leak_host(source) and (declassified or released_by):
+            who = released_by or "the US government"
+            evidence = f"marked '{declassified}'" if declassified else "as its record says"
+            line = f"{start}; declassified and released by {who} ({evidence}); copy from {host}."
+            return Release("public", line, "", statement, host)
+        return Release("out", "", f"prints a classified marking ({level}) with no declassification or government "
+                       "release shown: never included", statement, host)
     if kind == "restricted":
-        if is_government(source) and gov_answers is not False:
-            address = source if "//" in str(source) else f"https://{host_of(source)}/"
-        elif gov_address and is_government(gov_address) and gov_answers is True:
-            address = gov_address
-        else:
-            address = ""
+        address = _gov_release(source, gov_address, gov_answers)
         if address:
             agency = open_host(address)
             line = (f"{work[0].upper()}{work[1:]} (public domain under 17 U.S.C. 105). Its front pages print "

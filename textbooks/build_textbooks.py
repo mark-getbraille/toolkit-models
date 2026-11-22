@@ -18,10 +18,11 @@ What is built (sources.py lists every book, the licence lines checked by hand, a
   drinks     wine, beer, spirits and soft drinks, and brewing, winemaking and distilling (drinks_reference.py: the
              guide "How to describe a drink" and the TTB wine manual; and the drinks laws, TTB and FDA guides,
              Wikibooks and old public-domain books of sources.py, group "drinks"); drinks:guide, drinks:ttb_wine_bam
-  pdf        official PDF documents (sources.PDF_DOCS): US military field manuals with Distribution Statement A
-             (survival, first aid, map reading, knots, hygiene, cold weather, mountaineering; key fieldmanuals) and
-             Alberta's publications under its Open Government Licence (key government), US Navy nonresident
-             training courses with Distribution Statement A (key courses) and UK Maritime and Coastguard Agency and
+  pdf        official PDF documents (sources.PDF_DOCS): US military field manuals (survival, first aid, map
+             reading, knots, hygiene, cold weather, mountaineering; key fieldmanuals) and Alberta's publications
+             under its Open Government Licence (key government), US Navy nonresident training courses (key
+             courses), the military ones judged by the release rule of military_release.py (pdfdoc_book), and UK
+             Maritime and Coastguard Agency and
              Ministry of Defence guidance under the Open Government Licence v3.0; key pdf:<name> builds one
   nonprofit  reference works of non-profit organisations published as openly licensed web guides (sources.NONPROFIT:
              the EFF's Surveillance Self-Defense, People's Law School, the W3C WAI Curricula); key nonprofit:<name>
@@ -90,6 +91,7 @@ from dataclasses import dataclass, field
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import mathtext  # noqa: E402
+import military_release  # noqa: E402
 import sources  # noqa: E402
 from zimwrite import ZimWriter  # noqa: E402
 
@@ -1843,12 +1845,14 @@ def webguide_book(entry, cache=None, left_out=None):
 
 # ====================================================================== official PDF documents (sources.PDF_DOCS)
 
-# Distribution Statement A, as US military publications print it ("DISTRIBUTION RESTRICTION: Approved for public
-# release; distribution is unlimited."), and the words of every other (restricted) marking.
-DISTRIBUTION_A = re.compile(r"approved\s+for\s+public\s+release\s*[;:,.]?\s*distribution\s+is\s+unlimited", re.I)
-RESTRICTED = re.compile(r"distribution\s+(statement\s+)?[B-F]\b|distribution\s+authorized\s+to|authorized\s+to\s+U\.?\s?"
-                        r"S\.?\s+Government\s+agencies|for\s+official\s+use\s+only|\bFOUO\b|controlled\s+unclassified"
-                        r"|\bCUI\b|\bNOFORN\b|export[- ]controlled", re.I)
+# The release rule for US military publications (military_release.py, the same file in every part of this
+# repository; the owner's decision of 22 November 2026). Its markings are kept under the old names here.
+DISTRIBUTION_A = military_release.DISTRIBUTION_A
+RESTRICTED = military_release.RESTRICTED
+# An old notice's claim that a publication is approved for public release, taken out when its copy does not print
+# Distribution Statement A (military_notice).
+APPROVAL_CLAIM = re.compile(r"^A work of the US [^.]*?\(public domain\)(?:, approved for public release; distribution "
+                            r"is unlimited)?\.\s*", re.I)
 # Part titles that are never kept from a field manual: weapons, tactics, combat and anything meant to harm.
 NOT_FIELD_SAFE = re.compile(r"\b(weapons?|small\s+arms|ammunition|firing|marksmanship|ambush\w*|combat\s+operations?|"
                             r"tactic\w*|camouflage|evasion|resistance|escape|explosives?|demolitions?|mines?|"
@@ -2138,14 +2142,57 @@ def section_pages(text):
     return pages
 
 
+def gov_copy_answers(url, cache=None):
+    """Whether the government's own open copy of a publication (url: an entry's "gov" address) answers without a login
+    now: None when its site's robots.txt does not allow this builder to ask, else what a HEAD request shows
+    (military_release.answers_without_login)."""
+    try:
+        if not allowed_by_robots(url, cache):
+            return None
+        req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": USER_AGENT})
+        with urllib.request.urlopen(req, timeout=60) as r:
+            return military_release.answers_without_login(r.status, r.geturl(), r.headers.get("Content-Type", ""))
+    except (urllib.error.URLError, OSError, ValueError):
+        return False
+
+
+def military_release_of(entry, front, pdf_url, cache=None):
+    """The release verdict (a military_release.Release) of a US military publication (an entry with distribution_a)
+    from the words of its front matter and the address its PDF was read from. A restricted-marked copy whose entry
+    names the government's own open copy ("gov") is asked again with that address, checked at build time
+    (gov_copy_answers). entry["work"] names it in the release line (default "a work of the US armed forces")."""
+    work = entry.get("work") or "a work of the US armed forces"
+    rule = military_release.release_rule(front, pdf_url, work)
+    if rule.verdict == "personal" and entry.get("gov"):
+        rule = military_release.release_rule(front, pdf_url, work, gov_address=entry["gov"],
+                                             gov_answers=gov_copy_answers(entry["gov"], cache))
+    return rule
+
+
+def military_notice(release, notice):
+    """A military book's notice: its truthful release line first, then the entry's own notice (an old opening
+    sentence such as "A work of the US Navy (public domain), approved for public release; distribution is
+    unlimited." is replaced, since the release line says it truthfully)."""
+    rest = APPROVAL_CLAIM.sub("", str(notice or "").strip())
+    release = release if release.endswith(".") else release + "."
+    return f"{release} {rest}".strip()
+
+
 def pdfdoc_book(entry, work, cache=None, left_out=None):
     """The Book of one official PDF (a sources.PDF_DOCS entry): the PDF is found (an Internet Archive item, the
     official address in entry["pdf"], or the newest PDF on an official publication page), its licence checked (the
     licence line of its page or of entry["licence_page"], such as an agency's copyright policy, or for a US military
-    manual Distribution Statement A in its own front matter and no restricted marking), then made into one page per
+    publication, entry distribution_a (a field manual) or military (any other military publication), the release
+    rule of military_release.py on its own front matter: military_release_of), then made into one page per
     chapter; for a field manual, parts about weapons, tactics or harm (NOT_FIELD_SAFE) are left out. None when it is
-    not allowed (said in left_out). Its "published" is entry["published"], else the date in the PDF's own
-    information."""
+    not allowed (said in left_out). A military manual's notice starts with its truthful release line
+    (military_notice): Distribution Statement A when printed, else "published openly by <the host>; its front pages
+    print no distribution statement", the government address that publishes a restricted-marked copy openly, or
+    "Originally classified <level>; declassified and released by ..." for a declassified one. A restricted-marked
+    copy the government does not publish itself is never built into a book (the books are published as public
+    GitHub releases, the personal-use ones too): it goes into left_out with its address, personal_use and
+    fetch_yourself, for the owner's Program Downloader "To do yourself" list. Its "published" is entry["published"],
+    else the date in the PDF's own information."""
     left_out = left_out if left_out is not None else []
     title = entry["title"]
     licence_page = entry.get("licence_page") or (entry.get("page") if not entry.get("archive") else "")
@@ -2196,12 +2243,19 @@ def pdfdoc_book(entry, work, cache=None, left_out=None):
     if entry.get("pdf_licence_text") and not re.search(entry["pdf_licence_text"], " ".join(front.split())):
         left_out.append({"title": title, "reason": "Its PDF no longer states the licence that was checked."})
         return None
-    if entry.get("distribution_a"):
-        bad = RESTRICTED.search(front)
-        if not DISTRIBUTION_A.search(front) or bad:
-            left_out.append({"title": title, "reason": "Its front matter does not show Distribution Statement A "
-                             f"(approved for public release; distribution is unlimited){' but ' + bad.group(0) if bad else ''}."})
+    notice = entry.get("notice", "")
+    if entry.get("distribution_a") or entry.get("military"):     # a US military publication: the release rule
+        rule = military_release_of(entry, front, pdf_url, cache)
+        if rule.verdict == "personal":
+            left_out.append({"title": title, "reason": f"It {rule.reason} (from {pdf_url}).", "url": page,
+                             "pdf": pdf_url, "personal_use": True, "fetch_yourself": True})
             return None
+        if rule.verdict != "public":
+            words = (f"It {rule.reason}" if rule.reason.startswith("prints") else
+                     rule.reason[0].upper() + rule.reason[1:])
+            left_out.append({"title": title, "reason": f"{words}."})
+            return None
+        notice = military_notice(rule.release, notice)
     licence = entry["licence"]
     whole = bool(entry.get("unchanged"))         # a no-changes licence: the whole PDF, its text unchanged
     if not licence_kind(licence_short(licence), whole) and not licence_kind(licence, whole):
@@ -2213,7 +2267,7 @@ def pdfdoc_book(entry, work, cache=None, left_out=None):
                 licence_url=entry["licence_url"], source=page, description=entry["description"],
                 original_pdf={"url": pdf_url, "size": os.path.getsize(local), "sha256": file_sha256(local)},
                 published=entry.get("published") or pdf_date(local), region=entry.get("region", ""),
-                notice=entry.get("notice", ""), unchanged=whole,
+                notice=notice, unchanged=whole,
                 changes=entry.get("changes") or
                 "its text made into web pages, one per chapter, with each drawing's caption kept as text"
                 + ("; parts about weapons and tactics left out" if entry.get("distribution_a") else ""))

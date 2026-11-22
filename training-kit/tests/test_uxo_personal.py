@@ -35,9 +35,12 @@ A_LINE = "DISTRIBUTION RESTRICTION: Approved for public release; distribution is
 
 # ----------------------------------------------------------------- the release check
 
-def test_distribution_a_kept_and_restricted_refused():
-    """Distribution A in its usual forms is kept; B to F, FOUO, CUI, NOFORN and export control are refused, also
-    beside Distribution A; a document saying nothing is refused."""
+def test_release_rule_in_the_personal_collections():
+    """The release rule (military_release.py) with made-up front matter: Distribution A in its usual forms is said;
+    a missing statement on an Internet Archive or government copy is accepted with a truthful line; B to F, FOUO,
+    CUI, NOFORN and export control are accepted as PERSONAL USE ONLY (these collections are never published), also
+    beside Distribution A; a live classified marking is refused (a declassified one comes in, never from a leak
+    site); a third-party copy needs the statement."""
     for text in (A_LINE, "Approved for public release, distribution unlimited", "Distribution Unlimited; Approved "
                  "for Public Release", "DISTRIBUTION STATEMENT A: Approved for public release; distribution is "
                  "unlimited."):
@@ -49,12 +52,25 @@ def test_distribution_a_kept_and_restricted_refused():
                  "contractors.", "Distribution Statement D.", "DISTRIBUTION STATEMENT E", "Distribution F: further "
                  "dissemination only as directed", "FOR OFFICIAL USE ONLY", "CUI", "NOFORN",
                  "This document contains export-controlled technical data."):
-        ok, why = ux.release_check(text)
+        for front in (text, A_LINE + " " + text):
+            ok, line = ux.release_check(front)
+            assert ok and line.startswith("PERSONAL USE ONLY") and "restricted marking" in line, text
+        ok, why = ux.release_check(text, source="https://example.com/x.pdf")
         assert not ok and "restricted" in why, text
-        ok, why = ux.release_check(A_LINE + " " + text)
-        assert not ok and "restricted" in why, text
-    ok, why = ux.release_check("To be distributed in accordance with DA Form 12-40.")
+    ok, line = ux.release_check("To be distributed in accordance with DA Form 12-40.")
+    assert ok and "print no distribution statement" in line and "approved for public release" not in line.lower()
+    ok, line = ux.release_check("Made-up manual.", source="https://www.denix.osd.mil/uxo/x.pdf")
+    assert ok and "denix.osd.mil" in line
+    ok, why = ux.release_check("To be distributed in accordance with DA Form 12-40.",
+                               source="https://example.com/x.pdf")
     assert not ok and "does not say" in why
+    for text in ("SECRET", "TOP SECRET", "CONFIDENTIAL"):
+        ok, why = ux.release_check(A_LINE + " " + text)
+        assert not ok and "classified" in why, text
+        ok, line = ux.release_check(text + " DECLASSIFIED E.O. 13526 (made up)")
+        assert ok and f"Originally classified {text}" in line, text
+        assert not ux.release_check(text + " DECLASSIFIED", source="https://wikileaks.org/x.pdf")[0]
+    assert ux.release_check("UNCLASSIFIED " + A_LINE)[0]
 
 
 def test_shifted_font_cover_is_read():
@@ -64,20 +80,25 @@ def test_shifted_font_cover_is_read():
     assert ux.unshifted(shifted).startswith("DISTRIBUTION")
     assert ux.release_check("COVER " + shifted)[0]
     bad = "".join(chr(ord(c) - 29) if "!" <= c <= "z" else c for c in "DISTRIBUTION STATEMENT C: authorized")
-    assert not ux.release_check(A_LINE + " " + bad)[0]
+    assert ux.release_check(A_LINE + " " + bad)[1].startswith("PERSONAL USE ONLY")
 
 
 def test_public_education_allow_list():
     """The owner's allow-list: named US government public safety education (the DoD 3Rs material from
     denix.osd.mil, the BLM and FWS handbook from its Internet Archive copy) is accepted without Distribution A, with
-    the note; a restricted marking still refuses it; nothing else gets that basis."""
+    the note; a marking on it is judged by the release rule (restricted: open when read from the agency's own
+    site, else personal use; classified: refused); nothing else gets that basis."""
     assert ux.PUBLIC_EDUCATION == ("public safety education material of a US government agency, published for "
                                    "distribution to the public (17 U.S.C. 105)")
     ok, line = ux.release_check("Recognize, Retreat, Report. Call 911.", "public_education")
     assert ok and line == ux.PUBLIC_EDUCATION
-    ok, why = ux.release_check("Recognize, Retreat, Report. FOR OFFICIAL USE ONLY", "public_education")
-    assert not ok and "restricted" in why
-    assert not ux.release_check("Recognize, Retreat, Report.")[0]          # not on the list: refused as before
+    ok, line = ux.release_check("Recognize, Retreat, Report. FOR OFFICIAL USE ONLY", "public_education")
+    assert ok and line.startswith("PERSONAL USE ONLY")
+    ok, line = ux.release_check("Recognize, Retreat, Report. FOR OFFICIAL USE ONLY", "public_education",
+                                source="https://www.denix.osd.mil/uxo/x.pdf")
+    assert ok and "publishes it openly at https://www.denix.osd.mil/uxo/x.pdf" in line
+    assert not ux.release_check("Recognize, Retreat, Report. SECRET", "public_education")[0]
+    assert ux.release_check("Recognize, Retreat, Report.")[1] != ux.PUBLIC_EDUCATION   # not on the list
     docs = ux.PUBLIC_EDUCATION_DOCUMENTS
     assert len(docs) >= 10 and all(d in ux.UXO_DOCUMENTS for d in docs)
     for d in docs:
@@ -301,11 +322,19 @@ def made_up_manual(statement=A_LINE):
 
 
 def test_made_up_pdf_distribution_check():
-    """A made-up PDF with Distribution A passes; one with Distribution C is refused."""
-    doc = {"id": "fm-99-1", "short": "FM 99-1 (made up)", "title": "Made-up UXO manual", "year": 2026}
+    """Made-up PDFs from the Internet Archive: Distribution A passes; Distribution C passes as personal use only;
+    no statement passes truthfully; a classified marking is refused."""
+    doc = {"id": "fm-99-1", "short": "FM 99-1 (made up)", "title": "Made-up UXO manual", "year": 2026,
+           "page": "https://archive.org/details/fm-99-1"}
     assert ux.process_document(doc, made_up_manual(), "uxo")["ok"]
-    refused = ux.process_document(doc, made_up_manual("DISTRIBUTION STATEMENT C: authorized to DoD only."), "uxo")
-    assert not refused["ok"] and "restricted" in refused["reason"]
+    personal = ux.process_document(doc, made_up_manual("DISTRIBUTION STATEMENT C: authorized to DoD only."), "uxo")
+    assert personal["ok"] and personal["release"].startswith("PERSONAL USE ONLY")
+    silent = ux.process_document(doc, made_up_manual("Headquarters, Department of the Army."), "uxo")
+    assert silent["ok"] and "print no distribution statement" in silent["release"]
+    refused = ux.process_document(doc, made_up_manual("SECRET"), "uxo")
+    assert not refused["ok"] and "classified" in refused["reason"]
+    assert ux.release_kind(dict(doc, release=personal["release"])).startswith("personal use only")
+    assert ux.release_kind(dict(doc, release=silent["release"])).endswith("prints no distribution statement")
 
 
 def test_made_up_pdf_end_to_end(tmp_path):

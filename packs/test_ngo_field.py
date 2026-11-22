@@ -8,7 +8,8 @@ It checks that:
   - a field manual follows the release rule (military_release.py; a made-up PDF made with pypdfium2 when it is
     installed): an Internet Archive copy is kept with or without Distribution Statement A, with a truthful release
     line; a restricted marking leaves it out of this open pack unless a government site publishes that copy; a
-    classified marking always leaves it out; a third-party copy still needs the statement;
+    classified marking leaves it out unless declassified and released; a third-party copy still needs the
+    statement;
   - figure captions are read, list-of-figures lines are not, unsafe captions are recognised, first-aid words make a
     row "medical", and the box of a drawing stops at body text and never reaches into its caption;
   - the kit's non-profit notes load, with no collection used for picture-making.
@@ -117,7 +118,9 @@ def test_distribution_check_on_a_made_up_pdf():
     why, line = fm.distribution_ok(pdf("DISTRIBUTION STATEMENT C: authorized to DOD only."),
                                    "https://armypubs.army.mil/epubs/x.pdf")
     assert why == "" and "publishes it openly at https://armypubs.army.mil/epubs/x.pdf" in line
-    assert "classified" in fm.distribution_ok(pdf("SECRET"), "https://armypubs.army.mil/epubs/x.pdf")[0]
+    assert "classified" in fm.distribution_ok(pdf("SECRET"), ia)[0]           # live marking, no release shown
+    why, line = fm.distribution_ok(pdf("SECRET DECLASSIFIED by made-up authority"), ia)
+    assert why == "" and "Originally classified SECRET; declassified" in line
     assert fm.distribution_ok(pdf("Survival manual."), "https://example.com/x.pdf")[0]
     assert fm.distribution_ok(pdf("Approved for public release; distribution is unlimited."),
                               "https://example.com/x.pdf")[0] == ""

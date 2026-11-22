@@ -9,7 +9,9 @@ It checks that:
   - a restricted marking comes in only when a government site publishes that copy openly (read from it, or a
     separate government address checked to answer without a login); from the Internet Archive or a museum it is
     personal use only; from a third-party site it is left out;
-  - a classified marking is left out whatever the host, and "UNCLASSIFIED" is not taken for one;
+  - an old classification marking comes in only when declassified and released (a marking, a record naming the
+    releasing agency, or a government site publishing it); live markings, leak sites and third-party copies are
+    left out; "UNCLASSIFIED" is not taken for one;
   - a third-party copy keeps the old rule (Distribution Statement A needed);
   - the shifted cover font of some Army PDFs is read;
   - a login page is not taken for an open answer.
@@ -87,13 +89,35 @@ def test_restricted_marking():
     assert museum.verdict == "personal" and "museum" in museum.release
 
 
-def test_classified_is_always_out():
-    """CONFIDENTIAL, SECRET and TOP SECRET leave it out whatever the host; UNCLASSIFIED does not."""
+def test_classified_needs_declassification_or_a_government_release():
+    """An old classification marking: in when declassified (a marking in its text, or its record naming the
+    releasing agency) on an open host, or when a government reading room publishes it; out with live markings and
+    no release evidence, and always from a leak site or a third-party host; UNCLASSIFIED is not a marking."""
+    declassified = "SECRET. DECLASSIFIED Authority NND 000001 (made up). Made-up report."
+    rule = M.release_rule(declassified, IA)
+    assert rule.verdict == "public" and "Originally classified SECRET; declassified and released" in rule.release
+    assert "DECLASSIFIED" in rule.release and "approved for public release" not in rule.release.lower()
+    sanitized = M.release_rule("TOP SECRET Sanitized Copy Approved for Release 2010/01/01 (made up)", IA)
+    assert sanitized.verdict == "public" and "TOP SECRET" in sanitized.release
+    room = "https://www.cia.gov/readingroom/docs/made-up.pdf"
+    rule = M.release_rule("CONFIDENTIAL. Made-up memorandum.", room)
+    assert rule.verdict == "public" and "Originally classified CONFIDENTIAL" in rule.release and room in rule.release
+    assert "Reading Room" in rule.release
+    record = M.release_rule("SECRET. Made-up report.", IA, released_by="the National Archives (NARA)")
+    assert record.verdict == "public" and "the National Archives (NARA)" in record.release
+    checked = M.release_rule("SECRET. Made-up report.", IA, gov_address="https://www.archives.gov/x.pdf",
+                             gov_answers=True)
+    assert checked.verdict == "public" and "https://www.archives.gov/x.pdf" in checked.release
     for words in ("SECRET", "TOP SECRET//NOFORN", "CONFIDENTIAL", "Classified by: made-up"):
-        for source in (IA, APD, OTHER):
+        for source in (IA, OTHER):
             rule = M.release_rule(words + " Approved for public release; distribution is unlimited", source)
             assert rule.verdict == "out" and "classified" in rule.reason, (words, source)
+    for leak in ("https://wikileaks.org/made-up.pdf", "https://cryptome.org/made-up.pdf"):
+        assert M.release_rule(declassified, leak).verdict == "out"
+        assert M.release_rule(declassified, leak, released_by="NARA").verdict == "out"
+    assert M.release_rule(declassified, OTHER).verdict == "out"
     assert M.release_rule("UNCLASSIFIED. The Secretary of the Army; keep it confidential.", IA).verdict == "public"
+    assert M.level_of("CONFIDENTIAL SECRET TOP SECRET") == "TOP SECRET"
 
 
 def test_third_party_host_keeps_the_old_rule():

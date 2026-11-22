@@ -16,7 +16,8 @@ museum site is used whether or not it prints Distribution Statement A, and each 
 statement"). A manual that prints a restricted marking (Distribution B to F, FOUO, CUI, NOFORN, export control) is
 used only when the government itself publishes it openly at the address it was read from; this pack is published
 openly and has no personal-use route, so an Internet Archive copy of such a manual is left out (its reason says
-"personal use only, fetch it yourself"). A classified marking always leaves it out. The official site
+"personal use only, fetch it yourself"). A classified marking leaves it out unless it was declassified and released
+(military_release.py says how that is shown). The official site
 (armypubs.army.mil) shuts out automated readers in its robots.txt, and marines.mil, the Coast Guard's and FEMA's
 sites refuse automated requests, so the copies on the Internet Archive are used (its robots.txt allows them); each
 row names that copy. The same manuals are in the toolkit's offline library as text (textbooks/sources.py PDF_DOCS,

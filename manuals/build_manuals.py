@@ -91,7 +91,8 @@ Sources, and why each may be used by a program:
       ("Approved for public release; distribution is unlimited"); a copy that prints a restricted marking
       (Distribution B to F, FOUO, CUI, NOFORN, export control) and is not published by the government itself is
       listed as a link-only, PERSONAL USE ONLY entry that the owner fetches himself (Program Downloader's "To do
-      yourself" list); a classified marking leaves it out.
+      yourself" list); a classified marking leaves it out unless it was declassified and released (the
+      release line then says so).
   Not used: ManualsLib and other manual-copying sites (their terms forbid automated use), nor the Internet Archive's
       copies of them (items such as manualsbase-id-2170, manualsonline-id-..., manualzilla-id-..., manualsplus_...:
       COPY_SITE_ITEMS, or an item whose metadata names one of NEVER_SITES): never put into any index (the owner's
@@ -1234,7 +1235,8 @@ def public_guide_entries(fetch, guides, key):
     works, each the Internet Archive's copy): kept only when the item has a PDF. A military manual (doc["military"])
     is judged by the front of its own text (public_release): indexed with its truthful release line when "public"
     (with or without Distribution Statement A, by the owner's decision of 22 November 2026); a link-only, PERSONAL
-    USE ONLY entry when it prints a restricted marking; left out when classified. Returns (entries, notes)."""
+    USE ONLY entry when it prints a restricted marking; left out when still classified (a declassified and released
+    one is indexed, its release line saying so). Returns (entries, notes)."""
     entries, notes = [], []
     for doc in guides:
         if listing_out_of_time():
