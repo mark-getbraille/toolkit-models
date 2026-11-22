@@ -41,11 +41,14 @@ EDGAR_KINDS = [
     ('"Dear Fellow Shareholders"', "DEF 14A", "letter to shareholders"),
 ]
 ABCD_URL = "https://raw.githubusercontent.com/asappresearch/abcd/master/data/abcd_v1.1.json.gz"
-OPENSTAX_RAW = "https://raw.githubusercontent.com/openstax/{repo}/main/"
-OPENSTAX_BOOKS = [("osbooks-introduction-business", "introduction-business-2e"),
-                  ("osbooks-business-ethics", "business-ethics"),
-                  ("osbooks-principles-of-management-bundle", "principles-management"),
-                  ("osbooks-principles-of-management-bundle", "organizational-behavior")]
+# OpenStax moved its books to CC BY-NC-SA in March 2026. Each book is read at the last commit published as CC BY 4.0
+# (a Creative Commons licence can't be withdrawn for a version already published); the commits are the ones recorded
+# in the reference library's textbooks/sources.py OSBOOKS_PINS. Introduction to Business 2e was never published as
+# CC BY, so it is left out.
+OPENSTAX_RAW = "https://raw.githubusercontent.com/openstax/{repo}/{commit}/"
+OPENSTAX_BOOKS = [("osbooks-business-ethics", "business-ethics", "d64573e"),
+                  ("osbooks-principles-of-management-bundle", "principles-management", "a995241"),
+                  ("osbooks-principles-of-management-bundle", "organizational-behavior", "a995241")]
 BUSINESS_TOPICS = re.compile(r"(?i)communicat|writing|meeting|negotiat|memo|e-?mail|letter|report|presentation|"
                              r"listening|feedback|conflict|customer|sales|marketing|proposal|team|interview|"
                              r"diversity|ethic|leadership|decision|motivat|change")
@@ -173,8 +176,8 @@ def cnxml_text(xml):
 
 
 def read_openstax_business(fetcher, say=print, per_book=40, **_):
-    for repo, slug in OPENSTAX_BOOKS:
-        base = OPENSTAX_RAW.format(repo=repo)
+    for repo, slug, commit in OPENSTAX_BOOKS:
+        base = OPENSTAX_RAW.format(repo=repo, commit=commit)
         collection = fetcher.get(f"{base}collections/{slug}.collection.xml").decode("utf-8", "replace")
         modules = re.findall(r'<col:module document="(m\d+)"', collection) or \
             re.findall(r'document="(m\d+)"', collection)
