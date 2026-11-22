@@ -3440,3 +3440,19 @@ for _prep_name, _prep_prefix in (("preparedness_sources", "PREPAREDNESS"), ("rad
     NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in _prep_sources
                                                                    if s.key not in _prep_ok)
     _add_collections(_prep_sources)
+# Practical life (practical_sources.py, the owner's request of 2026-11-22): driving and road rules, computer and phone
+# basics, cleaning and household management, knots and outdoor skills, pool equipment, and motorcycles, RVs and
+# trailers: their ready-made packs, the knots' share-alike Commons files and what was left out. The file may be
+# missing. Only the keys in PRACTICAL_PICTURE_MAKING_OK may be used for picture-making.
+try:
+    import practical_sources as _practical  # noqa: E402
+except ImportError as _e:
+    _practical = None
+    if getattr(_e, "name", None) != "practical_sources":
+        say(f"(The practical life collections could not be loaded: {_e}. They are left out.)")
+PRACTICAL_SOURCES = list(getattr(_practical, "PRACTICAL_SOURCES", []) or [])
+_practical_ok = set(getattr(_practical, "PRACTICAL_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _practical_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in PRACTICAL_SOURCES
+                                                               if s.key not in _practical_ok)
+_add_collections(PRACTICAL_SOURCES)

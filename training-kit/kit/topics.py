@@ -122,8 +122,9 @@ TOPICS = [
            "drinks_alcohol_commons_sa")),
     Topic("machines", "Vehicles, machines and devices",
           "Vehicles and their parts and dashboard symbols, machine parts, tools, plugs, clocks and displays, "
-          "electronic devices, electronic parts and repair, assistive devices, radios and antennas, and "
-          "building-site safety.",
+          "electronic devices, electronic parts and repair, assistive devices, radios and antennas, "
+          "building-site safety, car controls and roads, computer and phone parts, and motorcycles, RVs and "
+          "trailers.",
           ("wikidata_vehicle_models", "commons_vehicle_kinds", "commons_us_cars", "commons_ca_cars",
            "commons_airplanes", "commons_car_parts", "commons_cycle_parts", "commons_machine_parts",
            "commons_engine_bays", "iso_machine_symbols", "corolla_engine_bay", "tyre_condition",
@@ -139,6 +140,9 @@ TOPICS = [
            "commons_car_care", "commons_ev_charging", "commons_dashboard_lights", "open_images_car_care",
            # radios, antennas and mesh radio devices (radio_sources.py; also in the radio topic)
            "commons_radios", "commons_antennas_station", "commons_mesh_data_radio", "open_images_radio",
+           # driving, computer and phone basics, motorcycles, RVs and trailers (practical_sources.py)
+           "commons_driving", "open_images_driving", "commons_computer_basics", "open_images_computer_basics",
+           "commons_trailers_rvs", "commons_motorcycle_gear", "open_images_motorcycles_rvs",
            # share-alike
            "car_care_commons_sa", "radio_commons_sa",
            "commons_mechanical_sa", "dashboard_symbols_sa", "device_models_sa", "farm_mech_commons_sa",
@@ -151,9 +155,9 @@ TOPICS = [
     # one add-on. The household collections moved here from "machines"; the craft collections are also in "art" and
     # the household pests also in "nature", so those add-ons keep them.
     Topic("home", "Home and household",
-          "Appliances and their controls, kitchens, laundry and care labels, cleaning products and hazards, home "
-          "repair, locks, heating and lighting, building work and ramps, pests, baby products, sewing and crafts, "
-          "first aid, dental and eye care, and emergency kits, shelters and disasters.",
+          "Appliances and controls, kitchens, laundry and care labels, cleaning tools, products and hazards, home "
+          "repair, locks, heating, lighting, building and ramps, pests, baby products, sewing and crafts, first "
+          "aid, dental and eye care, emergency kits, disasters, pool equipment, knots and outdoor tools.",
           ("commons_appliances", "commons_appliance_controls", "open_images_appliance_controls", "commons_kitchen",
            "laundry_symbols", "laundry_care_labels", "commons_household_chemicals", "commons_finishes_in_use",
            "commons_household_hazards", "open_images_household_hazards",
@@ -186,6 +190,9 @@ TOPICS = [
            # emergency preparedness and disasters (preparedness_sources.py)
            "commons_emergency_kits_power", "commons_warnings_shelters", "commons_emergency_signs_maps",
            "commons_disaster_types", "open_images_disasters", "preparedness_commons_sa",
+           # cleaning tools, pool equipment, knots and outdoor tools (practical_sources.py)
+           "commons_cleaning_tools", "open_images_cleaning", "commons_pool_equipment", "commons_knots",
+           "commons_outdoor_skills", "open_images_knots_outdoor", "knots_commons_sa",
            # non-commercial and research-only (personal use)
            "cpsc_recalls")),
     # Radio communications (the owner's decision of 22 November 2026): ham and other two-way radio, antennas and

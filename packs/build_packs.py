@@ -1902,6 +1902,13 @@ from radio_packs import RADIO_PACKS, RADIO_COMMONS_KEYS
 for _packs, _commons in ((PREPAREDNESS_PACKS, PREPAREDNESS_COMMONS_KEYS), (RADIO_PACKS, RADIO_COMMONS_KEYS)):
     PACKS.update(_packs)
     COMMONS_KEYS = COMMONS_KEYS | frozenset(_commons)
+# Practical life (packs/practical_packs.py gathers six files, the owner's request of 2026-11-22): driving and road
+# rules, computer and phone basics, cleaning and household management, knots and outdoor skills, pool equipment, and
+# motorcycles, RVs and trailers. Every answer carries its safety note (seat belts, never mixing cleaners or pool
+# chemicals, drowning prevention, rope and sharp tools, towing, helmets).
+from practical_packs import PRACTICAL_PACKS, PRACTICAL_COMMONS_KEYS
+PACKS.update(PRACTICAL_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(PRACTICAL_COMMONS_KEYS)
 
 
 def pack_lanes(keys):

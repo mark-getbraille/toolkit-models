@@ -500,6 +500,19 @@ jobs:
             commons_radio_cards_charts) limit=300 ;;
             commons_mesh_data_radio) limit=250 ;;
             open_images_radio) limit=400 ;;
+            commons_driving) limit=900 ;;
+            open_images_driving) limit=1500 ;;
+            commons_computer_basics) limit=900 ;;
+            open_images_computer_basics) limit=500 ;;
+            commons_cleaning_tools) limit=1000 ;;
+            open_images_cleaning) limit=800 ;;
+            commons_knots) limit=1500 ;;
+            commons_outdoor_skills) limit=700 ;;
+            open_images_knots_outdoor) limit=800 ;;
+            commons_pool_equipment) limit=250 ;;
+            commons_trailers_rvs) limit=900 ;;
+            commons_motorcycle_gear) limit=900 ;;
+            open_images_motorcycles_rvs) limit=1500 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in
