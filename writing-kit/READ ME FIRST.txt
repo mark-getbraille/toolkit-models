@@ -84,6 +84,8 @@ The styles:
   dialogue: made-up dialogues between characters.
   children_story: stories for children.
   humour: humorous writing.
+  nonfiction_prose: nonfiction books: history, essays, biography, travel and science (public domain).
+  form_letter: form letters and notices from agencies to the public, in plain language.
 
 What you get, in the out folder
 train.jsonl: the training examples, one per line.
@@ -95,6 +97,8 @@ ATTRIBUTION.txt: the credits and licences. Keep it with anything you make from t
 sources-not-used.txt: the sources that were checked and cannot be used, and why.
 messages folder: one folder per email that came with attachments, holding message.txt and the attachment files.
 transcripts folder: whole transcripts of real speech, one plain text file each, by source.
+audio_text folder: recordings with their matching text, for speech and text-to-speech work (see "Audio with
+  matching text" below). These are not training examples for Qwen.
 scanned-pages-left-out.txt: the scanned pages the OCR reader could not read well enough, with the reason (only
   when scanned releases were read).
 
@@ -283,6 +287,29 @@ programs), Founders Online (a browser check stops programs; non-commercial terms
 Mozilla's Bugzilla and mailing lists (closed to programs), the CFPB complaint stories (no longer published), USPTO
 patent texts (needs an identity-checked key and gigabyte files; not built yet) and the Kiwix copies (refuse
 programs; Wikimedia's own dumps are used).
+
+Audio with matching text, and government form letters (added late November 2026)
+These are kept in their own file, kit\sources_audio.py.
+  librispeech: LibriSpeech and LibriTTS, from openslr.org (CC BY 4.0): short recordings of people reading books,
+    each with exactly what is said. LibriTTS keeps the book's punctuation and capitals and was made for
+    text-to-speech. The kit reads only the start of each big file and stops when it has enough.
+  librivox: LibriVox audiobooks (public domain) from the Internet Archive, each chapter's recording with that
+    chapter's text from Project Gutenberg. The book texts also become writing examples, labelled fiction_prose or
+    nonfiction_prose. This one is OFF unless you name it, for example --sources librivox. The reason: LibriVox's
+    own website says in its robots.txt that it does not want its content used for AI training, so the kit never
+    reads LibriVox's site. The recordings themselves are public domain and the Internet Archive allows programs,
+    but using them goes around LibriVox's wish. It is your decision.
+  gov_letters: government form letters and notices (public domain): the plainlanguage.gov example letters and
+    before-and-after rewrites (the same pages as the reference library's plain language examples), and the IRS
+    pages that explain each notice and letter (CP2000 and the rest): why you got it and what to do.
+The recordings go into the audio_text folder, one folder per source: each recording beside a .txt file with its
+text, and pairs.jsonl listing them all with the book, chapter, licence and credit. README.txt there explains the
+two kinds of match: "utterance" (the text is exactly what is said) and "chapter" (the whole chapter, with
+LibriVox's short spoken introduction at the start of the recording).
+One more setting: --audio-pairs, the most recordings to take from each audio source (200 unless you say).
+Checked and not used: LibriVox's own website and API (it refuses AI training), the Social Security
+Administration's notices (ssa.gov refuses programs), and agency customer service email templates (no public
+collection of them was found).
 
 Privacy: your rule
 You asked to keep everything: the full text of every message, people's names, signatures, the earlier messages
