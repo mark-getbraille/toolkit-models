@@ -124,7 +124,8 @@ GUIDES = [
             NOTE + " A work of the National Institutes of Health (public domain).", depth=1,
             units=[(r"/heart-attack", "Heart attack"), (r"/high-blood-pressure", "High blood pressure"),
                    (r"/heart-failure", "Heart failure"), (r"/asthma", "Asthma"), (r".", "COPD")], limit=80),
-    F.nhs_book(GROUP, "nhs_long_term_conditions", "Diabetes, blood pressure, COPD, heart failure, arthritis, kidney disease and stomas (NHS)",
+    F.nhs_book(GROUP, "nhs_long_term_conditions", "Diabetes, blood pressure, COPD, heart failure, arthritis, kidney "
+               "disease and stomas (NHS)",
                "Long-term conditions (UK)",
                ["conditions/diabetes", "conditions/type-2-diabetes", "conditions/high-blood-pressure",
                 "conditions/chronic-obstructive-pulmonary-disease-copd", "conditions/heart-failure",

@@ -1,6 +1,7 @@
 """Picture packs for GARDENING AND LAWN CARE: vegetable, herb and flower gardens, fruit trees and houseplants in pots,
 soil and compost, seed packets and plant labels (read only where the file's own words give the plant's name), seed
-starting, pruning, lawns, lawn grasses and crabgrass, and leaf symptoms of plant diseases and deficiencies. Used by build_packs.py in the same way as its own PACKS: each builder is build_<key>(limit) and returns
+starting, pruning, lawns, lawn grasses and crabgrass, and leaf symptoms of plant diseases and deficiencies. Used by
+build_packs.py in the same way as its own PACKS: each builder is build_<key>(limit) and returns
 [(file name, JPEG bytes or None, row)]. The limit counts pictures.
 
 The owner's request of 2026-11-22 ("life skills"). Plants by species (iNaturalist and GBIF), crops and their

@@ -102,7 +102,8 @@ NOT_INCLUDED = [
     ("The Principles and Practice of Pruning (Kains, 1917)", "The Internet Archive's record of its scan "
      "(principlespracti00kainrich) gives no publication year, so the builder cannot confirm it is from before 1931 "
      "(checked 2026-11-22). Index: https://archive.org/details/principlespracti00kainrich"),
-    ("Pinterest, YouTube gardening videos, Instructables, Reddit and garden forums", "Not read (the owner's rule: their terms forbid scraping, or the "
+    ("Pinterest, YouTube gardening videos, Instructables, Reddit and garden forums", 
+     "Not read (the owner's rule: their terms forbid scraping, or the "
      "pictures and text are their users' own). Index: https://www.youtube.com/results?search_query=gardening"),
 ]
 

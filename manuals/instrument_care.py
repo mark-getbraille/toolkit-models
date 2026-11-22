@@ -13,7 +13,8 @@ INSTRUMENT_SAFETY = ("Unplug electric instruments and amplifiers before working 
                      "voltages inside even when unplugged, so leave their repair to a technician. Loosen strings "
                      "slowly and wear eye protection when cutting them.")
 
-IA_WORDS = ["guitar care", "guitar setup", "violin care", "string instrument care", "instrument care", "chromatic tuner",
+IA_WORDS = ["guitar care", "guitar setup", "violin care", "string instrument care", "instrument care",
+            "chromatic tuner",
             "clip-on tuner", "instrument humidifier", "guitar humidifier", "piano care", "piano tuning",
             "band instrument", "woodwind care", "brass care", "drum tuning"]
 
@@ -52,7 +53,8 @@ GUIDANCE = [
 CATEGORY = dict(
     name="Musical instrument care and repair (guides and manuals)",
     description="Caring for acoustic instruments: guitars and violins (strings, setup, humidity), pianos (tuning "
-                "and care), band instruments (woodwinds and brass), drums (heads and tuning), tuners and humidifiers: the Internet Archive's manuals, the makers' care guides (links) and the old "
+                "and care), band instruments (woodwinds and brass), drums (heads and tuning), tuners and "
+                "humidifiers: the Internet Archive's manuals, the makers' care guides (links) and the old "
                 "public-domain books of the reference library.",
     kind="manuals", licence="CC0 (facts and links); each document belongs to its maker",
     ia=IA_WORDS, makers=MAKERS, guidance=GUIDANCE, notice=INSTRUMENT_SAFETY)

@@ -165,7 +165,8 @@ CATEGORIES = {
     "birth_postpartum": dict(
         name="Birth, breastfeeding and newborn care devices (instructions)",
         description="Breast pumps, baby thermometers, baby scales, fetal dopplers and nasal aspirators: manuals "
-                    "at the Internet Archive (breast pump manuals are searched by the category baby_gear), the FDA's device records with barcode "
+                    "at the Internet Archive (breast pump manuals are searched by the category baby_gear), the FDA's "
+                    "device records with barcode "
                     "numbers, the makers' instructions (links), and CDC's and the FDA's guidance (links).",
         kind="manuals", licence="CC0 (facts and links); FDA device records are public domain; each other document "
                                 "belongs to its maker",

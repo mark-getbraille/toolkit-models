@@ -89,7 +89,8 @@ NOT_INCLUDED = [
      "category links them. Index: https://www.nhtsa.gov/recalls"),
     ("EPA Green Vehicle Guide", "The EPA's copyright statement allows non-commercial use only (see pets_home.py); "
      "its pages are about buying cleaner vehicles, not care. Link-only. Index: https://www.epa.gov/greenvehicles"),
-    ("YouTube car care videos, Instructables, Reddit and car forums", "Not read (the owner's rule: their terms forbid scraping, or the "
+    ("YouTube car care videos, Instructables, Reddit and car forums", 
+     "Not read (the owner's rule: their terms forbid scraping, or the "
      "pictures and text are their users' own). Index: https://www.youtube.com/results?search_query=car+maintenance"),
 ]
 

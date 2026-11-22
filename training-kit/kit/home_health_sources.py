@@ -169,7 +169,8 @@ HOME_HEALTH_NOT_INCLUDED = {
         "many are graphic clinical photos (disease and injury), beyond what ordinary first-aid guides show; the "
         "kit's cdc_phil packs take supplies and health behaviours only.",
     "Commons categories that do not exist or hold no files under the names tried (November 2026)":
-        "Eye drops (already med_vet_packs'), CPR training, CPR manikins, Pocket masks, Pressure bandages, Elastic bandages, Gauze pads, Arm slings, "
+        "Eye drops (already med_vet_packs'), CPR training, CPR manikins, Pocket masks, Pressure bandages, Elastic "
+        "bandages, Gauze pads, Arm slings, "
         "Burn dressings, Cold packs, Instant cold packs, Emergency blankets, Epinephrine autoinjectors, Medical "
         "alert bracelets, Eyewash stations, Stop the Bleed, Poison control, Mr. Yuk, FAST (stroke), Mental health "
         "first aid, Hand lenses, Progressive lenses, Eyeglass lenses, Nose pads, Glasses cases, Phoropters, "

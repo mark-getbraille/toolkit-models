@@ -68,3 +68,10 @@ def test_wiring():
                    k.CAR_CARE_SOURCES, k.CAR_CARE_PICTURE_MAKING_OK)
     import topics
     assert set(c.CAR_CARE_PACKS) <= set(topics.find("machines").keys)
+
+
+def test_connector_photos_name_a_plug():
+    for spec in c.EV_CHARGING:
+        if spec[2][0][0] == c.ASK_CONNECTOR:
+            assert spec[3].search("CHAdeMO charging plug") and not spec[3].search("Tesla Model S at Geneva Motor "
+                                                                                 "Show 2014"), spec[0]

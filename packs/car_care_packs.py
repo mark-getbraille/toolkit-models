@@ -28,7 +28,8 @@ The packs (all open: CC0, public domain or CC BY files; Open Images labels CC BY
                             home wallboxes. "What charging connector is this?"
   commons_dashboard_lights  Commons symbol files and photos found by their own titles (warning light, tell-tale,
                             ISO 2575): the meaning is said only when the file's own words name a road vehicle (or
-                            the symbol standard) and one light listed in DASHBOARD_LIGHTS (about 45 lights, with what the driver should do, as car handbooks
+                            the symbol standard) and one light listed in DASHBOARD_LIGHTS (about 45 lights, with
+                            what the driver should do, as car handbooks
                             give it), else the file is left out. Light colours are said only where the words say
                             them (red: stop safely; amber: check soon; green or blue: a system is on).
   open_images_car_care      Open Images V7: tyres, treads, rims and alloy wheels, hubcaps, headlamps and car lights,
@@ -100,13 +101,16 @@ CAR_CARE = [
 
 # ----------------------------------------------------------------- Commons: electric vehicle charging
 
+# The connector categories hold photos of whole cars too: only files whose own words name a plug, socket or port.
+CONNECTOR_WORDS = re.compile(r"\b(connectors?|plugs?|sockets?|ports?|inlets?|couplers?|cables?|charg\w*)\b", re.I)
 EV_CHARGING = [
     car("CHAdeMO", "a CHAdeMO connector, a round fast-charging plug used mostly by older Japanese electric cars",
-        CHARGING_NOTE, question=ASK_CONNECTOR),
+        CHARGING_NOTE, question=ASK_CONNECTOR, pattern=CONNECTOR_WORDS),
     car("North American Charging System", "a North American Charging Standard (NACS, SAE J3400) connector, the small "
-                                          "plug first used by Tesla", CHARGING_NOTE, question=ASK_CONNECTOR),
+                                          "plug first used by Tesla", CHARGING_NOTE, question=ASK_CONNECTOR,
+        pattern=CONNECTOR_WORDS),
     car("IEC 62196", "an IEC 62196 charging plug or socket: Type 1 (J1772), Type 2 (Mennekes) or CCS",
-        CHARGING_NOTE, question=ASK_CONNECTOR),
+        CHARGING_NOTE, question=ASK_CONNECTOR, pattern=CONNECTOR_WORDS),
     car("Tesla Supercharger", "a Tesla Supercharger, a fast charging post", CHARGING_NOTE, question=ASK_WHAT),
     car("Wallboxes", "a wallbox, a home charging unit for an electric car", CHARGING_NOTE, question=ASK_WHAT),
 ]
@@ -162,7 +166,8 @@ DASHBOARD_LIGHTS = [
     (r"cruise control", "the cruise control light: cruise control is on"),
     (r"lane (departure|keep)", "the lane-keeping light: the lane-keeping assistant is on, or warns that the car is "
                                "drifting out of its lane"),
-    (r"turn signal|direction indicator|turn indicator|blinker", "the turn signal (indicator) light: the indicator is on; "
+    (r"turn signal|direction indicator|turn indicator|blinker",
+     "the turn signal (indicator) light: the indicator is on; "
                                                            "fast blinking can mean a bulb is out"),
     (r"hazard", "the hazard warning light: all the indicators are flashing"),
     (r"key (not detected|fob)|immobili[sz]er", "the key or immobiliser light: the car does not detect the "
@@ -172,7 +177,8 @@ DASHBOARD_LIGHTS = [
     (r"frost|ice warning|low outside temperature|snowflake", "the frost warning light: it is cold outside and the "
                                                              "road may be icy"),
     (r"eco mode|\beco\b", "the eco mode light: the economy driving mode is on"),
-    (r"\bready\b", "the READY light of an electric or hybrid car: the car is on and ready to drive, though it is silent"),
+    (r"\bready\b", "the READY light of an electric or hybrid car: the car is on and ready to drive, though it is "
+                   "silent"),
     (r"turtle|reduced power|limited power", "the reduced power (turtle) light of an electric car: power is limited, "
                                             "often because the battery is very low or too hot; stop safely and charge "
                                             "or have it checked"),

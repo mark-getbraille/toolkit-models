@@ -109,7 +109,8 @@ INSTRUMENT_CARE_NOT_INCLUDED = {
     "Commons categories that do not exist or hold no files under the names tried (November 2026)":
         "Fretboards, Tuning machines, Nuts (string instruments), Plectrums, Guitar tuners, Shoulder rests, Luthier "
         "workshops, Musical instrument repair, Truss rods, Violin making, Piano making, Piano restoration, Flute and "
-        "Saxophone keys, Upright pianos (another pack's), Clarinet, Saxophone, Oboe and Bassoon reeds (Reeds (music) and Double reeds are used), "
+        "Saxophone keys, Upright pianos (another pack's), Clarinet, Saxophone, Oboe and Bassoon reeds (Reeds "
+        "(music) and Double reeds are used), "
         "Mouthpieces (music), Mutes (music), Ligatures (music), Drumheads (Drum heads is used), Drum keys, Piano "
         "actions, Piano hammers, Piano interiors, Piano soundboards; Lutherie, Violin makers, Drum kits and Piano "
         "keys are empty.",
