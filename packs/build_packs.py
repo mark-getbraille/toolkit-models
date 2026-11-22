@@ -1772,6 +1772,13 @@ COMMONS_KEYS = COMMONS_KEYS | frozenset(MEDICATION_COMMONS_KEYS)
 from health_test_packs import HEALTH_TEST_PACKS, HEALTH_TEST_COMMONS_KEYS
 PACKS.update(HEALTH_TEST_PACKS)
 COMMONS_KEYS = COMMONS_KEYS | frozenset(HEALTH_TEST_COMMONS_KEYS)
+# Clothing care labels close up (packs/care_label_packs.py), extending home_packs.laundry_symbols: computer-made woven
+# and printed care labels with the GINETEX/ASTM symbols drawn from simple shapes, made-up fibre, size and country lines
+# and sometimes the ASTM words, photographed by phone_photo.py (rows marked synthetic), and Commons photos of real care
+# labels found by search (not Category:Laundry tags).
+from care_label_packs import CARE_LABEL_PACKS, CARE_LABEL_COMMONS_KEYS
+PACKS.update(CARE_LABEL_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(CARE_LABEL_COMMONS_KEYS)
 
 
 def pack_lanes(keys):

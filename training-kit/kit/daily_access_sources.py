@@ -3,6 +3,7 @@ everyday-access packs made with it (see DAILY_ACCESS_SOURCES). This file lists:
   - the ready-made packs built in packs/ (group "permissive"; the kit downloads them with prepare_pack):
       indoor_packs.py              commons_indoor_wayfinding, open_images_indoor
       appliance_controls_packs.py  commons_appliance_controls, open_images_appliance_controls
+      care_label_packs.py          laundry_care_labels (computer-made labels and Commons photos)
       health_test_packs.py         lfa_covid_tests, commons_home_health_tests
       medication_label_packs.py    commons_medication_labels
       synthetic_bills_packs.py     synthetic_bills (computer-made, made-up details)
@@ -139,6 +140,13 @@ DAILY_ACCESS_SOURCES = [
                                         "meters, the result only where the photo's own words give it (Wikimedia "
                                         "Commons, ready-made pack)",
            COMMONS_OPEN, COMMONS_CREDIT, "permissive", 400, 10, prepare_pack, "about 90 MB"),
+    # ---- ready-made pack (packs/care_label_packs.py)
+    Source("laundry_care_labels", "Clothing care labels close up: computer-made labels with the care symbols read out, "
+                                  "and Commons photos of real labels (synthetic and Wikimedia Commons, ready-made "
+                                  "pack)",
+           "Computer-made labels CC0 (packs/care_label_packs.py); Commons pictures CC0, public domain or CC BY "
+           "(credited in CREDITS.txt); captions CC0", COMMONS_CREDIT + "; computer-made labels by the kit's makers",
+           "permissive", 3000, 30, prepare_pack, "about 250 MB"),
     # ---- share-alike
     Source("appliance_commons_sa", "Wikimedia Commons: rotary switches, air-conditioner remotes, smart thermostats and "
                                    "cooktops, files under CC BY-SA or GFDL (share-alike)",
@@ -153,9 +161,14 @@ DAILY_ACCESS_SOURCES = [
 
 # The collections a picture-making model may learn from: the Commons appliance controls (things); not the indoor
 # collections or the Open Images photos (people).
-DAILY_ACCESS_PICTURE_MAKING_OK = {"commons_appliance_controls", "appliance_commons_sa", "lfa_covid_tests"}
+DAILY_ACCESS_PICTURE_MAKING_OK = {"commons_appliance_controls", "appliance_commons_sa", "laundry_care_labels", "lfa_covid_tests"}
 
 DAILY_ACCESS_SIGN_UP = {
+    "Roboflow Universe laundry-symbol and care-label sets (several CC BY 4.0 or MIT)":
+        "https://universe.roboflow.com (for example 'Laundry Symbols' by laundrymanager, 'laundry_symbols' by "
+        "alexander-pitkin, 'care_symbols' by decodelaundrysymbols): a free Roboflow account and API key to export; "
+        "where their photos come from is not stated. The computer-made labels of laundry_care_labels cover the same "
+        "symbols.",
     "Kaggle lateral flow test sets (for example the 325-photo set used in arXiv 2404.14990, said to be MIT)":
         "https://www.kaggle.com : a free Kaggle account and API token are needed to download; check each set's "
         "licence and where its photos came from.",

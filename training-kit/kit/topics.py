@@ -125,7 +125,7 @@ TOPICS = [
            "commons_airplanes", "commons_car_parts", "commons_cycle_parts", "commons_machine_parts",
            "commons_engine_bays", "iso_machine_symbols", "corolla_engine_bay", "tyre_condition",
            "spark_plug_condition", "planetary_gearbox", "commons_appliances", "commons_connectors",
-           "laundry_symbols", "commons_tools", "commons_kitchen", "clock_times", "seven_segment", "abo_products",
+           "laundry_symbols", "laundry_care_labels", "commons_tools", "commons_kitchen", "clock_times", "seven_segment", "abo_products",
            "commons_things", "open_images_tech", "commons_us_controls", "wikidata_devices", "commons_devices",
            "nmah_devices", "farm_commons_equipment", "mech_commons_building", "open_images_objects", "core50",
            "gso_objects", "commons_household_chemicals", "commons_finishes_in_use", "commons_appliance_controls",

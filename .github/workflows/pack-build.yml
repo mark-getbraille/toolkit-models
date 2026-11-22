@@ -413,6 +413,7 @@ jobs:
             commons_medication_labels) limit=300 ;;
             lfa_covid_tests) limit=1200 ;;
             commons_home_health_tests) limit=400 ;;
+            laundry_care_labels) limit=3000 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in

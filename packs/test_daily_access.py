@@ -27,6 +27,7 @@ import build_packs  # noqa: E402,F401 - loaded first, as the builders expect
 import gaps_oi_packs as g  # noqa: E402
 import indoor_packs as indoor  # noqa: E402
 import appliance_controls_packs as appl  # noqa: E402
+import care_label_packs as care  # noqa: E402
 import health_test_packs as health  # noqa: E402
 import medication_label_packs as med  # noqa: E402
 import synthetic_bills_packs as bills  # noqa: E402
@@ -39,6 +40,7 @@ MODULES = [
      [indoor.INDOOR_OI]),
     (appl, appl.APPLIANCE_CONTROLS_PACKS, appl.APPLIANCE_CONTROLS_LIMITS, appl.APPLIANCE_CONTROLS_COMMONS_KEYS,
      appl.CONTROL_SPECS, [appl.CONTROLS_OI]),
+    (care, care.CARE_LABEL_PACKS, care.CARE_LABEL_LIMITS, care.CARE_LABEL_COMMONS_KEYS, [], []),
     (health, health.HEALTH_TEST_PACKS, health.HEALTH_TEST_LIMITS, health.HEALTH_TEST_COMMONS_KEYS,
      [(health.TEST_CATEGORY[0], False, [])], []),
     (med, med.MEDICATION_PACKS, med.MEDICATION_LIMITS, med.MEDICATION_COMMONS_KEYS, [], []),
@@ -185,6 +187,30 @@ def test_health_results_only_from_the_record():
                                 "c")) == 3
 
 
+# ----------------------------------------------------------------- care labels
+
+def test_care_labels_are_exact_and_repeatable():
+    name, data, rows = care.make_label(7)
+    assert (name, data) == care.make_label(7)[:2] and data[:2] == b"\xff\xd8"
+    said = {r["question"]: r["answer"] for r in rows}
+    assert all(r["synthetic"] for r in rows) and "CC0" in rows[0]["credit"]
+    meanings = {s[2] for s in care.SYMBOLS}
+    for sentence in said[care.LABEL_Q].replace(". ", ".|").split("|"):
+        assert sentence in meanings, sentence
+    assert said[care.FABRIC_Q].startswith("The label says ")
+    for n in range(40):
+        picks = care.choose_symbols(__import__("random").Random(n))
+        kinds = [p[0] for p in picks]
+        assert kinds == sorted(kinds, key=care.ORDER.index) and len(set(kinds)) == len(kinds)
+        if picks[0][2] == "Do not wash.":
+            assert care.BLEACH not in kinds and care.TUMBLE not in kinds
+    assert care.fibre_words("60% COTTON 40% POLYESTER") == "60% cotton and 40% polyester"
+    # the meanings are the same words as home_packs.laundry_symbols
+    import home_packs
+    known = {m for _k, m in home_packs.LAUNDRY_SYMBOLS.values()}
+    assert meanings <= known, meanings - known
+
+
 # ----------------------------------------------------------------- shared checks
 
 def asked_elsewhere():
@@ -274,6 +300,7 @@ def test_wiring():
     assert set(indoor.INDOOR_PACKS) <= no_making
     assert "commons_appliance_controls" not in no_making and "open_images_appliance_controls" in no_making
     assert listed["appliance_commons_sa"].group == "share-alike"
+    assert "laundry_care_labels" not in no_making and "laundry_care_labels" in topics.find("machines").keys
     assert "commons_home_health_tests" in no_making and "lfa_covid_tests" not in no_making
     assert {"lfa_covid_tests", "commons_home_health_tests"} <= set(topics.find("medicines").keys)
     assert "commons_medication_labels" in no_making and "commons_medication_labels" in topics.find("medicines").keys
