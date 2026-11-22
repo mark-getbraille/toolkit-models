@@ -59,7 +59,7 @@ GUIDANCE = [
                "programs)", url="https://www.poolsafely.gov/", by="the US Consumer Product Safety Commission"),
     dict(title="Swimming Pools and Bathing Facilities (Army TB MED 575; in the reference library: "
                "pool:army_tb_med_575)",
-         url="https://archive.org/details/ost-military-medical-tbmed575", by="the US Army"),
+         url="https://archive.org/details/DTIC_ADA355816", by="the US Army"),
 ]
 
 CATEGORY = dict(
