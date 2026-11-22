@@ -4,7 +4,8 @@
 # eight at a time. Commons refused requests (429) for hours when ten packs read it together, so the Commons packs
 # failed or came out empty; in their own narrow lane they wait for each other instead.
 # inputs.keys: the lane's pack keys as a JSON list (with their marks); inputs.parallel: how many build at once.
-# The repository secrets (EUROPEANA_KEY, DPLA_API_KEY) come from packs.yml ("secrets: inherit").
+# The repository secrets (EUROPEANA_KEY, DPLA_API_KEY, the optional NYPL_API_TOKEN) come from packs.yml
+# ("secrets: inherit").
 name: Build training packs (one lane)
 
 on:
@@ -35,6 +36,9 @@ jobs:
       EUROPEANA_KEY: ${{ secrets.EUROPEANA_KEY }}
       # The Digital Public Library of America's key (a repository secret); without it dpla_campus publishes nothing.
       DPLA_API_KEY: ${{ secrets.DPLA_API_KEY }}
+      # NYPL's free Digital Collections API token (optional): with it nypl_menus also takes later menus that NYPL marks
+      # "No Known U.S. Copyright Restrictions"; without it only menus dated before 1931.
+      NYPL_API_TOKEN: ${{ secrets.NYPL_API_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -54,8 +58,14 @@ jobs:
               python -m pip install "transformers==4.57.6" "sentencepiece==0.2.1" "sacremoses==0.1.1" ;;
             cd_booklets)
               python -m pip install numpy "pypdfium2==5.15.2" ;;
-            cd_films)
+            cd_films|pd_film_stills)
               python -m pip install numpy && sudo apt-get update && sudo apt-get install -y ffmpeg ;;
+            synthetic_formulas)
+              python -m pip install "matplotlib==3.11.2" ;;
+            chem_structures)
+              python -m pip install "rdkit==2026.9.2" ;;
+            denpar_dental_xrays)
+              python -m pip install "openpyxl==3.1.5" ;;
             us_federal_forms|field_manual_figures)
               python -m pip install "pypdfium2==5.15.2" ;;
             seoul_sidewalks|urine_samples)
@@ -535,6 +545,13 @@ jobs:
             commons_travel_signs) limit=600 ;;
             synthetic_civic_documents) limit=1500 ;;
             synthetic_gov_forms) limit=2000 ;;
+            nypl_menus) limit=3000 ;;
+            synthetic_menus) limit=2000 ;;
+            synthetic_formulas) limit=3000 ;;
+            chem_structures) limit=800 ;;
+            synthetic_screens) limit=3000 ;;
+            pd_film_stills) limit=2500 ;;
+            commons_golden_age_comics) limit=1500 ;;
             commons_driving) limit=900 ;;
             open_images_driving) limit=1500 ;;
             commons_computer_basics) limit=900 ;;
@@ -560,6 +577,10 @@ jobs:
             commons_daily_living_aids) limit=150 ;;
             commons_wilderness_rescue) limit=200 ;;
             commons_small_boats) limit=900 ;;
+            commons_wild_food_plants) limit=1500 ;;
+            commons_wild_mushrooms) limit=800 ;;
+            commons_home_preserving) limit=900 ;;
+            inat_wild_edibles) limit=1600 ;;
             nasa_space_astronauts) limit=3000 ;;
             nasa_aircraft) limit=2500 ;;
             nasa_earth_from_space) limit=3000 ;;
@@ -571,6 +592,25 @@ jobs:
             npgallery_historic_buildings) limit=3000 ;;
             npgallery_wildlife_more) limit=3000 ;;
             npgallery_landscapes_more) limit=3000 ;;
+            commons_personal_care_products) limit=1200 ;;
+            commons_historic_cosmetics) limit=300 ;;
+            met_historic_cosmetics) limit=600 ;;
+            open_images_personal_care) limit=1500 ;;
+            commons_toys_by_type) limit=2000 ;;
+            commons_ride_ons_playgrounds) limit=1200 ;;
+            commons_nursery_more) limit=300 ;;
+            commons_museum_toys) limit=300 ;;
+            met_toys) limit=500 ;;
+            open_images_toys) limit=2500 ;;
+            commons_world_money) limit=1500 ;;
+            met_world_coins) limit=800 ;;
+            open_images_money) limit=1500 ;;
+            commons_3d_printing) limit=1200 ;;
+            commons_cutting_lasers) limit=900 ;;
+            commons_cnc_machining) limit=900 ;;
+            commons_moulding_casting) limit=700 ;;
+            commons_pcb_fabrication) limit=120 ;;
+            open_images_making) limit=1500 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in

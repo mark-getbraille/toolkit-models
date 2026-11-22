@@ -67,7 +67,7 @@ def test_wiring():
     L.check_wiring(c.CAR_CARE_PACKS, c.CAR_CARE_LIMITS, c.CAR_CARE_COMMONS_KEYS, "car_care_sources",
                    k.CAR_CARE_SOURCES, k.CAR_CARE_PICTURE_MAKING_OK)
     import topics
-    assert set(c.CAR_CARE_PACKS) <= set(topics.find("machines").keys)
+    assert set(c.CAR_CARE_PACKS) <= set(topics.find("transport").keys)       # Transport and travel
 
 
 def test_connector_photos_name_a_plug():

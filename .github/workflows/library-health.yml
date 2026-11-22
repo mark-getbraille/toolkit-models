@@ -1,0 +1,55 @@
+# Library reports: the size plan (tools/size_plan.py: how much drive space the whole library needs, and what drives
+# to buy) and the build health check (tools/health_check.py: which packs, books and manual collections failed, are
+# still building, came out nearly empty or are not built yet, with the cause where the builds record one).
+# It runs only when someone starts it by hand (Actions > Library reports > Run workflow). Both reports are attached,
+# as plain text and as JSON, to the release "library-reports" (made the first time), replacing the earlier ones. The
+# master guide book (textbooks/library_guide.py, request word library-guide) reads the JSON from there for its "Size
+# plan" and "Build health check" pages.
+# Only public sources are read: this repository's releases and workflow runs with the run's own token, the public
+# place-packs releases, an official Kiwix mirror's listing (ftp.fau.de), Hugging Face's public API, CourtListener's
+# public bulk-data listing and the writing-kit branch. No secret is used.
+name: Library reports
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write           # to create the release and attach the reports
+  actions: read             # to read the build runs and the logs of failed jobs
+
+concurrency:
+  group: library-reports
+  cancel-in-progress: false
+
+jobs:
+  reports:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Make the size plan
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python tools/size_plan.py --out build/library-reports
+      - name: Make the build health check
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python tools/health_check.py --out build/library-reports --logs 40
+      - name: Attach both reports to the release "library-reports"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view library-reports > /dev/null 2>&1; then
+            gh release create library-reports --title "Library reports" \
+              --notes "The size plan and the build health check of the whole library (size-plan.txt, health-check.txt, and their JSON for the master guide). Made by the Library reports workflow when someone runs it."
+          fi
+          for f in build/library-reports/size-plan.txt build/library-reports/size-plan.json \
+                   build/library-reports/health-check.txt build/library-reports/health-check.json; do
+            for try in 1 2 3; do
+              gh release upload library-reports "$f" --clobber && break
+              sleep 20
+            done
+          done

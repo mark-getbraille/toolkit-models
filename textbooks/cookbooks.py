@@ -648,7 +648,7 @@ KIWIX_COOKING = [
     ("foss.cooking_en_all", "FOSS cooking", "recipes from an open cooking site"),
     ("grimgrains_en_all", "GrimGrains Recipes", "plant-based recipes"),
     ("cooking.stackexchange.com_en_all", "Cooking Q&A (Seasoned Advice)", "questions and answers on cooking (CC "
-     "BY-SA)"),
+     "BY-SA); for reading and looking things up only, not for AI training (Stack Exchange's terms)"),
     ("zimgit-food-preparation_en", "Food for Preppers", "recipes and techniques for preparing and storing food"),
     ("canadian-prepper_en_preppingfood", "Canadian prepper: Prepping Food", "long-term food storage and survival "
      "meals (videos)"),

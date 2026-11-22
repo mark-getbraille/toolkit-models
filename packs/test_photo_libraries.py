@@ -275,15 +275,17 @@ def test_wiring():
     for key in k.PHOTO_LIBRARY_BODILY_KEYS:
         assert key in sources.PEOPLE_AND_BODILY_PACK_KEYS and key not in k.PHOTO_LIBRARY_PICTURE_MAKING_OK, key
     in_topic = {
-        "machines": {"nasa_aircraft", "nasa_rockets_launch"},
+        "transport": {"nasa_aircraft", "nasa_rockets_launch"},
         "nature": {"nasa_earth_from_space", "nasa_planets_telescopes", "npgallery_wildlife_more",
                    "npgallery_landscapes_more"},
         "documents": {"npgallery_facilities"},
+        "places": {"npgallery_facilities", "npgallery_historic_buildings"},
+        "people": {"nasa_people_at_work"},
         "vision": {"npgallery_accessibility"},
     }
     for topic_id, wanted in in_topic.items():
         assert wanted <= set(topics.find(topic_id).keys), topic_id
-    no_topic = {"nasa_space_astronauts", "nasa_people_at_work", "npgallery_historic_buildings"}
+    no_topic = {"nasa_space_astronauts"}
     for topic in topics.TOPICS:
         assert not no_topic & set(topic.keys), topic.id
     assert all(reason for reason in k.PHOTO_LIBRARY_NOT_INCLUDED.values())
