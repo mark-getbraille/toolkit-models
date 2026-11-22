@@ -457,10 +457,23 @@ def details(n, seed=SEED):
 
 # ----------------------------------------------------------------- drawing
 
+def pieces(draw, word, fnt, width):
+    """A word longer than width pixels (a long web address) cut into pieces that fit."""
+    out, piece = [], ""
+    for ch in word:
+        if piece and draw.textlength(piece + ch, font=fnt) > width:
+            out.append(piece)
+            piece = ""
+        piece += ch
+    return out + [piece]
+
+
 def wrap(draw, text, fnt, width):
-    """text cut into lines that fit width pixels."""
+    """text cut into lines that fit width pixels (a word too long for one line is cut too)."""
     lines, line = [], ""
-    for word in text.split():
+    words = [p for w in text.split() for p in (pieces(draw, w, fnt, width)
+                                                if draw.textlength(w, font=fnt) > width else [w])]
+    for word in words:
         trial = f"{line} {word}".strip()
         if draw.textlength(trial, font=fnt) <= width or not line:
             line = trial
