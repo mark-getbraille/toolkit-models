@@ -15,8 +15,9 @@ The categories, each an INDEX of facts and links only (each document belongs to 
 Each lists the Internet Archive's manuals (searched by its IA words), the FDA's device identifiers of over-the-counter
 devices (udi: brand, model, maker and barcode numbers from AccessGUDID, public domain), the makers' own instructions
 as LINKS (the owner's rule: nothing is read from their sites), public-domain US military manuals where one exists
-(public_guides: kept only when its own front text says "Approved for public release" and shows no restricted marking,
-build_manuals.public_guide_entries), and the official guidance pages (links). Each says its notice first.
+(public_guides: judged by the release rule for military publications, military_release.py: indexed with or without
+Distribution Statement A, link only and personal use with a restricted marking; build_manuals.public_guide_entries),
+and the official guidance pages (links). Each says its notice first.
 """
 
 EMERGENCY = ("In an emergency, call 911 (or your local emergency number). Use a device only as its own instructions "
@@ -42,7 +43,7 @@ def _makers(category, prefix, makers):
 
 def _guide(ia, title, by, year, military=True):
     """One public-domain guide: an Internet Archive item, its title, who wrote it, its year, and whether it is a
-    military manual (whose front text must say it is approved for public release)."""
+    military manual (judged by the release rule for military publications (military_release.py, the owner's decision of 22 November 2026); build_manuals.public_guide_entries)."""
     return dict(ia=ia, title=title, by=by, year=year, military=military)
 
 

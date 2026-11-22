@@ -4,10 +4,12 @@ request of 2026-11-22. categories.py adds it to CATEGORIES. Owner's manuals by c
 What it lists, in plain words (an INDEX of facts and links only; each document belongs to its maker):
   ia             the Internet Archive's manual collections, searched by the words in IA_WORDS (maintenance and
                  service schedules, tyre and battery guides, jump starters, tyre inflators, EV chargers, dash cams);
-  public_guides  US Army automotive manuals, each the Internet Archive's copy, kept only when the item has a PDF and,
-                 being military, its own front text says "Approved for public release" or it was printed before 1964
-                 with no restricted marking (build_manuals.public_guide_entries checks it at every build): Principles
-                 of Automotive Vehicles (TM 9-2700, 1947) and the Driver's Manual (TM 21-305, 1944);
+  public_guides  US Army automotive manuals, each the Internet Archive's copy, kept when the item has a PDF and,
+                 being military, judged by the release rule for military publications (military_release.py, the
+                 owner's decision of 22 November 2026; build_manuals.public_guide_entries at every build): indexed
+                 with or without Distribution Statement A, with a truthful release line; link only and personal use
+                 when it prints a restricted marking: Principles of Automotive Vehicles (TM 9-2700, 1947, and
+                 TM 9-8000, 1985) and the Driver's Manual (TM 21-305, 1944);
   makers         tyre, battery, jump starter, charger and EV charger makers: by the owner's rule their own guides and
                  manuals are LINK-ONLY, for the person (or the personal assistant) to open; nothing is read;
   guidance       NHTSA's and the DOE's own pages (US government works, but their sites refuse programs or carry no
@@ -69,13 +71,19 @@ GUIDANCE = [
 
 def _guide(ia, title, by, year, military=False):
     """One public-domain guide: an Internet Archive item, its title, who wrote it, its year, and whether it is a
-    military manual (whose front text must say it is approved for public release, unless printed before 1964)."""
+    military manual (judged by the release rule for military publications (military_release.py, the owner's decision of 22 November 2026); build_manuals.public_guide_entries)."""
     return dict(ia=ia, title=title, by=by, year=year, military=military)
 
 
 PUBLIC_GUIDES = [
     _guide("TM9-2700", "Principles of Automotive Vehicles (TM 9-2700, 1947)", "the US Army", 1947, True),
     _guide("TM21-305", "Driver's Manual (TM 21-305, 1944)", "the US Army", 1944, True),
+]
+# Added under the release rule of 22 November 2026 (military_release.py): the Internet Archive's copy prints no
+# Distribution Statement A (read on 2026-11-22), so it comes in with a truthful release line.
+PUBLIC_GUIDES += [
+    _guide("tm-9-8000-principles-of-automotive-vehicles-1985", "Principles of Automotive Vehicles (TM 9-8000, 1985)",
+           "the US Army", 1985, True),
 ]
 
 CATEGORY = dict(

@@ -5,8 +5,9 @@ What this module builds, each IN FULL (US government works and Wikibooks, read w
   - the US Army's Carpentry (FM 5-426, 1995: lumber, framing, floors, walls, roofs, stairs, doors and windows,
     decks and wood structures) and Concrete and Masonry (FM 5-428, 1998: concrete mixing, forms, placing and
     finishing, brick, block and stone masonry), and Use and Care of Hand Tools and Measuring Tools (TM 9-243, 1983:
-    rules and tapes, squares, levels, plumb bobs and every hand tool), from the Internet Archive's copies, each kept
-    only when its own front matter says Distribution Statement A (checked at every build);
+    rules and tapes, squares, levels, plumb bobs and every hand tool), from the Internet Archive's copies, each
+    judged at every build by the release rule for military publications (military_release.py: with or without
+    Distribution Statement A, its notice saying truthfully which);
   - the US Navy's Blueprint Reading and Sketching (NAVEDTRA 14040: reading building and machine drawings, lines,
     symbols, dimensions and scales), with the same check;
   - OSHA's A Guide to Scaffold Use in the Construction Industry (OSHA 3150) and Fall Protection in Construction
@@ -42,12 +43,14 @@ SAFETY_NOTE = ("Safety: building work usually needs a permit and must meet local
 ARMY = "Headquarters, Department of the Army"
 NAVY = "Naval Education and Training Professional Development and Technology Center (US Navy)"
 OSHA = "US Occupational Safety and Health Administration (OSHA)"
-MILITARY_NOTICE = "A work of the US armed forces (public domain), approved for public release; distribution is " \
-                  "unlimited. " + SAFETY_NOTE
+# The builder puts the truthful release line first (build_textbooks.military_notice), so this notice holds only the
+# safety words.
+MILITARY_NOTICE = SAFETY_NOTE
 
 
 def military(name, title, subject, publisher, archive, published, description):
-    """A US military manual from the Internet Archive, kept only with Distribution Statement A in its front matter."""
+    """A US military manual from the Internet Archive, judged by the release rule (military_release.py) on its own
+    front matter at every build (distribution_a)."""
     return K.us_pdf(GROUP, name=name, title=title, subject=subject, publisher=publisher, archive=archive,
                     distribution_a=True, published=published, version=f"{published} edition",
                     description=description, notice=MILITARY_NOTICE)
@@ -73,6 +76,12 @@ PDFS = [
              "Reading plans and drawings", NAVY, "US_Navy_Training_Course_-_Blueprint_Reading_and_Sketching", "1994",
              "The US Navy's course on reading drawings: blueprints, lines and views, dimensions, tolerances and "
              "scales, symbols, sketching, and building, electrical and piping drawings."),
+    # Restored under the release rule of 22 November 2026 (military_release.py): refused on 2026-11-22 for printing
+    # no Distribution Statement A; an Internet Archive copy, so it now comes in with a truthful notice.
+    military("navy_builder_3_2_1981", "Builder 3 & 2 (US Navy rate training manual, 1981)", "Carpentry, masonry and "
+             "construction", NAVY, "ERIC_ED210471", "1981",
+             "The US Navy's course for Seabee builders: woodworking and carpentry, concrete, masonry, plastering and "
+             "tile, roofing, finishing, construction drawings, estimating and safety on the building site."),
     K.us_pdf(GROUP, name="osha_3150_scaffold_use", title="A Guide to Scaffold Use in the Construction Industry (OSHA "
              "3150)", subject="Scaffold safety", publisher=OSHA, archive="DTIC_ADA400342", published="2001",
              version="OSHA 3150 (2001)",
@@ -112,8 +121,9 @@ COLLECTION = K.Collection("build", GROUP, guides=GUIDES, pdfs=PDFS,
 
 LICENCE_LINES = {
     "building_military": "US Army field and technical manuals and US Navy training courses: works of the US "
-                         "government (17 U.S.C. 105), each kept only when its own front matter says \"Approved for "
-                         "public release; distribution is unlimited\" (checked in the PDF at every build); the "
+                         "government (17 U.S.C. 105), each judged in the PDF at every build by the release rule for "
+                         "military publications (military_release.py: with or without Distribution Statement A, "
+                         "the notice saying truthfully which); the "
                          "Internet Archive's copies (armypubs.army.mil's robots.txt shuts out automated readers).",
     "building_osha_fpl": "OSHA's guides (the Defense Technical Information Center's copies on the Internet Archive; "
                          "osha.gov refuses programs) and the Forest Products Laboratory's Wood Handbook "
@@ -121,10 +131,6 @@ LICENCE_LINES = {
                          "works of the US government (17 U.S.C. 105).",
 }
 NOT_INCLUDED = [
-    ("US Navy Builder 3 and 2 (rate training manual, 1981; ERIC ED210471)", "A US Navy course, but the Internet "
-     "Archive's copy shows no Distribution Statement A in its front matter (the builder refused it on 2026-11-22), so "
-     "it is not built; the Army's Carpentry and Concrete and Masonry manuals cover the same work. Index: "
-     "https://archive.org/details/ERIC_ED210471"),
     ("NIOSH construction, falls, ladder safety and silica pages (cdc.gov/niosh)", "Public domain, but www.cdc.gov "
      "answered this build machine \"403 Forbidden\" for every page on 2026-11-22 (it answered before); try again in a "
      "later build. Link-only for now. Index: https://www.cdc.gov/niosh/construction/ and "
