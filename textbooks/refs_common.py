@@ -30,6 +30,7 @@ REGISTRY = {
     "ben": "benefits_manuals",       # SSA POMS, CMS manuals, the IRS Internal Revenue Manual
     "rcl": "recalls",                # NHTSA vehicle recalls and service bulletins, CPSC product recalls
     "dict": "wordnet_dict",          # Open English WordNet (dictionary and thesaurus)
+    "tech": "tech_kb",               # Microsoft Learn (MicrosoftDocs repositories) and Swift documentation
 }
 
 
@@ -105,10 +106,13 @@ def shallow_clone(repo, work, paths=None, ref=None):
     """A small copy of the public git repository repo ("https://github.com/owner/name") in work: only the newest
     commit (of ref, a tag or branch, when given), only the folders and files in paths (all when None). Returns the
     folder. GitHub allows cloning public repositories; one clone per build is all that is asked of it."""
-    name = re.sub(r"[^A-Za-z0-9_.-]+", "_", repo.rstrip("/").split("/", 3)[-1]) + (f"@{ref}" if ref else "")
+    import hashlib
+    import shutil
+    name = re.sub(r"[^A-Za-z0-9_.-]+", "_", repo.rstrip("/").split("/", 3)[-1]) + (f"@{ref}" if ref else "") + \
+        "-" + hashlib.sha256(repr(paths).encode()).hexdigest()[:8]
     dest = os.path.join(work, "git", name)
-    if os.path.isdir(os.path.join(dest, ".git")):
-        return dest
+    if os.path.isdir(dest):
+        shutil.rmtree(dest)            # always a fresh copy: a kept one (a cache) would be last week's text
     os.makedirs(os.path.dirname(dest), exist_ok=True)
     env = dict(os.environ, GIT_LFS_SKIP_SMUDGE="1", GIT_TERMINAL_PROMPT="0")
     cmd = ["git", "clone", "--quiet", "--depth", "1", "--filter=blob:none", "--no-checkout"]
