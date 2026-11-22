@@ -174,7 +174,8 @@ PEOPLE_PACKS = {
     "commons_mobility_aids": (build_commons_mobility_aids, COMMONS_LICENCE.format(
         what="manual and sports wheelchair, orthosis, leg brace and accessible taxi")),
     "commons_hearing_communication": (build_commons_hearing_communication, COMMONS_LICENCE.format(
-        what="hearing loop, audiometry, audiogram, captioning, subtitle, TTY, videophone, accessibility symbol, PECS and sensory room")),
+        what="hearing loop, audiometry, audiogram, captioning, subtitle, TTY, videophone, accessibility symbol, PECS "
+             "and sensory room")),
     "commons_veterans": (build_commons_veterans, COMMONS_LICENCE.format(
         what="US military ribbon bar, decoration, badge, dog tag and folded flag")),
     "commons_immigration_documents": (build_commons_immigration_documents, COMMONS_LICENCE.format(
