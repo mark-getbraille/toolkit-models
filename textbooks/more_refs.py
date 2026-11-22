@@ -50,6 +50,12 @@ MODULES = [
     "midwifery",            # CDC Hear Her, maternal and infant health, NHS after-birth pages (birth:)
     "instrument_care",      # old public-domain piano tuning and violin making books (instr:)
     "outdoor_cooking",      # emergency, camp and outdoor cooking: CDC, Ready.gov, USFA, CPSC, USFS, NPS, EPA, Army (outcook:)
+    # people: disability, veterans, education, relationships, immigration (the owner's request of 2026-11-22)
+    "disability_life",      # deaf and hard of hearing, autism, mobility, disability rights beyond blindness (dis:)
+    "veterans",             # VA benefits booklet, homeless, mental health, crisis line, DOL VETS, discharge (veteran:)
+    "education_help",       # apprenticeships, adult education, college planning, study skills, accommodations (edu:)
+    "relationships",        # communication, conflict resolution, healthy relationships, cultural etiquette (relate:)
+    "immigration",          # USCIS Policy Manual and guides, M-618, EOIR, Canada newcomers (immig:)
 ]
 
 _loaded = {}
