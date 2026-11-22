@@ -1980,6 +1980,15 @@ for _packs, _commons in ((MENTAL_HEALTH_PACKS, MENTAL_HEALTH_COMMONS_KEYS),
                          (WILDERNESS_FIRST_AID_PACKS, WILDERNESS_FIRST_AID_COMMONS_KEYS)):
     PACKS.update(_packs)
     COMMONS_KEYS = COMMONS_KEYS | frozenset(_commons)
+# Large public-domain US government photo libraries (the owner's request of 2026-11-22), one file each: the NASA Image
+# and Video Library by theme (packs/nasa_library_packs.py: astronauts, aircraft, Earth from space, planets and
+# telescopes, rockets and launch sites, NASA people at work) and NPGallery by theme (packs/nps_library_packs.py:
+# accessibility features, visitor facilities and signs, historic buildings, more wildlife and landscapes). Neither
+# reads Commons.
+from nasa_library_packs import NASA_LIBRARY_PACKS
+from nps_library_packs import NPS_LIBRARY_PACKS
+PACKS.update(NASA_LIBRARY_PACKS)
+PACKS.update(NPS_LIBRARY_PACKS)
 
 
 def pack_lanes(keys):

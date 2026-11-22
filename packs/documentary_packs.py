@@ -62,7 +62,8 @@ Looked at and not used here (checked at the source in November 2026), with the r
                                  to the home page; no listing could be read.
   Australian Antarctic Division  images.aad.gov.au did not answer from this machine.
   Parks Canada                   Its photos are Crown copyright, not under an open licence.
-  NASA Image and Video Library   Already in the kit (training-kit/kit/sources.py "nasa").
+  NASA Image and Video Library   Its own packs by theme: packs/nasa_library_packs.py (and the kit's small live
+                                 "nasa" collection). Themed NPGallery packs: packs/nps_library_packs.py.
 
     python packs/documentary_packs.py npgallery --limit 8      (prints a few rows: a quick check of one builder)
 """
