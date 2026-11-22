@@ -4,7 +4,8 @@
 # eight at a time. Commons refused requests (429) for hours when ten packs read it together, so the Commons packs
 # failed or came out empty; in their own narrow lane they wait for each other instead.
 # inputs.keys: the lane's pack keys as a JSON list (with their marks); inputs.parallel: how many build at once.
-# The repository secrets (EUROPEANA_KEY, DPLA_API_KEY) come from packs.yml ("secrets: inherit").
+# The repository secrets (EUROPEANA_KEY, DPLA_API_KEY, the optional NYPL_API_TOKEN) come from packs.yml
+# ("secrets: inherit").
 name: Build training packs (one lane)
 
 on:
@@ -35,6 +36,9 @@ jobs:
       EUROPEANA_KEY: ${{ secrets.EUROPEANA_KEY }}
       # The Digital Public Library of America's key (a repository secret); without it dpla_campus publishes nothing.
       DPLA_API_KEY: ${{ secrets.DPLA_API_KEY }}
+      # NYPL's free Digital Collections API token (optional): with it nypl_menus also takes later menus that NYPL marks
+      # "No Known U.S. Copyright Restrictions"; without it only menus dated before 1931.
+      NYPL_API_TOKEN: ${{ secrets.NYPL_API_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -54,8 +58,12 @@ jobs:
               python -m pip install "transformers==4.57.6" "sentencepiece==0.2.1" "sacremoses==0.1.1" ;;
             cd_booklets)
               python -m pip install numpy "pypdfium2==5.15.2" ;;
-            cd_films)
+            cd_films|pd_film_stills)
               python -m pip install numpy && sudo apt-get update && sudo apt-get install -y ffmpeg ;;
+            synthetic_formulas)
+              python -m pip install "matplotlib==3.11.2" ;;
+            chem_structures)
+              python -m pip install "rdkit==2026.9.2" ;;
             us_federal_forms|field_manual_figures)
               python -m pip install "pypdfium2==5.15.2" ;;
             seoul_sidewalks|urine_samples)
@@ -535,6 +543,13 @@ jobs:
             commons_travel_signs) limit=600 ;;
             synthetic_civic_documents) limit=1500 ;;
             synthetic_gov_forms) limit=2000 ;;
+            nypl_menus) limit=3000 ;;
+            synthetic_menus) limit=2000 ;;
+            synthetic_formulas) limit=3000 ;;
+            chem_structures) limit=800 ;;
+            synthetic_screens) limit=3000 ;;
+            pd_film_stills) limit=2500 ;;
+            commons_golden_age_comics) limit=1500 ;;
             commons_driving) limit=900 ;;
             open_images_driving) limit=1500 ;;
             commons_computer_basics) limit=900 ;;

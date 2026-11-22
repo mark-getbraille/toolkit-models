@@ -1952,6 +1952,20 @@ for _packs, _commons in ((MONEY_WORK_PACKS, MONEY_WORK_COMMONS_KEYS), (TRAVEL_PA
                          (CIVICS_PACKS, CIVICS_COMMONS_KEYS), (GOV_FORMS_PACKS, GOV_FORMS_COMMONS_KEYS)):
     PACKS.update(_packs)
     COMMONS_KEYS = COMMONS_KEYS | frozenset(_commons)
+# Pictures for the picture describer (the owner's request of 2026-11-22): restaurant menus (packs/menus_packs.py: NYPL
+# "What's on the Menu?" and made-up modern menus), maths and science notation (packs/math_notation_packs.py: typeset
+# formulas with their LaTeX and RDKit chemical structures), computer and phone screens (packs/screens_packs.py),
+# public-domain film stills (packs/film_stills_packs.py) and public-domain Golden Age comics (packs/comics_packs.py).
+from menus_packs import MENUS_PACKS, MENUS_COMMONS_KEYS
+from math_notation_packs import MATH_PACKS, MATH_COMMONS_KEYS
+from screens_packs import SCREENS_PACKS, SCREENS_COMMONS_KEYS
+from film_stills_packs import FILM_STILLS_PACKS, FILM_STILLS_COMMONS_KEYS
+from comics_packs import COMICS_PACKS, COMICS_COMMONS_KEYS
+for _packs, _commons in ((MENUS_PACKS, MENUS_COMMONS_KEYS), (MATH_PACKS, MATH_COMMONS_KEYS),
+                         (SCREENS_PACKS, SCREENS_COMMONS_KEYS), (FILM_STILLS_PACKS, FILM_STILLS_COMMONS_KEYS),
+                         (COMICS_PACKS, COMICS_COMMONS_KEYS)):
+    PACKS.update(_packs)
+    COMMONS_KEYS = COMMONS_KEYS | frozenset(_commons)
 # Practical life (packs/practical_packs.py gathers six files, the owner's request of 2026-11-22): driving and road
 # rules, computer and phone basics, cleaning and household management, knots and outdoor skills, pool equipment, and
 # motorcycles, RVs and trailers. Every answer carries its safety note (seat belts, never mixing cleaners or pool
