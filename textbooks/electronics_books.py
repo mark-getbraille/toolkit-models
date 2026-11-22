@@ -2,7 +2,8 @@
 repair and assistive technology" (the owner's request of 2026-11-22). Keys: electronics (every book), elec:<name>.
 
 What this module builds, each IN FULL:
-  - Lessons in Electric Circuits (Tony R. Kuphaldt), all six volumes (DC, AC, semiconductors, digital, reference,
+  - Lessons in Electric Circuits (Tony R. Kuphaldt), in the group "Reference, power and electrical" since
+    2026-11-22 (power_books.py; its keys unchanged), all six volumes (DC, AC, semiconductors, digital, reference,
     experiments), CC BY 4.0 by the author's own statement (each volume's Appendix 3, checked at every build), read
     from the author's PDFs on ibiblio.org;
   - the US Navy's Electricity and Electronics Training Series modules the library did not have yet (microwave
@@ -76,8 +77,11 @@ LIEC_VOLUMES = [
      "hands-on experiments: building and testing circuits with a multimeter, from a simple battery circuit to "
      "amplifiers and digital logic, with safety notes"),
 ]
+# Lessons in Electric Circuits is in the top-level group "Reference, power and electrical" (power_books.GROUP, the
+# owner's decision of 2026-11-22); its keys (elec:kuphaldt_liec_*) stay the same.
+POWER_GROUP = "power"
 PDFS = [
-    dict(group=GROUP, country="International", licence="CC BY 4.0",
+    dict(group=POWER_GROUP, country="International", licence="CC BY 4.0",
          licence_url="https://creativecommons.org/licenses/by/4.0/", licence_page=LIEC + page,
          licence_text=LIEC_TEXT, level="reference", name=f"kuphaldt_liec_{key.lower()}",
          title=f"Lessons in Electric Circuits, {title} (Tony R. Kuphaldt)", subject="Electricity and electronics",

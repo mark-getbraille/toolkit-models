@@ -10,7 +10,8 @@ categories.py adds CATEGORIES to its own.
 
 Each is an INDEX of facts and links only (each manual belongs to its maker):
   ia        the Internet Archive's manual collections, searched by words no other collection searches: "hearing aid",
-            "tty" and "amplified phone" are the accessibility collection's, and "wheelchair", "power chair",
+            "tty" and "amplified phone" are the accessibility collection's, "bed shaker" and "vibrating alarm" the
+            emergency preparedness collection's, and "wheelchair", "power chair",
             "mobility scooter", "walker", "patient lift" and the rest are the home_medical collection's (with the
             FDA's device records), so they are not repeated here;
   makers    by the owner's rule every maker's own manuals and guides are LINK-ONLY (their terms keep all rights):
@@ -51,8 +52,8 @@ def _makers(category, prefix, makers):
 # ------------------------------------------------------------------------------ hearing and communication devices
 
 HEARING_IA = ["cochlear implant", "sound processor", "bone anchored", "assistive listening", "fm system",
-              "pocket talker", "loop system", "captioned telephone", "captel", "bed shaker", "vibrating alarm",
-              "alerting system", "speech generating", "augmentative communication", "communication device"]
+              "pocket talker", "loop system", "captioned telephone", "captel", "alerting system", "speech generating",
+              "augmentative communication", "communication device"]
 
 HEARING_MAKERS = _makers("hearing_communication_devices", "hcd", [
     dict(key="phonak", maker="Phonak (Sonova)", type="hearing aid", library="https://www.phonak.com/"),

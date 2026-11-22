@@ -585,6 +585,13 @@ from outdoor_cooking import CATEGORY as _OUTDOOR_COOKING  # noqa: E402
 
 CATEGORIES["outdoor_cooking"] = _OUTDOOR_COOKING
 
+# Blind and low-vision living (the owner's request of 2026-11-22, a heading of its own): braille writers with their
+# care and repair, displays, embossers, magnifiers, screen reader software, talking devices, canes and describer apps;
+# the Internet Archive words, the makers as links, the care documents and the programmes are in manuals/vision_devices.py.
+from vision_devices import CATEGORY as _VISION_DEVICES  # noqa: E402
+
+CATEGORIES["vision_devices"] = _VISION_DEVICES
+
 # Hardware, tools and shop equipment: their makers, access decisions, safety notices and public-domain guides are in
 # manuals/hardware_tools.py. Its new categories are added, and power_tools, hand_tools and lawn_garden are extended
 # (more Internet Archive words, the makers' libraries, a safety notice and the guides).
@@ -653,6 +660,40 @@ from instrument_care import CATEGORY as _INSTRUMENT_CARE  # noqa: E402
 
 CATEGORIES.update({"car_care": _CAR_CARE, "garden_care": _GARDEN_CARE, "instrument_care": _INSTRUMENT_CARE})
 CATEGORIES.update(_HOME_HEALTH_CARE)
+# Emergency preparedness (manuals/preparedness_manuals.py: generators, transfer switches, power stations and battery
+# backups; kits, escape ladders, respirators and alerts for deaf and blind people) and radio communications, with its
+# own heading (manuals/radio_manuals.py: two-way radios, weather alert radios, amateur radio makers, mesh and satellite
+# messengers, military radio manuals), the owner's request of 2026-11-22; every maker link-only.
+from preparedness_manuals import CATEGORIES as _PREPAREDNESS  # noqa: E402
+from radio_manuals import CATEGORIES as _RADIO  # noqa: E402
+
+CATEGORIES.update(_PREPAREDNESS)
+CATEGORIES.update(_RADIO)
+# Password managers, security keys, routers, VPNs and home cameras (privacy, security and digital safety; the owner's
+# request of 2026-11-22): the Internet Archive words, the makers as links, KeePassXC's openly licensed guides and the
+# security guidance are in manuals/privacy_manuals.py.
+from privacy_manuals import CATEGORY as _PRIVACY_SECURITY  # noqa: E402
+
+CATEGORIES["privacy_security"] = _PRIVACY_SECURITY
+# Power and electrical, under its own heading (manuals/power_manuals.py, the owner's request of 2026-11-22): backup,
+# PTO and welder generators and vehicle power, solar and battery power, small wind and micro-hydro, and home
+# electrical; every maker link-only. The existing electrical collections in power_manuals.HEADING_KEYS get the same
+# heading; their keys do not change.
+from power_manuals import CATEGORIES as _POWER, HEADING as _POWER_HEADING, HEADING_KEYS as _POWER_KEYS  # noqa: E402
+
+CATEGORIES.update(_POWER)
+for _key in _POWER_KEYS:
+    if _key in CATEGORIES:
+        CATEGORIES[_key]["heading"] = _POWER_HEADING
+# Money and work, travel and language learning, and citizenship and civics (the owner's request of 2026-11-22): currency
+# readers and money counters, translators and travel gear, and accessible voting machines, each with its notice, makers
+# (link-only), government documents and guidance, in its own file.
+from money_devices import CATEGORY as _MONEY_DEVICES  # noqa: E402
+from travel_devices import CATEGORY as _TRAVEL_DEVICES  # noqa: E402
+from voting_equipment import CATEGORY as _VOTING_EQUIPMENT  # noqa: E402
+
+CATEGORIES.update({"money_devices": _MONEY_DEVICES, "travel_devices": _TRAVEL_DEVICES,
+                   "voting_equipment": _VOTING_EQUIPMENT})
 # Disabilities other than blindness (the owner's request of 2026-11-22): hearing aids, cochlear implants, assistive
 # listening, captioned phones and AAC devices; wheelchairs, scooters, lifts and accessible vehicles. Makers link-only,
 # the US government's guides in full: manuals/disability_devices.py.

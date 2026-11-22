@@ -12,9 +12,9 @@ What this module builds, in plain words, each IN FULL (every page or every page 
     programmes (refugees and asylum, Temporary Protected Status, DACA, parole, T and U visas, abused spouses and
     children), travel documents, and avoiding immigration scams ("notarios" and other people who are not allowed to
     give immigration legal help);
-  - "Welcome to the United States: A Guide for New Immigrants" (USCIS M-618), the PDF in English and in eleven of
-    its translations (Arabic, Chinese traditional and simplified, French, Korean, Portuguese, Russian, Somali,
-    Spanish, Urdu, Vietnamese);
+  - "Welcome to the United States: A Guide for New Immigrants" (USCIS M-618) in eleven of its translations (Arabic,
+    Chinese traditional and simplified, French, Korean, Portuguese, Russian, Somali, Spanish, Urdu, Vietnamese); the
+    English edition is the civics collection's (civ:uscis_welcome_new_immigrants);
   - the Executive Office for Immigration Review (EOIR, the immigration courts, US Department of Justice): finding
     legal help (the list of free legal service providers, recognised organisations and accredited representatives),
     immigration court information, and the EOIR Policy Manual (with the Immigration Court Practice Manual and the
@@ -24,8 +24,9 @@ What this module builds, in plain words, each IN FULL (every page or every page 
   Every book's notice ends with LEGAL: "General information, not legal advice; check the current rules or ask an
   accredited representative or lawyer."
 
-Not repeated (other collections): citizenship and naturalisation, the naturalisation test and civics (the money and
-world helper's collection, key prefix of its own); the Immigration and Nationality Act is in the US Code (code:usc:8);
+Not repeated (other collections): citizenship and naturalisation, the naturalisation test and civics (the civics
+collection, civ:, with the M-618 in English and A Guide to Naturalization); the Immigration and Nationality Act is in
+the US Code (code:usc:8);
 US passports and travel abroad (the travel books).
 
 Not built (NOT_INCLUDED): the State Department's refugee admissions pages (state.gov refuses programs), the Office of
@@ -173,12 +174,12 @@ GUIDES.append(dict(K.guide(
     country="Canada"), licence=CROWN_NC, licence_url=CANADA_TERMS, licence_page=CANADA_TERMS,
     licence_text=CANADA_TEXT, personal_use=True))
 
-# "Welcome to the United States: A Guide for New Immigrants" (M-618): the English PDF and its translations, as USCIS
-# publishes them. (code, language name, ISO 639-3 code). Haitian Creole (M-618_hc) and Tagalog (M-618_t) are left
-# out: see NOT_INCLUDED.
+# "Welcome to the United States: A Guide for New Immigrants" (M-618): its translations, as USCIS publishes them.
+# (code, language name, ISO 639-3 code). The English edition is the civics collection's (civ:uscis_welcome_new_
+# immigrants); Haitian Creole (M-618_hc) and Tagalog (M-618_t) are left out: see NOT_INCLUDED.
 M618 = USCIS + "/sites/default/files/document/guides/M-618{}.pdf"
 M618_PAGE = USCIS + "/citizenship/civic-assimilation/settling-in-the-us"
-M618_EDITIONS = [("", "English", "eng"), ("_sp", "Spanish", "spa"), ("_a", "Arabic", "ara"),
+M618_EDITIONS = [("_sp", "Spanish", "spa"), ("_a", "Arabic", "ara"),
                  ("_c", "Chinese, traditional characters", "zho"), ("_cs", "Chinese, simplified characters", "zho"),
                  ("_fr", "French", "fra"), ("_k", "Korean", "kor"), ("_p", "Portuguese", "por"),
                  ("_r", "Russian", "rus"), ("_SOM", "Somali", "som"), ("_u", "Urdu", "urd"),
@@ -187,7 +188,7 @@ M618_EDITIONS = [("", "English", "eng"), ("_sp", "Spanish", "spa"), ("_a", "Arab
 
 def welcome_guide(code, language, iso):
     """The PDF entry of one edition of the M-618 guide (read whole by the builder)."""
-    suffix = "" if not code else "_" + code.strip("_").lower()
+    suffix = "_" + code.strip("_").lower()
     return K.us_pdf(GROUP, name="uscis_welcome_guide" + suffix,
                     title=f"Welcome to the United States: A Guide for New Immigrants (USCIS M-618, {language})",
                     subject="Settling in the United States", publisher=USCIS_PUBLISHER, pdf=M618.format(code),
@@ -235,8 +236,9 @@ NOT_INCLUDED = [
     ("Immigration Advocates Network legal directory, CLINIC, ILRC and ImmigrationLawHelp.org guides", "Copyright of "
      "each non-profit; link-only for the owner. Index: https://www.immigrationadvocates.org/legaldirectory/ and "
      "https://www.immigrationlawhelp.org/"),
-    ("Citizenship, naturalisation and the civics test", "Covered by the citizenship and civics collection (another "
-     "part of the library); not repeated here. Index: https://www.uscis.gov/citizenship"),
+    ("Citizenship, naturalisation, the civics test and the English M-618", "Covered by the citizenship and civics "
+     "collection (civ:, with civ:uscis_welcome_new_immigrants and civ:uscis_guide_to_naturalization); not repeated "
+     "here. Index: https://www.uscis.gov/citizenship"),
     ("Canada's newcomer guides under the Open Government Licence - Canada", "None was found on open.canada.ca "
      "(searched for IRCC's newcomer and welcome guides, 2026-11-22); the canada.ca pages are built for personal use "
      "instead (immig:canada_newcomers). Index: https://open.canada.ca/data/en/dataset?organization=cic"),

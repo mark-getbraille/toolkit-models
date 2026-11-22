@@ -305,6 +305,8 @@ HOME_CRAFTS_TOPICS = {
     "nature": ("commons_pest_control", "open_images_home_upkeep", "home_upkeep_commons_sa"),
     "art": ("commons_knit_crochet_lace", "commons_quilt_embroidery_weaving", "commons_fabrics_fibres",
             "open_images_textile_crafts", "nmah_textiles_sewing", "textile_crafts_commons_sa"),
+    # the electrical repair and backup power collections also in "power" (Power and electrical, power_sources.py)
+    "power": ("commons_home_repair", "open_images_home_upkeep", "commons_emergency_lighting", "home_upkeep_commons_sa"),
 }
 
 HOME_CRAFTS_SIGN_UP = {
