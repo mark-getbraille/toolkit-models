@@ -3424,3 +3424,21 @@ PERSONAL_PICTURE_MAKING_OK |= _outdoor_cooking_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in OUTDOOR_COOKING_SOURCES
                                                                if s.key not in _outdoor_cooking_ok)
 _add_collections(OUTDOOR_COOKING_SOURCES)
+# Money and work, travel, and citizenship and civics (the owner's request of 2026-11-22): money_work_sources.py,
+# travel_sources.py and civics_sources.py, their ready-made packs (computer-made SPECIMEN documents and the travel
+# signs) and what was left out. Each file may be missing; none of their keys may be used for picture-making unless the
+# file's *_PICTURE_MAKING_OK names it (none does).
+for _mwc_name, _mwc_prefix in (("money_work_sources", "MONEY_WORK"), ("travel_sources", "TRAVEL"),
+                               ("civics_sources", "CIVICS")):
+    try:
+        _mwc = __import__(_mwc_name)
+    except ImportError as _e:
+        _mwc = None
+        if getattr(_e, "name", None) != _mwc_name:
+            say(f"(The {_mwc_name.replace('_sources', '').replace('_', ' ')} collections could not be loaded: {_e}. "
+                "They are left out.)")
+    _mwc_sources = list(getattr(_mwc, f"{_mwc_prefix}_SOURCES", []) or [])
+    _mwc_ok = set(getattr(_mwc, f"{_mwc_prefix}_PICTURE_MAKING_OK", ()) or ())
+    PERSONAL_PICTURE_MAKING_OK |= _mwc_ok
+    NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in _mwc_sources if s.key not in _mwc_ok)
+    _add_collections(_mwc_sources)

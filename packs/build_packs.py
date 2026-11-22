@@ -1891,6 +1891,17 @@ for _packs, _commons in ((CAR_CARE_PACKS, CAR_CARE_COMMONS_KEYS), (GARDEN_PACKS,
 from outdoor_cooking_packs import OUTDOOR_COOKING_PACKS, OUTDOOR_COOKING_COMMONS_KEYS
 PACKS.update(OUTDOOR_COOKING_PACKS)
 COMMONS_KEYS = COMMONS_KEYS | frozenset(OUTDOOR_COOKING_COMMONS_KEYS)
+# Money and work, travel, and citizenship and civics (the owner's request of 2026-11-22), one pack file each:
+# computer-made SPECIMEN pay stubs and W-2s (packs/money_work_packs.py), SPECIMEN passports and boarding passes with the
+# Commons travel signs (packs/travel_packs.py), and SPECIMEN sample ballots and jury summonses (packs/civics_packs.py);
+# shared drawing helpers in packs/synthetic_documents.py. The synthetic documents are never for picture-making.
+from money_work_packs import MONEY_WORK_PACKS, MONEY_WORK_COMMONS_KEYS
+from travel_packs import TRAVEL_PACKS, TRAVEL_COMMONS_KEYS
+from civics_packs import CIVICS_PACKS, CIVICS_COMMONS_KEYS
+for _packs, _commons in ((MONEY_WORK_PACKS, MONEY_WORK_COMMONS_KEYS), (TRAVEL_PACKS, TRAVEL_COMMONS_KEYS),
+                         (CIVICS_PACKS, CIVICS_COMMONS_KEYS)):
+    PACKS.update(_packs)
+    COMMONS_KEYS = COMMONS_KEYS | frozenset(_commons)
 
 
 def pack_lanes(keys):

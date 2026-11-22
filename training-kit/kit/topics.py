@@ -207,8 +207,9 @@ TOPICS = [
            # non-commercial and research-only (personal use)
            "vam", "mimo_instruments", "princeton_general_personal", "turkish_instruments")),
     Topic("documents", "Documents, maps and signs",
-          "Reading text and making sense of pages: letters, forms, receipts, tables and charts, maps, sheet "
-          "music, road, safety and indoor signs (toilets, room numbers, exits), and phone screens.",
+          "Reading text and making sense of pages: letters, forms, receipts, pay stubs, passports and boarding passes, "
+          "ballots, tables and charts, maps, sheet music, road, safety, travel and indoor signs (toilets, room "
+          "numbers, exits), and phone screens.",
           ("textvqa", "textocr", "coco_text", "cord", "doclaynet", "plotqa", "loc_letters", "owid_charts",
            "pubtabnet_tables", "us_federal_forms", "open_images_cards_documents", "loc_maps", "safety_signs", "commons_hazard_symbols", "us_road_signs",
            "ca_road_signs",
@@ -216,6 +217,8 @@ TOPICS = [
            "openstax_figures", "commons_charts", "wpc_surface_maps", "nhc_forecast_cones",
            "commons_indoor_wayfinding", "open_images_indoor",
            "synthetic_bills",
+           # money and work, travel, citizenship and civics (money_work_sources.py, travel_sources.py, civics_sources.py)
+           "synthetic_pay_documents", "synthetic_travel_documents", "commons_travel_signs", "synthetic_civic_documents",
            # share-alike
            "hiertext", "mapqa", "indoor_commons_sa",
            # non-commercial and research-only (personal use)
