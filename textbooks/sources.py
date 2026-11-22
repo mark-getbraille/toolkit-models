@@ -2048,6 +2048,7 @@ PRACTICE_SUBJECTS[:0] = _wb.PRACTICE_SUBJECTS
 import more_refs as _more  # noqa: E402
 
 _g, _l, _n, _p = _more.records()
+ALLOWED.update(_more.allowed())
 GROUPS.update(_g)
 LICENCE_LINES.update(_l)
 NOT_INCLUDED = NOT_INCLUDED + _n

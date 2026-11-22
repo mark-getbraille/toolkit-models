@@ -95,6 +95,15 @@ def daily_keys():
     return keys
 
 
+def allowed():
+    """The licences these modules add to sources.ALLOWED ({short name: kind}), such as the GNU licences of the NVDA
+    and liblouis documentation (share-alike)."""
+    out = {}
+    for m in modules():
+        out.update(getattr(m, "ALLOWED", {}))
+    return out
+
+
 def records():
     """(GROUPS, LICENCE_LINES, NOT_INCLUDED, PRACTICE_SUBJECTS) of every module, for sources.py."""
     groups, lines, rows, practice = {}, {}, [], []

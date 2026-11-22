@@ -312,3 +312,42 @@ def main_for(collection, doc, argv=None):
         return 0
     collection.build(a.keys, a.out, a.cache, limit=a.limit)
     return 0
+
+
+def split_html(text, level=2, start=None, end=None):
+    """[(title, id, body HTML)] of one long HTML document split at its headings of level (the text before the first
+    one, when it has words, is "Introduction"). start, end: regular expressions of where the document's content
+    begins and ends (default: the <body>)."""
+    import html as _html
+    import re as _re
+    m = _re.search(start or r"<body\b[^>]*>", text)
+    text = text[m.end():] if m else text
+    if end:
+        m = _re.search(end, text)
+        text = text[:m.start()] if m else text
+    text = _re.sub(r"<h1\b.*?</h1>", "", text, count=1, flags=_re.S)
+    parts = _re.split(rf"(<h{level}\b[^>]*>.*?</h{level}>)", text, flags=_re.S)
+    out = []
+    if _re.sub(r"<[^>]+>|\s", "", parts[0]):
+        out.append(("Introduction", "introduction", parts[0]))
+    for i in range(1, len(parts), 2):
+        head = parts[i]
+        title = " ".join(_html.unescape(_re.sub(r"<[^>]+>", " ", head)).split())
+        hid = (_re.search(r'id="([^"]+)"', head) or [None, ""])[1]
+        out.append((title, hid, parts[i + 1]))
+    return out
+
+
+def last_modified(url):
+    """The server's Last-Modified date of url as "YYYY-MM-DD" ("" when it does not say)."""
+    import build_textbooks as B
+    import email.utils
+    req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": B.USER_AGENT})
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            when = r.headers.get("Last-Modified")
+    except (urllib.error.URLError, OSError):
+        return ""
+    finally:
+        B._last[urllib.parse.urlsplit(url).hostname] = time.monotonic()
+    return email.utils.parsedate_to_datetime(when).date().isoformat() if when else ""

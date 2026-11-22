@@ -411,7 +411,7 @@ def data_sign(kind):
 LABEL_GUIDE = K.us_web(
     GROUP, name="label_guide", title="Reading the Nutrition Facts label (FDA)",
     subject="Nutrition Facts label", publisher="US Food and Drug Administration (FDA)",
-    source="https://www.fda.gov/food/food-labeling-nutrition/nutrition-facts-label",
+    source="https://www.fda.gov/food/nutrition-facts-label/how-understand-and-use-nutrition-facts-label",
     licence_page="https://www.fda.gov/about-fda/about-website/website-policies",
     licence_text=r"They are in the public domain and may be republished",
     description="The FDA's guides to the Nutrition Facts label, every page of its section: how to understand and "
@@ -419,10 +419,8 @@ LABEL_GUIDE = K.us_web(
                 "added sugars, the Daily Value lows and highs, sodium, dietary fiber, and the label for older adults "
                 "and for people with diabetes.",
     notice="A work of the US Food and Drug Administration (public domain: FDA website policies).",
-    crawl=[("https://www.fda.gov/food/food-labeling-nutrition/nutrition-facts-label", 1),
-           ("https://www.fda.gov/food/nutrition-facts-label", 1)],
-    pages=r"^https://www\.fda\.gov/food/(food-labeling-nutrition/|nutrition-facts-label|nutrition-education-resources"
-          r"-materials/)[a-z0-9/-]*$",
+    crawl=[("https://www.fda.gov/food/nutrition-facts-label/how-understand-and-use-nutrition-facts-label", 1)],
+    pages=r"^https://www\.fda\.gov/food/nutrition-facts-label/(?!como-|la-etiqueta|social-media)[a-z0-9-]+$",
     content=(r"<main\b[^>]*>", r"</main>"), limit=40)
 
 COLLECTION = K.Collection(
