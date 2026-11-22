@@ -94,3 +94,39 @@ def test_cdc_books_are_whole_with_cdc_conditions():
     assert cdc["unchanged"] and cdc["licence_page"] == F.CDC_TERMS
     for words in ("Source: CDC", "free of charge", "does not constitute its endorsement"):
         assert words in cdc["notice"], words
+
+
+def test_home_test_device_book(monkeypatch):
+    import home_tests as H
+    answers = {
+        "device/classification": {"meta": {"license": "https://open.fda.gov/license/", "results": {"total": 2}},
+                                  "results": [{"product_code": "LCX", "device_name": "Kit, Test, Pregnancy, Hcg, Over "
+                                               "The Counter", "medical_specialty_description": "Clinical Chemistry",
+                                               "device_class": "2", "regulation_number": "862.1155"},
+                                              {"product_code": "EFT", "device_name": "Cleanser, Denture, Over The "
+                                               "Counter", "medical_specialty_description": "Dental"}]},
+        "device/510k": {"meta": {"results": {"total": 1}},
+                        "results": [{"k_number": "K999999", "device_name": "Made-up test", "applicant": "Acme",
+                                     "decision_date": "2025-01-02", "decision_description": "Substantially "
+                                     "Equivalent"}]},
+        "device/udi": {"meta": {"results": {"total": 1}, "last_updated": "2026-11-02"},
+                       "results": [{"brand_name": "MadeUp Early", "company_name": "Acme Diagnostics",
+                                    "version_or_model_number": "M1", "device_description": "hCG midstream test",
+                                    "identifiers": [{"id": "00812345678901"}], "is_otc": "true",
+                                    "commercial_distribution_status": "In Commercial Distribution"}]}}
+    monkeypatch.setattr(H, "EXTRA_CODES", [])
+    monkeypatch.setattr(H, "api", lambda path, params: answers.get(path, {}))
+    book = H.device_records_book("device_records", "/tmp/none", None, [])
+    titles = [p.title for p in book.pages]
+    assert titles[0] == "Before you use a home test" and B.esc(H.SAFETY) in book.pages[0].body
+    assert titles[1] == "Kit, test, pregnancy, hcg, over the counter (product code LCX)"
+    assert "K999999" in book.pages[1].body and "21 CFR 862.1155" in book.pages[1].body
+    assert titles[2] == "MadeUp Early (Acme Diagnostics): kit, test, pregnancy, hcg, over the counter"
+    assert "00812345678901" in book.pages[2].body and not any("Denture" in t for t in titles)
+    assert book.licence == "CC0 1.0" and book.notice.startswith(H.SAFETY) and book.published == "2026-11-02"
+
+
+def test_home_test_books_start_with_the_safety_notice():
+    import home_tests as H
+    for g in H.GUIDES:
+        assert g["notice"].startswith(H.SAFETY), g["name"]
