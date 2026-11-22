@@ -11,7 +11,8 @@ Answers say only what the Commons category names, with a plain line, and every a
 (general information, not medical advice or a diagnosis; use each product as its own directions say; 911; 988), the same words as the packs' (packs/test_health_life.py checks).
 
 Picture-making (SEXUAL_HEALTH_PICTURE_MAKING_OK): none.
-Topics: no topic add-on (the owner's choice: never the sensitive topics, and not loaded by chance with the everyday home add-on). The pack shows products only: no nudity, nothing sexual, no content mark.
+Topics: the health topic (Health and medical pictures; the owner's decision of 22 November 2026): never the sensitive topics,
+and not the everyday home add-on. The pack shows products only: no nudity, nothing sexual, no content mark.
 
     python -c "import sources, sexual_health_sources"      (from the kit folder: checks the file loads)
 """

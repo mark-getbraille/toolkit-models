@@ -11,7 +11,7 @@ Answers say only what the Commons category names, with a plain line, and every a
 (general information, not medical advice or a diagnosis; ask your doctor before a new exercise or eating plan if you have a health condition; 911; 988), the same words as the packs' (packs/test_health_life.py checks).
 
 Picture-making (FITNESS_NUTRITION_PICTURE_MAKING_OK): none (the food guide categories hold event photos too); the equipment photos show people exercising and the adaptive sports pack shows athletes (FITNESS_NUTRITION_BODILY_KEYS, describing only).
-Topics: the equipment and adaptive sports in the home topic, the food guides in the food topic.
+Topics: the equipment and adaptive sports in the home topic (the adaptive sports also in people), the food guides in the food topic.
 
     python -c "import sources, fitness_nutrition_sources"      (from the kit folder: checks the file loads)
 """

@@ -16,9 +16,9 @@ collections; the firearms collections keep their own safety line.
 
 Picture-making (OUTDOORS_PICTURE_MAKING_OK): only the Commons gear, tackle and marker collections (things); sources.py
 puts every other key in NOT_FOR_PICTURE_MAKING (boats, paddling and Open Images photos show people).
-Topics: the gear and tackle are in the home topic, the boats and paddling gear in the machines topic, the buoys,
-markers, trail blazes and avalanche signs in the documents topic (signs), and the Open Images outdoor photos in the
-home topic.
+Topics: the gear and tackle are in the home topic, the boats and paddling gear in the transport topic, the buoys,
+markers, trail blazes and avalanche signs in the transport and documents topics (signs), and the Open Images outdoor
+photos in the home topic.
 
     python -c "import sources, outdoors_sources"      (from the kit folder: checks the file loads)
 """

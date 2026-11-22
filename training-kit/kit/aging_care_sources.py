@@ -11,7 +11,7 @@ Answers say only what the Commons category names, with a plain line, and every a
 (general information, not medical advice or a diagnosis; a doctor, nurse or occupational therapist can say which aid fits; 911; 988), the same words as the packs' (packs/test_health_life.py checks).
 
 Picture-making (AGING_CARE_PICTURE_MAKING_OK): none (patient lifts are shown in use with people).
-Topics: the home topic (Home and household).
+Topics: the health topic (Health and medical pictures).
 
     python -c "import sources, aging_care_sources"      (from the kit folder: checks the file loads)
 """

@@ -11,7 +11,7 @@ Answers say only what the Commons category names, with a plain line, and every a
 (general information, not training, medical advice or a diagnosis; 911 or the SOS of a satellite messenger or PLB; take a wilderness first aid course), the same words as the packs' (packs/test_health_life.py checks).
 
 Picture-making (WILDERNESS_FIRST_AID_PICTURE_MAKING_OK): none (mountain rescue photos show rescuers and the people they carry: WILDERNESS_FIRST_AID_BODILY_KEYS, describing only).
-Topics: the home topic (Home and household), beside the first aid supplies.
+Topics: the health topic (Health and medical pictures), beside the first aid supplies.
 
     python -c "import sources, wilderness_first_aid_sources"      (from the kit folder: checks the file loads)
 """

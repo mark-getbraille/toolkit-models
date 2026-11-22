@@ -255,14 +255,22 @@ def oi_gap_rows(labels, groups, rng, title=""):
     return [dict(r, child=True) if child else r for r in rows]
 
 
-def oi_gap_labels(s, mids, quick=False):
+def oi_gap_labels(s, mids, quick=False, extra=()):
     """{image id: {label: 1, 0 or None (people disagreed)}} for the wanted labels, read as the label lists download
-    (the train list is about 2.7 GB); quick reads only the validation and test lists."""
+    (the train list is about 2.7 GB); quick reads only the validation and test lists. extra: labels kept only for
+    photos that also have another wanted label (such as "Person", on millions of photos): the lists are sorted by
+    photo, so a photo whose labels are all extra ones is dropped as soon as the next photo starts."""
     labels = {}
+    extra = set(extra)
     for url in OI_GAP_LABELS[1:] if quick else OI_GAP_LABELS:
+        current = None
         for cells in csv.reader(oi_lines(s, url)):
             if len(cells) != 4 or cells[2] not in mids:
                 continue
+            if extra and cells[0] != current:
+                if current in labels and set(labels[current]) <= extra:
+                    del labels[current]
+                current = cells[0]
             try:
                 value = round(float(cells[3]))
             except ValueError:
@@ -270,6 +278,8 @@ def oi_gap_labels(s, mids, quick=False):
             found = labels.setdefault(cells[0], {})
             name = mids[cells[2]]
             found[name] = value if found.get(name, value) == value else None
+        if extra and current in labels and set(labels[current]) <= extra:
+            del labels[current]
         say(f"  Open Images: {len(labels)} photos with a wanted label after {url.rsplit('/', 1)[-1]}")
     return labels
 
@@ -298,19 +308,23 @@ def oi_gap_photos(s, wanted, quick=False):
     return photos
 
 
-def build_oi_gap(key, groups, limit, seed):
+def build_oi_gap(key, groups, limit, seed, without=()):
     """One gap pack: the wanted labels' photos, each with rows from oi_gap_rows; the rarest label first, so a bidet
-    or an infant bed is not crowded out by cakes, and photos in Google's own store before Flickr ones."""
+    or an infant bed is not crowded out by cakes, and photos in Google's own store before Flickr ones. without:
+    labels that leave a photo out when people confirmed them (the toys pack leaves out every photo with a child in
+    it, the personal care pack every photo of a person's face or body)."""
     s, rng = session(), pass_random(seed)
-    wanted = gap_labels(groups) | set(OI_CHILD) | LEAVE_OUT | LEAVE_OUT_WITH_CHILD
+    without = set(without)
+    wanted = gap_labels(groups) | set(OI_CHILD) | LEAVE_OUT | LEAVE_OUT_WITH_CHILD | without
     mids = {}
     for line in csv.reader(oi_lines(s, OI_CLASSES)):
         if len(line) == 2 and line[1] in wanted:
             mids.setdefault(line[0], line[1])
     asked = gap_labels(groups)
     say(f"Open Images {key}: {len(set(mids.values()) & asked)} of {len(asked)} labels found in the class list")
-    labels = oi_gap_labels(s, mids, QUICK["on"])
-    labels = {i: v for i, v in labels.items() if any(c == 1 and n in asked for n, c in v.items())}
+    labels = oi_gap_labels(s, mids, QUICK["on"], extra=without - asked)
+    labels = {i: v for i, v in labels.items() if any(c == 1 and n in asked for n, c in v.items())
+              and not any(c == 1 and n in without for n, c in v.items())}
     photos = oi_gap_photos(s, set(labels), QUICK["on"])
     counts = {}
     for v in labels.values():

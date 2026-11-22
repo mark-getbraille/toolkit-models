@@ -114,12 +114,12 @@ def test_wiring():
     import people_sources as k
     listed = {s.key: s for s in sources.SOURCES}
     no_making = set(sources.NOT_FOR_PICTURE_MAKING)
-    machines, documents = set(topics.find("machines").keys), set(topics.find("documents").keys)
+    health, money = set(topics.find("health").keys), set(topics.find("money").keys)
     for key in keys:
         assert listed[key].group == "permissive" and listed[key].prepare is sources.prepare_pack, key
         assert key in no_making, key
-    assert "commons_mobility_aids" in machines and "people_commons_sa" in machines
-    assert {"commons_hearing_communication", "commons_immigration_documents"} <= documents
+    assert {"commons_mobility_aids", "people_commons_sa", "commons_hearing_communication"} <= health
+    assert "commons_immigration_documents" in money
     assert not any("commons_veterans" in t.keys for t in topics.TOPICS)
     for s in k.PEOPLE_SOURCES:
         assert s.key in listed and s.key in no_making, s.key

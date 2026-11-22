@@ -75,7 +75,7 @@ def test_wiring():
     assert {s.key for s in gov_forms_sources.GOV_FORMS_SOURCES} == keys
     for key in keys:
         assert listed[key].group == "permissive" and listed[key].prepare is sources.prepare_pack
-        assert key in topics.find("documents").keys
+        assert key in topics.find("money").keys
         assert key in sources.NOT_FOR_PICTURE_MAKING and key not in sources.PERSONAL_PICTURE_MAKING_OK
         assert listed[key].cap == gf.GOV_FORMS_LIMITS[key]
     assert all(gov_forms_sources.GOV_FORMS_NOT_INCLUDED.values())

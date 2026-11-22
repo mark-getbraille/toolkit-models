@@ -363,5 +363,6 @@ def test_wiring():
     assert "laundry_care_labels" not in no_making and "laundry_care_labels" in topics.find("home").keys
     assert "commons_home_health_tests" in no_making and "lfa_covid_tests" not in no_making
     assert {"lfa_covid_tests", "commons_home_health_tests"} <= set(topics.find("medicines").keys)
+    assert {"lfa_covid_tests", "commons_home_health_tests"} <= set(topics.find("health").keys)
     assert "commons_medication_labels" in no_making and "commons_medication_labels" in topics.find("medicines").keys
-    assert "synthetic_bills" in no_making and "synthetic_bills" in topics.find("documents").keys
+    assert "synthetic_bills" in no_making and "synthetic_bills" in topics.find("money").keys
