@@ -226,8 +226,8 @@ HEALTH_TEST_PACKS = {
                         "credited below."),
     "commons_home_health_tests": (build_commons_home_health_tests,
                                   "Wikimedia Commons (https://commons.wikimedia.org): files CC0, public domain or "
-                                  "CC BY (credited below) of COVID-19 rapid antigen tests, pregnancy and ovulation tests "
-                                  "and glucose meters; captions CC0."),
+                                  "CC BY (credited below) of COVID-19 rapid antigen tests, pregnancy and ovulation "
+                                  "tests and glucose meters; captions CC0."),
 }
 HEALTH_TEST_LIMITS = {
     "lfa_covid_tests": 1200,              # 8 items, about 260 photos each (2 to 3 MB each: made smaller)
