@@ -1824,6 +1824,22 @@ COMMONS_KEYS = COMMONS_KEYS | frozenset(HAZARD_COMMONS_KEYS)
 from baby_packs import BABY_PACKS, BABY_COMMONS_KEYS
 PACKS.update(BABY_PACKS)
 COMMONS_KEYS = COMMONS_KEYS | frozenset(BABY_COMMONS_KEYS)
+# Electronics repair, light construction and arts and crafts (the owner's request of 2026-11-22). Electronics
+# (packs/electronics_packs.py): parts by name with a value only where the file states it, cables and connectors,
+# soldering and test equipment, devices opened for repair, assistive and low-vision devices, circuit diagrams; mains,
+# lithium and soldering safety notes. Light construction (packs/building_packs.py): framing, decks, sheds, fences,
+# concrete, masonry, tiling, insulation, stairs, ramps and home access modifications, construction safety.
+# Arts and crafts (packs/crafts_packs.py): pottery and jewellery (each with a museum pack from Cleveland and
+# Chicago), paper crafts and calligraphy, candles and soap, glass and carving, art supplies, models and resin.
+from electronics_packs import ELECTRONICS_PACKS, ELECTRONICS_COMMONS_KEYS
+PACKS.update(ELECTRONICS_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(ELECTRONICS_COMMONS_KEYS)
+from building_packs import BUILDING_PACKS, BUILDING_COMMONS_KEYS
+PACKS.update(BUILDING_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(BUILDING_COMMONS_KEYS)
+from crafts_packs import CRAFTS_PACKS, CRAFTS_COMMONS_KEYS
+PACKS.update(CRAFTS_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(CRAFTS_COMMONS_KEYS)
 
 
 def pack_lanes(keys):

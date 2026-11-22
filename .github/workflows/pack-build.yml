@@ -427,6 +427,27 @@ jobs:
             commons_baby_products) limit=800 ;;
             open_images_baby_products) limit=1500 ;;
             abo_baby_products) limit=80 ;;
+            commons_electronic_parts) limit=2500 ;;
+            commons_cables_connectors) limit=600 ;;
+            commons_electronics_repair) limit=1500 ;;
+            commons_assistive_devices) limit=500 ;;
+            commons_circuit_diagrams) limit=800 ;;
+            open_images_electronics) limit=1500 ;;
+            commons_light_construction) limit=2500 ;;
+            commons_home_access_building) limit=400 ;;
+            commons_construction_safety) limit=900 ;;
+            open_images_building) limit=1500 ;;
+            commons_pottery_ceramics) limit=1500 ;;
+            museum_ceramics) limit=2000 ;;
+            commons_jewellery_beading) limit=1500 ;;
+            museum_jewellery) limit=1200 ;;
+            commons_paper_crafts) limit=1800 ;;
+            commons_candle_soap) limit=400 ;;
+            commons_glass_carving) limit=1200 ;;
+            commons_art_supplies) limit=1000 ;;
+            commons_models_resin) limit=800 ;;
+            museum_glass_crafts) limit=1000 ;;
+            open_images_crafts) limit=2500 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in
