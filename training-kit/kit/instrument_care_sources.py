@@ -14,8 +14,8 @@ Already in the kit and not repeated: the Met's CC0 instruments (met_instruments)
 Answers say only what the source says; pickups end with ELECTRIC_NOTE and wooden parts that crack with dry air with
 CARE_NOTE (the packs' words). Every licence was checked at its source in November 2026.
 
-Picture-making (INSTRUMENT_CARE_PICTURE_MAKING_OK): the parts packs and the share-alike entry (things); not the care
-pack (luthiers and technicians at work) nor the Open Images photos (people play in them).
+Picture-making (INSTRUMENT_CARE_PICTURE_MAKING_OK): none (people play, tune and repair the instruments in many of
+these photos).
 
     python -c "import sources, instrument_care_sources"      (from the kit folder: checks the file loads)
 """
@@ -98,8 +98,7 @@ INSTRUMENT_CARE_SOURCES = [
            "about 170 MB of pictures", terms=SA_TERMS, terms_summary=SA_SUMMARY),
 ]
 
-INSTRUMENT_CARE_PICTURE_MAKING_OK = {"commons_string_instrument_parts", "commons_wind_percussion_parts",
-                                     "commons_piano_parts", "instrument_care_commons_sa"}
+INSTRUMENT_CARE_PICTURE_MAKING_OK = set()
 
 INSTRUMENT_CARE_NOT_INCLUDED = {
     "Museum instrument collections (the Met, MIMO, the V&A, Smithsonian)":

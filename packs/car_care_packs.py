@@ -27,8 +27,8 @@ The packs (all open: CC0, public domain or CC BY files; Open Images labels CC BY
                             Type 2 and CCS; CHAdeMO; the North American Charging Standard), Tesla Superchargers and
                             home wallboxes. "What charging connector is this?"
   commons_dashboard_lights  Commons symbol files and photos found by their own titles (warning light, tell-tale,
-                            ISO 2575): the meaning is said only when the file's own words name one light listed in
-                            DASHBOARD_LIGHTS (about 45 lights, with what the driver should do, as car handbooks
+                            ISO 2575): the meaning is said only when the file's own words name a road vehicle (or
+                            the symbol standard) and one light listed in DASHBOARD_LIGHTS (about 45 lights, with what the driver should do, as car handbooks
                             give it), else the file is left out. Light colours are said only where the words say
                             them (red: stop safely; amber: check soon; green or blue: a system is on).
   open_images_car_care      Open Images V7: tyres, treads, rims and alloy wheels, hubcaps, headlamps and car lights,
@@ -165,7 +165,7 @@ DASHBOARD_LIGHTS = [
     (r"turn signal|direction indicator|turn indicator|blinker", "the turn signal (indicator) light: the indicator is on; "
                                                            "fast blinking can mean a bulb is out"),
     (r"hazard", "the hazard warning light: all the indicators are flashing"),
-    (r"key (not detected|fob)|immobili[sz]er|security", "the key or immobiliser light: the car does not detect the "
+    (r"key (not detected|fob)|immobili[sz]er", "the key or immobiliser light: the car does not detect the "
                                                         "key, or the anti-theft system is on"),
     (r"service (due|required|reminder)|maintenance (due|required)|spanner|wrench", "the service reminder: the car is "
                                                                                     "due for a service"),
@@ -195,6 +195,14 @@ LIGHT_SEARCHES = ('intitle:"warning light"', 'intitle:"telltale"', 'intitle:"tel
                   'intitle:"indicator light" car')
 # Files the iso_machine_symbols pack already takes (the ISO 7000 files and these categories) are left out here.
 ALREADY_IN_ISO_PACK = re.compile(r"ISO[ _]7000", re.I)
+# A file must be about a road vehicle's dashboard: its words name one (or the symbol standard), and not an aircraft,
+# a ship or a machine.
+ROAD_VEHICLE = re.compile(r"\b(cars?|automobiles?|vehicles?|automotive|trucks?|lorr(y|ies)|vans?|motorcycles?|"
+                          r"scooters?|dashboards?|instrument (cluster|panel)|tell-?tales?|ISO[ _]2575|honda|toyota|"
+                          r"ford|volkswagen|vw|bmw|mercedes|nissan|hyundai|kia|tesla|renault|peugeot|fiat|skoda|"
+                          r"subaru|mazda|chevrolet|opel|volvo|audi)\b", re.I)
+NOT_ROAD = re.compile(r"\b(aircraft|airplanes?|aeroplanes?|aviation|cockpit|helicopters?|altimeter|navy|ships?|"
+                      r"submarines?|locomotives?|trains?|tractors?|forklifts?)\b", re.I)
 
 
 def light_meaning(words):
@@ -220,7 +228,7 @@ def light_rows(title, text, credit):
     own words name no light of DASHBOARD_LIGHTS (or several)."""
     words = f"{title.rsplit('.', 1)[0].replace('_', ' ')} {text}"
     meaning = light_meaning(words)
-    if not meaning or ALREADY_IN_ISO_PACK.search(words):
+    if not meaning or ALREADY_IN_ISO_PACK.search(words) or not ROAD_VEHICLE.search(words) or NOT_ROAD.search(words):
         return []
     answer = f"This is {meaning}."
     colour = light_colour(words)

@@ -20,13 +20,15 @@ import gaps_oi_packs as g
 
 
 def test_dashboard_light_meanings_only_from_the_words():
-    rows = c.light_rows("File:Tire pressure warning light.svg", "", "credit")
+    rows = c.light_rows("File:Car tire pressure warning light.svg", "", "credit")
     assert rows[0]["answer"].startswith("This is the tyre pressure warning light") and len(rows) == 1
-    rows = c.light_rows("File:Oil pressure telltale red.png", "Red oil pressure warning lamp on a dashboard.", "c")
+    rows = c.light_rows("File:Oil pressure telltale red.png", "Red oil pressure warning lamp on a car dashboard.", "c")
     assert "oil pressure" in rows[0]["answer"] and "Its file says it is red" in rows[0]["answer"]
     assert rows[1]["question"] == c.ALT_TEXT
     assert c.light_rows("File:Dashboard warning light.jpg", "A car dashboard at night.", "c") == []
-    assert c.light_rows("File:ABS and airbag warning lights.jpg", "", "c") == []          # two lights: no meaning
+    assert c.light_rows("File:Car ABS and airbag warning lights.jpg", "", "c") == []      # two lights: no meaning
+    assert c.light_rows("File:Tire pressure warning light.svg", "", "c") == []           # no road vehicle named
+    assert c.light_rows("File:Brake warning light.jpg", "Brake warning light in an aircraft cockpit.", "c") == []
     assert c.light_rows("File:ISO 7000 - 0248 oil pressure warning light.svg", "", "c") == []
     assert "flashes" in c.light_meaning("check engine light")
     assert c.light_meaning("malfunction indicator lamp").startswith("the check-engine light")

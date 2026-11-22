@@ -23,8 +23,8 @@ skin, never the genitals, groin or buttocks) are describing only: HOME_HEALTH_BO
 PEOPLE_AND_BODILY_PACK_KEYS. SCIN's rows carry "content": "medical", so they are used only when the training ticks
 medical pictures.
 
-Picture-making (HOME_HEALTH_PICTURE_MAKING_OK): the supply, dental and eye packs (things and drawings)
-and the share-alike things; never the people, skin, X-ray or Open Images packs.
+Picture-making (HOME_HEALTH_PICTURE_MAKING_OK): only the dental and eye packs (things); never the first aid
+supplies (tick removal and oral rehydration show people), the people, skin, X-ray or Open Images packs.
 
     python -c "import sources, home_health_sources"      (from the kit folder: checks the file loads)
 """
@@ -129,9 +129,8 @@ HOME_HEALTH_SOURCES = [
 
 # Describing only (people's bodies): added to sources.PEOPLE_AND_BODILY_PACK_KEYS.
 HOME_HEALTH_BODILY_KEYS = ("commons_first_aid_skills", "scin_skin_conditions")
-# Things and drawings only.
-HOME_HEALTH_PICTURE_MAKING_OK = {"commons_first_aid_supplies", "commons_dental_care", "commons_eye_care",
-                                 "home_health_commons_sa"}
+# The dental and eye packs only (things).
+HOME_HEALTH_PICTURE_MAKING_OK = {"commons_dental_care", "commons_eye_care"}
 
 HOME_HEALTH_SIGN_UP = {
     "Fitzpatrick17k (Groh et al., 2021)":

@@ -14,8 +14,8 @@ chemicals (commons_household_chemicals, chemical_commons_sa) and the farm equipm
 Answers say only what the source says; plant problems end with PLANT_SAFETY (the packs' words). Every licence was
 checked at its source in November 2026; nothing here is re-shared by the kit's makers.
 
-Picture-making (GARDEN_PICTURE_MAKING_OK): the Commons garden packs and the share-alike entry may be used (gardens,
-plants and tools; people are not their subject); the Open Images photos may not (people garden in many of them).
+Picture-making (GARDEN_PICTURE_MAKING_OK): only the plant problems (leaves close up); people garden, mow, compost
+and prune in the other collections' photos.
 
     python -c "import sources, garden_sources"      (from the kit folder: checks the file loads)
 """
@@ -97,8 +97,7 @@ GARDEN_SOURCES = [
            terms=SA_TERMS, terms_summary=SA_SUMMARY),
 ]
 
-GARDEN_PICTURE_MAKING_OK = {"commons_garden_growing", "commons_garden_care", "commons_lawn_care",
-                            "commons_plant_problems", "garden_commons_sa"}
+GARDEN_PICTURE_MAKING_OK = {"commons_plant_problems"}
 
 GARDEN_NOT_INCLUDED = {
     "USDA PLANTS Database images (plants.usda.gov)":

@@ -64,9 +64,15 @@ def spec(category, words, note="", deeper=True, question=ASK_WHAT, pattern=None)
     return out + ((pattern,) if pattern is not None else ())
 
 
-def problem(category, words, looks, deeper=True):
-    """A plant problem: "This plant shows <words>: <what it looks like>." and the extension note."""
-    return (category, deeper, [(ASK_PLANT, f"This plant shows {words}: {looks}. {PLANT_SAFETY}")])
+def problem(category, words, looks, deeper=True, pattern=None):
+    """A plant problem: "This plant shows <words>: <what it looks like>." and the extension note; pattern: words a
+    file's title or description must have (or, written as a negative lookahead, must not have)."""
+    out = (category, deeper, [(ASK_PLANT, f"This plant shows {words}: {looks}. {PLANT_SAFETY}")])
+    return out + ((pattern,) if pattern is not None else ())
+
+
+# Chlorosis files that show a plant born without chlorophyll (albino or variegated forms) are not a deficiency.
+NOT_ALBINO = re.compile(r"^(?!.*\b(albin\w*|variegat\w*|chimera)\b)", re.I | re.S)
 
 
 # Broad categories (Soil, Mulch, Turf) hold other things too: only files whose own words say garden, lawn, plant or
@@ -136,7 +142,7 @@ LAWN_CARE = [
 
 PLANT_PROBLEMS = [
     problem("Chlorosis", "chlorosis", "the leaves turn pale yellow while the veins may stay green, often from a "
-                                      "lack of iron or nitrogen or from poor roots"),
+                                      "lack of iron or nitrogen or from poor roots", pattern=NOT_ALBINO),
     problem("Powdery mildew", "powdery mildew", "a white, powdery fungal coating on the leaves"),
     problem("Leaf spot", "leaf spot", "brown or black spots on the leaves, from a fungus or bacteria"),
     problem("Phytophthora infestans", "late blight", "dark, greasy-looking patches on tomato or potato leaves and "

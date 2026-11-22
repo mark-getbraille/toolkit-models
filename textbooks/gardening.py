@@ -10,7 +10,7 @@ What this module builds, in plain words:
     from the Internet Archive's copy (ERIC), with today's note that the products named may no longer be sold;
   - old public-domain gardening books (published before 1931, checked on the Internet Archive's record at every
     build), each whole and marked out of date: The Vegetable Garden (Vilmorin-Andrieux, English edition of 1920),
-    Garden Guide: the Amateur Gardener's Handbook (1917), The Principles and Practice of Pruning (Kains, 1917), Dwarf
+    Garden Guide: the Amateur Gardener's Handbook (1917), Dwarf
     Fruit Trees (Waugh, 1906) and Lawns and Gardens (Jønns, 1897).
   (The USDA Farmers' Bulletins are pub:usda_farmers_bulletins, and the Internet Archive's gardening books by topic
   are open catalogue keys: not repeated. APHIS's pages are in pets_home.py.)
@@ -72,10 +72,6 @@ PDFS = [
                "Home gardening (old book)", "gardenguideamate00dickrich", 1917,
                "How to plan, plant and keep a home garden: soil, seeds, vegetables, flowers, lawns, fruit, pests "
                "and tools.", SAFETY),
-    C.old_book(GROUP, "kains_pruning_1917", "The Principles and Practice of Pruning (Kains, 1917)",
-               "Pruning (old book)", "principlespracti00kainrich", 1917,
-               "Why and how plants are pruned: fruit trees, bushes, vines, shade trees and hedges, with the tools.",
-               SAFETY),
     C.old_book(GROUP, "waugh_dwarf_fruit_trees_1906", "Dwarf Fruit Trees (Waugh, 1906)", "Fruit trees (old book)",
                "dwarffruittreest00waugrich", 1906,
                "Growing dwarf fruit trees in a garden: propagation, planting, pruning and general management.",
@@ -103,6 +99,9 @@ NOT_INCLUDED = [
      "Link-only. Index: https://www.rhs.org.uk/advice and https://www.almanac.com/gardening/planting-calendar"),
     ("USDA PLANTS Database (plants.usda.gov)", "A JavaScript application; its plant profiles are reached through its "
      "data downloads, not pages (link-only). Index: https://plants.usda.gov/"),
+    ("The Principles and Practice of Pruning (Kains, 1917)", "The Internet Archive's record of its scan "
+     "(principlespracti00kainrich) gives no publication year, so the builder cannot confirm it is from before 1931 "
+     "(checked 2026-11-22). Index: https://archive.org/details/principlespracti00kainrich"),
     ("Pinterest, YouTube gardening videos, Instructables, Reddit and garden forums", "Not read (the owner's rule: their terms forbid scraping, or the "
      "pictures and text are their users' own). Index: https://www.youtube.com/results?search_query=gardening"),
 ]

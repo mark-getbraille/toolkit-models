@@ -35,8 +35,13 @@ def test_seed_plant_only_from_the_words():
     assert added[0][2]["answer"] == "It is for Cherokee Purple tomato, as the file's own words say."
 
 
+def test_chlorosis_leaves_out_albino_plants():
+    pattern = next(s for s in gp.PLANT_PROBLEMS if s[0] == "Chlorosis")[3]
+    assert pattern.search("Iron chlorosis on a maple leaf") and not pattern.search("Albino milkweed")
+
+
 def test_plant_problems():
-    for category, _deeper, rows in gp.PLANT_PROBLEMS:
+    for category, _deeper, rows, *_pattern in gp.PLANT_PROBLEMS:
         assert rows[0][0] == gp.ASK_PLANT and rows[0][1].endswith(gp.PLANT_SAFETY), category
     import garden_sources as k
     assert k.PLANT_SAFETY == gp.PLANT_SAFETY

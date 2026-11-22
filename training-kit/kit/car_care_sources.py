@@ -15,8 +15,8 @@ BATTERY_NOTE, ROADSIDE_NOTE, CHARGING_NOTE). As in drinks_sources.py, nothing he
 each collection is downloaded by the kit on the user's own computer, only when the user ticks its choice. Every
 licence was checked at its source in November 2026.
 
-Picture-making (CAR_CARE_PICTURE_MAKING_OK): the Commons car care things, EV connectors and dashboard symbols may be
-used (things and drawings); the Open Images photos may not (people and number plates).
+Picture-making (CAR_CARE_PICTURE_MAKING_OK): only the dashboard symbols (drawings and close-ups); the other
+collections show people (washing cars, at breakdowns, charging) or number plates.
 
     python -c "import sources, car_care_sources"      (from the kit folder: checks the file loads)
 """
@@ -103,9 +103,8 @@ CAR_CARE_SOURCES = [
            terms=SA_TERMS, terms_summary=SA_SUMMARY),
 ]
 
-# Things and drawings may be used for picture-making; the Open Images photos may not (people, number plates).
-CAR_CARE_PICTURE_MAKING_OK = {"commons_car_care", "commons_ev_charging", "commons_dashboard_lights",
-                              "car_care_commons_sa"}
+# Only the dashboard symbols may be used for picture-making (the others show people or number plates).
+CAR_CARE_PICTURE_MAKING_OK = {"commons_dashboard_lights"}
 
 CAR_CARE_NOT_INCLUDED = {
     "NHTSA's pictures and consumer pages (nhtsa.gov: tyre safety, recalls, car seats)":
