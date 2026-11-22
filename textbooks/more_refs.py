@@ -50,6 +50,11 @@ MODULES = [
     "midwifery",            # CDC Hear Her, maternal and infant health, NHS after-birth pages (birth:)
     "instrument_care",      # old public-domain piano tuning and violin making books (instr:)
     "outdoor_cooking",      # emergency, camp and outdoor cooking: CDC, Ready.gov, USFA, CPSC, USFS, NPS, EPA, Army (outcook:)
+    # money, language learning, travel and civics (the owner's request of 2026-11-22)
+    "money_work",           # IRS publications, CFPB home buying, DOL, NLRB, HealthCare.gov, O*NET (mw:)
+    "languages",            # FSI and Peace Corps courses, Wikivoyage phrasebooks, Tatoeba sentences, ASL (lang:)
+    "travel",               # FAA PackSafe, USA.gov travel pages, national park passes (trip:)
+    "civics",               # Constitution, civics test, Ben's Guide, jury service, Supreme Court cases (civ:)
 ]
 
 _loaded = {}
