@@ -605,3 +605,10 @@ for _key, _more in _MORE_EXTEND.items():
     _cat = CATEGORIES[_key]
     _cat["ia_whole"] = dict(_cat.get("ia_whole") or {}, **_more.get("ia_whole", {}))
 CATEGORIES["firearms"]["ia_exclude"] = f"{FIREARMS_EXCLUDE}|{NOT_A_MANUAL}|{_MILITARY}"
+
+# Appliance error codes and troubleshooting (the Internet Archive's service manuals, the makers' error-code pages as
+# links, iFixit's pages as links, US government guides) and firmware and software release notes ("full" where openly
+# licensed, else links): manuals/troubleshooting.py.
+from troubleshooting import CATEGORIES as _TROUBLESHOOTING  # noqa: E402
+
+CATEGORIES.update(_TROUBLESHOOTING)

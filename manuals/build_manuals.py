@@ -76,6 +76,14 @@ Sources, and why each may be used by a program:
       (its open CSV extract, Open Government Licence - Canada); and the NIOSH Pocket Guide to Chemical Hazards
       (its CAS index), each chemical also linked to NOAA's CAMEO Chemicals and to PubChem, which are never read
       (chemical_labels.py says why).
+  Appliance troubleshooting and release notes (manuals/troubleshooting.py)   the Internet Archive's appliance
+      service manuals, tech sheets and troubleshooting manuals in ONE search ("ia_any", ia_any_entries); the
+      makers' error-code pages as "link" makers (their copyright: nothing is read); hand-entered pages
+      ("documents", document_entries): "full" ones are openly licensed (NVDA, GPL; Orca and BRLTTY, LGPL; the
+      Android and Pixel bulletins, CC BY 4.0; OpenWrt, CC BY-SA 4.0; US government pages) and may be downloaded
+      where robots.txt allows, with their version read where possible (document_version); "link" ones (JAWS,
+      Microsoft, Apple, router, phone and speaker makers, and iFixit, whose terms keep API answers 24 hours only
+      and out of indexes: NO_AUTOMATED_DOWNLOAD) are never downloaded by a program.
   US military manuals of automatic firearms (category firearms, categories.PUBLIC_MANUALS)   the Internet Archive's
       copies of Army training circulars, each put in the index only when the front of its own text says "Approved
       for public release; distribution is unlimited" (Distribution Statement A) and shows no restricted marking
@@ -501,15 +509,19 @@ def _title_words(words):
     return " AND ".join('"' + w.replace('"', "") + '"' for w in words.split())
 
 
-def ia_search(fetch, words, collections=("manuals", "computermanuals"), limit=200, any_year=False, any_of=None):
+def ia_search(fetch, words, collections=("manuals", "computermanuals"), limit=200, any_year=False, any_of=None,
+              title_clause=None):
     """Items of the manual collections whose title has the words (each word in quotes), without the copies of
     manual-copying sites (left out by the search itself, and again by copy_site_item).
     words ""        every item of the collections (a collection whose items all belong to one category:
                     the category's "ia_whole")
     any_of          instead of words: a list of word groups, any one of which the title must have (a mixed
                     collection searched with a category's words: its "ia_mixed")
-    any_year        keep items older than OLDEST_YEAR too (video games, synthesizers, tractors, old computers)"""
-    if any_of:
+    any_year        keep items older than OLDEST_YEAR too (video games, synthesizers, tractors, old computers)
+    title_clause    instead of words: a title clause already written (ia_any_clause)"""
+    if title_clause:
+        title = title_clause
+    elif any_of:
         title = " OR ".join(f"({_title_words(w)})" for w in any_of if w.split())
     else:
         title = _title_words(words)
@@ -1206,6 +1218,89 @@ def public_guide_entries(fetch, guides, key):
     return entries, notes
 
 
+def ia_any_clause(lists):
+    """The title clause of ia_any: one of the words or phrases of each list ({"kinds": [...], "documents": [...]}
+    gives '("washer" OR "heat pump") AND ("service" OR "tech sheet")'; a phrase is matched as a phrase)."""
+    return " AND ".join("(" + " OR ".join('"' + w.replace('"', "") + '"' for w in words) + ")"
+                        for words in lists.values() if words)
+
+
+def ia_any_entries(fetch, key, cat, limit, notes):
+    """The Internet Archive items of a category searched in ONE request: titles with a word of every list of
+    cat["ia_any"] (ia_any_clause), in the Manual Library (which holds every maker's collection).
+    Each entry's "kind" comes from cat["ia_kinds"] [(regular expression, kind)], the first that matches its title
+    (manuals/troubleshooting.py: "washer", "furnace" ...)."""
+    if listing_out_of_time():
+        return []
+    try:
+        docs = ia_search(fetch, "", ("manuals",), limit, any_year=bool(cat.get("any_year")),
+                         title_clause=ia_any_clause(cat["ia_any"]))
+    except (RuntimeError, OutOfTime, ValueError) as e:
+        notes.append(f"Internet Archive search failed: {e}")
+        return []
+    out = []
+    for d in docs:
+        e = ia_entry(d)
+        for rule, kind in cat.get("ia_kinds") or []:
+            if re.search(rule, e["name"], re.I):
+                e["kind"] = kind
+                break
+        out.append(e)
+    say(f"{key}: {len(out)} Internet Archive items")
+    return out
+
+
+def document_version(fetch, doc):
+    """(version, address) of a hand-entered document whose version can be read (doc["version_from"]):
+      "heading"   the first match of doc["version_pattern"] in the page itself (NVDA's What's New: "2026.3.1")
+      "gnome"     the newest stable release in GNOME's download list (download.gnome.org/sources/<project>/
+                  cache.json) and the address of that release's NEWS file
+    Returns ("", doc["url"]) when it has none. Raises RuntimeError or OutOfTime when it cannot be read."""
+    how = doc.get("version_from")
+    if how == "heading":
+        found = re.search(doc["version_pattern"], fetch.text(doc["url"]))
+        return (found.group(1) if found else ""), doc["url"]
+    if how == "gnome":
+        base = f"https://download.gnome.org/sources/{doc['project']}/"
+        releases = (fetch.json(base + "cache.json")[1] or {}).get(doc["project"]) or {}
+        stable = [v for v in releases if re.fullmatch(r"\d+(?:\.\d+)*", v) and releases[v].get("news")]
+        if not stable:
+            return "", doc["url"]
+        newest = max(stable, key=lambda v: tuple(int(n) for n in v.split(".")))
+        return newest, base + releases[newest]["news"]
+    return "", doc["url"]
+
+
+def document_entries(fetch, docs, key):
+    """The entries of a category's hand-entered pages (manuals/troubleshooting.py: release notes, makers' error-code
+    pages, iFixit's pages, government guides). Each doc: key, by, product, title, url, type, document, access
+    ("full": openly licensed, may be downloaded when robots.txt allows; "link": the address only, never
+    downloaded by a program), rights, reason, and optionally version_from (document_version). Returns
+    (entries, notes)."""
+    entries, notes = [], []
+    for doc in docs:
+        version, url = "", doc["url"]
+        if doc.get("version_from") and fetch is not None and doc["access"] == "full":
+            try:
+                version, url = document_version(fetch, doc)
+            except (RuntimeError, OutOfTime, ValueError, KeyError, IndexError, TypeError) as e:
+                notes.append(f"{doc['title']}: version not read ({e})")
+        kind = original_kind(url)
+        manual = {"title": doc["title"] + (f" (version {version})" if version else ""), "url": url, "page": url,
+                  "kind": "txt" if kind == "txt" else "page", "size": 0, "document": doc["document"],
+                  "rights": doc["rights"], "source": doc["by"]}
+        if doc["access"] != "full":
+            manual["link_only"] = True
+        if version:
+            manual["version"] = version
+        entries.append({"id": f"doc-{key}-{doc['key']}", "brand": doc["by"], "model": doc.get("product", ""),
+                        "name": doc["title"], "type": doc["type"], "category": key, "barcodes": [], "fcc_ids": [],
+                        "ic_ids": [], "source": doc["by"], "page": url, "access": doc["access"],
+                        "access_reason": doc["reason"], **({"version": version} if version else {}),
+                        "manuals": [manual]})
+    return entries, notes
+
+
 def attach_manuals(entries, manual_entries):
     """Give device records (openFDA, ENERGY STAR, EnerGuide) the manuals of Internet Archive items of the same brand
     and model, and the Canadian certification numbers those items print."""
@@ -1252,6 +1347,8 @@ def build(key, out_dir, limit, fetch):
                     seen.add(d.get("identifier"))
                     manual_entries.append(ia_entry(d))
             say(f"{key}: {len(manual_entries)} Internet Archive items after {words!r}")
+    if cat.get("ia_any"):
+        manual_entries += ia_any_entries(fetch, key, cat, limit, notes)
     if cat.get("ia_whole") or cat.get("ia_mixed"):
         manual_entries += ia_collection_entries(fetch, key, cat, limit, notes,
                                                 {m.get("ia") for e in manual_entries for m in e.get("manuals") or [] if m.get("ia")})
@@ -1280,6 +1377,12 @@ def build(key, out_dir, limit, fetch):
         got, why = maker_entries(fetch, cat["makers"], cat.get("exclude"))
         manual_entries += got
         notes += why
+    if cat.get("documents"):
+        got, why = document_entries(fetch, cat["documents"], key)
+        manual_entries += got
+        notes += why
+        say(f"{key}: {len(got)} hand-entered pages ({sum(1 for d in cat['documents'] if d['access'] == 'full')} "
+            "openly licensed)")
     for label_entries, why in chemical_entries(fetch, key, cat, limit):
         manual_entries += label_entries
         notes += why
@@ -1415,13 +1518,18 @@ def chemical_entries(fetch, key, cat, limit):
 # Commons licence (a non-commercial one for personal use only; a no-derivatives one allows unchanged copies), the
 # Open Government Licences, and Open Food Facts' ODbL and CC BY-SA.
 OPEN_RIGHTS = re.compile(r"public domain|government work|\bcc0\b|creativecommons\.org/(?:licenses|publicdomain)|"
-                         r"\bcc[ -]by\b|open government licen[cs]e|\bodbl\b", re.I)
+                         r"\bcc[ -]by\b|open government licen[cs]e|\bodbl\b|\bl?gpl\b|"
+                         r"gnu (?:lesser |library )?general public licen[cs]e|\bgnu l?gpl\b", re.I)
 NON_COMMERCIAL = re.compile(r"\bnc\b|non-?commercial|by-nc", re.I)
 ORIGINAL_KINDS = {"pdf": "pdf", "txt": "txt", "jpg": "jpg", "jpeg": "jpg", "png": "png", "gif": "gif",
                   "svg": "svg", "webp": "webp", "zip": "zip", "csv": "csv", "json": "json", "xml": "xml",
-                  "epub": "epub", "doc": "doc", "docx": "docx"}
+                  "epub": "epub", "doc": "doc", "docx": "docx", "news": "txt"}
 # Hosts whose terms forbid or limit downloads by programs even where robots.txt would allow them (with the reason).
-NO_AUTOMATED_DOWNLOAD = {}
+NO_AUTOMATED_DOWNLOAD = {
+    "www.ifixit.com": "iFixit's Terms of Use (read 2026-11-21) let programs use its content only through its API, "
+                      "kept 24 hours at most and never in indexes or datasets (its pages are CC BY-NC-SA 3.0: "
+                      "personal use).",
+}
 
 
 def original_kind(url, kind=""):
@@ -1454,11 +1562,13 @@ def download_permission(url, rights, robots=None):
 def entry_originals(entry, robots=None):
     """The "originals" of one index entry: each manual's file (or page) and its text file, the product's page and its
     thumbnail's source, each {url, kind, size, sha256 (""), licence, may_download, why} (download_permission);
-    an address is listed once."""
-    candidates = []
+    an address is listed once. A link-only document (document_entries) is never marked for downloading."""
+    candidates, link_only = [], set()
     for m in entry.get("manuals") or []:
         rights = m.get("rights", "")
         url = m.get("url") or m.get("page") or ""
+        if m.get("link_only"):
+            link_only.add(url)
         candidates.append((url, original_kind(url, m.get("kind", "")), int(m.get("size") or 0), rights))
         if m.get("text_url"):
             candidates.append((m["text_url"], "txt", 0, rights))
@@ -1475,6 +1585,8 @@ def entry_originals(entry, robots=None):
             continue
         seen.add(url)
         may, why = download_permission(url, rights, robots)
+        if url in link_only:
+            may, why = False, "Link only (the maker's or author's own page); open the link in a browser."
         out.append({"url": url, "kind": kind, "size": size, "sha256": "", "licence": rights or "not stated",
                     "may_download": may, "why": why})
     return out
@@ -1524,6 +1636,11 @@ def write(key, entries, out_dir, notes=(), requests_made=0, robots=None):
                            for m in cat["makers"]]
         index["copyright"] += (" Makers' sites are read only where their robots.txt and terms allow programs; the "
                                "others are linked (or named) for the person to open.")
+    if cat.get("documents"):
+        index["documents"] = [{k: d.get(k, "") for k in ("key", "by", "title", "access", "rights", "reason")}
+                              for d in cat["documents"]]
+        index["copyright"] += (" Hand-entered pages: \"full\" ones are openly licensed and may be copied whole; "
+                               "\"link\" ones belong to their makers and are only linked.")
     raw = gzip.compress(json.dumps(index, ensure_ascii=False, separators=(",", ":")).encode("utf-8"), mtime=0)
     os.makedirs(out_dir, exist_ok=True)
     # The same entries give the same checksum whatever day they were built (merge_catalogue keeps a new version only
