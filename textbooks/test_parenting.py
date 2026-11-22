@@ -126,8 +126,12 @@ def _channel(path):
                                                 'A kite flies high.', 'A. Writer', 'CC BY', 'Made-up Press');
         insert into content_contentnode values ('aaaaaaaaaaaaaa2', 'Closed Story', 'en', 'document', '', 'B. Writer',
                                                 'All Rights Reserved', 'Other Press');
+        insert into content_contentnode values ('aaaaaaaaaaaaaa3', 'Blue Bird', 'en', 'document', '', 'C. Writer',
+                                                'CC BY', 'Made-up Press');
         insert into content_file values ('aaaaaaaaaaaaaa1', 'document', 'abc123', 'en', 1);
         insert into content_localfile values ('abc123', 'pdf');
+        insert into content_file values ('aaaaaaaaaaaaaa3', 'epub', 'def456', 'en', 1);
+        insert into content_localfile values ('def456', 'epub');
     """)
     db.commit()
     return db
@@ -151,16 +155,21 @@ def test_picture_book(monkeypatch, tmp_path):
     monkeypatch.setattr(courses, "download", fake_download)
     monkeypatch.setattr(courses, "pdf_pages_as_pages", lambda local, prefix, title, number, unit="", split=60:
                         [B.Page(prefix, title, "<p>The red kite flies over the hill.</p>", number, unit)])
+    monkeypatch.setattr(B, "fetch", lambda url, cache=None, binary=False, tries=4: b"epub bytes")
+    monkeypatch.setattr(courses, "epub_html", lambda data: "<div>A blue bird sings.</div><p>Picture: A small blue "
+                        "bird on a branch.</p>")
     assert R.pieces_of("madeup", str(tmp_path)) == ["english-0"]
     left_out = []
     book = R.picture_book("madeup", "english-0", str(tmp_path), None, left_out)
-    assert [p.title for p in book.pages] == ["The Red Kite"]
+    assert [p.title for p in book.pages] == ["Blue Bird", "The Red Kite"]
+    assert "Picture: A small blue bird" in book.pages[0].body and "By C. Writer." in book.pages[0].body
+    book.pages = book.pages[1:]
     body = book.pages[0].body
     assert "A kite flies high." in body and "By A. Writer." in body and "Licence: CC BY 4.0." in body
     assert "red kite flies" in body and "1 stories under \"All Rights Reserved\"" in book.description
     assert book.licence == "CC BY 4.0" and book.group == "parenting" and book.published == "2026-01-02"
     assert book.grades.startswith("Read-aloud") and book.version.endswith("version 7")
-    assert book.originals[0]["kind"] == "sqlite" and book.originals[1]["kind"] == "pdf"
+    assert [o["kind"] for o in book.originals] == ["sqlite", "epub", "pdf"]
 
 
 def test_read_aloud_keys(monkeypatch):

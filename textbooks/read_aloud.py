@@ -10,8 +10,9 @@ What this module builds, in plain words:
       the South African languages);
       the African Storybook (Saide, South Africa: stories in more than 150 African languages, English and French,
       at five reading levels, from first words to read-aloud stories).
-    The stories come as PDFs, which carry no picture descriptions, so the pictures are left out; a story's words
-    are kept page by page. Pratham Books' StoryWeaver and the Global Digital Library are already in the library
+    Book Dash's stories come as PDFs (read page by page; they carry no picture descriptions), the African
+    Storybook's as EPUBs (read in order, a picture's description kept where the EPUB gives one); the pictures
+    themselves are left out. Pratham Books' StoryWeaver and the Global Digital Library are already in the library
     (directory_sources.py: dir:storyweaver, dir:gdl) and are not repeated.
   - "Nursery rhymes, lullabies and fairy tales to read aloud": old public-domain books (published before 1931,
     checked on each Internet Archive record at every build), one part per book: The Real Mother Goose (1916),
@@ -62,8 +63,8 @@ LEVELS = {"0": "Read-aloud picture books (about ages 2 to 6)",
           "2": "Level 2: first sentences", "3": "Level 3: first paragraphs", "4": "Level 4: longer paragraphs",
           "5": "Level 5: longer stories to read aloud"}
 STORY_NOTICE = ("Each story is under the Creative Commons Attribution 4.0 licence; its own credits (author, "
-                "illustrator, translator, publisher) are on its page. Pictures are left out: the stories' PDFs carry "
-                "no picture descriptions.")
+                "illustrator, translator, publisher) are on its page. Pictures are left out; a picture's description "
+                "is kept where the story's file gives one (Book Dash's PDFs give none).")
 
 
 def channel_db(name, work):
@@ -135,16 +136,26 @@ def picture_book(name, piece, work, cache=None, left_out=None, limit=None):
             counts["stories not read this time (the time for one build ran out)"] = \
                 counts.get("stories not read this time (the time for one build ran out)", 0) + 1
             continue
-        pdfs = [(c, e) for c, e, _l in courses.kolibri_files(db, node_id).get("document", []) if e == "pdf"]
-        if not pdfs:
-            counts["stories without a PDF"] = counts.get("stories without a PDF", 0) + 1
+        files = courses.kolibri_files(db, node_id)
+        pdfs = [(c, e) for c, e, _l in files.get("document", []) if e == "pdf"]
+        epubs = [(c, e) for c, e, _l in files.get("epub", []) if e == "epub"]
+        got, story_title = [], " ".join(title.split())
+        if pdfs:                                 # Book Dash: a PDF, read page by page
+            checksum, ext = pdfs[0]
+            file_url = courses.kolibri_file_url(checksum, ext)
+            local = courses.download(file_url, os.path.join(work, "kolibri", "files", f"{checksum}.pdf"))
+            got = courses.pdf_pages_as_pages(local, f"s-{node_id[:12]}", story_title, 0, LEVELS.get(level, ""),
+                                             split=200)
+            os.remove(local)
+        elif epubs:                              # the African Storybook: an EPUB (pictures keep any description)
+            checksum, ext = epubs[0]
+            file_url = courses.kolibri_file_url(checksum, ext)
+            body = courses.epub_html(B.fetch(file_url, None, binary=True))
+            if re.sub(r"<[^>]+>|\s", "", body):
+                got = [B.Page(f"s-{node_id[:12]}", story_title, body, 0, LEVELS.get(level, ""))]
+        else:
+            counts["stories without a PDF or EPUB"] = counts.get("stories without a PDF or EPUB", 0) + 1
             continue
-        checksum, ext = pdfs[0]
-        file_url = courses.kolibri_file_url(checksum, ext)
-        local = courses.download(file_url, os.path.join(work, "kolibri", "files", f"{checksum}.pdf"))
-        got = courses.pdf_pages_as_pages(local, f"s-{node_id[:12]}", " ".join(title.split()), 0, LEVELS.get(level, ""),
-                                         split=200)
-        os.remove(local)
         if not got:
             counts["stories without readable words"] = counts.get("stories without readable words", 0) + 1
             continue
@@ -153,7 +164,7 @@ def picture_book(name, piece, work, cache=None, left_out=None, limit=None):
         got[0].body = (f"<p>{B.esc(' '.join(desc.split()))}</p>" if desc.strip() else "") + \
             f"<p>{B.esc(credit)}</p>" + got[0].body
         pages += got
-        originals.append({"url": file_url, "kind": "pdf"})
+        originals.append({"url": file_url, "kind": ext})
     if not pages:
         left_out.append({"title": f"{spec['title']}: {piece}", "reason": "No story could be read."})
         return None
@@ -172,7 +183,7 @@ def picture_book(name, piece, work, cache=None, left_out=None, limit=None):
         language=__import__("directory_sources").two_to_three(language),
         published=B.iso_date(info.get("last_published") or str(meta[1] or "")),
         version=f"Kolibri Studio channel \"{spec['title']}\" version {info.get('version') or meta[0]}",
-        changes="each story's PDF made into a web page of its words (pictures left out)")
+        changes="each story's PDF or EPUB made into a web page of its words (pictures left out)")
     book.pages = pages
     book.originals = [{"url": url, "kind": "sqlite"}] + originals[:300]
     return book
