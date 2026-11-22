@@ -209,7 +209,8 @@ def build_commons_wind_water_power(limit):
 
 POWER_OI = [
     group("What solar power things are in this picture?",
-          {"Solar panel": "a solar panel", "Solar power": "solar power", "Solar energy": "solar energy",
+          {"Solar panel": "a solar panel", "Solar power": "something to do with solar power",
+           "Solar energy": "something to do with solar energy",
            "Solar charger": "a solar charger", "Solar vehicle": "a solar vehicle"}, SOLAR_NOTE),
     group("What wind power things are in this picture?",
           {"Wind turbine": "a wind turbine", "Windmill": "a windmill", "Turbine": "a turbine"}, TURBINE_NOTE),
@@ -220,7 +221,7 @@ POWER_OI = [
           {"Multipurpose battery": "a battery", "Automotive battery": "a car battery"}, BATTERY_NOTE),
     group("What electrical things are in this picture?",
           {"Wall socket": "a wall socket", "Circuit breaker": "a circuit breaker", "Power supply": "a power supply",
-           "Ground (electricity)": "an electrical ground (earth) connection", "Electricity": "electricity"},
+           "Ground (electricity)": "an electrical ground (earth) connection", "Electricity": "something to do with electricity"},
           WIRING_NOTE),
     group("What power line things are in this picture?",
           {"Overhead power line": "overhead power lines", "Lineman": "a line worker (lineman)"},

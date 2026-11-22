@@ -247,7 +247,8 @@ CATEGORIES = {
                     "Energy Systems & Design; Hugh Piggott's plans as a link), and the Department of Energy's small "
                     "wind and hydropower guidance.",
         kind="manuals", licence=LICENCE, any_year=True, ia=WIND_HYDRO_WORDS, makers=WIND_HYDRO_MAKERS,
-        notice=WIND_HYDRO_NOTICE, heading=HEADING, ia_exclude=r"\b(sega|video game|game manual|windows)\b",
+        notice=WIND_HYDRO_NOTICE, heading=HEADING, ia_exclude=r"\b(sega|video game|game manual|windows|quadrille|dental|pelton & crane|lego|"
+                   r"song|sheet music)\b",
         guidance=[dict(title="Small Wind Guidebook (WINDExchange, DOE; in the reference library: power:doe_small_wind)",
                        url="https://www.energy.gov/cmei/systems/windexchange/small-wind-guidebook",
                        by="the US Department of Energy"),
