@@ -104,6 +104,8 @@ MODULES = [
     "small_boats",          # Navigation Rules, boating CFR, Coast Guard and Army boat manuals, NOAA, NWS, old boat books (boat:)
     # home manufacturing and making (the owner's request of 2026-11-22), its own group
     "making_books",         # 3D printing, lasers, CNC, lathes: Klipper, FreeCAD, LinuxCNC, OpenSCAD, FDA, NIST (make:)
+    # the master guide to the whole library, made from the code at build time (the owner's request of 2026-11-22)
+    "library_guide",        # one book: every group, manual, topic, pack, writing source, B: folder (libguide:)
 ]
 
 _loaded = {}
