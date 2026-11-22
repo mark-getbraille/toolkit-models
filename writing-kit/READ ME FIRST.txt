@@ -86,6 +86,10 @@ The styles:
   humour: humorous writing.
   nonfiction_prose: nonfiction books: history, essays, biography, travel and science (public domain).
   form_letter: form letters and notices from agencies to the public, in plain language.
+  newspaper_news_historical, newspaper_editorial_historical, newspaper_ad_historical, newspaper_letter_historical,
+    newspaper_notice_historical and newspaper_fiction_poetry_historical: historical US newspapers (news reports,
+    editorials and opinion, advertisements, letters to the editor, notices and legal notices, serial fiction and
+    poetry); see "Historical newspapers" below.
 
 What you get, in the out folder
 train.jsonl: the training examples, one per line.
@@ -309,6 +313,63 @@ One more setting: --audio-pairs, the most recordings to take from each audio sou
 Checked and not used: LibriVox's own website and API (it refuses AI training), the Social Security
 Administration's notices (ssa.gov refuses programs), and agency customer service email templates (no public
 collection of them was found).
+
+Historical newspapers, 1770 to 1964 (added 22 November 2026)
+What it is: American Stories, the articles of nearly 20 million pages of old American newspapers that the Library
+of Congress scanned for its Chronicling America collection. Harvard researchers (Melissa Dell and colleagues, 2023)
+found each article on each page and read it with OCR. It is formal and period English: news, editorials,
+advertisements, letters to the editor, legal notices, serial stories and poems. Source name:
+american_stories_newspapers. Licence: CC BY 4.0, open: use it for anything, with credit. The credit and the paper
+to cite are written into out\newspapers\ATTRIBUTION.txt. No key or sign-up is needed.
+The text is kept exactly as printed and read by OCR, mistakes and all: nothing is scrubbed, corrected or left out.
+How big: 180 files, one for each year, 340 GB in all. The biggest years are around 1910, about 7 GB each; the years
+before 1840 are small, and 1890 to 1919 are 187 GB together. The finished examples take about 190 more GB, so allow
+about 530 GB of free disk space for everything.
+How long: downloading all of it takes about 8 hours at 100 megabits a second, or about 30 hours at 25 megabits a
+second. Building the examples afterwards takes about 10 hours when four years are built at a time (on a computer
+with five or more processor cores), or about 40 hours one year at a time; one big year takes about an hour.
+How to run it: press Enter on "Build Newspaper Data.cmd" in the writing-kit folder. It asks two questions:
+  which years: press Enter for every year, or type years, ranges and decades separated by commas, for example
+    1850-1869,1900s or 1865 or 1920-;
+  the most gigabytes to download: press Enter for no limit, or type a number such as 50. The oldest of the chosen
+    years come first, and it stops adding years before the limit.
+It says how big your choice is and how long it will take, then each year's size as it downloads, with a running
+total. You can close the window at any time: start it again and it carries on where it stopped, both the downloading
+and the building. Finished files are checked and never downloaded twice. It stops before a year that would not fit
+on the disk and says so.
+From a command prompt, in the writing-kit folder:
+  python kit\build_newspapers.py                                  (every year)
+  python kit\build_newspapers.py --list                           (each year's size and what you have)
+  python kit\build_newspapers.py --years 1850-1869,1900s --max-gb 60
+  python kit\build_newspapers.py --download-only                  (download now, build later)
+  python kit\build_newspapers.py --build-only                     (build what is downloaded; no internet needed)
+  python kit\build_newspapers.py --styles newspaper_editorial_historical,newspaper_letter_historical
+--folder chooses where the year files go (the folder "newspapers" if you leave it out); --workers sets how many
+years are built at the same time (up to 4 unless you say).
+What you get: out\newspapers has one folder per decade and in it one folder per year. In each year folder, each
+style has its own two files, for example newspaper_editorial_historical-train.jsonl.gz and
+newspaper_editorial_historical-validation.jsonl.gz. They are compressed; most training programs read them as they
+are, and 7-Zip opens them. To train on an era, use the decade folders you want; to train on one style, use that
+style's files. README.txt, NEWSPAPERS-REPORT.txt (how many of each style in each decade) and ATTRIBUTION.txt are in
+out\newspapers.
+Each example also has: year, decade, date, newspaper, state, page, headline, byline, ocr_quality and legibility.
+ocr_quality is a number from 0 to 1: the share of the article's words that are ordinary English words (old OCR has
+many misread words). legibility is how much of the article American Stories' own checker found clear (empty for the
+earliest years). Nothing is left out for a low score, so your training can choose, for example only articles with
+ocr_quality of 0.8 or more.
+How the styles are chosen: the dataset does not say what kind of article each one is, so the kit decides by simple
+rules on the headline and the first words: "Notice is hereby given", sheriff's sales and court notices are notices;
+"To the Editor" or "Mr. Editor" are letters; "Chapter IV" or "To be continued" are serial fiction, and short lines
+that nearly all start with a capital are poems; "Editorial", or phrases such as "in our opinion" and "it seems to
+us", are editorials; "For Sale", "Wanted", prices and "call at" are advertisements; everything else is news. The
+rules make mistakes now and then; the rule used is written in each example as style_rule.
+In the ordinary build it is left out unless you name it, because it is so big. Adding --sources
+american_stories_newspapers to build_dataset.py takes a small sample instead: 50 articles from each year you have
+downloaded, or, if you have none, from the start of seven years spread from 1805 to 1955 (only the first part of
+each file is downloaded, and it is not kept).
+Checked and not built yet: the Library of Congress's own page-by-page OCR files (public domain, about 2.5 TB). Its
+Chronicling America site is moving into loc.gov, it asks programs for 5 seconds between requests, and its text is
+whole pages without articles. It could later add the pages American Stories missed; see sources-not-used.txt.
 
 Privacy: your rule
 You asked to keep everything: the full text of every message, people's names, signatures, the earlier messages
