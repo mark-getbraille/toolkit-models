@@ -5,7 +5,7 @@ technical braille downstream, with a spoken reading). This file lists:
     prepare_pack): synthetic_formulas (formulas typeset with matplotlib's mathtext, with their LaTeX and a spoken
     reading such as "x squared plus 2 x plus 1") and chem_structures (chemical structures drawn with RDKit from
     Wikidata's SMILES, with the name, molecular formula, atom and ring counts and SMILES);
-  - im2latex_formulas (group "research", personal use): im2latex-100k (Genthial and Sauvestre's prebuilt set on
+  - im2latex_formulas (group "research", personal use): im2latex-100k (Anssi Kanervisto's prebuilt set of 2016 on
     Zenodo, record 56198, from Deng and others' "Image-to-Markup Generation", arXiv:1609.04938): about 100,000
     printed formulas with their LaTeX. Zenodo lists the record as CC0, but its formulas were taken from arXiv papers
     whose authors keep their own licences, so the kit treats it as personal use. Its formula pictures are read
@@ -27,8 +27,8 @@ from sources import Source, prepare_pack
 LATEX_Q = "What is the LaTeX for this?"
 IM2LATEX_RECORD = "56198"
 IM2LATEX_TERMS = "https://zenodo.org/records/56198"
-IM2LATEX_CREDIT = ("im2latex-100k (Anssi Kanervisto, Zenodo record 56198, https://zenodo.org/records/56198, from Yuntian "
-                   "Deng and others, Image-to-Markup Generation, arXiv:1609.04938); formulas from arXiv papers")
+IM2LATEX_CREDIT = ("im2latex-100k (Anssi Kanervisto, Zenodo record 56198, https://zenodo.org/records/56198, from "
+                   "Yuntian Deng and others, Image-to-Markup Generation, arXiv:1609.04938); formulas from arXiv papers")
 
 
 def im2latex_formulas(text):
@@ -103,7 +103,8 @@ MATH_SOURCES = [
            "CC0 (drawn by packs/math_notation_packs.py; Wikidata data CC0)",
            "Computer-made by the kit's makers with RDKit (BSD) from Wikidata (CC0), https://www.wikidata.org",
            "permissive", 800, 15, prepare_pack, "about 60 MB"),
-    Source("im2latex_formulas", "im2latex-100k: printed formulas from scientific papers with their LaTeX (personal use)",
+    Source("im2latex_formulas", "im2latex-100k: printed formulas from scientific papers with their LaTeX "
+                                "(personal use)",
            "Listed CC0 on Zenodo; the formulas come from arXiv papers under their authors' own licences, so personal, "
            "non-commercial use only", IM2LATEX_CREDIT, "research", 6000, 40, prepare_im2latex,
            "up to 290 MB, read once", terms=IM2LATEX_TERMS,

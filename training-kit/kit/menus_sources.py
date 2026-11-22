@@ -27,8 +27,9 @@ MENUS_SOURCES = [
            "Known U.S. Copyright Restrictions or CC0 by NYPL)",
            "From The New York Public Library, What's on the Menu?, https://www.nypl.org/research/support/"
            "whats-on-the-menu (each page in CREDITS.txt)", "permissive", 3000, 30, prepare_pack, "about 900 MB"),
-    Source("synthetic_menus", "Modern restaurant menus read in order: dishes, prices, vegetarian and gluten-free marks, "
-                              "specials boards and the restaurant's details (computer-made, synthetic, ready-made pack)",
+    Source("synthetic_menus", "Modern restaurant menus read in order: dishes, prices, vegetarian and gluten-free "
+                              "marks, specials boards and the restaurant's details (computer-made, synthetic, "
+                              "ready-made pack)",
            "CC0 (drawn by packs/menus_packs.py from a fixed seed; made-up restaurants)",
            "Computer-made by the kit's makers (packs/menus_packs.py)", "permissive", 2000, 25, prepare_pack,
            "about 350 MB"),

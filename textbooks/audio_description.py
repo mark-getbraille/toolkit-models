@@ -128,8 +128,8 @@ NOT_INCLUDED = [
     ("DCMP Description Key (Described and Captioned Media Program)", "Copyright of the National Association of the "
      "Deaf / DCMP; no open licence found, and dcmp.org refuses programs (403, checked 2026-11-22). Link-only. "
      "Index: https://dcmp.org/learn/descriptionkey"),
-    ("American Council of the Blind, Audio Description Project guidelines", "\"Website Design & Content © 2026 American "
-     "Council of the Blind\"; not openly licensed. Link-only. Index: https://adp.acb.org/"),
+    ("American Council of the Blind, Audio Description Project guidelines", "\"Website Design & Content © 2026 "
+     "American Council of the Blind\"; not openly licensed. Link-only. Index: https://adp.acb.org/"),
     ("FCC consumer guide: audio description", "Public domain, but www.fcc.gov answers programs \"403\" (checked "
      "2026-11-22); the rules themselves (47 CFR part 79) are built from govinfo.gov. Index: "
      "https://www.fcc.gov/audio-description"),

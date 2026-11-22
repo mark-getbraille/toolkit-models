@@ -542,7 +542,8 @@ def draw_screen(d, rng):
     size = (750, 1334) if phone else (1280, 800)
     page = Image.new("RGB", size, colours["back"])
     draw = ImageDraw.Draw(page)
-    fonts = (font(30 if phone else 22, False, k), font(24 if phone else 18, False, k), font(32 if phone else 24, True, k))
+    fonts = (font(30 if phone else 22, False, k), font(24 if phone else 18, False, k),
+             font(32 if phone else 24, True, k))
     full = d["kind"] in ("settings", "lock", "app_store", "sign_in", "two_factor", "captcha") and phone
     if phone:                                             # the phone's status bar
         draw.rectangle([0, 0, size[0], 50], fill=colours["back"] if not full else colours["bg"])

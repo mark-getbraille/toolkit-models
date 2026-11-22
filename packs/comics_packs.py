@@ -109,7 +109,8 @@ def comic_entry(title, info, caption):
         return "needs", {"credit": credit, "licence": f"Public domain in the US: {basis}", "page_url": page,
                          "url": info["thumburl"], "title": title.split(":", 1)[-1].rsplit(".", 1)[0],
                          "date": value("DateTimeOriginal"), "categories": categories[:300], "marks": marks}
-    rows = [dict({"question": FROM_Q, "answer": f"The Wikimedia Commons record of this picture says: \"{about.rstrip('.')}.\"",
+    said = f"The Wikimedia Commons record of this picture says: \"{about.rstrip('.')}.\""
+    rows = [dict({"question": FROM_Q, "answer": said,
                   "credit": credit}, **marks),
             dict({"question": PD_Q, "answer": f"Yes, in the United States, according to its Commons page: {basis}.",
                   "credit": credit}, **marks)]

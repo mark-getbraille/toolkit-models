@@ -14,7 +14,8 @@ The packs (MENUS_PACKS):
                    in the bucket menusdata.nypl.org on Amazon S3, the newest dump, of March 2023; NYPL released the data
                    under CC0 1.0 on the project's data page, menus.nypl.org/data; that site has since been retired
                    (it now forwards to https://www.nypl.org/research/support/whats-on-the-menu), so the page itself
-                   could not be read again on 2026-11-22) and each page's picture from images.nypl.org, NYPL's own picture server (its robots.txt is
+                   could not be read again on 2026-11-22) and each page's picture from images.nypl.org, NYPL's own
+                   picture server (its robots.txt is
                    absent, so nothing is disallowed), one at a time.
                    COPYRIGHT OF THE PICTURES: a menu is used only when
                      - its catalogue date is before 1931: published in or before 1930, it is in the public domain in
@@ -348,8 +349,9 @@ def menu_details(n, rng):
         dishes = rng.sample(SECTIONS[section], min(len(SECTIONS[section]), rng.randint(3, 5)))
         low, high = {"Starters": (6, 14), "Salads": (9, 16), "Mains": (14, 34), "Desserts": (6, 11),
                      "Drinks": (2, 6)}[section]
-        d["sections"].append((section, [(dish, about, marks, f"{rng.randint(low, high)}.{rng.choice(('00', '50', '95'))}")
-                                        for dish, about, marks in dishes]))
+        prices = [f"{rng.randint(low, high)}.{rng.choice(('00', '50', '95'))}" for _ in dishes]
+        d["sections"].append((section, [(dish, about, marks, price)
+                                        for (dish, about, marks), price in zip(dishes, prices)]))
     if layout == "pictures":
         mains = [x for sec, dishes in d["sections"] for x in dishes if sec != "Drinks"]
         d["pictured"] = [x[0] for x in rng.sample(mains, min(3, len(mains)))]
