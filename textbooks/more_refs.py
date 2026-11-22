@@ -35,6 +35,7 @@ MODULES = [
     "parenting",            # parenting and family: CDC, Child Welfare Information Gateway, CPIR, CPSC ... (parent:)
     "early_childhood",      # child care, pregnancy, newborns and infant feeding: ChildCare.gov, OWH, CDC, WIC, NHS (early:)
     "read_aloud",           # picture books (Book Dash, African Storybook) and old nursery rhymes (readaloud:)
+    "outdoor_cooking",      # emergency, camp and outdoor cooking: CDC, Ready.gov, USFA, CPSC, USFS, NPS, EPA, Army (outcook:)
 ]
 
 _loaded = {}
