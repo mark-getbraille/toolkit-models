@@ -72,3 +72,25 @@ def test_crawl_read_once(monkeypatch):
                         seen.append([u for u, _ in entry["urls"]]))
     c.book_for("t:x", "/tmp/none", None, [])
     assert seen == [["https://www.example.gov/a", "https://www.example.gov/a/b"]]
+
+
+def test_crisis_lines_are_checked(monkeypatch):
+    import family_health as F
+    pages = {"https://988lifeline.org/help-yourself/for-deaf-hard-of-hearing/":
+             "<p>For TTY Users: Use your preferred relay service or dial 711 then 988.</p><p>text 838255</p>",
+             "https://988.ca/": "<p>Old page without the number</p>"}
+    monkeypatch.setattr(B, "fetch", lambda url, cache=None, binary=False, tries=4: pages[url])
+    monkeypatch.setattr(K, "readable", lambda url, cache=None: True)
+    book = F.crisis_book("crisis_lines", "/tmp/none", None, [])
+    body = book.pages[0].body
+    assert "call 911" in body and "dial 711 then 988" in body and "text 838255" in body
+    assert "could not be checked" in body and "988.ca" in body and "9-8-8 Suicide Crisis Helpline" not in body
+    assert book.licence == "CC0" and "Canada not confirmed" in book.version
+
+
+def test_cdc_books_are_whole_with_cdc_conditions():
+    import family_health as F
+    cdc = next(g for g in F.GUIDES if g["name"] == "cdc_act_early")
+    assert cdc["unchanged"] and cdc["licence_page"] == F.CDC_TERMS
+    for words in ("Source: CDC", "free of charge", "does not constitute its endorsement"):
+        assert words in cdc["notice"], words
