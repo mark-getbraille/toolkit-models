@@ -50,6 +50,8 @@ MODULES = [
     "midwifery",            # CDC Hear Her, maternal and infant health, NHS after-birth pages (birth:)
     "instrument_care",      # old public-domain piano tuning and violin making books (instr:)
     "outdoor_cooking",      # emergency, camp and outdoor cooking: CDC, Ready.gov, USFA, CPSC, USFS, NPS, EPA, Army (outcook:)
+    # privacy, security and digital safety (the owner's request of 2026-11-22)
+    "privacy_books",        # EFF, Tor, Security in a Box, Privacy Guides, OWASP, GnuPG, CISA, NIST, FTC, IC3, NCSC (privacy:)
 ]
 
 _loaded = {}
