@@ -3603,3 +3603,19 @@ NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in PH
                                                                if s.key not in _photo_library_ok
                                                                or s.key in _photo_library_bodily)
 _add_collections(PHOTO_LIBRARY_SOURCES)
+# Home manufacturing and making (making_sources.py, the owner's request of 2026-11-22): the ready-made packs (3D
+# printing, cutting machines and lasers, CNC and small machining, moulding and casting, circuit board fabrication, Open
+# Images machine tools and workshops), their share-alike Commons files, and the sources looked at and left out; the
+# file may be missing. Only the keys in MAKING_PICTURE_MAKING_OK may be used for picture-making.
+try:
+    import making_sources as _making  # noqa: E402
+except ImportError as _e:
+    _making = None
+    if getattr(_e, "name", None) != "making_sources":
+        say(f"(The home manufacturing and making collections could not be loaded: {_e}. They are left out.)")
+MAKING_SOURCES = list(getattr(_making, "MAKING_SOURCES", []) or [])
+_making_ok = set(getattr(_making, "MAKING_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _making_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in MAKING_SOURCES
+                                                               if s.key not in _making_ok)
+_add_collections(MAKING_SOURCES)

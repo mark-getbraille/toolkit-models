@@ -102,6 +102,8 @@ MODULES = [
     "old_radio",            # old-time radio scripts: USDA and wartime government radio, index of links (otr:)
     # small boats (the owner's request of 2026-11-22)
     "small_boats",          # Navigation Rules, boating CFR, Coast Guard and Army boat manuals, NOAA, NWS, old boat books (boat:)
+    # home manufacturing and making (the owner's request of 2026-11-22), its own group
+    "making_books",         # 3D printing, lasers, CNC, lathes: Klipper, FreeCAD, LinuxCNC, OpenSCAD, FDA, NIST (make:)
 ]
 
 _loaded = {}

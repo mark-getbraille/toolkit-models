@@ -180,7 +180,9 @@ jobs:
                    "nasa_space_astronauts", "nasa_aircraft", "nasa_earth_from_space", "nasa_planets_telescopes",
                    "nasa_rockets_launch", "nasa_people_at_work", "npgallery_accessibility", "npgallery_facilities",
                    "npgallery_historic_buildings", "npgallery_wildlife_more", "npgallery_landscapes_more",
-                   "commons_small_boats"]
+                   "commons_small_boats",
+                   "commons_3d_printing", "commons_cutting_lasers", "commons_cnc_machining",
+                   "commons_moulding_casting", "commons_pcb_fabrication", "open_images_making"]
           words = [w for w in sys.argv[1].split(",") if w]
           # "key+" is a top-up pass of key and "key?" a needs-only run (kept with the mark, which the build job reads);
           # "all?" asks for a needs-only run of every pack.

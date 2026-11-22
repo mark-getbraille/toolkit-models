@@ -148,8 +148,12 @@ TOPICS = [
            # driving, computer and phone basics, motorcycles, RVs and trailers (practical_sources.py)
            "commons_driving", "open_images_driving", "commons_computer_basics", "open_images_computer_basics",
            "commons_trailers_rvs", "commons_motorcycle_gear", "open_images_motorcycles_rvs",
+           # home manufacturing and making: 3D printers, cutters and lasers, CNC, lathes and mills, moulding and
+           # casting, circuit board fabrication (making_sources.py; also in the home topic)
+           "commons_3d_printing", "commons_cutting_lasers", "commons_cnc_machining", "commons_moulding_casting",
+           "commons_pcb_fabrication", "open_images_making",
            # share-alike
-           "car_care_commons_sa", "radio_commons_sa", "people_commons_sa",
+           "car_care_commons_sa", "radio_commons_sa", "people_commons_sa", "making_commons_sa",
            "commons_mechanical_sa", "dashboard_symbols_sa", "device_models_sa", "farm_mech_commons_sa",
            "commons_airplanes_sa",
            # NASA aircraft and rockets (photo_library_sources.py)
@@ -164,7 +168,7 @@ TOPICS = [
     Topic("home", "Home and household",
           "Appliances, kitchens, laundry, cleaning and hazards, home repair, heating, lighting, building, pests, "
           "baby things, sewing, crafts, first aid, dental and eye care, emergency kits, pools, knots, camp, "
-          "homestead and outdoor gear, fishing, games and clothes.",
+          "homestead and outdoor gear, fishing, games, clothes, 3D printing, lasers and CNC.",
           ("commons_appliances", "commons_appliance_controls", "open_images_appliance_controls", "commons_kitchen",
            "laundry_symbols", "laundry_care_labels", "commons_household_chemicals", "commons_finishes_in_use",
            "commons_household_hazards", "open_images_household_hazards",
@@ -211,6 +215,9 @@ TOPICS = [
            # rescue gear (the sexual health products are in no topic, by the owner's choice)
            "commons_wellbeing_aids", "commons_fitness_equipment", "commons_adaptive_sports",
            "commons_daily_living_aids", "commons_wilderness_rescue",
+           # home manufacturing and making (making_sources.py; also in the machines topic)
+           "commons_3d_printing", "commons_cutting_lasers", "commons_cnc_machining", "commons_moulding_casting",
+           "commons_pcb_fabrication", "open_images_making", "making_commons_sa",
            # non-commercial and research-only (personal use)
            "cpsc_recalls")),
     # Power and electrical (the owner's decision of 22 November 2026): backup generators, solar, batteries, small wind
@@ -225,6 +232,8 @@ TOPICS = [
            "commons_home_repair", "open_images_home_upkeep", "commons_plumbing_electrical", "commons_connectors",
            "commons_electronic_parts", "commons_cables_connectors", "commons_circuit_diagrams",
            "open_images_electronics", "commons_emergency_lighting", "commons_emergency_kits_power",
+           # circuit board fabrication (making_sources.py; also in machines and home)
+           "commons_pcb_fabrication",
            # share-alike
            "power_commons_sa", "home_upkeep_commons_sa")),
     # Radio communications (the owner's decision of 22 November 2026): ham and other two-way radio, antennas and
