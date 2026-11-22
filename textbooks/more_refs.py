@@ -94,6 +94,8 @@ MODULES = [
     "sexual_health",        # CDC contraception, STIs, HIV, violence; OPA, OWH, FDA, NIDDK, help lines (sexhealth:)
     "aging_end_of_life",    # ACL long-term care, VA geriatrics, NCI end of life, NIDCD, IRS, VA burial, DOJ (aging:)
     "wilderness_first_aid", # NPS and USFS backcountry safety, NIOSH outdoor hazards, CDC, NOAA SARSAT, TB MEDs (wild:)
+    # sports, a top-level section (the owner's request of 2026-11-22)
+    "sports",               # rules (old public-domain rule books), teams and players (Wikidata), stats (Retrosheet, openfootball) (sport:)
     # Kiwix references, sheet music, newspapers and old-time radio (the owner's request of 2026-11-22)
     "stack_exchange",       # Stack Exchange how-to sites in the Kiwix library, REFERENCE ONLY, never training (se:)
     "a11y_community",       # accessibility communities: GNOME, ArchWiki and KDE accessibility pages, index (a11yc:)
