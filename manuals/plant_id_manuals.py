@@ -7,8 +7,8 @@ What it lists, in plain words (an INDEX of facts and links only; each manual bel
             guides, hand lenses, plant presses, herbaria, wildflower, tree and mushroom guides, foraging). "Loupe" and
             "moisture meter" are already searched by other collections, so they are not repeated here;
   makers    the plant identification apps and the hand lens makers: LINK-ONLY by the owner's rule (the apps' help
-            pages are links for the person to open; nothing is read from them, and the inaturalist.org site is never
-            read by the toolkit, only its open data through GBIF);
+            pages are links for the person to open; nothing is read from them; iNaturalist's site is not listed,
+            as the toolkit uses only its open data through GBIF);
   guidance  the reference library's plant books (textbooks/plant_id.py) and the poison help line.
 
 The safety notice is said first (NOTICE): never eat a wild plant or mushroom unless an expert has identified it in
@@ -26,8 +26,6 @@ RULE = ("by the owner's rule the maker's own manuals and guides are link-only: n
         "page is listed for the person to open or fetch with Program Downloader")
 _COMMON = dict(category="plant_id", prefix="pi", documents="manuals", access="link", reason=RULE)
 MAKERS = [dict(_COMMON, **m) for m in [
-    dict(key="seek-inaturalist", maker="Seek by iNaturalist", type="plant and animal identification app",
-         library="https://www.inaturalist.org/pages/seek_app", site="inaturalist.org"),
     dict(key="plantnet-app", maker="Pl@ntNet", type="plant identification app", library="https://plantnet.org/en/",
          site="plantnet.org"),
     dict(key="picturethis", maker="PictureThis", type="plant identification app", library="https://www.picturethisai.com/",

@@ -22,18 +22,19 @@ The packs (HOMESTEAD_PACKS):
                                   candling, chicken tractors, nest boxes, duck houses, beehives (Langstroth and top-bar), bee smokers, beekeeping
                                   suits, hive tools, honey extractors and honeycombs.
   commons_homestead_farmstead     Commons: cattle crushes (squeeze chutes), sheep pens, barbed-wire fences, hand
-                                  milking, water wells, wind pumps, rainwater harvesting, root cellars, off-grid homes, composting toilets,
+                                  milking, water wells, rainwater harvesting, root cellars, off-grid homes, composting toilets,
                                   butter churns and cream separators.
   open_images_homestead           Open Images V7 (labels CC BY 4.0; each photo CC BY, CC0 or the Public Domain Mark):
                                   farm animals (chickens, roosters, ducks, geese, turkeys, goats, sheep, pigs, rabbits,
                                   cattle), beekeeping (honeycomb, beekeepers, apiaries), the farm (hay, barns, silos,
-                                  chicken coops, pastures, windmills) and homestead power and water (water wells, solar
-                                  panels, wind turbines). No label is asked twice (packs/test_homestead.py checks).
+                                  chicken coops, pastures) and water wells. No label is asked twice (packs/test_homestead.py checks).
 
 Not repeated here: the breeds packs (commons_breeds, na_domestic_animals: chicken, duck, goat, sheep, rabbit and pig
 breeds), the farm packs (farm machinery), the Commons categories other packs ask (Chicken coops, Egg cartons, Sheep
-shearing, Rabbit hutches, Hay bales, Electric fences, Ear tags, Hand pumps, Septic tanks, Fence posts) and the Open
-Images labels other packs ask (Bee, Beehive, Honey, Fence, Egg and others). What was looked at and left out is in the
+shearing, Rabbit hutches, Hay bales, Electric fences, Ear tags, Hand pumps, Septic tanks, Fence posts, and the power packs' Wind
+pumps) and the Open
+Images labels other packs ask (Bee, Beehive, Honey, Fence, Egg, and the power packs' Solar panel,
+Wind turbine and Windmill). What was looked at and left out is in the
 kit's homestead_sources.py (HOMESTEAD_NOT_INCLUDED).
 
     python packs/homestead_packs.py commons_homestead_poultry_bees --limit 8      (prints a few rows: a quick check)
@@ -108,7 +109,6 @@ FARMSTEAD = [
     thing("Composting toilets", "a composting toilet, which turns waste into compost without water", deeper=True),
     thing("Milking by hand", "milking by hand", HANDLING_NOTE + " Wash hands and udders first, and keep milk cold.",
           True),
-    thing("Wind pumps", "a wind pump, a windmill that pumps water from a well", WELL_NOTE, True),
     thing("Butter churns", "a butter churn, which shakes or beats cream until it turns into butter"),
     thing("Cream separators", "a cream separator, which spins milk to separate the cream"),
 ]
@@ -137,10 +137,8 @@ HOMESTEAD_OI = [
           {"Honeycomb": "honeycomb", "Beekeeper": "a beekeeper", "Apiary": "an apiary (a bee yard)"}, BEE_NOTE),
     group("What farm buildings or land are in this picture?",
           {"Hay": "hay", "Barn": "a barn", "Silo": "a silo", "Chicken coop": "a chicken coop", "Farm": "a farm",
-           "Ranch": "a ranch", "Pasture": "a pasture", "Windmill": "a windmill"}),
-    group("What water or power equipment is in this picture?",
-          {"Water well": "a water well", "Solar panel": "a solar panel", "Wind turbine": "a wind turbine"},
-          f"{WELL_NOTE} {POWER_NOTE}"),
+           "Ranch": "a ranch", "Pasture": "a pasture"}),
+    group("Is there a water well in this picture?", {"Water well": "a water well"}, WELL_NOTE),
 ]
 
 
@@ -160,14 +158,14 @@ HOMESTEAD_PACKS = {
     "commons_homestead_poultry_bees": (build_commons_homestead_poultry_bees, COMMONS_LICENCE.format(
         what="egg incubator, candling, chicken tractor, nest box, duck house, beehive, bee smoker, hive tool and honey extractor")),
     "commons_homestead_farmstead": (build_commons_homestead_farmstead, COMMONS_LICENCE.format(
-        what="cattle crush, sheep pen, fence, hand milking, well, wind pump, rainwater, root cellar, off-grid, composting toilet, butter churn "
+        what="cattle crush, sheep pen, fence, hand milking, well, rainwater, root cellar, off-grid, composting toilet, butter churn "
              "and cream separator")),
     "open_images_homestead": (build_open_images_homestead, OI_LICENCE),
 }
 HOMESTEAD_LIMITS = {
     "commons_homestead_poultry_bees": 800,   # 14 categories; Beehives and Honeycombs have most files
-    "commons_homestead_farmstead": 800,      # 12 categories
-    "open_images_homestead": 1500,           # 26 labels; farm animals have most photos
+    "commons_homestead_farmstead": 800,      # 11 categories
+    "open_images_homestead": 1500,           # 23 labels; farm animals have most photos
 }
 # The packs that read Wikimedia Commons (build_packs.COMMONS_KEYS).
 HOMESTEAD_COMMONS_KEYS = ("commons_homestead_poultry_bees", "commons_homestead_farmstead")

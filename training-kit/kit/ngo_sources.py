@@ -1,8 +1,9 @@
 """Picture collections of NON-PROFIT ORGANISATIONS (NGOs, charities, foundations) for the Picture Model Training
 Kit that cannot be ready-made packs: what was looked at, what is already in the kit, what is left out and why, and
 which organisations to ask for permission. The open ones are packs: packs/ngo_packs.py (Our World in Data charts)
-and packs/field_manual_packs.py (drawings from US military field manuals with Distribution Statement A; US
-government works, not an NGO, but built in the same survey).
+and packs/field_manual_packs.py (drawings from US military field manuals published openly: with Distribution
+Statement A, or, by the owner's decision of 22 November 2026, copies from the Internet Archive or a government site
+without it; US government works, not an NGO, but built in the same survey).
 
 As in the other *_sources.py files, nothing here is re-shared by the kit's makers, and nothing here downloads
 anything: NGO_SOURCES is the place for a collection the kit downloads on the user's own computer when it is not open
@@ -61,7 +62,7 @@ NGO_NOT_INCLUDED = {
                                              "under each uploader's licence, mostly CC BY 4.0 but without words "
                                              "describing the pictures.",
     "Internet Archive picture collections": "rights differ item by item; used only where an item is a US government "
-                                            "work with Distribution Statement A (packs/field_manual_packs.py).",
+                                            "work published openly (packs/field_manual_packs.py and military_release.py).",
     "Canadian Armed Forces manuals": "Crown copyright, non-commercial reproduction only (canada.ca terms): personal "
                                      "use at most, and not checked item by item; left out.",
 }

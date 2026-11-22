@@ -2124,7 +2124,7 @@ SOURCES = [
     Source("owid_charts", "Charts from Our World in Data: what each chart shows and where its data come from (ready-made pack)",
            "CC BY 4.0 (https://ourworldindata.org/faqs)", "Our World in Data (Global Change Data Lab), CC BY 4.0 (each chart's page in CREDITS.txt)", "permissive", 3000, 20, prepare_pack, "about 250 MB"),
     Source("field_manual_figures", "Drawings from US Army field manuals and Navy training courses: knots, shelters, compasses, maps, machines, circuits, first aid (ready-made pack)",
-           "Public domain (US government works, Distribution Statement A)", "US Army and US Navy; copies from the Internet Archive (credited in CREDITS.txt)", "permissive", 2500, 20, prepare_pack, "about 200 MB"),
+           "Public domain (US government works, published openly; each credit says whether Distribution Statement A is printed)", "US Army and US Navy; copies from the Internet Archive (credited in CREDITS.txt)", "permissive", 2500, 20, prepare_pack, "about 200 MB"),
     # Open sets from big technology companies (packs/bigtech_packs.py); none shows people. The research entries
     # (ScreenQA, PixMo, FinTabNet) are in bigtech_sources.py.
     Source("gso_objects", "What is this? Real products scanned in 3D by Google, computer-made views (Google Scanned Objects, ready-made pack)",
@@ -3446,3 +3446,52 @@ for _module_name, _prefix in (("homestead_sources", "HOMESTEAD"), ("outdoors_sou
                                                                    if s.key not in _leisure_ok)
     _add_collections(_leisure_sources)
     LEISURE_SOURCES += _leisure_sources
+# Emergency preparedness and disasters (preparedness_sources.py) and radio communications (radio_sources.py), the owner's
+# request of 2026-11-22: their ready-made packs, share-alike Commons files and what was left out. Each file may be
+# missing. Only the keys in each file's *_PICTURE_MAKING_OK may be used for picture-making.
+# Power and electrical (power_sources.py, the owner's request of 2026-11-22) is loaded the same way.
+for _prep_name, _prep_prefix in (("preparedness_sources", "PREPAREDNESS"), ("radio_sources", "RADIO"),
+                                 ("power_sources", "POWER")):
+    try:
+        _prep = __import__(_prep_name)
+    except ImportError as _e:
+        _prep = None
+        if getattr(_e, "name", None) != _prep_name:
+            say(f"(The {_prep_name.replace('_sources', '')} collections could not be loaded: {_e}. They are left out.)")
+    _prep_sources = list(getattr(_prep, f"{_prep_prefix}_SOURCES", []) or [])
+    _prep_ok = set(getattr(_prep, f"{_prep_prefix}_PICTURE_MAKING_OK", ()) or ())
+    PERSONAL_PICTURE_MAKING_OK |= _prep_ok
+    NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in _prep_sources
+                                                                   if s.key not in _prep_ok)
+    _add_collections(_prep_sources)
+# Privacy, security and digital safety (privacy_sources.py): the ready-made packs (Commons security things and
+# screens, and the computer-made scam and safe message examples), their share-alike Commons files, and the sources
+# looked at and left out; the file may be missing. Only the keys in PRIVACY_PICTURE_MAKING_OK may be used for
+# picture-making (never the scam examples or screenshots).
+try:
+    import privacy_sources as _privacy  # noqa: E402
+except ImportError as _e:
+    _privacy = None
+    if getattr(_e, "name", None) != "privacy_sources":
+        say(f"(The privacy and security collections could not be loaded: {_e}. They are left out.)")
+PRIVACY_SOURCES = list(getattr(_privacy, "PRIVACY_SOURCES", []) or [])
+_privacy_ok = set(getattr(_privacy, "PRIVACY_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _privacy_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in PRIVACY_SOURCES
+                                                               if s.key not in _privacy_ok)
+_add_collections(PRIVACY_SOURCES)
+# Blind and low-vision living (vision_sources.py): the ready-made packs (braille writers, braille and tactile things,
+# mobility and deafblind life, APH Museum objects), their share-alike Commons files, and the sources looked at and left
+# out; the file may be missing. Only the keys in VISION_PICTURE_MAKING_OK may be used for picture-making.
+try:
+    import vision_sources as _vision  # noqa: E402
+except ImportError as _e:
+    _vision = None
+    if getattr(_e, "name", None) != "vision_sources":
+        say(f"(The blind and low-vision living collections could not be loaded: {_e}. They are left out.)")
+VISION_SOURCES = list(getattr(_vision, "VISION_SOURCES", []) or [])
+_vision_ok = set(getattr(_vision, "VISION_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _vision_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in VISION_SOURCES
+                                                               if s.key not in _vision_ok)
+_add_collections(VISION_SOURCES)

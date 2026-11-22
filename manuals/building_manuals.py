@@ -6,8 +6,9 @@ categories.py adds the collection home_construction; build_manuals.py builds it.
            one by one, so nothing is read; each library is listed for the person to open in a browser);
   ia       the Internet Archive's manuals of shed kits, deck and fence systems, stairlifts and ramps;
   public_guides  US government works from the Internet Archive: the Army's Carpentry (FM 5-426) and Concrete and
-           Masonry (FM 5-428), Use and Care of Hand Tools and Measuring Tools (TM 9-243), each kept only when its
-           front text says Distribution Statement A (build_manuals.public_guide_entries), and OSHA's scaffold guide;
+           Masonry (FM 5-428), Use and Care of Hand Tools and Measuring Tools (TM 9-243), each judged by the release
+           rule for military publications (military_release.py; build_manuals.public_guide_entries: in with or
+           without Distribution Statement A, link only with a restricted marking), and OSHA's scaffold guide;
   guidance the US Access Board's guide to ramps and curb ramps, OSHA's construction and ladder pages and NIOSH's
            ladder-safety and falls pages, linked for the person to open (osha.gov and cdc.gov refuse programs).
 Home repair (plumbing, outlets, drywall, painting, roofs, floors, doors and windows) is another collection's, and the
@@ -52,7 +53,7 @@ IA_WORDS = ["shed kit", "storage building", "storage shed", "deck kit", "decking
 
 def _guide(ia, title, by, year, military=False):
     """One public-domain guide: an Internet Archive item, its title, who wrote it, its year, and whether it is a
-    military training manual (whose front text must say it is approved for public release)."""
+    military training manual (judged by the release rule for military publications (military_release.py, the owner's decision of 22 November 2026); build_manuals.public_guide_entries)."""
     return dict(ia=ia, title=title, by=by, year=year, military=military)
 
 

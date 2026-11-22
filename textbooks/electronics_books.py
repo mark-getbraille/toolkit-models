@@ -2,13 +2,15 @@
 repair and assistive technology" (the owner's request of 2026-11-22). Keys: electronics (every book), elec:<name>.
 
 What this module builds, each IN FULL:
-  - Lessons in Electric Circuits (Tony R. Kuphaldt), all six volumes (DC, AC, semiconductors, digital, reference,
+  - Lessons in Electric Circuits (Tony R. Kuphaldt), in the group "Reference, power and electrical" since
+    2026-11-22 (power_books.py; its keys unchanged), all six volumes (DC, AC, semiconductors, digital, reference,
     experiments), CC BY 4.0 by the author's own statement (each volume's Appendix 3, checked at every build), read
     from the author's PDFs on ibiblio.org;
   - the US Navy's Electricity and Electronics Training Series modules the library did not have yet (microwave
     principles, modulation, synchros and servos, radio-frequency communications, radar, test methods and practices,
-    magnetic recording), Distribution Statement A in their own front matter (checked at every build), from the
-    Internet Archive's copies with their words (sources.NEETS has the other modules);
+    magnetic recording), judged at every build by the release rule for military publications (military_release.py;
+    their front matter prints Distribution Statement A), from the Internet Archive's copies with their words
+    (sources.NEETS has the other modules);
   - Wikibooks' electronics and computer books (Electronics, Practical Electronics, Electronics Handbook, Circuit
     Theory, How To Assemble A Desktop PC), CC BY-SA 4.0 (share-alike), every page;
   - the National Library Service for the Blind and Print Disabled (Library of Congress): its Digital Talking Book
@@ -75,8 +77,11 @@ LIEC_VOLUMES = [
      "hands-on experiments: building and testing circuits with a multimeter, from a simple battery circuit to "
      "amplifiers and digital logic, with safety notes"),
 ]
+# Lessons in Electric Circuits is in the top-level group "Reference, power and electrical" (power_books.GROUP, the
+# owner's decision of 2026-11-22); its keys (elec:kuphaldt_liec_*) stay the same.
+POWER_GROUP = "power"
 PDFS = [
-    dict(group=GROUP, country="International", licence="CC BY 4.0",
+    dict(group=POWER_GROUP, country="International", licence="CC BY 4.0",
          licence_url="https://creativecommons.org/licenses/by/4.0/", licence_page=LIEC + page,
          licence_text=LIEC_TEXT, level="reference", name=f"kuphaldt_liec_{key.lower()}",
          title=f"Lessons in Electric Circuits, {title} (Tony R. Kuphaldt)", subject="Electricity and electronics",
@@ -102,8 +107,8 @@ PDFS += [
              publisher="Naval Education and Training Professional Development and Technology Center (US Navy)",
              description=f"Module {n} of the US Navy's Electricity and Electronics Training Series (NEETS), a "
                          f"self-study course: {words[0].lower() + words[1:]}.",
-             notice="A work of the US Navy (public domain), approved for public release; distribution is unlimited. "
-                    + MAINS_NOTE)
+             work="a work of the US Navy",          # the builder puts the truthful release line first
+             notice=MAINS_NOTE)
     for n, words, archive in NEETS_MORE
 ]
 

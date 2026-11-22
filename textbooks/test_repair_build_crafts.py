@@ -50,7 +50,9 @@ def test_books_registered_and_licensed(m):
     assert keys == c.expand_keys([word]) and len(keys) == len(set(keys)) <= 256
     assert set(keys) == {f"{c.prefix}:{n}" for n in list(c.guides) + list(c.pdfs)}
     for g in list(c.guides.values()) + list(c.pdfs.values()):
-        assert g["group"] == m.GROUP, g["name"]
+        # Lessons in Electric Circuits is in the power and electrical group (power_books.py), keys unchanged
+        moved = g["name"].startswith("kuphaldt_liec_") and g["group"] == getattr(m, "POWER_GROUP", None)
+        assert g["group"] == m.GROUP or moved, g["name"]
         short = g["licence"] if g["licence"] in sources.NO_CHANGES else B.licence_short(g["licence"])
         assert B.licence_kind(short, bool(g.get("unchanged"))), g["name"]
         assert g["notice"] and g["description"] and g["title"], g["name"]

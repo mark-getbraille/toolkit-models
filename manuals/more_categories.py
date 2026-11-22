@@ -15,7 +15,7 @@ How a category reaches the Internet Archive (build_manuals.ia_search and ia_coll
               computers are still used and collected)
   ia_exclude  a regular expression: Internet Archive items whose title matches are left out (catalogues; for the
               firearms collection, everything firearms.FIREARMS_EXCLUDE forbids and every military manual, which
-              is taken only through categories.PUBLIC_MANUALS with its Distribution Statement A check)
+              is taken only through categories.PUBLIC_MANUALS with its release check, military_release.py)
   notice      a short safety notice the toolkit says first
 Only facts and links are published (the index); the manuals stay at the Internet Archive and belong to their makers.
 
@@ -256,7 +256,7 @@ CATEGORIES = {
 
 # Existing categories given more (their own words and sources kept).
 #   36. firearms: the Internet Archive's Weapon and Firearms Manuals as a second source of makers' owner's manuals,
-#       under the same exclusions; military manuals only through PUBLIC_MANUALS (Distribution Statement A checked).
+#       under the same exclusions; military manuals only through PUBLIC_MANUALS (the release rule checked).
 #   50. chemical_safety: the Lanco safety data sheets collection.
 MILITARY = (r"\b(?:TM|FM|TC|ATP|ADP|ADRP|MCWP|MCRP|NAVSEA|NAVAIR|NAVEDTRA|AFMAN|AFI|AFTO|STP|GTA)\s*[-\d]|\barmy\b|"
             r"\bmilitary\b|\bnavy\b|\bnaval\b|marine corps|air force|department of defen[cs]e|field manual|"

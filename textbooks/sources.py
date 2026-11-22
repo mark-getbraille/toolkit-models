@@ -223,7 +223,9 @@ LICENCE_LINES = {
     "field_manuals": "Each manual's own front page, for example ATP 3-50.21: \"DISTRIBUTION RESTRICTION: Approved "
                      "for public release; distribution is unlimited.\"; the Navy courses: \"DISTRIBUTION STATEMENT "
                      "A: Approved for public release; distribution is unlimited.\" US government works (17 U.S.C. "
-                     "105).",
+                     "105). Since 22 November 2026 (the owner's decision) a military manual from the Internet "
+                     "Archive or a government site is built also without the statement, its notice saying so "
+                     "(military_release.py).",
     "gov_uk": "Each gov.uk publication page: \"All content is available under the Open Government Licence v3.0, "
               "except where otherwise stated\"; MSN 1560: \"© Crown copyright 1994\".",
     "alberta": "Each open.alberta.ca publication page: \"Usage / Licence ... Open Government Licence - Alberta\".",
@@ -321,10 +323,15 @@ NONPROFIT = [
 # ("fieldmanual" or "government"), licence, licence_url, description, and where the PDF is:
 #   archive          an Internet Archive item holding a copy of a US military manual (the official site,
 #                    armypubs.army.mil, shuts out automated readers in its robots.txt; marines.mil, the Coast Guard's
-#                    and FEMA's sites refuse automated requests). distribution_a: True makes the builder read the
-#                    manual's own front matter and keep it only when it says "Approved for public release;
-#                    distribution is unlimited" (Distribution Statement A) and shows no restricted marking
-#                    (Distribution B to F, FOUO, CUI); its parts about weapons, tactics or harm are left out.
+#                    and FEMA's sites refuse automated requests). distribution_a: True makes the builder judge the
+#                    manual's own front matter by the release rule for military publications (military_release.py,
+#                    the owner's decision of 22 November 2026): built with or without Distribution Statement A from
+#                    an Internet Archive or government copy, its notice saying truthfully which; a restricted
+#                    marking only when the government publishes that copy itself (else left out for the owner to
+#                    fetch himself); its parts about weapons, tactics or harm are left out. gov: the government's
+#                    own open address of a restricted-marked manual, checked at build time. work: how the notice
+#                    names it ("a work of the US Navy"). military: True for a military publication that is not a
+#                    field manual (the release rule, but no parts cut out).
 #   page + licence_text + pdf_pattern   an official publication page that must still state licence_text (a regular
 #                    expression, checked at every build); its newest PDF matching pdf_pattern is used.
 # The field manuals were checked by hand on 2026-11-18: each front page reads "DISTRIBUTION RESTRICTION: Approved
@@ -611,16 +618,18 @@ COURSES_AND_FORCES_NOT_INCLUDED = [
      "PDF lecture notes and videos; not built yet."),
     ("OpenLearn (The Open University)", "Its site refuses automated requests (403), as noted above."),
     ("Coursera, edX, Udemy", "Copyright, all rights reserved."),
-    ("US Army Correspondence Course Program subcourses", "Not found as copies with text and Distribution Statement A "
-     "on the Internet Archive in this search; the Army's own site needs a login."),
+    ("US Army Correspondence Course Program subcourses", "Not found as copies with text on the Internet Archive in "
+     "this search; the Army's own site needs a login. (Since 22 November 2026 a copy would not need Distribution "
+     "Statement A: military_release.py.)"),
     ("US Coast Guard Navigation Rules handbook", "The Internet Archive's copies are lending-library scans that "
      "cannot be downloaded; uscg.mil refuses automated requests (403)."),
     ("Other US Navy rate training manuals (Boatswain's Mate, Damage Controlman, Engineman, Seabee rates)", "Not "
      "found as downloadable copies with text on the Internet Archive in this search (Damage Controlman only as a "
      "microfiche scan)."),
     ("armypubs.army.mil, marines.mil, uscg.mil, fema.gov", "armypubs' robots.txt disallows every automated reader; the "
-     "others refuse automated requests (403). Internet Archive copies are used where their own front matter shows "
-     "Distribution Statement A."),
+     "others refuse automated requests (403). Internet Archive copies are used, judged by the release rule for "
+     "military publications (military_release.py: with or without Distribution Statement A since 22 November "
+     "2026)."),
     ("UK Ministry of Defence and Maritime and Coastguard Agency, other documents", "gov.uk: \"All content is "
      "available under the Open Government Licence v3.0, except where otherwise stated\". Allowed; the MOD publishes "
      "few non-combat training documents there (most are policy). Two are built; more can be added to PDF_DOCS."),
@@ -1154,7 +1163,8 @@ def expand_keys(words):
     nonprofit:<name>, pdf:<name>, guide:<name>, law:<name>; medicines (every medicine book, medications.py) or
     med:<piece>; publications or pub:<piece> (periodicals.py). "all" does not include the medicines or the
     publications: ask for them by name."""
-    pdfs = lambda g: [f"pdf:{e['name']}" for e in PDF_DOCS if e["group"] == g]   # noqa: E731
+    # (a book moved to another group keeps the request words of its old one: "word_group", power_books.py)
+    pdfs = lambda g: [f"pdf:{e['name']}" for e in PDF_DOCS if e.get("word_group", e["group"]) == g]   # noqa: E731
     every = [f"osbooks:{r}" for r in OSBOOKS] + [f"osbooks-new:{r}" for r in OSBOOKS_NEWER] + \
         ["siyavula", "dspace"] + \
         [f"nonprofit:{e['name']}" for e in NONPROFIT] + [f"pdf:{e['name']}" for e in PDF_DOCS] + \
@@ -2180,3 +2190,18 @@ GROUPS.update(_g)
 LICENCE_LINES.update(_l)
 NOT_INCLUDED = NOT_INCLUDED + _n
 PRACTICE_SUBJECTS[:0] = _p
+# The privacy rules as law books (textbooks/privacy_books.py: the HIPAA, FERPA and COPPA rules, the UK Data
+# Protection Act 2018 and UK GDPR, Canada's PIPEDA), made with this module's own helpers and built as law:<name>.
+import privacy_books as _privacy_books  # noqa: E402
+
+LAWS += _privacy_books.laws(__import__(__name__))
+
+# ====================================================================== power and electrical (added 2026-11-22)
+# The owner's decision of 22 November 2026: a top-level group "Reference, power and electrical" (power_books.py). The
+# electricity books of the older lists move into it; only their group label changes, their keys stay the same.
+import power_books as _power  # noqa: E402
+
+for _doc in PDF_DOCS:
+    if _doc.get("name") in _power.MOVED_TO_POWER:
+        _doc["word_group"] = _doc.get("word_group", _doc["group"])   # "courses" still asks for it
+        _doc["group"] = _power.GROUP

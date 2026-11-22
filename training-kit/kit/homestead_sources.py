@@ -89,8 +89,8 @@ HOMESTEAD_SOURCES = [
                                           "root cellars, off-grid homes, composting toilets, butter churns and cream "
                                           "separators (Wikimedia Commons, ready-made pack)",
            COMMONS_OPEN, COMMONS_CREDIT, "permissive", 800, 10, prepare_pack, "about 180 MB"),
-    Source("open_images_homestead", "Farm animals, beekeeping, barns, silos, coops, pastures, water wells, solar panels "
-                                    "and wind turbines (Open Images, ready-made pack)",
+    Source("open_images_homestead", "Farm animals, beekeeping, barns, silos, coops, pastures and water wells (Open "
+                                    "Images, ready-made pack)",
            OI_OPEN, OI_CREDIT, "permissive", 1500, 15, prepare_pack, "about 300 MB"),
     Source("homestead_commons_sa", "Wikimedia Commons: chicken tractors, nest boxes, beehives, smokers, honey "
                                    "extractors, cattle crushes, wells, composting toilets, butter churns and cream "
@@ -109,7 +109,7 @@ HOMESTEAD_NOT_INCLUDED = {
     "Commons categories that do not exist or hold almost no files (November 2026)": "Egg incubators, Brooders, Egg "
         "candling, Poultry drinkers, Goat milking, Milking stands, Pigsties, Livestock trailers, Feed troughs, Hoof "
         "trimming, Windpumps, Woven wire fences, Goat sheds and Poultry feeders (3 files); the packs use Incubators "
-        "(poultry), Incubators (eggs), Candling, Milking by hand and Wind pumps instead.",
+        "(poultry), Incubators (eggs), Candling and Milking by hand instead (Wind pumps is the power packs').",
     "Breed identification": "Chicken, duck, goat, sheep, rabbit and pig breeds are the breeds packs' (commons_breeds, "
                             "na_domestic_animals); this collection names equipment and the kind of animal only.",
     "USDA ARS and APHIS photo galleries": "www.aphis.usda.gov refused programs and the ARS image gallery has no "

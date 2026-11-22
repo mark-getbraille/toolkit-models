@@ -3,12 +3,12 @@ of 2026-11-22 for homesteading. categories.py adds it to CATEGORIES.
 
 What it lists, in plain words (an INDEX of facts and links only; each manual belongs to its maker):
   ia        the Internet Archive's manual collections, searched by the words in IA_WORDS (beekeeping equipment, cream
-            separators, butter churns, grain mills, hand and well pumps, pressure tanks, composting toilets, solar
-            charge controllers, power inverters, wind turbines, poultry pluckers, sheep shears, goat milkers). The
+            separators, butter churns, grain mills, hand and well pumps, pressure tanks, composting toilets, poultry
+            pluckers, sheep shears, goat milkers). The
             words "incubator", "brooder", "electric fence", "milking machine" and "livestock waterer" are already
-            searched by pet_livestock_supplies, and portable power stations by emergency_lighting, so they are not
-            repeated here;
-  makers    the beekeeping, pump, poultry and off-grid power makers: by the owner's rule their own manuals are
+            searched by pet_livestock_supplies, portable power stations by emergency_lighting, and solar, battery, inverter and wind words by
+            the power collections, so they are not repeated here;
+  makers    the beekeeping, pump, poultry and dairy makers: by the owner's rule their own manuals are
             LINK-ONLY (nothing is read from their sites);
   guidance  the US government pages the reference library builds in full (textbooks/homestead.py: the EPA's well and
             septic pages, the FDA's egg safety page) and the Energy Saver articles.
@@ -19,7 +19,7 @@ tanks and qualified electricians.
 
 NOTICE = 'Read the safety section first. Handle animals calmly with an escape route; wash your hands after touching poultry or eggs (Salmonella). If you are allergic to bee stings, keep your emergency medicine with you. Never enter a septic tank or well pit. Solar, battery, inverter and generator wiring is work for a qualified electrician; switch off and lock out power before servicing a pump.'
 
-IA_WORDS = ["beekeeping", "beehive", "bee hive", "bee smoker", "honey extractor", "cream separator", "butter churn", "grain mill", "hand pump", "pitcher pump", "well pump", "submersible pump", "jet pump", "pressure tank", "composting toilet", "solar charge controller", "charge controller", "power inverter", "deep cycle battery", "wind turbine", "chicken plucker", "poultry plucker", "sheep shears", "shearing machine", "goat milker", "chicken coop"]
+IA_WORDS = ["beekeeping", "beehive", "bee hive", "bee smoker", "honey extractor", "cream separator", "butter churn", "grain mill", "hand pump", "pitcher pump", "well pump", "submersible pump", "jet pump", "pressure tank", "composting toilet", "chicken plucker", "poultry plucker", "sheep shears", "shearing machine", "goat milker", "chicken coop"]
 
 RULE = ("by the owner's rule the maker's own manuals and guides are link-only: nothing is read from its site; its "
         "page is listed for the person to open or fetch with Program Downloader")
@@ -35,9 +35,6 @@ MAKERS = [dict(_COMMON, **m) for m in [
     dict(key="goulds", maker="Goulds Water Technology (Xylem)", type="well pumps and pressure tanks", library="https://www.xylem.com/en-us/brands/goulds-water-technology/", site="xylem.com"),
     dict(key="simple-pump", maker="Simple Pump", type="hand well pumps", library="https://www.simplepump.com/", site="simplepump.com"),
     dict(key="separett", maker="Separett", type="composting and urine-diverting toilets", library="https://separett.com/", site="separett.com"),
-    dict(key="victron", maker="Victron Energy", type="solar charge controllers, inverters and batteries", library="https://www.victronenergy.com/support-and-downloads/manuals", site="victronenergy.com"),
-    dict(key="renogy", maker="Renogy", type="solar panels, charge controllers and inverters", library="https://www.renogy.com/", site="renogy.com"),
-    dict(key="morningstar", maker="Morningstar Corporation", type="solar charge controllers and inverters", library="https://www.morningstarcorp.com/", site="morningstarcorp.com"),
     dict(key="country-living", maker="Country Living Grain Mills", type="hand grain mills", library="https://countrylivinggrainmills.com/", site="countrylivinggrainmills.com"),
 ]]
 
@@ -52,6 +49,6 @@ GUIDANCE = [
 
 CATEGORY = dict(
     name='Homesteading and small livestock equipment (manuals)',
-    description="Beekeeping equipment, cream separators, butter churns, grain mills, hand and well pumps, pressure tanks, composting toilets, solar charge controllers, inverters, batteries and small wind turbines, poultry pluckers, shears and goat milkers: the Internet Archive's manuals, the makers' manual pages (links) and the US government's well, septic and egg safety guidance. Links only.",
+    description="Beekeeping equipment, cream separators, butter churns, grain mills, hand and well pumps, pressure tanks, composting toilets, poultry pluckers, shears and goat milkers: the Internet Archive's manuals, the makers' manual pages (links) and the US government's well, septic and egg safety guidance. Links only.",
     kind="manuals", licence="CC0 (facts and links); each manual belongs to its maker",
     ia=IA_WORDS, makers=MAKERS, guidance=GUIDANCE, notice=NOTICE)
