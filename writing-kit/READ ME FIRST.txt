@@ -295,10 +295,9 @@ These are kept in their own file, kit\sources_audio.py.
     text-to-speech. The kit reads only the start of each big file and stops when it has enough.
   librivox: LibriVox audiobooks (public domain) from the Internet Archive, each chapter's recording with that
     chapter's text from Project Gutenberg. The book texts also become writing examples, labelled fiction_prose or
-    nonfiction_prose. This one is OFF unless you name it, for example --sources librivox. The reason: LibriVox's
-    own website says in its robots.txt that it does not want its content used for AI training, so the kit never
-    reads LibriVox's site. The recordings themselves are public domain and the Internet Archive allows programs,
-    but using them goes around LibriVox's wish. It is your decision.
+    nonfiction_prose. It is ON, as you decided. LibriVox's own website says in its robots.txt that it does not
+    want its content used for AI training, so the kit never reads LibriVox's site; it uses only the public-domain
+    recordings on the Internet Archive, which allows programs. Keep what it makes for your own use.
   gov_letters: government form letters and notices (public domain): the plainlanguage.gov example letters and
     before-and-after rewrites (the same pages as the reference library's plain language examples), and the IRS
     pages that explain each notice and letter (CP2000 and the rest): why you got it and what to do.

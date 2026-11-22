@@ -12,10 +12,10 @@ What is here, by key:
                    so only the first part is downloaded.
     librivox       public-domain LibriVox audiobooks (the copies on the Internet Archive, collection librivoxaudio)
                    with the matching Project Gutenberg text (found in Gutenberg's own catalogue by title and author),
-                   paired chapter by chapter: each chapter's MP3 with that chapter's text. OFF unless named in
-                   --sources (OPT_IN): librivox.org's own robots.txt says "ai-train=no", so the kit does not use
-                   LibriVox's site or API; the recordings are public domain and the Internet Archive allows programs,
-                   but using them goes around LibriVox's stated wish, so it is the owner's decision. The book texts
+                   paired chapter by chapter: each chapter's MP3 with that chapter's text. ON by default since the
+                   owner decided so (22 November 2026): librivox.org's own robots.txt says "ai-train=no", so the kit
+                   never uses LibriVox's site or API, only the public-domain recordings on the Internet Archive,
+                   which allows programs; this goes around LibriVox's stated wish, for the owner's personal use. The book texts
                    also become writing examples, labelled fiction_prose or nonfiction_prose.
   Government form letters and notices (public domain)
     gov_letters    the plainlanguage.gov example letters and before-and-after rewrites (the same pages the
@@ -50,7 +50,7 @@ import sources_more
 cap_words = readers_business.cap_words
 
 # Sources that are left out of a build unless named in --sources (build_dataset.py).
-OPT_IN = {"librivox"}
+OPT_IN = set()                 # LibriVox is on by default (the owner's decision of 22 November 2026)
 
 # New style labels (styles.py adds them to its list): name -> what it is.
 STYLES = {

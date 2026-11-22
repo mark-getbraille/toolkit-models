@@ -69,7 +69,7 @@ def test_sources_registered():
     known = writing_sources.by_key()
     assert known["librispeech"].licence == "CC BY 4.0" and known["librispeech"].licence_class == writing_sources.OPEN
     assert known["gov_letters"].licence.startswith("Public domain")
-    assert "ai-train=no" in known["librivox"].warnings[0] and "librivox" in sa.OPT_IN
+    assert "ai-train=no" in known["librivox"].warnings[0] and "librivox" not in sa.OPT_IN
     assert {"nonfiction_prose", "form_letter"} <= set(styles.STYLES)
     assert any("ssa.gov" in why for _, why in writing_sources.NOT_USED)
     assert any("LibriVox's own website" in name for name, _ in writing_sources.NOT_USED)
