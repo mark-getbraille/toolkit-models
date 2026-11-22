@@ -66,6 +66,10 @@ def test_denpar_teeth_from_the_table():
     assert h.fdi_name("18") == "upper right third molar (wisdom tooth)" and h.fdi_name("55") == ""
     assert h.denpar_rows("Upper", "Anterior", "11,21,59") == []          # an unknown number: nothing said
     assert h.denpar_rows("Upper", "Left", "") == []
+    # the table's own arch and side are not used: the teeth's numbers say where they are
+    assert h.denpar_rows("Lower", "Left", "46,47")[0]["answer"].startswith("The dataset says it shows the lower "
+                                                                             "right teeth: the lower right first molar")
+    assert "upper front teeth" in h.denpar_rows("Upper", "Anterior", "12,11,21")[0]["answer"]
 
 
 def test_open_images_rows():

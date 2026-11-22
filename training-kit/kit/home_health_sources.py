@@ -98,15 +98,13 @@ HOME_HEALTH_SOURCES = [
                                   "aligners, mouthguards and implants, with the dental note (Wikimedia Commons, "
                                   "ready-made pack)",
            COMMONS_OPEN, COMMONS_CREDIT, "permissive", 600, 10, prepare_pack, "about 130 MB"),
-    Source("commons_eye_care", "Eye care: magnifying glasses, loupes and monoculars, reading glasses, bifocals and "
-                               "progressive lenses, frames, lenses and nose pads, contact lenses and cases, eye drops, "
-                               "eye charts and eye examination instruments, with the eye note (Wikimedia Commons, "
-                               "ready-made pack)",
-           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 1200, 15, prepare_pack, "about 260 MB"),
-    Source("commons_birth_care", "Birth and postpartum supplies: breast pumps, nipple shields, birthing pools, cord "
-                                 "clamps, baby thermometers, maternity pads, peri bottles, fetoscopes and Pinard "
-                                 "horns, and drawings of fetal development (Wikimedia Commons, ready-made pack)",
-           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 500, 10, prepare_pack, "about 100 MB"),
+    Source("commons_eye_care", "Eye care: magnifying glasses, magnifiers, loupes and monoculars, pinhole glasses, "
+                               "reading glasses, bifocals, frames, contact lenses and their cases, Snellen charts "
+                               "and slit lamps, with the eye note (Wikimedia Commons, ready-made pack)",
+           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 900, 10, prepare_pack, "about 200 MB"),
+    Source("commons_birth_care", "Birth supplies and drawings: breast pumps, fetoscopes and Pinard horns, the Apgar "
+                                 "score chart and drawings of fetal development (Wikimedia Commons, ready-made pack)",
+           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 200, 5, prepare_pack, "about 40 MB"),
     Source("scin_skin_conditions", "Skin conditions in adults' own photos with up to three dermatologists' labels, "
                                    "never a diagnosis (SCIN, Google Research and Stanford Medicine, ready-made pack; "
                                    "medical)",
@@ -177,9 +175,11 @@ HOME_HEALTH_NOT_INCLUDED = {
         "Eye drops (already med_vet_packs'), CPR training, CPR manikins, Pocket masks, Pressure bandages, Elastic bandages, Gauze pads, Arm slings, "
         "Burn dressings, Cold packs, Instant cold packs, Emergency blankets, Epinephrine autoinjectors, Medical "
         "alert bracelets, Eyewash stations, Stop the Bleed, Poison control, Mr. Yuk, FAST (stroke), Mental health "
-        "first aid, Peak flow meters, Inhaler spacers, Ostomy bags, Oxygen concentrators, Nasal cannulas, Hand "
+        "first aid, Hand lenses, Progressive lenses, Eyeglass lenses, Nose pads, Glasses cases, Phoropters, "
+        "Ophthalmoscopes, Human eye diagrams, Low vision aids, Nipple shields, Birthing pools, Umbilical cord clamps, "
+        "Baby thermometers, Maternity pads, Peri bottles, Peak flow meters, Inhaler spacers, Ostomy bags, Oxygen concentrators, Nasal cannulas, Hand "
         "sanitizer, Hot water bottles, Neti pots, Steri-Strips, Water flossers, Orthodontic retainers; Blood "
-        "pressure monitors, Dentures, Gauze and Splinters are empty.",
+        "pressure monitors, Dentures, Gauze, Splinters, Eye patches and Nipple shields are empty.",
     "Commons first aid and home care categories other packs already use":
         "Tourniquets, Triangular bandages, Cervical collars, Medical gloves, Autoinjectors, Naloxone, Ice packs, "
         "Sphygmomanometers, Glucose meters, Insulin pens, Inhalers, Nebulizers, Pill organizers, Pulse oximeters, "

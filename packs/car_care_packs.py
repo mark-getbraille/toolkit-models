@@ -14,24 +14,20 @@ asked again here (packs/test_car_care.py checks every Commons category and Open 
 Answers say only what the source says: a Commons category's name (with a fixed purpose line written here), an Open
 Images label people confirmed, or, for a dashboard symbol, the meaning its own file title or description names
 (DASHBOARD_LIGHTS: never guessed from the drawing). Safety notes are added where the work can hurt:
-  JACK_NOTE      jacks, jack stands, spare wheels and changing a wheel: never under a car held only by a jack.
-  HOT_NOTE       coolant, radiators and engine oil: let the engine cool before opening the cap.
-  BATTERY_NOTE   batteries and jump-starting: acid burns and explosive gas; the right order for the leads.
-  ROADSIDE_NOTE  breakdowns, warning triangles and flares: get off the road, hazard lights, call for help.
+  JACK_NOTE      jacks, lug wrenches and spare wheels: never under a car held only by a jack.
+  ROADSIDE_NOTE  breakdowns, roadside help and tow trucks: get off the road, hazard lights, call for help.
   CHARGING_NOTE  charging connectors: use only undamaged, certified equipment as the car's maker says.
+  (HOT_NOTE and BATTERY_NOTE are the same words the kit's share-alike entry and the manual library use.)
 
 The packs (all open: CC0, public domain or CC BY files; Open Images labels CC BY 4.0):
-  commons_car_care          Commons: wipers and wiper blades, car light bulbs, motor oil, washer fluid, coolant and
-                            brake fluid reservoirs, jump starters, battery terminals, tyre valves, sidewall markings
-                            and codes, tread depth gauges and wear bars, snow chains and winter tyres, tyre repair
-                            kits and inflators, jacks, jack stands, wheel chocks, lug wrenches and spare tyres, car
-                            washing, fuel filler caps, diesel exhaust fluid (AdBlue), warning triangles, road flares,
-                            broken-down cars and tow trucks.
-  commons_ev_charging       Commons: the plugs and sockets of electric car charging (SAE J1772, CCS, CHAdeMO, Tesla
-                            and the North American Charging Standard, Type 2), charging cables, home wallboxes and
-                            the charging ports of cars. "What charging connector is this?"
+  commons_car_care          Commons: windshield wipers, tyre valves, snow chains, scissor jacks, wheel chocks, lug
+                            wrenches and spare tyres, car washing, AdBlue (diesel exhaust fluid), broken-down
+                            vehicles, roadside assistance and tow trucks.
+  commons_ev_charging       Commons: the plugs and sockets of electric car charging (IEC 62196: Type 1 or J1772,
+                            Type 2 and CCS; CHAdeMO; the North American Charging Standard), Tesla Superchargers and
+                            home wallboxes. "What charging connector is this?"
   commons_dashboard_lights  Commons symbol files and photos found by their own titles (warning light, tell-tale,
-                            ISO 2575): the meaning is said only when the file's own words name a light listed in
+                            ISO 2575): the meaning is said only when the file's own words name one light listed in
                             DASHBOARD_LIGHTS (about 45 lights, with what the driver should do, as car handbooks
                             give it), else the file is left out. Light colours are said only where the words say
                             them (red: stop safely; amber: check soon; green or blue: a system is on).
@@ -39,6 +35,9 @@ The packs (all open: CC0, public domain or CC BY files; Open Images labels CC BY
                             motor oil and antifreeze, gauges (speedometer, odometer, tachometer), steering wheels and
                             gear shifts, electric cars, tow trucks, car washes, traffic cones.
 
+Commons has no category with free files for wiper blades, bulbs, washer fluid, coolant reservoirs, jump starters,
+tyre sidewall markings, tread wear bars, warning triangles or car jacks (checked 2026-11-22): the kit's
+car_care_sources.py lists them, and the manual library's car_care category links the makers' guides for them.
 What was looked at and left out (owner's manuals' pictures, NHTSA's site, YouTube, forums and others) is in the
 kit's car_care_sources.py (CAR_CARE_NOT_INCLUDED).
 
@@ -81,38 +80,16 @@ CAR_WORDS = re.compile(r"\b(cars?|automobiles?|vehicles?|auto(motive)?|tyres?|ti
 # ----------------------------------------------------------------- Commons: car care things
 
 CAR_CARE = [
-    car("Windscreen wipers", "a windscreen wiper (windshield wiper), which clears rain from the glass"),
-    car("Wiper blades", "a wiper blade, the rubber strip of a wiper that is replaced when it streaks"),
-    car("Automotive light bulbs", "a car light bulb, for a headlight, indicator or brake light"),
-    car("Windshield washer fluid", "windscreen (windshield) washer fluid, often blue, poured into its own "
-                                   "reservoir"),
-    car("Coolant reservoirs", "a coolant reservoir (expansion tank), the see-through tank with marks for the coolant "
-                              "level", HOT_NOTE),
-    car("Brake fluid reservoirs", "a brake fluid reservoir, with marks for the fluid level"),
-    car("Jump starters", "a jump starter, a battery pack for starting a car with a flat battery", BATTERY_NOTE),
-    car("Battery terminals", "a battery terminal, where a cable is clamped to a battery post", BATTERY_NOTE,
-        pattern=CAR_WORDS),
+    car("Windshield wipers", "a windscreen wiper (windshield wiper), which clears rain from the glass"),
     car("Tire valves", "a tyre valve, where air is put into a tyre"),
-    car("Tire sidewall markings", "the markings on a tyre's sidewall: the size, load and speed rating, and the DOT "
-                                  "code with the week and year it was made"),
-    car("Tire codes", "a tyre code, the size and rating printed on a tyre's sidewall"),
-    car("Tire tread depth gauges", "a tread depth gauge, which measures how deep a tyre's grooves are"),
-    car("Tread wear indicators", "a tread wear indicator (wear bar): when the tread is worn down to these bars, the "
-                                 "tyre needs replacing"),
     car("Snow chains", "snow chains, fitted over tyres for grip on snow and ice"),
-    car("Winter tires", "a winter tyre (snow tyre), with deep grooves and many small slits for grip in cold weather"),
-    car("Car jacks", "a car jack, for lifting a car to change a wheel", JACK_NOTE),
     car("Scissor jacks", "a scissor jack, the small jack that comes with many cars", JACK_NOTE),
     car("Wheel chocks", "a wheel chock, a wedge put against a wheel so the car cannot roll"),
     car("Lug wrenches", "a lug wrench (wheel brace), for undoing the wheel nuts", JACK_NOTE),
     car("Spare tires", "a spare tyre", JACK_NOTE),
     car("Car washing", "a car being washed", question="What is happening in this picture?"),
-    car("Fuel filler caps", "a fuel filler cap, the cap on the opening where fuel goes in"),
     car("AdBlue", "diesel exhaust fluid (AdBlue), a liquid that some diesel vehicles need topped up in "
                                 "its own tank, never in the fuel tank"),
-    car("Warning triangles", "a warning triangle, set up behind a broken-down car to warn other drivers",
-        ROADSIDE_NOTE),
-    car("Road flares", "a road flare, lit to warn traffic of a stopped vehicle or an accident", ROADSIDE_NOTE),
     car("Vehicle breakdowns", "a broken-down vehicle", ROADSIDE_NOTE,
         question="What is happening in this picture?"),
     car("Roadside assistance", "roadside assistance: a breakdown service helping a driver", ROADSIDE_NOTE,
@@ -323,8 +300,8 @@ OI_LICENCE = ("Google Open Images V7 (https://storage.googleapis.com/openimages/
               "photographer credited below.")
 CAR_CARE_PACKS = {
     "commons_car_care": (build_commons_car_care, COMMONS_LICENCE.format(
-        what="car care categories (wipers, bulbs, fluids, tyres and their markings, jacks and spare wheels, "
-             "roadside safety)")),
+        what="car care categories (wipers, tyre valves, snow chains, jacks, wheel chocks and spare wheels, car "
+             "washing, AdBlue, breakdowns and roadside help)")),
     "commons_ev_charging": (build_commons_ev_charging, COMMONS_LICENCE.format(
         what="electric vehicle charging connector, cable and port categories")),
     "commons_dashboard_lights": (build_commons_dashboard_lights, COMMONS_LICENCE.format(
@@ -333,8 +310,8 @@ CAR_CARE_PACKS = {
     "open_images_car_care": (build_open_images_car_care, OI_LICENCE),
 }
 CAR_CARE_LIMITS = {
-    "commons_car_care": 1800,          # 33 categories, an even share each
-    "commons_ev_charging": 600,        # 9 categories
+    "commons_car_care": 900,           # 12 categories, an even share each
+    "commons_ev_charging": 300,        # 5 categories, few free files
     "commons_dashboard_lights": 400,   # files whose own words name a light
     "open_images_car_care": 2500,      # 23 labels
 }

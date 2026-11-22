@@ -57,14 +57,11 @@ def thing(category, words, note="", deeper=True):
 
 # The main categories of packs/car_care_packs.py (the ones with many share-alike files).
 CAR_CARE_SA = [
-    thing("Windscreen wipers", "a windscreen wiper (windshield wiper), which clears rain from the glass"),
+    thing("Windshield wipers", "a windscreen wiper (windshield wiper), which clears rain from the glass"),
     thing("Motor oil", "motor oil (engine oil), which keeps the engine's moving parts from wearing", HOT_NOTE),
-    thing("Car jacks", "a car jack, for lifting a car to change a wheel", JACK_NOTE),
     thing("Spare tires", "a spare tyre", JACK_NOTE),
     thing("Snow chains", "snow chains, fitted over tyres for grip on snow and ice"),
     thing("Wheel chocks", "a wheel chock, a wedge put against a wheel so the car cannot roll"),
-    thing("Warning triangles", "a warning triangle, set up behind a broken-down car to warn other drivers",
-          ROADSIDE_NOTE),
     thing("Vehicle breakdowns", "a broken-down vehicle", ROADSIDE_NOTE),
     thing("AdBlue", "diesel exhaust fluid (AdBlue), a liquid that some diesel vehicles need topped up in its own tank, "
                     "never in the fuel tank"),
@@ -83,14 +80,13 @@ def prepare_car_care_commons_sa(source, data_dir, work, cap):
 
 
 CAR_CARE_SOURCES = [
-    Source("commons_car_care", "Car care: wipers, bulbs, motor oil and washer fluid, coolant and brake fluid "
-                               "reservoirs, jump starters, tyre valves, sidewall markings and wear bars, snow chains, "
-                               "jacks, jack stands and wheel chocks, spare tyres, warning triangles, flares and "
-                               "breakdowns, with safety notes (Wikimedia Commons, ready-made pack)",
-           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 1800, 20, prepare_pack, "about 400 MB"),
-    Source("commons_ev_charging", "Electric car charging connectors and ports: J1772, CCS, CHAdeMO, NACS (Tesla), "
-                                  "Type 2, cables and wallboxes (Wikimedia Commons, ready-made pack)",
-           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 600, 10, prepare_pack, "about 130 MB"),
+    Source("commons_car_care", "Car care: windshield wipers, tyre valves, snow chains, scissor jacks, wheel chocks, "
+                               "lug wrenches and spare tyres, car washing, AdBlue, breakdowns, roadside help and tow "
+                               "trucks, with safety notes (Wikimedia Commons, ready-made pack)",
+           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 900, 10, prepare_pack, "about 200 MB"),
+    Source("commons_ev_charging", "Electric car charging plugs and sockets: Type 1 (J1772), Type 2, CCS, CHAdeMO, "
+                                  "NACS (Tesla), Superchargers and wallboxes (Wikimedia Commons, ready-made pack)",
+           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 300, 5, prepare_pack, "about 70 MB"),
     Source("commons_dashboard_lights", "Dashboard warning lights, each meaning taken from the symbol file's own words "
                                        "(about 45 lights: tyre pressure, oil, coolant, battery, brakes, check engine, "
                                        "traction control, AdBlue, EV turtle mode and more), with what to do (Wikimedia "
@@ -100,8 +96,8 @@ CAR_CARE_SOURCES = [
                                    "steering wheels and gear levers, electric cars, tow trucks, car washes and traffic "
                                    "cones (Open Images, ready-made pack)",
            OI_OPEN, OI_CREDIT, "permissive", 2500, 25, prepare_pack, "about 500 MB"),
-    Source("car_care_commons_sa", "Wikimedia Commons: wipers, motor oil, jacks, spare tyres, snow chains, wheel "
-                                  "chocks, warning triangles, breakdowns, AdBlue and EV charging connectors, files "
+    Source("car_care_commons_sa", "Wikimedia Commons: wipers, motor oil, spare tyres, snow chains, wheel chocks, "
+                                  "breakdowns, AdBlue and EV charging connectors, files "
                                   "under CC BY-SA or GFDL (share-alike)",
            SA_LICENCE, SA_CREDIT, "share-alike", 800, 10, prepare_car_care_commons_sa, "about 180 MB of pictures",
            terms=SA_TERMS, terms_summary=SA_SUMMARY),
@@ -124,6 +120,10 @@ CAR_CARE_NOT_INCLUDED = {
     "Owner's manual pictures (makers' handbooks)":
         "copyright of the car makers; their manuals are LINKED by the manual library (category cars), never copied.",
     "Commons categories that do not exist or hold no files under the names tried (November 2026)":
+        "Windscreen wipers (Windshield wipers is used), Wiper blades, Automotive light bulbs, Windshield washer "
+        "fluid, Coolant reservoirs, Brake fluid reservoirs, Jump starting, Jump starters, Battery terminals, Tire "
+        "sidewall markings, Tire codes, Tread wear indicators, Fuel filler caps, Warning triangles, Car jacks, Tire "
+        "pressure gauges; Road flares, Winter tires and Wheel nuts are empty; "
         "Dashboard warning lights, Automobile warning lights, Check engine lights, ISO 2575 symbols, ISO 2575, "
         "Tire changing, Tire pressure monitoring systems, Tire inflators, Tire repair kits, Car emergency kits, "
         "Broken down vehicles, Engine coolant, Car batteries, Floor jacks, Jack stands (empty), SAE J1772 (empty), "

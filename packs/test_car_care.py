@@ -38,10 +38,9 @@ def test_dashboard_light_meanings_only_from_the_words():
 
 def test_safety_notes():
     answers = {spec[0]: spec[2][0][1] for spec in c.CAR_CARE + c.EV_CHARGING}
-    for category in ("Car jacks", "Scissor jacks", "Lug wrenches", "Spare tires"):
+    for category in ("Scissor jacks", "Lug wrenches", "Spare tires"):
         assert answers[category].endswith(c.JACK_NOTE), category
-    assert answers["Coolant reservoirs"].endswith(c.HOT_NOTE) and answers["Jump starters"].endswith(c.BATTERY_NOTE)
-    assert answers["Warning triangles"].endswith(c.ROADSIDE_NOTE)
+    assert answers["Vehicle breakdowns"].endswith(c.ROADSIDE_NOTE) and answers["Tow trucks"].endswith(c.ROADSIDE_NOTE)
     assert all(a.endswith(c.CHARGING_NOTE) for k, a in answers.items() if k in {s[0] for s in c.EV_CHARGING})
     assert "jack stands" in c.JACK_NOTE and "911" in c.ROADSIDE_NOTE and "acid" in c.BATTERY_NOTE
     import car_care_sources as k

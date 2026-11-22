@@ -73,21 +73,20 @@ def prepare_instrument_care_commons_sa(source, data_dir, work, cap):
 
 INSTRUMENT_CARE_SOURCES = [
     Source("commons_string_instrument_parts", "Stringed instrument parts: strings, frets, fingerboards, machine heads "
-                                              "and pegs, bridges, pickups, truss rods, bows and rosin, chinrests, "
+                                              "and pegs, bridges, pickups, necks, bows and rosin, chinrests, "
                                               "f-holes, sound posts, scrolls, pegboxes, tailpieces, capos and picks "
                                               "(Wikimedia Commons, ready-made pack)",
-           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 1600, 20, prepare_pack, "about 350 MB"),
+           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 1500, 20, prepare_pack, "about 330 MB"),
     Source("commons_wind_percussion_parts", "Wind and percussion parts: reeds and double reeds, mouthpieces, valves, "
-                                            "trumpet mutes, woodwind keys, drum heads, drumsticks, cymbals and "
-                                            "hi-hats (Wikimedia Commons, ready-made pack)",
-           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 1100, 15, prepare_pack, "about 240 MB"),
-    Source("commons_piano_parts", "Piano strings and pedals, upright pianos, piano tuning and piano tuners "
-                                  "(Wikimedia Commons, ready-made pack)",
+                                            "trumpet mutes, drum heads, drumsticks, cymbals and hi-hats (Wikimedia "
+                                            "Commons, ready-made pack)",
+           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 900, 10, prepare_pack, "about 200 MB"),
+    Source("commons_piano_parts", "Piano strings and pedals, piano tuning and piano tuners (Wikimedia "
+                                  "Commons, ready-made pack)",
+           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 300, 5, prepare_pack, "about 70 MB"),
+    Source("commons_instrument_care", "Luthiers at work, electronic tuners, tuning forks, metronomes, instrument, "
+                                      "guitar and violin cases and music stands (Wikimedia Commons, ready-made pack)",
            COMMONS_OPEN, COMMONS_CREDIT, "permissive", 700, 10, prepare_pack, "about 150 MB"),
-    Source("commons_instrument_care", "Luthiers at work, violin making, instrument repair, piano restoration, "
-                                      "electronic tuners, tuning forks, metronomes, cases and music stands (Wikimedia "
-                                      "Commons, ready-made pack)",
-           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 800, 10, prepare_pack, "about 170 MB"),
     Source("open_images_instrument_care", "Guitars, ukuleles, mandolins, double basses, bassoons, recorders, brass "
                                           "and mallet instruments, drum heads and drums, capos, music stands, pipe "
                                           "organs and synthesizers (Open Images, ready-made pack)",
@@ -110,7 +109,8 @@ INSTRUMENT_CARE_NOT_INCLUDED = {
         "copyright of the makers; their care pages are LINKED by the manual library's instrument_care category.",
     "Commons categories that do not exist or hold no files under the names tried (November 2026)":
         "Fretboards, Tuning machines, Nuts (string instruments), Plectrums, Guitar tuners, Shoulder rests, Luthier "
-        "workshops, Clarinet, Saxophone, Oboe and Bassoon reeds (Reeds (music) and Double reeds are used), "
+        "workshops, Musical instrument repair, Truss rods, Violin making, Piano making, Piano restoration, Flute and "
+        "Saxophone keys, Upright pianos (another pack's), Clarinet, Saxophone, Oboe and Bassoon reeds (Reeds (music) and Double reeds are used), "
         "Mouthpieces (music), Mutes (music), Ligatures (music), Drumheads (Drum heads is used), Drum keys, Piano "
         "actions, Piano hammers, Piano interiors, Piano soundboards; Lutherie, Violin makers, Drum kits and Piano "
         "keys are empty.",

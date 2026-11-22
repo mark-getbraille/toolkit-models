@@ -1,7 +1,6 @@
 """Picture packs for GARDENING AND LAWN CARE: vegetable, herb and flower gardens, fruit trees and houseplants in pots,
 soil and compost, seed packets and plant labels (read only where the file's own words give the plant's name), seed
-starting, watering, pruning, lawns and lawn grasses, lawn weeds, garden tools, and leaf symptoms of plant diseases and
-deficiencies. Used by build_packs.py in the same way as its own PACKS: each builder is build_<key>(limit) and returns
+starting, pruning, lawns, lawn grasses and crabgrass, and leaf symptoms of plant diseases and deficiencies. Used by build_packs.py in the same way as its own PACKS: each builder is build_<key>(limit) and returns
 [(file name, JPEG bytes or None, row)]. The limit counts pictures.
 
 The owner's request of 2026-11-22 ("life skills"). Plants by species (iNaturalist and GBIF), crops and their
@@ -18,22 +17,23 @@ off the picture (weed killers and fertilisers are chemical_packs', with their la
                  cooperative extension offices can identify it.
 
 The packs (all open: CC0, public domain or CC BY files; Open Images labels CC BY 4.0):
-  commons_garden_growing   Commons: vegetable, herb, kitchen, container, raised-bed, community and flower gardens and
-                           allotments; fruit trees and berry bushes; houseplants and potted plants; seedlings, seed
-                           trays, transplanting, cold frames, cloches, row covers, trellises and tomato cages.
-  commons_garden_care      Commons: compost, compost bins and heaps, worm composting, mulch, soil, potting soil and
-                           soil testing, seed packets and plant labels, watering (sprinklers, soaker hoses, rain
-                           barrels), pruning, secateurs and loppers, grafting and espaliers, hoes, dibbers, hand
-                           cultivators and gardening gloves, weeding, and the USDA plant hardiness zone maps.
-  commons_lawn_care        Commons: lawns, lawn mowing as practice, grass clippings, aeration, turf and sod, the
-                           common lawn grasses by name (Kentucky bluegrass, tall fescue, perennial ryegrass, zoysia,
-                           St. Augustine) and lawn weeds (crabgrass, lawn weeds).
-  commons_plant_problems   Commons: chlorosis, powdery and downy mildew, leaf spot, late blight, blossom end rot,
-                           sooty mould, leaf scorch and plant diseases, each with what it looks like on the leaves.
+  commons_garden_growing   Commons: vegetable, kitchen, herb, community and flower gardens, flower beds and
+                           allotments; fruit and apple trees; houseplants and potted plants; seedlings, planting and
+                           transplanting, cold frames, cloches and trellises.
+  commons_garden_care      Commons: compost, composting, compost bins and worm composting, soil testing, seed packets
+                           and plant labels, pruning and pruned trees, loppers and grafting.
+  commons_lawn_care        Commons: lawns, mowing (lawn and grass files only), sod, the common lawn grasses by name
+                           (Kentucky bluegrass, perennial ryegrass, zoysia, St. Augustine) and crabgrass.
+  commons_plant_problems   Commons: chlorosis, powdery mildew, leaf spot, late blight and sooty mould, each with what
+                           it looks like on the leaves.
   open_images_garden       Open Images V7: gardens, lawns and grass, compost, mulch and soil, seedlings, seeds,
                            greenhouses, herbs (basil, rosemary, thyme, sage, parsley, chives, oregano, dill), garden
                            flowers (roses, tulips, sunflowers, hydrangeas), hedges, moss, groundcover, succulents,
                            cacti and bonsai, pruning shears and garden tools, weeds and dandelions, fruit trees.
+
+Commons has no category with free files for raised beds, container gardening, sprinklers, soaker hoses, rain
+barrels, lawn weeds, downy mildew, blossom end rot or the USDA zone maps (checked 2026-11-22): the kit's
+garden_sources.py lists them; the zone map and soil pages are in the reference library (garden:).
 
 What was looked at and left out (extension service photos, the USDA PLANTS image gallery, Pinterest and others) is
 in the kit's garden_sources.py (GARDEN_NOT_INCLUDED).

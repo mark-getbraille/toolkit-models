@@ -21,17 +21,14 @@ does, or an Open Images label people confirmed. Notes:
 
 The packs (all open: CC0, public domain or CC BY files; Open Images labels CC BY 4.0):
   commons_string_instrument_parts  Commons: guitar strings, frets and fingerboards, machine heads and tuning pegs,
-                                   guitar bridges, nuts, pickups, truss rods, headstocks, bows and rosin, chinrests,
-                                   shoulder rests, violin bridges, f-holes, sound posts, scrolls, pegboxes and
-                                   tailpieces, capos and picks.
-  commons_wind_percussion_parts    Commons: reeds (clarinet, saxophone, oboe and bassoon reeds), mouthpieces,
-                                   ligatures, piston and rotary valves, mutes, woodwind keys and pads, drumheads,
-                                   drum keys, drumsticks, hi-hats and cymbals.
-  commons_piano_parts              Commons: piano actions, hammers, keys, strings, pedals and soundboards, upright
-                                   pianos, piano tuning and piano tuners.
-  commons_instrument_care          Commons: luthiers and their workshops, violin making, instrument repair, piano
-                                   restoration, tuners and tuning forks, metronomes, instrument cases and music
-                                   stands.
+                                   guitar bridges, pickups, necks and headstocks, violin bows, bows and rosin,
+                                   chinrests, violin bridges, f-holes, sound posts, scrolls, pegboxes and tailpieces,
+                                   capos and picks.
+  commons_wind_percussion_parts    Commons: reeds and double reeds, saxophone and trumpet mouthpieces, brass valves
+                                   (piston and rotary), trumpet mutes, drum heads, drumsticks, cymbals and hi-hats.
+  commons_piano_parts              Commons: piano strings and pedals, piano tuning and piano tuners at work.
+  commons_instrument_care          Commons: luthiers at work, electronic tuners, tuning forks, metronomes, instrument,
+                                   guitar and violin cases, and music stands.
   open_images_instrument_care      Open Images V7: acoustic, electric and bass guitars, ukuleles, mandolins, double
                                    basses, bassoons, recorders, euphoniums, sousaphones, cornets and flugelhorns,
                                    marimbas, vibraphones and glockenspiels, drumheads, hi-hats, bass and tom-tom drums,
@@ -202,10 +199,10 @@ INSTRUMENT_CARE_PACKS = {
     "open_images_instrument_care": (build_open_images_instrument_care, OI_LICENCE),
 }
 INSTRUMENT_CARE_LIMITS = {
-    "commons_string_instrument_parts": 1600,   # 22 categories
-    "commons_wind_percussion_parts": 1100,     # 15 categories
-    "commons_piano_parts": 700,                # 9 categories
-    "commons_instrument_care": 800,            # 10 categories
+    "commons_string_instrument_parts": 1500,   # 21 categories
+    "commons_wind_percussion_parts": 900,      # 12 categories
+    "commons_piano_parts": 300,                # 4 categories
+    "commons_instrument_care": 700,            # 8 categories
     "open_images_instrument_care": 2500,       # 23 labels
 }
 INSTRUMENT_CARE_COMMONS_KEYS = ("commons_string_instrument_parts", "commons_wind_percussion_parts",

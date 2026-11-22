@@ -1,7 +1,7 @@
 """Picture packs for HOME HEALTH CARE: first-aid supplies and first-aid skills (CPR, abdominal thrusts, the recovery
 position), home treatment things (oral rehydration, calamine lotion, heating pads, compression stockings, catheters),
-dental care products and appliances, eye care (magnifiers, glasses and their parts, contact lenses and their cases,
-eye charts and examination instruments), birth and postpartum supplies, skin conditions with dermatologists' labels
+dental care products and appliances, eye care (magnifiers, reading glasses and bifocals, contact lenses and their
+cases, eye charts), birth supplies and drawings, skin conditions with dermatologists' labels
 (Google's SCIN), and dental X-rays with the teeth they show (DenPAR). Used by build_packs.py in the same way as its
 own PACKS: each builder is build_<key>(limit) and returns [(file name, JPEG bytes or None, row)]. The limit counts
 pictures.
@@ -40,13 +40,11 @@ The packs (Commons files CC0, public domain or CC BY; Open Images labels CC BY 4
                                recovery position and first aid classes (adults only; describing only).
   commons_dental_care          Commons: water flossers, interdental brushes, tongue scrapers, braces, clear aligners,
                                mouthguards, implants, bridges and sealants.
-  commons_eye_care             Commons: magnifying glasses, hand lenses, loupes and monoculars, reading glasses,
-                               bifocals and progressive lenses, frames, lenses, nose pads and glasses cases, contact
-                               lenses and their cases, Snellen charts, phoropters, slit lamps, ophthalmoscopes, eye
-                               patches and diagrams of the eye.
-  commons_birth_care           Commons: breast pumps, nipple shields, birthing pools, umbilical cord clamps, baby
-                               thermometers, maternity pads, peri bottles, fetoscopes, Pinard horns and drawings of
-                               fetal development (things and drawings only).
+  commons_eye_care             Commons: magnifying glasses, magnifiers, loupes and monoculars, pinhole glasses,
+                               reading glasses, bifocals, glasses frames, contact lenses and their cases, Snellen
+                               charts and slit lamps.
+  commons_birth_care           Commons: breast pumps, fetoscopes and Pinard horns (for listening to the baby's heart),
+                               the Apgar score chart and drawings of fetal development (things and drawings only).
   scin_skin_conditions         SCIN (Skin Condition Image Network, Google Research and Stanford Medicine, 2024; the
                                SCIN Data Use License: attribution, adapting and sharing allowed): adults' own photos
                                of skin conditions with up to three dermatologists' labels. Photos of the genitals,
@@ -156,46 +154,30 @@ DENTAL = [
 
 EYE = [
     item("Magnifying glasses", "a magnifying glass, a handheld lens that makes small print look bigger", EYE_NOTE),
-    item("Hand lenses", "a hand lens, a small folding magnifier", EYE_NOTE),
     item("Loupes", "a loupe, a small strong magnifier held close to the eye", EYE_NOTE),
     item("Monoculars", "a monocular, a small telescope for seeing far things, such as signs", EYE_NOTE),
     item("Reading glasses", "a pair of reading glasses, which magnify for close work", EYE_NOTE),
+    item("Magnifiers", "a magnifier: a lens, stand or dome that makes print and small things look bigger", EYE_NOTE),
+    item("Pinhole glasses", "pinhole glasses: glasses with many tiny holes instead of lenses", EYE_NOTE),
     item("Bifocals", "bifocal glasses: the lower part of each lens is for reading, the upper part for distance",
          EYE_NOTE),
-    item("Progressive lenses", "progressive lenses, which change strength gradually from distance at the top to "
-                               "reading at the bottom", EYE_NOTE),
     item("Eyeglass frames", "a glasses frame", EYE_NOTE),
-    item("Eyeglass lenses", "a spectacle lens", EYE_NOTE),
-    item("Nose pads", "the nose pads of a pair of glasses, which can be bent gently to change the fit", EYE_NOTE),
-    item("Glasses cases", "a glasses case", EYE_NOTE),
     item("Contact lenses", "a contact lens; never rinse or store lenses in tap water or saliva", EYE_NOTE),
     item("Contact lens cases", "a contact lens case; empty it, rinse it with fresh solution and let it air-dry every "
                                "day", EYE_NOTE),
     item("Snellen charts", "a Snellen eye chart, with rows of letters getting smaller, for testing sight", EYE_NOTE),
-    item("Phoropters", "a phoropter, the instrument with many lenses an eye doctor uses to find a prescription",
-         EYE_NOTE),
     item("Slit lamps", "a slit lamp, a microscope with a bright light for examining the eye", EYE_NOTE),
-    item("Ophthalmoscopes", "an ophthalmoscope, for looking at the back of the eye", EYE_NOTE),
-    item("Eye patches", "an eye patch", EYE_NOTE),
-    item("Human eye diagrams", "a diagram of the human eye (cornea, iris, pupil, lens, retina and optic nerve)",
-         EYE_NOTE),
 ]
 
 # ----------------------------------------------------------------- Commons: birth and postpartum supplies (things only)
 
 BIRTH = [
     item("Breast pumps", "a breast pump, for expressing breast milk", BIRTH_NOTE),
-    item("Nipple shields", "a nipple shield, a thin silicone cover worn during breastfeeding", BIRTH_NOTE),
-    item("Birthing pools", "a birthing pool, used for labour or a water birth", BIRTH_NOTE),
-    item("Umbilical cord clamps", "an umbilical cord clamp, put on a newborn's cord after birth", BIRTH_NOTE),
-    item("Baby thermometers", "a baby thermometer; a fever in a baby under 3 months is urgent: call the doctor at "
-                              "once", BIRTH_NOTE),
-    item("Maternity pads", "maternity pads, for the bleeding after birth", BIRTH_NOTE),
-    item("Peri bottles", "a peri bottle, for rinsing the area between the legs with warm water after birth",
-         BIRTH_NOTE),
     item("Fetoscopes", "a fetoscope, for listening to a baby's heartbeat in the womb", BIRTH_NOTE),
     item("Pinard horns", "a Pinard horn, a trumpet-shaped tube a midwife uses to listen to the baby's heartbeat",
          BIRTH_NOTE),
+    item("Apgar score", "a chart of the Apgar score: the newborn's appearance, pulse, grimace, activity and breathing, "
+                        "each scored 0 to 2 at one and five minutes after birth", BIRTH_NOTE),
     item("Fetal development", "a drawing of a baby's development in the womb", BIRTH_NOTE),
 ]
 
@@ -322,15 +304,23 @@ def fdi_name(number):
 
 
 def xray_answer(arch, site, teeth):
-    """The answer for one radiograph from the dataset's own table: its arch, site and FDI numbers, or ""."""
+    """The answer for one radiograph from the dataset's own table: the FDI numbers of the teeth it shows, or "".
+    Where in the mouth is worked out from the FDI numbers alone (their first digit), because the table's arch and
+    site columns sometimes disagree with its own tooth numbers (about one row in thirteen); arch and site are not
+    used."""
     numbers = [t.strip() for t in str(teeth or "").replace(";", ",").split(",") if t.strip()]
     names = [f"the {fdi_name(n)} ({n})" for n in numbers if fdi_name(n)]
     if not names or len(names) != len(numbers):
         return ""
-    where = f"{str(arch).strip().lower()} {str(site).strip().lower()}".strip()
+    where = WHERE.get(frozenset(n[0] for n in numbers), "")
     listed = ", ".join(names[:-1]) + (" and " if len(names) > 1 else "") + names[-1]
-    return (f"The dataset says it shows the {where} teeth: {listed}. The numbers are FDI tooth numbers. "
-            + DENTAL_NOTE)
+    return (f"The dataset says it shows {'the ' + where + ' teeth: ' if where else 'these teeth: '}{listed}. The "
+            f"numbers are FDI tooth numbers. " + DENTAL_NOTE)
+
+
+# Where the teeth are, from the quarters of the mouth their FDI numbers name.
+WHERE = {frozenset("1"): "upper right", frozenset("2"): "upper left", frozenset("3"): "lower left",
+         frozenset("4"): "lower right", frozenset("12"): "upper front", frozenset("34"): "lower front"}
 
 
 def denpar_rows(arch, site, teeth):
@@ -417,8 +407,8 @@ HOME_HEALTH_LIMITS = {
     "commons_first_aid_supplies": 500,     # 11 categories, few files each
     "commons_first_aid_skills": 500,       # 5 categories
     "commons_dental_care": 600,            # 7 categories
-    "commons_eye_care": 1200,              # 20 categories
-    "commons_birth_care": 500,             # 10 categories, few files each
+    "commons_eye_care": 900,               # 12 categories
+    "commons_birth_care": 200,             # 5 categories, few files each
     "scin_skin_conditions": 3000,          # about 5,000 cases, some left out
     "denpar_dental_xrays": 1000,           # 1,000 radiographs with a table row
     "open_images_home_health": 1500,       # 17 labels, few photos each

@@ -15,8 +15,6 @@ What this module builds, in plain words, each IN FULL from the publisher's own s
     non-US note;
   - CDC Yellow Book, Health Information for International Travel (travel health: altitude, heat and cold, injuries,
     bites, water and food, travel first-aid kits; for when no doctor is near), kept whole;
-  - the US Army Special Forces Medical Handbook (ST 31-91B, 1982), whole from the Internet Archive's copy, only when
-    its own front matter shows Distribution Statement A (the builder checks it): medicine with no doctor nearby;
   - "Emergency Childbirth: A Reference Guide for Students of the Medical Self-Help Training Course" (US Public
     Health Service and Office of Civil Defense), whole from the Internet Archive's copy of Project Gutenberg's text.
   (The US Army's First Aid, FM 4-25.11, is already a field manual of the library (pdf:army_fm_4_25_11_first_aid), and
@@ -135,16 +133,6 @@ GUIDES = [
 ]
 
 PDFS = [
-    dict(K.us_pdf(GROUP, name="army_st_31_91b_medical_handbook", title="US Army Special Forces Medical Handbook (ST "
-                  "31-91B, 1982)", subject="Medicine with no doctor nearby", publisher="US Army John F. Kennedy "
-                  "Special Warfare Center", archive="milmanual-st-31-91b--us-army-special-forces-medical-handbook",
-                  published="1982", version="ST 31-91B (1 March 1982)",
-                  description="The US Army's medical handbook for medics working far from a doctor: examining a "
-                              "patient, first aid and emergencies, injuries, burns, bites and stings, heat and cold, "
-                              "common illnesses by body system, obstetrics, children, dental and eye care, and "
-                              "preventive medicine. Written for trained medics in 1982: out of date in places.",
-                  notice=EMERGENCY + " A US Army handbook of 1982, for trained medics: medicines and practice have "
-                                     "changed since."), distribution_a=True),
     K.us_pdf(GROUP, name="emergency_childbirth_self_help", title="Emergency Childbirth: A Reference Guide for "
              "Students of the Medical Self-Help Training Course (US Public Health Service)",
              subject="Emergency childbirth", publisher="US Public Health Service and the Office of Civil Defense",
@@ -173,10 +161,9 @@ LICENCE_LINES = {
     "firstaid_nhs": "nhs.uk/our-policies/terms-and-conditions (checked at every build): its content is \"released "
                     "free-of-charge under the current version of the Open Government Licence\"; the attribution is "
                     "in the notice. robots.txt allows /conditions/; no AI rules (checked 2026-11-22).",
-    "firstaid_army": "archive.org (its robots.txt allows the files): ST 31-91B is a US Army publication (17 U.S.C. "
-                     "105); the builder reads it only when its own front matter shows Distribution Statement A and "
-                     "no restricted marking. The Emergency Childbirth guide is a US Public Health Service work "
-                     "(public domain), the Internet Archive's copy of Project Gutenberg's text.",
+    "firstaid_childbirth": "archive.org (its robots.txt allows the files): the Emergency Childbirth guide is a US "
+                           "Public Health Service work (public domain), the Internet Archive's copy of Project "
+                           "Gutenberg's text.",
 }
 NOT_INCLUDED = [
     ("American Red Cross first aid and CPR guides, and the American Heart Association's CPR and first aid materials",
@@ -191,6 +178,10 @@ NOT_INCLUDED = [
      "BY-NC-SA. Not read. Link-only. Index: https://wikem.org/ and https://www.who.int/publications"),
     ("Wikibooks: First Aid (CC BY-SA)", "Already in the toolkit's Kiwix library (Wikibooks in full), which the "
      "toolkit reads; not repeated. Index: https://en.wikibooks.org/wiki/First_Aid"),
+    ("US Army Special Forces Medical Handbook (ST 31-91B, 1982)", "The Internet Archive's copy "
+     "(milmanual-st-31-91b--us-army-special-forces-medical-handbook) does not show Distribution Statement A in its "
+     "front matter (the builder's check, 2026-11-22), so it is not copied. Link-only. Index: "
+     "https://archive.org/details/milmanual-st-31-91b--us-army-special-forces-medical-handbook"),
     ("US Army TC 4-02.1, First Aid (2016)", "No copy with a text layer and its front matter was found at the "
      "Internet Archive (checked 2026-11-22); FM 4-25.11 (2002) is already built (pdf:army_fm_4_25_11_first_aid). "
      "Index: https://armypubs.army.mil/"),

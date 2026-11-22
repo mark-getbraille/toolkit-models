@@ -4,7 +4,7 @@ are the category musical_instruments (and their repair the electronics collectio
 
 What it lists, in plain words (an INDEX of facts and links only):
   ia      the Internet Archive's manual collections, searched by IA_WORDS (acoustic instruments' care and setup,
-          tuners, metronomes, humidifiers, string winders, piano care);
+          tuners, humidifiers, piano care; metronomes are musical_instruments');
   makers  instrument, string, drumhead and care-product makers: link-only by the owner's rule (nothing is read);
   guidance the old public-domain books of the reference library (piano tuning, violin making).
 """
