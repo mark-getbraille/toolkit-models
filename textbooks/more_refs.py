@@ -129,6 +129,8 @@ MODULES = [
     "court_opinions",       # Supreme Court opinions by volume and landmark cases by subject, from govinfo (court:)
     "patents",              # famous patents (Wikisource), assistive and household patents (USPTO, sign-up) (pat:)
     "quotations",           # Bartlett, Hoyt, Brewer, proverb and idiom books, Wikiquote from its dump (quote:)
+    # old public-domain and open books for nine thin life-skills groups (the owner's request of 2026-11-22)
+    "oldbooks_life",        # household, instruments, garden, outdoors, science, computer, typing, media, genealogy, etiquette (olife:)
 ]
 
 _loaded = {}
