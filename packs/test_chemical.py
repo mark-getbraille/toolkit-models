@@ -236,7 +236,7 @@ def test_wiring():
     assert "commons_hazard_symbols" not in sources.NOT_FOR_PICTURE_MAKING
     assert "chemical_commons_sa" in sources.NOT_FOR_PICTURE_MAKING and k.CHEMICAL_PICTURE_MAKING_OK == set()
     by_id = {t.id: set(t.keys) for t in topics.TOPICS}
-    assert photo | {"chemical_commons_sa"} <= by_id["machines"] and "commons_hazard_symbols" in by_id["documents"]
+    assert photo | {"chemical_commons_sa"} <= by_id["home"] and "commons_hazard_symbols" in by_id["documents"]
 
 
 def test_kit_share_alike_drops_harm(monkeypatch):

@@ -117,36 +117,57 @@ TOPICS = [
            "open_images_bar_drinks", "europeana_drinks_history",
            # share-alike
            "drinks_alcohol_commons_sa")),
-    Topic("machines", "Vehicles, machines and household equipment",
-          "Vehicles and their parts and dashboard symbols, tools, appliances and their controls, plugs and "
-          "displays, home repair (plumbing, roofs, locks, small engines, bikes, sewing), heating and lighting, "
-          "electronics and repair, assistive devices and building work.",
+    Topic("machines", "Vehicles, machines and devices",
+          "Vehicles and their parts and dashboard symbols, machine parts, tools, plugs, clocks and displays, "
+          "electronic devices, electronic parts and repair, assistive devices and building-site safety.",
           ("wikidata_vehicle_models", "commons_vehicle_kinds", "commons_us_cars", "commons_ca_cars",
            "commons_airplanes", "commons_car_parts", "commons_cycle_parts", "commons_machine_parts",
            "commons_engine_bays", "iso_machine_symbols", "corolla_engine_bay", "tyre_condition",
-           "spark_plug_condition", "planetary_gearbox", "commons_appliances", "commons_connectors",
-           "laundry_symbols", "laundry_care_labels", "commons_tools", "commons_kitchen", "clock_times", "seven_segment", "abo_products",
-           "commons_things", "open_images_tech", "commons_us_controls", "wikidata_devices", "commons_devices",
-           "nmah_devices", "farm_commons_equipment", "mech_commons_building", "open_images_objects", "core50",
-           "gso_objects", "commons_household_chemicals", "commons_finishes_in_use", "commons_appliance_controls",
-           "open_images_appliance_controls",
-           "commons_baby_products", "open_images_baby_products", "abo_baby_products", "commons_household_hazards", "open_images_household_hazards",
-           "commons_home_repair", "commons_locks_engines_bikes", "open_images_home_upkeep", "commons_sewing_mending",
-           "commons_upholstery_leather_shoes", "commons_home_heating", "commons_firewood", "open_images_home_heating",
-           "commons_emergency_lighting", "open_images_emergency_lighting",
-           # electronics repair, assistive devices and light construction (electronics_sources.py, building_sources.py)
+           "spark_plug_condition", "planetary_gearbox", "commons_connectors", "commons_tools", "clock_times",
+           "seven_segment", "abo_products", "commons_things", "open_images_tech", "commons_us_controls",
+           "wikidata_devices", "commons_devices", "nmah_devices", "farm_commons_equipment", "mech_commons_building",
+           "open_images_objects", "core50", "gso_objects",
+           # electronics repair, assistive devices and building-site safety (electronics_sources.py, building_sources.py)
            "commons_electronic_parts", "commons_cables_connectors", "commons_electronics_repair",
            "commons_assistive_devices", "commons_circuit_diagrams", "open_images_electronics",
-           "commons_light_construction", "commons_home_access_building", "commons_construction_safety",
-           "open_images_building", "electronics_commons_sa", "building_commons_sa",
+           "commons_construction_safety", "electronics_commons_sa",
            # share-alike
            "commons_mechanical_sa", "dashboard_symbols_sa", "device_models_sa", "farm_mech_commons_sa",
-           "commons_airplanes_sa", "chemical_commons_sa", "appliance_commons_sa", "home_upkeep_commons_sa",
-           "home_heating_commons_sa", "emergency_lighting_commons_sa",
+           "commons_airplanes_sa",
            # non-commercial and research-only (personal use)
            "autovi", "dashboard_warning_icons", "car_parts_damage", "car_parts_dsmlr", "car_damage_views",
            "mechanical_parts_2022", "co3d_devices", "stanford_cars", "fgvc_aircraft", "museums_victoria",
-           "cpsc_recalls", "stanford_products")),
+           "stanford_products")),
+    # Home and household (the owner's decision of 22 November 2026): everything about running and keeping a home in
+    # one add-on. The household collections moved here from "machines"; the craft collections are also in "art" and
+    # the household pests also in "nature", so those add-ons keep them.
+    Topic("home", "Home and household",
+          "Appliances and their controls, kitchens, laundry and care labels, cleaning products and hazards, home "
+          "repair, locks, heating and lighting, building work and ramps, pests, baby products, sewing and crafts.",
+          ("commons_appliances", "commons_appliance_controls", "open_images_appliance_controls", "commons_kitchen",
+           "laundry_symbols", "laundry_care_labels", "commons_household_chemicals", "commons_finishes_in_use",
+           "commons_household_hazards", "open_images_household_hazards",
+           "commons_baby_products", "open_images_baby_products", "abo_baby_products",
+           # home repair, locks, small engines and bicycles, pests (home_crafts_sources.py)
+           "commons_home_repair", "commons_locks_engines_bikes", "open_images_home_upkeep", "commons_pest_control",
+           # heating, firewood and emergency lighting
+           "commons_home_heating", "commons_firewood", "open_images_home_heating", "commons_emergency_lighting",
+           "open_images_emergency_lighting",
+           # light construction and home access (building_sources.py)
+           "commons_light_construction", "commons_home_access_building", "open_images_building",
+           # sewing, mending and the textile crafts
+           "commons_sewing_mending", "commons_upholstery_leather_shoes", "commons_knit_crochet_lace",
+           "commons_quilt_embroidery_weaving", "commons_fabrics_fibres", "open_images_textile_crafts",
+           "nmah_textiles_sewing",
+           # other crafts (crafts_sources.py)
+           "commons_pottery_ceramics", "commons_jewellery_beading", "commons_paper_crafts", "commons_candle_soap",
+           "commons_glass_carving", "commons_art_supplies", "commons_models_resin", "open_images_crafts",
+           # share-alike
+           "commons_home_sa", "home_safety_commons_sa", "chemical_commons_sa", "appliance_commons_sa",
+           "home_upkeep_commons_sa", "home_heating_commons_sa", "emergency_lighting_commons_sa", "building_commons_sa",
+           "textile_crafts_commons_sa", "pottery_commons_sa", "jewellery_commons_sa", "crafts_commons_sa",
+           # non-commercial and research-only (personal use)
+           "cpsc_recalls")),
     Topic("art", "Art and museum objects",
           "Paintings, sculpture and museum objects, described the way museums write for blind visitors, musical "
           "instruments of every culture, and crafts: quilts, knitting, crochet, lace, weaving, fabrics, pottery, "

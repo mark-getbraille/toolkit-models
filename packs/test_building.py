@@ -79,7 +79,8 @@ def test_wiring():
     for key in keys:
         assert listed[key].group == "permissive" and listed[key].prepare is sources.prepare_pack, key
     assert listed["building_commons_sa"].group == "share-alike"
-    machines = set(topics.find("machines").keys)
+    # building work and ramps are in the home topic, building-site safety in the machines topic (22 November 2026)
+    placed = set(topics.find("machines").keys) | set(topics.find("home").keys)
     no_making = set(sources.NOT_FOR_PICTURE_MAKING)
     for s in k.BUILDING_SOURCES:
-        assert s.key in machines and s.key in no_making, s.key
+        assert s.key in placed and s.key in no_making, s.key

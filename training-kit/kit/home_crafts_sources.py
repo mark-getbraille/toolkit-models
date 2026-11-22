@@ -294,10 +294,14 @@ HOME_CRAFTS_PICTURE_MAKING_OK = {"commons_fabrics_fibres", "nmah_textiles_sewing
 # locks, engines, bicycles and sewing things go with household equipment ("machines"), the pests with nature, the
 # crafts, quilts and fabrics with art and museum objects.
 HOME_CRAFTS_TOPICS = {
-    "machines": ("commons_home_repair", "commons_locks_engines_bikes", "open_images_home_upkeep",
-                 "commons_sewing_mending", "commons_upholstery_leather_shoes", "home_upkeep_commons_sa",
-                 "commons_home_heating", "commons_firewood", "open_images_home_heating", "home_heating_commons_sa",
-                 "commons_emergency_lighting", "open_images_emergency_lighting", "emergency_lighting_commons_sa"),
+    # the home and household topic gathers every collection here (the owner's decision of 22 November 2026); the
+    # textile crafts are also in art and the household pests also in nature
+    "home": ("commons_home_repair", "commons_locks_engines_bikes", "open_images_home_upkeep", "commons_pest_control",
+             "commons_home_heating", "commons_firewood", "open_images_home_heating", "commons_emergency_lighting",
+             "open_images_emergency_lighting", "commons_sewing_mending", "commons_upholstery_leather_shoes",
+             "commons_knit_crochet_lace", "commons_quilt_embroidery_weaving", "commons_fabrics_fibres",
+             "open_images_textile_crafts", "nmah_textiles_sewing", "home_upkeep_commons_sa", "home_heating_commons_sa",
+             "emergency_lighting_commons_sa", "textile_crafts_commons_sa"),
     "nature": ("commons_pest_control", "open_images_home_upkeep", "home_upkeep_commons_sa"),
     "art": ("commons_knit_crochet_lace", "commons_quilt_embroidery_weaving", "commons_fabrics_fibres",
             "open_images_textile_crafts", "nmah_textiles_sewing", "textile_crafts_commons_sa"),
