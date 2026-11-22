@@ -334,7 +334,9 @@ def otl_items(piece, titles):
 
 # ====================================================================== the Internet Archive, by topic
 
-# Topic key -> (the library's topic, the toolkit's group, the Internet Archive search words for it).
+# Topic key -> (the library's topic, the toolkit's group, the Internet Archive search words for it). Sewing, art and
+# drawing, and crafts are in "Reference, arts and crafts" (group "crafts", crafts_books.py), the one top-level group
+# for crafts (the owner's request of 22 November 2026).
 IA_TOPICS = {
     "birds": ("Birds", "science", 'subject:(birds OR ornithology)'),
     "mammals": ("Mammals", "science", 'subject:(mammals)'),
@@ -349,7 +351,7 @@ IA_TOPICS = {
     "astronomy": ("Astronomy and space", "science", 'subject:(astronomy OR "outer space")'),
     "maps": ("Maps, navigation and charts", "government", 'subject:(navigation OR cartography OR "map reading")'),
     "boating": ("Boating and seamanship", "reference", 'subject:(seamanship OR sailing OR boats OR yachting)'),
-    "sewing": ("Sewing, knitting and needlework", "reference", 'subject:(sewing OR dressmaking OR knitting OR '
+    "sewing": ("Sewing, knitting and needlework", "crafts", 'subject:(sewing OR dressmaking OR knitting OR '
               'needlework OR crocheting OR embroidery)'),
     "woodworking": ("Woodworking and carpentry", "reference", 'subject:(woodwork OR carpentry OR cabinetwork)'),
     "home": ("Home repair and housekeeping", "reference", 'subject:("home economics" OR housekeeping OR plumbing '
@@ -363,8 +365,8 @@ IA_TOPICS = {
                   '"visually handicapped" OR "blind -- education")'),
     "deafness": ("Sign language and deafness", "disability", 'subject:(deaf OR "sign language")'),
     "music": ("Music", "reference", 'subject:("music theory" OR harmony OR "music instruction")'),
-    "art": ("Art and drawing", "reference", 'subject:(drawing OR painting OR "art instruction")'),
-    "crafts": ("Crafts and hobbies", "reference", 'subject:(handicraft OR basketry OR leatherwork OR pottery)'),
+    "art": ("Art and drawing", "crafts", 'subject:(drawing OR painting OR "art instruction")'),
+    "crafts": ("Crafts and hobbies", "crafts", 'subject:(handicraft OR basketry OR leatherwork OR pottery)'),
     "games": ("Games, chess and puzzles", "reference", 'subject:(chess OR checkers OR games OR puzzles)'),
     "pets": ("Pets and animal care", "science", 'subject:(dogs OR cats OR pets OR "veterinary medicine")'),
     "money": ("Personal finance and money", "consumer", 'subject:("personal finance" OR budgets OR thrift OR '
