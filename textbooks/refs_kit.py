@@ -249,6 +249,8 @@ class Collection:
             book.version = (book.version + ", " if book.version else "") + \
                 f"pages read {datetime.date.today().isoformat()}"
         for field in ("published", "notice", "region", "language"):
+            if field == "notice" and (entry.get("military") or entry.get("distribution_a")):
+                continue                     # the builder's notice starts with the truthful release line: kept
             if entry.get(field):
                 setattr(book, field, entry[field])
         return book

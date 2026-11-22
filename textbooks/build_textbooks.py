@@ -2180,13 +2180,31 @@ def military_notice(release, notice):
     return f"{release} {rest}".strip()
 
 
+def kept_part(keep, part_title, text, start):
+    """For an entry with "keep_parts" (a regular expression of the parts to keep, for a manual of which only some
+    chapters are wanted, such as the rope, climbing and snow-shelter chapters of a mountain leader's guide whose other
+    chapters are about tactics): (kept, name). kept is True when the expression is found in the part's title or in
+    the first words of its first page, so a part whose bookmark only says "Chapter_" is judged by the heading printed
+    on its page ("CHAPTER 11 SNOW SHELTERS"). name is what to call the part, in the book or in its "Left out" line:
+    that printed heading when the bookmark is only a word like "Chapter_", else the bookmark's own title."""
+    first = " ".join(" ".join(text.lines(start)[:6]).split())[:160]
+    kept = bool(re.search(keep, f"{part_title} {first}", re.I))
+    name = part_title
+    if re.fullmatch(r"(?i)\W*(chapter|appendix|part)?[\W_\d]*[a-z]?[\W_]*", part_title.strip()) and first:
+        capitals = re.match(r"(?:[A-Z0-9][A-Z0-9&,'’()/\-]*\s+)+", first + " ")      # the heading in capitals
+        name = (capitals.group(0) if capitals else first).strip()[:70]
+        name = name.title() if name.isupper() else name
+    return kept, name
+
+
 def pdfdoc_book(entry, work, cache=None, left_out=None):
     """The Book of one official PDF (a sources.PDF_DOCS entry): the PDF is found (an Internet Archive item, the
     official address in entry["pdf"], or the newest PDF on an official publication page), its licence checked (the
     licence line of its page or of entry["licence_page"], such as an agency's copyright policy, or for a US military
     publication, entry distribution_a (a field manual) or military (any other military publication), the release
     rule of military_release.py on its own front matter: military_release_of), then made into one page per
-    chapter; for a field manual, parts about weapons, tactics or harm (NOT_FIELD_SAFE) are left out. None when it is
+    chapter; for a field manual, parts about weapons, tactics or harm (NOT_FIELD_SAFE) are left out, and for an entry
+    with "keep_parts" only the parts that expression names are kept (kept_part). None when it is
     not allowed (said in left_out). A military manual's notice starts with its truthful release line
     (military_notice): Distribution Statement A when printed, else "published openly by <the host>; its front pages
     print no distribution statement", the government address that publishes a restricted-marked copy openly, or
@@ -2282,6 +2300,12 @@ def pdfdoc_book(entry, work, cache=None, left_out=None):
             if part_title not in skipped:
                 skipped.append(part_title)
             continue
+        if entry.get("keep_parts"):              # only the chosen parts of a manual (kept_part)
+            kept, part_title = kept_part(entry["keep_parts"], part_title, text, start)
+            if not kept:
+                if part_title not in skipped:
+                    skipped.append(part_title)
+                continue
         label = f"{part_title} (pages {start + 1} to {end})" if end - start > 1 else f"{part_title} (page {start + 1})"
         book.pages.append(Page(f"part-{i}-{slug(part_title, 40)}", label, part_html(text, start, end), i))
     if skipped:
