@@ -10,8 +10,8 @@ It checks that:
     demonstration models, worn or used products and children; the incontinence and rescue filters do the same;
   - no Commons category of these packs is named by another pack file, nor twice here;
   - every pack is wired: in build_packs.PACKS and COMMONS_KEYS, in the workflows' known list and limit lines, in the
-    kit's sources (permissive, prepare_pack), the guarded kit modules listed twice as hidden imports, picture-making
-    only for the food guides, the people packs in PEOPLE_AND_BODILY_PACK_KEYS, the sexual health pack in no topic,
+    kit's sources (permissive, prepare_pack), the guarded kit modules listed twice as hidden imports, no picture-making, the people packs in
+    PEOPLE_AND_BODILY_PACK_KEYS, the sexual health pack in no topic,
     the food guides in the food topic and the others in the home topic.
 
 Run it from the repository's folder:   python3 -m pytest packs/test_health_life.py
@@ -101,6 +101,10 @@ def test_safety_filters():
         assert spec[3] is SH.SAFE_WORDS, spec[0]
     pads = next(s for s in AC.DAILY_LIVING_AIDS if s[0] == "Incontinence pads")[3]
     assert pads.search("Incontinence pads in a pack") and not pads.search("Man wearing incontinence pad")
+    guide = FN.GUIDE_ONLY
+    assert guide.search("Foodpyramid.jpg") and guide.search("MyPlate icon, USDA graphic")
+    assert not guide.search("Secretary Vilsack answers questions at the announcement of MyPlate")
+    assert all(s[3] is guide for s in FN.FOOD_GUIDES)
     rescue = next(s for s in WF.WILDERNESS_RESCUE if s[0] == "Mountain rescue")[3]
     assert rescue.search("Mountain rescue team training with a stretcher")
     assert not rescue.search("Injured climber evacuated after accident") and not rescue.search("Body recovered")
@@ -150,7 +154,7 @@ def test_wiring():
             assert (key in sources.NOT_FOR_PICTURE_MAKING) == (key not in ok or key in bodily), key
             assert (key in sources.PEOPLE_AND_BODILY_PACK_KEYS) == (key in bodily), key
     assert MH.MENTAL_HEALTH_PACKS and set(FN.FITNESS_NUTRITION_PACKS) - {"commons_food_guides"} <= by_topic["home"]
-    assert "commons_food_guides" in by_topic["food"] and "commons_food_guides" not in sources.NOT_FOR_PICTURE_MAKING
+    assert "commons_food_guides" in by_topic["food"]
     for key in ("commons_wellbeing_aids", "commons_daily_living_aids", "commons_wilderness_rescue"):
         assert key in by_topic["home"], key
     assert "commons_contraception_menstrual" not in every_topic          # the owner's choice: no topic

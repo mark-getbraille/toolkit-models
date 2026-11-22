@@ -10,7 +10,7 @@ checked at its source in November 2026 (Wikimedia Commons files CC0, public doma
 Answers say only what the Commons category names, with a plain line, and every answer ends with the note
 (general information, not medical advice or a diagnosis; ask your doctor before a new exercise or eating plan if you have a health condition; 911; 988), the same words as the packs' (packs/test_health_life.py checks).
 
-Picture-making (FITNESS_NUTRITION_PICTURE_MAKING_OK): only the food guide pictures (drawings and charts); the equipment photos show people exercising and the adaptive sports pack shows athletes (FITNESS_NUTRITION_BODILY_KEYS, describing only).
+Picture-making (FITNESS_NUTRITION_PICTURE_MAKING_OK): none (the food guide categories hold event photos too); the equipment photos show people exercising and the adaptive sports pack shows athletes (FITNESS_NUTRITION_BODILY_KEYS, describing only).
 Topics: the equipment and adaptive sports in the home topic, the food guides in the food topic.
 
     python -c "import sources, fitness_nutrition_sources"      (from the kit folder: checks the file loads)
@@ -34,7 +34,7 @@ FITNESS_NUTRITION_SOURCES = [
     Source("commons_food_guides", "Food guide pictures: MyPlate and food pyramids (Wikimedia Commons, ready-made pack)",
            COMMONS_OPEN, COMMONS_CREDIT, "permissive", 150, 5, prepare_pack, "about 20 MB"),
 ]
-FITNESS_NUTRITION_PICTURE_MAKING_OK = {"commons_food_guides"}
+FITNESS_NUTRITION_PICTURE_MAKING_OK = set()
 # The packs that show people (describing only; added to sources.PEOPLE_AND_BODILY_PACK_KEYS).
 FITNESS_NUTRITION_BODILY_KEYS = ("commons_fitness_equipment", "commons_adaptive_sports")
 FITNESS_NUTRITION_NOT_INCLUDED = {

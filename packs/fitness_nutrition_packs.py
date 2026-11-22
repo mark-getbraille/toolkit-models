@@ -36,6 +36,7 @@ no Open Images pack. What was looked at and left out is in the kit's fitness_nut
     python packs/fitness_nutrition_packs.py commons_food_guides --limit 8      (prints a few rows: a quick check)
 """
 
+import re
 import sys
 
 import build_packs  # noqa: F401 - loaded first: the other pack files and build_packs import each other
@@ -47,10 +48,18 @@ ASK_WHAT = "What is this?"
 ASK_SPORT = "What sport is this?"
 
 
-def thing(category, words, deeper=False, question=ASK_WHAT):
+def thing(category, words, deeper=False, question=ASK_WHAT, pattern=None):
     """A Commons spec for home_packs.build_commons_topic: (category, deeper, [(question, "This is <words>." and the
-    fitness note)])."""
-    return (category, deeper, [(question, f"This is {words}. {FIT_NOTE}")])
+    fitness note)]), with a pattern when only files whose own words match may be taken."""
+    spec = (category, deeper, [(question, f"This is {words}. {FIT_NOTE}")])
+    return spec + (pattern,) if pattern else spec
+
+
+# The food guide categories also hold photos of the events where the guides were announced (officials, chefs,
+# students): only files whose own words name the picture itself and no person or event (checked live 2026-11-22).
+GUIDE_ONLY = re.compile(r"^(?!.*\b(secretary|surgeon general|chef|announc\w*|press|event|ceremony|launch\w*|"
+                        r"students?|child(ren)?|kids?|people|speaks?|speaking|answers?|unveil\w*)\b)"
+                        r".*(myplate|miplato|plate|pyramid|icon|logo|graphic|diagram|chart|guide)", re.I | re.S)
 
 
 FITNESS_EQUIPMENT = [
@@ -88,10 +97,11 @@ ADAPTIVE_SPORTS = [
 
 FOOD_GUIDES = [
     thing("MyPlate", "MyPlate, the US Department of Agriculture's food guide picture (2011): a plate divided into "
-                     "fruits, vegetables, grains and protein foods, with a cup beside it for dairy", True),
+                     "fruits, vegetables, grains and protein foods, with a cup beside it for dairy", True,
+          pattern=GUIDE_ONLY),
     thing("Food pyramids", "a food pyramid, a picture that shows the kinds of food to eat more of (at the wide "
                            "bottom) and less of (at the narrow top); the USDA's Food Guide Pyramid (1992) was "
-                           "replaced by MyPyramid (2005) and then by MyPlate (2011)", True),
+                           "replaced by MyPyramid (2005) and then by MyPlate (2011)", True, pattern=GUIDE_ONLY),
 ]
 
 
