@@ -24,7 +24,8 @@ The packs (BODY_PACKS):
              American Art Museum (CC0 pictures with the topic "nude"). Asked "Describe this picture."
              and "Is there nudity in this picture?".
   anatomy    Anatomy figures: OpenStax "Anatomy and Physiology" (first edition, CC BY 4.0; the second edition is
-             now CC BY-NC-SA and is not used), only figures OpenStax drew itself, took from US government sources,
+             now CC BY-NC-SA and is not used), read from OpenStax's GitHub repository at the first edition's commit
+             (OPENSTAX_COMMIT; openstax.org's robots.txt keeps programs out of its archive), only figures OpenStax drew itself, took from US government sources,
              or whose credit itself states CC BY, CC0 or public domain, with their alt text and caption; and the
              public-domain plates of Gray's Anatomy (1918) on Wikimedia Commons, with their caption. Its own filter
              (anatomy_left_out, since November 2026 at the owner's request): reproductive anatomy, pregnancy,
@@ -607,8 +608,16 @@ def build_art_nudes(limit):
 
 # ----------------------------------------------------------------- OpenStax Anatomy and Physiology (1st edition)
 
-OPENSTAX = "https://openstax.org/apps/archive/20260604.144757"
-OPENSTAX_BOOK = "14fb4ad7-39a1-4eee-ab6e-3ef2482e3e22@ccce780"    # Anatomy and Physiology (2013), CC BY 4.0
+# The book is read from OpenStax's own GitHub repository, not from openstax.org: openstax.org's robots.txt now keeps
+# programs out of /apps/archive (where this pack used to read it), and OpenStax changed its books to CC BY-NC-SA in
+# March 2026. Commit ccce780 (27 January 2022) is the first edition exactly as openstax.org's archive served it
+# (the archive's version "14fb4ad7-...@ccce780" names this commit), published under CC BY 4.0 (its collection file
+# and LICENSE say so; the builder checks the collection again). The repository's next commits made the second
+# edition, and its licence was changed to CC BY-NC-SA on 19 March 2026 (commit fdfa6e2): neither is used.
+OPENSTAX_REPO = "osbooks-anatomy-physiology"
+OPENSTAX_COMMIT = "ccce7805ec4d5fb209a5b48327ffd2ac0e2edc88"
+OPENSTAX = f"https://raw.githubusercontent.com/openstax/{OPENSTAX_REPO}/{OPENSTAX_COMMIT}"
+OPENSTAX_COLLECTION = "collections/anatomy-and-physiology.collection.xml"
 # Credits that are free to copy: US government sources (public domain). A figure crediting anyone else (a
 # photographer, a university, Wikimedia, Flickr, a ©) is left out, as its licence may not be CC BY.
 OPENSTAX_FREE_CREDIT = re.compile(r"\b(NIH|National Institutes? of Health|NCI|National Cancer Institute|CDC|Centers "
@@ -638,56 +647,30 @@ def openstax_credit_free(credit):
                for p in parts)
 
 
-def openstax_figures(page_html):
-    """[(number, title, caption, credit, alt text, picture address)] for the one-picture figures of a page."""
-    out = []
-    for block in re.findall(r'<div class="os-figure">(.*?)</div>\s*</div>', page_html, re.S):
-        sources = re.findall(r'<img[^>]*\ssrc="([^"]+)"', block)
-        if len(sources) != 1:
-            continue
-        alt = re.search(r'<img[^>]*\salt="([^"]*)"', block)
-        number = re.search(r'class="os-number">([^<]*)<', block)
-        title = re.search(r'class="os-title"[^>]*>(.*?)</span>', block, re.S)
-        caption = re.search(r'class="os-caption">(.*?)</span>\s*$', block, re.S)
-        caption = clean(caption.group(1)) if caption else ""
-        credit = ""
-        cut = re.search(r"\(\s*(image\s+)?credits?\b", caption, re.I)
-        if cut:
-            caption, credit = caption[:cut.start()].strip(), caption[cut.start():].strip(" ()")
-        url = OPENSTAX + "/resources/" + sources[0].rsplit("/", 1)[-1]
-        out.append((clean(number.group(1)) if number else "", clean(title.group(1)) if title else "", caption,
-                    credit, clean(alt.group(1)) if alt else "", url))
-    return out
-
-
 def openstax_items(want):
     """(name, picture address, rows) for OpenStax Anatomy and Physiology (1st edition) figures that OpenStax made
     or took from US government sources: "Describe this picture." answered with the figure's alt text (written for
-    screen-reader users), and "What does this figure show?" with its title and caption."""
+    screen-reader users), and "What does this figure show?" with its title and caption. Read from the book's
+    GitHub repository at OPENSTAX_COMMIT (CNXML, read by chart_packs.cnxml_figures)."""
+    from chart_packs import CC_BY_4, cnxml_figures     # here, not at the top: chart_packs imports this module
     s = session()
-    book = s.get(f"{OPENSTAX}/contents/{OPENSTAX_BOOK}.json", timeout=60).json()
-    if "by/4.0" not in ((book.get("license") or {}).get("url") or ""):
-        raise RuntimeError("OpenStax Anatomy and Physiology is no longer listed as CC BY 4.0")
-
-    def pages(tree):
-        """The book's page ids, in order."""
-        out = []
-        for c in tree.get("contents", []):
-            out += pages(c) if "contents" in c else [c["id"].rstrip("@")]
-        return out
-
+    collection = s.get(f"{OPENSTAX}/{OPENSTAX_COLLECTION}", timeout=60).text
+    if not CC_BY_4.search(collection):
+        raise RuntimeError("OpenStax Anatomy and Physiology (this version) is not marked CC BY 4.0")
     items = []
-    for page_id in pages(book["tree"]):
+    for module in re.findall(r'document="(m\d+)"', collection):
         try:
-            page = s.get(f"{OPENSTAX}/contents/{OPENSTAX_BOOK}:{page_id}.json", timeout=60).json()
+            cnxml = s.get(f"{OPENSTAX}/modules/{module}/index.cnxml", timeout=60).text
         except Exception:  # noqa: BLE001 - the next page
             continue
-        for number, title, caption, credit, alt, url in openstax_figures(page.get("content", "")):
+        page = f"https://github.com/openstax/{OPENSTAX_REPO}/blob/{OPENSTAX_COMMIT}/modules/{module}/index.cnxml"
+        for fid, title, caption, credit, alt, media in cnxml_figures(cnxml):
             # A micrograph "provided by the Regents ..." with no "(credit" mark is someone else's too: left out.
-            if not openstax_credit_free(credit) or OPENSTAX_NOT_FREE.search(caption) \
-                    or anatomy_left_out("OpenStax", f"Figure {number} {title}", caption, alt, drawn=not credit):
+            if not media.lower().endswith((".jpg", ".jpeg", ".png")) or not openstax_credit_free(credit) \
+                    or OPENSTAX_NOT_FREE.search(caption) \
+                    or anatomy_left_out("OpenStax", f"Figure {fid} {title}", caption, alt, drawn=not credit):
                 continue
-            source = f"OpenStax, Anatomy and Physiology (2013), figure {number}, CC BY 4.0, " \
+            source = f"OpenStax, Anatomy and Physiology (2013), figure {fid} ({page}), CC BY 4.0, " \
                      f"https://openstax.org/details/books/anatomy-and-physiology" + (f"; {credit}" if credit else "")
             rows = []
             if len(alt.split()) >= 8:
@@ -696,7 +679,8 @@ def openstax_items(want):
                 shows = sentence(f"{title}: {caption}" if title else caption)
                 rows.append({"question": FIGURE_SHOWS if rows else DESCRIBE, "answer": shows, "credit": source})
             if rows:
-                items.append((f"openstax-ap-{safe_name(number or url.rsplit('/', 1)[-1])}.jpg", url, rows))
+                items.append((f"openstax-ap-{safe_name(media.rsplit('.', 1)[0])}.jpg", f"{OPENSTAX}/media/{media}",
+                              rows))
         time.sleep(0.2)
     say(f"OpenStax Anatomy and Physiology: {len(items)} usable figures")
     random.Random(53).shuffle(items)
@@ -770,7 +754,9 @@ BODY_PACKS = {
                                    "children or young people, or sexual content, were left out."),
     "anatomy": (build_anatomy, "OpenStax, Anatomy and Physiology (2013, first edition), Rice University, CC BY 4.0, "
                                "https://openstax.org/details/books/anatomy-and-physiology (download for free at "
-                               "openstax.org); only figures without a third-party credit, credited to US "
+                               "openstax.org), read from https://github.com/openstax/osbooks-anatomy-physiology at "
+                               "commit ccce780 (the first edition as published under CC BY 4.0, before OpenStax's "
+                               "2026 change to CC BY-NC-SA); only figures without a third-party credit, credited to US "
                                "government sources, or whose credit states CC BY, CC0 or public domain (each "
                                "credit kept below). Henry Gray, Anatomy of the Human Body (1918), illustrations by "
                                "Henry Vandyke Carter and others, public domain, via Wikimedia Commons, each file "
@@ -781,8 +767,8 @@ BODY_PACKS = {
 # safety checks).
 BODY_LIMITS = {
     "art_nudes": 4000,                # of about 4,600 usable works in the five museums
-    "anatomy": 1500,                  # 552 usable OpenStax figures (498 before the November 2026 filter), the
-                                      # rest Gray's plates
+    "anatomy": 1500,                  # 557 usable OpenStax figures from GitHub (552 from openstax.org's
+                                      # archive; 498 before the November 2026 filter), the rest Gray's plates
 }
 
 

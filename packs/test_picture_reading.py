@@ -131,6 +131,14 @@ def test_openstax_figures_parsed_and_checked():
     assert not ch.CC_BY_4.search('<md:license url="http://creativecommons.org/licenses/by-nc-sa/4.0/">')
 
 
+def test_anatomy_openstax_read_from_github_pinned():
+    """The anatomy pack reads OpenStax from GitHub at the first edition's CC BY 4.0 commit, never from openstax.org
+    (its robots.txt keeps programs out of /apps/archive and /books/ files)."""
+    import body_packs as bp
+    assert bp.OPENSTAX.startswith("https://raw.githubusercontent.com/openstax/") and len(bp.OPENSTAX_COMMIT) == 40
+    assert bp.OPENSTAX_COMMIT in bp.OPENSTAX and "openstax.org/apps" not in open(bp.__file__).read()
+
+
 def test_commons_charts_need_a_description():
     import chart_packs as ch
     rows_for = ch.chart("a pie chart")
