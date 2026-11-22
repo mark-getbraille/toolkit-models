@@ -128,10 +128,11 @@ TOPICS = [
            "laundry_symbols", "commons_tools", "commons_kitchen", "clock_times", "seven_segment", "abo_products",
            "commons_things", "open_images_tech", "commons_us_controls", "wikidata_devices", "commons_devices",
            "nmah_devices", "farm_commons_equipment", "mech_commons_building", "open_images_objects", "core50",
-           "gso_objects", "commons_household_chemicals", "commons_finishes_in_use",
+           "gso_objects", "commons_household_chemicals", "commons_finishes_in_use", "commons_appliance_controls",
+           "open_images_appliance_controls",
            # share-alike
            "commons_mechanical_sa", "dashboard_symbols_sa", "device_models_sa", "farm_mech_commons_sa",
-           "commons_airplanes_sa", "chemical_commons_sa",
+           "commons_airplanes_sa", "chemical_commons_sa", "appliance_commons_sa",
            # non-commercial and research-only (personal use)
            "autovi", "dashboard_warning_icons", "car_parts_damage", "car_parts_dsmlr", "car_damage_views",
            "mechanical_parts_2022", "co3d_devices", "stanford_cars", "fgvc_aircraft", "museums_victoria",

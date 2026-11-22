@@ -1746,6 +1746,13 @@ COMMONS_KEYS = frozenset({
 from indoor_packs import INDOOR_PACKS, INDOOR_COMMONS_KEYS
 PACKS.update(INDOOR_PACKS)
 COMMONS_KEYS = COMMONS_KEYS | frozenset(INDOOR_COMMONS_KEYS)
+# Appliance controls close up (packs/appliance_controls_packs.py): Commons rotary switches, appliance control panels,
+# push buttons, touch screens, timers, air-conditioner remotes, smart thermostats and cooktops, with a setting only
+# where the file's own words state it; Open Images knobs, panels, buttons, displays and appliances no other pack asks
+# about. The Open Images photos show people: describing only.
+from appliance_controls_packs import APPLIANCE_CONTROLS_PACKS, APPLIANCE_CONTROLS_COMMONS_KEYS
+PACKS.update(APPLIANCE_CONTROLS_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(APPLIANCE_CONTROLS_COMMONS_KEYS)
 
 
 def pack_lanes(keys):

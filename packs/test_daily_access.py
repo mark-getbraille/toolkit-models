@@ -26,6 +26,7 @@ sys.path.insert(1, os.path.join(HERE, "..", "training-kit", "kit"))
 import build_packs  # noqa: E402,F401 - loaded first, as the builders expect
 import gaps_oi_packs as g  # noqa: E402
 import indoor_packs as indoor  # noqa: E402
+import appliance_controls_packs as appl  # noqa: E402
 
 REPO = os.path.dirname(HERE)
 # Each pack file of this group: (module, its packs, its limits, its Commons keys, its Commons specs, its Open Images
@@ -33,6 +34,8 @@ REPO = os.path.dirname(HERE)
 MODULES = [
     (indoor, indoor.INDOOR_PACKS, indoor.INDOOR_LIMITS, indoor.INDOOR_COMMONS_KEYS, indoor.INDOOR_SPECS,
      [indoor.INDOOR_OI]),
+    (appl, appl.APPLIANCE_CONTROLS_PACKS, appl.APPLIANCE_CONTROLS_LIMITS, appl.APPLIANCE_CONTROLS_COMMONS_KEYS,
+     appl.CONTROL_SPECS, [appl.CONTROLS_OI]),
 ]
 
 
@@ -75,27 +78,59 @@ def test_indoor_open_images_rows():
     assert all(r.get("child") for r in oi_rows({"Lobby": 1, "Child": 1}, indoor.INDOOR_OI))
 
 
+# ----------------------------------------------------------------- appliance controls
+
+def test_appliance_settings_only_where_stated():
+    alt = build_packs.ALT_TEXT
+    entries = [("a.jpg", b"x", {"question": appl.WHAT_Q, "answer": "This is a rotary switch.", "credit": "c"}),
+               (None, None, {"question": alt, "answer": "The oven dial is set to 180 °C.", "credit": "c",
+                             "file": "pictures/a.jpg"}),
+               ("b.jpg", b"y", {"question": appl.WHAT_Q, "answer": "This is a timer.", "credit": "c"}),
+               (None, None, {"question": alt, "answer": "A kitchen timer on the counter.", "credit": "c",
+                             "file": "pictures/b.jpg"}),
+               ("c.jpg", b"z", {"question": appl.WHAT_Q, "answer": "This is a cooktop.", "credit": "c"}),
+               (None, None, {"question": alt, "answer": "Set to 3, then set to 5 for boiling.", "credit": "c",
+                             "file": "pictures/c.jpg"})]
+    out = appl.with_settings(entries)
+    added = [e for e in out if e[2]["question"] == appl.DISPLAY_Q]
+    assert len(added) == 1 and added[0][2]["file"] == "pictures/a.jpg" and "180" in added[0][2]["answer"]
+    assert all(e[2]["question"] != appl.DISPLAY_Q for e in out if e[2].get("file") != "pictures/a.jpg")
+
+
+def test_appliance_specs():
+    for spec in appl.CONTROL_SPECS:
+        assert spec[2][0][1].endswith(appl.CONTROLS_NOTE) and not re.search(r"\d", spec[2][0][1])
+    broad = {s[0]: s[3] for s in appl.CONTROL_SPECS if len(s) > 3}
+    assert set(broad) == {"Rotary switches", "Control panels", "Push buttons", "Touchscreens", "Timers"}
+    assert broad["Control panels"].search("Control panel of a Bosch washing machine")
+    assert not broad["Control panels"].search("Elevator control panel in an office tower")
+    rows = oi_rows({"Control knob": 1, "Led display": 1}, appl.CONTROLS_OI)
+    said = {r["question"]: r["answer"] for r in rows}
+    assert said["What kind of display is in this picture?"].endswith("not what it shows.")
+    assert not any(re.search(r"\d", r["answer"]) for r in rows)
+
+
 # ----------------------------------------------------------------- shared checks
 
 def asked_elsewhere():
-    """Every Open Images label another pack asks about (as test_gaps.py and test_drinks.py gather them)."""
-    import everyday_packs
-    import home_packs
-    import food_packs
-    import culture_packs
-    import drinks_packs
-    elsewhere = set(everyday_packs.OI_HOME) | set(food_packs.OI_FOOD) | set(culture_packs.OI_CULTURE)
-    for grp in home_packs.OI_GROUP_QUESTIONS:
-        elsewhere |= set(grp[0])
-    import things_packs, packaged_goods_packs, med_vet_packs, people_activity_packs, disability_packs  # noqa: E401
-    import world_life_packs, street_scene_packs  # noqa: E401
-    for mod in (things_packs, packaged_goods_packs, med_vet_packs, people_activity_packs, disability_packs,
-                world_life_packs, street_scene_packs):
-        for name, value in vars(mod).items():
-            if name.startswith("OI_") and isinstance(value, dict):
+    """Every Open Images label another pack file asks about: the keys of its OI_... dictionaries, the labels of its
+    gaps_oi_packs-style groups, and home_packs' group questions (every *_packs.py file but those of MODULES)."""
+    import importlib
+    ours = {m[0].__name__ for m in MODULES}
+    elsewhere = set()
+    for path in sorted(glob.glob(os.path.join(HERE, "*_packs.py"))):
+        name = os.path.basename(path)[:-3]
+        if name in ours:
+            continue
+        mod = importlib.import_module(name)
+        for var, value in vars(mod).items():
+            if var.startswith("OI_") and isinstance(value, dict):
                 elsewhere |= set(value)
-    for groups in (g.PUBLIC_HOME, g.OUTINGS, g.FOOD_MORE, g.CARDS, drinks_packs.BAR_DRINKS, drinks_packs.SOFT):
-        elsewhere |= g.gap_labels(groups)
+            elif isinstance(value, list) and value and all(isinstance(x, dict) and "things" in x for x in value):
+                elsewhere |= g.gap_labels(value)
+            elif var == "OI_GROUP_QUESTIONS":
+                for grp in value:
+                    elsewhere |= set(grp[0])
     return elsewhere
 
 
@@ -162,3 +197,5 @@ def test_wiring():
         assert s.key in in_topics, s.key
     assert {"indoor_commons_sa"} <= set(listed) and listed["indoor_commons_sa"].group == "share-alike"
     assert set(indoor.INDOOR_PACKS) <= no_making
+    assert "commons_appliance_controls" not in no_making and "open_images_appliance_controls" in no_making
+    assert listed["appliance_commons_sa"].group == "share-alike"

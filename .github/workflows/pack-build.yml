@@ -407,6 +407,8 @@ jobs:
             commons_hazard_symbols) limit=450 ;;
             commons_indoor_wayfinding) limit=2500 ;;
             open_images_indoor) limit=2500 ;;
+            commons_appliance_controls) limit=600 ;;
+            open_images_appliance_controls) limit=2000 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in
