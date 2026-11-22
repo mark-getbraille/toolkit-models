@@ -529,13 +529,13 @@ NOT_INCLUDED = [
      "handling-and-safety-2006) is a British Waterways (now Canal and River Trust) publication with no open licence "
      "stated; MCA guidance on gov.uk is under the Open Government Licence and could be added. Link-only. Index: "
      "https://canalrivertrust.org.uk/"),
-    ("Admiralty Navigation Manual (1938, reprinted 1943) and Admiralty Manual of Navigation (1955 to 1973)", "The 1938 "
+    ("Admiralty Navigation Manual (1938, reprinted 1943) and Admiralty Manual of Navigation (1955)", "The 1938 "
      "volumes (Indian Digital Library scans and admiraltynavigationmanualvol1) are public domain in the UK and, as "
-     "their Crown copyright ended before 1996, in the US; not added yet (poor scans). The 1970 and 1973 volumes "
-     "(admiralty-manual-navigation-v-1, admiralty-manual-of-navigation-volume-2) are downloadable but, like the "
-     "Admiralty seamanship manuals, their US copyright may have been restored (URAA, 1996); the owner's decision of "
-     "22 November 2026 named seamanship, boat and rigging manuals, so they are link-only until he decides. The 1914 "
-     "manual is built. Index: https://archive.org/details/admiralty-publications"),
+     "their Crown copyright ended before 1996, in the US; not added yet (poor scans). The 1955 volume has no "
+     "downloadable copy. The 1970 and 1973 volumes are built in knots_military.py (kmil:admiralty_manual_of_"
+     "navigation_1970_v1 and kmil:admiralty_manual_of_navigation_1973_v2, with the owner's approval of 22 November "
+     "2026, marked us_restoration_risk like the Admiralty seamanship manuals), and the 1914 manual here. Index: "
+     "https://archive.org/details/admiralty-publications"),
     ("Old boat books whose copies cannot be used", "Daniel Beard's Boat-Building and Boating (1911): the Internet "
      "Archive's copy is a 1931 printing, so the builder's year check refuses it; T. H. Russell's Motor Boats: "
      "Construction and Operation (1910) and Linton Hope's Small Yacht Construction and Rigging (1903): scans without "

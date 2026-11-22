@@ -85,6 +85,19 @@ def test_old_book_notes_and_exclusions():
                   "milw:army_fm_31_27_pack_animals_2000", "milw:army_fm_3_05_213_pack_animals_2004"):
         assert built in whole, built
     assert "kmil:bluejackets_manual_1927" in keys
+    # The owner's decisions of 22 November 2026: the 1918 Bluejacket's Manual whole (its contact-mine pages kept as
+    # history, said in its description), and the Admiralty Manual of Navigation of 1970 and 1973 like the seamanship
+    # manuals (UK Crown copyright expired, US restoration risk marked).
+    pdfs = {p["name"]: p for p in knots_military.PDFS}
+    bj = pdfs["bluejackets_manual_1918"]
+    assert bj["old_public_domain"] and bj["published"] == "1918" and "mines" in bj["description"]
+    assert "history" in bj["description"] and not bj.get("military")
+    for name, year in (("admiralty_manual_of_navigation_1970_v1", "1970"), ("admiralty_manual_of_navigation_1973_v2",
+                                                                            "1973")):
+        assert f"kmil:{name}" in keys
+        nav = pdfs[name]
+        assert nav["us_restoration_risk"] and nav["uk_crown_expired"] and nav["published"] == year
+        assert nav["licence"] == knots_military.UK_CROWN_EXPIRED and knots_military.CROWN_NOTICE in nav["notice"]
     rows = " ".join(r[0] + " " + r[1] for r in knots_military.NOT_INCLUDED + bushcraft.NOT_INCLUDED)
     for words in ("1 January 1996", "br67manualseamanship1995", "until the end of 2045", "Pig-Sticking", "Kochanski",
                   "milw:usaf_afh_10_644_sere_2017", "FM 31-27", "personal use", "Down But Not Out", "Australia",
@@ -177,7 +190,9 @@ def test_admiralty_manuals_1951_to_1975():
     archives = {p["archive"] for p in marked.values()}
     assert archives == {"manual-seamanship-1951-v1", "manual-seamanship-1951-v2", "manual-seamanship-1951-v3",
                         "admiralty-manual-sea-v1", "admiralty-manual-sea-v2", "admiralty-manual-sea-v3",
-                        "admiraltymanualseamanshipv1-1972"}
+                        "admiraltymanualseamanshipv1-1972",
+                        # the Admiralty Manual of Navigation, same treatment (the owner's approval, 22 November 2026)
+                        "admiralty-manual-navigation-v-1", "admiralty-manual-of-navigation-volume-2"}
     keys = set(sources.expand_keys(["knots-military"]))
     for name, p in marked.items():
         assert f"kmil:{name}" in keys and p["group"] == "knots", name

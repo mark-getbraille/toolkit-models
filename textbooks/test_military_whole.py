@@ -94,4 +94,7 @@ def test_not_included_rows():
         assert row in sources.NOT_INCLUDED
         assert "Index: https://" in row[1], row[0]
     rows = " ".join(a + " " + b for a, b in M.NOT_INCLUDED)
-    assert "mines" in rows and "personal use" in rows
+    assert "personal use" in rows
+    # The 1918 Bluejacket's Manual is no longer left out here: the owner chose to build it whole (knots_military.py).
+    assert "bluejacketsmanua0000lieu" not in rows
+    assert "kmil:bluejackets_manual_1918" in sources.expand_keys(["knots-military"])

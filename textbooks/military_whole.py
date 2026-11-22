@@ -40,7 +40,9 @@ about explosives are bookmarked in every one of them, so they can be cut. A manu
 cut (no bookmarks, no printed headings) is not built; NOT_INCLUDED says which and why.
 
 Elsewhere, under the same rule: the radio manuals FM 6-02.53 and ATP 6-02.53 (radio_books.py, radio:) and the
-Bluejackets' Manual of 1927 (knots_military.py, kmil:).
+Bluejackets' Manual of 1927 (knots_military.py, kmil:). The 1918 printing of the Bluejacket's Manual, once left out
+here because its pages on contact mines cannot be cut, is built whole in knots_military.py by the owner's decision
+of 22 November 2026 (a private printing, public domain as published before 1931; the mines pages kept as history).
 
 Run from the repository's folder:
   python3 textbooks/military_whole.py milw:usaf_afh_10_644_sere_2017 --out build/textbooks --limit 3
@@ -177,10 +179,6 @@ NOT_INCLUDED = [
      "built here (TC 3-21.76, 2025); the 2017 copy's bookmarks also skip chapter 11. Shop reprints (for example "
      "\"Ranger Handbook: Not for the Weak or Fainthearted\") are their publishers' copyright: never used. Index: "
      "https://archive.org/details/tc-3-21-76-ranger-handbook-april-2017"),
-    ("The Bluejackets' Manual, 1918 (6th edition)", "Public domain (published before 1931), but its scan has no "
-     "bookmarks and no chapter headings the builder can find, and pages 599 to 601 describe how the Navy's contact "
-     "mines and their detonators work: a mines part that cannot be cut, so it is left out by the explosives rule. The "
-     "1917 and 1927 editions are built (kmil:). Index: https://archive.org/details/bluejacketsmanua0000lieu"),
     ("The Bluejackets' Manual, the Internet Archive item dated 1902 (bluejacketsmanua12mcle)", "Its record says 1902, "
      "but its chapters (aircraft recognition, chemical warfare defence, the telephone talker) are those of a Second "
      "World War edition, which the US Naval Institute published under its own copyright; renewal was not checked: "
