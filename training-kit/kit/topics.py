@@ -133,11 +133,12 @@ TOPICS = [
            # electronics repair, assistive devices and building-site safety (electronics_sources.py, building_sources.py)
            "commons_electronic_parts", "commons_cables_connectors", "commons_electronics_repair",
            "commons_assistive_devices", "commons_circuit_diagrams", "open_images_electronics",
+           "commons_mobility_aids",
            "commons_construction_safety", "electronics_commons_sa",
            # car care: wipers, tyres, jacks, roadside help, EV connectors, dashboard lights
            "commons_car_care", "commons_ev_charging", "commons_dashboard_lights", "open_images_car_care",
            # share-alike
-           "car_care_commons_sa",
+           "car_care_commons_sa", "people_commons_sa",
            "commons_mechanical_sa", "dashboard_symbols_sa", "device_models_sa", "farm_mech_commons_sa",
            "commons_airplanes_sa",
            # non-commercial and research-only (personal use)
@@ -216,6 +217,7 @@ TOPICS = [
            "openstax_figures", "commons_charts", "wpc_surface_maps", "nhc_forecast_cones",
            "commons_indoor_wayfinding", "open_images_indoor",
            "synthetic_bills",
+           "commons_hearing_communication", "commons_immigration_documents",
            # share-alike
            "hiertext", "mapqa", "indoor_commons_sa",
            # non-commercial and research-only (personal use)

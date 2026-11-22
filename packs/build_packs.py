@@ -1891,6 +1891,13 @@ for _packs, _commons in ((CAR_CARE_PACKS, CAR_CARE_COMMONS_KEYS), (GARDEN_PACKS,
 from outdoor_cooking_packs import OUTDOOR_COOKING_PACKS, OUTDOOR_COOKING_COMMONS_KEYS
 PACKS.update(OUTDOOR_COOKING_PACKS)
 COMMONS_KEYS = COMMONS_KEYS | frozenset(OUTDOOR_COOKING_COMMONS_KEYS)
+# Disabilities other than blindness, veterans and immigration documents (packs/people_packs.py): Commons manual and
+# sports wheelchairs, braces, accessible taxis, hearing loops, hearing tests, captions, accessibility symbols, PECS
+# cards, US military decorations, dog tags, burial flags, national cemetery headstones and immigration document
+# specimens; every answer ends with its ADA, hearing, VA or USCIS note.
+from people_packs import PEOPLE_PACKS, PEOPLE_COMMONS_KEYS
+PACKS.update(PEOPLE_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(PEOPLE_COMMONS_KEYS)
 
 
 def pack_lanes(keys):

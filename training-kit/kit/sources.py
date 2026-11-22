@@ -3424,3 +3424,18 @@ PERSONAL_PICTURE_MAKING_OK |= _outdoor_cooking_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in OUTDOOR_COOKING_SOURCES
                                                                if s.key not in _outdoor_cooking_ok)
 _add_collections(OUTDOOR_COOKING_SOURCES)
+# Disabilities other than blindness, veterans and immigration documents (people_sources.py): the ready-made packs, the
+# share-alike Commons files, and the sources looked at and left out; the file may be missing. None of its keys may be
+# used for picture-making (PEOPLE_PICTURE_MAKING_OK is empty).
+try:
+    import people_sources as _people  # noqa: E402
+except ImportError as _e:
+    _people = None
+    if getattr(_e, "name", None) != "people_sources":
+        say(f"(The people collections could not be loaded: {_e}. They are left out.)")
+PEOPLE_SOURCES = list(getattr(_people, "PEOPLE_SOURCES", []) or [])
+_people_ok = set(getattr(_people, "PEOPLE_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _people_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in PEOPLE_SOURCES
+                                                               if s.key not in _people_ok)
+_add_collections(PEOPLE_SOURCES)
