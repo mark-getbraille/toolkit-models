@@ -109,6 +109,7 @@ MODULES = [
     "pet_care",             # pet care: CDC Healthy Pets, FDA CVM pet food and poisons, old dog and cat books (pet:)
     "genealogy",            # genealogy: NARA guides, Census Bureau family history, CDC vital records offices (gen:)
     "audio_media",          # audio and media: Audacity Manual, OSARA, W3C WAI media guide, LoC AV formats (media:)
+    "audio_description",    # describing pictures and video: 47 CFR part 79 (audio description rules), index (describe:)
     "typing_skills",        # typing: old public-domain touch typing courses and a keyboard skills index (typing:)
     "recycling",            # recycling and waste: EPA (personal use), FDA medicine disposal, DEA take-back (recycle:)
     "game_fish",            # game and fish: CDC game diseases, APHIS and USGS CWD, FDA and EPA fish advice (gamefish:)
