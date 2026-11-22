@@ -1924,6 +1924,31 @@ COMMONS_KEYS = COMMONS_KEYS | frozenset(VISION_COMMONS_KEYS)
 from power_packs import POWER_PACKS, POWER_COMMONS_KEYS
 PACKS.update(POWER_PACKS)
 COMMONS_KEYS = COMMONS_KEYS | frozenset(POWER_COMMONS_KEYS)
+# Money and work, travel, and citizenship and civics (the owner's request of 2026-11-22), one pack file each:
+# computer-made SPECIMEN pay stubs and W-2s (packs/money_work_packs.py), SPECIMEN passports and boarding passes with the
+# Commons travel signs (packs/travel_packs.py), and SPECIMEN sample ballots and jury summonses (packs/civics_packs.py);
+# shared drawing helpers in packs/synthetic_documents.py. The synthetic documents are never for picture-making.
+from money_work_packs import MONEY_WORK_PACKS, MONEY_WORK_COMMONS_KEYS
+from travel_packs import TRAVEL_PACKS, TRAVEL_COMMONS_KEYS
+from civics_packs import CIVICS_PACKS, CIVICS_COMMONS_KEYS
+for _packs, _commons in ((MONEY_WORK_PACKS, MONEY_WORK_COMMONS_KEYS), (TRAVEL_PACKS, TRAVEL_COMMONS_KEYS),
+                         (CIVICS_PACKS, CIVICS_COMMONS_KEYS)):
+    PACKS.update(_packs)
+    COMMONS_KEYS = COMMONS_KEYS | frozenset(_commons)
+# Practical life (packs/practical_packs.py gathers six files, the owner's request of 2026-11-22): driving and road
+# rules, computer and phone basics, cleaning and household management, knots and outdoor skills, pool equipment, and
+# motorcycles, RVs and trailers. Every answer carries its safety note (seat belts, never mixing cleaners or pool
+# chemicals, drowning prevention, rope and sharp tools, towing, helmets).
+from practical_packs import PRACTICAL_PACKS, PRACTICAL_COMMONS_KEYS
+PACKS.update(PRACTICAL_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(PRACTICAL_COMMONS_KEYS)
+# Disabilities other than blindness, veterans and immigration documents (packs/people_packs.py): Commons manual and
+# sports wheelchairs, braces, hearing loops, hearing tests, captions, TTYs, accessibility symbols, PECS cards, US
+# military ribbon bars and decorations, dog tags, folded flags, passports, visas and Social Security cards; every
+# answer ends with its ADA, hearing, VA or USCIS note.
+from people_packs import PEOPLE_PACKS, PEOPLE_COMMONS_KEYS
+PACKS.update(PEOPLE_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(PEOPLE_COMMONS_KEYS)
 # Health and life (the owner's request of 2026-11-22), one pack file each: mental health and wellbeing aids
 # (packs/mental_health_packs.py), fitness equipment, adaptive sports and food guides (packs/fitness_nutrition_packs.py),
 # contraceptive and period products and HIV tests (packs/sexual_health_packs.py), daily-living aids

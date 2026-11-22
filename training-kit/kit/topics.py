@@ -122,8 +122,9 @@ TOPICS = [
            "drinks_alcohol_commons_sa")),
     Topic("machines", "Vehicles, machines and devices",
           "Vehicles and their parts and dashboard symbols, machine parts, tools, plugs, clocks and displays, "
-          "electronic devices, electronic parts and repair, assistive devices, radios and antennas, and "
-          "building-site safety.",
+          "electronic devices, electronic parts and repair, assistive devices, radios and antennas, "
+          "building-site safety, car controls and roads, computer and phone parts, and motorcycles, RVs and "
+          "trailers.",
           ("wikidata_vehicle_models", "commons_vehicle_kinds", "commons_us_cars", "commons_ca_cars",
            "commons_airplanes", "commons_car_parts", "commons_cycle_parts", "commons_machine_parts",
            "commons_engine_bays", "iso_machine_symbols", "corolla_engine_bay", "tyre_condition",
@@ -134,6 +135,7 @@ TOPICS = [
            # electronics repair, assistive devices and building-site safety (electronics_sources.py, building_sources.py)
            "commons_electronic_parts", "commons_cables_connectors", "commons_electronics_repair",
            "commons_assistive_devices", "commons_circuit_diagrams", "open_images_electronics",
+           "commons_mobility_aids",
            "commons_construction_safety", "electronics_commons_sa",
            # car care: wipers, tyres, jacks, roadside help, EV connectors, dashboard lights
            "commons_car_care", "commons_ev_charging", "commons_dashboard_lights", "open_images_car_care",
@@ -141,8 +143,11 @@ TOPICS = [
            "commons_radios", "commons_antennas_station", "commons_mesh_data_radio", "open_images_radio",
            # generators, dynamos and wind and water turbines (power_sources.py; also in the power topic)
            "commons_generators_power", "commons_wind_water_power",
+           # driving, computer and phone basics, motorcycles, RVs and trailers (practical_sources.py)
+           "commons_driving", "open_images_driving", "commons_computer_basics", "open_images_computer_basics",
+           "commons_trailers_rvs", "commons_motorcycle_gear", "open_images_motorcycles_rvs",
            # share-alike
-           "car_care_commons_sa", "radio_commons_sa",
+           "car_care_commons_sa", "radio_commons_sa", "people_commons_sa",
            "commons_mechanical_sa", "dashboard_symbols_sa", "device_models_sa", "farm_mech_commons_sa",
            "commons_airplanes_sa",
            # non-commercial and research-only (personal use)
@@ -153,9 +158,9 @@ TOPICS = [
     # one add-on. The household collections moved here from "machines"; the craft collections are also in "art" and
     # the household pests also in "nature", so those add-ons keep them.
     Topic("home", "Home and household",
-          "Appliances and their controls, kitchens, laundry and care labels, cleaning products and hazards, home "
-          "repair, locks, heating and lighting, building work and ramps, pests, baby products, sewing and crafts, "
-          "first aid, dental and eye care, and emergency kits, shelters and disasters.",
+          "Appliances and controls, kitchens, laundry and care labels, cleaning tools, products and hazards, home "
+          "repair, locks, heating, lighting, building and ramps, pests, baby products, sewing and crafts, first "
+          "aid, dental and eye care, emergency kits, disasters, pool equipment, knots and outdoor tools.",
           ("commons_appliances", "commons_appliance_controls", "open_images_appliance_controls", "commons_kitchen",
            "laundry_symbols", "laundry_care_labels", "commons_household_chemicals", "commons_finishes_in_use",
            "commons_household_hazards", "open_images_household_hazards",
@@ -190,6 +195,9 @@ TOPICS = [
            "commons_disaster_types", "open_images_disasters", "preparedness_commons_sa",
            # generators, solar panels and batteries (power_sources.py; also in the power topic)
            "commons_generators_power", "commons_solar_batteries", "open_images_power", "power_commons_sa",
+           # cleaning tools, pool equipment, knots and outdoor tools (practical_sources.py)
+           "commons_cleaning_tools", "open_images_cleaning", "commons_pool_equipment", "commons_knots",
+           "commons_outdoor_skills", "open_images_knots_outdoor", "knots_commons_sa",
            # health and life: wellbeing aids, fitness equipment and adaptive sports, daily-living aids and wilderness
            # rescue gear (the sexual health products are in no topic, by the owner's choice)
            "commons_wellbeing_aids", "commons_fitness_equipment", "commons_adaptive_sports",
@@ -254,8 +262,9 @@ TOPICS = [
            # non-commercial and research-only (personal use)
            "vam", "mimo_instruments", "princeton_general_personal", "turkish_instruments")),
     Topic("documents", "Documents, maps and signs",
-          "Reading text and making sense of pages: letters, forms, receipts, tables and charts, maps, sheet "
-          "music, road, safety and indoor signs (toilets, room numbers, exits), and phone screens.",
+          "Reading text and making sense of pages: letters, forms, receipts, pay stubs, passports and boarding passes, "
+          "ballots, tables and charts, maps, sheet music, road, safety, travel and indoor signs (toilets, room "
+          "numbers, exits), and phone screens.",
           ("textvqa", "textocr", "coco_text", "cord", "doclaynet", "plotqa", "loc_letters", "owid_charts",
            "pubtabnet_tables", "us_federal_forms", "open_images_cards_documents", "loc_maps", "safety_signs", "commons_hazard_symbols", "us_road_signs",
            "ca_road_signs",
@@ -264,6 +273,9 @@ TOPICS = [
            "commons_indoor_wayfinding", "open_images_indoor",
            "commons_emergency_signs_maps", "commons_radio_cards_charts",
            "synthetic_bills",
+           # money and work, travel, citizenship and civics (money_work_sources.py, travel_sources.py, civics_sources.py)
+           "synthetic_pay_documents", "synthetic_travel_documents", "commons_travel_signs", "synthetic_civic_documents",
+           "commons_hearing_communication", "commons_immigration_documents",
            # share-alike
            "hiertext", "mapqa", "indoor_commons_sa",
            # non-commercial and research-only (personal use)
