@@ -500,6 +500,13 @@ jobs:
             commons_radio_cards_charts) limit=300 ;;
             commons_mesh_data_radio) limit=250 ;;
             open_images_radio) limit=400 ;;
+            commons_wellbeing_aids) limit=300 ;;
+            commons_fitness_equipment) limit=500 ;;
+            commons_adaptive_sports) limit=400 ;;
+            commons_food_guides) limit=150 ;;
+            commons_contraception_menstrual) limit=400 ;;
+            commons_daily_living_aids) limit=150 ;;
+            commons_wilderness_rescue) limit=200 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in

@@ -1902,6 +1902,22 @@ from radio_packs import RADIO_PACKS, RADIO_COMMONS_KEYS
 for _packs, _commons in ((PREPAREDNESS_PACKS, PREPAREDNESS_COMMONS_KEYS), (RADIO_PACKS, RADIO_COMMONS_KEYS)):
     PACKS.update(_packs)
     COMMONS_KEYS = COMMONS_KEYS | frozenset(_commons)
+# Health and life (the owner's request of 2026-11-22), one pack file each: mental health and wellbeing aids
+# (packs/mental_health_packs.py), fitness equipment, adaptive sports and food guides (packs/fitness_nutrition_packs.py),
+# contraceptive and period products and HIV tests (packs/sexual_health_packs.py), daily-living aids
+# (packs/aging_care_packs.py) and wilderness rescue gear (packs/wilderness_first_aid_packs.py); every answer ends
+# with its health note (911 and 988; the wilderness note names the SOS of a messenger or PLB).
+from mental_health_packs import MENTAL_HEALTH_PACKS, MENTAL_HEALTH_COMMONS_KEYS
+from fitness_nutrition_packs import FITNESS_NUTRITION_PACKS, FITNESS_NUTRITION_COMMONS_KEYS
+from sexual_health_packs import SEXUAL_HEALTH_PACKS, SEXUAL_HEALTH_COMMONS_KEYS
+from aging_care_packs import AGING_CARE_PACKS, AGING_CARE_COMMONS_KEYS
+from wilderness_first_aid_packs import WILDERNESS_FIRST_AID_PACKS, WILDERNESS_FIRST_AID_COMMONS_KEYS
+for _packs, _commons in ((MENTAL_HEALTH_PACKS, MENTAL_HEALTH_COMMONS_KEYS),
+                         (FITNESS_NUTRITION_PACKS, FITNESS_NUTRITION_COMMONS_KEYS),
+                         (SEXUAL_HEALTH_PACKS, SEXUAL_HEALTH_COMMONS_KEYS), (AGING_CARE_PACKS, AGING_CARE_COMMONS_KEYS),
+                         (WILDERNESS_FIRST_AID_PACKS, WILDERNESS_FIRST_AID_COMMONS_KEYS)):
+    PACKS.update(_packs)
+    COMMONS_KEYS = COMMONS_KEYS | frozenset(_commons)
 
 
 def pack_lanes(keys):
