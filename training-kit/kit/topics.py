@@ -140,6 +140,8 @@ TOPICS = [
            "commons_car_care", "commons_ev_charging", "commons_dashboard_lights", "open_images_car_care",
            # radios, antennas and mesh radio devices (radio_sources.py; also in the radio topic)
            "commons_radios", "commons_antennas_station", "commons_mesh_data_radio", "open_images_radio",
+           # generators, dynamos and wind and water turbines (power_sources.py; also in the power topic)
+           "commons_generators_power", "commons_wind_water_power",
            # driving, computer and phone basics, motorcycles, RVs and trailers (practical_sources.py)
            "commons_driving", "open_images_driving", "commons_computer_basics", "open_images_computer_basics",
            "commons_trailers_rvs", "commons_motorcycle_gear", "open_images_motorcycles_rvs",
@@ -190,11 +192,27 @@ TOPICS = [
            # emergency preparedness and disasters (preparedness_sources.py)
            "commons_emergency_kits_power", "commons_warnings_shelters", "commons_emergency_signs_maps",
            "commons_disaster_types", "open_images_disasters", "preparedness_commons_sa",
+           # generators, solar panels and batteries (power_sources.py; also in the power topic)
+           "commons_generators_power", "commons_solar_batteries", "open_images_power", "power_commons_sa",
            # cleaning tools, pool equipment, knots and outdoor tools (practical_sources.py)
            "commons_cleaning_tools", "open_images_cleaning", "commons_pool_equipment", "commons_knots",
            "commons_outdoor_skills", "open_images_knots_outdoor", "knots_commons_sa",
            # non-commercial and research-only (personal use)
            "cpsc_recalls")),
+    # Power and electrical (the owner's decision of 22 November 2026): backup generators, solar, batteries, small wind
+    # and water power, and the kit's electrical collections (wiring, outlets, panels, plugs, cables, circuits), in one
+    # add-on of its own; those collections also stay in "home" and "machines" (power_sources.POWER_TOPIC_EXISTING).
+    Topic("power", "Power and electrical",
+          "Generators and their safety labels, solar panels, charge controllers and connectors, battery banks, wind "
+          "turbines, water wheels and turbines, fuel, power lines, and home wiring, outlets, breakers, plugs, cables "
+          "and circuits.",
+          ("commons_generators_power", "commons_solar_batteries", "commons_wind_water_power", "open_images_power",
+           # the kit's electrical and backup power collections (also in home or machines)
+           "commons_home_repair", "open_images_home_upkeep", "commons_plumbing_electrical", "commons_connectors",
+           "commons_electronic_parts", "commons_cables_connectors", "commons_circuit_diagrams",
+           "open_images_electronics", "commons_emergency_lighting", "commons_emergency_kits_power",
+           # share-alike
+           "power_commons_sa", "home_upkeep_commons_sa")),
     # Radio communications (the owner's decision of 22 November 2026): ham and other two-way radio, antennas and
     # station gear, QSL cards and charts, and off-grid mesh and data radio, in one add-on of its own (the radios,
     # antennas and mesh devices are also in "machines", the cards and charts also in "documents").
@@ -206,6 +224,14 @@ TOPICS = [
            "open_images_radio",
            # share-alike
            "radio_commons_sa")),
+    # Privacy, security and digital safety (the owner's request of 22 November 2026): security keys and devices,
+    # security screens and tools, and computer-made scam and safe message examples (privacy_sources.py).
+    Topic("privacy", "Privacy, security and digital safety",
+          "Security keys, code tokens, routers, home cameras and webcam covers, sign-in and padlock screens, password "
+          "and authenticator apps, and made-up scam texts, phishing emails and fake pop-ups with their warning signs.",
+          ("commons_privacy_security", "commons_privacy_screens", "synthetic_scam_examples",
+           # share-alike
+           "privacy_commons_sa")),
     Topic("art", "Art and museum objects",
           "Paintings, sculpture and museum objects, described the way museums write for blind visitors, musical "
           "instruments of every culture, and crafts: quilts, knitting, crochet, lace, weaving, fabrics, pottery, "
@@ -231,8 +257,9 @@ TOPICS = [
            # non-commercial and research-only (personal use)
            "vam", "mimo_instruments", "princeton_general_personal", "turkish_instruments")),
     Topic("documents", "Documents, maps and signs",
-          "Reading text and making sense of pages: letters, forms, receipts, tables and charts, maps, sheet "
-          "music, road, safety and indoor signs (toilets, room numbers, exits), and phone screens.",
+          "Reading text and making sense of pages: letters, forms, receipts, pay stubs, passports and boarding passes, "
+          "ballots, tables and charts, maps, sheet music, road, safety, travel and indoor signs (toilets, room "
+          "numbers, exits), and phone screens.",
           ("textvqa", "textocr", "coco_text", "cord", "doclaynet", "plotqa", "loc_letters", "owid_charts",
            "pubtabnet_tables", "us_federal_forms", "open_images_cards_documents", "loc_maps", "safety_signs", "commons_hazard_symbols", "us_road_signs",
            "ca_road_signs",
@@ -241,6 +268,8 @@ TOPICS = [
            "commons_indoor_wayfinding", "open_images_indoor",
            "commons_emergency_signs_maps", "commons_radio_cards_charts",
            "synthetic_bills",
+           # money and work, travel, citizenship and civics (money_work_sources.py, travel_sources.py, civics_sources.py)
+           "synthetic_pay_documents", "synthetic_travel_documents", "commons_travel_signs", "synthetic_civic_documents",
            # share-alike
            "hiertext", "mapqa", "indoor_commons_sa",
            # non-commercial and research-only (personal use)
@@ -268,6 +297,22 @@ TOPICS = [
            # non-commercial and research-only (personal use)
            "inaturalist_us_nc", "inaturalist_ca_nc", "plantnet_nc", "cub200", "plantdoc", "stanford_dogs",
            "soybean_weeds_nc", "weed_growth_stage_nc", "cropandweed_nc")),
+    # Blind and low-vision living (the owner's request of 22 November 2026): the things of blind and low-vision life
+    # in one add-on, gathered from vision_sources.py and the packs other files already had (vision_sources.
+    # VISION_TOPIC_KEYS_ELSEWHERE). Kept before the sensitive topics, which stay last.
+    Topic("vision", "Blind and low-vision living",
+          "Braille, braille writers such as the Perkins Brailler, slates, white canes, guide dogs, tactile paving and "
+          "graphics, braille signs, reading machines, magnifiers, eye charts, sighted guiding, deafblind "
+          "communication, and money by touch.",
+          ("commons_braille_writing", "commons_tactile_access", "commons_mobility_deafblind",
+           "aph_museum_objects",
+           # gathered from other files
+           "commons_disability", "tapad_tactile_paving", "commons_access_features", "commons_assistive_devices",
+           "commons_eye_care", "commons_crosswalks_signals", "commons_indoor_wayfinding", "commons_money_sides",
+           # share-alike
+           "vision_commons_sa", "commons_disability_sa",
+           # research-only (personal use): photos and scans of braille pages
+           "angelina_braille", "dsbi_braille")),
     Topic("nudity", "Nudity in art and photography",
           "Sensitive. Nude people in paintings, drawings, sculpture and non-sexual photographic studies of adults, "
           "described plainly and without anything sexual. No children.",

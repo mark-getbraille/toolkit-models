@@ -3427,7 +3427,9 @@ _add_collections(OUTDOOR_COOKING_SOURCES)
 # Emergency preparedness and disasters (preparedness_sources.py) and radio communications (radio_sources.py), the owner's
 # request of 2026-11-22: their ready-made packs, share-alike Commons files and what was left out. Each file may be
 # missing. Only the keys in each file's *_PICTURE_MAKING_OK may be used for picture-making.
-for _prep_name, _prep_prefix in (("preparedness_sources", "PREPAREDNESS"), ("radio_sources", "RADIO")):
+# Power and electrical (power_sources.py, the owner's request of 2026-11-22) is loaded the same way.
+for _prep_name, _prep_prefix in (("preparedness_sources", "PREPAREDNESS"), ("radio_sources", "RADIO"),
+                                 ("power_sources", "POWER")):
     try:
         _prep = __import__(_prep_name)
     except ImportError as _e:
@@ -3440,6 +3442,55 @@ for _prep_name, _prep_prefix in (("preparedness_sources", "PREPAREDNESS"), ("rad
     NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in _prep_sources
                                                                    if s.key not in _prep_ok)
     _add_collections(_prep_sources)
+# Privacy, security and digital safety (privacy_sources.py): the ready-made packs (Commons security things and
+# screens, and the computer-made scam and safe message examples), their share-alike Commons files, and the sources
+# looked at and left out; the file may be missing. Only the keys in PRIVACY_PICTURE_MAKING_OK may be used for
+# picture-making (never the scam examples or screenshots).
+try:
+    import privacy_sources as _privacy  # noqa: E402
+except ImportError as _e:
+    _privacy = None
+    if getattr(_e, "name", None) != "privacy_sources":
+        say(f"(The privacy and security collections could not be loaded: {_e}. They are left out.)")
+PRIVACY_SOURCES = list(getattr(_privacy, "PRIVACY_SOURCES", []) or [])
+_privacy_ok = set(getattr(_privacy, "PRIVACY_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _privacy_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in PRIVACY_SOURCES
+                                                               if s.key not in _privacy_ok)
+_add_collections(PRIVACY_SOURCES)
+# Blind and low-vision living (vision_sources.py): the ready-made packs (braille writers, braille and tactile things,
+# mobility and deafblind life, APH Museum objects), their share-alike Commons files, and the sources looked at and left
+# out; the file may be missing. Only the keys in VISION_PICTURE_MAKING_OK may be used for picture-making.
+try:
+    import vision_sources as _vision  # noqa: E402
+except ImportError as _e:
+    _vision = None
+    if getattr(_e, "name", None) != "vision_sources":
+        say(f"(The blind and low-vision living collections could not be loaded: {_e}. They are left out.)")
+VISION_SOURCES = list(getattr(_vision, "VISION_SOURCES", []) or [])
+_vision_ok = set(getattr(_vision, "VISION_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _vision_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in VISION_SOURCES
+                                                               if s.key not in _vision_ok)
+_add_collections(VISION_SOURCES)
+# Money and work, travel, and citizenship and civics (the owner's request of 2026-11-22): money_work_sources.py,
+# travel_sources.py and civics_sources.py, their ready-made packs (computer-made SPECIMEN documents and the travel
+# signs) and what was left out. Each file may be missing; none of their keys may be used for picture-making unless the
+# file's *_PICTURE_MAKING_OK names it (none does).
+for _mwc_name, _mwc_prefix in (("money_work_sources", "MONEY_WORK"), ("travel_sources", "TRAVEL"),
+                               ("civics_sources", "CIVICS")):
+    try:
+        _mwc = __import__(_mwc_name)
+    except ImportError as _e:
+        _mwc = None
+        if getattr(_e, "name", None) != _mwc_name:
+            say(f"(The {_mwc_name.replace('_sources', '').replace('_', ' ')} collections could not be loaded: {_e}. "
+                "They are left out.)")
+    _mwc_sources = list(getattr(_mwc, f"{_mwc_prefix}_SOURCES", []) or [])
+    _mwc_ok = set(getattr(_mwc, f"{_mwc_prefix}_PICTURE_MAKING_OK", ()) or ())
+    PERSONAL_PICTURE_MAKING_OK |= _mwc_ok
+    NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in _mwc_sources if s.key not in _mwc_ok)
+    _add_collections(_mwc_sources)
 # Practical life (practical_sources.py, the owner's request of 2026-11-22): driving and road rules, computer and phone
 # basics, cleaning and household management, knots and outdoor skills, pool equipment, and motorcycles, RVs and
 # trailers: their ready-made packs, the knots' share-alike Commons files and what was left out. The file may be

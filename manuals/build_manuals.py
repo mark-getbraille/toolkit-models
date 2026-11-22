@@ -1687,6 +1687,8 @@ def write(key, entries, out_dir, notes=(), requests_made=0, robots=None):
                           "Chemicals and PubChem" if cat.get("niosh") else ""),
              "copyright": "Facts and links only: the manuals belong to their makers and are not published here.",
              "notes": list(notes)[:50], "entries": entries}
+    if cat.get("heading"):
+        index["heading"] = cat["heading"]        # the heading the toolkit lists it under ("Power and electrical")
     if cat.get("guidance"):
         index["guidance"] = cat["guidance"]
     if cat.get("notice"):
@@ -1723,6 +1725,8 @@ def write(key, entries, out_dir, notes=(), requests_made=0, robots=None):
                 "original_count": sum(len(e["originals"]) for e in entries),
                 "downloadable_count": sum(1 for e in entries for o in e["originals"] if o["may_download"]),
                 "built": built, "requests": requests_made, "files": [name], "content_sha256": content}
+    if cat.get("heading"):
+        manifest["heading"] = cat["heading"]
     with open(os.path.join(out_dir, f"manifest-{key}.json"), "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=1)
     say(json.dumps({k: v for k, v in manifest.items() if k != "description"}))

@@ -4,7 +4,7 @@ owner's request of 2026-11-22 for motorcycles, RVs and trailers. practical_manua
 What it lists, in plain words (an INDEX of facts and links only; each manual belongs to its maker):
   ia        the Internet Archive's manual collections, searched by the words in IA_WORDS (travel trailers, campers,
             motorhomes, fifth wheels, trailer hitches and brake controllers, RV refrigerators, furnaces, water
-            heaters and generators, motorcycle helmets and intercoms). The plain words motorcycle, scooter, moped, ATV
+            heaters (RV generators are the power collection's), motorcycle helmets and intercoms). The plain words motorcycle, scooter, moped, ATV
             and snowmobile are already searched by the powersports collection, which has the motorcycle owner's
             manuals, so they are not repeated here;
   makers    the motorcycle, RV, trailer, hitch and RV appliance makers (Harley-Davidson, Honda, Airstream, Winnebago,
@@ -23,7 +23,7 @@ NOTICE = ("Match the hitch, ball and coupler ratings to the loaded trailer's wei
           "a motorcycle, wear a DOT-approved helmet and protective gear.")
 
 IA_WORDS = ["travel trailer", "camper", "pop-up camper", "motorhome", "motor home", "fifth wheel", "trailer hitch",
-            "brake controller", "rv refrigerator", "rv furnace", "rv water heater", "rv generator", "airstream",
+            "brake controller", "rv refrigerator", "rv furnace", "rv water heater", "airstream",
             "winnebago", "motorcycle helmet", "motorcycle intercom"]
 
 RULE = ("by the owner's rule the maker's own manuals are link-only: nothing is read from its site; its page is "
@@ -81,7 +81,7 @@ GUIDANCE = [
 CATEGORY = dict(
     name="RVs, trailers and towing, and motorcycle gear (manuals)",
     description="Travel trailers, campers, motorhomes and fifth wheels, trailer hitches and brake controllers, RV "
-                "refrigerators, furnaces, water heaters and generators, and motorcycle helmets and intercoms: the "
+                "refrigerators, furnaces, water heaters, and motorcycle helmets and intercoms: the "
                 "Internet Archive's manuals, the makers' manual pages (links) and the government's trailer, towing, "
                 "campground and motorcycle safety guidance. Links only.",
     kind="manuals", licence="CC0 (facts and links); each manual belongs to its maker",

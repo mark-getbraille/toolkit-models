@@ -1163,7 +1163,8 @@ def expand_keys(words):
     nonprofit:<name>, pdf:<name>, guide:<name>, law:<name>; medicines (every medicine book, medications.py) or
     med:<piece>; publications or pub:<piece> (periodicals.py). "all" does not include the medicines or the
     publications: ask for them by name."""
-    pdfs = lambda g: [f"pdf:{e['name']}" for e in PDF_DOCS if e["group"] == g]   # noqa: E731
+    # (a book moved to another group keeps the request words of its old one: "word_group", power_books.py)
+    pdfs = lambda g: [f"pdf:{e['name']}" for e in PDF_DOCS if e.get("word_group", e["group"]) == g]   # noqa: E731
     every = [f"osbooks:{r}" for r in OSBOOKS] + [f"osbooks-new:{r}" for r in OSBOOKS_NEWER] + \
         ["siyavula", "dspace"] + \
         [f"nonprofit:{e['name']}" for e in NONPROFIT] + [f"pdf:{e['name']}" for e in PDF_DOCS] + \
@@ -2189,3 +2190,18 @@ GROUPS.update(_g)
 LICENCE_LINES.update(_l)
 NOT_INCLUDED = NOT_INCLUDED + _n
 PRACTICE_SUBJECTS[:0] = _p
+# The privacy rules as law books (textbooks/privacy_books.py: the HIPAA, FERPA and COPPA rules, the UK Data
+# Protection Act 2018 and UK GDPR, Canada's PIPEDA), made with this module's own helpers and built as law:<name>.
+import privacy_books as _privacy_books  # noqa: E402
+
+LAWS += _privacy_books.laws(__import__(__name__))
+
+# ====================================================================== power and electrical (added 2026-11-22)
+# The owner's decision of 22 November 2026: a top-level group "Reference, power and electrical" (power_books.py). The
+# electricity books of the older lists move into it; only their group label changes, their keys stay the same.
+import power_books as _power  # noqa: E402
+
+for _doc in PDF_DOCS:
+    if _doc.get("name") in _power.MOVED_TO_POWER:
+        _doc["word_group"] = _doc.get("word_group", _doc["group"])   # "courses" still asks for it
+        _doc["group"] = _power.GROUP
