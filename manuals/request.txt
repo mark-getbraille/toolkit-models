@@ -6,5 +6,5 @@
 # 21 November (2): and the household chemicals, pesticide labels and chemical safety collections.
 # 21 November (3): the new manual categories from the reference inventory, and firearms and chemical safety with their new Internet Archive collections.
 # 22 November: appliance error codes and troubleshooting, and release notes (NVDA, Orca, BRLTTY, Android, OpenWrt in full; makers as links).
-# 22 November (12): sleep and relaxation, fitness equipment, contraceptive products, aging in place, wilderness first aid.
-sleep_relaxation,fitness_equipment,contraceptive_products,aging_in_place,wilderness_first_aid
+# 22 November (13): homestead, outdoors, games and hobbies, science instruments, plant identification.
+homestead,outdoors,games_hobbies,science_instruments,plant_id
