@@ -35,6 +35,16 @@ MODULES = [
     "parenting",            # parenting and family: CDC, Child Welfare Information Gateway, CPIR, CPSC ... (parent:)
     "early_childhood",      # child care, pregnancy, newborns and infant feeding: ChildCare.gov, OWH, CDC, WIC, NHS (early:)
     "read_aloud",           # picture books (Book Dash, African Storybook) and old nursery rhymes (readaloud:)
+    # life skills (the owner's request of 2026-11-22)
+    "car_care",             # old public-domain car care books (car:)
+    "gardening",            # USDA hardiness zones, NRCS soil health, lawn weeds, old gardening books (garden:)
+    "first_aid",            # emergency and wilderness first aid: CDC, NHS, ST 31-91B, emergency childbirth (firstaid:)
+    "home_health",          # home treatment, long-term conditions, caregiving: NHS, CDC, NIDDK, NHLBI, VA (homecare:)
+    "dental_care",          # NIDCR, CDC oral health, NHS dental pages, Oral Health in America (dental:)
+    "eye_care",             # NEI, CDC vision health, FDA contact lenses, NHS eyes, VA blind rehabilitation (eyes:)
+    "eyecare_products",     # eye medicines by use (DailyMed) and eye care device records (openFDA) (eyeprod:)
+    "midwifery",            # CDC Hear Her, maternal and infant health, NHS after-birth pages (birth:)
+    "instrument_care",      # old public-domain piano tuning and violin making books (instr:)
 ]
 
 _loaded = {}
