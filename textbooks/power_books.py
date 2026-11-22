@@ -31,8 +31,7 @@ What this module builds, in plain words, each IN FULL:
   - the IRS instructions for Form 5695 (Residential Energy Credits), with a note that the rules change: the IRS page
     says which years and expenses qualify;
   - Wikibooks' Battery Power (CC BY-SA 4.0);
-  - old public-domain battery books: Marshall's Small Accumulators: how made and used (1899) and Morse's Storage
-    Batteries (1912).
+  - an old public-domain battery book: Morse's Storage Batteries (1912).
 
 Every book's notice carries SAFETY: carbon monoxide (generators outdoors only, at least 20 feet from the house; get
 out and call 911 if a CO alarm sounds), never back-feed (a transfer switch or interlock installed by a licensed
@@ -319,7 +318,7 @@ OLD_BACKUP = [
              "commutation, voltage regulation, efficiency and testing.", "dynamos and motors",
              country="United Kingdom"),
     old_book("powell_windmills_wind_motors_1910", "Windmills and Wind Motors: how to build and run them (F. E. "
-             "Powell, 1910)", "Building windmills", "F. E. Powell", "windmillsandwin00powegoog", 1910,
+             "Powell, 1910)", "Building windmills", "F. E. Powell", "windmillswindmot00powe_0", 1910,
              "A do-it-yourself book on building small windmills and wind motors: sails and wheels, towers, "
              "governing in high winds, and using them to pump water and drive dynamos.", "windmills"),
     old_book("murphy_the_windmill_1901", "The Windmill: its efficiency and economic use (Edward Charles Murphy, US "
@@ -342,10 +341,6 @@ OLD_BACKUP = [
              "gas and oil engines, electric motors and their care.", "farm engines, windmills and water motors"),
 ]
 OLD_SOLAR = [
-    old_book("marshall_small_accumulators_1899", "Small Accumulators: how made and used (Percival Marshall, 1899)",
-             "Storage batteries", "Percival Marshall (Dawbarn and Ward)", "smallaccumulato00unkngoog", 1899,
-             "An amateur's handbook of small lead-acid storage batteries: how they work, how to make plates and "
-             "cells, charging, and caring for them.", "storage batteries", country="United Kingdom"),
     old_book("morse_storage_batteries_1912", "Storage Batteries: the chemistry and physics of the lead accumulator "
              "(Harry W. Morse, 1912)", "Storage batteries", "Harry W. Morse (Macmillan)", "storagebatteries00morsrich",
              1912, "How lead-acid storage batteries work: the chemistry of charging and discharging, capacity, "
@@ -432,6 +427,9 @@ NOT_INCLUDED = [
     ("Instructables, YouTube and other do-it-yourself generator and solar videos and pages", "Their terms do not "
      "allow programs to copy their content (the owner's rule for this collection); not read. Index: "
      "https://www.instructables.com/"),
+    ("Small Accumulators: how made and used (Percival Marshall, 1899)", "Public domain, but the only Internet "
+     "Archive copy (a Google scan) has no text layer, so it cannot be read aloud (checked in a test build "
+     "2026-11-22). Index: https://archive.org/details/smallaccumulato00unkngoog"),
     ("Wikibooks: Energy Efficiency Reference and Electricity and Magnetism", "Already whole in the Kiwix library's "
      "Wikibooks (CC BY-SA); the two short books on generators and batteries are built here. Index: "
      "https://en.wikibooks.org/wiki/Energy_Efficiency_Reference"),
