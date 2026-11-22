@@ -32,6 +32,9 @@ MODULES = [
     "family_health",        # parenting, aging and caregiving, mental health, crisis lines (fam:)
     "pets_home",            # pets (APHIS) and home health (EPA, personal use) (home:)
     "home_tests",           # at-home medical tests: FDA guides, test lists and device records (hometest:)
+    "parenting",            # parenting and family: CDC, Child Welfare Information Gateway, CPIR, CPSC ... (parent:)
+    "early_childhood",      # child care, pregnancy, newborns and infant feeding: ChildCare.gov, OWH, CDC, WIC, NHS (early:)
+    "read_aloud",           # picture books (Book Dash, African Storybook) and old nursery rhymes (readaloud:)
 ]
 
 _loaded = {}
