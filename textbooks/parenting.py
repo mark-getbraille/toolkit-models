@@ -176,6 +176,34 @@ GUIDES.append(dict(
     licence=PD_DEDICATED, licence_page=CPIR + "/", licence_text=CPIR_TEXT, page_mark=CPIR_TEXT,
     licence_url="https://www.parentcenterhub.org/"))
 
+# ====================================================================== NIH: NICHD health topics and NIDA for parents
+
+GUIDES += [
+    K.guide(GROUP, "nichd_health_topics", "Child and family health topics (NICHD)", "Child health",
+            "Eunice Kennedy Shriver National Institute of Child Health and Human Development (NICHD), National "
+            "Institutes of Health", "https://www.nichd.nih.gov/health/topics",
+            r"^https://www\.nichd\.nih\.gov/health/topics/(?!factsheets|Pages|espanol)[a-z0-9-]+(/(conditioninfo|"
+            r"about)(/[a-z0-9-]+)?)?$",
+            "Every NICHD health topic, with its overview and its condition information pages (what it is, its "
+            "symptoms, causes, diagnosis and treatment): pregnancy and pregnancy loss, preterm labour and birth, "
+            "breastfeeding, newborn screening, birth defects and congenital anomalies, Down syndrome, fragile X, "
+            "autism, cerebral palsy, intellectual and developmental disabilities, learning disabilities, puberty, "
+            "childhood obesity, sudden infant death syndrome, and reproductive health.",
+            "A work of the National Institutes of Health (public domain). " + NOT_MEDICAL, depth=2,
+            follow=r"^https://www\.nichd\.nih\.gov/health/topics/[a-z0-9-]+(/conditioninfo)?$", limit=800),
+    K.guide(GROUP, "nida_parents_teens", "Drugs, alcohol and vaping: for parents and teens (NIDA)",
+            "Substance use prevention for families", "National Institute on Drug Abuse (NIDA), National Institutes "
+            "of Health", "https://nida.nih.gov/research-topics/parents-educators",
+            r"^https://nida\.nih\.gov/research-topics/parents-educators(/[a-z0-9-]+)*$",
+            "NIDA's pages for parents and teens (what was NIDA for Teens), every page: conversation starters for "
+            "talking with children and teens about drugs, the Mind Matters series on how drugs affect the brain "
+            "(for children aged 11 to 13), lessons and activities, and the facts on vaping, cannabis, alcohol, "
+            "opioids and other drugs as they are written for teens.",
+            "A work of the National Institutes of Health (public domain). If you or your teen needs help, call or "
+            "text 988, or find treatment at findtreatment.gov.", depth=2,
+            follow=r"^https://nida\.nih\.gov/research-topics/parents-educators/[a-z0-9-]+$", limit=80),
+]
+
 COLLECTION = K.Collection("parent", GROUP, guides=GUIDES,
                           words={"parenting": lambda: [f"parent:{g['name']}" for g in GUIDES]})
 
@@ -190,6 +218,9 @@ LICENCE_LINES["parenting_childwelfare"] = (
     "\"Publications may be freely reproduced and distributed. However, when doing so, please credit Information "
     "Gateway\"; a US government work (Children's Bureau). robots.txt: \"User-agent: *\" \"Allow: /\"; no AI rules "
     "(checked 2026-11-22).")
+LICENCE_LINES["parenting_nih"] = (
+    "www.nichd.nih.gov and nida.nih.gov: works of the US government (17 U.S.C. 105, checked on govinfo.gov's "
+    "policies page at every build); robots.txt allows the pages; no AI rules (checked 2026-11-22).")
 LICENCE_LINES["parenting_cpir"] = (
     "www.parentcenterhub.org (every page, checked on each page read): \"This product is public domain. "
     "Authorization to reproduce it in whole or in part is granted. While permission to reprint material from this "
