@@ -733,3 +733,10 @@ from wilderness_manuals import CATEGORY as _WILDERNESS  # noqa: E402
 CATEGORIES.update({"sleep_relaxation": _SLEEP_RELAXATION, "fitness_equipment": _FITNESS,
                    "contraceptive_products": _CONTRACEPTIVE, "aging_in_place": _AGING,
                    "wilderness_first_aid": _WILDERNESS})
+
+# Reference gaps (the owner's request of 2026-11-22): audio recorders, podcast microphones and recording gear
+# (manuals/audio_gear_manuals.py, every maker link-only). Pet supplies are already the collection
+# pet_livestock_supplies, so no new pet collection is added.
+from audio_gear_manuals import CATEGORY as _AUDIO_GEAR  # noqa: E402
+
+CATEGORIES["audio_gear"] = _AUDIO_GEAR
