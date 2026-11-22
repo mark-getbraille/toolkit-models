@@ -123,8 +123,8 @@ TOPICS = [
     Topic("machines", "Vehicles, machines and devices",
           "Vehicles and their parts and dashboard symbols, machine parts, tools, plugs, clocks and displays, "
           "electronic devices, electronic parts and repair, assistive devices, radios and antennas, "
-          "building-site safety, car controls and roads, computer and phone parts, and motorcycles, RVs and "
-          "trailers.",
+          "building-site safety, car controls and roads, computer and phone parts, motorcycles, RVs, trailers "
+          "and boats.",
           ("wikidata_vehicle_models", "commons_vehicle_kinds", "commons_us_cars", "commons_ca_cars",
            "commons_airplanes", "commons_car_parts", "commons_cycle_parts", "commons_machine_parts",
            "commons_engine_bays", "iso_machine_symbols", "corolla_engine_bay", "tyre_condition",
@@ -139,6 +139,8 @@ TOPICS = [
            "commons_construction_safety", "electronics_commons_sa",
            # car care: wipers, tyres, jacks, roadside help, EV connectors, dashboard lights
            "commons_car_care", "commons_ev_charging", "commons_dashboard_lights", "open_images_car_care",
+           # boats and paddling (outdoors_sources.py)
+           "commons_boating_paddling",
            # radios, antennas and mesh radio devices (radio_sources.py; also in the radio topic)
            "commons_radios", "commons_antennas_station", "commons_mesh_data_radio", "open_images_radio",
            # generators, dynamos and wind and water turbines (power_sources.py; also in the power topic)
@@ -158,9 +160,9 @@ TOPICS = [
     # one add-on. The household collections moved here from "machines"; the craft collections are also in "art" and
     # the household pests also in "nature", so those add-ons keep them.
     Topic("home", "Home and household",
-          "Appliances and controls, kitchens, laundry and care labels, cleaning tools, products and hazards, home "
-          "repair, locks, heating, lighting, building and ramps, pests, baby products, sewing and crafts, first "
-          "aid, dental and eye care, emergency kits, disasters, pool equipment, knots and outdoor tools.",
+          "Appliances, kitchens, laundry, cleaning and hazards, home repair, heating, lighting, building, pests, "
+          "baby things, sewing, crafts, first aid, dental and eye care, emergency kits, pools, knots, camp, "
+          "homestead and outdoor gear, fishing, games and clothes.",
           ("commons_appliances", "commons_appliance_controls", "open_images_appliance_controls", "commons_kitchen",
            "laundry_symbols", "laundry_care_labels", "commons_household_chemicals", "commons_finishes_in_use",
            "commons_household_hazards", "open_images_household_hazards",
@@ -185,8 +187,13 @@ TOPICS = [
            # emergency cooking, camp stoves, grills and smokers (outdoor_cooking_sources.py)
            "commons_camp_cooking", "commons_emergency_cooking", "commons_grills_smokers",
            "open_images_outdoor_cooking",
+           # homestead equipment, outdoor gear and tackle, games, clothing (the leisure collections)
+           "commons_homestead_poultry_bees", "commons_homestead_farmstead", "commons_fishing_tackle",
+           "commons_outdoor_gear", "open_images_outdoors", "commons_card_games", "commons_board_games_world",
+           "commons_puzzles_hobbies", "open_images_games", "commons_clothing_more", "open_images_clothing",
            # share-alike
            "home_health_commons_sa", "outdoor_cooking_commons_sa",
+           "homestead_commons_sa", "outdoors_commons_sa", "games_commons_sa", "clothing_commons_sa",
            "commons_home_sa", "home_safety_commons_sa", "chemical_commons_sa", "appliance_commons_sa",
            "home_upkeep_commons_sa", "home_heating_commons_sa", "emergency_lighting_commons_sa", "building_commons_sa",
            "textile_crafts_commons_sa", "pottery_commons_sa", "jewellery_commons_sa", "crafts_commons_sa",
@@ -262,15 +269,16 @@ TOPICS = [
            # non-commercial and research-only (personal use)
            "vam", "mimo_instruments", "princeton_general_personal", "turkish_instruments")),
     Topic("documents", "Documents, maps and signs",
-          "Reading text and making sense of pages: letters, forms, receipts, pay stubs, passports and boarding passes, "
-          "ballots, tables and charts, maps, sheet music, road, safety, travel and indoor signs (toilets, room "
-          "numbers, exits), and phone screens.",
+          "Reading text and making sense of pages: letters, forms, receipts, pay stubs, passports, boarding passes, "
+          "ballots, tables, charts, maps, sheet music, road, safety, travel and indoor signs, buoys, trail markers "
+          "and phone screens.",
           ("textvqa", "textocr", "coco_text", "cord", "doclaynet", "plotqa", "loc_letters", "owid_charts",
            "pubtabnet_tables", "us_federal_forms", "open_images_cards_documents", "loc_maps", "safety_signs", "commons_hazard_symbols", "us_road_signs",
            "ca_road_signs",
            "deepscores_sheet_music", "field_manual_figures", "bentham_pages", "commons_handwriting",
            "openstax_figures", "commons_charts", "wpc_surface_maps", "nhc_forecast_cones",
            "commons_indoor_wayfinding", "open_images_indoor",
+           "commons_water_trail_markers",
            "commons_emergency_signs_maps", "commons_radio_cards_charts",
            "synthetic_bills",
            # money and work, travel, citizenship and civics (money_work_sources.py, travel_sources.py, civics_sources.py)
@@ -284,7 +292,8 @@ TOPICS = [
            "commons_mail_parcels", "commons_screens")),
     Topic("nature", "Plants, animals and nature",
           "Plants, mushrooms, insects, birds and other animals by name, household pests and pest control, pet and "
-          "farm breeds, crops and their diseases, weeds, clouds and weather, and landscapes seen from the ground and from space.",
+          "farm breeds and animals, crops and their diseases, weeds, poisonous plants, mushrooms and wild plants, "
+          "clouds, weather and science instruments, and landscapes from the ground and from space.",
           ("inaturalist", "lila_camera_traps", "gbif_species", "commons_breeds", "cattle_health",
            "agml_plant_health", "agml_weeds", "agml_harvest", "agrob_tomato", "gwhd_wheat", "inat_crops", "ccsn_clouds",
            "weather_images", "eurosat", "inaturalist_us", "inaturalist_ca", "earth_observatory", "usgs",
@@ -296,8 +305,12 @@ TOPICS = [
            # gardening and lawn care
            "commons_garden_growing", "commons_garden_care", "commons_lawn_care", "commons_plant_problems",
            "open_images_garden",
+           # farm animals, science instruments and plant identification (the leisure collections)
+           "open_images_homestead", "commons_science_instruments", "open_images_science", "commons_poisonous_plants",
+           "commons_mushrooms_id", "commons_wild_plants_bark",
            # share-alike
            "garden_commons_sa",
+           "science_commons_sa", "plant_id_commons_sa",
            "oxford_pets", "plantvillage", "plantnet_sa", "commons_breeds_sa", "inaturalist_us_sa",
            "inaturalist_ca_sa", "plant_seedlings_sa", "gaps_rocks_commons_sa", "home_upkeep_commons_sa",
            # non-commercial and research-only (personal use)

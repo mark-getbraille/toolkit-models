@@ -1891,6 +1891,21 @@ for _packs, _commons in ((CAR_CARE_PACKS, CAR_CARE_COMMONS_KEYS), (GARDEN_PACKS,
 from outdoor_cooking_packs import OUTDOOR_COOKING_PACKS, OUTDOOR_COOKING_COMMONS_KEYS
 PACKS.update(OUTDOOR_COOKING_PACKS)
 COMMONS_KEYS = COMMONS_KEYS | frozenset(OUTDOOR_COOKING_COMMONS_KEYS)
+# Leisure and learning (the owner's requests of 2026-11-22), each in its own file: homesteading and small livestock
+# (homestead_packs.py), outdoor recreation (outdoors_packs.py), games and hobbies (games_packs.py), science
+# instruments (science_packs.py), clothing (clothing_packs.py) and plant identification (plant_id_packs.py); every
+# answer ends with its safety note (handling, bees, wells, life jackets, ice, small parts, the Sun, poison plants).
+from homestead_packs import HOMESTEAD_PACKS, HOMESTEAD_COMMONS_KEYS
+from outdoors_packs import OUTDOORS_PACKS, OUTDOORS_COMMONS_KEYS
+from games_packs import GAMES_PACKS, GAMES_COMMONS_KEYS
+from science_packs import SCIENCE_PACKS, SCIENCE_COMMONS_KEYS
+from clothing_packs import CLOTHING_PACKS, CLOTHING_COMMONS_KEYS
+from plant_id_packs import PLANT_ID_PACKS, PLANT_ID_COMMONS_KEYS
+for _packs, _commons in ((HOMESTEAD_PACKS, HOMESTEAD_COMMONS_KEYS), (OUTDOORS_PACKS, OUTDOORS_COMMONS_KEYS),
+                         (GAMES_PACKS, GAMES_COMMONS_KEYS), (SCIENCE_PACKS, SCIENCE_COMMONS_KEYS),
+                         (CLOTHING_PACKS, CLOTHING_COMMONS_KEYS), (PLANT_ID_PACKS, PLANT_ID_COMMONS_KEYS)):
+    PACKS.update(_packs)
+    COMMONS_KEYS = COMMONS_KEYS | frozenset(_commons)
 # Emergency preparedness and disasters (packs/preparedness_packs.py, the owner's request of 2026-11-22): kits, supplies,
 # respirators, potassium iodide and backup power; warning sirens, shelters, safe rooms, response and FEMA mitigation and
 # recovery; emergency signs and warning maps; the disasters commons_disasters lacks (volcanoes, tsunamis, drought, ice,

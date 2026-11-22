@@ -660,6 +660,18 @@ from instrument_care import CATEGORY as _INSTRUMENT_CARE  # noqa: E402
 
 CATEGORIES.update({"car_care": _CAR_CARE, "garden_care": _GARDEN_CARE, "instrument_care": _INSTRUMENT_CARE})
 CATEGORIES.update(_HOME_HEALTH_CARE)
+# Leisure and learning (the owner's request of 2026-11-22): homesteading and small livestock equipment, fishing,
+# paddling and outdoor gear, board games, puzzles and hobbies, telescopes, microscopes and weather stations, and plant
+# identification guides, lenses and apps, each
+# with its notice, Internet Archive words, makers (link-only) and guidance, in its own file.
+from homestead_manuals import CATEGORY as _HOMESTEAD  # noqa: E402
+from outdoors_manuals import CATEGORY as _OUTDOORS  # noqa: E402
+from games_manuals import CATEGORY as _GAMES_HOBBIES  # noqa: E402
+from science_manuals import CATEGORY as _SCIENCE_INSTRUMENTS  # noqa: E402
+from plant_id_manuals import CATEGORY as _PLANT_ID  # noqa: E402
+
+CATEGORIES.update({"homestead": _HOMESTEAD, "outdoors": _OUTDOORS, "games_hobbies": _GAMES_HOBBIES,
+                   "science_instruments": _SCIENCE_INSTRUMENTS, "plant_id": _PLANT_ID})
 # Emergency preparedness (manuals/preparedness_manuals.py: generators, transfer switches, power stations and battery
 # backups; kits, escape ladders, respirators and alerts for deaf and blind people) and radio communications, with its
 # own heading (manuals/radio_manuals.py: two-way radios, weather alert radios, amateur radio makers, mesh and satellite
