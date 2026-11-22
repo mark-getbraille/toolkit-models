@@ -75,7 +75,12 @@ WEB = dict(page_mark="", start=[], units="", sitemap="", unit_rules=[], content=
 US_WEB = dict(US, **WEB)
 
 # The words a Defense Technical Information Center record's report page (form SF 298) uses for a public-release
-# document, allowing the machine-read text's slips ("distrihution") and with or without "is".
+# document, allowing the machine-read text's slips ("distrihution") and with or without "is". Used as the Tongue and
+# Quill's pdf_licence_text: its own "Distribution F" (the Air Force's internal code for how printed copies were sent
+# out) would read as a restricted marking under the release rule for military publications (military_release.py),
+# so the printed public-release line on its SF 298 is what is checked. Other military publications here use the
+# release rule (military=True), which by the owner's decision of 22 November 2026 no longer needs the statement for
+# an Internet Archive or government copy.
 PUBLIC_RELEASE = r"(?i)approved\s+for\s+public\s+release\s*[;:,.]?\s*distri\w{4,8}\s+(?:is\s+)?unlimited"
 
 PLG_REPO = "https://github.com/GSA/plainlanguage.gov"
@@ -233,10 +238,11 @@ PDFS = [
          "and forms of address. This is the March 2010 edition; the Navy's newer edition (June 2015, changed 2018) "
          "is only on its own site, which refuses programs.", "2010-03",
          "SECNAV M-5216.5, March 2010 (DTIC record ADA549326)", archive="DTIC_ADA549326",
-         pdf_licence_text=PUBLIC_RELEASE,
-         notice="A work of the US Department of the Navy (not under copyright in the United States), approved for "
-                "public release; distribution unlimited. An older edition: check the current SECNAV M-5216.5 "
-                "before preparing official Navy correspondence."),
+         # Judged by the release rule for military publications (military_release.py): the book's notice starts
+         # with its truthful release line, which the builder writes from the PDF's own front matter.
+         military=True, work="a work of the US Department of the Navy",
+         notice="An older edition: check the current SECNAV M-5216.5 before preparing official Navy "
+                "correspondence."),
     _pdf("tongue_and_quill", "The Tongue and Quill (AFH 33-337, 2004)", "Writing and speaking (military)",
          "Air University and the Department of the Air Force",
          DTIC_NOTE + "The Air Force's handbook of communication, the whole book: the steps to effective "
@@ -690,7 +696,9 @@ LICENCE_LINES = {
                         "(said in the book's notice). govinfo's robots.txt allows /content/pkg/.",
     "dtic_military_manuals": "SECNAV M-5216.5 (2010) and AFH 33-337 (2004): the DTIC report page (SF 298) in each "
                              "PDF says \"Approved for public release; distribution unlimited\" (checked at every "
-                             "build); works of the US government. archive.org's robots.txt allows the files. (The "
+                             "build: the release rule of military_release.py for SECNAV M-5216.5, the line itself "
+                             "for AFH 33-337); works of the US government. archive.org's robots.txt allows the "
+                             "files. (The "
                              "Tongue and Quill's own \"Distribution F\" is the Air Force's internal code for how "
                              "printed copies were sent out, not a DoD restriction; the 1997 copy on the Internet "
                              "Archive has no public-release line and is not used.)",

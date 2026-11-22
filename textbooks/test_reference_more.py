@@ -110,3 +110,20 @@ def test_canada_notes_are_precise():
     for r in texts:
         if "non-commercial" in r:
             assert "open.canada.ca" in r and "web pages" in r, r
+
+
+def test_release_rule_additions():
+    """The manuals added under the release rule of 22 November 2026 (military_release.py) are judged by it
+    (distribution_a), reach the fieldmanuals and courses keys, and are no longer listed as left out."""
+    import building_books
+    import first_aid
+    added = R.NAVY_RATE_MANUALS_NO_STATEMENT + R.ARMY_MANUALS_RELEASE_RULE
+    assert len(added) >= 10
+    for e in added:
+        assert e["distribution_a"] is True and e["archive"] and e["published"], e["name"]
+    keys = sources.expand_keys(["courses", "fieldmanuals"])
+    assert all(f"pdf:{e['name']}" in keys for e in added)
+    left = " ".join(title for title, _why in sources.NOT_INCLUDED)
+    assert "Builder 3 & 2, Construction Electrician" not in left and "Special Forces Medical Handbook" not in left
+    assert any(p["archive"] == "ERIC_ED210471" and p["distribution_a"] for p in building_books.PDFS)
+    assert any(p.get("archive", "").startswith("milmanual-st-31-91b") and p["distribution_a"] for p in first_aid.PDFS)

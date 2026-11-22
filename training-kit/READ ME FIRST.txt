@@ -248,7 +248,10 @@ The topics:
   plugs, clocks, displays, electronic parts and repair, assistive devices.
 - Home and household (home): appliances and their controls, kitchens, laundry and care labels, cleaning products
   and hazards, home repair, locks, heating and emergency lighting, building work and ramps, pests, baby products,
-  sewing and crafts.
+  sewing and crafts, first aid, dental and eye care, and emergency kits, warnings, shelters and disasters.
+- Radio communications (radio): ham, GMRS, FRS, CB, marine and scanner radios, weather radios, antennas, towers,
+  connectors and meters, Morse keys, ham stations, QSL cards and frequency charts, and off-grid mesh and data radio
+  (Meshtastic, LoRa, APRS).
 - Art and museum objects (art): museum descriptions written for blind visitors, famous works, instruments, crafts.
 - Documents, maps and signs (documents): letters, forms, receipts, tables, charts, maps, sheet music, road and
   safety signs, phone screens.

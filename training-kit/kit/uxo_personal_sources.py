@@ -1,6 +1,6 @@
-"""PERSONAL-USE recognition collections: unexploded ordnance (UXO) and small arms, from military manuals that are
-approved for public release. For the owner's own computer only; NOTHING HERE IS EVER PUBLISHED by the kit's makers
-(no ready-made pack, no release asset, no add-on that is shared).
+"""PERSONAL-USE recognition collections: unexploded ordnance (UXO) and small arms, from military manuals published
+openly (see the release rule below). For the owner's own computer only; NOTHING HERE IS EVER PUBLISHED by the kit's
+makers (no ready-made pack, no release asset, no add-on that is shared).
 
 WHY. The owner is blind and is building a safety tool that helps people recognise suspected unexploded ordnance, so
 that they stay away from it and report it (the kit already has the open landmine and munition picture packs:
@@ -11,16 +11,33 @@ public military manuals hold the best plain identification drawings and safety r
 for RECOGNITION and SAFETY only.
 
 STRICT SCOPE (enforced in code, not only promised):
-  1. PUBLIC RELEASE ONLY (release_check). A document is used only when its own front matter (first FRONT_PAGES
-     pages) says "Approved for public release; distribution is unlimited" (Distribution Statement A), or, for a
-     humanitarian body's document, shows the open licence named in its entry (basis "licence"). Any restricted
-     marking (Distribution B to F, "distribution authorized to", FOUO, CUI, NOFORN, export-controlled) refuses it,
-     even when Distribution A is also printed. By the owner's decision (November 2026), public safety education
-     that US government agencies publish for handing out to the public is also accepted, but only by name on an
-     allow-list (PUBLIC_EDUCATION_DOCUMENTS: the DoD 3Rs "Recognize, Retreat, Report" guides, pocket cards and
-     fact sheets from denix.osd.mil, and the 2006 BLM and FWS munitions handbook), as PUBLIC_EDUCATION; a
-     restricted marking still refuses them, and the section filter still applies. They are read only from the
-     agency's own site (its robots.txt checked first) or from the Internet Archive copy of that exact document.
+  1. THE RELEASE RULE (release_check). A military document is judged by the repository's release rule for
+     military publications (military_release.py, the same file in every part of the repository; the owner's
+     decision of 22 November 2026: "Remove the cleared-for-public-release restrictions for military publications
+     if posted by a government entity or a museum or archive.org", refined the same day: "If stamped restricted
+     etc. but published openly by a government entity, it is safe"). On its own front matter (first FRONT_PAGES
+     pages) and the address of its copy:
+       - Distribution Statement A printed ("Approved for public release; distribution is unlimited"): used, and
+         said so;
+       - no statement, from the Internet Archive, a government (.gov, .mil) or a museum site: used, with the
+         truthful line "a work of the US armed forces ... published openly by <the host>; its front pages print no
+         distribution statement";
+       - a restricted marking (Distribution B to F, "distribution authorized to", FOUO, CUI, NOFORN, ITAR,
+         export-controlled): used, since these collections are personal use only and never published: with the
+         line "PERSONAL USE ONLY: ... prints a restricted marking ..." (or, when the government itself publishes
+         that copy openly on its own site, the line naming that address);
+       - an old classification marking (CONFIDENTIAL, SECRET, TOP SECRET; not "UNCLASSIFIED"): used only when it
+         was declassified and released (a declassification marking in its text, or a government site publishing
+         it openly), with the line "Originally classified <level>; declassified and released by ..."; live markings
+         without that evidence, or any copy from a leak site, are refused;
+       - from any other site: the old rule, Distribution Statement A needed.
+     A humanitarian body's document must show the open licence named in its entry (basis "licence"), and any
+     restricted or classified marking refuses it. By the owner's decision (November 2026), public safety education
+     that US government agencies publish for handing out to the public is accepted by name on an allow-list
+     (PUBLIC_EDUCATION_DOCUMENTS: the DoD 3Rs "Recognize, Retreat, Report" guides, pocket cards and fact sheets
+     from denix.osd.mil, and the 2006 BLM and FWS munitions handbook), as PUBLIC_EDUCATION; a marking on one of
+     them is judged by the release rule as above, and the section filter still applies. They are read only from
+     the agency's own site (its robots.txt checked first) or from the Internet Archive copy of that exact document.
      Some Army PDFs print the statement in a font whose letters come out moved by 29 places (",675,%87,21" for
      "DISTRIBUTION"); the check also reads that form (unshifted), so the statement is checked, never assumed.
   2. RECOGNITION AND SAFETY SECTIONS ONLY (filter_pages). Each page's section titles are found from the PDF's
@@ -76,7 +93,9 @@ How to use (for the kit's own code):
                         review_only True) plus personal_only, never_publish and never_for_picture_making (all True).
                         fetch(folder, cap, say) fills the review workspace and the personal documents folder.
   UXO_DOCUMENTS, SMALL_ARMS_DOCUMENTS   the documents (checked by hand in November 2026; checked again in code);
-                        UXO_DOCUMENTS ends with PUBLIC_EDUCATION_DOCUMENTS, the owner's allow-list.
+                        UXO_DOCUMENTS holds PUBLIC_EDUCATION_DOCUMENTS, the owner's allow-list; both lists end
+                        with the documents added under the release rule of 22 November 2026
+                        (UXO_DOCUMENTS_RELEASE_RULE, SMALL_ARMS_DOCUMENTS_RELEASE_RULE).
   UXO_NOT_INCLUDED, SMALL_ARMS_NOT_INCLUDED   looked at and left out, with the reason; OWNER_DECISION the
                         owner's decisions about material outside the strict rule.
 
@@ -94,6 +113,9 @@ import re
 import shutil
 import sys
 import time
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import military_release  # noqa: E402
 
 TOPICS = ("uxo", "small_arms")
 FRONT_PAGES = 20          # the release statement must be on one of the first pages
@@ -121,48 +143,49 @@ def say_nothing(text):
 
 # ----------------------------------------------------------------- 1. the release check
 
-DISTRIBUTION_A = re.compile(r"approved\s*for\s*public\s*release\s*[;:,.]?\s*(and\s*)?distribution\s*(is\s*)?"
-                            r"unlimited|distribution\s*(is\s*)?unlimited\s*[;:,.]?\s*approved\s*for\s*public\s*"
-                            r"release|distribution\s+statement\s+a\s*[:.]\s*approved", re.I)
-RESTRICTED = re.compile(r"distribution\s*(statement\s*)?[B-F]\s*[:.\-–—]|distribution\s+statement\s+[B-F]\b|"
-                        r"distribution\s*authorized\s*to|authorized\s+to\s+U\.?\s?S\.?\s+Government\s+agencies|"
-                        r"for\s*official\s*use\s*only|\bFOUO\b|controlled\s*unclassified|\bCUI\b|\bNOFORN\b|"
-                        r"export[- ]?controlled|\bITAR\b|not\s+releasable\s+to", re.I)
+# The release rule for military publications (military_release.py); its markings under the old names here.
+DISTRIBUTION_A = military_release.DISTRIBUTION_A
+RESTRICTED = military_release.RESTRICTED
 
 
 PUBLIC_EDUCATION = ("public safety education material of a US government agency, published for distribution to the "
                     "public (17 U.S.C. 105)")
 
 
-def unshifted(text):
-    """The text with every character moved 29 places on: some Army PDFs print the cover in a font whose letters come
-    out 29 places early (",675,%87,21" is "DISTRIBUTION"). Only used for the release check."""
-    return "".join(chr(ord(c) + 29) if 3 < ord(c) < 94 and c not in " \t\n\r" else c for c in text)
+unshifted = military_release.unshifted       # the shifted cover font of some Army PDFs (military_release.py)
 
 
-def release_check(front_text, basis="statement", licence=None):
-    """(True, the line found) when the document's front matter shows it is publicly released, else (False, the
-    reason). basis "statement": Distribution Statement A ("Approved for public release; distribution is
-    unlimited"); basis "licence": licence (a regular expression for the open licence its publisher states); basis
-    "public_education": a document on the owner's allow-list (PUBLIC_EDUCATION_DOCUMENTS), accepted without a
-    statement as PUBLIC_EDUCATION. A restricted marking always refuses, in either form of the text."""
+def release_check(front_text, basis="statement", licence=None, source=ARCHIVE):
+    """(True, the release line) when the document may be used in these personal collections, else (False, the
+    reason). source: the address its copy comes from (the Internet Archive when not given).
+      basis "statement"         a military document, judged by military_release.release_rule (the module
+                                docstring, point 1): Distribution Statement A, or no statement from an open host,
+                                gives its truthful line; a restricted marking is accepted with a line that starts
+                                "PERSONAL USE ONLY" (these collections are never published) unless the government
+                                publishes that copy itself; a live classified marking, or a third-party copy without the
+                                statement, refuses it.
+      basis "licence"           licence (a regular expression for the open licence its publisher states) must be
+                                printed; any restricted or classified marking refuses it.
+      basis "public_education"  a document on the owner's allow-list (PUBLIC_EDUCATION_DOCUMENTS), accepted without
+                                a statement as PUBLIC_EDUCATION; a marking on it is judged by the release rule."""
     text = " ".join((front_text or "").split())
-    for form in (text, unshifted(text)):
-        bad = RESTRICTED.search(form)
-        if bad:
-            return False, f"its front matter shows a restricted marking ({' '.join(bad.group(0).split())})"
-    if basis == "public_education":
-        return True, PUBLIC_EDUCATION
+    kind, words = military_release.marking(text)
     if basis == "licence":
+        if kind:
+            return False, f"its front matter shows a {kind} marking ({words})"
         found = re.search(licence, text, re.I) if licence else None
         if found:
             return True, " ".join(found.group(0).split())
         return False, "its front matter does not show the open licence it should be published under"
-    for form in (text, unshifted(text)):
-        found = DISTRIBUTION_A.search(form)
-        if found:
-            return True, "Approved for public release; distribution is unlimited (Distribution Statement A)"
-    return False, "its front matter does not say it is approved for public release (Distribution Statement A)"
+    if basis == "public_education" and not kind:
+        return True, PUBLIC_EDUCATION
+    rule = military_release.release_rule(text, source)
+    if rule.verdict == "out":
+        if not kind and not rule.statement:
+            return False, ("its front matter does not say it is approved for public release (Distribution Statement "
+                           "A), and its copy is not from a government, museum or Internet Archive site")
+        return False, f"its front matter {rule.reason}"
+    return True, rule.release.rstrip(".")
 
 
 # ----------------------------------------------------------------- 2. the section filter
@@ -409,8 +432,24 @@ def figure_answer(document, label, caption, topic):
     words = " ".join(w.lower() if re.fullmatch(r"\(?[A-Z][a-z]+(-[A-Za-z][a-z]+)*[,;:)]?", w)
                      and w.strip("(),;:").split("-")[0] not in PROPER else w for w in words.split())
     line = UXO_LINE if topic == "uxo" else GUN_LINE
-    kind = "public safety education" if document.get("basis") == "public_education" else "approved for public release"
-    return f"This is a figure from {document['short']} ({kind}): figure {label}, {words}. {line}"
+    return f"This is a figure from {document['short']} ({release_kind(document)}): figure {label}, {words}. {line}"
+
+
+def release_kind(document):
+    """A few words for a figure's answer saying how the document was released, truthful to its release line
+    (document["release"], set by process_document; a document without one is named by its basis, as before)."""
+    release = document.get("release") or ""
+    if document.get("basis") == "public_education" and (not release or release == PUBLIC_EDUCATION):
+        return "public safety education"
+    if not release or release.startswith("Distribution Statement A"):
+        return "approved for public release"
+    if release.startswith("PERSONAL USE ONLY"):
+        return "personal use only: it prints a restricted marking"
+    if "Originally classified" in release:
+        return "declassified and released by the US government"
+    if "publishes it openly at" in release:
+        return "published openly by the US government, though it prints a restricted marking"
+    return "published openly; it prints no distribution statement"
 
 
 def figure_rows(document, kept_pages, page_captions, topic):
@@ -434,7 +473,7 @@ def figure_rows(document, kept_pages, page_captions, topic):
 # ----------------------------------------------------------------- 4. the documents
 
 def archive_doc(identifier, short, title, publisher, year, topic, note=""):
-    """One document on the Internet Archive (its "Text PDF" is read), checked for Distribution Statement A."""
+    """One document on the Internet Archive (its "Text PDF" is read), judged by the release rule (release_check)."""
     return {"id": identifier, "source": "archive", "short": short, "title": title, "publisher": publisher,
             "year": year, "topic": topic, "basis": "statement", "licence": None, "note": note,
             "page": f"{ARCHIVE}/details/{identifier}"}
@@ -442,7 +481,7 @@ def archive_doc(identifier, short, title, publisher, year, topic, note=""):
 
 def public_education_doc(url, short, title, agency, year, topic="uxo", page="", identifier=""):
     """One document on the owner's allow-list of US government public safety education (no Distribution Statement
-    A line on it; accepted as PUBLIC_EDUCATION, still refused for any restricted marking and still filtered). It is
+    A line on it; accepted as PUBLIC_EDUCATION; a marking on it is judged by the release rule; still filtered). It is
     read from url on the agency's own site, or from the Internet Archive item identifier (a copy of that exact
     document)."""
     return {"id": identifier or os.path.splitext(url.rsplit("/", 1)[-1])[0], "source": "archive" if identifier else
@@ -554,12 +593,58 @@ PUBLIC_EDUCATION_DOCUMENTS = [
 ]
 UXO_DOCUMENTS += PUBLIC_EDUCATION_DOCUMENTS
 
+# Added under the release rule of 22 November 2026 (military_release.py): looked at before and left out for printing
+# no Distribution Statement A or for a restricted marking (SMALL_ARMS_NOT_INCLUDED, UXO_NOT_INCLUDED until then). Each
+# Internet Archive item was read on 2026-11-22 (a text layer; the release rule's verdict in each comment) and is
+# judged again, and filtered to its recognition and safety pages, at every run. Kept apart for easy merges.
+UXO_DOCUMENTS_RELEASE_RULE = [
+    # No statement printed. The Internet Archive item now has a text layer (an "Additional Text PDF").
+    archive_doc("Unexploded_Ordinance_Procedures_FM_21-16", "FM 21-16 (1994)", "FM 21-16, Unexploded Ordnance (UXO) "
+                "Procedures", "Headquarters, Department of the Army", 1994, "uxo",
+                "Recognising, marking and reporting UXO; its disposal sections are cut by the section filter."),
+]
+SMALL_ARMS_DOCUMENTS_RELEASE_RULE = [
+    # Print DISTRIBUTION STATEMENT C: kept as PERSONAL USE ONLY (these collections are never published).
+    archive_doc("tm-9-1005-313-10-machine-gun-7.62-mm-m-240-m-240-b-m-240-c-m-240-d-m-240-e-1-m-2",
+                "TM 9-1005-313-10, M240 (2002)", "TM 9-1005-313-10, Operator's Manual, Machine Gun, 7.62 mm, M240 "
+                "series", "Headquarters, Department of the Army", 2002, "small_arms",
+                "Personal use only (Distribution Statement C). Kept: its safety and description pages."),
+    archive_doc("tm-9-1005-201-10-machine-gun-5.56mm-m-249-1991", "TM 9-1005-201-10, M249 (1991)",
+                "TM 9-1005-201-10, Operator's Manual, Machine Gun, 5.56 mm, M249", "Headquarters, Department of the "
+                "Army", 1991, "small_arms", "Personal use only (Distribution Statement C). Kept: its safety and "
+                "description pages."),
+    # No statement printed.
+    archive_doc("milmanual-tm-9-1005-317-10---operators-manual-m9-9mm-handgun", "TM 9-1005-317-10, M9 pistol",
+                "TM 9-1005-317-10, Operator's Manual, Pistol, 9 mm, M9", "Headquarters, Department of the Army",
+                1985, "small_arms", "Kept: its safety and description pages."),
+    archive_doc("milmanual-tm-9-1005-249-10---operators-manual-for-m16-m16a1", "TM 9-1005-249-10, M16 and M16A1",
+                "TM 9-1005-249-10, Operator's Manual, Rifle, 5.56 mm, M16 and M16A1", "Headquarters, Department of "
+                "the Army", 1985, "small_arms", "Kept: its safety and description pages."),
+    archive_doc("TM9-1005-211-12", "TM 9-1005-211-12, M1911A1 (1968)", "TM 9-1005-211-12, Pistol, Caliber .45, "
+                "Automatic, M1911A1", "Headquarters, Department of the Army", 1968, "small_arms",
+                "Mostly maintenance, which the section filter cuts."),
+    archive_doc("TM9-1005-222-12", "TM 9-1005-222-12, M1 rifle (1969)", "TM 9-1005-222-12, Rifle, Caliber .30, M1, "
+                "M1C and M1D", "Headquarters, Department of the Army", 1969, "small_arms",
+                "Mostly maintenance, which the section filter cuts."),
+    archive_doc("TM9-1005-223-20", "TM 9-1005-223-20, M14 rifle (1967)", "TM 9-1005-223-20, Rifles, 7.62 mm, M14 and "
+                "M14A1", "Headquarters, Department of the Army", 1967, "small_arms",
+                "Mostly maintenance, which the section filter cuts."),
+    archive_doc("TM9-1005-213-10", "TM 9-1005-213-10, M2 machine gun (1973)", "TM 9-1005-213-10, Operator's Manual, "
+                "Machine Gun, Caliber .50, Browning, M2", "Headquarters, Department of the Army", 1973, "small_arms",
+                "Kept: its safety and description pages."),
+    archive_doc("fstc-cs-07-35-66-small-arms-identification-and-operation-guide-eurasian-communist-countries",
+                "FSTC-CS-07-35-66 (1967)", "FSTC-CS-07-35-66, Small Arms Identification and Operation Guide, "
+                "Eurasian Communist Countries", "US Army Foreign Science and Technology Center", 1967, "small_arms",
+                "An identification guide; its operation pages are cut by the section filter."),
+    archive_doc("TM9-285", "TM 9-285, Shotguns (1942)", "TM 9-285, Shotguns, All Types", "War Department", 1942,
+                "small_arms", "The only shotgun manual found; mostly operation and care, which the filter cuts."),
+]
+UXO_DOCUMENTS += UXO_DOCUMENTS_RELEASE_RULE
+SMALL_ARMS_DOCUMENTS += SMALL_ARMS_DOCUMENTS_RELEASE_RULE
+
 DOCUMENTS = {"uxo": UXO_DOCUMENTS, "small_arms": SMALL_ARMS_DOCUMENTS}
 
 UXO_NOT_INCLUDED = {
-    "FM 21-16, Unexploded Ordnance (UXO) Procedures (1994), archive.org Unexploded_Ordinance_Procedures_FM_21-16":
-        "the only copy found is scanned without readable text, so its release statement cannot be checked by the "
-        "program; FM 3-100.38 and ATP 4-32.2 replaced it and are included.",
     "GICHD Explosive Ordnance Guide for Ukraine (2nd edition, 2022)":
         "a very good recognition guide, but '© GICHD' with no open licence; the GICHD terms of use reserve all "
         "rights and forbid changes (https://www.gichd.org/terms-of-use/), and its fuze and anti-disturbance "
@@ -587,32 +672,22 @@ UXO_NOT_INCLUDED = {
 }
 
 SMALL_ARMS_NOT_INCLUDED = {
-    "TM 9-1005-313-10, M240 machine gun operator's manual": "Distribution Statement C (US Government agencies and "
-                                                           "their contractors only): refused.",
-    "TM 9-1005-201-10, M249 machine gun operator's manual (1991)": "Distribution Statement C: refused.",
-    "TM 9-1005-317-10, M9 pistol operator's manual": "no Distribution Statement A in the copies found ('to be "
-                                                    "distributed in accordance with DA Form 12-40E'); TC 3-23.35 "
-                                                    "covers the M9 with Distribution A.",
-    "TM 9-1005-249-10 (M16, M16A1) and TM 9-1005-319-10 (M16A2)": "no Distribution Statement A in the copies "
-                                                                 "found; TC 3-22.9 covers the rifle.",
-    "TM 9-1005-211-12 (M1911A1, 1968), TM 9-1005-222-12 (M1 rifle, 1969), TM 9-1005-223-20 (M14, 1967), "
-    "TM 9-1005-213-10 (M2, 1973)":
-        "printed before distribution statements; no Distribution Statement A on them, and mostly maintenance.",
-    "FSTC-CS-07-35-66, Small Arms Identification and Operation Guide, Eurasian Communist Countries (1967)":
-        "no Distribution Statement A; and half of it is operation.",
     "DIA Small-Caliber Ammunition Identification Guide (DTIC ADA165896)": "ammunition, not the firearm itself; "
                                                                          "its release line cannot be read.",
     "TM 10698A-10/1, Shotgun, Combat, 12 Gauge, Semi-Automatic, M1014 operator's manual (USMC, 2000)":
-        "looked for in November 2026 as the only shotgun manual found: its cover says 'Distribution is limited to "
-        "U.S. Government agencies only' and 'For Official Use Only': refused.",
+        "its cover says 'Distribution is limited to U.S. Government agencies only' and 'For Official Use Only'; "
+        "the release rule of 22 November 2026 would keep it as personal use only, but no Internet Archive or "
+        "government copy was found when searched again on 2026-11-22.",
     "TC 3-22.12, M26 Modular Accessory Shotgun System (2014)": "listed by the Army Publishing Directorate, but no "
                                                               "public copy found (the APD gives it only on its "
                                                               "CAC-only library, and its robots.txt disallows "
                                                               "programs); its release statement could not be "
                                                               "checked, so it is not included.",
-    "M500 (Mossberg 500) military shotgun manuals": "no copy found with a Distribution Statement A.",
-    "TM 9-285, Shotguns, All Types (1942)": "printed before distribution statements; no Distribution Statement A, and "
-                                            "mostly operation and care.",
+    "M500 (Mossberg 500) military shotgun manuals": "no Internet Archive or government copy found (searched again "
+                                                    "on 2026-11-22 under the new release rule).",
+    "TM 9-1005-319-10 (M16A2)": "the only copy found is on a manual-copying site's Internet Archive mirror "
+                                "(manuallib-id-...), which the kit never uses; TM 9-1005-249-10 and TC 3-22.9 "
+                                "cover the rifle.",
     "State hunter-education manuals": "copyrighted (most are published by a private company for the states); no "
                                       "open licence found.",
     "TC 3-22.9 and the other training circulars' marksmanship chapters": "kept documents; the chapters on aiming, "
@@ -744,7 +819,8 @@ def safe_file_name(text):
 
 
 def process_document(document, data, topic, fm=None):
-    """Check and filter one document's PDF bytes. Returns {"ok", "reason", "release", "filter", "file_name",
+    """Check and filter one document's PDF bytes: the release rule on its front matter with the address of its copy
+    (release_check), then the section filter. Returns {"ok", "reason", "release", "filter", "file_name",
     "pdf" (bytes to save: the original, or only the kept pages), "figures" (from cut_figures, when fm is given),
     "figures_left"}."""
     import pypdfium2 as pdfium
@@ -756,12 +832,14 @@ def process_document(document, data, topic, fm=None):
         result["reason"] = f"the PDF cannot be read ({str(e)[:80]})"
         return result
     pages = page_texts(doc)
+    source = document.get("url") if document.get("source") == "url" else document.get("page") or ARCHIVE
     ok, line = release_check(" ".join(pages[:FRONT_PAGES]), document.get("basis", "statement"),
-                             document.get("licence"))
+                             document.get("licence"), source)
     if not ok:
         result["reason"] = line
         return result
     result["release"] = line
+    document = dict(document, release=line)          # the figures' answers say how it was released (release_kind)
     kept = filter_pages(pages, bookmarks_of(doc), topic)
     result["filter"] = kept
     if kept["leave_out"]:
@@ -806,9 +884,12 @@ def readme_text(topic, results):
                                                    "parts and basic firearm safety") + ".",
              "They were downloaded on this computer for the owner's personal use only. Do not share, upload or "
              "redistribute them, and do not put them in anything that is published.",
-             "Each one says in its own front matter that it is approved for public release (Distribution "
-             "Statement A), or is on the owner's list of " + PUBLIC_EDUCATION + "; none shows a restricted "
-             "marking. The program checked this before keeping it.",
+             "Each one is a US government work published openly by a government site or the Internet Archive, "
+             "or is on the owner's list of " + PUBLIC_EDUCATION + ". Its release line below says truthfully "
+             "whether it prints Distribution Statement A (approved for public release), prints no distribution "
+             "statement, or prints a restricted marking (marked PERSONAL USE ONLY), or was classified and has "
+             "been declassified and released; nothing still classified is kept. "
+             "The program checked this before keeping it.",
              "Sections outside recognition and safety (" + ("render-safe, disposal, demolition, fuze functioning, "
                                                             "charges, manufacturing, modifying, arming or "
                                                             "employing munitions" if topic == "uxo" else
@@ -933,7 +1014,8 @@ def make_review_workspace(folder, source, say):
 
 
 def download_pdf(identifier, session=None):
-    """(PDF bytes, address) of an Internet Archive item's PDF (its "Text PDF" first), or (None, reason)."""
+    """(PDF bytes, address) of an Internet Archive item's PDF (its "Text PDF" first, then an "Additional Text PDF",
+    which some items have beside a scanned "Image Container PDF"), or (None, reason)."""
     import requests
     from urllib.parse import quote
     s = session or requests.Session()
@@ -942,7 +1024,8 @@ def download_pdf(identifier, session=None):
     files = [f for f in meta.get("files", []) if f.get("name", "").lower().endswith(".pdf")]
     if not files:
         return None, "the Internet Archive item has no PDF"
-    files.sort(key=lambda f: (f.get("format") != "Text PDF", -int(f.get("size") or 0)))
+    files.sort(key=lambda f: ({"Text PDF": 0, "Additional Text PDF": 1}.get(f.get("format"), 2),
+                              -int(f.get("size") or 0)))
     url = f"{ARCHIVE}/download/{identifier}/{quote(files[0]['name'])}"
     for attempt in range(3):
         r = s.get(url, timeout=600)
@@ -1063,15 +1146,17 @@ def fetch_small_arms_recognition(folder, cap, say=say_nothing):
 
 # ----------------------------------------------------------------- the table
 
-TERMS_SUMMARY = ("US government works approved for public release (Distribution Statement A), or public safety "
-                 "education published by a US government agency for the public; kept for personal "
-                 "use only by the owner's rule: never shared, never published, never used to make pictures.")
+TERMS_SUMMARY = ("US government works published openly by a government site or the Internet Archive (with or "
+                 "without Distribution Statement A; a restricted marking marked personal use only; an old "
+                 "classification only when declassified and released), or public safety education published by a US government agency for the public; kept "
+                 "for personal use only by the owner's rule: never shared, never published, never used to make "
+                 "pictures.")
 
 UXO_PERSONAL_SOURCES = [
     dict(key="uxo_recognition_personal", topic="uxo",
          name="Unexploded ordnance recognition: figures from public military manuals (personal use, review)",
-         category="research", licence="Public domain (US government works), each with Distribution Statement A "
-                                      "checked in its own front matter, or on the owner's public-education list",
+         category="research", licence="Public domain (US government works), each judged by the release rule in its "
+                                      "own front matter, or on the owner's public-education list",
          terms="https://www.esd.whs.mil/Portals/54/Documents/DD/issuances/dodi/523024p.pdf",
          terms_summary=TERMS_SUMMARY,
          credit="US Army, Marine Corps, Navy and Air Force multi-service publications, the Naval EOD Technology "
@@ -1081,8 +1166,8 @@ UXO_PERSONAL_SOURCES = [
          review_only=True, personal_only=True, never_publish=True, never_for_picture_making=True),
     dict(key="small_arms_recognition_personal", topic="small_arms",
          name="Small arms recognition: exterior views from public Army training circulars (personal use, review)",
-         category="research", licence="Public domain (US government works), each with Distribution Statement A "
-                                      "checked in its own front matter",
+         category="research", licence="Public domain (US government works), each judged by the release rule in its "
+                                      "own front matter",
          terms="https://www.esd.whs.mil/Portals/54/Documents/DD/issuances/dodi/523024p.pdf",
          terms_summary=TERMS_SUMMARY,
          credit="Headquarters, Department of the Army training circulars, copies on the Internet Archive "
@@ -1095,7 +1180,8 @@ UXO_PICTURE_MAKING_OK = set()
 
 
 def check_file(path, topic):
-    """Print what the release check and the section filter make of one local PDF (nothing is downloaded)."""
+    """Print what the release check and the section filter make of one local PDF (nothing is downloaded). A local
+    file has no host, so the release rule judges it as an Internet Archive copy (ARCHIVE), the kit's usual source."""
     with open(path, "rb") as f:
         data = f.read()
     document = {"id": os.path.basename(path), "short": os.path.basename(path), "title": os.path.basename(path),

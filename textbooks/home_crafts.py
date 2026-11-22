@@ -342,9 +342,10 @@ NOT_INCLUDED = [
      "manuals are in the Internet Archive collection of camping_outdoor, for the owner to fetch with Program "
      "Downloader. No public-release US government or military lantern manual was found (the TM 10 series found "
      "covers water heaters, 1945). Index: https://archive.org/details/manuals_coleman"),
-    ("US Army cold-weather and field heater manuals", "The cold-weather field manuals (FM 31-70 and others) are already "
-     "in the field manual library (fieldmanuals); the space heater technical manuals found (TM 9-4520-271-24P, 2006) "
-     "are parts lists without a distribution statement that could be checked. Index: "
+    ("US Army cold-weather and field heater manuals", "The cold-weather field manuals (FM 31-70, TC 21-3 and others) "
+     "are in the field manual library (fieldmanuals); the space heater technical manuals found (TM 9-4520-271-24P, "
+     "2006) are parts lists, with nothing to read for using a heater. (A missing distribution statement no longer "
+     "leaves out a military manual: military_release.py.) Index: "
      "https://archive.org/details/milmanual-fm-31-70-basic-cold-weather-manual"),
     ("Encyclopedia of Needlework (Thérèse de Dillmont) and Weldon's Practical Needlework", "Dillmont is in the Kiwix "
      "library's Project Gutenberg books; no Internet Archive copy of Weldon's Practical Needlework volumes with a "
