@@ -28,6 +28,10 @@ import refs_kit as K  # noqa: E402
 
 GROUP = "parenting"
 GROUPS = {GROUP: "Reference, parenting and family"}
+# A work its publisher has put in the public domain by its own statement (such as CPIR's "This product is public
+# domain"), added to sources.ALLOWED through more_refs.allowed().
+PD_DEDICATED = "Public domain (dedicated by its publisher)"
+ALLOWED = {PD_DEDICATED: "open"}
 
 # CDC's terms (the same as family_health.py): checked at every build, kept whole, credit and no-endorsement notice.
 CDC_TERMS = "https://www.cdc.gov/other/agencymaterials.html"
@@ -138,6 +142,40 @@ GUIDES.append(dict(
     licence_page=CWIG_TERMS, licence_text=CWIG_TEXT,
     urls=[CWIG + "/state-child-abuse-and-neglect-reporting-numbers/"]))
 
+# ====================================================================== Center for Parent Information and Resources
+
+# parentcenterhub.org (funded by the US Department of Education's Office of Special Education Programs) says on every
+# page: "This product is public domain. Authorization to reproduce it in whole or in part is granted." Each page is
+# checked for that line (page_mark). Its robots.txt asks for 600 seconds between requests; the builder waits its
+# longest pause (60 seconds), so the book is kept to the pages its family hubs list.
+CPIR = "https://www.parentcenterhub.org"
+CPIR_TEXT = r"This product is public domain\. Authorization to reproduce it in whole or in part is granted"
+CPIR_HUBS = ["specific-disabilities", "disability-landing", "partc", "iep", "disagree", "family-information-guides"]
+CPIR_NOT_PAGES = (r"login|logout|register|password|profile|members|activity|dashboard|checkout|payment|transaction|"
+                  r"listing|categor|location|single-|search|region|conference|webinar|forums|groups|embed|external|"
+                  r"cart|contact|find-your-center|branchmptac|rptacs|napcc|surveyitembank|centersconnect|nepact|"
+                  r"buzz-from-the-hub|parent-center|parentcenter|the-parent|welcome-parent|the-cpir|whatiscpir|resourcelibrary|ta-resources|"
+                  r"resources-in-|resource-family|resources-tta|wp-|tag|author|feed|buzz|korean|osep|naptac|dissem|web-|"
+                  r"essa|rda|spp-apr|priority-|regs-|fapebrief|10-great|glossar|raisecenter")
+GUIDES.append(dict(
+    K.guide(GROUP, "cpir_parent_guides", "Parent guides to disabilities, special education and early intervention "
+            "(Center for Parent Information and Resources)", "Special education and disabilities for parents",
+            "Center for Parent Information and Resources (CPIR), funded by the US Department of Education",
+            [f"{CPIR}/{h}/" for h in CPIR_HUBS],
+            rf"^https://www\.parentcenterhub\.org/(?!(?:{CPIR_NOT_PAGES}))[a-z0-9-]+/?$",
+            "The Center for Parent Information and Resources' guides for families, as its family hubs list them: "
+            "getting started (where to find your Parent Training and Information Center), the fact sheets on "
+            "specific disabilities (autism, ADHD, blindness and visual impairment, deafness, Down syndrome, "
+            "learning disabilities, intellectual disability, speech and language and the rest), early intervention "
+            "for babies and toddlers (Part C of IDEA), special education in school (evaluation, the IEP, parent "
+            "rights, transition to adulthood) and family engagement.",
+            "From the Center for Parent Information and Resources (parentcenterhub.org): \"This product is public "
+            "domain. Authorization to reproduce it in whole or in part is granted.\" No endorsement by the US "
+            "Department of Education is intended or should be inferred.", depth=1, limit=120,
+            content=(r'<div id="main-content"[^>]*>', r'<footer\b|<div id="sidebar"')),
+    licence=PD_DEDICATED, licence_page=CPIR + "/", licence_text=CPIR_TEXT, page_mark=CPIR_TEXT,
+    licence_url="https://www.parentcenterhub.org/"))
+
 COLLECTION = K.Collection("parent", GROUP, guides=GUIDES,
                           words={"parenting": lambda: [f"parent:{g['name']}" for g in GUIDES]})
 
@@ -152,6 +190,12 @@ LICENCE_LINES["parenting_childwelfare"] = (
     "\"Publications may be freely reproduced and distributed. However, when doing so, please credit Information "
     "Gateway\"; a US government work (Children's Bureau). robots.txt: \"User-agent: *\" \"Allow: /\"; no AI rules "
     "(checked 2026-11-22).")
+LICENCE_LINES["parenting_cpir"] = (
+    "www.parentcenterhub.org (every page, checked on each page read): \"This product is public domain. "
+    "Authorization to reproduce it in whole or in part is granted. While permission to reprint material from this "
+    "website is not necessary, the citation should be: Center for Parent Information and Resources\". robots.txt: "
+    "Crawl-delay 600 (the builder waits 60 seconds, its longest pause), nothing else refused; no AI rules (checked "
+    "2026-11-22).")
 NOT_INCLUDED = [
     ("Child Welfare Information Gateway publications (factsheets for families, bulletins, state statutes series) as "
      "PDFs", "Freely reproducible, but the PDFs are on artifacts.childwelfare.gov, whose robots.txt answers \"403 "
