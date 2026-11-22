@@ -139,8 +139,8 @@ TOPICS = [
            "commons_construction_safety", "electronics_commons_sa",
            # car care: wipers, tyres, jacks, roadside help, EV connectors, dashboard lights
            "commons_car_care", "commons_ev_charging", "commons_dashboard_lights", "open_images_car_care",
-           # boats and paddling (outdoors_sources.py)
-           "commons_boating_paddling",
+           # boats and paddling (outdoors_sources.py) and small boat types, parts and engines (small_boats_sources.py)
+           "commons_boating_paddling", "commons_small_boats",
            # radios, antennas and mesh radio devices (radio_sources.py; also in the radio topic)
            "commons_radios", "commons_antennas_station", "commons_mesh_data_radio", "open_images_radio",
            # generators, dynamos and wind and water turbines (power_sources.py; also in the power topic)
@@ -285,6 +285,7 @@ TOPICS = [
            "synthetic_bills",
            # money and work, travel, citizenship and civics (money_work_sources.py, travel_sources.py, civics_sources.py)
            "synthetic_pay_documents", "synthetic_travel_documents", "commons_travel_signs", "synthetic_civic_documents",
+           "synthetic_gov_forms",
            "commons_hearing_communication", "commons_immigration_documents",
            # national park visitor facilities and signs (photo_library_sources.py)
            "npgallery_facilities",

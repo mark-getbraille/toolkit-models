@@ -534,6 +534,7 @@ jobs:
             synthetic_travel_documents) limit=3000 ;;
             commons_travel_signs) limit=600 ;;
             synthetic_civic_documents) limit=1500 ;;
+            synthetic_gov_forms) limit=2000 ;;
             commons_driving) limit=900 ;;
             open_images_driving) limit=1500 ;;
             commons_computer_basics) limit=900 ;;
@@ -558,6 +559,7 @@ jobs:
             commons_contraception_menstrual) limit=400 ;;
             commons_daily_living_aids) limit=150 ;;
             commons_wilderness_rescue) limit=200 ;;
+            commons_small_boats) limit=900 ;;
             nasa_space_astronauts) limit=3000 ;;
             nasa_aircraft) limit=2500 ;;
             nasa_earth_from_space) limit=3000 ;;

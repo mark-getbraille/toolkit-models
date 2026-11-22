@@ -169,7 +169,7 @@ jobs:
                    "aph_museum_objects",
                    "commons_generators_power", "commons_solar_batteries", "commons_wind_water_power", "open_images_power",
                    "synthetic_pay_documents", "synthetic_travel_documents", "commons_travel_signs",
-                   "synthetic_civic_documents",
+                   "synthetic_civic_documents", "synthetic_gov_forms",
                    "commons_driving", "open_images_driving", "commons_computer_basics",
                    "open_images_computer_basics", "commons_cleaning_tools", "open_images_cleaning", "commons_knots",
                    "commons_outdoor_skills", "open_images_knots_outdoor", "commons_pool_equipment",
@@ -179,7 +179,8 @@ jobs:
                    "commons_wellbeing_aids", "commons_fitness_equipment", "commons_adaptive_sports", "commons_food_guides", "commons_contraception_menstrual", "commons_daily_living_aids", "commons_wilderness_rescue",
                    "nasa_space_astronauts", "nasa_aircraft", "nasa_earth_from_space", "nasa_planets_telescopes",
                    "nasa_rockets_launch", "nasa_people_at_work", "npgallery_accessibility", "npgallery_facilities",
-                   "npgallery_historic_buildings", "npgallery_wildlife_more", "npgallery_landscapes_more"]
+                   "npgallery_historic_buildings", "npgallery_wildlife_more", "npgallery_landscapes_more",
+                   "commons_small_boats"]
           words = [w for w in sys.argv[1].split(",") if w]
           # "key+" is a top-up pass of key and "key?" a needs-only run (kept with the mark, which the build job reads);
           # "all?" asks for a needs-only run of every pack.

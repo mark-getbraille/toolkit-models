@@ -1916,6 +1916,13 @@ def archive_pdf(identifier, cache=None):
             f"https://archive.org/details/{identifier}")
 
 
+def uk_crown_last_year(today=None):
+    """The latest year of publication whose UK Crown copyright has ended by today: Crown copyright in a published
+    work lasts 50 years from the end of the year it was published, so on 1 January 2026 the works of 1975 and before
+    became public domain in the UK."""
+    return (today or datetime.date.today()).year - 51
+
+
 def archive_year(identifier, cache=None):
     """The year an Internet Archive item says its work was published (its "date", else "year"), or 0."""
     meta = json.loads(fetch(f"https://archive.org/metadata/{identifier}", cache)).get("metadata", {})
@@ -2234,6 +2241,14 @@ def pdfdoc_book(entry, work, cache=None, left_out=None):
             if not year or year >= 1931:
                 left_out.append({"title": title, "reason": "The Internet Archive's record does not show it was "
                                  f"published before 1931 ({year or 'no year'}), so it may still be in copyright."})
+                return None
+        if entry.get("uk_crown_expired"):        # UK Crown copyright: 50 years from the end of the year of publication
+            year = archive_year(entry["archive"], cache)
+            last = uk_crown_last_year()
+            if not year or year > last or int(str(entry.get("published") or "9999")[:4]) > last:
+                left_out.append({"title": title, "reason": "The Internet Archive's record does not show it was "
+                                 f"published in {last} or earlier ({year or 'no year'}), so its UK Crown copyright "
+                                 "may not have ended yet."})
                 return None
     elif entry.get("pdf"):
         pdf_url, page = entry["pdf"], entry.get("page") or entry["pdf"]
@@ -2753,6 +2768,7 @@ def merge(manifest_paths, existing=None, robots=None):
     import cookbooks                             # (the same)
     import drinks_reference                      # (the same)
     import open_catalogues                       # (the same)
+    import stack_exchange                        # (the same) Stack Exchange Kiwix books: reference only
     return {"built": datetime.date.today().isoformat(), "release": RELEASE,
             "books": sorted(books.values(), key=lambda b: (b["group"], b["title"].casefold())),
             "left_out": left, "not_included": [{"title": t, "reason": r} for t, r in sources.NOT_INCLUDED +
@@ -2766,7 +2782,9 @@ def merge(manifest_paths, existing=None, robots=None):
                               **open_catalogues.LICENCE_LINES},
             "groups": sources.GROUPS, "group_notes": {**periodicals.GROUP_NOTES, **medications.GROUP_NOTES,
                                                       **courses.GROUP_NOTES, **cookbooks.GROUP_NOTES},
-            "kiwix_labels": {**courses.KIWIX_LABELS, **cookbooks.KIWIX_LABELS},
+            # stack_exchange last: its reference-only labels win over an older plain label (cooking Q&A)
+            "kiwix_labels": {**courses.KIWIX_LABELS, **cookbooks.KIWIX_LABELS, **stack_exchange.KIWIX_LABELS},
+            "kiwix_reference_only": stack_exchange.KIWIX_REFERENCE_ONLY,   # never used to train a model
             "pieces_done": sorted(done),
             "pieces_failed": {k: n for k, n in sorted(failed.items()) if k not in done}}
 
