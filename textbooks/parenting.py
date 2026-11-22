@@ -242,8 +242,58 @@ GUIDES.append(dict(
                    (r"Drowning", "Drowning at home"), (r".", "More child safety")], limit=200),
     licence_page=CPSC_TERMS, licence_text=CPSC_TEXT))
 
-COLLECTION = K.Collection("parent", GROUP, guides=GUIDES,
-                          words={"parenting": lambda: [f"parent:{g['name']}" for g in GUIDES]})
+# ====================================================================== Canada (personal use) and parents with disabilities
+
+# The Government of Canada's terms (canada.ca/en/transparency/terms.html, checked at every build): "Unless otherwise
+# specified you may reproduce the materials in whole or in part for non-commercial purposes, and in any format,
+# without charge or further permission", with the title, author and the address of the original named (the
+# builder's credit line and originals do that). Commercial reproduction needs permission, so the book is marked
+# personal use only. (Its name avoids the words "non-commercial", which build_textbooks.licence_short would shorten to
+# a Creative Commons name.)
+CROWN_NC = "Crown copyright (Canada), canada.ca terms for personal and public use"
+ALLOWED[CROWN_NC] = "non-commercial"
+CANADA_TERMS = "https://www.canada.ca/en/transparency/terms.html"
+CANADA_TEXT = r"you may reproduce the materials in whole or in part for non-commercial purposes"
+PHAC = "https://www.canada.ca/en/public-health/services"
+GUIDES.append(dict(
+    K.guide(GROUP, "canada_parenting", "Pregnancy, babies and parenting (Public Health Agency of Canada)",
+            "Parenting (Canada)", "Public Health Agency of Canada (Government of Canada, canada.ca)",
+            [PHAC + "/child-infant-health.html", PHAC + "/pregnancy.html"],
+            r"^https://www\.canada\.ca/en/public-health/services/(health-promotion/childhood-adolescence|"
+            r"child-infant-health|pregnancy)(/[a-z0-9-]+)*\.html$",
+            "The Public Health Agency of Canada's pages for parents, every page: pregnancy (healthy pregnancy, the "
+            "Sensible Guide to a Healthy Pregnancy, labour and birth), infant and child health (breastfeeding and "
+            "infant nutrition, safe sleep, postpartum health, mental health during and after pregnancy, the Nobody's "
+            "Perfect parenting sheets, injury prevention) and childhood and adolescence.",
+            "Canadian source, personal use only: reproduced under the Government of Canada's terms for "
+            "non-commercial reproduction; a copy of the version on canada.ca (the address of each page is at its "
+            "end), not the official version, made without the Government of Canada's endorsement. Health care, "
+            "benefits and the services named are Canada's.", depth=2,
+            follow=r"^https://www\.canada\.ca/en/public-health/services/(child-infant-health|pregnancy)(/[a-z0-9-]+)"
+                   r"*\.html$", units=[(r"/pregnancy", "Pregnancy"), (r"/child-infant-health", "Babies and children"),
+                                      (r".", "Parenting")], limit=200, country="Canada"),
+    licence=CROWN_NC, licence_url=CANADA_TERMS, licence_page=CANADA_TERMS, licence_text=CANADA_TEXT,
+    personal_use=True))
+
+# The National Council on Disability's report on the rights of parents with disabilities (blind parents included):
+# a US government work, read whole from its PDF.
+PDFS = [
+    K.us_pdf(GROUP, name="ncd_rocking_the_cradle", title="Rocking the Cradle: Ensuring the Rights of Parents with "
+             "Disabilities and Their Children (National Council on Disability)",
+             subject="Parents with disabilities", publisher="National Council on Disability (NCD)",
+             pdf="https://www.ncd.gov/assets/uploads/reports/2012/ncd-rocking-the-cradle.pdf",
+             page="https://www.ncd.gov/report/rocking-the-cradle-ensuring-the-rights-of-parents-with-disabilities-and-"
+                  "their-children/", published="2012-09-27", version="2012 report",
+             description="The National Council on Disability's report on parents with disabilities, blind and "
+                         "visually impaired parents among them: the barriers they meet in child welfare, family "
+                         "courts, adoption and assisted reproduction, the supports that help (adaptive parenting "
+                         "equipment and techniques, personal assistance, peer support), the laws that protect "
+                         "them (the ADA, Section 504) and NCD's recommendations.",
+             notice="A work of the National Council on Disability, an independent federal agency (public domain)."),
+]
+
+COLLECTION = K.Collection("parent", GROUP, guides=GUIDES, pdfs=PDFS,
+                          words={"parenting": lambda: [f"parent:{g['name']}" for g in GUIDES + PDFS]})
 
 LICENCE_LINES = {
     "parenting_cdc": "www.cdc.gov/other/agencymaterials.html (checked at every build): CDC's pages are in the public "
@@ -265,6 +315,16 @@ LICENCE_LINES["parenting_cpsc"] = (
     "them, crediting CPSC and not suggesting CPSC's endorsement (both in the notice); pictures, which may belong to "
     "others, are left out. robots.txt of cpsc.gov and anchorit.gov allows the pages; no AI rules (checked "
     "2026-11-22).")
+LICENCE_LINES["parenting_canada"] = (
+    "www.canada.ca/en/transparency/terms.html (checked at every build): \"Unless otherwise specified you may "
+    "reproduce the materials in whole or in part for non-commercial purposes, and in any format, without charge or "
+    "further permission\", naming the title, author and the address of the original; commercial reproduction needs "
+    "permission, so the book is personal use only. robots.txt allows /en/public-health/; no AI rules (checked "
+    "2026-11-22).")
+LICENCE_LINES["parenting_ncd"] = (
+    "www.ncd.gov: the National Council on Disability is an independent federal agency, so its reports are works of "
+    "the US government (17 U.S.C. 105, checked on govinfo.gov's policies page at every build); robots.txt allows "
+    "/assets/uploads/; no AI rules (checked 2026-11-22).")
 LICENCE_LINES["parenting_cpir"] = (
     "www.parentcenterhub.org (every page, checked on each page read): \"This product is public domain. "
     "Authorization to reproduce it in whole or in part is granted. While permission to reprint material from this "
@@ -274,8 +334,8 @@ LICENCE_LINES["parenting_cpir"] = (
 NOT_INCLUDED = [
     ("CPSC window covering (blind cord) safety guide", "CPSC's consumer guide to corded window coverings is not "
      "linked from its safety education pages or listed in its sitemap (only rulemaking papers are, checked "
-     "2026-11-22); the safety rules for cords are in the CPSC's other child safety pages built here. Link-only: the "
-     "industry's own safety site is copyright. Index: https://www.cpsc.gov/Safety-Education and "
+     "2026-11-22), and no other open guide to it was found. Link-only: the industry's own safety site is "
+     "copyright. Index: https://www.cpsc.gov/Safety-Education and "
      "https://windowcoverings.org/"),
     ("Child Welfare Information Gateway publications (factsheets for families, bulletins, state statutes series) as "
      "PDFs", "Freely reproducible, but the PDFs are on artifacts.childwelfare.gov, whose robots.txt answers \"403 "
