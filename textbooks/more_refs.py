@@ -50,6 +50,11 @@ MODULES = [
     "midwifery",            # CDC Hear Her, maternal and infant health, NHS after-birth pages (birth:)
     "instrument_care",      # old public-domain piano tuning and violin making books (instr:)
     "outdoor_cooking",      # emergency, camp and outdoor cooking: CDC, Ready.gov, USFA, CPSC, USFS, NPS, EPA, Army (outcook:)
+    # health and life (the owner's request of 2026-11-22), each in its own group
+    "mental_health",        # NIMH topics, CDC, VA PTSD, OWH, Smokefree.gov, NIDA, NCI grief, help lines (mind:)
+    "fitness_nutrition",    # Physical Activity and Dietary Guidelines, Move Your Way, FDA label, CDC, NHLBI, NIDDK (fit:)
+    "sexual_health",        # CDC contraception, STIs, HIV, violence; OPA, OWH, FDA, NIDDK, help lines (sexhealth:)
+    "aging_end_of_life",    # ACL long-term care, VA geriatrics, NCI end of life, NIDCD, IRS, VA burial, DOJ (aging:)
 ]
 
 _loaded = {}
