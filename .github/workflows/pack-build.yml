@@ -416,6 +416,9 @@ jobs:
             laundry_care_labels) limit=3000 ;;
             commons_household_hazards) limit=200 ;;
             open_images_household_hazards) limit=1500 ;;
+            commons_baby_products) limit=800 ;;
+            open_images_baby_products) limit=1500 ;;
+            abo_baby_products) limit=80 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in

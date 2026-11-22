@@ -27,6 +27,7 @@ import build_packs  # noqa: E402,F401 - loaded first, as the builders expect
 import gaps_oi_packs as g  # noqa: E402
 import indoor_packs as indoor  # noqa: E402
 import appliance_controls_packs as appl  # noqa: E402
+import baby_packs as baby  # noqa: E402
 import household_hazard_packs as hazard  # noqa: E402
 import care_label_packs as care  # noqa: E402
 import health_test_packs as health  # noqa: E402
@@ -41,6 +42,8 @@ MODULES = [
      [indoor.INDOOR_OI]),
     (appl, appl.APPLIANCE_CONTROLS_PACKS, appl.APPLIANCE_CONTROLS_LIMITS, appl.APPLIANCE_CONTROLS_COMMONS_KEYS,
      appl.CONTROL_SPECS, [appl.CONTROLS_OI]),
+    (baby, baby.BABY_PACKS, baby.BABY_LIMITS, baby.BABY_COMMONS_KEYS, [s[:3] for s in baby.BABY_SPECS],
+     [baby.BABY_OI]),
     (hazard, hazard.HAZARD_PACKS, hazard.HAZARD_LIMITS, hazard.HAZARD_COMMONS_KEYS, [], [hazard.HAZARD_OI]),
     (care, care.CARE_LABEL_PACKS, care.CARE_LABEL_LIMITS, care.CARE_LABEL_COMMONS_KEYS, [], []),
     (health, health.HEALTH_TEST_PACKS, health.HEALTH_TEST_LIMITS, health.HEALTH_TEST_COMMONS_KEYS,
@@ -229,6 +232,43 @@ def test_hazards_only_where_the_words_say_them():
     assert hazard.hazards_said("Fire extinguisher, expired in 2019")[0][1] == hazard.EXTINGUISHER_NOTE
 
 
+# ----------------------------------------------------------------- baby products
+
+def test_baby_products_features_only_from_the_record():
+    assert baby.features_said("Mama Bear Baby Pacifier, Stage 1 (0-6M), BPA Free (Pack of 4)") == [
+        "Stage 1", "0-6 months", "BPA free"]
+    assert baby.features_said("Rear-facing infant car seat with 5-point harness and chest clip") == [
+        "rear-facing", "an infant car seat", "a five-point harness", "a chest clip"]
+    assert baby.features_said("A blue car seat") == []
+    assert baby.measure_said("Baby thermometer reading 37.2 °C") == "37.2 °C"
+    assert baby.measure_said("oral syringe marked 5 ml and 10 ml") == ""             # two: none said
+    assert not baby.is_child("Baby bottles on a kitchen shelf") and baby.is_child("A baby holding a sippy cup")
+    rows = baby.product_rows("a crib (cot)", baby.SLEEP_NOTE, "White crib", "", "c")
+    assert rows == [{"question": baby.WHAT_Q, "answer": "This is a crib (cot). " + baby.SLEEP_NOTE, "credit": "c"}]
+    assert baby.product_rows("a baby bottle", "", "Baby in the bath with a bottle", "", "c") == []
+    assert baby.product_rows("a pacifier", "", "Naked toddler with a pacifier", "", "c") == []
+    assert baby.product_rows("a child car seat", baby.CAR_SEAT_NOTE, "Forward-facing car seat. A boy sits in it.",
+                             "A boy sits in it.", "c") == []                      # a child in it: products only
+    assert baby.product_rows("a bassinet", baby.SLEEP_NOTE, "Bassinet, lithograph, 1850", "", "c") == []
+    rows = baby.product_rows("a child car seat", baby.CAR_SEAT_NOTE, "Forward-facing child car seat in a car", "", "c")
+    assert rows[1]["answer"] == "Its record says: forward-facing." and not any(r.get("child") for r in rows)
+    assert "weight and height limits" in baby.CAR_SEAT_NOTE and "on their back" in baby.SLEEP_NOTE
+
+
+def test_abo_baby_rows():
+    listing = {"product_type": [{"value": "PACIFIER"}], "country": "US", "main_image_id": "x",
+               "item_name": [{"language_tag": "en_US", "value": "Solimo Orthodontic Baby Pacifier, Stage 3 (12-18M)"}],
+               "brand": [{"language_tag": "en_US", "value": "Solimo"}]}
+    rows = baby.abo_baby_rows(listing)
+    assert rows[0]["answer"].startswith("This is a pacifier (dummy). Its listing calls it: Solimo Orthodontic")
+    assert rows[0]["answer"].endswith(baby.PACIFIER_NOTE) and rows[1]["answer"] == (
+        "Its listing says: Stage 3, 12-18 months.")
+    thermo = dict(listing, product_type=[{"value": "THERMOMETER"}],
+                  item_name=[{"language_tag": "en_US", "value": "Digital Thermo-Hygrometer"}])
+    assert baby.abo_baby_rows(thermo) == []                      # not a baby thermometer
+    assert baby.abo_baby_rows(dict(listing, product_type=[{"value": "CHAIR"}])) == []
+
+
 # ----------------------------------------------------------------- shared checks
 
 def asked_elsewhere():
@@ -318,6 +358,7 @@ def test_wiring():
     assert set(indoor.INDOOR_PACKS) <= no_making
     assert "commons_appliance_controls" not in no_making and "open_images_appliance_controls" in no_making
     assert listed["appliance_commons_sa"].group == "share-alike"
+    assert set(baby.BABY_PACKS) <= no_making
     assert {"commons_household_hazards", "open_images_household_hazards"} <= no_making
     assert "laundry_care_labels" not in no_making and "laundry_care_labels" in topics.find("machines").keys
     assert "commons_home_health_tests" in no_making and "lfa_covid_tests" not in no_making

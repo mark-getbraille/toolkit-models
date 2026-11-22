@@ -1786,6 +1786,14 @@ COMMONS_KEYS = COMMONS_KEYS | frozenset(CARE_LABEL_COMMONS_KEYS)
 from household_hazard_packs import HAZARD_PACKS, HAZARD_COMMONS_KEYS
 PACKS.update(HAZARD_PACKS)
 COMMONS_KEYS = COMMONS_KEYS | frozenset(HAZARD_COMMONS_KEYS)
+# Baby and young child products for blind parents (packs/baby_packs.py): Commons categories and searches (bottles,
+# formula, baby food, wipes, car seats, cribs, high chairs, playpens, monitors, pacifiers, teethers, sippy cups, outlet
+# covers, gates, strollers, bassinets, bouncers, swings, oral syringes, droppers, children's toothbrushes), Open Images
+# baby things no other pack asks, and ABO's baby product listings; features and readings only from the record, with
+# short safety notes; never an undressed child. Describing only.
+from baby_packs import BABY_PACKS, BABY_COMMONS_KEYS
+PACKS.update(BABY_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(BABY_COMMONS_KEYS)
 
 
 def pack_lanes(keys):

@@ -3,6 +3,7 @@ everyday-access packs made with it (see DAILY_ACCESS_SOURCES). This file lists:
   - the ready-made packs built in packs/ (group "permissive"; the kit downloads them with prepare_pack):
       indoor_packs.py              commons_indoor_wayfinding, open_images_indoor
       appliance_controls_packs.py  commons_appliance_controls, open_images_appliance_controls
+      baby_packs.py                commons_baby_products, open_images_baby_products, abo_baby_products
       household_hazard_packs.py    commons_household_hazards, open_images_household_hazards
       care_label_packs.py          laundry_care_labels (computer-made labels and Commons photos)
       health_test_packs.py         lfa_covid_tests, commons_home_health_tests
@@ -157,6 +158,20 @@ DAILY_ACCESS_SOURCES = [
     Source("open_images_household_hazards", "Leaks, space heaters and heaters, fire sprinklers and fire alarms, with "
                                             "safety notes (Open Images, ready-made pack)",
            OI_OPEN, OI_CREDIT, "permissive", 1500, 15, prepare_pack, "about 300 MB"),
+    # ---- ready-made packs (packs/baby_packs.py)
+    Source("commons_baby_products", "Baby and young child products: bottles, formula, baby food, car seats, cribs, "
+                                    "high chairs, playpens, gates, strollers, monitors, pacifiers, oral syringes and "
+                                    "more, features only from the record, with safety notes (Wikimedia Commons, "
+                                    "ready-made pack)",
+           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 800, 10, prepare_pack, "about 180 MB"),
+    Source("open_images_baby_products", "Baby gates, bibs, baby food, infant formula, baby monitors, cradles, child "
+                                        "car seats, prams, baby carriers, mobiles and rattles (Open Images, ready-made "
+                                        "pack)",
+           OI_OPEN, OI_CREDIT, "permissive", 1500, 15, prepare_pack, "about 300 MB"),
+    Source("abo_baby_products", "Baby products in Amazon's catalogue photos: bottles and nipples, pacifiers by age "
+                                "stage, bowls, sheets and sleeping bags (Amazon Berkeley Objects, ready-made pack)",
+           "CC BY 4.0 (Amazon Berkeley Objects)", "Amazon Berkeley Objects (Amazon.com and UC Berkeley), CC BY 4.0, "
+           "https://amazon-berkeley-objects.s3.amazonaws.com/", "permissive", 80, 5, prepare_pack, "about 20 MB"),
     # ---- share-alike
     Source("appliance_commons_sa", "Wikimedia Commons: rotary switches, air-conditioner remotes, smart thermostats and "
                                    "cooktops, files under CC BY-SA or GFDL (share-alike)",
@@ -210,6 +225,13 @@ DAILY_ACCESS_SIGN_UP = {
 }
 
 DAILY_ACCESS_NOT_INCLUDED = {
+    "CPSC recall photos of baby products (saferproducts.gov Recalls API)":
+        "not public domain as a whole: CPSC allows copying recall notices, but 'any other use of photographs ... may "
+        "require permission from a copyright holder' (the recalling firms' own pictures). Already the personal-use "
+        "entry us_sources.cpsc_recalls, which includes the baby product recalls.",
+    "Commons diapers, baby baths and changing tables":
+        "their photos often show an undressed baby (the owner's rule: never unclothed children outside the medical "
+        "and birth collections), so they are not taken; ABO's diaper and wipe listings are abo_packaged_goods'.",
     "CPSC and NIST photo galleries (cpsc.gov, nist.gov, their Flickr streams)":
         "CPSC's recall photos are the recalling firms' own pictures (not public domain; see packaged_goods_sources.py) "
         "and the agencies' Flickr streams fall under Flickr's API terms (no storing). Their own public-domain photos "
