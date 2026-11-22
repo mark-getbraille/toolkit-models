@@ -185,8 +185,8 @@ NOT_INCLUDED = [
      "can find, checked 2026-11-22). TB MED 508 covers cold-water immersion, and the weather safety pages are "
      "prep:nws_safety. Link-only. Index: https://www.uscgboating.org/"),
     ("US Army Desert Operations (FM 90-3), Jungle Operations (FM 90-5) and Mountain Operations (FM 3-97.6)",
-     "Mostly tactics, which the field manual rule leaves out; their medical sections repeat TB MED 505, 507 and 508 "
-     "(built here) and the survival and mountaineering manuals already in the library. Index: "
+     "Built whole elsewhere since the owner's rule of 22 November 2026 (military_whole.py, milw:), not repeated "
+     "here; their medical parts repeat TB MED 505, 507 and 508 (built here). Index: "
      "https://archive.org/details/fm-90-3-desert-operations-1993"),
     ("TB MED 507 (2022 edition) and TB MED 508 newer editions", "No copy with a text layer was found at the "
      "Internet Archive or on an open government address in this pass (armypubs.army.mil refuses programs); the 2003 "

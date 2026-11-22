@@ -1946,8 +1946,10 @@ COMMONS_KEYS = COMMONS_KEYS | frozenset(POWER_COMMONS_KEYS)
 from money_work_packs import MONEY_WORK_PACKS, MONEY_WORK_COMMONS_KEYS
 from travel_packs import TRAVEL_PACKS, TRAVEL_COMMONS_KEYS
 from civics_packs import CIVICS_PACKS, CIVICS_COMMONS_KEYS
+# Filled-in government forms (packs/gov_forms_packs.py): SPECIMEN forms laid out like the W-4, W-9, 1099-NEC and SS-5.
+from gov_forms_packs import GOV_FORMS_PACKS, GOV_FORMS_COMMONS_KEYS
 for _packs, _commons in ((MONEY_WORK_PACKS, MONEY_WORK_COMMONS_KEYS), (TRAVEL_PACKS, TRAVEL_COMMONS_KEYS),
-                         (CIVICS_PACKS, CIVICS_COMMONS_KEYS)):
+                         (CIVICS_PACKS, CIVICS_COMMONS_KEYS), (GOV_FORMS_PACKS, GOV_FORMS_COMMONS_KEYS)):
     PACKS.update(_packs)
     COMMONS_KEYS = COMMONS_KEYS | frozenset(_commons)
 # Practical life (packs/practical_packs.py gathers six files, the owner's request of 2026-11-22): driving and road
@@ -1980,6 +1982,22 @@ for _packs, _commons in ((MENTAL_HEALTH_PACKS, MENTAL_HEALTH_COMMONS_KEYS),
                          (WILDERNESS_FIRST_AID_PACKS, WILDERNESS_FIRST_AID_COMMONS_KEYS)):
     PACKS.update(_packs)
     COMMONS_KEYS = COMMONS_KEYS | frozenset(_commons)
+# Small boats (packs/small_boats_packs.py, the owner's request of 2026-11-22): Commons boat types (rowboats, dinghies,
+# dories, punts, jon boats, pontoon boats, inflatables, catamarans, sailboats, keelboats, motorboats, wooden boats,
+# life rafts), parts and fittings (cleats, rowlocks, oars, fairleads, keels, centreboards, sails, fenders, mooring
+# lines), boat engines and boatbuilders; every answer ends with its boating, engine, line or workshop note.
+from small_boats_packs import SMALL_BOATS_PACKS, SMALL_BOATS_COMMONS_KEYS
+PACKS.update(SMALL_BOATS_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(SMALL_BOATS_COMMONS_KEYS)
+# Large public-domain US government photo libraries (the owner's request of 2026-11-22), one file each: the NASA Image
+# and Video Library by theme (packs/nasa_library_packs.py: astronauts, aircraft, Earth from space, planets and
+# telescopes, rockets and launch sites, NASA people at work) and NPGallery by theme (packs/nps_library_packs.py:
+# accessibility features, visitor facilities and signs, historic buildings, more wildlife and landscapes). Neither
+# reads Commons.
+from nasa_library_packs import NASA_LIBRARY_PACKS
+from nps_library_packs import NPS_LIBRARY_PACKS
+PACKS.update(NASA_LIBRARY_PACKS)
+PACKS.update(NPS_LIBRARY_PACKS)
 # Home manufacturing and making (packs/making_packs.py, the owner's request of 2026-11-22): Commons 3D printers, prints
 # and 3D design, cutting machines, heat presses and lasers, CNC and small lathe and mill tooling, moulding, casting and
 # makerspaces, circuit board fabrication, and Open Images machine tools and workshops; every answer ends with its

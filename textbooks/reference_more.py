@@ -112,8 +112,9 @@ FAA_HANDBOOKS = [
 # Distribution Statement A, its notice saying truthfully which; a restricted marking only when the government
 # publishes that copy itself. US government works (17 U.S.C. 105). Checked on 2026-11-21: the six below print the
 # statement; the 1970s ERIC copies (Builder, Construction Electrician, Utilitiesman, Engineman, Electrician's Mate,
-# Fireman) do not, and come in under the new rule (NAVY_RATE_MANUALS_NO_STATEMENT below). Seaman, Damage
-# Controlman and Basic Military Requirements were not found on the Internet Archive with a text layer.
+# Fireman) do not, and come in under the new rule (NAVY_RATE_MANUALS_NO_STATEMENT below). Seaman and Damage
+# Controlman were not found on the Internet Archive with a text layer; Basic Military Requirements (1992) was found
+# later and is built in military_whole.py (milw:navy_basic_military_requirements_1992).
 COURSE = dict(group="course", country="United States", licence=US_GOV, licence_url=US_GOV_URL, distribution_a=True,
               publisher="Naval Education and Training Command (US Navy)")
 
@@ -407,10 +408,13 @@ NOT_INCLUDED = [
      "Published only as separate chapter files on faa.gov (no single PDF); not built yet."),
     ("FAA Aeronautical Information Manual (AIM)", "Changed twice a year under a dated file name; not built yet (the "
      "14 CFR rules it explains are on govinfo.gov)."),
-    ("Navy rate training manuals for Seaman, Damage Controlman and Basic Military Requirements",
-     "No Internet Archive copy with a text layer was found (netc.navy.mil refuses programs)."),
-    ("Navy Gunner's Mate and Seabee Combat Handbook copies on the Internet Archive", "Weapons and combat: never "
-     "chosen."),
+    ("Navy rate training manuals for Seaman and Damage Controlman",
+     "No Internet Archive copy with a text layer was found (netc.navy.mil refuses programs). Basic Military "
+     "Requirements (NAVEDTRA 12043, 1992) was found and is built in military_whole.py."),
+    ("Navy Gunner's Mate and Seabee Combat Handbook copies on the Internet Archive", "Under the owner's rule of 22 "
+     "November 2026 (manuals read whole; only explosives parts cut) the Seabee Combat Handbook volumes 1 and 2 are "
+     "built in military_whole.py (milw:), volume 1's chapter on hand grenades, land mines and booby traps cut; no "
+     "Gunner's Mate copy that can be downloaded was found (searched 2026-11-22)."),
     ("Army FM 3-05.70 Survival (2002) and FM 21-11 First Aid for Soldiers (1989) copies", "Their front matter says "
      "\"Distribution authorized to ...\" (restricted), and no open copy on a government site was found (searched "
      "2026-11-22): by the release rule of 22 November 2026 they are personal use only, never built into a book; "
@@ -419,15 +423,16 @@ NOT_INCLUDED = [
      "https://archive.org/details/fm-3-05.70-survival-2002 and "
      "https://archive.org/details/fm-21-11-first-aid-for-soldier-1989"),
     ("FM 6-02.53 Tactical Radio Operations (2009), AFH 10-644 Survival, Evasion, Resistance, Escape (2017) and FM "
-     "24-18 Tactical Single-Channel Radio Communications Techniques (1987)", "Their titles name tactics, evasion "
-     "or resistance, which the field-manual rule never chooses (NOT_FIELD_SAFE); FM 24-18 (1987) also prints "
-     "\"Distribution authorized to ...\". Field Radio Techniques (FM 24-18, 1965) and AFR 64-4 (1985) are built "
-     "instead."),
-    ("Ranger Medic Handbook (75th Ranger Regiment, 2007 and 2022 editions on the Internet Archive)", "The 2007 "
-     "edition prints no distribution statement, so the release rule of 22 November 2026 would allow it, but it is "
-     "a combat casualty care handbook of a combat unit, and the field-manual rule never chooses combat or Ranger "
-     "titles; the 2022 edition is also a private publisher's reprint (\"Copyright © 2022 Breakaway Media, LLC ... "
-     "All rights reserved\"). Not built. Index: https://archive.org/details/ranger-medic-handbook-2007"),
+     "24-18 Tactical Single-Channel Radio Communications Techniques (1987)", "Under the owner's rule of 22 November "
+     "2026 (manuals read whole; only explosives parts cut): FM 6-02.53 and its successor ATP 6-02.53 are built in "
+     "radio_books.py (radio:), AFH 10-644 in military_whole.py (milw:); FM 24-18 (1987) prints \"Distribution "
+     "authorized to ...\" and no government site publishes it, so it stays personal use (military_whole.py says "
+     "so)."),
+    ("Ranger Medic Handbook (75th Ranger Regiment, 2007 and 2022 editions on the Internet Archive)", "The title "
+     "rule is gone (the Ranger Handbook, TC 3-21.76, is built in military_whole.py), but the 2007 copy's bookmarks "
+     "are broken, so it is not built yet, and the 2022 edition is a private publisher's reprint (\"Copyright © 2022 "
+     "Breakaway Media, LLC ... All rights reserved\"): military_whole.py says why. Index: "
+     "https://archive.org/details/ranger-medic-handbook-2007"),
     ("Old UK National Archives education pages (/education/resources/...)", "Gone from the site (410, or moved to "
      "the new teaching resources, which are built); the UK Government Web Archive keeps them, and its own terms were "
      "not checked."),

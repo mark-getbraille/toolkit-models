@@ -56,6 +56,9 @@ MODULES = [
     "household",            # cleaning and household management: FDA, EPA Safer Choice, CPSC checklist, old books (house:)
     "knots_outdoor",        # knots and outdoor skills: Forest Service axe and saw manuals, old knot books (knot:)
     "knots_military",       # knots, rope, pack and mountain manuals: Coast Guard, Navy, Army, Marine Corps (kmil:)
+    "military_whole",       # whole military manuals: SERE, Ranger Handbook, desert/jungle/mountain, Seabee, BMR (milw:)
+    "gov_forms",            # US federal forms with their instructions: IRS, Medicare, VA, passports, OPM (form:)
+    "state_laws",           # state statutes and codes, per state, from official bulk downloads (statelaw:)
     "bushcraft",            # bushcraft and woodcraft: old woodcraft classics, NZ DOC outdoor safety, index (bush:)
     "pools_spas",           # pools, spas and hot tubs: CDC, Army TB MED 575, Navy NAVMED P-5010-4 (pool:)
     "motorcycles_rvs",      # motorcycles, RVs and trailers: Army trailer manual, NPS campgrounds, Motor Camping (rvs:)
@@ -91,6 +94,8 @@ MODULES = [
     "sexual_health",        # CDC contraception, STIs, HIV, violence; OPA, OWH, FDA, NIDDK, help lines (sexhealth:)
     "aging_end_of_life",    # ACL long-term care, VA geriatrics, NCI end of life, NIDCD, IRS, VA burial, DOJ (aging:)
     "wilderness_first_aid", # NPS and USFS backcountry safety, NIOSH outdoor hazards, CDC, NOAA SARSAT, TB MEDs (wild:)
+    # small boats (the owner's request of 2026-11-22)
+    "small_boats",          # Navigation Rules, boating CFR, Coast Guard and Army boat manuals, NOAA, NWS, old boat books (boat:)
     # home manufacturing and making (the owner's request of 2026-11-22), its own group
     "making_books",         # 3D printing, lasers, CNC, lathes: Klipper, FreeCAD, LinuxCNC, OpenSCAD, FDA, NIST (make:)
 ]
