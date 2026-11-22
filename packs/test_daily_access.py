@@ -27,6 +27,7 @@ import build_packs  # noqa: E402,F401 - loaded first, as the builders expect
 import gaps_oi_packs as g  # noqa: E402
 import indoor_packs as indoor  # noqa: E402
 import appliance_controls_packs as appl  # noqa: E402
+import health_test_packs as health  # noqa: E402
 import medication_label_packs as med  # noqa: E402
 import synthetic_bills_packs as bills  # noqa: E402
 
@@ -38,6 +39,8 @@ MODULES = [
      [indoor.INDOOR_OI]),
     (appl, appl.APPLIANCE_CONTROLS_PACKS, appl.APPLIANCE_CONTROLS_LIMITS, appl.APPLIANCE_CONTROLS_COMMONS_KEYS,
      appl.CONTROL_SPECS, [appl.CONTROLS_OI]),
+    (health, health.HEALTH_TEST_PACKS, health.HEALTH_TEST_LIMITS, health.HEALTH_TEST_COMMONS_KEYS,
+     [(health.TEST_CATEGORY[0], False, [])], []),
     (med, med.MEDICATION_PACKS, med.MEDICATION_LIMITS, med.MEDICATION_COMMONS_KEYS, [], []),
     (bills, bills.SYNTHETIC_BILLS_PACKS, bills.SYNTHETIC_BILLS_LIMITS, bills.SYNTHETIC_BILLS_COMMONS_KEYS, [], []),
 ]
@@ -157,6 +160,31 @@ def test_medicine_name_and_strength_only_from_the_words():
     assert med.medicine_rows("File:Pills.jpg", "Some pills.", "c") == []
 
 
+# ----------------------------------------------------------------- home health tests
+
+def test_health_results_only_from_the_record():
+    negative = health.lfa_result("0.0 ng")
+    assert "no virus protein" in negative and "only the control line (C)" in negative
+    assert negative.endswith(health.RESULT_NOTE)
+    small = health.lfa_result("0.074 ng")
+    assert "positive sample" in small and "may be very faint or not show" in small
+    assert "may be very faint" not in health.lfa_result("7.4 ng") and health.lfa_result("Read me") == ""
+    assert health.RESULT_NOTE == ("Faint lines can be hard to read; follow the test's own instructions, retest if "
+                                  "unsure, and contact a doctor or pharmacist.")
+    assert "positive" in health.test_result("Rapid antigen test, positive result")
+    assert health.test_result("A rapid antigen test on a table.") == ""
+    assert health.test_result("Positive control and negative sample side by side") == ""     # two results
+    assert "negative" in health.test_result("Pregnancy test: not pregnant, one line")
+    assert "invalid" in health.test_result("Invalid result: no control line")
+    assert "112 mg/dL" in health.glucose_reading("The glucose meter reads 112 mg/dl.")
+    assert health.glucose_reading("Readings of 98 mg/dL and 140 mg/dL") == ""
+    rows = health.test_rows("a home pregnancy test", "File:Pregnancy test positive.jpg", "", "c")
+    assert rows[1]["question"] == health.RESULT_Q and rows[1]["answer"].endswith(health.RESULT_NOTE)
+    assert health.test_rows("a blood-glucose meter", "File:Glucose meter.jpg", "Blood on a finger.", "c") == []
+    assert len(health.test_rows("a blood-glucose meter", "File:Glucose meter.jpg", "Blood glucose 6.2 mmol/L.",
+                                "c")) == 3
+
+
 # ----------------------------------------------------------------- shared checks
 
 def asked_elsewhere():
@@ -246,5 +274,7 @@ def test_wiring():
     assert set(indoor.INDOOR_PACKS) <= no_making
     assert "commons_appliance_controls" not in no_making and "open_images_appliance_controls" in no_making
     assert listed["appliance_commons_sa"].group == "share-alike"
+    assert "commons_home_health_tests" in no_making and "lfa_covid_tests" not in no_making
+    assert {"lfa_covid_tests", "commons_home_health_tests"} <= set(topics.find("medicines").keys)
     assert "commons_medication_labels" in no_making and "commons_medication_labels" in topics.find("medicines").keys
     assert "synthetic_bills" in no_making and "synthetic_bills" in topics.find("documents").keys

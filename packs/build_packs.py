@@ -1765,6 +1765,13 @@ COMMONS_KEYS = COMMONS_KEYS | frozenset(SYNTHETIC_BILLS_COMMONS_KEYS)
 from medication_label_packs import MEDICATION_PACKS, MEDICATION_COMMONS_KEYS
 PACKS.update(MEDICATION_PACKS)
 COMMONS_KEYS = COMMONS_KEYS | frozenset(MEDICATION_COMMONS_KEYS)
+# Home health tests read for blind users (packs/health_test_packs.py): figshare's CC BY photos of COVID-19 rapid
+# antigen tests read from the researchers' record of what was put on each test, and Commons rapid antigen, pregnancy
+# and ovulation tests and glucose meters with the result only where the file's own words give it; every result ends
+# with the faint-lines note. The Commons photos may show people: describing only.
+from health_test_packs import HEALTH_TEST_PACKS, HEALTH_TEST_COMMONS_KEYS
+PACKS.update(HEALTH_TEST_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(HEALTH_TEST_COMMONS_KEYS)
 
 
 def pack_lanes(keys):

@@ -411,6 +411,8 @@ jobs:
             open_images_appliance_controls) limit=2000 ;;
             synthetic_bills) limit=4000 ;;
             commons_medication_labels) limit=300 ;;
+            lfa_covid_tests) limit=1200 ;;
+            commons_home_health_tests) limit=400 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in

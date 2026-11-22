@@ -77,7 +77,7 @@ TOPICS = [
           "home: bandages, syringes, insulin pens, inhalers, instruments, and animal medicines.",
           ("taiwan_pills", "pharmassist", "mediseg", "medpack_id", "scoa_blister", "med_commons_supplies",
            "med_commons_instruments", "med_commons_medicines", "vet_commons_medicine", "dental_instruments",
-           "open_images_medical", "cdc_phil_supplies", "commons_medication_labels",
+           "open_images_medical", "cdc_phil_supplies", "commons_medication_labels", "lfa_covid_tests", "commons_home_health_tests",
            # share-alike (with Wikipedia ticked)
            "med_vet_commons_sa", "openfacts_supplements",
            # research-only (personal use)

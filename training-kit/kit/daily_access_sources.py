@@ -3,6 +3,7 @@ everyday-access packs made with it (see DAILY_ACCESS_SOURCES). This file lists:
   - the ready-made packs built in packs/ (group "permissive"; the kit downloads them with prepare_pack):
       indoor_packs.py              commons_indoor_wayfinding, open_images_indoor
       appliance_controls_packs.py  commons_appliance_controls, open_images_appliance_controls
+      health_test_packs.py         lfa_covid_tests, commons_home_health_tests
       medication_label_packs.py    commons_medication_labels
       synthetic_bills_packs.py     synthetic_bills (computer-made, made-up details)
   - the share-alike Commons files of the same Commons categories (group "share-alike": only with the share-alike
@@ -127,6 +128,17 @@ DAILY_ACCESS_SOURCES = [
                                         "(Wikimedia Commons, ready-made pack)",
            "Pictures CC0, public domain, CC BY or an open government licence (credited in CREDITS.txt); captions CC0",
            COMMONS_CREDIT, "permissive", 300, 5, prepare_pack, "about 70 MB"),
+    # ---- ready-made packs (packs/health_test_packs.py)
+    Source("lfa_covid_tests", "COVID-19 rapid antigen test cassettes after a known amount of virus protein was added, "
+                              "read from the researchers' record, with the faint-lines note (figshare, ready-made "
+                              "pack)",
+           "CC BY 4.0 (figshare collection 7581998, Anne M. Davis and Asahi Tomitaka, 2024)",
+           "Images of COVID-19 Lateral Flow Assay Results, Anne M. Davis and Asahi Tomitaka, figshare (CC BY 4.0), "
+           "https://figshare.com/collections/7581998", "permissive", 1200, 20, prepare_pack, "about 250 MB"),
+    Source("commons_home_health_tests", "Home health tests: rapid antigen, pregnancy and ovulation tests and glucose "
+                                        "meters, the result only where the photo's own words give it (Wikimedia "
+                                        "Commons, ready-made pack)",
+           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 400, 10, prepare_pack, "about 90 MB"),
     # ---- share-alike
     Source("appliance_commons_sa", "Wikimedia Commons: rotary switches, air-conditioner remotes, smart thermostats and "
                                    "cooktops, files under CC BY-SA or GFDL (share-alike)",
@@ -141,9 +153,12 @@ DAILY_ACCESS_SOURCES = [
 
 # The collections a picture-making model may learn from: the Commons appliance controls (things); not the indoor
 # collections or the Open Images photos (people).
-DAILY_ACCESS_PICTURE_MAKING_OK = {"commons_appliance_controls", "appliance_commons_sa"}
+DAILY_ACCESS_PICTURE_MAKING_OK = {"commons_appliance_controls", "appliance_commons_sa", "lfa_covid_tests"}
 
 DAILY_ACCESS_SIGN_UP = {
+    "Kaggle lateral flow test sets (for example the 325-photo set used in arXiv 2404.14990, said to be MIT)":
+        "https://www.kaggle.com : a free Kaggle account and API token are needed to download; check each set's "
+        "licence and where its photos came from.",
     "Places365 (MIT CSAIL)":
         "365 kinds of scenes, among them lobby, corridor, elevator, escalator, waiting room, ticket booth and airport "
         "terminal; 'for non-commercial research and educational purposes' and the download is now behind a request "
@@ -170,6 +185,17 @@ DAILY_ACCESS_SIGN_UP = {
 }
 
 DAILY_ACCESS_NOT_INCLUDED = {
+    "FDA at-home test pages and EUA instructions (fda.gov)":
+        "the pictures on FDA's at-home COVID-19 test pages are the makers' packaging, shown as small thumbnails, and "
+        "the EUA 'instructions for use' are the makers' own documents (as with DailyMed's labels: the makers' "
+        "copyright); fda.gov asks robots to wait 30 seconds between pages. Not built; the general reading rule "
+        "(control line and test line) is written into the answers of health_test_packs.py.",
+    "Machine learning for determining lateral flow device results (University of Birmingham, Mendeley Data "
+    "hj9hmywh9c)":
+        "CC BY 4.0, but it holds two PDF documents (a validation report and a study protocol), no pictures.",
+    "REACT-2 lateral flow image library (Imperial College London)":
+        "about 595,000 participants' photos of home antibody tests, described in Communications Medicine (2022), "
+        "but not released for download.",
     "FDA and DailyMed package and label pictures (as open packs)":
         "the package and label art is the drug makers' (NLM: content 'licensed from private individuals, companies, "
         "or organizations that may be protected'), so they stay the kit's research entries dailymed_human_labels and "
