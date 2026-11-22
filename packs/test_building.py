@@ -36,13 +36,17 @@ def test_lumber_size_only_from_the_files_own_words():
 
 def test_notes_follow_their_answers():
     answers = {spec[0]: spec[2][0][1] for spec in b.BUILDING_SPECS}
-    for category in ("Formwork", "Concrete pouring", "Bricklaying", "Tiling", "Grout"):
+    for category in ("Formwork", "Concrete pouring", "Bricklaying", "Tiling", "Tilers"):
         assert answers[category].endswith(b.CONCRETE_NOTE), category
-    for category in ("Wooden ramps", "Modular ramps", "Threshold ramps"):
+    for category in ("Wooden ramps", "Ramps"):
         assert answers[category].endswith(b.RAMP_NOTE), category
+    ramps = next(spec for spec in b.ACCESS if spec[0] == "Ramps")
+    assert ramps[3].search("Wheelchair ramp at the library") and not ramps[3].search("Highway on-ramp")
+    shoring = next(spec for spec in b.SAFETY if spec[0] == "Shoring")
+    assert shoring[3].search("Trench shoring at a sewer dig") and not shoring[3].search("Shoring of a ship hull")
     for category in ("Wooden decks", "Garden sheds", "Wooden fences", "Wooden stairs"):
         assert answers[category].endswith(b.PERMIT_NOTE), category
-    assert answers["Fall arrest"].endswith(b.FALL_NOTE)
+    assert answers["Fall protection"].endswith(b.FALL_NOTE)
     assert "1 in 12" in b.RAMP_NOTE and "405.2" in b.RAMP_NOTE and "6 inches" in b.RAMP_NOTE
     assert "silica" in b.CONCRETE_NOTE and all(a.startswith("This is ") for a in answers.values())
     import sources  # noqa: F401 - loaded first

@@ -28,34 +28,30 @@ gaps_collection_packs.marked_rows apply. Safety notes, in the drinks distilling 
   PIGMENT_NOTE some artists' paints and pastels contain toxic pigments (cadmium, cobalt, lead): read the label.
 
 The packs (CRAFTS_PACKS):
-  commons_pottery_ceramics     potter's wheels and throwing, potters at work, kilns (pottery and electric), raku,
-                               glazes and glazing, stoneware, earthenware, terracotta, slip casting, coil and pinch
-                               pots, pottery tools, clay and polymer clay, studio pottery, bisque and greenware,
-                               sgraffito.
+  commons_pottery_ceramics     potter's wheels, potters at work and wheel-thrown pottery, kilns (pottery kilns and
+                               the anagama), raku, stoneware, earthenware, terracotta, crystalline and tin glazes,
+                               sgraffito, modelling and polymer clay.
   museum_ceramics              the Cleveland Museum of Art (type Ceramic) and the Art Institute of Chicago (ceramics,
                                stoneware, porcelain, earthenware) open-access records, CC0, with the museum's own words.
-  commons_jewellery_beading    jewellery making and workshops, goldsmiths and silversmiths, beadwork, seed, glass and
-                               wooden beads, bead looms, findings, jump rings, clasps and ear wires, wire wrapping,
-                               lost-wax casting, cabochons and faceted stones, gem cutting and lapidary, jewellers'
-                               tools, ring mandrels and saws, enamelling and cloisonne, chainmail jewellery.
+  commons_jewellery_beading    jewellery making, goldsmiths, silversmiths and jewellers at work, beadwork, seed,
+                               glass and wooden beads, jump rings and clasps, wire wrapping, lost-wax casting,
+                               cabochons, gem cutting and lapidary, jewellers' tools, enamelling and cloisonne,
+                               chainmail jewellery.
   museum_jewellery             Cleveland (type Jewelry and Enamel) and Chicago (jewelry, enamel, bead) records, CC0.
-  commons_paper_crafts         origami (models, cranes, modular), kirigami, paper models and papercraft, paper cutting,
-                               quilling, papier-mache, scrapbooking, greeting and handmade cards, bookbinding and its
-                               tools, stab and Coptic binding, marbled paper, papermaking and handmade paper,
-                               calligraphy, calligraphers, dip pens, nibs, brush pens and inkwells, block printing,
-                               linocut, rubber stamps, decoupage.
-  commons_candle_soap          candle making, candle moulds, beeswax and hand-dipped candles; soap making, handmade
-                               soap, soap moulds, melt-and-pour soap (with LYE_NOTE or WAX_NOTE).
-  commons_glass_carving        stained glass making and workshops, leaded glass, fused glass, glassblowing and
-                               glassblowers, lampworking, glass art, mosaics and mosaic making; woodcarving and wood
-                               carvers, whittling, chip and relief carving, carving tools, pyrography.
-  commons_art_supplies         painting tools, artists' palettes, easels, watercolour, oil and acrylic paints,
-                               gouache, palette knives, coloured pencils, pastels and oil pastels, charcoal,
-                               sketchbooks, artists' brushes, drawing tools, graphite pencils, art materials,
+  commons_paper_crafts         origami (modular, birds), kirigami, paper models and papercraft, paper cutting,
+                               quilling, papier-mache, scrapbooking, greeting cards, bookbinding and its tools,
+                               Coptic binding, marbled paper, papermaking and handmade paper, calligraphy and
+                               calligraphers, dip pens, pen nibs, brush pens and inkwells, block printing, linocut,
+                               rubber stamps, decoupage.
+  commons_candle_soap          beeswax candles and candle wicks (WAX_NOTE), Aleppo soap (LYE_NOTE); Commons has no
+                               category for candle or soap making (checked 2026-11-22).
+  commons_glass_carving        a stained-glass window being made, fused glass, glassblowing and glassblowers,
+                               lampworking, glass art, mosaic making; woodcarving and woodcarvers, whittling, chip
+                               and relief carving, carving tools, pyrography.
+  commons_art_supplies         painting tools, painting palettes, easels, watercolour, oil and acrylic paint,
+                               gouache, coloured pencils, pastels, sketchbooks, drawing tools, art materials,
                                painters at work.
-  commons_models_resin         scale models and model kits, plastic model kits, model making, dioramas, model
-                               railways and aircraft, miniature figures and their painting, resin art, epoxy resin,
-                               resin casting and resin jewellery, silicone moulds.
+  commons_models_resin         scale models, plastic models, dioramas, model railways and aircraft, resin casting.
   museum_glass_crafts          Cleveland (type Glass, Lacquer, Calligraphy) and Chicago (glass, book) records, CC0.
   open_images_crafts           Open Images labels no other pack asks about: pottery and ceramics (ceramic, clay,
                                earthenware, porcelain, potter's wheel), jewellery and stones (bead, earring, pendant,
@@ -114,69 +110,52 @@ def thing(category, words, note="", deeper=True):
 
 POTTERY = [
     thing("Pottery wheels", "a potter's wheel, a spinning wheel on which clay is shaped by hand", CLAY_NOTE),
-    thing("Throwing (pottery)", "throwing: shaping clay on a potter's wheel", CLAY_NOTE),
-    thing("Potters at work", "a potter at work", CLAY_NOTE),
-    thing("Pottery making", "pottery being made", CLAY_NOTE),
     thing("Kilns", "a kiln, the oven in which pottery is fired", KILN_NOTE, deeper=False),
     thing("Pottery kilns", "a pottery kiln", KILN_NOTE),
-    thing("Electric kilns", "an electric kiln", KILN_NOTE),
     thing("Raku", "raku: pottery taken red-hot from the kiln and cooled in the open or in sawdust", KILN_NOTE),
-    thing("Ceramic glazes", "ceramic glaze, the glassy coating fired onto pottery", CLAY_NOTE),
-    thing("Glazing (ceramics)", "pottery being glazed", CLAY_NOTE),
     thing("Stoneware", "stoneware, pottery fired hot until it is hard and watertight", deeper=False),
     thing("Earthenware", "earthenware, pottery fired at a lower heat, porous unless glazed", deeper=False),
     thing("Terracotta", "terracotta, reddish-brown unglazed earthenware", deeper=False),
-    thing("Slip casting", "slip casting: liquid clay poured into plaster moulds", CLAY_NOTE),
-    thing("Coil pottery", "coil pottery, built up from ropes of clay"),
-    thing("Pinch pots", "a pinch pot, shaped by pinching a ball of clay"),
-    thing("Pottery tools", "pottery tools (ribs, loop and wire tools, needles, sponges)"),
     thing("Modelling clay", "modelling clay"),
     thing("Polymer clay", "polymer clay, a coloured clay hardened in a home oven"),
-    thing("Studio pottery", "studio pottery, made by an individual potter", deeper=False),
-    thing("Greenware", "greenware: unfired, dried clay pottery, fragile until fired"),
-    thing("Bisque", "bisque: pottery fired once, before glazing"),
     thing("Sgraffito", "sgraffito: a design scratched through a coloured layer of clay or glaze"),
+    thing("Potters", "a potter at work", CLAY_NOTE, deeper=False),
+    thing("Wheel-thrown pottery", "wheel-thrown pottery, shaped on a potter's wheel"),
+    thing("Crystalline glaze", "a crystalline glaze, in which crystals grow in the glaze as the kiln cools"),
+    thing("Tin-glazing", "tin-glazed pottery, with an opaque white glaze painted in colours"),
+    thing("Anagama kiln", "an anagama, a long wood-fired tunnel kiln built up a slope", KILN_NOTE),
 ]
 
 # ----------------------------------------------------------------- Commons: jewellery making and beading
 
 JEWELLERY = [
     thing("Jewellery making", "jewellery making", TORCH_NOTE),
-    thing("Jewellery workshops", "a jewellery workshop", TORCH_NOTE),
-    thing("Goldsmiths at work", "a goldsmith at work", TORCH_NOTE),
     thing("Silversmiths", "a silversmith at work", TORCH_NOTE),
     thing("Silversmithing", "silversmithing", TORCH_NOTE),
     thing("Beadwork", "beadwork", deeper=False),
     thing("Seed beads", "seed beads, tiny glass beads"),
     thing("Glass beads", "glass beads"),
     thing("Wooden beads", "wooden beads"),
-    thing("Bead looms", "a bead loom, for weaving beads into a flat band"),
-    thing("Jewellery findings", "jewellery findings: the small metal parts (clasps, jump rings, ear wires) that hold "
-                                "jewellery together"),
     thing("Jump rings", "jump rings, small split metal rings that join jewellery parts"),
     thing("Clasps", "a clasp, which fastens a necklace or bracelet"),
-    thing("Ear wires", "ear wires, the hooks of earrings"),
     thing("Wire wrapping", "wire-wrapped jewellery, made by winding wire round stones or beads"),
     thing("Lost-wax casting", "lost-wax casting: a wax model is covered in plaster, melted out and replaced with "
                               "metal", TORCH_NOTE),
     thing("Cabochons", "a cabochon, a stone polished smooth and domed, not faceted"),
-    thing("Faceted gemstones", "a faceted gemstone, cut with flat polished faces"),
     thing("Gem cutting", "gem cutting (faceting)"),
     thing("Lapidary", "lapidary work: cutting and polishing stones"),
-    thing("Jewellers' tools", "jewellers' tools"),
-    thing("Ring mandrels", "a ring mandrel, a tapered rod for shaping and sizing rings"),
-    thing("Jewelers' saws", "a jeweller's saw, a fine saw for cutting metal"),
     thing("Enamelling", "enamelling: powdered glass fused onto metal", TORCH_NOTE),
     thing("Cloisonné", "cloisonne: enamel set between thin wire walls on metal"),
     thing("Chainmail jewellery", "chainmail jewellery, made of linked metal rings"),
+    thing("Goldsmiths", "a goldsmith at work", TORCH_NOTE, deeper=False),
+    thing("Jewellers", "a jeweller at work", TORCH_NOTE, deeper=False),
+    thing("Jewellery tools", "jewellers' tools"),
 ]
 
 # ----------------------------------------------------------------- Commons: paper crafts and calligraphy
 
 PAPER = [
     thing("Origami", "origami: paper folded into a shape without cuts or glue", deeper=False),
-    thing("Origami models", "an origami model"),
-    thing("Origami cranes", "an origami crane"),
     thing("Modular origami", "modular origami, many folded units fitted together"),
     thing("Kirigami", "kirigami: paper folded and cut"),
     thing("Paper models", "a paper model"),
@@ -185,10 +164,8 @@ PAPER = [
     thing("Quilling", "quilling: strips of paper rolled and shaped into designs"),
     thing("Papier-mâché", "papier-mache: paper and paste moulded and dried hard"),
     thing("Scrapbooking", "scrapbooking: photos and keepsakes arranged on decorated pages"),
-    thing("Handmade greeting cards", "a handmade greeting card"),
     thing("Bookbinding", "bookbinding", deeper=False),
     thing("Bookbinding tools", "bookbinding tools (bone folder, awl, needle, thread, press)"),
-    thing("Japanese stab binding", "Japanese stab binding, pages sewn through holes along the spine"),
     thing("Coptic binding", "Coptic binding, with the sewing showing on an open spine"),
     thing("Marbled paper", "marbled paper, patterned by floating colours on liquid"),
     thing("Papermaking", "papermaking by hand"),
@@ -197,36 +174,28 @@ PAPER = [
     thing("Calligraphy tools", "calligraphy tools"),
     thing("Calligraphers", "a calligrapher at work"),
     thing("Dip pens", "a dip pen, a nib on a holder dipped in ink"),
-    thing("Nibs", "pen nibs"),
     thing("Brush pens", "a brush pen"),
     thing("Inkwells", "an inkwell"),
     thing("Block printing", "block printing: a carved block inked and pressed onto paper or cloth"),
     thing("Linocut", "a linocut, a print from a carved block of linoleum", BLADE_NOTE),
     thing("Rubber stamps", "rubber stamps"),
     thing("Decoupage", "decoupage: paper cut-outs glued on and varnished"),
+    thing("Origami birds", "an origami bird"),
+    thing("Greeting cards", "a greeting card"),
+    thing("Pen nibs", "pen nibs, the metal points of dip pens"),
 ]
 
 # ----------------------------------------------------------------- Commons: candles and soap
 
 CANDLE_SOAP = [
-    thing("Candle making", "candle making", WAX_NOTE),
-    thing("Candle moulds", "a candle mould", WAX_NOTE),
     thing("Beeswax candles", "beeswax candles"),
-    thing("Hand-dipped candles", "hand-dipped candles, made by dipping a wick in melted wax again and again",
-          WAX_NOTE),
-    thing("Soap making", "soap making", LYE_NOTE),
-    thing("Handmade soap", "handmade soap", "Handmade soap is ready to use only after it has cured for some weeks."),
-    thing("Soap moulds", "a soap mould", LYE_NOTE),
-    thing("Melt and pour soap", "melt-and-pour soap, a ready-made soap base melted, scented and moulded (no lye is "
-                                "handled)", WAX_NOTE.replace("hot wax", "hot soap base")),
+    thing("Candle wicks", "candle wicks", WAX_NOTE),
+    thing("Aleppo soap", "Aleppo soap, a traditional soap made from olive and laurel oils", LYE_NOTE),
 ]
 
 # ----------------------------------------------------------------- Commons: glass, mosaics and carving
 
 GLASS_CARVING = [
-    thing("Stained glass making", "stained glass being made", GLASS_NOTE),
-    thing("Stained glass workshops", "a stained glass workshop", GLASS_NOTE),
-    thing("Leaded glass", "leaded glass: pieces of glass held in lead strips", GLASS_NOTE),
     thing("Fused glass", "fused glass: pieces of glass melted together in a kiln", KILN_NOTE),
     thing("Glassblowing", "glassblowing: shaping molten glass by blowing through a pipe", TORCH_NOTE),
     thing("Glassblowers", "a glassblower at work", TORCH_NOTE),
@@ -234,55 +203,43 @@ GLASS_CARVING = [
     thing("Glass art", "glass art", deeper=False),
     thing("Mosaic making", "a mosaic being made from small pieces of tile or glass", GLASS_NOTE),
     thing("Woodcarving", "woodcarving", BLADE_NOTE, deeper=False),
-    thing("Wood carvers", "a wood carver at work", BLADE_NOTE),
     thing("Whittling", "whittling: carving wood with a knife", BLADE_NOTE),
     thing("Chip carving", "chip carving: patterns cut by removing small chips of wood", BLADE_NOTE),
     thing("Relief carving", "relief carving: a picture carved so it stands out from a flat background", BLADE_NOTE),
     thing("Wood carving tools", "wood carving tools (gouges, chisels and knives)", BLADE_NOTE),
     thing("Pyrography", "pyrography: designs burned into wood with a hot tool", "Safety: the tip is hot enough to "
           "burn; work with ventilation."),
+    thing("Making a stained-glass window", "a stained-glass window being made", GLASS_NOTE),
+    thing("Woodcarvers", "a wood carver at work", BLADE_NOTE),
 ]
 
 # ----------------------------------------------------------------- Commons: painting and drawing supplies
 
 ART_SUPPLIES = [
     thing("Painting tools", "painting tools"),
-    thing("Artists' palettes", "an artist's palette, for mixing paint"),
     thing("Easels", "an easel, a stand that holds a painting or drawing"),
-    thing("Watercolor paints", "watercolour paints"),
-    thing("Oil paints", "oil paints", PIGMENT_NOTE),
-    thing("Acrylic paints", "acrylic paints"),
     thing("Gouache", "gouache, an opaque watercolour"),
-    thing("Palette knives", "a palette knife, for mixing and spreading paint"),
     thing("Colored pencils", "coloured pencils"),
     thing("Pastels", "pastels, sticks of pigment", PIGMENT_NOTE, deeper=False),
-    thing("Oil pastels", "oil pastels"),
-    thing("Charcoal (art)", "drawing charcoal"),
     thing("Sketchbooks", "a sketchbook"),
-    thing("Artists' brushes", "artists' brushes"),
     thing("Drawing tools", "drawing tools"),
-    thing("Graphite pencils", "graphite (lead) pencils for drawing"),
     thing("Art materials", "art materials", deeper=False),
     thing("Painters at work", "a painter at work", deeper=False),
+    thing("Watercolor paint", "watercolour paint"),
+    thing("Oil paint", "oil paint", PIGMENT_NOTE),
+    thing("Acrylic paint", "acrylic paint"),
+    thing("Painting palettes", "an artist's palette, for mixing paint"),
 ]
 
 # ----------------------------------------------------------------- Commons: models, miniatures and resin
 
 MODELS_RESIN = [
     thing("Scale models", "a scale model, a small copy of a real thing", deeper=False),
-    thing("Model kits", "a model kit"),
-    thing("Plastic model kits", "a plastic model kit: parts on frames (sprues) to cut out and glue together"),
-    thing("Model making", "model making"),
     thing("Dioramas", "a diorama, a small scene built as a model"),
     thing("Model railways", "a model railway", deeper=False),
     thing("Model aircraft", "a model aircraft", deeper=False),
-    thing("Miniature figures", "miniature figures"),
-    thing("Miniature painting", "miniatures being painted"),
-    thing("Resin art", "resin art", RESIN_NOTE),
-    thing("Epoxy resin", "epoxy resin", RESIN_NOTE),
     thing("Resin casting", "resin casting: liquid resin poured into a mould", RESIN_NOTE),
-    thing("Resin jewellery", "resin jewellery", RESIN_NOTE),
-    thing("Silicone moulds", "a silicone mould"),
+    thing("Plastic models", "a plastic model kit or a model built from one"),
 ]
 
 
@@ -444,15 +401,15 @@ CRAFTS_OI = [
            "Calligraphy": "calligraphy", "Tissue paper": "tissue paper", "Art paper": "art paper",
            "Rice paper": "rice paper", "Construction paper": "construction paper", "Craft": "a craft",
            }),
-    group("What painting or drawing things are in this picture?",
-          {"Paint": "paint", "Painting": "a painting", "Palette": "a palette", "Sketch": "a sketch",
-           "Pastel (Art)": "pastels", "Watercolor paint": "watercolour paint", "Acrylic paint": "acrylic paint",
-           "Fountain pen": "a fountain pen", "Marker pen": "a marker pen",
-           "Compass (Drawing Instrument)": "a drawing compass", "Easel": "an easel", "Canvas": "a canvas",
-           "Sketch pad": "a sketch pad", },
-          PIGMENT_NOTE),
+    group("What paints are in this picture?",
+          {"Paint": "paint", "Watercolor paint": "watercolour paint", "Acrylic paint": "acrylic paint",
+           "Pastel (Art)": "pastels", "Palette": "a palette"}, PIGMENT_NOTE),
+    group("What drawing or writing things are in this picture?",
+          {"Sketch": "a sketch", "Sketch pad": "a sketch pad", "Fountain pen": "a fountain pen",
+           "Marker pen": "a marker pen", "Compass (Drawing Instrument)": "a drawing compass", "Easel": "an easel",
+           "Canvas": "a canvas"}),
     group("What other crafts are in this picture?",
-          {"Sculpture": "a sculpture", "Stained glass": "stained glass", "Mosaic": "a mosaic",
+          {"Painting": "a painting", "Sculpture": "a sculpture", "Stained glass": "stained glass", "Mosaic": "a mosaic",
            "Stone carving": "stone carving", "Chainsaw carving": "chainsaw carving", "Scale model": "a scale model",
            "Model car": "a model car", "Model aircraft": "a model aircraft",            "Wood stain": "wood stain"}),
 ]
@@ -495,15 +452,15 @@ CRAFTS_PACKS = {
     "open_images_crafts": (build_open_images_crafts, OI_LICENCE),
 }
 CRAFTS_LIMITS = {
-    "commons_pottery_ceramics": 1500,       # 23 categories
+    "commons_pottery_ceramics": 1200,       # 15 categories
     "museum_ceramics": 2000,                # Cleveland about 3,000 CC0 ceramics; Chicago about 9,000
-    "commons_jewellery_beading": 1500,      # 26 categories
+    "commons_jewellery_beading": 1200,      # 20 categories
     "museum_jewellery": 1200,               # Cleveland about 1,200 jewellery and enamel; Chicago about 900
-    "commons_paper_crafts": 1800,           # 30 categories
-    "commons_candle_soap": 400,             # 8 categories, few open files
-    "commons_glass_carving": 1200,          # 16 categories
-    "commons_art_supplies": 1000,           # 18 categories
-    "commons_models_resin": 800,            # 14 categories
+    "commons_paper_crafts": 1600,           # 28 categories
+    "commons_candle_soap": 100,             # 3 categories, few open files
+    "commons_glass_carving": 1000,          # 14 categories
+    "commons_art_supplies": 900,            # 13 categories
+    "commons_models_resin": 500,            # 6 categories
     "museum_glass_crafts": 1000,            # Cleveland about 600; Chicago about 2,500
     "open_images_crafts": 2500,             # 47 labels
 }

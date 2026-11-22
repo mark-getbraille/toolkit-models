@@ -99,7 +99,8 @@ def test_notes_follow_their_answers():
         assert answers[category].endswith(e.SOLDER_NOTE), category
     assert answers["Burnt fuses"].endswith(e.FUSE_NOTE)
     for spec in e.ASSISTIVE:
-        if spec[0] not in ("Monoculars", "Screen protectors", "Mobile phone cases", "Computer speakers"):
+        if spec[0] not in ("Monoculars", "Computer speakers", "Optophone", "Mobile phone covers",
+                           "Smartphone screen protectors"):
             assert spec[2][0][1].endswith(e.DEVICE_NOTE), spec[0]
     assert "NLS" in e.DEVICE_NOTE and "VIST" in e.DEVICE_NOTE
     assert all(a.startswith("This is ") for a in answers.values())

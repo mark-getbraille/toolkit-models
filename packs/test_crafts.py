@@ -32,18 +32,15 @@ def answers(specs):
 
 def test_notes_follow_their_answers():
     a = answers(c.CRAFTS_SPECS)
-    for category in ("Kilns", "Pottery kilns", "Raku", "Fused glass"):
+    for category in ("Kilns", "Pottery kilns", "Raku", "Fused glass", "Anagama kiln"):
         assert a[category].endswith(c.KILN_NOTE), category
-    for category in ("Pottery wheels", "Throwing (pottery)", "Ceramic glazes"):
+    for category in ("Pottery wheels", "Potters"):
         assert a[category].endswith(c.CLAY_NOTE), category
-    for category in ("Soap making", "Soap moulds"):
-        assert a[category].endswith(c.LYE_NOTE), category
-    assert a["Candle making"].endswith(c.WAX_NOTE) and a["Leaded glass"].endswith(c.GLASS_NOTE)
-    for category in ("Glassblowing", "Lampworking", "Lost-wax casting", "Enamelling"):
+    assert a["Aleppo soap"].endswith(c.LYE_NOTE)
+    assert a["Candle wicks"].endswith(c.WAX_NOTE) and a["Making a stained-glass window"].endswith(c.GLASS_NOTE)
+    for category in ("Glassblowing", "Lampworking", "Goldsmiths", "Jewellers"):
         assert a[category].endswith(c.TORCH_NOTE), category
-    for category in ("Resin casting", "Epoxy resin"):
-        assert a[category].endswith(c.RESIN_NOTE), category
-    for category in ("Whittling", "Wood carving tools", "Linocut"):
+    for category in ("Whittling", "Woodcarvers"):
         assert a[category].endswith(c.BLADE_NOTE), category
     assert "lye to water, never water to lye" in c.LYE_NOTE and "double boiler" in c.WAX_NOTE
     assert "silica" in c.CLAY_NOTE and "lead" in c.GLASS_NOTE
@@ -52,7 +49,7 @@ def test_notes_follow_their_answers():
     assert (k.KILN_NOTE, k.CLAY_NOTE, k.LYE_NOTE, k.TORCH_NOTE, k.GLASS_NOTE, k.BLADE_NOTE) == (
         c.KILN_NOTE, c.CLAY_NOTE, c.LYE_NOTE, c.TORCH_NOTE, c.GLASS_NOTE, c.BLADE_NOTE)
     sa = {cat: ans for cat, _q, ans, _d in k.POTTERY_SA + k.JEWELLERY_SA + k.CRAFTS_SA}
-    assert sa["Kilns"].endswith(k.KILN_NOTE) and sa["Soap making"].endswith(k.LYE_NOTE)
+    assert sa["Kilns"].endswith(k.KILN_NOTE) and sa["Aleppo soap"].endswith(k.LYE_NOTE)
 
 
 def test_museum_records(monkeypatch):
@@ -91,6 +88,8 @@ def test_open_images_rows():
     assert said["Is there any origami in this picture?"] == "No, I can't see any origami in this picture."
     rows = g.oi_gap_rows({"Watercolor paint": 1}, c.CRAFTS_OI, random.Random(1))
     assert rows[0]["answer"] == "I can see watercolour paint. " + c.PIGMENT_NOTE
+    rows = g.oi_gap_rows({"Fountain pen": 1}, c.CRAFTS_OI, random.Random(1))
+    assert rows[0]["answer"] == "I can see a fountain pen."                   # no paint note on a pen
 
 
 def test_wiring():

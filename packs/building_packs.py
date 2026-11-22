@@ -26,20 +26,18 @@ exactly one in a standard lumber form ("2x4", "2 by 6") as "The file's own words
 
 The packs (BUILDING_PACKS; Commons files CC0, public domain (OSHA, FEMA and other US government photos among them)
 or CC BY, checked file by file; Open Images labels CC BY 4.0 and photos CC BY, CC0 or the Public Domain Mark):
-  commons_light_construction   framing (wood, platform and timber framing, houses being built, trusses, rafters,
-                               joists, sheathing and house wrap), decks and composite decking, sheds, fences by kind,
-                               concrete (pouring, formwork, finishing, slabs, footings, foundations), masonry
-                               (bricklaying, stone and dry stone walls, retaining walls, concrete block walls,
-                               paving), tiling and grout, insulation (spray foam, fibreglass, cellulose, polystyrene),
-                               stairs (wooden stairs, stringers, handrails, balusters, railings).
-  commons_home_access_building ramps and home accessibility modifications as built: wooden and modular ramps,
-                               threshold ramps, accessible entrances, grab bars, roll-in showers, accessible kitchens,
-                               lever handles, stairlifts and platform lifts (wheelchair ramps, accessible bathrooms
-                               and toilets, wheelchair and stair lifts are disability_packs' and not repeated).
-  commons_construction_safety  fall protection and fall arrest, guardrails, safety vests, trench shoring,
-                               construction workers at work and construction safety, building inspections and
-                               permits, framing nailers and hammers in use, measuring and layout tools (laser levels,
-                               plumb bobs, chalk lines, carpenter's and speed squares).
+  commons_light_construction   framing (timber framing, roof trusses), decks, sheds, fences by kind, concrete
+                               (pouring, formwork, slabs, concrete construction), masonry (bricklaying and
+                               bricklayers, stone and dry stone walls, retaining walls, concrete block walls,
+                               paving), tiling and tilers, insulation (spray foam, cellulose), stairs (wooden stairs,
+                               stringers, handrails, balusters, railings).
+  commons_home_access_building ramps and home accessibility modifications as built: wooden ramps, access ramps (only
+                               files whose own words say wheelchair or access), grab bars, accessible kitchens
+                               (wheelchair ramps, accessible bathrooms and toilets, wheelchair and stair lifts are
+                               disability_packs' and not repeated).
+  commons_construction_safety  fall protection, guardrails, safety vests, trench shoring (only files whose words name
+                               a trench or dig), construction workers and carpenters at work, building permits,
+                               layout tools (plumb bobs, chalk lines, speed squares).
   open_images_building         Open Images labels no other pack asks about: fences by kind, sheds, decks, concrete
                                slabs and reinforced concrete, particle board, welded wire mesh, tile flooring,
                                mortar, concrete saws, framing hammers and hard hats.
@@ -74,6 +72,10 @@ RAMP_NOTE = ("For public buildings the ADA Standards say a ramp may be no steepe
 PERMIT_NOTE = "Decks, sheds, fences, stairs and structural work usually need a building permit: check local codes."
 POWER_TOOL_NOTE = ("Safety: wear eye and hearing protection, keep guards in place, and unplug or remove the battery "
                    "before changing a blade or clearing a jam.")
+TRENCH_NOTE = ("Safety: a trench can collapse without warning: never enter one deeper than about 5 feet without "
+               "shoring or a trench box.")
+ACCESS_WORDS = re.compile(r"\b(wheelchairs?|accessib\w*|disab\w*|handicap\w*|barrier[- ]free|mobility)\b", re.I)
+TRENCH_WORDS = re.compile(r"\b(trench\w*|excavat\w*|dig\w*)\b", re.I)
 LADDER_LINE = ("Read the ladder's safety labels: they give its weight rating and how to set it up; never stand on the "
                "top step or cap.")
 
@@ -101,32 +103,17 @@ def stated_lumber(title, text):
 # ----------------------------------------------------------------- Commons: framing, decks, sheds, fences, masonry
 
 CONSTRUCTION = [
-    thing("Wood framing", "wood framing: the wooden skeleton of a building's walls, floors and roof", PERMIT_NOTE),
-    thing("Platform framing", "platform framing, the usual way houses are framed, one storey at a time"),
     thing("Timber framing", "timber framing, heavy timbers joined with wooden joints and pegs"),
-    thing("Houses under construction", "a house under construction", FALL_NOTE, deeper=False),
     thing("Roof trusses", "roof trusses, factory-made triangles of lumber that hold up a roof", FALL_NOTE),
-    thing("Rafters", "rafters, the sloping beams of a roof"),
-    thing("Floor joists", "floor joists, the beams that hold up a floor"),
-    thing("House wrap", "house wrap, the weather-resistant sheet stapled over a house's sheathing"),
     thing("Wooden decks", "a wooden deck", PERMIT_NOTE),
-    thing("Deck construction", "a deck being built: posts, beams, joists and decking boards", PERMIT_NOTE),
-    thing("Composite decking", "composite decking, boards made of wood fibre and plastic"),
     thing("Sheds", "a shed", PERMIT_NOTE, deeper=False),
     thing("Garden sheds", "a garden shed", PERMIT_NOTE),
     thing("Wooden fences", "a wooden fence", PERMIT_NOTE),
     thing("Picket fences", "a picket fence, a low fence of evenly spaced upright boards"),
     thing("Chain-link fences", "a chain-link fence, woven steel wire on metal posts"),
-    thing("Split-rail fences", "a split-rail fence, rough rails laid between posts"),
-    thing("Privacy fences", "a privacy fence, a tall solid fence"),
     thing("Formwork", "formwork, the moulds that hold wet concrete until it sets", CONCRETE_NOTE),
     thing("Concrete pouring", "concrete being poured", CONCRETE_NOTE),
-    thing("Concrete finishing", "concrete being finished: smoothed with floats and trowels as it sets",
-          CONCRETE_NOTE),
     thing("Concrete slabs", "a concrete slab"),
-    thing("Concrete footings", "concrete footings, the wide base that spreads a wall's or post's weight into the "
-                               "ground", CONCRETE_NOTE),
-    thing("House foundations", "a house foundation", CONCRETE_NOTE),
     thing("Bricklaying", "bricklaying: laying bricks in mortar", CONCRETE_NOTE),
     thing("Bricklayers", "a bricklayer at work", CONCRETE_NOTE),
     thing("Stone walls", "a stone wall"),
@@ -135,60 +122,47 @@ CONSTRUCTION = [
     thing("Concrete block walls", "a concrete block wall", CONCRETE_NOTE),
     thing("Paving stones", "paving stones (pavers)"),
     thing("Tiling", "tiling: tiles being set in adhesive", CONCRETE_NOTE),
-    thing("Grout", "grout, the filler between tiles", CONCRETE_NOTE),
     thing("Spray foam insulation", "spray foam insulation", "Safety: spray foam gives off harmful fumes while it is "
                                                             "applied: only with a respirator and ventilation."),
-    thing("Fiberglass insulation", "fibreglass insulation", "Safety: glass fibres irritate skin, eyes and lungs: "
-                                                            "wear gloves, long sleeves, goggles and a dust mask."),
     thing("Cellulose insulation", "cellulose insulation, made from shredded paper"),
-    thing("Polystyrene insulation", "polystyrene foam insulation boards"),
     thing("Wooden stairs", "wooden stairs", PERMIT_NOTE),
     thing("Stair stringers", "stair stringers, the notched boards that carry the steps of a staircase"),
     thing("Handrails", "a handrail"),
     thing("Balusters", "balusters, the upright posts that hold up a stair or deck railing"),
     thing("Railings", "a railing", deeper=False),
+    thing("Decks (architecture)", "a deck", PERMIT_NOTE, deeper=False),
+    thing("Concrete construction", "concrete construction", CONCRETE_NOTE),
+    thing("Tilers", "a tiler at work, setting tiles", CONCRETE_NOTE),
 ]
 
 # ----------------------------------------------------------------- Commons: home accessibility modifications
 
 ACCESS = [
     thing("Wooden ramps", "a wooden ramp", RAMP_NOTE),
-    thing("Modular ramps", "a modular ramp, made of aluminium sections bolted together", RAMP_NOTE),
-    thing("Threshold ramps", "a threshold ramp, a short ramp over a door sill", RAMP_NOTE),
-    thing("Portable ramps", "a portable ramp", RAMP_NOTE),
-    thing("Accessible entrances", "an accessible (step-free) entrance", RAMP_NOTE),
     thing("Grab bars", "grab bars, strong rails fixed to the wall (into the studs or with special anchors) to hold "
                        "on to"),
-    thing("Roll-in showers", "a roll-in shower, with no step, for a wheelchair or shower chair"),
     thing("Accessible kitchens", "an accessible kitchen, with lower counters and space under them for a "
                                  "wheelchair"),
-    thing("Lever door handles", "a lever door handle, easier to use than a knob"),
-    thing("Stairlifts", "a stairlift, a chair that runs on a rail up the stairs"),
-    thing("Platform lifts", "a platform lift, which raises a wheelchair user up a few steps"),
-    thing("Home modifications", "a home modification for accessibility"),
+    # Commons' "Ramps" holds road, loading and skate ramps too: only files whose own words say they are for
+    # wheelchairs or access.
+    thing("Ramps", "a ramp for wheelchair access", RAMP_NOTE, deeper=False) + (ACCESS_WORDS,),
 ]
 
 # ----------------------------------------------------------------- Commons: construction safety and layout tools
 
 SAFETY = [
     thing("Fall protection", "fall protection", FALL_NOTE),
-    thing("Fall arrest", "fall arrest equipment: a harness, lanyard and anchor that stop a fall", FALL_NOTE),
     thing("Guardrails", "a guardrail", deeper=False),
     thing("Safety vests", "a high-visibility safety vest"),
-    thing("Trench shoring", "trench shoring, supports that stop a trench's walls from caving in", "Safety: a trench "
-          "can collapse without warning: never enter one deeper than about 5 feet without shoring or a trench box."),
     thing("Construction workers", "construction workers at work", deeper=False),
     thing("Carpenters", "a carpenter at work", deeper=False),
-    thing("Construction safety", "construction safety", FALL_NOTE),
-    thing("Building inspection", "a building inspection"),
     thing("Building permits", "a building permit", PERMIT_NOTE),
-    thing("Framing hammers", "a framing hammer, a heavy hammer for framing"),
-    thing("Framing nailers", "a framing nailer, a nail gun for framing", POWER_TOOL_NOTE),
-    thing("Laser levels", "a laser level, which projects a level line on a wall"),
     thing("Plumb bobs", "a plumb bob, a pointed weight on a string that hangs straight down"),
     thing("Chalk lines", "a chalk line, a chalky string snapped to mark a straight line"),
-    thing("Carpenter's squares", "a carpenter's square (framing square)"),
     thing("Speed squares", "a speed square, a triangle for marking square and angled cuts"),
+    # "Shoring" holds the shoring of buildings and ships too: only files whose own words name a trench or dig.
+    thing("Shoring", "trench shoring, supports that stop a trench's walls from caving in", TRENCH_NOTE,
+          deeper=False) + (TRENCH_WORDS,),
 ]
 
 
@@ -248,9 +222,9 @@ BUILDING_PACKS = {
     "open_images_building": (build_open_images_building, OI_LICENCE),
 }
 BUILDING_LIMITS = {
-    "commons_light_construction": 2500,      # 42 categories, an even share each
-    "commons_home_access_building": 400,     # 12 categories, few open files
-    "commons_construction_safety": 900,      # 17 categories
+    "commons_light_construction": 2000,      # 29 categories, an even share each
+    "commons_home_access_building": 200,     # 4 categories, few open files
+    "commons_construction_safety": 500,      # 10 categories
     "open_images_building": 1500,            # 16 labels; fences and sheds have many photos
 }
 BUILDING_COMMONS_KEYS = ("commons_light_construction", "commons_home_access_building", "commons_construction_safety")

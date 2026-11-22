@@ -51,8 +51,8 @@ def thing(category, words, note="", deeper=True):
 
 
 BUILDING_SA = [
-    thing("Wood framing", "wood framing: the wooden skeleton of a building's walls, floors and roof", PERMIT_NOTE),
-    thing("Houses under construction", "a house under construction", deeper=False),
+    thing("Timber framing", "timber framing, heavy timbers joined with wooden joints and pegs"),
+    thing("Decks (architecture)", "a deck", PERMIT_NOTE, deeper=False),
     thing("Roof trusses", "roof trusses"),
     thing("Wooden decks", "a wooden deck", PERMIT_NOTE),
     thing("Garden sheds", "a garden shed", PERMIT_NOTE),
@@ -78,16 +78,15 @@ BUILDING_SOURCES = [
                                          "bricklaying and stone walls, tiling, insulation and stairs, a lumber size "
                                          "only where the file names it, with safety and permit notes (Wikimedia "
                                          "Commons, ready-made pack)",
-           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 2500, 25, prepare_pack, "about 550 MB"),
-    Source("commons_home_access_building", "Ramps and home accessibility modifications as built: wooden, modular and "
-                                           "threshold ramps, step-free entrances, grab bars, roll-in showers, "
-                                           "accessible kitchens, lever handles, stairlifts, with the ADA ramp rule "
+           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 2000, 20, prepare_pack, "about 450 MB"),
+    Source("commons_home_access_building", "Ramps and home accessibility modifications as built: wooden ramps, access "
+                                           "ramps, grab bars and accessible kitchens, with the ADA ramp rule "
                                            "(Wikimedia Commons, ready-made pack)",
-           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 400, 10, prepare_pack, "about 90 MB"),
-    Source("commons_construction_safety", "Construction safety and layout: fall protection, guardrails, trench "
-                                          "shoring, inspections and permits, framing nailers, laser levels, plumb "
-                                          "bobs, chalk lines and squares (Wikimedia Commons, ready-made pack)",
-           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 900, 10, prepare_pack, "about 200 MB"),
+           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 200, 5, prepare_pack, "about 45 MB"),
+    Source("commons_construction_safety", "Construction safety and layout: fall protection, guardrails, safety vests, "
+                                          "trench shoring, building permits, workers at work, plumb bobs, chalk lines "
+                                          "and speed squares (Wikimedia Commons, ready-made pack)",
+           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 500, 10, prepare_pack, "about 110 MB"),
     Source("open_images_building", "Fences, sheds and decks, concrete slabs, particle board, mortar, tile flooring, "
                                    "concrete saws and hard hats (Open Images, ready-made pack)",
            OI_OPEN, OI_CREDIT, "permissive", 1500, 15, prepare_pack, "about 300 MB"),
@@ -119,6 +118,13 @@ BUILDING_NOT_INCLUDED = {
         "Spirit level, Laser level, Masonry trowel, Masonry tool, Fence Post, Ceramic tile cutter, Concrete grinder, "
         "Wire saw, Pipe insulation, Wood veneer: no human-checked labels in Open Images, so left out. Bricklayer, "
         "Carpenter and Electrician judge people by their trade and are left out.",
+    "Commons categories that do not exist under the names tried (November 2026)":
+        "Wood and platform framing, Houses under construction, Rafters, Floor joists, House wrap, Deck construction, "
+        "Composite decking, Concrete finishing and footings, House foundations, Grout, Fiberglass and polystyrene "
+        "insulation, Modular, threshold and portable ramps, Accessible entrances, Roll-in showers, Lever door handles, "
+        "Stairlifts, Platform lifts, Home modifications, Fall arrest, Trench shoring, Construction safety, Building "
+        "inspection, Framing hammers and nailers, Laser levels and Carpenter's squares; the packs use the categories "
+        "that exist (Timber framing, Decks (architecture), Concrete construction, Tilers, Ramps, Shoring ...).",
     "Building codes (the International Residential Code and the like)":
         "the ICC's codes are copyrighted (read free online only); the reference library has the ADA Standards and "
         "the Access Board's guide.",

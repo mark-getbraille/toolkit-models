@@ -46,13 +46,13 @@ labels CC BY 4.0 and photos CC BY, CC0 or the Public Domain Mark):
                                 signal generators, spectrum analysers, LCR meters, test equipment; electronics
                                 workbenches, antistatic bags, spudgers; phones, smartphones and laptops opened up;
                                 radio repair, valve radios, audio amplifiers; assistive technology devices.
-  commons_assistive_devices     assistive and low-vision devices (the owner's request of 2026-11-22): video
-                                magnifiers (CCTVs) and handheld electronic magnifiers, braille embossers and
-                                notetakers, talking clocks, watches and calculators, DAISY and talking-book players,
-                                reading machines, electronic travel aids, monoculars, screen protectors and phone
-                                cases, computer speakers, each with DEVICE_NOTE (battery, cleaning, warranty and the
-                                repair programmes). Refreshable braille displays, hearing aids, white canes and
-                                binoculars are disability_packs' and other packs' (not repeated).
+  commons_assistive_devices     assistive and low-vision devices (the owner's request of 2026-11-22): braille
+                                embossers and printers, talking clocks, monoculars, the optophone (an early reading
+                                machine), phone covers and screen protectors, computer speakers, with DEVICE_NOTE
+                                (battery, cleaning, warranty and the repair programmes). Commons has no category for
+                                video magnifiers, notetakers, DAISY players or travel aids (checked 2026-11-22: the
+                                kit's electronics_sources.py lists them); refreshable braille displays, hearing aids,
+                                white canes and binoculars are disability_packs' and other packs' (not repeated).
   commons_circuit_diagrams      circuit diagrams (schematics), amplifier circuits, resistor and fuse diagrams, chip
                                 pinout diagrams and electronic symbols (drawings, which Commons sends as pictures):
                                 "What is this?" -> "This is a circuit diagram (a schematic): ..." Only what kind of
@@ -356,32 +356,18 @@ DEVICE_NOTE = ("Care: use only the maker's battery and charger, keep it dry, cle
                "free through your library; a state Assistive Technology programme or VA VIST coordinator can help) "
                "before opening it.")
 ASSISTIVE = [
-    part("Video magnifiers", "a video magnifier (a CCTV): a camera on a stand that shows print and objects "
-                             "enlarged on a screen", DEVICE_NOTE),
-    part("Electronic magnifiers", "an electronic (digital) magnifier: a handheld camera and screen that enlarge "
-                                  "print", DEVICE_NOTE),
     part("Braille embossers", "a braille embosser: a printer that punches braille dots into paper", DEVICE_NOTE),
     part("Braille printers", "a braille printer (embosser)", DEVICE_NOTE),
-    part("Braille notetakers", "a braille notetaker: a portable computer with a braille keyboard, speech and often "
-                               "a braille display", DEVICE_NOTE),
     part("Talking clocks", "a talking clock, which speaks the time at the press of a button", DEVICE_NOTE),
-    part("Talking watches", "a talking watch, which speaks the time at the press of a button", DEVICE_NOTE),
-    part("Talking calculators", "a talking calculator, which speaks the keys and results", DEVICE_NOTE),
-    part("DAISY players", "a DAISY player: a talking-book player for blind and print-disabled readers", DEVICE_NOTE),
-    part("Talking book machines", "a talking-book machine, a player for recorded books for blind readers",
-         DEVICE_NOTE),
-    part("Reading machines", "a reading machine, which scans printed pages and reads them aloud", DEVICE_NOTE),
-    part("Kurzweil Reading Machine", "a Kurzweil Reading Machine, an early machine that read printed pages aloud",
-         DEVICE_NOTE),
-    part("Electronic travel aids", "an electronic travel aid, which warns a blind traveller of obstacles by sound "
-                                   "or vibration", DEVICE_NOTE),
     part("Monoculars", "a monocular: a small one-eyed telescope, used by some low-vision people to see signs and "
                        "faces at a distance", "Care: clean the lenses only with a lens brush and lens cloth; turn "
                        "the focus ring gently."),
-    part("Screen protectors", "a screen protector, a thin film or glass sheet that protects a phone or tablet "
-                              "screen"),
-    part("Mobile phone cases", "a mobile phone case"),
     part("Computer speakers", "computer speakers"),
+    part("Optophone", "an optophone, an early reading machine that turned printed letters into sounds for blind "
+                      "readers", deeper=False),
+    part("Mobile phone covers", "a mobile phone case (cover)"),
+    part("Smartphone screen protectors", "a screen protector, a thin film or glass sheet that protects a phone "
+                                         "screen"),
 ]
 
 # ----------------------------------------------------------------- Commons: circuit diagrams and symbols
@@ -465,8 +451,7 @@ ELECTRONICS_PACKS = {
     "commons_electronics_repair": (build_commons_electronics_repair, COMMONS_LICENCE.format(
         what="soldering, test equipment and electronics repair")),
     "commons_assistive_devices": (build_commons_assistive_devices, COMMONS_LICENCE.format(
-        what="video magnifier, braille embosser and notetaker, talking device, talking-book player, reading machine "
-             "and travel aid")),
+        what="braille embosser, talking clock, monocular, reading machine, phone cover and screen protector")),
     "commons_circuit_diagrams": (build_commons_circuit_diagrams, COMMONS_LICENCE.format(
         what="circuit diagram and electronic symbol")),
     "open_images_electronics": (build_open_images_electronics, OI_LICENCE),
@@ -475,7 +460,7 @@ ELECTRONICS_LIMITS = {
     "commons_electronic_parts": 2500,      # 46 categories, an even share each
     "commons_cables_connectors": 600,      # 14 categories
     "commons_electronics_repair": 1500,    # 26 categories
-    "commons_assistive_devices": 500,      # 17 categories, few open files each
+    "commons_assistive_devices": 250,      # 8 categories, few open files each
     "commons_circuit_diagrams": 800,       # 7 categories of drawings
     "open_images_electronics": 1500,       # 25 labels, few photos for most
 }

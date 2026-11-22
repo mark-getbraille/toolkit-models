@@ -91,11 +91,10 @@ ELECTRONICS_SOURCES = [
                                          "workbenches, phones and laptops opened up, radio repair, with safety notes "
                                          "(Wikimedia Commons, ready-made pack)",
            COMMONS_OPEN, COMMONS_CREDIT, "permissive", 1500, 15, prepare_pack, "about 300 MB"),
-    Source("commons_assistive_devices", "Assistive and low-vision devices: video magnifiers, electronic magnifiers, "
-                                        "braille embossers and notetakers, talking clocks and watches, DAISY and "
-                                        "talking-book players, reading machines, travel aids, with care notes "
-                                        "(Wikimedia Commons, ready-made pack)",
-           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 500, 10, prepare_pack, "about 100 MB"),
+    Source("commons_assistive_devices", "Assistive and low-vision devices: braille embossers and printers, talking "
+                                        "clocks, monoculars, the optophone reading machine, phone covers and screen "
+                                        "protectors, with care and repair notes (Wikimedia Commons, ready-made pack)",
+           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 250, 5, prepare_pack, "about 50 MB"),
     Source("commons_circuit_diagrams", "Circuit diagrams (schematics), chip pinouts and electronic symbols, said only "
                                        "as what kind of drawing it is and its own description (Wikimedia Commons, "
                                        "ready-made pack)",
@@ -148,4 +147,10 @@ ELECTRONICS_NOT_INCLUDED = {
         "Swollen batteries, Dual in-line packages, Thermal paste, Desoldering pumps and braid, Bench power "
         "supplies, Mobile phone repair, Television repair, Battery fires; the packs use the categories that exist "
         "(Electronic color code, Insert fuses, Desoldering, Defective electronic components ...).",
+    "Commons pictures of video magnifiers, electronic magnifiers, braille notetakers, DAISY and talking-book players, "
+    "talking watches and calculators, reading machines and electronic travel aids":
+        "no Commons category exists for any of them (checked 2026-11-22), and Commons search is not used for them in "
+        "this first version; the makers' product photos are their copyright. Braille embossers, talking clocks, "
+        "monoculars and the optophone are in commons_assistive_devices; refreshable braille displays in "
+        "disability_packs. The owner's own photos can be added with the own-pictures folder.",
 }

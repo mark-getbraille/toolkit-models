@@ -63,12 +63,12 @@ def thing(category, words, note="", deeper=True):
 
 POTTERY_SA = [
     thing("Pottery wheels", "a potter's wheel, a spinning wheel on which clay is shaped by hand", CLAY_NOTE),
-    thing("Throwing (pottery)", "throwing: shaping clay on a potter's wheel", CLAY_NOTE),
+    thing("Potters", "a potter at work", CLAY_NOTE, deeper=False),
     thing("Kilns", "a kiln, the oven in which pottery is fired", KILN_NOTE, deeper=False),
     thing("Raku", "raku: pottery taken red-hot from the kiln and cooled in the open or in sawdust", KILN_NOTE),
     thing("Stoneware", "stoneware, pottery fired hot until it is hard and watertight", deeper=False),
     thing("Earthenware", "earthenware, pottery fired at a lower heat, porous unless glazed", deeper=False),
-    thing("Ceramic glazes", "ceramic glaze, the glassy coating fired onto pottery", CLAY_NOTE),
+    thing("Tin-glazing", "tin-glazed pottery, with an opaque white glaze painted in colours"),
 ]
 JEWELLERY_SA = [
     thing("Jewellery making", "jewellery making", TORCH_NOTE),
@@ -82,12 +82,12 @@ CRAFTS_SA = [
     thing("Origami", "origami: paper folded into a shape without cuts or glue", deeper=False),
     thing("Bookbinding", "bookbinding", deeper=False),
     thing("Western calligraphy", "Western calligraphy, decorative handwriting with a broad pen"),
-    thing("Soap making", "soap making", LYE_NOTE),
-    thing("Stained glass making", "stained glass being made", GLASS_NOTE),
+    thing("Aleppo soap", "Aleppo soap, a traditional soap made from olive and laurel oils", LYE_NOTE),
+    thing("Making a stained-glass window", "a stained-glass window being made", GLASS_NOTE),
     thing("Glassblowing", "glassblowing: shaping molten glass by blowing through a pipe", TORCH_NOTE),
     thing("Whittling", "whittling: carving wood with a knife", BLADE_NOTE),
     thing("Easels", "an easel, a stand that holds a painting or drawing"),
-    thing("Plastic model kits", "a plastic model kit"),
+    thing("Plastic models", "a plastic model kit or a model built from one"),
 ]
 
 
@@ -111,40 +111,41 @@ def prepare_crafts_commons_sa(source, data_dir, work, cap):
 
 
 CRAFTS_SOURCES = [
-    Source("commons_pottery_ceramics", "Pottery and ceramics: potter's wheels and throwing, kilns, raku, glazes, "
-                                       "stoneware, earthenware, slip casting, hand-building, tools and clay, with "
-                                       "kiln and clay-dust notes (Wikimedia Commons, ready-made pack)",
-           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 1500, 15, prepare_pack, "about 320 MB"),
+    Source("commons_pottery_ceramics", "Pottery and ceramics: potter's wheels and potters, kilns, raku, stoneware, "
+                                       "earthenware, terracotta, crystalline and tin glazes, sgraffito and clay, "
+                                       "with kiln and clay-dust notes (Wikimedia Commons, ready-made pack)",
+           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 1200, 15, prepare_pack, "about 260 MB"),
     Source("museum_ceramics", "Ceramics in museums: pottery, stoneware, porcelain and earthenware with the museum's "
                               "own description (Cleveland Museum of Art and Art Institute of Chicago, ready-made "
                               "pack)", MUSEUM_OPEN, MUSEUM_CREDIT, "permissive", 2000, 20, prepare_pack,
            "about 400 MB"),
-    Source("commons_jewellery_beading", "Jewellery making and beading: workshops, goldsmiths and silversmiths, beads, "
-                                        "findings, wire wrapping, lost-wax casting, cabochons and gem cutting, "
-                                        "jewellers' tools, enamelling (Wikimedia Commons, ready-made pack)",
-           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 1500, 15, prepare_pack, "about 320 MB"),
+    Source("commons_jewellery_beading", "Jewellery making and beading: goldsmiths, silversmiths and jewellers at work, "
+                                        "beads, jump rings and clasps, wire wrapping, lost-wax casting, cabochons and "
+                                        "gem cutting, jewellers' tools, enamelling (Wikimedia Commons, ready-made "
+                                        "pack)", COMMONS_OPEN, COMMONS_CREDIT, "permissive", 1200, 15, prepare_pack,
+           "about 260 MB"),
     Source("museum_jewellery", "Jewellery, enamels and beads in museums, with the museum's own description "
                                "(Cleveland Museum of Art and Art Institute of Chicago, ready-made pack)",
            MUSEUM_OPEN, MUSEUM_CREDIT, "permissive", 1200, 15, prepare_pack, "about 240 MB"),
     Source("commons_paper_crafts", "Paper crafts and calligraphy: origami, kirigami, paper models, quilling, "
                                    "papier-mache, scrapbooking, cards, bookbinding, marbling, papermaking, "
                                    "calligraphy, dip pens, block printing and linocut (Wikimedia Commons, ready-made "
-                                   "pack)", COMMONS_OPEN, COMMONS_CREDIT, "permissive", 1800, 20, prepare_pack,
-           "about 380 MB"),
-    Source("commons_candle_soap", "Candle and soap making, with the lye and hot-wax safety notes (Wikimedia Commons, "
-                                  "ready-made pack)", COMMONS_OPEN, COMMONS_CREDIT, "permissive", 400, 10,
-           prepare_pack, "about 90 MB"),
+                                   "pack)", COMMONS_OPEN, COMMONS_CREDIT, "permissive", 1600, 20, prepare_pack,
+           "about 340 MB"),
+    Source("commons_candle_soap", "Beeswax candles, candle wicks and Aleppo soap, with the lye and hot-wax safety "
+                                  "notes (Wikimedia Commons, ready-made pack)", COMMONS_OPEN, COMMONS_CREDIT,
+           "permissive", 100, 5, prepare_pack, "about 20 MB"),
     Source("commons_glass_carving", "Stained glass, fused glass, glassblowing, lampworking and mosaics; woodcarving, "
                                     "whittling, chip and relief carving, pyrography (Wikimedia Commons, ready-made "
-                                    "pack)", COMMONS_OPEN, COMMONS_CREDIT, "permissive", 1200, 15, prepare_pack,
-           "about 260 MB"),
+                                    "pack)", COMMONS_OPEN, COMMONS_CREDIT, "permissive", 1000, 10, prepare_pack,
+           "about 220 MB"),
     Source("commons_art_supplies", "Painting and drawing supplies: palettes, easels, watercolour, oil and acrylic "
-                                   "paints, palette knives, coloured pencils, pastels, charcoal, sketchbooks and "
-                                   "brushes (Wikimedia Commons, ready-made pack)",
-           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 1000, 10, prepare_pack, "about 210 MB"),
-    Source("commons_models_resin", "Scale models, model kits, dioramas, model railways, miniatures and resin casting "
-                                   "(Wikimedia Commons, ready-made pack)",
-           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 800, 10, prepare_pack, "about 170 MB"),
+                                   "paint, gouache, coloured pencils, pastels and sketchbooks (Wikimedia Commons, "
+                                   "ready-made pack)",
+           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 900, 10, prepare_pack, "about 190 MB"),
+    Source("commons_models_resin", "Scale models, plastic models, dioramas, model railways and aircraft, and resin "
+                                   "casting (Wikimedia Commons, ready-made pack)",
+           COMMONS_OPEN, COMMONS_CREDIT, "permissive", 500, 10, prepare_pack, "about 110 MB"),
     Source("museum_glass_crafts", "Glass, lacquer, calligraphy and bookbinding in museums, with the museum's own "
                                   "description (Cleveland Museum of Art and Art Institute of Chicago, ready-made "
                                   "pack)", MUSEUM_OPEN, MUSEUM_CREDIT, "permissive", 1000, 10, prepare_pack,
@@ -153,16 +154,16 @@ CRAFTS_SOURCES = [
                                  "palettes and sketches, sculpture, stained glass and mosaics (Open Images, "
                                  "ready-made pack)", OI_OPEN, OI_CREDIT, "permissive", 2500, 25, prepare_pack,
            "about 500 MB"),
-    Source("pottery_commons_sa", "Wikimedia Commons: potter's wheels, throwing, kilns, raku, stoneware, earthenware "
-                                 "and glazes, files under CC BY-SA or GFDL (share-alike)",
+    Source("pottery_commons_sa", "Wikimedia Commons: potter's wheels, potters, kilns, raku, stoneware, earthenware "
+                                 "and tin-glazed pottery, files under CC BY-SA or GFDL (share-alike)",
            SA_LICENCE, SA_CREDIT, "share-alike", 600, 10, prepare_pottery_commons_sa, "about 130 MB of pictures",
            terms=SA_TERMS, terms_summary=SA_SUMMARY),
     Source("jewellery_commons_sa", "Wikimedia Commons: jewellery making, beadwork, glass beads, wire wrapping, "
                                    "cabochons and lapidary work, files under CC BY-SA or GFDL (share-alike)",
            SA_LICENCE, SA_CREDIT, "share-alike", 500, 10, prepare_jewellery_commons_sa, "about 110 MB of pictures",
            terms=SA_TERMS, terms_summary=SA_SUMMARY),
-    Source("crafts_commons_sa", "Wikimedia Commons: origami, bookbinding, calligraphy, soap making, stained glass, "
-                                "glassblowing, whittling, easels and model kits, files under CC BY-SA or GFDL "
+    Source("crafts_commons_sa", "Wikimedia Commons: origami, bookbinding, calligraphy, Aleppo soap, stained glass, "
+                                "glassblowing, whittling, easels and plastic models, files under CC BY-SA or GFDL "
                                 "(share-alike)",
            SA_LICENCE, SA_CREDIT, "share-alike", 800, 10, prepare_crafts_commons_sa, "about 170 MB of pictures",
            terms=SA_TERMS, terms_summary=SA_SUMMARY),
@@ -200,6 +201,14 @@ CRAFTS_NOT_INCLUDED = {
         "Airbrush, Palette knife, Resin, Toy craft kit: no human-checked labels; left out. Labels already asked "
         "elsewhere (Pottery, Vase, Jewellery, Necklace, Bracelet, Ring, Candle, Soap, Drawing, Pencil, Crayon, Pen, "
         "Paper, Book, Toy) are never asked twice.",
+    "Commons categories that do not exist under the names tried (November 2026)":
+        "Throwing (pottery), Electric kilns, Ceramic glazes, Slip casting, Coil and pinch pots, Pottery tools, "
+        "Greenware, Bisque, Jewellery workshops and findings, Bead looms, Ear wires, Ring mandrels, Origami models and "
+        "cranes, Candle making and moulds, Soap making and moulds, Handmade soap, Melt and pour soap, Stained glass "
+        "making, Leaded glass, Artists' palettes and brushes, Watercolor, Oil and Acrylic paints (plural), Palette "
+        "knives, Charcoal (art), Model kits, Miniature figures, Resin art, Epoxy resin; the packs use the categories "
+        "that exist (Potters, Wheel-thrown pottery, Goldsmiths, Jewellers, Origami birds, Candle wicks, Aleppo soap, "
+        "Making a stained-glass window, Painting palettes, Plastic models ...).",
     "Textile crafts (sewing, knitting, crochet, quilting, embroidery, weaving, macrame, spinning, dyeing, "
     "upholstery, leatherwork) and furniture refinishing":
         "another collection's (the home repair and textile crafts packs); not here.",
