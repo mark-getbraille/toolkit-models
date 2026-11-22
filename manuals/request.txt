@@ -6,5 +6,5 @@
 # 21 November (2): and the household chemicals, pesticide labels and chemical safety collections.
 # 21 November (3): the new manual categories from the reference inventory, and firearms and chemical safety with their new Internet Archive collections.
 # 22 November: appliance error codes and troubleshooting, and release notes (NVDA, Orca, BRLTTY, Android, OpenWrt in full; makers as links).
-# 22 November (3): car care, garden care, first aid and home care, dental and eye care devices, birth and postpartum, instrument care.
-car_care,garden_care,first_aid_home_care,dental_care_devices,eye_care_optics,birth_postpartum,instrument_care
+# 22 November (4): emergency, camp and outdoor cooking.
+outdoor_cooking
