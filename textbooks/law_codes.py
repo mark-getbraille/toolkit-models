@@ -160,14 +160,11 @@ LICENCE_LINES = {
                     "are read from uscode.house.gov/download.html.",
 }
 NOT_INCLUDED = [
-    ("Texas Constitution and Statutes", "statutes.capitol.texas.gov is now a JavaScript application without a "
-     "readable download page for programs (checked 2026-11-22). Link-only. Index: https://statutes.capitol.texas.gov/"),
-    ("Other state codes (for example Oregon, Virginia, Utah, Ohio, Minnesota, North Carolina, Iowa, Massachusetts)",
-     "Their robots.txt files allow programs (checked 2026-11-22), but each site's terms, and whether it claims "
-     "copyright in its compilation, were not checked one by one in this pass; Idaho's and Alaska's robots.txt shut "
-     "out AI readers. State statutes are not copyrightable (Georgia v. Public.Resource.Org, 2020); add a state only "
-     "after reading its terms. Link-only for now. Index: https://www.ncsl.org/about-state-legislatures/"
-     "state-legislative-websites-directory"),
+    ("State codes (all states, DC and Puerto Rico)", "Built per state in state_laws.py (statelaw:, request words "
+     "state-laws and state-law:<state>) where the state's site is clean (Nevada, North Carolina, North Dakota, Iowa, "
+     "South Dakota, and Georgia from the Internet Archive); every other state, with what was found and what is "
+     "needed, is in state_laws.NOT_INCLUDED. Index: "
+     "https://www.ncsl.org/about-state-legislatures/state-legislative-websites-directory"),
     ("Public.Resource.Org bulk state codes (law.resource.org)", "Its robots.txt shuts out ClaudeBot, GPTBot, CCBot "
      "and other AI readers. Index: https://law.resource.org/pub/us/code/"),
     ("Open States bill text (openstates.org)", "Its API needs a sign-up key, and no key is in the owner's settings "
@@ -175,9 +172,6 @@ NOT_INCLUDED = [
     ("Municipal codes on American Legal Publishing (codelibrary.amlegal.com) and Municode (library.municode.com)",
      "Copyrighted platforms whose terms forbid copying their code pages. Link-only for the personal assistant. "
      "Index: https://codelibrary.amlegal.com/ and https://library.municode.com/"),
-    ("Washington, New York, California and Florida statutes", "Said already (sources.REFERENCE_NOT_INCLUDED): "
-     "app.leg.wa.gov disallows everything, New York's Open Legislation needs a key, California refuses programs, "
-     "Florida claims copyright in its compilation. Index: https://app.leg.wa.gov/rcw/"),
 ]
 
 
