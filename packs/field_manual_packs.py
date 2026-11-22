@@ -89,6 +89,18 @@ MANUALS = [
                       (14, "microelectronics"), (16, "test equipment"), (19, "the technician's handbook"),
                       (22, "digital computers"), (24, "fiber optics"))]
 
+# Added under the release rule of 22 November 2026 (military_release.py): Internet Archive copies that print no
+# Distribution Statement A (read on 2026-11-22), so each row's credit says "its front pages print no distribution
+# statement". A page that is one scanned picture gives no figures, as for every manual here. Kept apart for merges.
+MANUALS_RELEASE_RULE = [
+    ("fm-4-25-10-field-hygiene-and-sanitation-2004", "the US Army's field hygiene manual (FM 4-25.10, 2004)", False),
+    ("MCRP_3-02F_FM_21-76_Survival", "the US Army and Marine Corps survival manual (FM 21-76, 1992)", False),
+    ("Afr64-4352-481Survivalmanual", "the US Air Force's survival training manual (AFR 64-4, 1985)", False),
+    ("milmanual-st-31-91b--us-army-special-forces-medical-handbook",
+     "the US Army's Special Forces medical handbook (ST 31-91B, 1982)", True),
+]
+MANUALS += MANUALS_RELEASE_RULE
+
 # The release markings, from the shared rule (military_release.py), kept under these names for the tests.
 DISTRIBUTION_A = military_release.DISTRIBUTION_A
 RESTRICTED = military_release.RESTRICTED
@@ -267,7 +279,8 @@ def manual_figures(data, identifier, manual, medical, pdf_url, page_url):
         considered(identifier, pdf_url, why)
         return []
     skip = unsafe_pages(doc)
-    who = "the US Navy" if "Navy" in manual else "Headquarters, Department of the Army"
+    who = ("the US Navy" if "Navy" in manual else "Headquarters, US Air Force" if "Air Force" in manual
+           else "Headquarters, Department of the Army")
     credit = f"Figure from {manual}, {who}; {PD_CREDIT}; {release.rstrip(".")}; copy at {page_url}"
     base = re.sub(r"[^a-z0-9]+", "_", identifier.lower()).strip("_")[:40]
     out, seen = [], set()

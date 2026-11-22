@@ -175,3 +175,11 @@ def test_unsafe_pages_reads_pypdfium2_5_bookmarks():
     for kind in (New, Old):
         doc = Doc([kind("Chapter 1. Shelters", 0), kind("Chapter 2. Weapons", 10), kind("Chapter 3. Knots", 20)])
         assert fm.unsafe_pages(doc) == set(range(10, 20)), kind
+
+
+def test_field_manual_release_rule_additions():
+    """The manuals added under the release rule of 22 November 2026 are in the pack's list once each."""
+    ids = [m[0] for m in fm.MANUALS]
+    assert len(ids) == len(set(ids)) and all(m in fm.MANUALS for m in fm.MANUALS_RELEASE_RULE)
+    assert ("milmanual-st-31-91b--us-army-special-forces-medical-handbook" in ids and
+            dict((m[0], m[2]) for m in fm.MANUALS)["milmanual-st-31-91b--us-army-special-forces-medical-handbook"])
