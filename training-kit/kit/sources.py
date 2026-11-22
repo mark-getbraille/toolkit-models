@@ -3584,3 +3584,22 @@ PERSONAL_PICTURE_MAKING_OK |= _small_boats_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in SMALL_BOATS_SOURCES
                                                                if s.key not in _small_boats_ok)
 _add_collections(SMALL_BOATS_SOURCES)
+# Large public-domain US government photo libraries (photo_library_sources.py, the owner's request of 2026-11-22): the
+# NASA Image and Video Library and NPGallery packs by theme, and what was left out; the file may be missing. Only the
+# keys in PHOTO_LIBRARY_PICTURE_MAKING_OK may be used for picture-making; the packs that are mostly people
+# (PHOTO_LIBRARY_BODILY_KEYS) are added to PEOPLE_AND_BODILY_PACK_KEYS.
+try:
+    import photo_library_sources as _photo_library  # noqa: E402
+except ImportError as _e:
+    _photo_library = None
+    if getattr(_e, "name", None) != "photo_library_sources":
+        say(f"(The photo library collections could not be loaded: {_e}. They are left out.)")
+PHOTO_LIBRARY_SOURCES = list(getattr(_photo_library, "PHOTO_LIBRARY_SOURCES", []) or [])
+_photo_library_ok = set(getattr(_photo_library, "PHOTO_LIBRARY_PICTURE_MAKING_OK", ()) or ())
+_photo_library_bodily = tuple(getattr(_photo_library, "PHOTO_LIBRARY_BODILY_KEYS", ()) or ())
+PEOPLE_AND_BODILY_PACK_KEYS = PEOPLE_AND_BODILY_PACK_KEYS + _photo_library_bodily
+PERSONAL_PICTURE_MAKING_OK |= _photo_library_ok - set(_photo_library_bodily)
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in PHOTO_LIBRARY_SOURCES
+                                                               if s.key not in _photo_library_ok
+                                                               or s.key in _photo_library_bodily)
+_add_collections(PHOTO_LIBRARY_SOURCES)
