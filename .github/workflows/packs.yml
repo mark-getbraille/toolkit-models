@@ -191,7 +191,8 @@ jobs:
                    "pd_film_stills", "commons_golden_age_comics",
                    "commons_wild_food_plants", "commons_wild_mushrooms", "commons_home_preserving",
                    "inat_wild_edibles",
-                   "commons_sports_equipment", "commons_sports_gear", "commons_sports_venues", "commons_sports_action", "open_images_sports"]
+                   "commons_sports_equipment", "commons_sports_gear", "commons_sports_venues", "commons_sports_action", "open_images_sports",
+                   "commons_cameras_by_type", "commons_camera_makers", "commons_lenses_lighting", "commons_film_darkroom", "commons_historic_processes", "nmah_photography", "open_images_photography"]
           words = [w for w in sys.argv[1].split(",") if w]
           # "key+" is a top-up pass of key and "key?" a needs-only run (kept with the mark, which the build job reads);
           # "all?" asks for a needs-only run of every pack.

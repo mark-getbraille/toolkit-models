@@ -179,8 +179,10 @@ TOPICS = [
            # casting, circuit board fabrication (making_sources.py; also in the home topic)
            "commons_3d_printing", "commons_cutting_lasers", "commons_cnc_machining", "commons_moulding_casting",
            "commons_pcb_fabrication", "open_images_making",
+           # cameras, lenses and darkroom equipment as devices (photography_sources.py; also in "art" and "crafts")
+           "commons_cameras_by_type", "commons_camera_makers", "commons_lenses_lighting", "commons_film_darkroom",
            # share-alike
-           "radio_commons_sa", "making_commons_sa", "commons_mechanical_sa", "device_models_sa",
+           "radio_commons_sa", "making_commons_sa", "photography_commons_sa", "commons_mechanical_sa", "device_models_sa",
            "farm_mech_commons_sa",
            # non-commercial and research-only (personal use)
            "mechanical_parts_2022", "co3d_devices", "museums_victoria", "stanford_products")),
@@ -397,6 +399,9 @@ TOPICS = [
            "instrument_care_commons_sa",
            # public-domain film stills and Golden Age comics (film_stills_sources.py, comics_sources.py)
            "pd_film_stills", "commons_golden_age_comics",
+           # photography: cameras, lenses, film and darkroom, historic processes, NMAH, Open Images (photography_sources.py)
+           "commons_cameras_by_type", "commons_camera_makers", "commons_lenses_lighting", "commons_film_darkroom",
+           "commons_historic_processes", "nmah_photography", "open_images_photography", "photography_commons_sa",
            # non-commercial and research-only (personal use)
            "vam", "mimo_instruments", "princeton_general_personal", "turkish_instruments")),
     # Arts and crafts (the owner's request of 22 November 2026: a top-level section): every craft collection in one
@@ -406,7 +411,8 @@ TOPICS = [
     Topic("crafts", "Arts and crafts",
           "Knitting, crochet, lace, quilting, embroidery, weaving, sewing, upholstery, leather and fabrics, pottery, "
           "jewellery and beading, paper crafts, candles and soap, glass and carving, art supplies, models and "
-          "resin, and craft cutters and heat presses.",
+          "resin, craft cutters and heat presses, and photography: cameras, lenses, film, the darkroom and historic "
+          "photographic processes.",
           (# textile crafts (home_crafts_sources.py)
            "commons_knit_crochet_lace", "commons_quilt_embroidery_weaving", "commons_sewing_mending",
            "commons_upholstery_leather_shoes", "commons_fabrics_fibres", "open_images_textile_crafts",
@@ -418,6 +424,9 @@ TOPICS = [
            # vinyl cutters, cutting machines, heat presses, screen printing and machine embroidery (making_sources.py;
            # also in "machines" and "home", which keep the lasers and engravers it also holds)
            "commons_cutting_lasers",
+           # photography: cameras, lenses, film and darkroom, historic processes, NMAH, Open Images (photography_sources.py)
+           "commons_cameras_by_type", "commons_camera_makers", "commons_lenses_lighting", "commons_film_darkroom",
+           "commons_historic_processes", "nmah_photography", "open_images_photography", "photography_commons_sa",
            # share-alike
            "textile_crafts_commons_sa", "pottery_commons_sa", "jewellery_commons_sa", "crafts_commons_sa")),
     # Sports (the owner's request of 22 November 2026: a top-level section): equipment, gear, places, athletes in action
