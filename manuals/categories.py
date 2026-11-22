@@ -585,6 +585,13 @@ from outdoor_cooking import CATEGORY as _OUTDOOR_COOKING  # noqa: E402
 
 CATEGORIES["outdoor_cooking"] = _OUTDOOR_COOKING
 
+# Blind and low-vision living (the owner's request of 2026-11-22, a heading of its own): braille writers with their
+# care and repair, displays, embossers, magnifiers, screen reader software, talking devices, canes and describer apps;
+# the Internet Archive words, the makers as links, the care documents and the programmes are in manuals/vision_devices.py.
+from vision_devices import CATEGORY as _VISION_DEVICES  # noqa: E402
+
+CATEGORIES["vision_devices"] = _VISION_DEVICES
+
 # Hardware, tools and shop equipment: their makers, access decisions, safety notices and public-domain guides are in
 # manuals/hardware_tools.py. Its new categories are added, and power_tools, hand_tools and lawn_garden are extended
 # (more Internet Archive words, the makers' libraries, a safety notice and the guides).
@@ -662,6 +669,22 @@ from radio_manuals import CATEGORIES as _RADIO  # noqa: E402
 
 CATEGORIES.update(_PREPAREDNESS)
 CATEGORIES.update(_RADIO)
+# Password managers, security keys, routers, VPNs and home cameras (privacy, security and digital safety; the owner's
+# request of 2026-11-22): the Internet Archive words, the makers as links, KeePassXC's openly licensed guides and the
+# security guidance are in manuals/privacy_manuals.py.
+from privacy_manuals import CATEGORY as _PRIVACY_SECURITY  # noqa: E402
+
+CATEGORIES["privacy_security"] = _PRIVACY_SECURITY
+# Power and electrical, under its own heading (manuals/power_manuals.py, the owner's request of 2026-11-22): backup,
+# PTO and welder generators and vehicle power, solar and battery power, small wind and micro-hydro, and home
+# electrical; every maker link-only. The existing electrical collections in power_manuals.HEADING_KEYS get the same
+# heading; their keys do not change.
+from power_manuals import CATEGORIES as _POWER, HEADING as _POWER_HEADING, HEADING_KEYS as _POWER_KEYS  # noqa: E402
+
+CATEGORIES.update(_POWER)
+for _key in _POWER_KEYS:
+    if _key in CATEGORIES:
+        CATEGORIES[_key]["heading"] = _POWER_HEADING
 # Health and life (the owner's request of 2026-11-22), one file each, every maker link-only and the health note said
 # first: light therapy lamps, sound machines and wake-up lights (manuals/sleep_relaxation_manuals.py), fitness
 # equipment and trackers (manuals/fitness_manuals.py), contraceptive and period products

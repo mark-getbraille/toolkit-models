@@ -53,6 +53,10 @@ MODULES = [
     # emergency preparedness and radio communications (the owner's request of 2026-11-22)
     "disaster_ready",       # Ready.gov, NRC, CISA, ASPR and emPOWER, SBA, EPA disasters and smoke, links (ready:)
     "radio_books",          # radio rules, NCVEC question pools, AUXCOMM, military radio manuals, mesh radio docs (radio:)
+    # privacy, security and digital safety (the owner's request of 2026-11-22)
+    "privacy_books",        # EFF, Tor, Security in a Box, Privacy Guides, OWASP, GnuPG, CISA, NIST, FTC, IC3, NCSC (privacy:)
+    "vision_living",        # blind and low-vision living: the index, Orca, NLS, BEP, Access Board, EEOC, RSA, APH (vision:)
+    "power_books",          # power and electrical: DOE wind, small wind, hydro and solar, Treasury, IRS, Army generators (power:)
     # health and life (the owner's request of 2026-11-22), each in its own group
     "mental_health",        # NIMH topics, CDC, VA PTSD, OWH, Smokefree.gov, NIDA, NCI grief, help lines (mind:)
     "fitness_nutrition",    # Physical Activity and Dietary Guidelines, Move Your Way, CDC, NHLBI, NIDDK, OWH (fit:)

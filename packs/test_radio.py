@@ -107,4 +107,4 @@ def test_wiring():
     radio = topics.find("radio")
     assert radio.title == "Radio communications" and set(k.RADIO_TOPICS["radio"]) == set(radio.keys)
     ids = [t.id for t in topics.TOPICS]
-    assert ids.index("radio") == ids.index("home") + 1
+    assert ids.index("radio") == ids.index("power") + 1 == ids.index("home") + 2   # power and electrical between
