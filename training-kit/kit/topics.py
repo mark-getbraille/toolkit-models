@@ -77,7 +77,7 @@ TOPICS = [
           "home: bandages, syringes, insulin pens, inhalers, instruments, and animal medicines.",
           ("taiwan_pills", "pharmassist", "mediseg", "medpack_id", "scoa_blister", "med_commons_supplies",
            "med_commons_instruments", "med_commons_medicines", "vet_commons_medicine", "dental_instruments",
-           "open_images_medical", "cdc_phil_supplies",
+           "open_images_medical", "cdc_phil_supplies", "commons_medication_labels", "lfa_covid_tests", "commons_home_health_tests",
            # share-alike (with Wikipedia ticked)
            "med_vet_commons_sa", "openfacts_supplements",
            # research-only (personal use)
@@ -125,13 +125,15 @@ TOPICS = [
            "commons_airplanes", "commons_car_parts", "commons_cycle_parts", "commons_machine_parts",
            "commons_engine_bays", "iso_machine_symbols", "corolla_engine_bay", "tyre_condition",
            "spark_plug_condition", "planetary_gearbox", "commons_appliances", "commons_connectors",
-           "laundry_symbols", "commons_tools", "commons_kitchen", "clock_times", "seven_segment", "abo_products",
+           "laundry_symbols", "laundry_care_labels", "commons_tools", "commons_kitchen", "clock_times", "seven_segment", "abo_products",
            "commons_things", "open_images_tech", "commons_us_controls", "wikidata_devices", "commons_devices",
            "nmah_devices", "farm_commons_equipment", "mech_commons_building", "open_images_objects", "core50",
-           "gso_objects", "commons_household_chemicals", "commons_finishes_in_use",
+           "gso_objects", "commons_household_chemicals", "commons_finishes_in_use", "commons_appliance_controls",
+           "open_images_appliance_controls",
+           "commons_baby_products", "open_images_baby_products", "abo_baby_products", "commons_household_hazards", "open_images_household_hazards",
            # share-alike
            "commons_mechanical_sa", "dashboard_symbols_sa", "device_models_sa", "farm_mech_commons_sa",
-           "commons_airplanes_sa", "chemical_commons_sa",
+           "commons_airplanes_sa", "chemical_commons_sa", "appliance_commons_sa",
            # non-commercial and research-only (personal use)
            "autovi", "dashboard_warning_icons", "car_parts_damage", "car_parts_dsmlr", "car_damage_views",
            "mechanical_parts_2022", "co3d_devices", "stanford_cars", "fgvc_aircraft", "museums_victoria",
@@ -148,14 +150,16 @@ TOPICS = [
            "vam", "mimo_instruments", "princeton_general_personal", "turkish_instruments")),
     Topic("documents", "Documents, maps and signs",
           "Reading text and making sense of pages: letters, forms, receipts, tables and charts, maps, sheet "
-          "music, road and safety signs, and phone screens.",
+          "music, road, safety and indoor signs (toilets, room numbers, exits), and phone screens.",
           ("textvqa", "textocr", "coco_text", "cord", "doclaynet", "plotqa", "loc_letters", "owid_charts",
            "pubtabnet_tables", "us_federal_forms", "open_images_cards_documents", "loc_maps", "safety_signs", "commons_hazard_symbols", "us_road_signs",
            "ca_road_signs",
            "deepscores_sheet_music", "field_manual_figures", "bentham_pages", "commons_handwriting",
            "openstax_figures", "commons_charts", "wpc_surface_maps", "nhc_forecast_cones",
+           "commons_indoor_wayfinding", "open_images_indoor",
+           "synthetic_bills",
            # share-alike
-           "hiertext", "mapqa",
+           "hiertext", "mapqa", "indoor_commons_sa",
            # non-commercial and research-only (personal use)
            "sroie", "wildreceipt", "dvqa", "funsd", "xfund", "chartqa", "scienceqa", "ai2d", "streetsignset",
            "fintabnet_tables", "cra_forms", "screenqa_rico", "rico_screens", "rico_widgets", "tqa_diagrams",

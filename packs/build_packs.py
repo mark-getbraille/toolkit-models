@@ -1768,6 +1768,63 @@ COMMONS_KEYS = frozenset({
     "commons_sign_language",
 })
 
+# Everyday access, each pack file with its packs and the keys of those that read Commons (added to COMMONS_KEYS here,
+# in one place): finding your way inside public buildings (packs/indoor_packs.py: Commons lobbies, corridors,
+# stairwells, lifts, escalators, toilet signs, room numbers, desks, waiting rooms, gates and ticket barriers, and Open
+# Images indoor places, signs and doors; sign text only where a category names it, such as a room number). For
+# describing only (public places with people in them).
+from indoor_packs import INDOOR_PACKS, INDOOR_COMMONS_KEYS
+PACKS.update(INDOOR_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(INDOOR_COMMONS_KEYS)
+# Appliance controls close up (packs/appliance_controls_packs.py): Commons rotary switches, appliance control panels,
+# push buttons, touch screens, timers, air-conditioner remotes, smart thermostats and cooktops, with a setting only
+# where the file's own words state it; Open Images knobs, panels, buttons, displays and appliances no other pack asks
+# about. The Open Images photos show people: describing only.
+from appliance_controls_packs import APPLIANCE_CONTROLS_PACKS, APPLIANCE_CONTROLS_COMMONS_KEYS
+PACKS.update(APPLIANCE_CONTROLS_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(APPLIANCE_CONTROLS_COMMONS_KEYS)
+# Bills and statements, COMPUTER-MADE ONLY (packs/synthetic_bills_packs.py, with the phone-photo effects of
+# packs/phone_photo.py): utility, phone, bank and credit-card statements, pharmacy receipts and medical bills with
+# made-up people, companies and amounts, drawn from a fixed seed; every row marked synthetic. Never for picture-making.
+from synthetic_bills_packs import SYNTHETIC_BILLS_PACKS, SYNTHETIC_BILLS_COMMONS_KEYS
+PACKS.update(SYNTHETIC_BILLS_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(SYNTHETIC_BILLS_COMMONS_KEYS)
+# Medicine names and strengths on packages (packs/medication_label_packs.py): Commons photos of medicine packages whose
+# OWN title or description names the medicine and its strength, found with Commons search, with the check-with-your-
+# pharmacist note; files the medicine packs already show are left out. Never for picture-making.
+from medication_label_packs import MEDICATION_PACKS, MEDICATION_COMMONS_KEYS
+PACKS.update(MEDICATION_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(MEDICATION_COMMONS_KEYS)
+# Home health tests read for blind users (packs/health_test_packs.py): figshare's CC BY photos of COVID-19 rapid
+# antigen tests read from the researchers' record of what was put on each test, and Commons rapid antigen, pregnancy
+# and ovulation tests and glucose meters with the result only where the file's own words give it; every result ends
+# with the faint-lines note. The Commons photos may show people: describing only.
+from health_test_packs import HEALTH_TEST_PACKS, HEALTH_TEST_COMMONS_KEYS
+PACKS.update(HEALTH_TEST_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(HEALTH_TEST_COMMONS_KEYS)
+# Clothing care labels close up (packs/care_label_packs.py), extending home_packs.laundry_symbols: computer-made woven
+# and printed care labels with the GINETEX/ASTM symbols drawn from simple shapes, made-up fibre, size and country lines
+# and sometimes the ASTM words, photographed by phone_photo.py (rows marked synthetic), and Commons photos of real care
+# labels found by search (not Category:Laundry tags).
+from care_label_packs import CARE_LABEL_PACKS, CARE_LABEL_COMMONS_KEYS
+PACKS.update(CARE_LABEL_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(CARE_LABEL_COMMONS_KEYS)
+# Common household hazards (packs/household_hazard_packs.py): Commons photos, CPSC and NIST ones among them, whose OWN
+# words state a frayed cord, an overloaded socket, exposed wiring, mould, a leak, a damaged smoke alarm, a spent
+# extinguisher, a blocked exit, a trip hazard or a heater too close to things, each with a short safety note; Open
+# Images leaks, heaters and fire sprinklers and alarms. Describing only.
+from household_hazard_packs import HAZARD_PACKS, HAZARD_COMMONS_KEYS
+PACKS.update(HAZARD_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(HAZARD_COMMONS_KEYS)
+# Baby and young child products for blind parents (packs/baby_packs.py): Commons categories and searches (bottles,
+# formula, baby food, wipes, car seats, cribs, high chairs, playpens, monitors, pacifiers, teethers, sippy cups, outlet
+# covers, gates, strollers, bassinets, bouncers, swings, oral syringes, droppers, children's toothbrushes), Open Images
+# baby things no other pack asks, and ABO's baby product listings; features and readings only from the record, with
+# short safety notes; never an undressed child. Describing only.
+from baby_packs import BABY_PACKS, BABY_COMMONS_KEYS
+PACKS.update(BABY_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(BABY_COMMONS_KEYS)
+
 
 def pack_lanes(keys):
     """Split the workflow's pack keys into (Commons lane, other lane), keeping their order. A key may carry the

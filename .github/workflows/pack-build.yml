@@ -413,6 +413,20 @@ jobs:
             commons_household_chemicals) limit=2500 ;;
             commons_finishes_in_use) limit=2000 ;;
             commons_hazard_symbols) limit=450 ;;
+            commons_indoor_wayfinding) limit=2500 ;;
+            open_images_indoor) limit=2500 ;;
+            commons_appliance_controls) limit=600 ;;
+            open_images_appliance_controls) limit=2000 ;;
+            synthetic_bills) limit=4000 ;;
+            commons_medication_labels) limit=300 ;;
+            lfa_covid_tests) limit=1200 ;;
+            commons_home_health_tests) limit=400 ;;
+            laundry_care_labels) limit=3000 ;;
+            commons_household_hazards) limit=200 ;;
+            open_images_household_hazards) limit=1500 ;;
+            commons_baby_products) limit=800 ;;
+            open_images_baby_products) limit=1500 ;;
+            abo_baby_products) limit=80 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in
