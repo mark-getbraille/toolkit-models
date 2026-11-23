@@ -91,6 +91,13 @@ FOLDERS = [
      "sites.txt\"). RepeaterBook exports and the ARRL directory are on the To do yourself list."),
 ]
 
+# The top-level sections that have a guide book of their own (key, section, request word): listed on the Reference
+# books page so the owner can open the guide to a whole section (the owner's requests of 22 and 23 November 2026).
+SECTION_GUIDES = [
+    ("arts:index", "Arts and crafts", "arts-crafts"),
+    ("lang:index", "Languages", "languages-index"),
+]
+
 # Where each part of the library lands on B: (release tags are matched by their first words).
 LANDS = [
     ("Picture packs (training data)", "B:\\Data packs\\toolkit-models\\training-data\\",
@@ -264,6 +271,9 @@ def reference_pages(data):
             "<p>Every group of the reference library, with how many books it has, how many are built and their total "
             "size. Each group has its own page listing every book. Licence classes:</p><ul>"]
     body += [f"<li>{esc(v)}</li>" for k, v in CLASS_HELP.items() if k != "unknown"]
+    body.append("</ul><h2>Guides to the sections</h2><ul>")
+    body += [f"<li>{esc(name)}: the guide book {esc(key)} (request word {esc(word)}).</li>"
+             for key, name, word in SECTION_GUIDES]
     body.append("</ul><h2>The groups</h2><ul>")
     pages = []
     for g in order:

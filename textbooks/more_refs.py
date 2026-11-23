@@ -83,6 +83,8 @@ MODULES = [
     "languages",            # FSI and Peace Corps courses, Wikivoyage phrasebooks, Tatoeba sentences, ASL (lang:)
     "peace_corps_languages", # every Peace Corps language course, lesson book, phrasebook and dictionary (pclang:)
     "languages_open",       # open language resources: COERLL, Global Storybooks, FreeDict, Tatoeba, old grammars, sign, braille (lopen:)
+    "languages_gov",        # government language courses: FSI, DLI, survival kits, War Department guides, TERMIUM (lgov:)
+    "languages_index",      # Languages, a top-level section: the guide to every language book, by language (lang:index)
     "travel",               # FAA PackSafe, USA.gov travel pages, national park passes (trip:)
     "civics",               # Constitution, civics test, Ben's Guide, jury service, Supreme Court cases (civ:)
     # people: disability, veterans, education, relationships, immigration (the owner's request of 2026-11-22)

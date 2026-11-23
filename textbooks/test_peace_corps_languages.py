@@ -47,7 +47,7 @@ def test_registered_in_the_language_group():
     prefixes = [m.COLLECTION.prefix for m in more_refs.modules()]
     assert "peace_corps_languages" in more_refs.MODULES and P in more_refs.modules()
     assert prefixes.count("pclang") == 1
-    assert P.GROUPS == languages.GROUPS and sources.GROUPS["languages"] == "Reference, language learning"
+    assert P.GROUPS == languages.GROUPS and sources.GROUPS["languages"] == "Languages"
     assert set(P.LICENCE_LINES) <= set(sources.LICENCE_LINES)
     for row in P.NOT_INCLUDED:
         assert row in sources.NOT_INCLUDED and "Index: http" in row[1], row[0]
