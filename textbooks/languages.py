@@ -5,8 +5,9 @@ code>.
 "Languages" is a top-level section of the library (the owner's request of 23 November 2026: "Make a new top level
 section for languages"). Its group key stays "languages" (so no key or request word changed); it was called
 "Reference, language learning" before. The other language modules put their books in the same group (GROUP):
-languages_gov.py (government courses and phrase guides, lgov:), and the guide to the whole section, lang:index, is
-made by languages_index.py.
+languages_gov.py (government courses and phrase guides, lgov:), languages_open.py (open resources, lopen:) and
+peace_corps_languages.py (Peace Corps courses, pclang:); the guide to the whole section, lang:index, is made by
+languages_index.py.
 
 What this module builds, in plain words:
   - the Foreign Service Institute's language courses (US government works, public domain), the languages the owner

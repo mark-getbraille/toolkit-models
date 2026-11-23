@@ -1,4 +1,4 @@
-"""The Peace Corps's language courses for the reference library, in the group "Reference, language learning" (the
+"""The Peace Corps's language courses for the reference library, in the group "Languages" (the
 owner's request of 2026-11-23: every Peace Corps manual and guide; this module has the language courses). Keys:
 pclang:index (a guide to every language, in plain words) and pclang:<course>. Request words: peace-corps-languages
 (every book), pclang-africa, pclang-asia-pacific, pclang-europe-asia, pclang-americas and pclang-mena.
@@ -58,7 +58,7 @@ import languages as L  # noqa: E402
 import refs_kit as K  # noqa: E402
 
 GROUP = L.GROUP                       # "languages": the same group as the FSI courses
-GROUPS = dict(L.GROUPS)               # {"languages": "Reference, language learning"}
+GROUPS = dict(L.GROUPS)               # {"languages": "Languages"}, the top-level section (23 November 2026)
 
 IA = "https://archive.org"
 YOJIK_PC = "https://fsi-languages.yojik.eu/languages/PeaceCorps"

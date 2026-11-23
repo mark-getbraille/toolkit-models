@@ -11,12 +11,12 @@ What this module builds, in plain words:
       languages_gov.py (the other FSI courses, DLI courses, Language Survival Kits, War Department guides and
         dictionaries, Native American dictionaries and grammars),
       languages_open.py (COERLL grammars and courses, Global Storybooks readers, FreeDict dictionaries, more Tatoeba
-        sentences, old Latin, Greek, Hebrew, Sanskrit, Old English and Esperanto books);
+        sentences, old Latin, Greek, Hebrew, Sanskrit, Old English and Esperanto books),
+      peace_corps_languages.py (every Peace Corps language course, pclang:);
     then pages for what is not one language: phrasebooks for many languages, sign languages, braille in other
     languages, terminology (Canada's TERMIUM Plus), countries and cultures (DLI's Countries in Perspective), the
-    translator devices' manuals, and the collections still being added, named by their request words
-    (peace-corps-languages: every Peace Corps language course, from another helper's branch, not merged yet; and
-    lang-open, with lopen:index and lopen:braille_index, the open resources' own guides).
+    translator devices' manuals, and the collections' own guides and request words (pclang:index and
+    peace-corps-languages; lopen:index, lopen:braille_index and lang-open).
 
 The key prefix "lang:" is shared with languages.py: more_refs.module_for gives "lang:index" to this module (the
 only one whose own keys hold it). The index's left_out names any listed key the library no longer has
@@ -35,13 +35,14 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import languages as L  # noqa: E402
 import languages_gov as G  # noqa: E402
 import languages_open as O  # noqa: E402
+import peace_corps_languages as P  # noqa: E402
 import practical_index as X  # noqa: E402
 import refs_kit as K  # noqa: E402
 
 GROUP = L.GROUP                      # "languages": the top-level section "Languages" (named in languages.py's GROUPS)
 GROUPS = {}
 
-# The Peace Corps language courses' request word (the peace-corps-lang branch; named here until it is merged).
+# The request words of the Peace Corps language courses and of the open language resources.
 PEACE_CORPS_WORD = "peace-corps-languages"
 OPEN_WORD = "lang-open"
 
@@ -87,6 +88,8 @@ def language_books():
         add(language, f"lopen:tatoeba:{code}", f"{language} sentences with English translations (Tatoeba)")
     for e in O.CLASSICAL:
         add(e["subject"], f"lopen:{e['name']}", e["title"])
+    for c in P.COURSES:
+        add(c["language"], f"pclang:{c['key']}", f"{c['title']} (Peace Corps)")
     return out
 
 
@@ -102,7 +105,8 @@ def other_sections():
     return [
         ("Many languages", "Phrasebooks and readers in many languages at once, and the collections still being added.", [
             ("key", "lang:wikivoyage_phrasebooks", "Wikivoyage's phrasebooks for travellers (share-alike)"),
-            ("word", PEACE_CORPS_WORD, "The Peace Corps's language courses (being added)"),
+            ("key", "pclang:index", "Peace Corps language courses: a guide to every language"),
+            ("word", PEACE_CORPS_WORD, "The Peace Corps's language courses, all of them"),
             ("word", OPEN_WORD, "Open language resources: university courses, readers, dictionaries, old grammars"),
             ("key", "lopen:index", "Open language resources: a guide to the library"),
             ("manuals", "travel_devices", "Translators and travel gear: manuals")]),

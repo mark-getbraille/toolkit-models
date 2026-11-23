@@ -3,8 +3,8 @@ owner's request of 23 November 2026), with MADE-UP data only: nothing is downloa
 
 It checks that the group "languages" is titled "Languages" and every language module files its books there; that
 lang:index is registered under its request word languages-index and is routed to this module although languages.py
-shares the "lang:" prefix; that the index lists every book of languages.py, languages_gov.py and languages_open.py,
-once, with lopen:index and lopen:braille_index and the request words of the collections still being added
+shares the "lang:" prefix; that the index lists every book of languages.py, languages_gov.py, languages_open.py and
+peace_corps_languages.py, once, with lopen:index and lopen:braille_index and the request words of the collections still being added
 (peace-corps-languages, lang-open); that every key, pack and manual collection it names exists; that its pages are one
 per language, A to Z; that the Internet Archive's foreign-language topic moved into the section; and that the library
 guide names the section's guide.
@@ -22,6 +22,7 @@ import languages as L  # noqa: E402
 import languages_gov as G  # noqa: E402
 import languages_index as I  # noqa: E402
 import languages_open as O  # noqa: E402
+import peace_corps_languages as P  # noqa: E402
 import library_guide  # noqa: E402
 import more_refs  # noqa: E402
 import open_catalogues as OC  # noqa: E402
@@ -38,7 +39,7 @@ def entries(kind):
 
 def test_top_level_section_and_registration():
     assert sources.GROUPS["languages"] == "Languages"
-    assert L.GROUP == G.GROUP == O.GROUP == I.GROUP == "languages"
+    assert L.GROUP == G.GROUP == O.GROUP == P.GROUP == I.GROUP == "languages"
     assert more_refs.MODULES.count("languages_index") == 1 and I in more_refs.modules()
     assert sources.expand_keys(["languages-index"]) == ["lang:index"]
     assert more_refs.module_for("lang:index") is I and more_refs.module_for("languages-index") is I
@@ -51,9 +52,10 @@ def test_top_level_section_and_registration():
 def test_index_lists_every_language_book_once():
     keys = [k for k, _w in entries("key")]
     assert len(keys) == len(set(keys)), [k for k, c in collections.Counter(keys).items() if c > 1]
-    every = set(L.COLLECTION.own_keys()) | set(G.COLLECTION.own_keys()) | set(O.COLLECTION.own_keys())
-    assert every - {"lopen:index"} - {"lopen:braille_index"} <= set(keys) | {"lopen:index"}
-    assert {"lopen:index", "lopen:braille_index"} <= set(keys)
+    every = set(L.COLLECTION.own_keys()) | set(G.COLLECTION.own_keys()) | set(O.COLLECTION.own_keys()) | \
+        set(P.COLLECTION.own_keys())
+    assert every <= set(keys)
+    assert {"lopen:index", "lopen:braille_index", "pclang:index"} <= set(keys)
     assert set(keys) <= every
     words = [w for w, _t in entries("word")]
     assert I.PEACE_CORPS_WORD == "peace-corps-languages" and {"peace-corps-languages", "lang-open"} <= set(words)
