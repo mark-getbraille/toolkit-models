@@ -140,6 +140,8 @@ MODULES = [
     "education_more",       # education: ED booklets (ERIC copies), FAFSA form, old education classics (edumore:)
     # official copies for the thin sections, from GovInfo, agency sites and the Internet Archive (2026-11-22)
     "govinfo_fill",         # NHTSA, FEMA, SAMHSA, NIA, CMS, VA, NARA, CDC, CPSC, EPA booklets; Army and Navy manuals (gpo:)
+    # FEMA Independent Study courses (the owner's request of 2026-11-23), their own group
+    "fema_is",              # every FEMA EMI Independent Study course: student manuals and web lessons, index (fema:)
 ]
 
 _loaded = {}
