@@ -2,7 +2,7 @@
 downloaded.
 
 It checks that the module is registered once and its request words reach sources.expand_keys, each at most 256 jobs
-and without duplicates; that every book is in the teaching group with a licence the toolkit may repackage, a
+and without duplicates; that every book is in the teaching and homeschooling group (key "k12", as the teach-us branch) with a licence the toolkit may repackage, a
 licence line checked at build time (or the pre-1931 year check for the old books), a description and a notice; that
 no Internet Archive item or official page is listed twice here or elsewhere in the library; that the index has a
 table row for every Canadian province and territory and that every link-only row says why; that Oak's sign-up entry
@@ -40,7 +40,7 @@ def test_registered_and_word_sizes():
         assert all(k.startswith("tworld:") for k in keys), word
     every = set(sources.expand_keys(["teach-world"]))
     assert every == set(T.COLLECTION.own_keys())
-    assert T.GROUP in sources.GROUPS and set(T.LICENCE_LINES) <= set(sources.LICENCE_LINES)
+    assert T.GROUP == "k12" and T.GROUP in sources.GROUPS and set(T.LICENCE_LINES) <= set(sources.LICENCE_LINES)
     for row in T.NOT_INCLUDED:
         assert row in sources.NOT_INCLUDED
 

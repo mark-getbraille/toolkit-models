@@ -73,9 +73,11 @@ import practical_index as X  # noqa: E402
 import refs_kit as K  # noqa: E402
 from old_ia_books import old_book  # noqa: E402
 
-# The top-level group of teaching and homeschooling, the same key as the teach-us branch's module (its US states).
-GROUP = "teaching"
-GROUPS = {GROUP: "Reference, teaching and homeschooling"}
+# The top-level group "Teaching and homeschooling": the group key "k12" of sources.GROUPS, the same key the teach-us
+# branch's modules (teach_states.py, teach_index.py) use; that branch renames the group's label from "School books
+# (K-12)" to "Teaching and homeschooling", so nothing is named here.
+GROUP = "k12"
+GROUPS = {}
 PREFIX = "tworld"
 CHECKED = "2026-11-23"
 
