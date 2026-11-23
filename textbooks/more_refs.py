@@ -162,6 +162,10 @@ MODULES = [
     "trades",               # OSHA booklets and standards (29 CFR 1910, 1926, 1928), NIOSH, MSHA, DOE, BLS, old trade books, index (trade:)
     # FEMA Independent Study courses (the owner's request of 2026-11-23), their own group
     "fema_is",              # every FEMA EMI Independent Study course: student manuals and web lessons, index (fema:)
+    # animal care and veterinary books (the owner's request of 2026-11-23), their own group
+    "animal_care",          # APHIS, FDA, CDC zoonoses, USDA special reports and yearbooks, Army horse and dog manuals, old vet books (vet:)
+    # weather, rocks and the sky (the owner's request of 2026-11-23), their own group
+    "earth_sky",            # NWS spotters, weather manuals, USGS booklets, BLM, MSHA, NASA eclipses and planets, old books (earth:)
 ]
 
 _loaded = {}
