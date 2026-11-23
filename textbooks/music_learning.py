@@ -47,12 +47,12 @@ What this module builds, in plain words, each IN FULL:
 Already in the library and not repeated: Prout's Harmony and Goetschius's Exercises in Melody-Writing (games:),
 Stanford and Forsyth's History of Music and Krehbiel's How to Listen to Music (lit:), the old guitar, banjo and band
 books (olife:), Braille Music Notation 1930 (pdf:braille_music_notation_1930), Louis Braille's 1829 book with music
-(lopen:braille_procede_1829), the NLS braille music catalogues (music:nls_braille_music), piano tuning and violin making
+(lopen:braille_procede_1829), Krolick's Dictionary of Braille Music Signs (blind:nls_dictionary_braille_music_signs_1979),
+the NLS braille music catalogues (music:nls_braille_music), piano tuning and violin making
 (instr:, olife:), and the textbook catalogues (LibreTexts, the Open Textbook Library) with their music theory books.
 
-Not built (NOT_INCLUDED, link-only): the Music Braille Code 2015 (BANA copyright), Krolick's Dictionary of Braille
-Music Signs (1979) and De Garmo's Introduction to Braille Music Transcription (1970), both published by the Library of
-Congress but written by volunteers outside the government (the second quotes copyrighted music by permission), Open
+Not built (NOT_INCLUDED, link-only): the Music Braille Code 2015 (BANA copyright), De Garmo's Introduction to Braille
+Music Transcription (1970: published by the Library of Congress, but it quotes copyrighted music by permission), Open
 Music Theory's second edition (its Pressbooks host refuses programs), and the Library of Congress music division's
 research guides (loc.gov's guides pages are not a government work in full: they quote other owners' material).
 
@@ -428,10 +428,6 @@ LINK_ONLY = [
     ("link", "Music Braille Code 2015 (Braille Authority of North America)",
      "https://www.brailleauthority.org/music-braille-code-2015", "BANA's copyright: the current braille music code "
      "in the US and Canada; link-only, fetch it yourself."),
-    ("link", "Dictionary of Braille Music Signs (Bettye Krolick, Library of Congress NLS, 1979)",
-     "https://archive.org/details/dictionaryofbrai00bett", "Published by the Library of Congress but written by a "
-     "volunteer outside the government, so not a government work, and its copyright status could not be confirmed; "
-     "link-only."),
     ("link", "Introduction to Braille Music Transcription (Mary Turner De Garmo, Library of Congress, 1970)",
      "https://archive.org/details/introductiontobr00mary", "Written by a volunteer outside the government and "
      "quoting copyrighted music by permission of its publishers; link-only."),
@@ -468,9 +464,11 @@ INDEX_SECTIONS = [
      [("key", k, e["title"]) for k, e in zip(keys_of(BRAILLE_PDFS), BRAILLE_PDFS)] +
      [("key", "pdf:braille_music_notation_1930", "Braille Music Notation (American Braille Press, 1930)"),
       ("key", "lopen:braille_procede_1829", "Louis Braille's own book of 1829, with his music signs (in French)"),
+      ("key", "blind:nls_dictionary_braille_music_signs_1979", "Krolick's Dictionary of Braille Music Signs (NLS, "
+                                                                "1979)"),
       ("key", "music:nls_braille_music", "the NLS braille music catalogues and the Music Section's guides"),
       ("key", "vision:nls_services", "the National Library Service: who can enrol, talking books and braille")] +
-     LINK_ONLY[:3]),
+     LINK_ONLY[:2]),
     ("Music history and appreciation", "Old histories of music and listening courses.",
      [("key", k, e["title"]) for k, e in zip(keys_of(HISTORY_PDFS), HISTORY_PDFS)] +
      [("key", "lit:stanford_forsyth_history_of_music", "Stanford and Forsyth's A History of Music"),
@@ -481,7 +479,7 @@ INDEX_SECTIONS = [
                               "guide (music:index)"),
       ("word", "instrument-care", "piano tuning and violin making (instr:)"),
       ("word", "audio-media", "recording and editing audio: the Audacity Manual, OSARA and media guides"),
-      ("manuals", "audio_gear", "audio recorders, microphones and recording gear")] + LINK_ONLY[3:]),
+      ("manuals", "audio_gear", "audio recorders, microphones and recording gear")] + LINK_ONLY[2:]),
 ]
 
 INDEX_BOOK, INDEX_SIGN = X.index_maker(
@@ -518,10 +516,6 @@ LICENCE_LINES = {
 NOT_INCLUDED = [
     ("Music Braille Code 2015 (BANA)", "Copyright of the Braille Authority of North America; link-only (also in "
      "vision_living.py and sheet_music.py). Index: https://www.brailleauthority.org/music-braille-code-2015"),
-    ("Dictionary of Braille Music Signs (Bettye Krolick, NLS, 1979)", "Published by the Library of Congress, but "
-     "written by a volunteer outside the government, so not a US government work; published in 1979 without a "
-     "notice, a status that could still be cured by registration then, so it is not treated as public domain. "
-     "Link-only. Index: https://archive.org/details/dictionaryofbrai00bett"),
     ("Introduction to Braille Music Transcription (Mary Turner De Garmo, Library of Congress, 1970)", "Written by a "
      "volunteer outside the government; it quotes copyrighted music (Sam Fox 1939, Summy-Birchard 1959 and others) by "
      "permission, which does not pass to copies. Link-only. Index: https://archive.org/details/introductiontobr00mary"),

@@ -19,8 +19,11 @@ is filed beside that module's books in the library (the same group label), and n
     yearbook Outdoors USA), old camping, canoeing, hiking and fishing books not already in bushcraft.py, outdoors.py,
     knots_outdoor.py or small_boats.py, and old bird books;
   - Reference, science you can use (science_use.py): old popular science (Faraday, Tyndall, Huxley, Serviss,
-    Olcott, Ball, Slosson, Thomson's Outline of Science, Comstock's Handbook of Nature-Study, Yule's statistics),
-    two yearbooks (Climate and Man 1941, Science for Better Living 1968) and seven NASA educator guides;
+    Olcott, Ball, Slosson, Thomson's Outline of Science, Yule's statistics) and two yearbooks (Climate and Man 1941,
+    Science for Better Living 1968);
+  - Teaching and homeschooling (group key "k12", the top-level section of 23 November 2026): Comstock's Handbook of
+    Nature-Study for Teachers and Parents and seven NASA educator guides (listed with the science books, word
+    oldbooks-life-science);
   - Reference, computer and phone basics (computer_basics.py): the LibreOffice Impress Guide and Draw Guide
     (CC BY 4.0, read the same way as computer_basics.lo_guide) and the GNOME desktop help (CC BY-SA 3.0,
     share-alike, a separate book; its accessibility pages are already a11yc:gnome_help_accessibility);
@@ -632,6 +635,9 @@ OUTDOORS = [
 # ====================================================================== science you can use
 
 SCI = "scienceuse"            # science_use.GROUP (not imported: science_use's import list is long)
+# The teachers' guides below (Comstock's nature-study handbook and NASA's educator guides) are teaching material: they
+# are in "Teaching and homeschooling" (group key "k12", the top-level section of 23 November 2026); keys unchanged.
+TEACH = "k12"
 SCIENCE = [
     _old(SCI, "faraday_chemical_history_candle_1908", "The Chemical History of a Candle (Michael Faraday, 1908 "
          "printing)", "Chemistry (old book)", "Michael Faraday (Harper)", "chemicalhistoryo00faraiala", 1908,
@@ -702,7 +708,7 @@ SCIENCE = [
          1922,
          "The third volume of the four, continuing the popular chapters on the sciences by many writers.",
          SCI_NOTE, country="United Kingdom"),
-    _old(SCI, "comstock_handbook_nature_study_1911", "Handbook of Nature-Study for Teachers and Parents (Anna "
+    _old(TEACH, "comstock_handbook_nature_study_1911", "Handbook of Nature-Study for Teachers and Parents (Anna "
          "Botsford Comstock, 1911)", "Nature study (old book)", "Anna Botsford Comstock (Comstock Publishing)",
          "handbookofnature00coms", 1911,
          "The famous Cornell nature-study handbook: lessons on birds, fish, insects, mammals, wild flowers, "
@@ -729,32 +735,32 @@ SCIENCE = [
               "Agriculture 1968", "Everyday science", "yoa1968", 1968,
               "The USDA's yearbook on agricultural science in daily life: food and nutrition, clothing and "
               "textiles, housing, health, the environment and the countryside."),
-    _gov(SCI, "nasa_exploring_the_moon_1994", "Exploring the Moon: A Teacher's Guide with Activities (NASA, 1994)",
+    _gov(TEACH, "nasa_exploring_the_moon_1994", "Exploring the Moon: A Teacher's Guide with Activities (NASA, 1994)",
          "The Moon", "National Aeronautics and Space Administration (NASA)", "ERIC_ED390711", 1994,
          "NASA's guide to the Moon for teachers: its surface, rocks and history from the Apollo missions, with "
          "classroom activities.", NASA_NOTICE + " " + SKY_SAFETY),
-    _gov(SCI, "nasa_space_based_astronomy_1994", "Space-Based Astronomy: A Teacher's Guide with Activities (NASA, "
+    _gov(TEACH, "nasa_space_based_astronomy_1994", "Space-Based Astronomy: A Teacher's Guide with Activities (NASA, "
          "1994)", "Astronomy", "National Aeronautics and Space Administration (NASA)", "ERIC_ED384510", 1994,
          "NASA's guide to astronomy from space: light and the electromagnetic spectrum, telescopes, and why "
          "observatories are put in orbit, with activities.", NASA_NOTICE + " " + SKY_SAFETY),
-    _gov(SCI, "nasa_looking_at_earth_from_space_1995", "Looking at Earth from Space: Teacher's Guide with Activities "
+    _gov(TEACH, "nasa_looking_at_earth_from_space_1995", "Looking at Earth from Space: Teacher's Guide with Activities "
          "(NASA, 1995)", "Earth science", "National Aeronautics and Space Administration (NASA)", "ERIC_ED392630",
          1995,
          "NASA's guide to studying the Earth from satellites: weather, oceans, land, ice and remote sensing, with "
          "activities.", NASA_NOTICE),
-    _gov(SCI, "nasa_microgravity_1995", "Microgravity: Teacher's Guide with Activities for Physical Science (NASA, "
+    _gov(TEACH, "nasa_microgravity_1995", "Microgravity: Teacher's Guide with Activities for Physical Science (NASA, "
          "1995)", "Physics", "National Aeronautics and Space Administration (NASA)", "ERIC_ED406237", 1995,
          "NASA's guide to microgravity (weightlessness): gravity, free fall, orbits and experiments in space, "
          "with activities.", NASA_NOTICE),
-    _gov(SCI, "nasa_space_food_nutrition_1999", "Space Food and Nutrition: An Educator's Guide with Activities (NASA, "
+    _gov(TEACH, "nasa_space_food_nutrition_1999", "Space Food and Nutrition: An Educator's Guide with Activities (NASA, "
          "1999)", "Food science", "National Aeronautics and Space Administration (NASA)", "ERIC_ED448036", 1999,
          "NASA's guide to food in space: nutrition, how astronaut food is prepared, packaged and kept, with "
          "activities.", NASA_NOTICE),
-    _gov(SCI, "nasa_plants_in_space_1997", "Teachers and Students Investigating Plants in Space (NASA, 1997)",
+    _gov(TEACH, "nasa_plants_in_space_1997", "Teachers and Students Investigating Plants in Space (NASA, 1997)",
          "Biology", "National Aeronautics and Space Administration (NASA)", "ERIC_ED406233", 1997,
          "NASA's guide to plant biology in space: how plants sense gravity and light, with growing experiments.",
          NASA_NOTICE),
-    _gov(SCI, "nasa_mars_exploration_water_2000", "Mars Exploration: Is There Water on Mars? An Educator's Guide "
+    _gov(TEACH, "nasa_mars_exploration_water_2000", "Mars Exploration: Is There Water on Mars? An Educator's Guide "
          "(NASA, 2000)", "Planets", "National Aeronautics and Space Administration (NASA)", "ERIC_ED481371", 2000,
          "NASA's guide to Mars and the search for its water, with physical and earth science activities.",
          NASA_NOTICE),

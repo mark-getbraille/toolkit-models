@@ -10,8 +10,7 @@ jobs):
 
 What this module builds, in plain words, each IN FULL:
   - the IRS publications not yet in the library, each the IRS's newest PDF from its official address
-    (www.irs.gov/pub/irs-pdf/, robots.txt allows it): Publication 3 (Armed Forces' Tax Guide), 524 (Credit for the
-    Elderly or the Disabled), 15-A and 15-B (the employer's supplemental and fringe benefits guides), 509 (Tax
+    (www.irs.gov/pub/irs-pdf/, robots.txt allows it): Publication 3 (Armed Forces' Tax Guide), 15-A and 15-B (the employer's supplemental and fringe benefits guides), 509 (Tax
     Calendars), 538 (Accounting Periods and Methods), 544 (Sales and Other Dispositions of Assets), 551 (Basis of
     Assets), 926 (Household Employer's Tax Guide), 936 (Home Mortgage Interest), 550 (Investment Income and Expenses),
     4681 (Canceled Debts, Foreclosures, Repossessions, and Abandonments), 527 (Residential Rental Property), 925
@@ -41,7 +40,8 @@ What this module builds, in plain words, each IN FULL:
   Every book's notice ends with NOT_ADVICE: general information, not tax, legal or accounting advice.
 
 Already in the library and not repeated: IRS Publications 17, 501, 502, 525, 526, 554, 590-A, 590-B, 596, 907, 915,
-970 and 334 (sources.py and thin:taxes), 1, 15, 463, 503, 505, 523, 529, 560, 583, 587, 594 and 946 (money_work.py),
+970 and 334 (sources.py and thin:taxes), 524 (blind:irs_pub_524), 1, 15, 463, 503, 505, 523, 529, 560, 583, 587,
+594 and 946 (money_work.py),
 the Form 1040 family, W-4, W-9 and the 1099s with their instructions (gov_forms.py), the SBA's business guide
 (wb:sba_business_guide) and disaster loans (ready:sba_disaster_loans), the Peace Corps small enterprise and
 microbusiness accounting manuals (pc-business), OpenStax Principles of Accounting, Introduction to Business,
@@ -101,10 +101,6 @@ IRS_PUBS = [
     irs_pdf("p3", "Armed Forces' Tax Guide (IRS Publication 3)", "Tax rules for members of the armed forces: "
             "which military pay is taxed, combat zone exclusions, moving expenses, the extended deadlines and the "
             "credits.", "publication-3"),
-    irs_pdf("p524", "Credit for the Elderly or the Disabled (IRS Publication 524)", "Who can take the credit for "
-            "the elderly or the disabled (people 65 or older, and people under 65 retired on permanent and total "
-            "disability), the income limits, the physician's statement, and how to figure the credit.",
-            "publication-524"),
     irs_pdf("p15a", "Employer's Supplemental Tax Guide (IRS Publication 15-A)", "Supplemental rules for employers: "
             "who is an employee or an independent contractor, sick pay, pensions and annuities, and other special "
             "kinds of pay.", "publication-15-a"),
@@ -326,6 +322,7 @@ INDEX_SECTIONS = [
                              "sites, with the Department of Labor's pages"),
       ("word", "gov-forms", "the federal forms with their instructions: Form 1040 and its schedules (C and SE for "
                             "the self-employed), W-4, W-9, the 1099s, 4506-T and 8822"),
+      ("key", "blind:irs_pub_524", "Credit for the Elderly or the Disabled (IRS Publication 524)"),
       ("key", "aging:irs_deceased_person", "Taxes after someone dies (IRS)"),
       ("key", "power:irs_form_5695_instructions", "Instructions for Form 5695, Residential Energy Credits")]),
     ("Starting and running a business", "Guides to starting, running and protecting a small business.",

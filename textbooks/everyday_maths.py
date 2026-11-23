@@ -33,7 +33,8 @@ Math in Society and OpenIntro Statistics where their licences allow), NIST SP 81
 pages (science:) and Handbook 44 (pdf:nist_handbook_44_2025), the CFPB's and FDIC's money guides (money:), Helping
 Your Child Learn Mathematics (edumore:), Yule's Theory of Statistics (olife:) and Dudeney's puzzles (games:).
 
-Not built (NOT_INCLUDED, link-only): the Nemeth Code (BANA and APH copyright), the Department of Education's LINCS
+Not built (NOT_INCLUDED, link-only): the current Nemeth Code (BANA and APH copyright; the NLS's 1978 introduction to
+braille mathematics is in the library as blind:nls_intro_braille_mathematics_1978), the Department of Education's LINCS
 adult numeracy resources (its site refuses programs), Moore's Practical Business Arithmetic and other books whose
 Internet Archive record gives the year only as "c1906" (the builder cannot read a year it is not sure of, so they
 are left out rather than guessed), and lending-library copies.
@@ -227,6 +228,8 @@ INDEX_SECTIONS = [
        "download for personal use, link-only."),
       ("link", "UEB technical material guidance (BANA)", "https://www.brailleauthority.org/",
        "BANA's copyright; link-only."),
+      ("key", "blind:nls_intro_braille_mathematics_1978", "An Introduction to Braille Mathematics, based on the "
+                                                          "Nemeth Code 1972 (NLS, 1978; check against today's code)"),
       ("key", "vision:nls_services", "the National Library Service: braille and talking books, including maths "
                                      "textbooks on request")]),
 ]
@@ -254,9 +257,10 @@ LICENCE_LINES = {
 }
 
 NOT_INCLUDED = [
-    ("Nemeth Code for Mathematics and Science Notation (BANA, APH)", "Copyright of BANA and APH; free for personal "
-     "use, link-only (also in vision_living.py). No public-domain braille maths introduction from before 1931 was "
-     "found on the Internet Archive (searched 2026-11-23). Index: https://www.brailleauthority.org/"),
+    ("Nemeth Code for Mathematics and Science Notation (BANA, APH), current edition", "Copyright of BANA and APH; "
+     "free for personal use, link-only (also in vision_living.py). No braille maths introduction from before 1931 "
+     "was found on the Internet Archive (searched 2026-11-23); the NLS's 1978 introduction is built in "
+     "blind_living_more.py (blind:nls_intro_braille_mathematics_1978). Index: https://www.brailleauthority.org/"),
     ("Department of Education LINCS adult numeracy resources (lincs.ed.gov)", "Federal and public domain where made by "
      "the Department, but lincs.ed.gov answers programs \"403\" (robots.txt included, checked 2026-11-23). Index: "
      "https://lincs.ed.gov/"),

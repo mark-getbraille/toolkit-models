@@ -195,7 +195,8 @@ def test_irs_entries():
         assert e["page"].startswith("https://www.irs.gov/"), e["name"]
         assert e["subject"] == "Taxes" and e["licence"] == sources.US_GOV
     names = {e["name"] for e in BZ.IRS_PUBS}
-    assert {"irs_pub_3", "irs_pub_524", "irs_pub_15a", "irs_pub_15b"} <= names
+    assert {"irs_pub_3", "irs_pub_15a", "irs_pub_15b"} <= names
+    assert "irs_pub_524" not in names                     # blind_living_more.py has it: linked from the index
     assert "irs_pub_535" not in names                     # discontinued: in NOT_INCLUDED instead
     assert any("535" in row[0] for row in sources.NOT_INCLUDED)
 
