@@ -805,3 +805,9 @@ from craft_trades_manuals import CATEGORIES as _CRAFT_TRADES  # noqa: E402
 
 for _key, _cat in _CRAFT_TRADES.items():
     CATEGORIES[_key] = dict(_cat, heading=_CRAFTS_HEADING)
+# Homestead and self-reliance skills (the owner's request of 2026-11-23, manuals/homestead_fill_manuals.py): water
+# purifiers and treatment tablets, sextants and marine chronometers, forges, anvils and sausage stuffers; every maker
+# link-only, the water, Sun and forge safety notice first; the reference books are under homestead-fill (hfill:).
+from homestead_fill_manuals import CATEGORY as _HOMESTEAD_SKILLS  # noqa: E402
+
+CATEGORIES["homestead_skills"] = _HOMESTEAD_SKILLS

@@ -3705,3 +3705,19 @@ PERSONAL_PICTURE_MAKING_OK |= _photography_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in PHOTOGRAPHY_SOURCES
                                                                if s.key not in _photography_ok)
 _add_collections(PHOTOGRAPHY_SOURCES)
+# Homestead and self-reliance skills (homestead_fill_sources.py, the owner's request of 2026-11-23): the ready-made
+# packs (forge, traps and tanning; seeds, baskets, nets, meat and water; stars and celestial navigation) and the sources
+# looked at and left out; the file may be missing. Only the keys in HOMESTEAD_FILL_PICTURE_MAKING_OK may be used for
+# picture-making.
+try:
+    import homestead_fill_sources as _homestead_fill  # noqa: E402
+except ImportError as _e:
+    _homestead_fill = None
+    if getattr(_e, "name", None) != "homestead_fill_sources":
+        say(f"(The homestead skills collections could not be loaded: {_e}. They are left out.)")
+HOMESTEAD_FILL_SOURCES = list(getattr(_homestead_fill, "HOMESTEAD_FILL_SOURCES", []) or [])
+_homestead_fill_ok = set(getattr(_homestead_fill, "HOMESTEAD_FILL_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _homestead_fill_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in HOMESTEAD_FILL_SOURCES
+                                                               if s.key not in _homestead_fill_ok)
+_add_collections(HOMESTEAD_FILL_SOURCES)

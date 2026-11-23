@@ -49,9 +49,9 @@ What this module builds, each book IN FULL (machine-read text, one web page per 
   - Wikibooks' Beekeeping and Sewing (CC BY-SA 4.0, share-alike: kept separate as every Wikibooks book is).
 
 Not built (NOT_INCLUDED, each with its index address): university Extension beekeeping, sewing and leather guides
-(each university's copyright: link-only), the Peace Corps beekeeping manuals and blacksmithing (other helpers' books,
-named by their request words in arts:index), modern craft books (copyright), and the makers' own manuals (the manual
-library's collections, linked from arts:index).
+(each university's copyright: link-only), the Peace Corps beekeeping manuals and blacksmithing (built by approtech.py
+and homestead_fill.py; the beekeeping and tanning books are listed in arts:index), modern craft books (copyright),
+and the makers' own manuals (the manual library's collections, linked from arts:index).
 
 Run from the repository's folder:
   python3 textbooks/craft_trades.py ctrade:frary_laboratory_glass_blowing_1914 --out build/textbooks --limit 5
@@ -624,9 +624,10 @@ NOT_INCLUDED = [
     ("USDA ARS Bee Research Laboratory pages and the Honey Bee Health Coalition's Varroa guide", "The ARS pages are "
      "public domain but homestead.py found www.ars.usda.gov did not answer; the Coalition's guide is its own "
      "copyright. Link-only. Index: https://honeybeehealthcoalition.org/varroa/"),
-    ("Peace Corps beekeeping manuals and blacksmithing books", "Built by other helpers' modules (the appropriate "
-     "technology and homestead collections), not repeated here. Index: https://archive.org/search?query=peace+corps+"
-     "beekeeping"),
+    ("Peace Corps beekeeping manuals and blacksmithing books", "Built by the appropriate technology (approtech.py, "
+     "apt:) and homestead fill-in (homestead_fill.py, hfill:) collections, not repeated here; the Peace Corps "
+     "beekeeping manuals and the tanning books are listed on arts:index. Index: "
+     "https://archive.org/search?query=peace+corps+beekeeping"),
     ("Modern beekeeping, glassblowing, leather craft, tailoring and millinery books", "In copyright (lending-only "
      "copies on the Internet Archive); only books published before 1931 and US government works are built. Index: "
      "https://archive.org/search?query=subject%3Aleatherwork"),

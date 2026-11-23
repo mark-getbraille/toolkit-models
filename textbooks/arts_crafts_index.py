@@ -41,9 +41,20 @@ GROUPS = {}
 
 # The photography collection's request word (the photography helper's branch; said generally until it is merged).
 PHOTOGRAPHY_WORD = "photography"
-# Other helpers' collections on the craft trade pages, named by their request words until they are merged (their
-# branches of 2026-11-23): the Peace Corps beekeeping manuals are in the appropriate technology farming books
-# (approtech.py), and hide tanning is in the homestead fill books (homestead_fill.py).
+# Other collections' books on the craft trade pages (merged 2026-11-23): the Peace Corps beekeeping manuals of the
+# appropriate technology collection (approtech.py, apt:) and the leather and tanning books of the homestead fill-ins
+# (homestead_fill.py, hfill:), listed by key, with their request words.
+PEACE_CORPS_BEE_KEYS = [
+    ("key", "apt:pc_small_scale_beekeeping_1982", "Small Scale Beekeeping (Peace Corps Manual M-17, 1982)"),
+    ("key", "apt:pc_beekeeping_trainers_manual_1983", "A Manual for Trainers of Small Scale Beekeeping Development "
+                                                      "Workers (Peace Corps, 1983)"),
+    ("key", "apt:pc_beekeeping_lesson_plans_philippines_1981", "Lesson Plans for Beekeeping in the Philippines "
+                                                               "(Peace Corps, 1981)")]
+TANNING_KEYS = [
+    ("key", "hfill:watt_leather_manufacture_1906", "Leather Manufacture: tanning, currying and chrome leather "
+                                                   "(Alexander Watt, 1906)"),
+    ("key", "hfill:farnham_home_manufacture_furs_skins_1916", "Home Manufacture of Furs and Skins (Albert B. "
+                                                              "Farnham, 1916)")]
 APPROTECH_FARMING_WORD = "apt-farming"
 TANNING_WORD = "trapping-tanning"
 
@@ -141,7 +152,7 @@ def sections():
              ("pack", "commons_cutting_lasers", "Vinyl cutters, cutting machines, heat presses and screen printing")]),
         ("Beekeeping", "Bees and hives, queen rearing, honey and wax, bee diseases and Varroa, with the sting and "
                        "smoker safety notes (the beekeeping books are in the homesteading group).",
-         trade_books("bees") + HOMESTEAD_BEE_KEYS + [
+         trade_books("bees") + HOMESTEAD_BEE_KEYS + PEACE_CORPS_BEE_KEYS + [
              ("word", "ctrade-bees", "Every beekeeping book of the craft trades collection"),
              ("word", APPROTECH_FARMING_WORD, "The Peace Corps beekeeping manuals, with the appropriate technology "
                                               "farming books"),
@@ -161,7 +172,7 @@ def sections():
                                               "lehrs")]),
         ("Leather working", "Leather craft, harness making and saddlery, shoemaking and shoe repair, tanning, and "
                             "canvas and webbing repair.",
-         trade_books("leather") + [
+         trade_books("leather") + TANNING_KEYS + [
              ("word", "ctrade-leather", "Every leather and canvas book of the craft trades collection"),
              ("word", TANNING_WORD, "Trapping and tanning hides, with the homestead books"),
              ("key", "skill:army_fm_10_16_general_fabric_repair_2000", "General Fabric Repair (FM 10-16, 2000): "

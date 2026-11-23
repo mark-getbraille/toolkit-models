@@ -1,6 +1,13 @@
-"""Language learning for the reference library, in the group "Reference, language learning" (the owner's request of
-2026-11-22). Keys: languages (every book), lang:<name>; the courses are lang:fsi:<course>, the sentence books
-lang:tatoeba:<language code>.
+"""Language learning for the reference library, in the group "Languages" (the owner's request of 2026-11-22). Keys:
+languages (every book), lang:<name>; the courses are lang:fsi:<course>, the sentence books lang:tatoeba:<language
+code>.
+
+"Languages" is a top-level section of the library (the owner's request of 23 November 2026: "Make a new top level
+section for languages"). Its group key stays "languages" (so no key or request word changed); it was called
+"Reference, language learning" before. The other language modules put their books in the same group (GROUP):
+languages_gov.py (government courses and phrase guides, lgov:), languages_open.py (open resources, lopen:) and
+peace_corps_languages.py (Peace Corps courses, pclang:); the guide to the whole section, lang:index, is made by
+languages_index.py.
 
 What this module builds, in plain words:
   - the Foreign Service Institute's language courses (US government works, public domain), the languages the owner
@@ -44,7 +51,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import refs_kit as K  # noqa: E402
 
 GROUP = "languages"
-GROUPS = {GROUP: "Reference, language learning"}
+GROUPS = {GROUP: "Languages"}     # a top-level section (23 November 2026); the key "languages" is unchanged
 
 IA = "https://archive.org"
 YOJIK = "https://fsi-languages.yojik.eu/languages"

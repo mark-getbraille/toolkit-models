@@ -248,6 +248,8 @@ TOPICS = [
            # share-alike
            "outdoor_cooking_commons_sa",
            "homestead_commons_sa", "outdoors_commons_sa", "games_commons_sa", "clothing_commons_sa",
+           # homestead skills: forge, traps and tanning, seeds, baskets, nets, meat and water (homestead_fill_sources.py)
+           "commons_forge_traps_tanning", "commons_homestead_stores",
            "commons_home_sa", "home_safety_commons_sa", "chemical_commons_sa", "appliance_commons_sa",
            "home_upkeep_commons_sa", "home_heating_commons_sa", "emergency_lighting_commons_sa", "building_commons_sa",
            # emergency preparedness and disasters (preparedness_sources.py)
@@ -428,6 +430,8 @@ TOPICS = [
            # photography: cameras, lenses, film and darkroom, historic processes, NMAH, Open Images (photography_sources.py)
            "commons_cameras_by_type", "commons_camera_makers", "commons_lenses_lighting", "commons_film_darkroom",
            "commons_historic_processes", "nmah_photography", "open_images_photography", "photography_commons_sa",
+           # blacksmithing, horseshoes and tanning (homestead_fill_sources.py; also in "home")
+           "commons_forge_traps_tanning",
            # share-alike
            "textile_crafts_commons_sa", "pottery_commons_sa", "jewellery_commons_sa", "crafts_commons_sa")),
     # Sports (the owner's request of 22 November 2026: a top-level section): equipment, gear, places, athletes in action
@@ -454,6 +458,8 @@ TOPICS = [
            "openstax_figures", "commons_charts", "wpc_surface_maps", "nhc_forecast_cones",
            "commons_indoor_wayfinding", "commons_water_trail_markers", "commons_travel_signs",
            "commons_emergency_signs_maps", "commons_radio_cards_charts",
+           # star charts, constellations and celestial navigation instruments (homestead_fill_sources.py)
+           "commons_stars_navigation",
            # national park visitor facilities and signs (photo_library_sources.py; also in "places")
            "npgallery_facilities",
            # restaurant menus (menus_sources.py, also in "food"), maths and science notation (math_notation_sources.py)
