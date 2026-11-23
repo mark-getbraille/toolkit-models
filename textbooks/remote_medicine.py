@@ -536,7 +536,9 @@ SECTIONS = [
         ("key", "rmed:army_emergency_war_surgery_2004", "Emergency War Surgery (2004), for trained surgeons"),
         ("key", "pdf:navy_hospital_corpsman", "Hospital Corpsman (US Navy course, 2000)"),
         ("word", "rmed-austere", "The remote and austere care books (request word)"),
-        ("word", "military-whole", "Whole military manuals: survival, desert, jungle and mountain (request word)")]),
+        ("word", "military-whole", "Whole military manuals: survival, desert, jungle and mountain (request word)"),
+        ("word", "service-skills-medical", "The Army Medical Department's self-study courses: vital signs, wounds, "
+                                           "nursing care, pharmacy and preventive medicine (request word)")]),
     ("Heat, cold, altitude, water and diving", "The environment's injuries, and how to prevent them.", [
         ("key", "wild:army_tb_med_507_heat", "Heat illness (Army TB MED 507)"),
         ("key", "rmed:usariem_desert_heat_1990", "Staying healthy in the desert (USARIEM, 1990)"),
@@ -700,8 +702,11 @@ NOT_INCLUDED = [
      "here, and later editions are sold by a private publisher. Index: https://archive.org/details/"
      "NOAA_Diving_Manual-4e-2001"),
     ("Tactical Combat Casualty Care (TCCC) guidelines and the Center for Army Lessons Learned TCCC Handbook (2017)",
-     "Combat medic material, left to the Army medic manuals added beside this collection, so it is not repeated "
-     "here; the TCCC guidelines themselves are published in a book reader (books.allogy.com) that offers no file. "
+     "Care under fire for combat medics: not built in this pass, so as not to cross the military medic collections "
+     "(the Army Medical Department's courses, request word service-skills-medical, and the Navy's Hospital "
+     "Corpsman manuals); the CALL handbook has an Internet Archive copy (17-13-tactical-combat-casualty-care-"
+     "handbook-ver-5-may-2017) for a later pass, and the TCCC guidelines themselves are published in a book reader "
+     "(books.allogy.com) that offers no file. "
      "Index: https://jts.health.mil/index.cfm/committees/cotccc"),
     ("Joint Trauma System guidelines not chosen", "The surgical and hospital ones (REBOA, thoracotomy, cranial "
      "surgery, ventilators and others), the military working dog ones, and Unexploded Ordnance Management (about "
