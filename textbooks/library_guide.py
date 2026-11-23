@@ -5,7 +5,9 @@ the builder and the weekly check). Request word: library-guide. Group: "Referenc
 
 What the book holds, one page per area (each page has headings for a screen reader's heading keys, and a start page
 links to every page):
-  - Reference books: every group of the reference library (sources.GROUPS), each on its own page, with every book:
+  - Reference books: the top-level sections first (SECTIONS: Teaching and homeschooling, Arts and crafts, History,
+    Sports, each with its guide's key), then every group of the reference library (sources.GROUPS), each on its own
+    page, with every book:
     its title, what it covers in one line, its size when the published catalogue (textbooks.json) lists it, and its
     licence class (open, share-alike, personal use, link-only). Books the code lists but no build has published yet
     are listed too, marked "not built yet". The books that were checked and NOT built (NOT_INCLUDED) have a page of
@@ -56,6 +58,17 @@ LICENCE_LINES = {
                            "given to the public domain under CC0 1.0.",
 }
 NOT_INCLUDED = []           # nothing was left out: every part of the library is described
+
+# The top-level sections the owner asked for, each one group of the reference library with a guide book of its own:
+# {group key: (section name, the key of its guide)}. The Reference books page lists them first, and each one's group
+# page starts with its guide's key. Teaching and homeschooling (the owner's request of 23 November 2026) is the school
+# books' group under its old key "k12" (teach_index.py).
+SECTIONS = {
+    "k12": ("Teaching and homeschooling", "teach:index"),
+    "crafts": ("Arts and crafts", "arts:index"),
+    "history": ("History", "hist:index"),
+    "sports": ("Sports", "sport:index"),
+}
 
 # Program Downloader's folders on the B: drive (the owner's plan of 22 November 2026). Data packs and Original sources
 # are in Program Downloader 1.4 (downloader/paths.py, backup.py, originals.py); the other four folders are being added
@@ -264,6 +277,11 @@ def reference_pages(data):
             "<p>Every group of the reference library, with how many books it has, how many are built and their total "
             "size. Each group has its own page listing every book. Licence classes:</p><ul>"]
     body += [f"<li>{esc(v)}</li>" for k, v in CLASS_HELP.items() if k != "unknown"]
+    body.append("</ul><h2>The top-level sections</h2><p>Each has a guide book that lists its books by grade, subject or "
+                "topic, with the request words and picture packs:</p><ul>")
+    for g, (section, guide) in SECTIONS.items():
+        body.append(f'<li><a href="books-{slug(g)}">{esc(section)}</a>: its guide is key {esc(guide)}.</li>'
+                    if g in rows else f"<li>{esc(section)}: its guide is key {esc(guide)} (not built yet).</li>")
     body.append("</ul><h2>The groups</h2><ul>")
     pages = []
     for g in order:
@@ -274,7 +292,8 @@ def reference_pages(data):
         path = f"books-{slug(g)}"
         body.append(f'<li><a href="{path}">{esc(name)}</a>: {len(rs)} books, {len(built)} built'
                     f'{(", " + size_words(total)) if total else ""}.</li>')
-        gb = [f"<p>{len(rs)} books, {len(built)} of them built"
+        gb = [f"<p>A top-level section. Start with its guide, key {esc(SECTIONS[g][1])}.</p>" if g in SECTIONS else ""]
+        gb += [f"<p>{len(rs)} books, {len(built)} of them built"
               f"{(', ' + size_words(total) + ' in all') if total else ''}. "
               f"The books are listed under their licence class, A to Z.</p>"]
         for cls in CLASS_ORDER:

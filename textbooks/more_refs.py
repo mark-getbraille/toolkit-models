@@ -86,7 +86,7 @@ MODULES = [
     # people: disability, veterans, education, relationships, immigration (the owner's request of 2026-11-22)
     "disability_life",      # deaf and hard of hearing, autism, mobility, disability rights beyond blindness (dis:)
     "veterans",             # VA benefits booklet, homeless, mental health, crisis line, DOL VETS, discharge (veteran:)
-    "education_help",       # apprenticeships, adult education, college planning, study skills, accommodations (edu:)
+    "education_help",       # apprenticeships, adult education, college planning (edu:); in Teaching and homeschooling
     "relationships",        # communication, conflict resolution, healthy relationships, cultural etiquette (relate:)
     "immigration",          # USCIS Policy Manual and guides, M-618, EOIR, Canada newcomers (immig:)
     # health and life (the owner's request of 2026-11-22), each in its own group
@@ -140,6 +140,9 @@ MODULES = [
     "education_more",       # education: ED booklets (ERIC copies), FAFSA form, old education classics (edumore:)
     # official copies for the thin sections, from GovInfo, agency sites and the Internet Archive (2026-11-22)
     "govinfo_fill",         # NHTSA, FEMA, SAMHSA, NIA, CMS, VA, NARA, CDC, CPSC, EPA booklets; Army and Navy manuals (gpo:)
+    # teaching and homeschooling, a top-level section (the owner's request of 2026-11-23; group key "k12")
+    "teach_states",         # homeschooling laws and open state curricula, all 50 states, DC and territories (tstate:)
+    "teach_index",          # the guide to the section, and federal homeschooling booklets (teach:)
 ]
 
 _loaded = {}
