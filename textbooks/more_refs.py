@@ -162,6 +162,9 @@ MODULES = [
     "trades",               # OSHA booklets and standards (29 CFR 1910, 1926, 1928), NIOSH, MSHA, DOE, BLS, old trade books, index (trade:)
     # FEMA Independent Study courses (the owner's request of 2026-11-23), their own group
     "fema_is",              # every FEMA EMI Independent Study course: student manuals and web lessons, index (fema:)
+    # cooking basics and more fitness and nutrition (the owner's request of 2026-11-23)
+    "cooking_basics",       # classic cook books, VA and USDA recipes, budget cooking, index (cook:, shared with cookbooks.py)
+    "fitness_more",         # military fitness manuals, older and blind exercisers, special diets, old physical culture (fit:)
 ]
 
 _loaded = {}
