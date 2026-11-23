@@ -81,6 +81,7 @@ MODULES = [
     # money, language learning, travel and civics (the owner's request of 2026-11-22)
     "money_work",           # IRS publications, CFPB home buying, DOL, NLRB, HealthCare.gov, O*NET (mw:)
     "languages",            # FSI and Peace Corps courses, Wikivoyage phrasebooks, Tatoeba sentences, ASL (lang:)
+    "languages_open",       # open language resources: COERLL, Global Storybooks, FreeDict, Tatoeba, old grammars, sign, braille (lopen:)
     "travel",               # FAA PackSafe, USA.gov travel pages, national park passes (trip:)
     "civics",               # Constitution, civics test, Ben's Guide, jury service, Supreme Court cases (civ:)
     # people: disability, veterans, education, relationships, immigration (the owner's request of 2026-11-22)
