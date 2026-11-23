@@ -1859,7 +1859,7 @@ APPROVAL_CLAIM = re.compile(r"^A work of the US [^.]*?\(public domain\)(?:, appr
 # manuals are historical, and their whole text is included from here on).
 NOT_FIELD_SAFE = re.compile(r"\b(explosives?|demolitions?|land\s*mines?|mines?\s+and\s+booby|mine\s*warfare|"
                             r"minefields?|grenades?|booby|improvised\s+(explosive|munitions?|devices?)|IEDs?|"
-                            r"sabotage|incendiar\w*|detonat\w*|blasting)\b", re.I)
+                            r"sabotage|incendiar\w*|detonat\w*|blasting|dynamite)\b", re.I)
 FIGURE_LINE = re.compile(r"^\s*(Figure\s+[A-Z]?-?\d+(?:-\d+)?[a-z]?\.?)(?:\s*[\u2014\u2013]\s*|\s+)(.{2,200}?)\s*$")
 
 
@@ -2307,13 +2307,17 @@ def pdfdoc_book(entry, work, cache=None, left_out=None):
                 notice=notice, unchanged=whole,
                 changes=entry.get("changes") or
                 "its text made into web pages, one per chapter, with each drawing's caption kept as text"
-                + ("; parts about explosives, demolition, mines and booby traps left out" if entry.get("distribution_a") else ""))
+                + ("; parts about explosives, demolition, mines and booby traps left out"
+                   if entry.get("distribution_a") or entry.get("cut_explosives") else ""))
     skipped = []
     if entry.get("split_sections"):              # one page per numbered section of its own text (sections_of_pdf)
         book.pages += section_pages(text)
         return book
     for i, (part_title, start, end) in enumerate(manual_parts(local), 1):
-        if entry.get("distribution_a") and NOT_FIELD_SAFE.search(part_title):
+        # a field manual, or a civilian manual marked cut_explosives (approtech.py: a well manual's dynamite appendix,
+        # whose bookmark says only "Appendix III": its title is read from the first lines of its first page too)
+        heading = part_title + (" " + " ".join(text.lines(start)[:3]) if entry.get("cut_explosives") else "")
+        if (entry.get("distribution_a") or entry.get("cut_explosives")) and NOT_FIELD_SAFE.search(heading):
             if part_title not in skipped:
                 skipped.append(part_title)
             continue

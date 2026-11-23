@@ -30,7 +30,7 @@ What this module builds, in plain words:
     Claitor's reprint on the Internet Archive (bls.gov refuses programs; Claitor's claims copyright only in its format);
   - trade texts: Wikibooks' Welding (CC BY-SA 4.0, share-alike, kept separate) and old public-domain trade books
     (published before 1931: plumbing, steam and hot-water heating, masonry and bricklaying, carpentry, sheet metal,
-    welding, electrical work, machine shop, blacksmithing, auto repair, barbering), each with a note on what is out
+    welding, electrical work, machine shop, auto repair, barbering), each with a note on what is out
     of date;
   - trade:index, the guide to every trade (carpentry, electrical, plumbing, HVAC, welding, masonry, roofing, auto,
     diesel, heavy equipment, landscaping, culinary, cosmetology and more): what to read, by key, across the library.
@@ -490,10 +490,6 @@ FARM = [
                     "Library's scan on the Internet Archive, which marks it a historic document whose content may "
                     "not reflect current practice; take a current chain saw course (such as the Forest Service's or "
                     "a state forestry course) before felling trees. " + TRADE_SAFETY),
-    old_trade("drew_farm_blacksmithing_1904", "Farm Blacksmithing (James M. Drew, 1904)", "Farm blacksmithing",
-              "James M. Drew (Webb Publishing)", "farmblacksmithin00drew", 1904,
-              "A textbook for farm boys and agricultural schools: the forge and tools, fire, drawing out, bending, "
-              "upsetting and welding iron, making hooks, links and clevises, and simple farm repairs."),
 ]
 
 # ====================================================================== apprenticeship and careers (trade-apprentice)
@@ -598,10 +594,6 @@ TEXTS = [
               "Machine shop", "Joshua Rose (Charles Scribner's Sons)", "modernmachinesho01roseuoft", 1901,
               "A large illustrated treatise on the machinist's trade of its day: lathes, cutting tools, boring, "
               "planing, shaping, milling, gear cutting, measuring, filing and fitting."),
-    old_trade("richardson_practical_blacksmithing_1889", "Practical Blacksmithing, Volume 1 (M. T. Richardson, editor, "
-              "1889)", "Blacksmithing", "M. T. Richardson (editor)", "practicalblacksm01richuoft", 1889,
-              "A collection of articles by working smiths: the history of the trade, forges and chimneys, anvils, "
-              "tongs and other tools, and many shop methods."),
     old_trade("page_automobile_repairing_made_easy_1918", "Automobile Repairing Made Easy (Victor W. Pagé, 1918)",
               "Auto repair", "Victor W. Pagé (Norman W. Henley)", "automobilerepai00paggoog", 1918,
               "A complete treatise of its day on repairing cars: the shop and its tools, engines, carburettors, "
@@ -991,7 +983,8 @@ SECTIONS = [
         ("key", "trade:lincoln_electric_arc_welding_1918", "Electric Arc Welding (Lincoln Electric, 1918)"),
         ("key", "trade:broemel_sheet_metal_workers_manual_1918", "Sheet Metal Workers' Manual (1918)"),
         ("key", "trade:rose_modern_machine_shop_practice_1901", "Modern Machine-Shop Practice (1901)"),
-        ("key", "trade:richardson_practical_blacksmithing_1889", "Practical Blacksmithing (1889)"),
+        ("key", "hfill:richardson_practical_blacksmithing_v1_1889", "Practical Blacksmithing, volume 1 (1889)"),
+        ("word", "blacksmithing", "Blacksmithing and the farm forge books (request word)"),
         ("key", "make:army_tc_9_524_machine_tools", "Fundamentals of Machine Tools (Army TC 9-524)"),
         ("word", "making", "Machining, CNC and 3D printing books (request word)"),
         ("manuals", "metal_shop_welding", "Welder and metal shop makers' manuals"),
@@ -1081,7 +1074,8 @@ SECTIONS = [
         ("key", "trade:niosh_farm_safety", "Silo fires, ATVs and landscape workers (NIOSH)"),
         ("key", "trade:usfs_chain_saw_training_guide_1978", "Chain Saw Training Guide (Forest Service, 1978)"),
         ("key", "knot:usfs_crosscut_saw_manual", "Crosscut Saw Manual (Forest Service)"),
-        ("key", "trade:drew_farm_blacksmithing_1904", "Farm Blacksmithing (1904)"),
+        ("key", "apt:drew_farm_blacksmithing_1904", "Farm Blacksmithing (Drew, 1904)"),
+        ("word", "approtech", "Appropriate technology and village skills books (request word)"),
         ("word", "gardening", "Gardening and lawn books (request word)"),
         ("word", "homestead", "Homesteading and small livestock books (request word)"),
         ("manuals", "lawn_garden", "Lawn and garden equipment makers' manuals"),
@@ -1235,6 +1229,10 @@ NOT_INCLUDED = [
     ("Forest Service and BLM chain saw courses newer than 1978", "fs.usda.gov's training pages answer programs "
      "\"403\"; the BLM's Chainsaw Maintenance note (1969) is two pages only. Index: "
      "https://archive.org/details/chainsawmaintena10bure"),
+    ("Old blacksmithing books (Drew's Farm Blacksmithing, Richardson's Practical Blacksmithing and others)",
+     "Already built by the appropriate technology and homestead collections (apt:drew_farm_blacksmithing_1904 and "
+     "the hfill: blacksmithing books, request word blacksmithing); linked from trade:index, not built twice. Index: "
+     "https://archive.org/details/farmblacksmithin00drew"),
     ("Modern trade textbooks (Audel, ATP, Goodheart-Willcox, NCCER, Delmar)", "Copyright of their publishers; "
      "link-only. Index: https://openlibrary.org/search?q=subject%3Abuilding+trades"),
 ]
