@@ -140,6 +140,8 @@ MODULES = [
     "education_more",       # education: ED booklets (ERIC copies), FAFSA form, old education classics (edumore:)
     # official copies for the thin sections, from GovInfo, agency sites and the Internet Archive (2026-11-22)
     "govinfo_fill",         # NHTSA, FEMA, SAMHSA, NIA, CMS, VA, NARA, CDC, CPSC, EPA booklets; Army and Navy manuals (gpo:)
+    # thin homestead and self-reliance areas (the owner's request of 2026-11-23)
+    "homestead_fill",       # seed saving, butchering, trapping and tanning, forge, stars and navigation, water, nets and baskets (hfill:)
 ]
 
 _loaded = {}
