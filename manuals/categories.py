@@ -798,3 +798,10 @@ CATEGORIES.update(_PHOTOGRAPHY)
 for _key in _PHOTO_KEYS:
     if _key in CATEGORIES:
         CATEGORIES[_key]["heading"] = _PHOTO_HEADING
+# The craft trades (the owner's request of 2026-11-23, manuals/craft_trades_manuals.py): leather sewing machines,
+# splitters and tools, lampworking torches, glass annealers and hat steamers; every maker link-only, the safety notice
+# first. Under the "Arts and crafts" heading; beekeeping equipment stays in homestead.
+from craft_trades_manuals import CATEGORIES as _CRAFT_TRADES  # noqa: E402
+
+for _key, _cat in _CRAFT_TRADES.items():
+    CATEGORIES[_key] = dict(_cat, heading=_CRAFTS_HEADING)

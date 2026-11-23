@@ -1870,6 +1870,11 @@ COMMONS_KEYS = COMMONS_KEYS | frozenset(BUILDING_COMMONS_KEYS)
 from crafts_packs import CRAFTS_PACKS, CRAFTS_COMMONS_KEYS
 PACKS.update(CRAFTS_PACKS)
 COMMONS_KEYS = COMMONS_KEYS | frozenset(CRAFTS_COMMONS_KEYS)
+# The craft trades (packs/craft_trades_packs.py, the owner's request of 2026-11-23): one Commons pack filling the gaps
+# in beekeeping equipment, glassblowing tools and furnaces, saddlery and leather carving, tailors, hatters and milliners.
+from craft_trades_packs import CRAFT_TRADES_PACKS, CRAFT_TRADES_COMMONS_KEYS
+PACKS.update(CRAFT_TRADES_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(CRAFT_TRADES_COMMONS_KEYS)
 # Life skills (the owner's request of 2026-11-22), one pack file each, with the keys of those that read Commons: car
 # care (packs/car_care_packs.py: wipers, fluids, tyres and their markings, jacks, roadside safety, EV connectors,
 # dashboard lights by their files' own words), gardening and lawn care (packs/garden_packs.py), home health care

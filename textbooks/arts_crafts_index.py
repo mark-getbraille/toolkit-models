@@ -140,24 +140,34 @@ def sections():
              ("word", "ctrade-bees", "Every beekeeping book of the craft trades collection"),
              ("manuals", "homestead", "Beekeeping equipment, with the homestead equipment manuals"),
              ("pack", "commons_homestead_poultry_bees", "Beehives, bee smokers, honey extractors and beekeeping suits"),
-             ("pack", "open_images_homestead", "Honeycomb, beekeepers and apiaries in photos")]),
+             ("pack", "open_images_homestead", "Honeycomb, beekeepers and apiaries in photos"),
+             ("pack", "commons_craft_trades", "Queen excluders, honey supers, hive frames, nucleus hives and other "
+                                              "beekeeping equipment")]),
         ("Glass blowing and glass work", "Scientific glassblowing and lampwork, annealing, eye protection, and "
                                          "stained and leaded glass.",
          trade_books("glass") + [
              ("word", "ctrade-glass", "Every glass book of the craft trades collection"),
              ("manuals", "pottery_kilns", "Kilns, including glass kilns"),
-             ("pack", "commons_glass_carving", "Stained glass, glassblowing, lampworking and mosaics")]),
+             ("manuals", "craft_trades_tools", "Lampworking torches and glass annealers"),
+             ("pack", "commons_glass_carving", "Stained glass, glassblowing, lampworking and mosaics"),
+             ("pack", "commons_craft_trades", "Glassblowing pipes, glory holes, glass furnaces, glass kilns and "
+                                              "lehrs")]),
         ("Leather working", "Leather craft, harness making and saddlery, shoemaking and shoe repair, tanning, and "
                             "canvas and webbing repair.",
          trade_books("leather") + [
              ("word", "ctrade-leather", "Every leather and canvas book of the craft trades collection"),
-             ("pack", "commons_upholstery_leather_shoes", "Leatherwork, shoemaking and cobblers")]),
+             ("manuals", "craft_trades_tools", "Leather sewing machines and leather tools"),
+             ("pack", "commons_upholstery_leather_shoes", "Leatherwork, shoemaking and cobblers"),
+             ("pack", "commons_craft_trades", "Saddlers, saddleries, saddle making, leather carving and swivel "
+                                              "knives")]),
         ("Clothing making and repair", "Tailoring, pattern drafting, dressmaking, millinery, fitting, mending and "
                                        "remaking clothes.",
          trade_books("clothing") + [
              ("word", "ctrade-clothing", "Every clothing book of the craft trades collection"),
              ("manuals", "sewing_textile", "Sewing machines and sergers"),
-             ("pack", "commons_sewing_mending", "Sewing patterns, dress forms, tailoring and mending")]),
+             ("manuals", "craft_trades_tools", "Hat and garment steamers"),
+             ("pack", "commons_sewing_mending", "Sewing patterns, dress forms, tailoring and mending"),
+             ("pack", "commons_craft_trades", "Tailors, tailor shops, hatters, milliners and hat blocks")]),
         ("Photography", "Cameras, taking pictures and photo technique.", [
              ("word", PHOTOGRAPHY_WORD, "The photography collection's books")]),
     ]

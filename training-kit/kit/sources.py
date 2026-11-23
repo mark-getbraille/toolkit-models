@@ -3386,6 +3386,21 @@ PERSONAL_PICTURE_MAKING_OK |= _crafts_ok
 NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in CRAFTS_SOURCES
                                                                if s.key not in _crafts_ok)
 _add_collections(CRAFTS_SOURCES)
+# The craft trades (craft_trades_sources.py, the owner's request of 2026-11-23): one ready-made Commons pack filling the
+# gaps in beekeeping equipment, glassblowing, saddlery, leather carving, tailors, hatters and milliners; the file may
+# be missing. It shows people at work, so it is never used for picture-making.
+try:
+    import craft_trades_sources as _craft_trades  # noqa: E402
+except ImportError as _e:
+    _craft_trades = None
+    if getattr(_e, "name", None) != "craft_trades_sources":
+        say(f"(The craft trades collection could not be loaded: {_e}. It is left out.)")
+CRAFT_TRADES_SOURCES = list(getattr(_craft_trades, "CRAFT_TRADES_SOURCES", []) or [])
+_craft_trades_ok = set(getattr(_craft_trades, "CRAFT_TRADES_PICTURE_MAKING_OK", ()) or ())
+PERSONAL_PICTURE_MAKING_OK |= _craft_trades_ok
+NOT_FOR_PICTURE_MAKING = tuple(NOT_FOR_PICTURE_MAKING) + tuple(s.key for s in CRAFT_TRADES_SOURCES
+                                                               if s.key not in _craft_trades_ok)
+_add_collections(CRAFT_TRADES_SOURCES)
 # Life skills (the owner's request of 2026-11-22): car care (car_care_sources.py), gardening and lawn care
 # (garden_sources.py), home health care with dental, eye and birth care (home_health_sources.py) and musical
 # instrument care (instrument_care_sources.py): their ready-made packs, share-alike Commons files and what was left

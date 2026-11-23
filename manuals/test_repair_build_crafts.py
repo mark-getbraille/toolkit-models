@@ -128,8 +128,10 @@ def test_arts_and_crafts_heading(tmp_path):
         assert C.CATEGORIES[key]["heading"] == "Home manufacturing and making", key
     # the photography collections and the darkroom chemicals join the heading too (photography_manuals.py)
     import photography_manuals as PM
+    # and the craft trades' leather and glass working equipment (craft_trades_manuals.py)
+    import craft_trades_manuals as CTM
     assert sum(1 for c in C.CATEGORIES.values() if c.get("heading") == "Arts and crafts") == \
-        len(CM.HEADING_KEYS) + len(PM.HEADING_KEYS)
+        len(CM.HEADING_KEYS) + len(PM.HEADING_KEYS) + len(CTM.CATEGORIES)
     manifest = B.write("pottery_kilns", [], str(tmp_path))
     index = json.loads(gzip.decompress((tmp_path / manifest["file"]).read_bytes()))
     assert index["heading"] == manifest["heading"] == "Arts and crafts"

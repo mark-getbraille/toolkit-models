@@ -411,7 +411,7 @@ TOPICS = [
     Topic("crafts", "Arts and crafts",
           "Knitting, crochet, lace, quilting, embroidery, weaving, sewing, upholstery, leather and fabrics, pottery, "
           "jewellery and beading, paper crafts, candles and soap, glass and carving, art supplies, models and "
-          "resin, craft cutters and heat presses, and photography.",
+          "resin, craft cutters and heat presses, beekeeping, saddlery, hat making and photography.",
           (# textile crafts (home_crafts_sources.py)
            "commons_knit_crochet_lace", "commons_quilt_embroidery_weaving", "commons_sewing_mending",
            "commons_upholstery_leather_shoes", "commons_fabrics_fibres", "open_images_textile_crafts",
@@ -420,6 +420,8 @@ TOPICS = [
            "commons_pottery_ceramics", "museum_ceramics", "commons_jewellery_beading", "museum_jewellery",
            "commons_paper_crafts", "commons_candle_soap", "commons_glass_carving", "commons_art_supplies",
            "commons_models_resin", "museum_glass_crafts", "open_images_crafts",
+           # craft trades: beekeeping equipment, glassblowing, saddlery, tailors, hatters (craft_trades_sources.py)
+           "commons_craft_trades",
            # vinyl cutters, cutting machines, heat presses, screen printing and machine embroidery (making_sources.py;
            # also in "machines" and "home", which keep the lasers and engravers it also holds)
            "commons_cutting_lasers",
