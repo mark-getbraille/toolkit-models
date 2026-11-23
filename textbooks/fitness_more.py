@@ -12,9 +12,8 @@ What this module builds, in plain words, each IN FULL:
   - military fitness manuals (fit-military), each judged at every build by the release rule for military
     publications (military_release.py: the builder reads its front pages and says truthfully what they print about
     distribution): the Army's FM 7-22 Holistic Health and Fitness (2020) and the FM 7-22 Army Physical Readiness
-    Training it replaced (2012), FM 21-20 Physical Fitness Training (1992) and Physical Training (1941), the Marine
-    Corps' MCRP 3-02A Marine Physical Readiness Training for Combat, the Navy SEAL Physical Fitness Guide and the
-    Navy's Physical Fitness Manual (1943);
+    Training it replaced (2012), FM 21-20 Physical Fitness Training (1992) and Physical Training (1941), the Navy
+    SEAL Physical Fitness Guide (1997) and the Navy's Physical Fitness Manual (1943);
   - exercise for older adults, people with disabilities and blind people (fit-older-adaptive): Physical Activity and
     Health, a Report of the Surgeon General (1996), the President's Council's Aqua Dynamics water exercise booklet
     (1980), NHLBI's Your Guide to Physical Activity and Your Heart (2006), the Children's Bureau's Recreation for
@@ -111,7 +110,8 @@ def _nhlbi(name, title, subject, pdf, published, description, safety=""):
                     licence_page=NHLBI_POLICY, licence_text=NHLBI_TEXT, published=published,
                     version=f"{published} edition (the PDF on www.nhlbi.nih.gov)", description=description,
                     notice=f"A work of the National Institutes of Health (public domain): NHLBI says \"Most of the "
-                           f"information on the NHLBI website is in the public domain\". {safety + ' ' if safety else ''}"
+                           f"information on the NHLBI website is in the public domain\". "
+                           f"{safety + ' ' if safety else ''}"
                            f"{NOTE}")
 
 
@@ -147,26 +147,22 @@ MILITARY = [
     _mil("army_fm_21_20_physical_training_1941", "Physical Training (FM 21-20, US War Department, 1941)",
          "US War Department", "Fm21-20-nsia", "1941-03",
          "The Second World War Army physical training manual: setting-up exercises, rifle exercises, running, "
-         "marching, grass drills, guerrilla exercises, combatives, games, swimming and tests. A historical "
-         "manual: " + OLD_FIT_NOTE.format(year="1941"), "a work of the US Army"),
-    _mil("usmc_mcrp_3_02a_physical_readiness_combat", "Marine Physical Readiness Training for Combat (MCRP 3-02A, US "
-         "Marine Corps)", "Headquarters, US Marine Corps", "milmanual-mcrp-3-02a-marine-physical-readiness-training-"
-         "for-combat", "",
-         "The Marine Corps' physical training reference: the principles of conditioning, planning unit training, "
-         "warm-up and cool-down, strength, endurance and flexibility exercises, conditioning hikes and runs, "
-         "obstacle courses, aquatic training, and preventing injuries.", "a work of the US Marine Corps"),
-    _mil("navy_seal_physical_fitness_guide", "The Navy SEAL Physical Fitness Guide (Naval Special Warfare Command)",
+         "marching, grass drills, guerrilla exercises, combatives, games, swimming and tests. "
+         + OLD_FIT_NOTE.format(year="1941"), "a work of the US Army"),
+    _mil("navy_seal_physical_fitness_guide_1997", "The Navy SEAL Physical Fitness Guide (Naval Special Warfare "
+         "Command, 1997)",
          "US Navy, Naval Special Warfare Command, and the Uniformed Services University of the Health Sciences",
-         "US_Navy_SEAL_Physical_Fitness_Guide", "",
+         "DTIC_ADA524159", "1997-08",
          "The Navy's fitness guide for SEALs, written by its sports medicine and physiology experts (edited by "
-         "Patricia A. Deuster): cardiorespiratory conditioning, running, swimming, strength training, flexibility, "
-         "calisthenics, circuit training, load-bearing, training in hot and cold climates and at altitude, and "
-         "preventing and treating training injuries.", "a work of the US Navy"),
+         "Patricia A. Deuster; the Defense Technical Information Center's copy): cardiorespiratory conditioning, "
+         "running, swimming, strength training, flexibility, calisthenics, circuit training, load-bearing, "
+         "training in hot and cold climates and at altitude, and preventing and treating training injuries.",
+         "a work of the US Navy"),
     _mil("navy_physical_fitness_manual_1943", "Physical Fitness Manual for the U.S. Navy (Bureau of Naval Personnel, "
          "1943)", "US Navy, Bureau of Naval Personnel, Training Division", "14321410R.nlm.nih.gov", "1943",
          "The Navy's Second World War fitness manual (the National Library of Medicine's copy): the conditioning "
-         "programme, calisthenics, running, swimming, combatives, games and sports, and fitness tests. A historical "
-         "manual: " + OLD_FIT_NOTE.format(year="1943"), "a work of the US Navy"),
+         "programme, calisthenics, running, swimming, combatives, games and sports, and fitness tests. "
+         + OLD_FIT_NOTE.format(year="1943"), "a work of the US Navy"),
 ]
 
 # ====================================================================== older adults, disabilities and blind people
@@ -365,8 +361,8 @@ WORDS = {"fitness-more": lambda: ["fit:index", "fit:va_nutrition_handouts"] + _k
 COLLECTION = K.Collection("fit", GROUP, pdfs=PDFS, makers=MAKERS, words=WORDS)
 
 LICENCE_LINES = {
-    "fitmore_military": "FM 7-22 (2020 and 2012), FM 21-20 (1992 and 1941), MCRP 3-02A, the Navy SEAL Physical "
-                        "Fitness Guide and the 1943 Navy manual: works of the US armed forces read from the "
+    "fitmore_military": "FM 7-22 (2020 and 2012), FM 21-20 (1992 and 1941), the Navy SEAL Physical Fitness Guide "
+                        "(DTIC's copy) and the 1943 Navy manual: works of the US armed forces read from the "
                         "Internet Archive (armypubs.army.mil and the Navy's sites refuse programs) and judged at "
                         "every build by the release rule (military_release.py): the builder reads the front pages "
                         "and says truthfully what they print about distribution; a restricted marking is never "
@@ -393,6 +389,10 @@ NOT_INCLUDED = [
      "retired; its workout cards and videos were never published as one openly downloadable book, and the Navy's "
      "site refuses programs. The Navy SEAL guide and the 1943 Navy manual are built. Index: "
      "https://www.mynavyhr.navy.mil/Support-Services/21st-Century-Sailor/Physical-Readiness/"),
+    ("Marine Physical Readiness Training for Combat (MCRP 3-02A)", "A US Marine Corps publication, but both Internet "
+     "Archive copies are scans without a text layer, so the builder cannot read them aloud (checked 2026-11-23); the "
+     "Army and Navy manuals here cover the same training. Index: "
+     "https://archive.org/details/milmanual-mcrp-3-02a-marine-physical-readiness-training-for-combat"),
     ("Army Physical Readiness Training (TC 3-22.20, 2010) and Physical Training (FM 21-20, 1957)", "Replaced by the "
      "2012 FM 7-22 and kept close to it and to the 1941 and 1992 FM 21-20 built here; not built twice. Index: "
      "https://archive.org/details/DTIC_ADA531081"),
@@ -414,7 +414,8 @@ NOT_INCLUDED = [
     ("The Navy SEAL Nutrition Guide (1994)", "The Internet Archive's only copy is a lending copy of a commercial "
      "reprint. Index: https://archive.org/details/navysealnutritio0000patr"),
     ("Walter Camp's The Daily Dozen (1925 book with records)", "No public scan was found; his 1919 Keeping Fit All the "
-     "Way, which sets out the same twelve exercises, is built. Index: https://archive.org/details/07221040R.nlm.nih.gov"),
+     "Way, which sets out the same twelve exercises, is built. Index: "
+     "https://archive.org/details/07221040R.nlm.nih.gov"),
 ]
 
 

@@ -168,9 +168,8 @@ Stew</a></li>
 
 def test_va_pdf_links():
     links = C.va_pdf_links(MADE_UP_LISTING)
-    assert links == [("Made-Up Stew", "https://www.nutrition.va.gov/NUTRITION/docs/Recipes/MainDishes/Made-Up-Stew.pdf"),
-                     ("Pretend & Pasta", "https://www.nutrition.va.gov/NUTRITION/docs/Recipes/MainDishes/"
-                                         "Pretend-Pasta.pdf")]
+    base = "https://www.nutrition.va.gov/NUTRITION/docs/Recipes/MainDishes/"
+    assert links == [("Made-Up Stew", base + "Made-Up-Stew.pdf"), ("Pretend & Pasta", base + "Pretend-Pasta.pdf")]
 
 
 def test_va_book_from_made_up_pages(monkeypatch, tmp_path):
