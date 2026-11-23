@@ -277,7 +277,7 @@ STATES = [
     S("louisiana", "Louisiana", "south", "La. R.S. 17:236.1 (home study programs; a 2024 bill, HB 550, changed BESE "
       "approval: read the current text)", "https://doe.louisiana.gov/schools/home-study",
       "The Department's page describes applying online for a BESE-approved home study program each year.",
-      ["https://legis.la.gov/Legis/Law.aspx?d=80346"],
+      [],                                    # (legis.la.gov's statute page gave no text to a program: link only)
       [("link", "The Louisiana ELA Guidebooks (open access; no licence statement was found, and the unit readers are "
                 "publishers' copyrighted texts).", "https://doe.louisiana.gov/academics/ela-guidebooks")], "link"),
     S("maryland", "Maryland", "south", "COMAR 13A.10.01 (home instruction)",
