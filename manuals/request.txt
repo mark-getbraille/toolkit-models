@@ -9,4 +9,5 @@
 # 22 November (24): sports equipment.
 # 22 November (25): the craft collections again, under their new "Arts and crafts" heading.
 # 22 November (26): and the film camera, darkroom and digital camera collections, with darkroom chemicals under Arts and crafts.
-sewing_textile,textile_craft_tools,art_craft_supplies,pottery_kilns,jewellery_tools,craft_machines,heat_press_vinyl,film_cameras_darkroom,digital_cameras,photo_chemicals
+# 23 November: and the homestead skills collection (water purifiers, sextants, forges, anvils, sausage stuffers).
+sewing_textile,textile_craft_tools,art_craft_supplies,pottery_kilns,jewellery_tools,craft_machines,heat_press_vinyl,film_cameras_darkroom,digital_cameras,photo_chemicals,homestead_skills

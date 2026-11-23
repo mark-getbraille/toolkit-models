@@ -798,3 +798,9 @@ CATEGORIES.update(_PHOTOGRAPHY)
 for _key in _PHOTO_KEYS:
     if _key in CATEGORIES:
         CATEGORIES[_key]["heading"] = _PHOTO_HEADING
+# Homestead and self-reliance skills (the owner's request of 2026-11-23, manuals/homestead_fill_manuals.py): water
+# purifiers and treatment tablets, sextants and marine chronometers, forges, anvils and sausage stuffers; every maker
+# link-only, the water, Sun and forge safety notice first; the reference books are under homestead-fill (hfill:).
+from homestead_fill_manuals import CATEGORY as _HOMESTEAD_SKILLS  # noqa: E402
+
+CATEGORIES["homestead_skills"] = _HOMESTEAD_SKILLS
