@@ -116,6 +116,8 @@ def test_guide_covers_grades_subjects_and_braille():
         assert word in titles, word
     words = {what for _p, _i, entries in T.SECTIONS for kind, what, *_r in entries if kind == "word"}
     assert {"teach-world", "pc-teaching", "lang-open", "languages-gov", "tstate-laws"} <= words
+    keys = {what for _p, _i, entries in T.SECTIONS for kind, what, *_r in entries if kind == "key"}
+    assert "tworld:index" in keys and sources.expand_keys(["teach-world"]) != ["teach-world"]
 
 
 def test_guide_book_is_made(monkeypatch, tmp_path):

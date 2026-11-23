@@ -25,7 +25,8 @@ What this module builds itself:
   - teach:index, the guide (the toolkit's own facts and links, CC0, nothing downloaded): one page per grade band and
     per subject (reading, writing, maths, science, history and civics, geography, arts, music, physical education,
     life skills, special education, and teaching blind and low-vision students with braille literacy), listing
-    the books by key, the request words of whole collections (other helpers' too: teach-world, pc-teaching,
+    the books by key, the request words of whole collections (other modules' too: tworld:index and teach-world of
+    teach_world.py, pc-teaching,
     lang-open, languages-gov), the picture packs and the link-only sources;
   - five homeschooling booklets of the US government, read IN FULL from ERIC's copies on the Internet Archive (each
     checked at every build to print its publisher or its public-domain line on its front pages):
@@ -142,6 +143,8 @@ def sections():
              ("key", "tstate:index", "Homeschooling and open teaching materials, state by state (every state, DC and "
                                      "the territories)"),
              ("word", "tstate-laws", "The homeschooling statutes and rules, read from the official sites, by region"),
+             ("key", "tworld:index", "Teaching and homeschooling around the world: a guide (Canada, the UK, "
+                                     "Ireland, Australia, New Zealand, other countries and NGOs)"),
              ("word", "teach-world", OTHER_WORDS["teach-world"]),
              ("link", "US Department of Education: State Regulation of Private and Home Schools",
               "https://www.ed.gov/birth-grade-12-education/education-choice/state-regulation-of-private-and-home-"
