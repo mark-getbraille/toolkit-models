@@ -45,6 +45,8 @@ Needs: matplotlib (synthetic_formulas) and rdkit (chem_structures): "python -m p
 """
 
 import io
+import os
+import json
 import re
 import sys
 import time
@@ -578,6 +580,22 @@ def formula_words(formula):
     return " ".join({"+": "plus", "-": "minus"}.get(p, p) for p in parts)
 
 
+STORED_COMPOUNDS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "catalogues", "chem_smiles.json")
+
+
+def stored_compounds(path=STORED_COMPOUNDS):
+    """[(name, Wikidata item, SMILES)] from the stored list (catalogues/chem_smiles.json: read once from Wikidata,
+    CC0, because Wikidata refuses GitHub's machines since November 2026); [] when it is missing or unreadable, and
+    then wikidata_compounds() asks Wikidata itself."""
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, ValueError):
+        return []
+    return [(c["name"], c["qid"], c["smiles"]) for c in data.get("compounds", [])
+            if c.get("name") and str(c.get("qid", "")).startswith("Q") and c.get("smiles")]
+
+
 def chem_rows(name, qid, smiles, facts):
     """The rows of one structure (see the module docstring); every row carries "smiles"."""
     atoms = ", ".join(f"{k} {ELEMENT_NAMES.get(e, e)}" for e, k in facts["atoms"])
@@ -618,7 +636,7 @@ def build_chem_structures(limit, compounds=None):
     """The chem_structures pack (see the module docstring): each compound drawn a few times in different styles,
     until limit pictures. compounds: [(name, item, SMILES)] (else read from Wikidata)."""
     from food_packs import with_twins
-    compounds = compounds if compounds is not None else wikidata_compounds()
+    compounds = compounds if compounds is not None else (stored_compounds() or wikidata_compounds())
     usable = []
     for name, qid, smiles in compounds:
         facts = structure_facts(smiles)

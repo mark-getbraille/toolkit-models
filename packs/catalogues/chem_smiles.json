@@ -1,0 +1,1011 @@
+{
+ "about": "SMILES of the chem_structures compounds, read once from Wikidata (CC0) on 23 November 2026: each English Wikipedia title's Wikidata item (Wikipedia pageprops), then the item's isomeric SMILES (P2017), else canonical (P233), deprecated statements skipped. GitHub machines are refused by Wikidata, so the build reads this file. packs/math_notation_packs.py STORED_COMPOUNDS.",
+ "licence": "CC0 (Wikidata)",
+ "compounds": [
+  {
+   "name": "water",
+   "qid": "Q283",
+   "smiles": "O"
+  },
+  {
+   "name": "hydrogen peroxide",
+   "qid": "Q171877",
+   "smiles": "OO"
+  },
+  {
+   "name": "ammonia",
+   "qid": "Q4087",
+   "smiles": "N"
+  },
+  {
+   "name": "methane",
+   "qid": "Q37129",
+   "smiles": "C"
+  },
+  {
+   "name": "ethane",
+   "qid": "Q52858",
+   "smiles": "CC"
+  },
+  {
+   "name": "propane",
+   "qid": "Q131189",
+   "smiles": "CCC"
+  },
+  {
+   "name": "butane",
+   "qid": "Q134192",
+   "smiles": "CCCC"
+  },
+  {
+   "name": "octane",
+   "qid": "Q150681",
+   "smiles": "CCCCCCCC"
+  },
+  {
+   "name": "ethylene",
+   "qid": "Q151313",
+   "smiles": "C=C"
+  },
+  {
+   "name": "acetylene",
+   "qid": "Q133145",
+   "smiles": "C#C"
+  },
+  {
+   "name": "benzene",
+   "qid": "Q2270",
+   "smiles": "C1=CC=CC=C1"
+  },
+  {
+   "name": "toluene",
+   "qid": "Q15779",
+   "smiles": "CC1=CC=CC=C1"
+  },
+  {
+   "name": "naphthalene",
+   "qid": "Q179724",
+   "smiles": "C1=CC=C2C=CC=CC2=C1"
+  },
+  {
+   "name": "phenol",
+   "qid": "Q130336",
+   "smiles": "C1=CC=C(C=C1)O"
+  },
+  {
+   "name": "methanol",
+   "qid": "Q14982",
+   "smiles": "CO"
+  },
+  {
+   "name": "ethanol",
+   "qid": "Q153",
+   "smiles": "CCO"
+  },
+  {
+   "name": "isopropyl alcohol",
+   "qid": "Q16392",
+   "smiles": "CC(C)O"
+  },
+  {
+   "name": "glycerol",
+   "qid": "Q132501",
+   "smiles": "C(C(CO)O)O"
+  },
+  {
+   "name": "ethylene glycol",
+   "qid": "Q194207",
+   "smiles": "C(CO)O"
+  },
+  {
+   "name": "acetone",
+   "qid": "Q49546",
+   "smiles": "CC(=O)C"
+  },
+  {
+   "name": "formaldehyde",
+   "qid": "Q161210",
+   "smiles": "C=O"
+  },
+  {
+   "name": "acetaldehyde",
+   "qid": "Q61457",
+   "smiles": "CC=O"
+  },
+  {
+   "name": "acetic acid",
+   "qid": "Q47512",
+   "smiles": "CC(=O)O"
+  },
+  {
+   "name": "formic acid",
+   "qid": "Q161233",
+   "smiles": "C(=O)O"
+  },
+  {
+   "name": "citric acid",
+   "qid": "Q159683",
+   "smiles": "C(C(=O)O)C(CC(=O)O)(C(=O)O)O"
+  },
+  {
+   "name": "DL-lactic acid",
+   "qid": "Q161249",
+   "smiles": "CC(C(=O)O)O"
+  },
+  {
+   "name": "oxalic acid",
+   "qid": "Q184832",
+   "smiles": "C(=O)(C(=O)O)O"
+  },
+  {
+   "name": "tartaric acid",
+   "qid": "Q194322",
+   "smiles": "C(C(C(=O)O)O)(C(=O)O)O"
+  },
+  {
+   "name": "DL-malic acid",
+   "qid": "Q190143",
+   "smiles": "C(C(C(=O)O)O)C(=O)O"
+  },
+  {
+   "name": "benzoic acid",
+   "qid": "Q191700",
+   "smiles": "C1=CC=C(C=C1)C(=O)O"
+  },
+  {
+   "name": "salicylic acid",
+   "qid": "Q193572",
+   "smiles": "C1=CC=C(C(=C1)C(=O)O)O"
+  },
+  {
+   "name": "aspirin",
+   "qid": "Q18216",
+   "smiles": "CC(=O)OC1=CC=CC=C1C(=O)O"
+  },
+  {
+   "name": "paracetamol",
+   "qid": "Q57055",
+   "smiles": "CC(=O)NC1=CC=C(C=C1)O"
+  },
+  {
+   "name": "ibuprofen",
+   "qid": "Q186969",
+   "smiles": "CC(C)CC1=CC=C(C=C1)C(C)C(=O)O"
+  },
+  {
+   "name": "naproxen",
+   "qid": "Q1215575",
+   "smiles": "C[C@@H](C1=CC2=C(C=C1)C=C(C=C2)OC)C(=O)O"
+  },
+  {
+   "name": "caffeine",
+   "qid": "Q60235",
+   "smiles": "Cn1c(=O)c2c(ncn2C)n(C)c1=O"
+  },
+  {
+   "name": "theobromine",
+   "qid": "Q206844",
+   "smiles": "CN1C=NC2=C1C(=O)NC(=O)N2C"
+  },
+  {
+   "name": "(−)-nicotine",
+   "qid": "Q28086552",
+   "smiles": "CN1CCC[C@H]1C2=CC=CN=C2"
+  },
+  {
+   "name": "keto-D-fructose",
+   "qid": "Q122043",
+   "smiles": "C([C@H]([C@H]([C@@H](C(=O)CO)O)O)O)O"
+  },
+  {
+   "name": "sucrose",
+   "qid": "Q4027534",
+   "smiles": "OC[C@H]1O[C@@](CO)(O[C@H]2O[C@H](CO)[C@@H](O)[C@H](O)[C@H]2O)[C@@H](O)[C@@H]1O"
+  },
+  {
+   "name": "β-lactose",
+   "qid": "Q127900",
+   "smiles": "C([C@@H]1[C@@H]([C@@H]([C@H]([C@@H](O1)O[C@@H]2[C@H](O[C@H]([C@@H]([C@H]2O)O)O)CO)O)O)O)O"
+  },
+  {
+   "name": "maltose",
+   "qid": "Q170002",
+   "smiles": "C([C@@H]1[C@H]([C@@H]([C@H]([C@H](O1)O[C@@H]2[C@H](OC([C@@H]([C@H]2O)O)O)CO)O)O)O)O"
+  },
+  {
+   "name": "glycine",
+   "qid": "Q620730",
+   "smiles": "C(C(=O)O)N"
+  },
+  {
+   "name": "L-alanine",
+   "qid": "Q218642",
+   "smiles": "C[C@H](N)C(O)=O"
+  },
+  {
+   "name": "L-valine",
+   "qid": "Q483752",
+   "smiles": "CC(C)[C@H](N)C(O)=O"
+  },
+  {
+   "name": "L-leucine",
+   "qid": "Q483745",
+   "smiles": "CC(C)C[C@@H](C(=O)O)N"
+  },
+  {
+   "name": "L-isoleucine",
+   "qid": "Q484940",
+   "smiles": "CC[C@H](C)[C@H](N)C(O)=O"
+  },
+  {
+   "name": "DL-proline",
+   "qid": "Q484583",
+   "smiles": "C1CC(NC1)C(=O)O"
+  },
+  {
+   "name": "phenylalanine",
+   "qid": "Q170545",
+   "smiles": "N[C@@H](CC1=CC=CC=C1)C(O)=O"
+  },
+  {
+   "name": "tryptophan",
+   "qid": "Q181003",
+   "smiles": "N[C@@H](CC1=CNC2=C1C=CC=C2)C(O)=O"
+  },
+  {
+   "name": "DL-methionine",
+   "qid": "Q180341",
+   "smiles": "CSCCC(C(=O)O)N"
+  },
+  {
+   "name": "L-serine",
+   "qid": "Q183290",
+   "smiles": "N[C@@H](CO)C(O)=O"
+  },
+  {
+   "name": "L-threonine",
+   "qid": "Q186521",
+   "smiles": "C[C@H]([C@@H](C(=O)O)N)O"
+  },
+  {
+   "name": "L-Cysteine",
+   "qid": "Q186474",
+   "smiles": "N[C@@H](CS)C(O)=O"
+  },
+  {
+   "name": "L-tyrosine",
+   "qid": "Q188017",
+   "smiles": "C1=CC(=CC=C1C[C@@H](C(=O)O)N)O"
+  },
+  {
+   "name": "DL-asparagine",
+   "qid": "Q185906",
+   "smiles": "C(C(C(=O)O)N)C(=O)N"
+  },
+  {
+   "name": "L-glutamine",
+   "qid": "Q181619",
+   "smiles": "N[C@@H](CCC(N)=O)C(O)=O"
+  },
+  {
+   "name": "L-aspartic acid",
+   "qid": "Q178450",
+   "smiles": "N[C@@H](CC(O)=O)C(O)=O"
+  },
+  {
+   "name": "DL-glutamic acid",
+   "qid": "Q181136",
+   "smiles": "C(CC(=O)O)C(C(=O)O)N"
+  },
+  {
+   "name": "DL-lysine",
+   "qid": "Q178430",
+   "smiles": "C(CCN)CC(C(=O)O)N"
+  },
+  {
+   "name": "L-arginine",
+   "qid": "Q173670",
+   "smiles": "N[C@@H](CCCNC(N)=N)C(O)=O"
+  },
+  {
+   "name": "L-histidine",
+   "qid": "Q485277",
+   "smiles": "N[C@@H](CC1=CNC=N1)C(O)=O"
+  },
+  {
+   "name": "urea",
+   "qid": "Q48318",
+   "smiles": "C(=O)(N)N"
+  },
+  {
+   "name": "uric acid",
+   "qid": "Q105522",
+   "smiles": "C12=C(NC(=O)N1)NC(=O)NC2=O"
+  },
+  {
+   "name": "creatine",
+   "qid": "Q223600",
+   "smiles": "CN(CC(=O)O)C(=N)N"
+  },
+  {
+   "name": "cholesterol",
+   "qid": "Q43656",
+   "smiles": "C[C@H](CCCC(C)C)[C@H]1CC[C@@H]2[C@@]1(CC[C@H]3[C@H]2CC=C4[C@@]3(CC[C@@H](C4)O)C)C"
+  },
+  {
+   "name": "testosterone",
+   "qid": "Q1318776",
+   "smiles": "C[C@]12CC[C@H]3[C@@H](CCC4=CC(=O)CC[C@]34C)[C@@H]1CC[C@@H]2O"
+  },
+  {
+   "name": "17β-estradiol",
+   "qid": "Q422416",
+   "smiles": "C[C@]12CC[C@H]3[C@H]([C@@H]1CC[C@@H]2O)CCC4=C3C=CC(=C4)O"
+  },
+  {
+   "name": "progesterone",
+   "qid": "Q26963",
+   "smiles": "CC(=O)[C@H]1CC[C@@H]2[C@@]1(CC[C@H]3[C@H]2CCC4=CC(=O)CC[C@]34C)C"
+  },
+  {
+   "name": "cortisol",
+   "qid": "Q190875",
+   "smiles": "C[C@]12CCC(=O)C=C1CC[C@@H]3[C@@H]2[C@H](C[C@]4([C@H]3CC[C@@]4(C(=O)CO)O)C)O"
+  },
+  {
+   "name": "epinephrine",
+   "qid": "Q132621",
+   "smiles": "CNC[C@@H](C1=CC(=C(C=C1)O)O)O"
+  },
+  {
+   "name": "norepinephrine",
+   "qid": "Q186242",
+   "smiles": "C1=CC(=C(C=C1[C@H](CN)O)O)O"
+  },
+  {
+   "name": "dopamine",
+   "qid": "Q170304",
+   "smiles": "C1=CC(=C(C=C1CCN)O)O"
+  },
+  {
+   "name": "serotonin",
+   "qid": "Q167934",
+   "smiles": "C1=CC2=C(C=C1O)C(=CN2)CCN"
+  },
+  {
+   "name": "melatonin",
+   "qid": "Q180912",
+   "smiles": "C/C(=N\\CCC1=CNC2=C1C=C(C=C2)OC)/O"
+  },
+  {
+   "name": "histamine",
+   "qid": "Q61233",
+   "smiles": "C1=C(NC=N1)CCN"
+  },
+  {
+   "name": "acetylcholine",
+   "qid": "Q180623",
+   "smiles": "CC(=O)OCC[N+](C)(C)C"
+  },
+  {
+   "name": "adenine",
+   "qid": "Q15277",
+   "smiles": "C1=NC2=C(N1)C(=NC=N2)N"
+  },
+  {
+   "name": "guanine",
+   "qid": "Q169313",
+   "smiles": "C1=NC2=C(N1)C(=O)N=C(N2)N"
+  },
+  {
+   "name": "cytosine",
+   "qid": "Q178425",
+   "smiles": "C1=C(NC(=O)N=C1)N"
+  },
+  {
+   "name": "thymine",
+   "qid": "Q171973",
+   "smiles": "CC1=CNC(=O)NC1=O"
+  },
+  {
+   "name": "uracil",
+   "qid": "Q182990",
+   "smiles": "C1=CNC(=O)NC1=O"
+  },
+  {
+   "name": "adenosine triphosphate",
+   "qid": "Q80863",
+   "smiles": "C1=NC2=C(C(=N1)N)N=CN2[C@H]3[C@@H]([C@@H]([C@H](O3)COP(=O)(O)OP(=O)(O)OP(=O)(O)O)O)O"
+  },
+  {
+   "name": "niacinamide",
+   "qid": "Q192423",
+   "smiles": "C1=CC(=CN=C1)C(=O)N"
+  },
+  {
+   "name": "riboflavin",
+   "qid": "Q130365",
+   "smiles": "CC1=CC2=C(C=C1C)N(C3=NC(=O)NC(=O)C3=N2)C[C@@H]([C@@H]([C@@H](CO)O)O)O"
+  },
+  {
+   "name": "thiamine(1+) ion",
+   "qid": "Q83187",
+   "smiles": "CC1=C(SC=[N+]1CC2=CN=C(N=C2N)C)CCO"
+  },
+  {
+   "name": "pyridoxine",
+   "qid": "Q423746",
+   "smiles": "CC1=NC=C(C(=C1O)CO)CO"
+  },
+  {
+   "name": "biotin",
+   "qid": "Q181354",
+   "smiles": "C1[C@H]2[C@@H]([C@@H](S1)CCCCC(=O)O)NC(=O)N2"
+  },
+  {
+   "name": "retinol",
+   "qid": "Q424976",
+   "smiles": "CC(=C/CO)\\C=C\\C=C(C)\\C=C\\C1=C(C)CCCC1(C)C"
+  },
+  {
+   "name": "β-carotene",
+   "qid": "Q306135",
+   "smiles": "CC1=C(C(CCC1)(C)C)/C=C/C(=C/C=C/C(=C/C=C/C=C(/C=C/C=C(/C=C/C2=C(CCCC2(C)C)C)\\C)\\C)/C)/C"
+  },
+  {
+   "name": "capsaicin",
+   "qid": "Q273169",
+   "smiles": "CC(C)/C=C/CCCCC(=O)NCC1=CC(=C(C=C1)O)OC"
+  },
+  {
+   "name": "L-menthol",
+   "qid": "Q407418",
+   "smiles": "CC(C)[C@@H]1CC[C@@H](C)C[C@H]1O"
+  },
+  {
+   "name": "vanillin",
+   "qid": "Q33495",
+   "smiles": "COC1=C(C=CC(=C1)C=O)O"
+  },
+  {
+   "name": "(E)-cinnamaldehyde",
+   "qid": "Q204036",
+   "smiles": "C1=CC=C(C=C1)/C=C/C=O"
+  },
+  {
+   "name": "(±)-limonene",
+   "qid": "Q278809",
+   "smiles": "CC1=CCC(CC1)C(=C)C"
+  },
+  {
+   "name": "eugenol",
+   "qid": "Q423357",
+   "smiles": "COC1=C(C=CC(=C1)CC=C)O"
+  },
+  {
+   "name": "camphor",
+   "qid": "Q181559",
+   "smiles": "CC1(C2CCC1(C(=O)C2)C)C"
+  },
+  {
+   "name": "(±)-carvone",
+   "qid": "Q416800",
+   "smiles": "CC1=CCC(CC1=O)C(=C)C"
+  },
+  {
+   "name": "linalool",
+   "qid": "Q410932",
+   "smiles": "CC(=CCCC(C)(C=C)O)C"
+  },
+  {
+   "name": "geraniol",
+   "qid": "Q410836",
+   "smiles": "CC(=CCC/C(=C/CO)/C)C"
+  },
+  {
+   "name": "thymol",
+   "qid": "Q408883",
+   "smiles": "CC1=CC(=C(C=C1)C(C)C)O"
+  },
+  {
+   "name": "ethyl acetate",
+   "qid": "Q407153",
+   "smiles": "CCOC(=O)C"
+  },
+  {
+   "name": "diethyl ether",
+   "qid": "Q202218",
+   "smiles": "CCOCC"
+  },
+  {
+   "name": "chloroform",
+   "qid": "Q172275",
+   "smiles": "C(Cl)(Cl)Cl"
+  },
+  {
+   "name": "dichloromethane",
+   "qid": "Q421748",
+   "smiles": "C(Cl)Cl"
+  },
+  {
+   "name": "carbon tetrachloride",
+   "qid": "Q225045",
+   "smiles": "C(Cl)(Cl)(Cl)Cl"
+  },
+  {
+   "name": "hexane",
+   "qid": "Q150440",
+   "smiles": "CCCCCC"
+  },
+  {
+   "name": "cyclohexane",
+   "qid": "Q211433",
+   "smiles": "C1CCCCC1"
+  },
+  {
+   "name": "styrene",
+   "qid": "Q28917",
+   "smiles": "C=CC1=CC=CC=C1"
+  },
+  {
+   "name": "aniline",
+   "qid": "Q186414",
+   "smiles": "C1=CC=C(C=C1)N"
+  },
+  {
+   "name": "pyridine",
+   "qid": "Q210385",
+   "smiles": "C1=CC=NC=C1"
+  },
+  {
+   "name": "furan",
+   "qid": "Q243992",
+   "smiles": "C1=COC=C1"
+  },
+  {
+   "name": "thiophene",
+   "qid": "Q305364",
+   "smiles": "C1=CSC=C1"
+  },
+  {
+   "name": "pyrrole",
+   "qid": "Q242627",
+   "smiles": "C1=CNC=C1"
+  },
+  {
+   "name": "1H-indole",
+   "qid": "Q319541",
+   "smiles": "C1=CC=C2C(=C1)C=CN2"
+  },
+  {
+   "name": "imidazole",
+   "qid": "Q328692",
+   "smiles": "C1=CN=CN1"
+  },
+  {
+   "name": "morphine",
+   "qid": "Q81225",
+   "smiles": "CN1CC[C@]23[C@@H]4[C@H]1CC5=C2C(=C(C=C5)O)O[C@H]3[C@H](C=C4)O"
+  },
+  {
+   "name": "codeine",
+   "qid": "Q174723",
+   "smiles": "CN1CC[C@]23[C@@H]4[C@H]1CC5=C2C(=C(C=C5)OC)O[C@H]3[C@H](C=C4)O"
+  },
+  {
+   "name": "quinine",
+   "qid": "Q189522",
+   "smiles": "COC1=CC2=C(C=CN=C2C=C1)[C@H]([C@@H]3C[C@@H]4CCN3C[C@@H]4C=C)O"
+  },
+  {
+   "name": "benzylpenicillin",
+   "qid": "Q258450",
+   "smiles": "CC1([C@@H](N2[C@H](S1)[C@@H](C2=O)NC(=O)CC3=CC=CC=C3)C(=O)O)C"
+  },
+  {
+   "name": "amoxicillin",
+   "qid": "Q201928",
+   "smiles": "CC1([C@@H](N2[C@H](S1)[C@@H](C2=O)NC(=O)[C@@H](C3=CC=C(C=C3)O)N)C(=O)O)C"
+  },
+  {
+   "name": "metformin",
+   "qid": "Q19484",
+   "smiles": "[H]/N=C(/N)\\N/C(=N\\[H])/N(C)C"
+  },
+  {
+   "name": "atorvastatin",
+   "qid": "Q668093",
+   "smiles": "CC(C)C1=C(C(=C(N1CC[C@H](C[C@H](CC(=O)O)O)O)C2=CC=C(C=C2)F)C3=CC=CC=C3)C(=O)NC4=CC=CC=C4"
+  },
+  {
+   "name": "omeprazole",
+   "qid": "Q422210",
+   "smiles": "CC1=CN=C(C(=C1OC)C)CS(=O)C2=NC3=C(N2)C=C(C=C3)OC"
+  },
+  {
+   "name": "lisinopril",
+   "qid": "Q412208",
+   "smiles": "C1C[C@H](N(C1)C(=O)[C@H](CCCCN)N[C@@H](CCC2=CC=CC=C2)C(=O)O)C(=O)O"
+  },
+  {
+   "name": "amlodipine",
+   "qid": "Q411347",
+   "smiles": "CCOC(=O)C1=C(NC(=C(C1C2=CC=CC=C2Cl)C(=O)OC)C)COCCN"
+  },
+  {
+   "name": "L-thyroxine",
+   "qid": "Q773449",
+   "smiles": "C1=C(C=C(C(=C1I)OC2=CC(=C(C(=C2)I)O)I)I)C[C@@H](C(=O)O)N"
+  },
+  {
+   "name": "sertraline",
+   "qid": "Q407617",
+   "smiles": "CN[C@H]1CC[C@H](C2=CC=CC=C12)C3=CC(=C(C=C3)Cl)Cl"
+  },
+  {
+   "name": "fluoxetine",
+   "qid": "Q422244",
+   "smiles": "CNCCC(C1=CC=CC=C1)OC2=CC=C(C=C2)C(F)(F)F"
+  },
+  {
+   "name": "diazepam",
+   "qid": "Q210402",
+   "smiles": "CN1C(=O)CN=C(C2=C1C=CC(=C2)Cl)C3=CC=CC=C3"
+  },
+  {
+   "name": "sildenafil",
+   "qid": "Q191521",
+   "smiles": "CCCC1=NN(C2=C1N=C(NC2=O)C3=C(C=CC(=C3)S(=O)(=O)N4CCN(CC4)C)OCC)C"
+  },
+  {
+   "name": "loratadine",
+   "qid": "Q424049",
+   "smiles": "CCOC(=O)N1CCC(=C2C3=C(CCC4=C2N=CC=C4)C=C(C=C3)Cl)CC1"
+  },
+  {
+   "name": "cetirizine",
+   "qid": "Q423075",
+   "smiles": "C1CN(CCN1CCOCC(=O)O)C(C2=CC=CC=C2)C3=CC=C(C=C3)Cl"
+  },
+  {
+   "name": "diphenhydramine",
+   "qid": "Q413486",
+   "smiles": "CN(C)CCOC(C1=CC=CC=C1)C2=CC=CC=C2"
+  },
+  {
+   "name": "(+)-pseudoephedrine",
+   "qid": "Q263958",
+   "smiles": "C[C@@H]([C@H](C1=CC=CC=C1)O)NC"
+  },
+  {
+   "name": "dextromethorphan",
+   "qid": "Q407781",
+   "smiles": "COC1=CC=C2C[C@H]3[C@H]4CCCC[C@@]4(CCN3C)C2=C1"
+  },
+  {
+   "name": "lidocaine",
+   "qid": "Q216935",
+   "smiles": "CCN(CC)C/C(=N\\C1=C(C=CC=C1C)C)/O"
+  },
+  {
+   "name": "benzocaine",
+   "qid": "Q422745",
+   "smiles": "CCOC(=O)C1=CC=C(C=C1)N"
+  },
+  {
+   "name": "saccharin",
+   "qid": "Q191381",
+   "smiles": "C1=CC=C2C(=C1)C(=O)NS2(=O)=O"
+  },
+  {
+   "name": "aspartame",
+   "qid": "Q182040",
+   "smiles": "COC(=O)[C@H](CC1=CC=CC=C1)NC(=O)[C@H](CC(=O)O)N"
+  },
+  {
+   "name": "sucralose",
+   "qid": "Q410209",
+   "smiles": "OC[C@H]1O[C@H](O[C@]2(CCl)O[C@H](CCl)[C@@H](O)[C@@H]2O)[C@H](O)[C@@H](O)[C@H]1Cl"
+  },
+  {
+   "name": "monosodium L-glutamate",
+   "qid": "Q179678",
+   "smiles": "[H+].[Na+].N[C@@H](CCC([O-])=O)C([O-])=O"
+  },
+  {
+   "name": "sodium bicarbonate",
+   "qid": "Q179731",
+   "smiles": "C(=O)(O)[O-].[Na+]"
+  },
+  {
+   "name": "sulfuric acid",
+   "qid": "Q4118",
+   "smiles": "OS(O)(=O)=O"
+  },
+  {
+   "name": "nitric acid",
+   "qid": "Q83320",
+   "smiles": "[N+](=O)(O)[O-]"
+  },
+  {
+   "name": "phosphoric acid",
+   "qid": "Q184782",
+   "smiles": "OP(=O)(O)O"
+  },
+  {
+   "name": "carbon dioxide",
+   "qid": "Q1997",
+   "smiles": "C(=O)=O"
+  },
+  {
+   "name": "nitrous oxide",
+   "qid": "Q905750",
+   "smiles": "N#[N+][O-]"
+  },
+  {
+   "name": "ozone",
+   "qid": "Q36933",
+   "smiles": "[O-][O+]=O"
+  },
+  {
+   "name": "sulfur dioxide",
+   "qid": "Q5282",
+   "smiles": "O=S=O"
+  },
+  {
+   "name": "hydrogen sulfide",
+   "qid": "Q170591",
+   "smiles": "S"
+  },
+  {
+   "name": "coumarin",
+   "qid": "Q111812",
+   "smiles": "C1=CC=C2C(=C1)C=CC(=O)O2"
+  },
+  {
+   "name": "resveratrol",
+   "qid": "Q407329",
+   "smiles": "C1=CC(=CC=C1/C=C/C2=CC(=CC(=C2)O)O)O"
+  },
+  {
+   "name": "quercetin",
+   "qid": "Q409478",
+   "smiles": "C1=CC(=C(C=C1C2=C(C(=O)C3=C(C=C(C=C3O2)O)O)O)O)O"
+  },
+  {
+   "name": "curcumin",
+   "qid": "Q312266",
+   "smiles": "COC1=C(C=CC(=C1)/C=C/C(=O)CC(=O)/C=C/C2=CC(=C(C=C2)O)OC)O"
+  },
+  {
+   "name": "piperine",
+   "qid": "Q414501",
+   "smiles": "C1CCN(CC1)C(=O)/C=C/C=C/C2=CC3=C(C=C2)OCO3"
+  },
+  {
+   "name": "allicin",
+   "qid": "Q409641",
+   "smiles": "C=CCSS(=O)CC=C"
+  },
+  {
+   "name": "D-(−)-salicin",
+   "qid": "Q419173",
+   "smiles": "C1=CC=C(C(=C1)CO)O[C@H]2[C@@H]([C@H]([C@@H]([C@H](O2)CO)O)O)O"
+  },
+  {
+   "name": "oleic acid",
+   "qid": "Q207688",
+   "smiles": "CCCCCCCC\\C=C/CCCCCCCC(O)=O"
+  },
+  {
+   "name": "linoleic acid",
+   "qid": "Q407426",
+   "smiles": "CCCCC/C=C\\C/C=C\\CCCCCCCC(=O)O"
+  },
+  {
+   "name": "palmitic acid",
+   "qid": "Q209727",
+   "smiles": "CCCCCCCCCCCCCCCC(=O)O"
+  },
+  {
+   "name": "stearic acid",
+   "qid": "Q209685",
+   "smiles": "CCCCCCCCCCCCCCCCCC(=O)O"
+  },
+  {
+   "name": "butyric acid",
+   "qid": "Q193213",
+   "smiles": "CCCC(=O)O"
+  },
+  {
+   "name": "propionic acid",
+   "qid": "Q422956",
+   "smiles": "CCC(=O)O"
+  },
+  {
+   "name": "succinic acid",
+   "qid": "Q213050",
+   "smiles": "C(CC(=O)O)C(=O)O"
+  },
+  {
+   "name": "fumaric acid",
+   "qid": "Q139857",
+   "smiles": "C(=C/C(=O)O)\\C(=O)O"
+  },
+  {
+   "name": "pyruvic acid",
+   "qid": "Q213580",
+   "smiles": "CC(=O)C(=O)O"
+  },
+  {
+   "name": "glutathione",
+   "qid": "Q116907",
+   "smiles": "C(CC(=O)N[C@@H](CS)C(=O)NCC(=O)O)[C@@H](C(=O)O)N"
+  },
+  {
+   "name": "taurine",
+   "qid": "Q207051",
+   "smiles": "C(CS(=O)(=O)O)N"
+  },
+  {
+   "name": "carnitine",
+   "qid": "Q243309",
+   "smiles": "C[N+](C)(C)C[C@H](O)CC([O-])=O"
+  },
+  {
+   "name": "choline",
+   "qid": "Q193166",
+   "smiles": "C[N+](C)(C)CCO"
+  },
+  {
+   "name": "inositol",
+   "qid": "Q407997",
+   "smiles": "C1(C(C(C(C(C1O)O)O)O)O)O"
+  },
+  {
+   "name": "xylitol",
+   "qid": "Q212093",
+   "smiles": "C([C@H]([C@@H]([C@H](CO)O)O)O)O"
+  },
+  {
+   "name": "D-sorbitol",
+   "qid": "Q245280",
+   "smiles": "C([C@H]([C@H]([C@@H]([C@H](CO)O)O)O)O)O"
+  },
+  {
+   "name": "D-(-)-mannitol",
+   "qid": "Q407646",
+   "smiles": "C([C@H]([C@H]([C@@H]([C@@H](CO)O)O)O)O)O"
+  },
+  {
+   "name": "erythritol",
+   "qid": "Q421873",
+   "smiles": "C([C@H]([C@H](CO)O)O)O"
+  },
+  {
+   "name": "alpha,alpha-trehalose",
+   "qid": "Q421773",
+   "smiles": "OC[C@H]1O[C@H](O[C@H]2O[C@H](CO)[C@@H](O)[C@H](O)[C@H]2O)[C@H](O)[C@@H](O)[C@@H]1O"
+  },
+  {
+   "name": "β-D-2-deoxyribose",
+   "qid": "Q192454",
+   "smiles": "C1[C@@H]([C@H](O[C@H]1O)CO)O"
+  },
+  {
+   "name": "D-glucosamine",
+   "qid": "Q327506",
+   "smiles": "C([C@@H]1[C@H]([C@@H]([C@H](C(O1)O)N)O)O)O"
+  },
+  {
+   "name": "dimethyl sulfoxide",
+   "qid": "Q407927",
+   "smiles": "CS(=O)C"
+  },
+  {
+   "name": "tetrahydrofuran",
+   "qid": "Q278332",
+   "smiles": "C1CCOC1"
+  },
+  {
+   "name": "acetonitrile",
+   "qid": "Q408047",
+   "smiles": "CC#N"
+  },
+  {
+   "name": "nitrobenzene",
+   "qid": "Q407290",
+   "smiles": "C1=CC=C(C=C1)[N+](=O)[O-]"
+  },
+  {
+   "name": "bisphenol A",
+   "qid": "Q271980",
+   "smiles": "CC(C)(C1=CC=C(C=C1)O)C2=CC=C(C=C2)O"
+  },
+  {
+   "name": "edetic acid",
+   "qid": "Q408032",
+   "smiles": "C(CN(CC(=O)O)CC(=O)O)N(CC(=O)O)CC(=O)O"
+  },
+  {
+   "name": "sodium lauryl sulfate",
+   "qid": "Q422241",
+   "smiles": "CCCCCCCCCCCCOS(=O)(=O)[O-].[Na+]"
+  },
+  {
+   "name": "triclosan",
+   "qid": "Q408646",
+   "smiles": "C1=CC(=C(C=C1Cl)O)OC2=C(C=C(C=C2)Cl)Cl"
+  },
+  {
+   "name": "methylparaben",
+   "qid": "Q229987",
+   "smiles": "COC(=O)C1=CC=C(C=C1)O"
+  },
+  {
+   "name": "hydroquinone",
+   "qid": "Q419164",
+   "smiles": "C1=CC(=CC=C1O)O"
+  },
+  {
+   "name": "benzoyl peroxide",
+   "qid": "Q411424",
+   "smiles": "C1=CC=C(C=C1)C(=O)OOC(=O)C2=CC=CC=C2"
+  },
+  {
+   "name": "tretinoin",
+   "qid": "Q29417",
+   "smiles": "CC1=C(C(CCC1)(C)C)/C=C/C(=C/C=C/C(=C/C(=O)O)/C)/C"
+  },
+  {
+   "name": "minoxidil",
+   "qid": "Q424165",
+   "smiles": "C1=C([N+](=C(N=C1N2CCCCC2)N)[O-])N"
+  },
+  {
+   "name": "oxybenzone",
+   "qid": "Q518114",
+   "smiles": "COC1=CC(=C(C=C1)C(=O)C2=CC=CC=C2)O"
+  },
+  {
+   "name": "avobenzone",
+   "qid": "Q2775914",
+   "smiles": "CC(C)(C)C1=CC=C(C=C1)C(=O)CC(=O)C2=CC=C(C=C2)OC"
+  },
+  {
+   "name": "diethyltoluamide",
+   "qid": "Q408389",
+   "smiles": "CCN(CC)C(=O)C1=CC(=CC=C1)C"
+  },
+  {
+   "name": "permethrin",
+   "qid": "Q411635",
+   "smiles": "CC1(C(C1C(=O)OCC2=CC(=CC=C2)OC3=CC=CC=C3)C=C(Cl)Cl)C"
+  },
+  {
+   "name": "glyphosate",
+   "qid": "Q407232",
+   "smiles": "C(C(=O)O)NCP(=O)(O)O"
+  },
+  {
+   "name": "bilirubin",
+   "qid": "Q104219",
+   "smiles": "CC1=C(NC(=C1CCC(=O)O)CC2=C(C(=C(N2)/C=C\\3/C(=C(C(=O)N3)C)C=C)C)CCC(=O)O)/C=C\\4/C(=C(C(=O)N4)C=C)C"
+  },
+  {
+   "name": "(E)-cinnamic acid",
+   "qid": "Q164785",
+   "smiles": "C1=CC=C(C=C1)/C=C/C(=O)O"
+  },
+  {
+   "name": "gallic acid",
+   "qid": "Q375837",
+   "smiles": "C1=C(C=C(C(=C1O)O)O)C(=O)O"
+  },
+  {
+   "name": "tannic acid",
+   "qid": "Q427956",
+   "smiles": "C1=C(C=C(C(=C1O)O)O)C(=O)OC2=CC(=CC(=C2O)O)C(=O)OC[C@@H]3[C@H]([C@@H]([C@H]([C@@H](O3)OC(=O)C4=CC(=C(C(=C4)OC(=O)C5=CC(=C(C(=C5)O)O)O)O)O)OC(=O)C6=CC(=C(C(=C6)OC(=O)C7=CC(=C(C(=C7)O)O)O)O)O)OC(=O)C8=CC(=C(C(=C8)OC(=O)C9=CC(=C(C(=C9)O)O)O)O)O)OC(=O)C1=CC(=C(C(=C1)OC(=O)C1=CC(=C(C(=C1)O)O)O)O)O"
+  }
+ ]
+}
