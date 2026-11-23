@@ -8,5 +8,5 @@
 # 21 November (2): human and animal medicine labels (DailyMed, Drugs@FDA, Health Canada brand names), 23 books.
 # 21 November (3): animal sounds (NPS Sound Gallery descriptions and links).
 # 21 November (4): with the animal sounds book, the K-12 school books and open courses (LibreTexts, BCcampus, Illustrative Mathematics, Siyavula, OpenStax). Personal-use courses go in a later run.
-# 23 November: money and work, languages, travel, civics, driving, computer basics, household, knots and outdoors, pools, motorcycles, disability, veterans, education, relationships and more.
-money-work,languages,travel,civics,driving,computer-basics,household,knots-outdoor,pools-spas,motorcycles-rvs,disability,veterans,education,relationships,immigration,mental-health,fitness-nutrition,sexual-health,aging-end-of-life,wilderness-first-aid
+# 23 November (2): homesteading, outdoors, card and board games, games and hobbies, sacred texts, science you can use, plant identification and literature.
+homestead,outdoors,card-games,board-games,games-hobbies,sacred-texts,science-use,plant-id,literature
