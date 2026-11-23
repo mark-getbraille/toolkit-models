@@ -120,8 +120,8 @@ NOT_INCLUDED = [
      "an overview and FAQs, no guide a program can read as a book (checked 2026-11-22). Link-only. Index: "
      "https://www.justice.gov/crs"),
     ("FEMA Emergency Management Institute: Effective Communication (IS-242.c) and Leadership and Influence (IS-240)",
-     "Public domain, but the course materials come only through FEMA's course player, and no copy was found on the "
-     "Internet Archive (checked 2026-11-22). Link-only. Index: "
+     "Public domain; not repeated here: both are built whole from FEMA's own lessons in the FEMA courses group "
+     "(fema_is.py: fema:is242c and fema:is240c, request word fema-management). Index: "
      "https://training.fema.gov/is/courseoverview.aspx?code=IS-242.c"),
     ("FTC: romance scams and online dating safety", "Public domain, but consumer.ftc.gov refuses programs (403); the "
      "privacy collection's scam books cover romance scams. Link-only. Index: "

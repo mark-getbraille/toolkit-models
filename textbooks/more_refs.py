@@ -160,6 +160,8 @@ MODULES = [
     "teach_world",          # Canada, UK (with Oak), Ireland, Australia, NZ, other countries, NGOs, classics (tworld:)
     # trades, apprenticeship and workplace safety (the owner's request of 2026-11-23), its own group
     "trades",               # OSHA booklets and standards (29 CFR 1910, 1926, 1928), NIOSH, MSHA, DOE, BLS, old trade books, index (trade:)
+    # FEMA Independent Study courses (the owner's request of 2026-11-23), their own group
+    "fema_is",              # every FEMA EMI Independent Study course: student manuals and web lessons, index (fema:)
 ]
 
 _loaded = {}
