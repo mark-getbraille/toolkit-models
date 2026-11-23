@@ -41,6 +41,11 @@ GROUPS = {}
 
 # The photography collection's request word (the photography helper's branch; said generally until it is merged).
 PHOTOGRAPHY_WORD = "photography"
+# Other helpers' collections on the craft trade pages, named by their request words until they are merged (their
+# branches of 2026-11-23): the Peace Corps beekeeping manuals are in the appropriate technology farming books
+# (approtech.py), and hide tanning is in the homestead fill books (homestead_fill.py).
+APPROTECH_FARMING_WORD = "apt-farming"
+TANNING_WORD = "trapping-tanning"
 
 # Which crafts_books.py subjects go on which page of the index (a subject not named here goes on "Other crafts").
 CB_PAGES = {
@@ -138,6 +143,8 @@ def sections():
                        "smoker safety notes (the beekeeping books are in the homesteading group).",
          trade_books("bees") + HOMESTEAD_BEE_KEYS + [
              ("word", "ctrade-bees", "Every beekeeping book of the craft trades collection"),
+             ("word", APPROTECH_FARMING_WORD, "The Peace Corps beekeeping manuals, with the appropriate technology "
+                                              "farming books"),
              ("manuals", "homestead", "Beekeeping equipment, with the homestead equipment manuals"),
              ("pack", "commons_homestead_poultry_bees", "Beehives, bee smokers, honey extractors and beekeeping suits"),
              ("pack", "open_images_homestead", "Honeycomb, beekeepers and apiaries in photos"),
@@ -156,6 +163,11 @@ def sections():
                             "canvas and webbing repair.",
          trade_books("leather") + [
              ("word", "ctrade-leather", "Every leather and canvas book of the craft trades collection"),
+             ("word", TANNING_WORD, "Trapping and tanning hides, with the homestead books"),
+             ("key", "skill:army_fm_10_16_general_fabric_repair_2000", "General Fabric Repair (FM 10-16, 2000): "
+                                                                      "canvas, webbing, clothing and textile repair"),
+             ("word", "service-skills-quartermaster", "The service skills books on fabric repair, sewing machine "
+                                                      "care and parachutes"),
              ("manuals", "craft_trades_tools", "Leather sewing machines and leather tools"),
              ("pack", "commons_upholstery_leather_shoes", "Leatherwork, shoemaking and cobblers"),
              ("pack", "commons_craft_trades", "Saddlers, saddleries, saddle making, leather carving and swivel "

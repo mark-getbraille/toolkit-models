@@ -101,7 +101,7 @@ def test_safety_notes_say_what_matters():
 
 def test_military_manuals_judged_by_the_release_rule():
     army = [e for e in CT.PDFS if e["name"].startswith("army_")]
-    assert len(army) == 3
+    assert len(army) == 2
     assert all(e["distribution_a"] and e["licence"] == sources.US_GOV for e in army)
 
 
@@ -137,7 +137,7 @@ def test_not_included():
     for row in CT.NOT_INCLUDED:
         assert row in sources.NOT_INCLUDED and "Index: http" in row[1], row[0]
     names = " ".join(r[0] for r in CT.NOT_INCLUDED)
-    for words in ("Extension", "Peace Corps", "blacksmithing", "Parachute Rigger", "makers' manuals"):
+    for words in ("Extension", "Peace Corps", "blacksmithing", "Parachute Rigger", "FM 10-16", "makers' manuals"):
         assert words in names, words
 
 

@@ -61,7 +61,8 @@ def test_index_lists_every_craft_book_and_photography():
     sewing = {f"pdf:{e['name']}" for e in TT.SEWING}
     trades = {f"ctrade:{e['name']}" for e in CT.GUIDES + CT.PDFS}
     bees = {what for _k, what, _t in A.HOMESTEAD_BEE_KEYS}
-    assert crafts | textiles | sewing | trades | bees | {"make:index"} == keys
+    service = {"skill:army_fm_10_16_general_fabric_repair_2000"}      # service_skills.py's, on the leather page
+    assert crafts | textiles | sewing | trades | bees | service | {"make:index"} == keys
     assert "craft:webster_quilts_1915" in textiles and "craft:mickel_leather_work_1915" in textiles
     home_repair = {f"craft:{g['name']}" for g in HC.GUIDES + HC.PDFS if g["group"] == HC.GROUP}
     assert "craft:epa_safe_pest_control" in home_repair and not home_repair & keys

@@ -44,7 +44,8 @@ What this module builds, each book IN FULL (machine-read text, one web page per 
     the eyes, on annealing glass and on making a large glass disk, and the USDA's clothing bulletins (fitting, mending,
     make-overs, coat making, work clothes, pattern alteration, hand sewing, menswear jackets, sewing machine care);
   - US Army manuals, judged by the release rule (military_release.py) on their own front matter at every build: TM
-    10-430 The Saddler (1942), TM 10-269 Repair of Canvas and Webbing (1948) and FM 10-16 General Fabric Repair (2000);
+    10-430 The Saddler (1942) and TM 10-269 Repair of Canvas and Webbing (1948). FM 10-16 General Fabric Repair (2000)
+    and the military sewing machine and parachute courses are service_skills.py's (skill:), listed in arts:index;
   - Wikibooks' Beekeeping and Sewing (CC BY-SA 4.0, share-alike: kept separate as every Wikibooks book is).
 
 Not built (NOT_INCLUDED, each with its index address): university Extension beekeeping, sewing and leather guides
@@ -432,10 +433,6 @@ LEATHER = [
          "The US Army's manual for repairing tents, tarpaulins, covers, packs and web equipment: canvas and webbing, "
          "hand and machine stitches, patches and darns, grommets, snaps and buckles, and waterproofing.",
          CANVAS_NOTE),
-    army("leather", "army_fm_10_16_general_fabric_repair_2000", "General Fabric Repair (FM 10-16, 2000)",
-         "Fabric, canvas and leather repair", ARMY, "fm-10-16-general-fabric-repair-2000", 2000,
-         "The US Army's field manual for the fabric repair shop: sewing machines and their care, stitches and seams, "
-         "repairing clothing, tents, canvas and webbing, and leather and rubber items.", CANVAS_NOTE),
 ]
 
 # ====================================================================== clothing making and repair
@@ -615,7 +612,7 @@ LICENCE_LINES = {
     "ctrade_us_gov": "USDA, APHIS and National Bureau of Standards publications: works of the US government (17 U.S.C. "
                      "105, checked on govinfo.gov's policies page at every build), read from the National "
                      "Agricultural Library's and NIST's copies on the Internet Archive.",
-    "ctrade_army": "US Army manuals TM 10-430, TM 10-269 and FM 10-16: judged at every build by the release rule "
+    "ctrade_army": "US Army manuals TM 10-430 and TM 10-269: judged at every build by the release rule "
                    "(military_release.py) on their own front matter, from the Internet Archive's copies.",
     "ctrade_wikibooks": "Wikibooks' Beekeeping and Sewing: CC BY-SA 4.0 (share-alike), the licence line checked at "
                         "every build; kept apart from the permissive books as every Wikibooks book is.",
@@ -637,8 +634,9 @@ NOT_INCLUDED = [
      "Not checked one by one (which volume and printing each is), so left out for now; the Pattern Drafting "
      "(1920) and Tailored Buttonholes (1923) volumes are built. Index: https://archive.org/search?query=woman%27s+"
      "institute+library+of+dressmaking"),
-    ("Navy Parachute Rigger and other service fabric manuals", "Left to the navy rates and service skills collections, "
-     "so that no manual is built twice. Index: https://archive.org/search?query=parachute+rigger"),
+    ("Navy Parachute Rigger, Army FM 10-16 General Fabric Repair and other service fabric manuals", "Left to the navy "
+     "rates and service skills collections (service_skills.py builds FM 10-16 as skill:army_fm_10_16_general_fabric_"
+     "repair_2000, listed in arts:index), so that no manual is built twice. Index: https://archive.org/search?query=parachute+rigger"),
     ("Leather, glass and sewing machine makers' manuals", "Their makers' copyright; the manual library lists them "
      "(arts:index links the collections). Index: https://archive.org/details/manuals"),
 ]
