@@ -116,6 +116,11 @@ jobs:
       # The free Oak National Academy API key for the Oak lesson books (textbooks/teach_world.py); without the secret
       # those books are left out and the manifest says where to ask for one.
       OAK_API_KEY: ${{ secrets.OAK_API_KEY }}
+      # More optional free keys (each book says where to sign up when its key is missing): New York Senate Open
+      # Legislation (state_laws.py), USPTO Open Data Portal (patents.py), openFDA (more requests a day).
+      NYSENATE_API_KEY: ${{ secrets.NYSENATE_API_KEY }}
+      USPTO_ODP_API_KEY: ${{ secrets.USPTO_ODP_API_KEY }}
+      OPENFDA_API_KEY: ${{ secrets.OPENFDA_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
