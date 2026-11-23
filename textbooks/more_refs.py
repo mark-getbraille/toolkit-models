@@ -173,6 +173,10 @@ MODULES = [
     # cooking basics and more fitness and nutrition (the owner's request of 2026-11-23)
     "cooking_basics",       # classic cook books, VA and USDA recipes, budget cooking, index (cook:, shared with cookbooks.py)
     "fitness_more",         # military fitness manuals, older and blind exercisers, special diets, old physical culture (fit:)
+    # animal care and veterinary books (the owner's request of 2026-11-23), their own group
+    "animal_care",          # APHIS, FDA, CDC zoonoses, USDA special reports and yearbooks, Army horse and dog manuals, old vet books (vet:)
+    # weather, rocks and the sky (the owner's request of 2026-11-23), their own group
+    "earth_sky",            # NWS spotters, weather manuals, USGS booklets, BLM, MSHA, NASA eclipses and planets, old books (earth:)
 ]
 
 _loaded = {}
