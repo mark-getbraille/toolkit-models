@@ -177,6 +177,10 @@ MODULES = [
     "animal_care",          # APHIS, FDA, CDC zoonoses, USDA special reports and yearbooks, Army horse and dog manuals, old vet books (vet:)
     # weather, rocks and the sky (the owner's request of 2026-11-23), their own group
     "earth_sky",            # NWS spotters, weather manuals, USGS booklets, BLM, MSHA, NASA eclipses and planets, old books (earth:)
+    # music, small business and taxes, everyday maths (the owner's request of 2026-11-23)
+    "music_learning",       # music theory (open textbooks, old books), method books, braille music, history, index (musiclearn:)
+    "business_tax",         # IRS publications and instructions, IRS small business pages, FTC guides, bookkeeping, index (biz:)
+    "everyday_maths",       # practical, business and mental arithmetic, units and the slide rule, index (emath:)
 ]
 
 _loaded = {}
