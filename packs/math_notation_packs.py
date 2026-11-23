@@ -519,17 +519,23 @@ def wikidata_compounds(titles=CHEMICALS):
     for start in range(0, len(titles), 25):
         batch = titles[start:start + 25]
         data = {}
-        for attempt in range(6):
+        for attempt in range(8):
+            wait = 15 * (attempt + 1)
             try:
                 r = s.get(WIKIDATA_API, timeout=60, params={
                     "action": "wbgetentities", "sites": "enwiki", "titles": "|".join(batch), "normalize": 1,
                     "props": "labels|claims", "languages": "en", "format": "json", "maxlag": 5})
+                # Wikimedia answers "too many requests" (429) or, when its servers lag, a 200 whose JSON is an
+                # "error" (maxlag) with no entities: both mean wait (as long as Retry-After asks) and try again.
                 if r.status_code == 200:
-                    data = r.json()
-                    break
+                    body = r.json()
+                    if "entities" in body:
+                        data = body
+                        break
+                wait = max(wait, int(r.headers.get("Retry-After") or 0))
             except Exception:  # noqa: BLE001 - wait longer each time
                 pass
-            time.sleep(15 * (attempt + 1))
+            time.sleep(min(wait, 300))
         for qid, entity in sorted((data.get("entities") or {}).items()):
             if not qid.startswith("Q"):
                 continue
