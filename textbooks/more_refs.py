@@ -141,6 +141,14 @@ MODULES = [
     "education_more",       # education: ED booklets (ERIC copies), FAFSA form, old education classics (edumore:)
     # official copies for the thin sections, from GovInfo, agency sites and the Internet Archive (2026-11-22)
     "govinfo_fill",         # NHTSA, FEMA, SAMHSA, NIA, CMS, VA, NARA, CDC, CPSC, EPA booklets; Army and Navy manuals (gpo:)
+    # job skills from military trade manuals, its own group (the owner's request of 2026-11-23)
+    "service_skills",       # Army correspondence subcourses, soldier's and technical manuals, MCI, Air Force, Coast Guard (skill:)
+    # remote and long-term-care medicine (the owner's request of 2026-11-23)
+    "remote_medicine",      # ship's medicine chest, JTS prolonged care, SOF handbook, USARIEM, PFA guides, home nursing (rmed:)
+    # US Navy rate training manuals, every rating, by trade (the owner's request of 2026-11-23)
+    "navy_rates",           # Navy rating handbooks (NAVEDTRA, NAVPERS): deck, engineering, Seabees, medical, supply, aviation, electronics, general, ordnance (rate:)
+    # Peace Corps manuals and guides (the owner's request of 2026-11-23), their own group
+    "peace_corps",          # teaching, health, youth, business, agriculture, environment, community, volunteers (pc:)
 ]
 
 _loaded = {}
