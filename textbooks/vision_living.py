@@ -11,8 +11,9 @@ assistant) find everything in one place.
 What this module builds, in plain words, each IN FULL:
   - vision:index, "Blind and low-vision living: a guide to the library": one page per subject (screen readers and
     magnification, braille, braille writer care and repair, orientation and mobility, daily living, rights and
-    services, education and employment, low vision, deafblind, devices and their repair), each listing the books of
-    the library by key with what they hold, the manual collections and picture packs, and the sources that are
+    services, education and employment, low vision, deafblind, devices and their repair, history and inspiration),
+    each listing the books of the library by key with what they hold (blind_living_more.py's books, blind:, among
+    them), the request words that gather a theme, the manual collections and picture packs, and the sources that are
     link-only, with the reason (facts and links only: CC0);
   - the GNOME Orca screen reader's help (help.gnome.org, written by Joanmarie Diggs, "Creative Commons Share Alike
     3.0": a share-alike book), every page: getting started, the Orca modifier, reading, flat review, structural
@@ -207,8 +208,9 @@ GUIDES.append(page_list_book(
 # ====================================================================== the index (facts and links only)
 
 # Each subject: (title, introduction, [entries]). An entry is ("key", key, what it holds) for a book of the library,
-# ("manuals", category key, what it holds) for a manual collection, ("pack", pack key, what it shows) for a picture
-# pack, or ("link", title, address, why it is a link only).
+# ("word", request word, what it holds) for a theme's books asked for together, ("manuals", category key, what it
+# holds) for a manual collection, ("pack", pack key, what it shows) for a picture pack, or ("link", title, address,
+# why it is a link only).
 SECTIONS = [
     ("Screen readers and magnification", "Screen readers, braille translation, keyboard commands, accessible "
      "documents and the web.", [
@@ -219,6 +221,11 @@ SECTIONS = [
         ("key", "atdoc:nvda_addons_gpl2", "NVDA add-ons under GPL version 2, with their documentation"),
         ("key", "atdoc:nvda_addons_open", "NVDA add-ons under other open licences"),
         ("key", "vision:orca_help", "Orca Screen Reader help (GNOME, Linux), every page"),
+        ("key", "blind:brltty_manual", "BRLTTY and BrlAPI Reference Manuals: braille displays on Linux (LGPL)"),
+        ("key", "blind:brltty_guides", "BRLTTY guides: commands, braille tables and the key bindings of every braille "
+                                       "display it supports"),
+        ("key", "a11yc:index", "Accessibility communities: GNOME, ArchWiki and KDE accessibility pages"),
+        ("word", "blind-screen-readers", "The BRLTTY books (request word)"),
         ("key", "atdoc:aem_center", "AEM Center guides: accessible formats, creating accessible documents, EPUB"),
         ("key", "guide:section508_gov", "Section508.gov: creating accessible documents, testing, buying accessible "
                                         "technology"),
@@ -242,6 +249,31 @@ SECTIONS = [
         ("key", "pdf:iceb_rules_of_ueb_2024", "Rules of Unified English Braille, Third Edition 2024 (ICEB), whole and "
                                               "unchanged"),
         ("key", "pdf:braille_music_notation_1930", "Braille Music Notation (American Braille Press, 1930: old)"),
+        ("key", "blind:nls_braille_transcribing_manual_2000", "Instruction Manual for Braille Transcribing, 4th "
+                                                             "edition (NLS, 2000; EBAE, before UEB)"),
+        ("key", "blind:nls_braille_transcribing_manual_1984", "Instruction Manual for Braille Transcribing, 3rd "
+                                                             "edition (NLS, 1984)"),
+        ("key", "blind:nls_braille_transcribing_manual_1977", "Instruction Manual for Braille Transcribing (Library "
+                                                             "of Congress, revised 1971 and 1973)"),
+        ("key", "blind:nls_braille_transcribing_manual_1961", "Instruction Manual for Braille Transcribing, 2nd "
+                                                             "edition (Library of Congress, 1961)"),
+        ("key", "blind:nls_intro_braille_mathematics_1978", "An Introduction to Braille Mathematics (Nemeth Code "
+                                                            "course, NLS, 1978)"),
+        ("key", "blind:nls_dictionary_braille_music_signs_1979", "Dictionary of Braille Music Signs (NLS, 1979)"),
+        ("key", "blind:wait_key_new_york_point_1908", "Key to the New York Point System (Wait, 1908: old code)"),
+        ("key", "blind:uniform_type_committee_fifth_report_1915", "The Uniform Type Committee's report (1915): the "
+                                                                  "war of the dots"),
+        ("key", "blind:loomis_revised_braille_ten_lessons_1924", "Revised Braille in Ten Lessons (Red Cross "
+                                                                 "volunteers, 1924)"),
+        ("key", "blind:irwin_grade_one_half_grade_two_1929", "Grade 1 1/2 and Grade 2 compared (AFB, 1929)"),
+        ("key", "blind:va_introductory_notes_braille_1959", "Introductory Notes on the Braille System (VA, 1959)"),
+        ("key", "lopen:braille_index", "Braille in other languages: the guide"),
+        ("key", "lopen:braille_procede_1829", "Louis Braille's own Procédé (1829, in French)"),
+        ("key", "lopen:moon_light_for_the_blind_1877", "Moon's Light for the Blind (1877): Moon type"),
+        ("key", "guide:access_board_ada_aba_standards", "The ADA and ABA Standards: signs with braille and raised "
+                                                        "characters"),
+        ("word", "blind-nls", "The Library of Congress's braille course books and That All May Read (request word)"),
+        ("word", "blind-braille", "Old braille codes and the war of the dots (request word)"),
         ("key", "atdoc:liblouis_manual", "The liblouis manual (braille translation tables and programming)"),
         ("key", "atdoc:liblouisutdml_manual", "The liblouisutdml manual"),
         ("key", "atdoc:liblouis_tables", "Every liblouis braille table with its metadata"),
@@ -291,6 +323,14 @@ SECTIONS = [
         ("key", "law:cfr_14_382_air_travel_disability", "Air Carrier Access Act rules (14 CFR 382), including "
                                                         "service animals and assistance"),
         ("key", "guide:ada_gov_guidance", "ADA.gov guidance, including service animals"),
+        ("key", "blind:eustis_seeing_eye_1927", "The Seeing Eye (Eustis, 1927): the article that started guide dog "
+                                                "work in America"),
+        ("key", "blind:levy_blindness_and_the_blind_1872", "Blindness and the Blind (Levy, 1872): \"on the blind "
+                                                           "walking alone, and of guides\""),
+        ("key", "blind:villey_world_of_the_blind_1930", "The World of the Blind (Villey, 1930): the sense of "
+                                                        "obstacles and finding one's way"),
+        ("key", "pet:index", "Pet care: the dog care books (for guide dog handlers too)"),
+        ("word", "blind-mobility", "The guide dog book of this area (request word)"),
         ("pack", "commons_mobility_deafblind", "Pictures: orientation and mobility training, sighted guiding, "
                                                "mobility canes, guide horses"),
         ("pack", "commons_crosswalks_signals", "Pictures: crossings, accessible pedestrian signals and push buttons"),
@@ -305,6 +345,10 @@ SECTIONS = [
         ("key", "vision:bep_currency_access", "The free US Currency Reader Program and accessible currency"),
         ("key", "vision:access_board_rx_labels", "Accessible prescription labels: braille, large print, talking labels"),
         ("key", "civic:hud_doj_reasonable_modifications", "Home modifications under the Fair Housing Act"),
+        ("key", "blind:hew_head_start_children_visual_handicaps_1978", "Head Start's guide for parents and teachers "
+                                                                       "of blind preschoolers: self-help skills "
+                                                                       "(1978)"),
+        ("word", "blind-daily-living", "The daily living books of this area (request word)"),
         ("pack", "commons_money_sides", "Pictures: US and Canadian money with how to tell it by touch or low vision"),
         ("pack", "commons_tactile_access", "Pictures: tactile graphics and models, large print, reading machines"),
         ("link", "ScripTalk talking prescription labels (En-Vision America)", "https://www.envisionamerica.com/",
@@ -337,6 +381,19 @@ SECTIONS = [
                                         "surgery)"),
         ("key", "vision:nls_services", "NLS Talking Books and BARD (information pages)"),
         ("key", "eyes:va_blind_rehabilitation", "VA Blind Rehabilitation Service"),
+        ("key", "blind:va_vha_directive_1174", "VHA Directive 1174: the VA's blind and low vision rehabilitation "
+                                               "services"),
+        ("key", "blind:va_coordinated_services_blinded_veterans_1991", "Coordinated Services for Blinded Veterans "
+                                                                       "(VA, 1991)"),
+        ("key", "pdf:irs_pub_501", "IRS Publication 501: the higher standard deduction for blind people"),
+        ("key", "pdf:irs_pub_907_tax_highlights_disabilities", "IRS Publication 907: tax highlights for persons with "
+                                                               "disabilities"),
+        ("key", "pdf:irs_pub_502", "IRS Publication 502: medical expenses, guide dogs and equipment"),
+        ("key", "blind:irs_pub_524", "IRS Publication 524: credit for the elderly or the disabled"),
+        ("key", "pdf:irs_pub_554_tax_guide_seniors", "IRS Publication 554: tax guide for seniors"),
+        ("key", "blind:nls_that_all_may_read_1983", "That All May Read: library service for blind people (NLS, 1983)"),
+        ("key", "blind:hew_services_to_the_blind_1973", "Services to the Blind: A Community Concern (RSA, 1973)"),
+        ("word", "blind-services", "The VA and IRS books (request word)"),
         ("key", "legal:adata_factsheets", "ADA National Network fact sheets"),
         ("link", "SSA Red Book and \"If You Are Blind Or Have Low Vision\"", "https://www.ssa.gov/redbook/",
          "Public domain, but ssa.gov refuses programs: link-only."),
@@ -349,6 +406,12 @@ SECTIONS = [
         ("key", "atdoc:aem_center", "Accessible educational materials, NIMAS and NIMAC"),
         ("key", "parent:cpir_parent_guides", "Parent guides to special education (visual impairment included)"),
         ("key", "pub:eric_open:vision", "Open ERIC papers on blindness and low vision"),
+        ("key", "blind:va_occupations_totally_blinded_veterans_1956", "Occupations of totally blinded veterans (VA, "
+                                                                      "1956: history)"),
+        ("key", "blind:armitage_education_employment_blind_1886", "The Education and Employment of the Blind "
+                                                                  "(Armitage, 1886: history)"),
+        ("key", "blind:oe_teachers_problems_blind_partially_seeing_1933", "Blind and partially seeing children in "
+                                                                          "the classroom (Office of Education, 1933)"),
         ("link", "Job Accommodation Network (askjan.org)", "https://askjan.org/",
          "Its robots.txt shuts out AI readers: link-only."),
         ("link", "AFB CareerConnect and APH's educational products", "https://www.afb.org/",
@@ -365,6 +428,9 @@ SECTIONS = [
      ]),
     ("Deafblind", "Equipment, services and tactile communication.", [
         ("key", "vision:nls_services", "NLS services for deafblind readers"),
+        ("key", "blind:elliott_hall_laura_bridgman_1903", "Laura Bridgman, the first deafblind child educated in "
+                                                          "English (1903)"),
+        ("key", "blind:keller_midstream_1929", "Helen Keller, Midstream: My Later Life (1929)"),
         ("pack", "commons_mobility_deafblind", "Pictures: deafblind people and the Lorm hand alphabet"),
         ("link", "National Deaf-Blind Equipment Distribution Program (iCanConnect, FCC)",
          "https://www.fcc.gov/general/national-deaf-blind-equipment-distribution-program",
@@ -382,6 +448,39 @@ SECTIONS = [
         ("manuals", "vision_devices", "Manuals of braille writers, displays, notetakers, embossers, magnifiers and "
                                       "talking devices (links)"),
         ("manuals", "accessibility", "Accessibility device manuals at the Internet Archive"),
+     ]),
+    ("History and inspiration", "Helen Keller, Laura Bridgman, Louis Braille, the Perkins Institution and the "
+     "history of blind people's lives. Old books use the words of their day.", [
+        ("key", "hist:keller_story_of_my_life_1905", "Helen Keller, The Story of My Life (1903)"),
+        ("key", "blind:keller_world_i_live_in_1908", "Helen Keller, The World I Live In (1908)"),
+        ("key", "blind:keller_optimism_1903", "Helen Keller, Optimism (1903)"),
+        ("key", "blind:keller_song_of_the_stone_wall_1910", "Helen Keller, The Song of the Stone Wall (1910)"),
+        ("key", "blind:keller_out_of_the_dark_1913", "Helen Keller, Out of the Dark (1913)"),
+        ("key", "blind:keller_my_religion_1927", "Helen Keller, My Religion (1927)"),
+        ("key", "blind:keller_midstream_1929", "Helen Keller, Midstream: My Later Life (1929)"),
+        ("key", "blind:elliott_hall_laura_bridgman_1903", "Laura Bridgman: Dr. Howe's Famous Pupil (1903)"),
+        ("key", "blind:lamson_life_education_laura_bridgman_1884", "Life and Education of Laura Dewey Bridgman "
+                                                                   "(Lamson, 1878)"),
+        ("key", "blind:howe_account_laura_bridgman_1843", "Samuel Gridley Howe's account of Laura Bridgman (1843)"),
+        ("key", "blind:perkins_annual_reports_110", "The Perkins Institution's first ten annual reports (Howe, 1833 "
+                                                    "on); the later ones to 1930 under the request word "
+                                                    "blind-history"),
+        ("key", "hist:best_the_blind_1919", "Harry Best, The Blind (1919)"),
+        ("key", "blind:census_blind_in_united_states_1910", "The Blind in the United States, 1910 (Census Bureau)"),
+        ("key", "blind:levy_blindness_and_the_blind_1872", "Blindness and the Blind (Levy, 1872)"),
+        ("key", "blind:villey_world_of_the_blind_1930", "The World of the Blind (Villey, 1930)"),
+        ("key", "blind:braille_centenary_paris_1909", "The Louis Braille centenary at Paris (1909, in French)"),
+        ("key", "blind:new_york_point_or_braille_1909", "New York Point or Braille? The New York hearing of 1909"),
+        ("key", "blind:outlook_for_the_blind_1930", "Outlook for the Blind, 1930 (and 1927 to 1929)"),
+        ("key", "blind:proofreader_cant_see_1916", "A blind proofreader at work (1916)"),
+        ("key", "blind:va_blind_rehabilitation_50_years_1998", "The VA Blind Rehabilitation Service's first 50 years "
+                                                               "(1998)"),
+        ("key", "vision:aph_museum_articles", "APH Museum articles: braille history and devices"),
+        ("word", "blind-history", "Every history book of this area, with all the Perkins reports (request word)"),
+        ("word", "blind-living", "Every book named blind: on these pages (request word; the books named vision: "
+                                 "are under the request word vision-living)"),
+        ("link", "Helen Keller's later books and the American Foundation for the Blind's Helen Keller Archive",
+         "https://www.afb.org/HelenKellerArchive", "Books after 1930 and the archive are copyright: link-only."),
      ]),
 ]
 
@@ -420,7 +519,8 @@ def index_book(name, work, cache=None, left_out=None, limit=None):
                       "A guide to everything in the library about living blind or with low vision, one page per "
                       "subject: screen readers and magnification, braille, braille writer care and repair, "
                       "orientation and mobility, daily living, rights and services, education and employment, low "
-                      "vision, deafblind, and devices and their repair. Each page lists the books by key with what "
+                      "vision, deafblind, devices and their repair, and history and inspiration. Each page lists "
+                      "the books by key with what "
                       "each holds, the manual collections, the picture packs and the sources that are links only, "
                       "with the reason.",
                       "Facts and links only (CC0). Each book listed has its own licence, shown in that book.",
@@ -439,6 +539,8 @@ def index_book(name, work, cache=None, left_out=None, limit=None):
                 manuals.append(f"<li>{B.esc(words)} (manual collection {B.esc(what)})</li>")
             elif kind == "pack":
                 packs.append(f"<li>{B.esc(words)} (picture pack {B.esc(what)})</li>")
+            elif kind == "word":
+                books.append(f"<li>{B.esc(words)} (request word {B.esc(what)})</li>")
             else:
                 links.append(f"<li>{B.esc(what)}: {B.esc(words)}. {B.esc(more[0])}</li>")
         body = f"<p>{B.esc(intro)}</p>"

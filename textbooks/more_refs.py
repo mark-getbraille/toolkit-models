@@ -78,6 +78,7 @@ MODULES = [
     # privacy, security and digital safety (the owner's request of 2026-11-22)
     "privacy_books",        # EFF, Tor, Security in a Box, Privacy Guides, OWASP, GnuPG, CISA, NIST, FTC, IC3, NCSC (privacy:)
     "vision_living",        # blind and low-vision living: the index, Orca, NLS, BEP, Access Board, EEOC, RSA, APH (vision:)
+    "blind_living_more",    # blind and low-vision living, more: NLS braille course books, VA, BRLTTY, old braille codes, Keller, Perkins (blind:)
     "power_books",          # power and electrical: DOE wind, small wind, hydro and solar, Treasury, IRS, Army generators (power:)
     # money, language learning, travel and civics (the owner's request of 2026-11-22)
     "money_work",           # IRS publications, CFPB home buying, DOL, NLRB, HealthCare.gov, O*NET (mw:)
