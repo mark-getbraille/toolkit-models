@@ -543,6 +543,8 @@ SECTIONS = [
         ("key", "apt:pc_wells_construction_1982", "Wells Construction: hand-dug and hand-drilled wells (Peace Corps)"),
         ("key", "apt:usgs_well_drilling_methods_1911", "Well-Drilling Methods (USGS, 1911)"),
         ("key", "apt:isler_well_boring_1902", "Well-Boring for Water (Isler, 1902)"),
+        ("key", "skill:army_fm_5_484_well_drilling_operations_1994", "Multiservice Procedures for Well-Drilling "
+                                                                     "Operations (FM 5-484, 1994)"),
         ("key", "apt:usgs_underground_waters_farm_use_1910", "Underground Waters for Farm Use (USGS, 1910)"),
         ("key", "apt:usgs_ground_water_rural_homeowner_1988", "Ground Water and the Rural Homeowner (USGS)"),
         ("key", "apt:usda_farmstead_water_supply_1925", "Farmstead Water Supply (USDA, 1925)"),
@@ -708,7 +710,8 @@ NOT_INCLUDED = [
      "2026; the ids used here are in notes/approtech-peace-corps-ids.txt. Index: "
      "https://archive.org/search?query=creator%3A%22Information+Collection+and+Exchange%22"),
     ("Army well-drilling manuals: TM 5-297 Well Drilling Operations, FM 5-166 (1975) and FM 5-484 (1994)", "Left to "
-     "the service-skills helper, who takes the Army technical manuals, so no address is used twice. Index: "
+     "the service-skills helper, who takes the Army technical manuals, so no address is used twice; FM 5-484 is "
+     "built there (skill:army_fm_5_484_well_drilling_operations_1994) and linked from the index. Index: "
      "https://archive.org/details/FM_5_484_M_P_W_D_O_1994"),
     ("Village Technology Handbook (VITA) and the Appropriate Technology Library (Village Earth)", "The Internet "
      "Archive's copy of the handbook is a lending-library scan; the library is a mixed collection, mostly in "
