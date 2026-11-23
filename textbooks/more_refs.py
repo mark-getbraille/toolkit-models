@@ -154,6 +154,8 @@ MODULES = [
     "peace_corps",          # teaching, health, youth, business, agriculture, environment, community, volunteers (pc:)
     # thin homestead and self-reliance areas (the owner's request of 2026-11-23)
     "homestead_fill",       # seed saving, butchering, trapping and tanning, forge, stars and navigation, water, nets and baskets (hfill:)
+    # teaching and homeschooling outside the US (the owner's request of 2026-11-23; the US states are in teach-us's module)
+    "teach_world",          # Canada, UK (with Oak), Ireland, Australia, NZ, other countries, NGOs, classics (tworld:)
     # trades, apprenticeship and workplace safety (the owner's request of 2026-11-23), its own group
     "trades",               # OSHA booklets and standards (29 CFR 1910, 1926, 1928), NIOSH, MSHA, DOE, BLS, old trade books, index (trade:)
 ]

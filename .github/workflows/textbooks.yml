@@ -113,6 +113,9 @@ jobs:
       # The free api.data.gov key for the govinfo search books (textbooks/govinfo_kit.py); without the secret those
       # books are left out and the manifest says where to sign up.
       GOVINFO_API_KEY: ${{ secrets.GOVINFO_API_KEY }}
+      # The free Oak National Academy API key for the Oak lesson books (textbooks/teach_world.py); without the secret
+      # those books are left out and the manifest says where to ask for one.
+      OAK_API_KEY: ${{ secrets.OAK_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
