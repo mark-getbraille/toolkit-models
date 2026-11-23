@@ -469,6 +469,20 @@ TOPICS = [
            # non-commercial and research-only (personal use)
            "dvqa", "chartqa", "scienceqa", "ai2d", "streetsignset", "fintabnet_tables", "tqa_diagrams",
            "commons_mail_parcels", "im2latex_formulas")),
+    # Teaching and school (the owner's request of 23 November 2026: teaching and homeschooling is a top-level section):
+    # the school diagrams, textbook figures, formulas, chemical structures and charts a pupil or teacher meets, with
+    # braille and tactile graphics for teaching blind pupils. Every collection here is also in "documents" (or, for
+    # braille and tactile graphics, "vision"), which keep them.
+    Topic("teaching", "Teaching and school",
+          "School and textbook pictures for teaching and homeschooling: science diagrams, textbook figures, maths "
+          "and science formulas, chemical structures, charts and graphs, maps in lessons, and braille and tactile "
+          "graphics for blind pupils.",
+          ("openstax_figures", "synthetic_formulas", "chem_structures", "commons_charts", "owid_charts", "plotqa",
+           "commons_braille_writing", "commons_tactile_access",
+           # share-alike
+           "mapqa",
+           # non-commercial and research-only (personal use)
+           "ai2d", "tqa_diagrams", "scienceqa", "chartqa", "dvqa", "im2latex_formulas")),
     Topic("nature", "Plants, animals and nature",
           "Plants, mushrooms, insects, birds and other animals by name, household pests and pest control, pet and "
           "farm breeds and animals, crops and their diseases, weeds, poisonous plants, mushrooms and wild plants, "

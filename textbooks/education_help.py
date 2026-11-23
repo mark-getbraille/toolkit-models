@@ -1,5 +1,6 @@
-"""Education after school age for the reference library, in its own group "Reference, education" (the owner's request
-of 2026-11-22): paying for college, apprenticeships, job training, and where the rest is in the library. Keys:
+"""Education after school age for the reference library, in the group "Teaching and homeschooling" (group key "k12",
+the top-level section of the owner's request of 23 November 2026; until then its own group "Reference, education";
+the keys and the request word did not change). First asked for on 2026-11-22: paying for college, apprenticeships, job training, and where the rest is in the library. Keys:
 education (every book), edu:<name>.
 
 What this module builds, in plain words, each IN FULL (every page of the guide, read from the publisher's own site):
@@ -46,8 +47,10 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import refs_kit as K  # noqa: E402
 
-GROUP = "education"
-GROUPS = {GROUP: "Reference, education"}
+# "Teaching and homeschooling" (named in sources.GROUPS under its old key "k12", the school books' group): the one
+# top-level section for teaching, school books and homeschooling (the owner's request of 23 November 2026).
+GROUP = "k12"
+GROUPS = {}
 
 # The line every legal or benefits book of these collections ends with (the owner's words of 2026-11-22).
 LEGAL = "General information, not legal advice; check the current rules or ask an accredited representative or lawyer."
