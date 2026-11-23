@@ -846,6 +846,8 @@ NGO_ROWS = [
      "Public domain (US government; already in the library)", "science"),
     ("US federal", "NOAA education", "https://www.noaa.gov/education", "Public domain (US government; already in "
      "the library)", "science"),
+    ("US federal", "Peace Corps teaching manuals (teaching English, maths and science, classroom management)",
+     "https://www.peacecorps.gov/", "Public domain (US government; already in the library)", "pc-teaching"),
     ("Blind students", "American Printing House (APH): free resources", "https://www.aph.org/",
      "Copyright APH, all rights reserved (link-only)", "vision"),
     ("Blind students", "Paths to Literacy (Perkins and TSBVI)", "https://www.pathstoliteracy.org/",
