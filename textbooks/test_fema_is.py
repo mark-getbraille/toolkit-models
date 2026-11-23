@@ -194,6 +194,11 @@ def test_third_party_and_restricted(monkeypatch, tmp_path):
     left_out = []
     assert F.lessons_book(c, [("L", [("S", "<p>FOR OFFICIAL USE ONLY</p>")])], "x", "y", left_out) is None
     assert "FOR OFFICIAL USE ONLY" in left_out[0]["reason"]
+    left_out = []
+    words = "<p>This training includes copyrighted content used with permission.</p>"
+    assert F.lessons_book(c, [("L", [("S", words)])], "x", "y", left_out) is None
+    assert "copyrighted" in left_out[0]["reason"]
+    assert F.BY_NAME["is904"]["via"] == "link" and "copyrighted content" in F.BY_NAME["is904"]["why"]
     # The words "official use" in ordinary lesson text are not a marking.
     assert F.lessons_book(c, [("L", [("S", "<p>Keep forms for official use only when asked.</p>")])], "x", "y",
                           []) is not None

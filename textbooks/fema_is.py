@@ -29,8 +29,10 @@ Pop-up windows of the old player (a lesson's printable version, extra summaries)
 Leaving things out (the owner's rules): a screen or PDF part that prints someone else's copyright notice ("©",
 "Copyright 2015", "All rights reserved", "used with permission") is left out and said in the manifest (left_out);
 a course whose text carries a restricted handling marking (FOR OFFICIAL USE ONLY, LAW ENFORCEMENT SENSITIVE,
-CONTROLLED UNCLASSIFIED INFORMATION) is not built at all. Neither was found when the courses were surveyed on
-2026-11-23, but the builder checks at every build.
+CONTROLLED UNCLASSIFIED INFORMATION) or says it "includes copyrighted content" is not built at all. When the courses
+were surveyed on 2026-11-23 (every newer lesson file whole, the first 15 screens of every older lesson), only IS-904
+said so (it is a link only); no copyright notice or marking was found elsewhere, but the builder checks at every
+build.
 
 Licences: every course and document is a work of FEMA, part of the US government (17 U.S.C. 105: public domain; the
 line is checked on govinfo.gov's policies page at every build). training.fema.gov and emilms.fema.gov have no
@@ -43,18 +45,18 @@ Ready.gov and CISA's active shooter pages (disaster_ready.py, request word disas
 (preparedness) and the US Fire Administration's home fire pages (home-crafts).
 
 Not built (NOT_INCLUDED): IS-905 and IS-917 (active shooter courses made of interactive animations with no
-readable text), IS-800.d (EMI points to the National Response Framework on www.fema.gov, which refuses
-programs), IS-324.a (hosted by COMET at UCAR, a non-federal site with its own copyright), IS-271.a (withdrawn for
-review), and the retired courses asked about (IS-368, IS-394.a, IS-325, IS-326, IS-632.a, IS-552, IS-522 and others:
-retired by EMI, most without lesson files left online). IS-907 (Active Shooter: What You Can Do) is retired too,
-but EMI still publishes its lesson, so it is built with a notice that it is retired.
+readable text), IS-904 (it says it includes copyrighted content used with permission), IS-800.d (EMI points to the
+National Response Framework on www.fema.gov, which refuses programs), IS-324.a (hosted by COMET at UCAR, a
+non-federal site with its own copyright), IS-271.a (withdrawn for review), and the retired courses asked about
+(IS-368, IS-394.a, IS-325, IS-326, IS-632.a, IS-552, IS-522 and others: retired by EMI, most without lesson files left
+online). IS-907 (Active Shooter: What You Can Do) is retired too, but EMI still publishes its lesson, so it is built
+with a notice that it is retired.
 
 Run from the repository's folder:
   python3 textbooks/fema_is.py --list fema-is
   python3 textbooks/fema_is.py fema:is909 --out build/textbooks --limit 5
 """
 
-import datetime
 import html
 import json
 import os
@@ -86,6 +88,8 @@ TRAINING_NOTE = ("This is training material, not instructions for a real emergen
 # Someone else's copyright notice, and restricted handling markings (written in capitals, as they are printed).
 THIRD_PARTY = re.compile(r"©|&copy;|\(c\)\s*(19|20)\d\d|\bcopyright\s*(©|\(c\)|(19|20)\d\d)|all rights reserved|"
                          r"(used|reprinted|reproduced) (here )?with (the )?permission", re.I)
+# A course's own statement that it holds other people's copyrighted material: then the whole course is left out.
+COURSE_COPYRIGHT = re.compile(r"(training|course|lesson) (includes|contains|uses) copyrighted (content|material)", re.I)
 RESTRICTED = re.compile(r"FOR OFFICIAL USE ONLY|//\s*FOUO\b|LAW ENFORCEMENT SENSITIVE|"
                         r"CONTROLLED UNCLASSIFIED INFORMATION|//\s*CUI\b")
 
@@ -123,7 +127,7 @@ def C(code, title, date, hours, via, folder, theme, teaches, **more):
 # Why two active shooter courses are links only.
 STORYLINE = ("Its lesson is made of interactive animations (Articulate Storyline) shown from another server, with "
              "no readable text in the lesson file (checked 2026-11-23); take it online. The CISA active shooter "
-             "pages are in the library (ready:cisa_active_shooter), and IS-904 and IS-907 are built here.")
+             "pages are in the library (ready:cisa_active_shooter), and the older IS-907 is built here.")
 
 COURSES = [
     # ------------------------------------------------------------------ incident command, NIMS and frameworks
@@ -271,9 +275,13 @@ COURSES = [
     C("IS-650.b", "Building Partnerships with Tribal Governments", "2018-11-02", 2, "old", "is_0650b", "community",
       "Tribal governments in the United States, their history with the federal government, and how to build "
       "working relationships with them for emergency management."),
-    C("IS-904", "Active Shooter Prevention: You Can Make a Difference", "2021-09-02", 1, "old", "is_0904",
+    C("IS-904", "Active Shooter Prevention: You Can Make a Difference", "2021-09-02", 1, "link", "is_0904",
       "community", "What you can do at work to lower the likelihood of an active shooter incident: recognising "
-      "warning signs and reporting concerns."),
+      "warning signs and reporting concerns.", link=OVERVIEW.format(code="IS-904"),
+      why="Its first screen says \"This training includes copyrighted content used with permission or by right, and "
+          "may not be used commercially\" (a Georgia Southern University video among it), and most of its screens "
+          "are videos and animations (checked 2026-11-23): link-only, take it online. The CISA active shooter pages "
+          "are in the library (ready:cisa_active_shooter)."),
     C("IS-905", "Responding to an Active Shooter: You Can Make a Difference", "2022-12-14", 1, "link", "is_0905",
       "community", "How to respond if an active shooter or targeted attack happens where you are, and how to help "
       "afterwards.", link=OVERVIEW.format(code="IS-905"), why=STORYLINE),
@@ -517,8 +525,9 @@ def _norm(text):
 
 def _clean(fragment, base="", layout=False):
     """A bit of lesson HTML made plain: script links (pop-up windows) dropped with their words, layout tables taken
-    apart (layout=True: the older player builds every screen of tables), and only plain structure kept (build_textbooks._Cleaner: headings, paragraphs, lists, links and
-    "Picture: " with each picture's description)."""
+    apart (layout=True: the older player builds every screen of tables), and only plain structure kept
+    (build_textbooks._Cleaner: headings, paragraphs, lists, tables, links and "Picture: " with each picture's
+    description)."""
     import build_textbooks as B
     fragment = re.sub(r"<a\b[^>]*href=\"javascript:[^\"]*\"[^>]*>.*?</a>", "", fragment or "", flags=re.S | re.I)
     fragment = re.sub(r"<a\b[^>]*href=\"#[^\"]*\"[^>]*>\s*click this link.*?</a>", "", fragment, flags=re.S | re.I)
@@ -838,11 +847,17 @@ def screen_ok(c, screen_title, body, left_out):
 
 
 def restricted(c, words, left_out):
-    """True (and the reason in left_out) when a course's text carries a restricted handling marking."""
+    """True (and the reason in left_out) when a course's text carries a restricted handling marking, or says the
+    course includes other people's copyrighted material."""
     m = RESTRICTED.search(words or "")
     if m:
         left_out.append({"title": book_title(c), "reason": f"Its text carries the handling marking \"{m.group(0)}\", "
                          "so it is not built."})
+        return True
+    m = COURSE_COPYRIGHT.search(words or "")
+    if m:
+        left_out.append({"title": book_title(c), "reason": f"It says it includes other people's copyrighted material "
+                         f"(\"{m.group(0)}\"), so it is not built; take it online."})
         return True
     return False
 
@@ -946,7 +961,8 @@ def sm_book(c, work, cache, left_out, limit):
     source = c.get("pdf") or c["zip"]
     if c.get("zip") and not os.path.exists(local):
         if not B.allowed_by_robots(c["zip"], cache):
-            left_out.append({"title": book_title(c), "reason": "The site's robots.txt does not allow its course files."})
+            left_out.append({"title": book_title(c), "reason": "The site's robots.txt does not allow its course "
+                             "files."})
             return None
         archive = K.download_file(c["zip"], cache, name=f"{name}.zip")
         with zipfile.ZipFile(archive) as z:
