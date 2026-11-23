@@ -142,6 +142,10 @@ MODULES = [
     "govinfo_fill",         # NHTSA, FEMA, SAMHSA, NIA, CMS, VA, NARA, CDC, CPSC, EPA booklets; Army and Navy manuals (gpo:)
     # job skills from military trade manuals, its own group (the owner's request of 2026-11-23)
     "service_skills",       # Army correspondence subcourses, soldier's and technical manuals, MCI, Air Force, Coast Guard (skill:)
+    # remote and long-term-care medicine (the owner's request of 2026-11-23)
+    "remote_medicine",      # ship's medicine chest, JTS prolonged care, SOF handbook, USARIEM, PFA guides, home nursing (rmed:)
+    # US Navy rate training manuals, every rating, by trade (the owner's request of 2026-11-23)
+    "navy_rates",           # Navy rating handbooks (NAVEDTRA, NAVPERS): deck, engineering, Seabees, medical, supply, aviation, electronics, general, ordnance (rate:)
     # thin homestead and self-reliance areas (the owner's request of 2026-11-23)
     "homestead_fill",       # seed saving, butchering, trapping and tanning, forge, stars and navigation, water, nets and baskets (hfill:)
 ]

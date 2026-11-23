@@ -183,9 +183,9 @@ NOT_INCLUDED = [
      "but its chapters (aircraft recognition, chemical warfare defence, the telephone talker) are those of a Second "
      "World War edition, which the US Naval Institute published under its own copyright; renewal was not checked: "
      "link-only. Index: https://archive.org/details/bluejacketsmanua12mcle"),
-    ("Navy Gunner's Mate rate training manuals", "No Internet Archive copy that can be downloaded was found (searched "
-     "2026-11-22); allowed by the rule when one is found (its parts about explosives cut). Index: "
-     "https://archive.org/search?query=gunner%27s+mate"),
+    ("Navy Gunner's Mate rate training manuals", "Not here: downloadable copies were found on 2026-11-23 and are "
+     "built in navy_rates.py (rate:navy_gunners_mate_3_2_1996 and the others, their chapters on explosives cut). "
+     "Index: https://archive.org/search?query=gunner%27s+mate"),
     ("FM 24-18 Tactical Single-Channel Radio Communications Techniques (1987)", "Its front pages print "
      "\"Distribution authorized to ...\" (restricted) and no government site publishes it openly, and half its pages "
      "are pictures without words: personal use only, for the owner to fetch himself (Program Downloader). Index: "

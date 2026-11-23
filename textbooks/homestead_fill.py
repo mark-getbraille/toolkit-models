@@ -51,7 +51,7 @@ manuals (each state's copyright), the NGA's Bowditch and sight reduction tables 
 Nautical and Air Almanacs (joint US and UK Crown works, sold), and others listed below. Psychological first aid and
 remote medicine are left to the remote medicine collection. The service skills collection (skill:) holds the Army's
 Red Meats course, the Marine Corps' Meats and Meat Cookery, TM 10-440 Blacksmith and Welder, Military Water Supply and
-TB MED 577; the index links them.
+TB MED 577, and the Navy rates collection (rate:) the Quartermaster and Steelworker manuals; the index links them.
 
 Run from the repository's folder:
   python3 textbooks/homestead_fill.py hfill:index --out build/textbooks
@@ -549,6 +549,8 @@ SECTIONS = [
         ("key", "hfill:lungwitz_complete_guide_blacksmithing_horseshoeing_1902", "The Complete Guide to "
                                                                                  "Blacksmithing, Horseshoeing (1902)"),
         ("key", "skill:army_tm_10_440_blacksmith_and_welder_1941", "Blacksmith and Welder (Army TM 10-440, 1941)"),
+        ("key", "rate:navy_steelworker_vol1_1996", "Steelworker, volume 1 (US Navy Seabees, 1996): metals and their "
+                                                   "working"),
         ("key", "skill:usmc_mci_metal_working_and_welding_1983", "Metal Working and Welding (Marine Corps Institute, "
                                                                  "1983)"),
         ("word", "making", "Home manufacturing and making: casting, machining and metalwork (request word)"),
@@ -567,6 +569,8 @@ SECTIONS = [
         ("key", "kmil:admiralty_manual_of_navigation_1973_v2", "Admiralty Manual of Navigation, volume II: nautical "
                                                                "astronomy (1973)"),
         ("key", "pdf:navy_quartermaster_1_c", "Quartermaster 1 and C (US Navy, 1991): celestial navigation"),
+        ("key", "rate:navy_quartermaster_3_2_1976", "Quartermaster 3 and 2 (US Navy, 1976): navigation and the "
+                                                    "stars"),
         ("key", "hfill:milham_how_to_identify_stars_1919", "How to Identify the Stars (Milham, 1919)"),
         ("key", "hfill:serviss_astronomy_naked_eye_1908", "Astronomy with the Naked Eye (Serviss, 1908)"),
         ("key", "hfill:burritt_geography_of_heavens_1860", "The Geography of the Heavens (Burritt, 1860)"),
