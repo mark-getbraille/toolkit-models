@@ -7,7 +7,8 @@ What this module builds, in plain words:
   - the language courses, lesson books, phrasebooks, grammars, dictionaries and technical-language lessons the Peace
     Corps wrote for training its volunteers, from the 1960s to 2013, one book per course (every volume of it), for
     the countries it served in Africa, Asia and the Pacific, Eastern Europe and Central Asia, Latin America and the
-    Caribbean, and North Africa and the Middle East;
+    Caribbean, and North Africa and the Middle East, and its guides for learning a language at post and for its
+    language teachers (the Language Training Reference Manual, the Language Coordinators Resource Kit and others);
   - each course's TEXT is the book, read with the builder's PDF reader (pdf_set.pdf_set_book, the same as the FSI
     courses of languages.py), from one of two places, both allowing programs:
       * the Internet Archive's copies of ERIC documents ("ERIC_ED......"), when ERIC's record names a Peace Corps
@@ -71,7 +72,8 @@ REGIONS = {
                     "the Balkans, the Baltic, the Black Sea and Caucasus countries and Central Asia"),
     "americas": ("pclang-americas", "Latin America and the Caribbean", "Central and South America and the Caribbean"),
     "mena": ("pclang-mena", "North Africa and the Middle East", "Morocco, Tunisia and Jordan"),
-    "general": ("", "Learning any language", "learning a language as a volunteer, for every country"),
+    "general": ("", "Learning and teaching languages", "learning a language as a volunteer, and the Peace Corps's "
+                                                        "guides for its language teachers, for every country"),
 }
 
 # Every language: (region, where it is spoken, in plain words).
@@ -909,6 +911,41 @@ COURSES = [
            "Language Study in the Field", "1966", "guide", "Peace Corps", [eric("ED012925")],
            "Charles and Marguerite Kraft's handbook for volunteers on going on learning a language at their post, "
            "with a language helper, without a course.", country="every country"),
+    course("language_informant_techniques_1976", "Language learning", "An Expanded Collection of Language "
+           "Informant Techniques", "1976", "guide", "Peace Corps", [eric("ED144380")],
+           "Gary Engelberg's techniques for learning a language from a native speaker (an \"informant\") when there "
+           "is no class: ways to get words, sentences and conversations and to practise them (Program and Training "
+           "Journal reprint 12).", ocr="poor", country="every country"),
+    course("older_learners_1978", "Language learning", "Foreign Language Learning for Older Learners: Problems and "
+           "Approaches", "1978", "guide", "Peace Corps", [eric("ED192627")],
+           "A short paper by Judith Roumani on how older volunteers learn languages and how training can help them.",
+           country="every country"),
+    course("language_training_reference_1989", "Language learning", "Language Training Reference Manual (Training "
+           "Manual T0056)", "1989", "teacher's manual", "Peace Corps, Information Collection and Exchange",
+           [eric("ED348880")],
+           "Kristin Lems's manual for Peace Corps language trainers: how adults learn languages, teaching methods and "
+           "techniques, lesson planning, and testing.", country="every country"),
+    course("language_training_curriculum_1993", "Language learning", "Peace Corps Language Training Curriculum",
+           "1993", "teacher's manual", "Peace Corps, Information Collection and Exchange", [eric("ED376735")],
+           "The Peace Corps's model curriculum for language training: competencies, topics and how to build a "
+           "course around them.", country="every country"),
+    course("classroom_testing_fr_es_1993", "Language learning", "Manual for Classroom Testing in Peace Corps Second "
+           "Language Courses (French and Spanish editions)", "1993", "teacher's manual",
+           "Peace Corps, Information Collection and Exchange", [eric("ED363140")],
+           "How language teachers in Peace Corps training can write and give classroom tests, in French and Spanish.",
+           country="every country"),
+    course("language_coordinators_kit_1998", "Language learning", "Language Coordinators Resource Kit", "1998",
+           "teacher's manual", "Peace Corps, Information Collection and Exchange", [eric("ED420177")],
+           "The whole kit for the Peace Corps's language coordinators in ten sections: the coordinator's role, "
+           "supervising teachers, curriculum, materials, principles of learning and teaching, ongoing learning, "
+           "assessment, pre-service training, training of trainers and a picture bank.", country="every country"),
+    course("peace_corps_language_training_1967", "Language learning", "Foreign Language Training in the United "
+           "States Peace Corps (1967) and To Speak as Equals: Language Training in the Peace Corps 1961-68",
+           "1968", "history", "Peace Corps",
+           [eric("ED152114", "Foreign Language Training in the United States Peace Corps (1967)"),
+            eric("ED022402", "To Speak as Equals (1968)")],
+           "Allan Kulakow's two papers on the Peace Corps's language training in its first years: how it trained "
+           "volunteers in more than a hundred languages, and what it learnt.", country="every country"),
 ]
 COURSE = {c["key"]: c for c in COURSES}
 
@@ -1030,6 +1067,11 @@ LINKS = [
      "book, phrase book and flashcards with real Cyrillic are built"),
     ("Moroccan Arabic (Darija)", "Moroccan Arabic Technical Lessons for Rehabilitation and Special Education (1984)",
      f"{IA}/details/ERIC_ED289373", "The Arabic of the scan reads as nonsense"),
+    ("Language learning", "Handbook for Classroom Testing in Peace Corps Language Programs (Manual T0068, 1993)",
+     f"{IA}/details/ERIC_ED357641", "It reprints parts copyrighted by others (\"Copyright 1989 by Terry L Marshall. "
+     "Reprinted by permission\"), so it is not wholly public domain; the French and Spanish testing manual is built"),
+    ("Language learning", "Language Coordinators Resource Kit, its ten sections one by one (1998)",
+     f"{IA}/details/ERIC_ED420178", "The same text as the whole kit, which is built (pclang:language_coordinators_kit_1998)"),
     ("Language learning", "Peace Corps Volunteer On-Going Language Learning Manual: Beyond Hello (2000)",
      "https://eric.ed.gov/?id=ED463649", "ERIC has no copy"),
 ]
@@ -1265,10 +1307,6 @@ NOT_INCLUDED = [(f"{title} ({lang}, Peace Corps)", f"{why}. Index: {url}") for l
      "from a private service, its terms say nothing allowing programs, and its site is \"Copyright Live Lingua\"; the "
      "same Peace Corps works are read from ERIC's copies on the Internet Archive and the archive's copy on "
      "fsi-languages.yojik.eu. Index: https://www.livelingua.com/project"),
-    ("Peace Corps language-training guides for trainers (Language Coordinators Resource Kit, Language Training "
-     "Reference Manual, classroom testing handbooks, competency curriculum guides)", "Guides for running language "
-     "programmes, not courses for learners; left to the Peace Corps manuals collection. Index: "
-     "https://eric.ed.gov/?q=%22Peace+Corps%22+language+training"),
 ]
 
 
