@@ -82,6 +82,7 @@ MODULES = [
     "money_work",           # IRS publications, CFPB home buying, DOL, NLRB, HealthCare.gov, O*NET (mw:)
     "languages",            # FSI and Peace Corps courses, Wikivoyage phrasebooks, Tatoeba sentences, ASL (lang:)
     "peace_corps_languages", # every Peace Corps language course, lesson book, phrasebook and dictionary (pclang:)
+    "languages_open",       # open language resources: COERLL, Global Storybooks, FreeDict, Tatoeba, old grammars, sign, braille (lopen:)
     "travel",               # FAA PackSafe, USA.gov travel pages, national park passes (trip:)
     "civics",               # Constitution, civics test, Ben's Guide, jury service, Supreme Court cases (civ:)
     # people: disability, veterans, education, relationships, immigration (the owner's request of 2026-11-22)
@@ -141,6 +142,8 @@ MODULES = [
     "education_more",       # education: ED booklets (ERIC copies), FAFSA form, old education classics (edumore:)
     # official copies for the thin sections, from GovInfo, agency sites and the Internet Archive (2026-11-22)
     "govinfo_fill",         # NHTSA, FEMA, SAMHSA, NIA, CMS, VA, NARA, CDC, CPSC, EPA booklets; Army and Navy manuals (gpo:)
+    # appropriate technology and village skills (the owner's request of 2026-11-23), its own group
+    "approtech",            # Peace Corps ICE water, wells, building, farm and energy manuals, USGS, USDA, old books (apt:)
     # job skills from military trade manuals, its own group (the owner's request of 2026-11-23)
     "service_skills",       # Army correspondence subcourses, soldier's and technical manuals, MCI, Air Force, Coast Guard (skill:)
     # remote and long-term-care medicine (the owner's request of 2026-11-23)
@@ -149,6 +152,8 @@ MODULES = [
     "navy_rates",           # Navy rating handbooks (NAVEDTRA, NAVPERS): deck, engineering, Seabees, medical, supply, aviation, electronics, general, ordnance (rate:)
     # Peace Corps manuals and guides (the owner's request of 2026-11-23), their own group
     "peace_corps",          # teaching, health, youth, business, agriculture, environment, community, volunteers (pc:)
+    # thin homestead and self-reliance areas (the owner's request of 2026-11-23)
+    "homestead_fill",       # seed saving, butchering, trapping and tanning, forge, stars and navigation, water, nets and baskets (hfill:)
 ]
 
 _loaded = {}
