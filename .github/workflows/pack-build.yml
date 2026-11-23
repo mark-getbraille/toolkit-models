@@ -623,6 +623,9 @@ jobs:
             commons_historic_processes) limit=1500 ;;
             nmah_photography) limit=600 ;;
             open_images_photography) limit=1500 ;;
+            commons_forge_traps_tanning) limit=700 ;;
+            commons_homestead_stores) limit=900 ;;
+            commons_stars_navigation) limit=700 ;;
           esac
           mode=""
           case "${{ matrix.key }}" in
