@@ -157,6 +157,8 @@ MODULES = [
     # teaching and homeschooling, a top-level section (the owner's request of 2026-11-23; group key "k12")
     "teach_states",         # homeschooling laws and open state curricula, all 50 states, DC and territories (tstate:)
     "teach_index",          # the guide to the section, and federal homeschooling booklets (teach:)
+    # teaching and homeschooling outside the US (the owner's request of 2026-11-23; the US states are in teach-us's module)
+    "teach_world",          # Canada, UK (with Oak), Ireland, Australia, NZ, other countries, NGOs, classics (tworld:)
 ]
 
 _loaded = {}
