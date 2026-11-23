@@ -148,6 +148,8 @@ MODULES = [
     "navy_rates",           # Navy rating handbooks (NAVEDTRA, NAVPERS): deck, engineering, Seabees, medical, supply, aviation, electronics, general, ordnance (rate:)
     # Peace Corps manuals and guides (the owner's request of 2026-11-23), their own group
     "peace_corps",          # teaching, health, youth, business, agriculture, environment, community, volunteers (pc:)
+    # thin homestead and self-reliance areas (the owner's request of 2026-11-23)
+    "homestead_fill",       # seed saving, butchering, trapping and tanning, forge, stars and navigation, water, nets and baskets (hfill:)
 ]
 
 _loaded = {}
