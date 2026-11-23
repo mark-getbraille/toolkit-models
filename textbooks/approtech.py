@@ -451,12 +451,12 @@ OLD_BOOKS = [
          TOOL_SAFETY),
     _old("shearer_farm_mechanics_1918", "Farm Mechanics: Machinery and Its Use to Save Hand Labor on the Farm "
          "(Herbert A. Shearer, 1918)", "Farm mechanics", "Herbert A. Shearer (Frederick J. Drake)",
-         "farmmechanicsmac00shearich", 1918,
+         "farmmechanics00shea", 1918,
          "Tools and machines for the farm: the farm shop, carpentry, rope work, belts and pulleys, pumps, engines, "
          "harness repair, soldering, painting and the care of farm machines.", TOOL_SAFETY),
     _old("brace_mayne_farm_shop_work_1915", "Farm Shop Work: Practical Manual Training (George M. Brace and D. D. "
          "Mayne, 1915)", "Farm shop", "George M. Brace and Dexter D. Mayne (American Book Company)",
-         "farmshopworkprac00bracrich", 1915,
+         "cu31924003595026", 1915,
          "Woodworking and metalworking for farm boys and girls: tools and their care, joints, building farm "
          "appliances, concrete work, forging, and rope work.", TOOL_SAFETY + CEMENT_SAFETY),
     _old("chapman_treatise_ropemaking_1869", "A Treatise on Ropemaking, as Practised in Private and Public Ropeyards "
