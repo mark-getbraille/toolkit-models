@@ -17,10 +17,11 @@ What this module builds, in plain words:
     site), and the factbook.json project dedicates its files to the public domain (CC0 1.0); both lines are checked
     at every build. Photos and flag pictures are not used (none are in the JSON); maps are described in words.
   - geo:index, a guide to geography in the library: the Factbook by continent, maps and land navigation, travel and
-    phrasebooks, holidays around the world, and the sources that are links only.
+    phrasebooks, holidays around the world, and the sources that are links only. The country studies, Background
+    Notes, map-reading guides and old gazetteers are in countries.py (ctry:), with its guide by country, ctry:index.
 
-Not built (NOT_INCLUDED, link-only): the State Department's country Background Notes and its "U.S. Relations With"
-fact sheets (state.gov and its 2009-2017 archive refuse programs), the 7 GB Kiwix copies of the Factbook with photos
+Not built (NOT_INCLUDED, link-only): the State Department's Background Notes after 1990 and its "U.S. Relations With"
+fact sheets (state.gov and its 2009-2017 archive refuse programs; the 1982 to 1990 editions are in countries.py), the 7 GB Kiwix copies of the Factbook with photos
 (too large; the text is built here), the USGS GNIS and NGA GNS place-name gazetteers (lookup databases of millions of
 names, not books; the picture packs already turn coordinates into countries with Natural Earth), and the Census
 Bureau's gazetteer files.
@@ -323,10 +324,20 @@ SECTIONS = [
      "South Asia), Australia and Oceania, Europe, North America (with Central America and the Caribbean), South "
      "America, and the oceans and the world.", [
          ("key", "geo:factbook", "The World Factbook (CIA, last edition): every country's page, with the map in "
-                                 "words, and the index by continent")]),
+                                 "words, and the index by continent"),
+         ("key", "ctry:index", "Countries of the world: the guide to every country book in the library, by continent "
+                               "and country (country studies, Background Notes, Defense Language Institute and Peace "
+                               "Corps books, history)"),
+         ("word", "countries", "The Library of Congress country studies, the State Department's Background Notes, "
+                               "older Army area handbooks, old gazetteers and World Bank data books")]),
     ("Maps and finding your way", "Reading maps, coordinates and compass directions.", [
         ("key", "pdf:army_fm_3_25_26_map_reading", "Map Reading and Land Navigation (FM 3-25.26): grid references, "
                                                    "latitude and longitude, contour lines"),
+        ("key", "ctry:usgs_exploring_maps", "Exploring Maps (USGS): what maps show and how to read them"),
+        ("key", "ctry:usgs_map_basics", "USGS fact sheets: map scales, map and compass, the UTM grid, US Topo maps"),
+        ("key", "ctry:dma_datums_grids", "Datums, Ellipsoids, Grids and Grid Reference Systems (Defense Mapping "
+                                         "Agency)"),
+        ("key", "ctry:census_garm", "Geographic Areas Reference Manual (Census Bureau)"),
         ("key", "science:usgs_earthquakes_for_everyone", "Earthquakes for everyone (USGS)"),
         ("key", "science:noaa_ocean_facts", "Ocean facts (NOAA)")]),
     ("Travel and languages", "Visiting other countries: travel rules, phrasebooks and language courses.", [
@@ -340,7 +351,8 @@ SECTIONS = [
         ("link", "State Department country pages (U.S. Relations With ... fact sheets)",
          "https://www.state.gov/countries-and-areas-list/", "state.gov refuses programs; open it in a browser"),
         ("link", "State Department Background Notes (archived, to about 2012)",
-         "https://2009-2017.state.gov/r/pa/ei/bgn/index.htm", "the archive refuses programs; open it in a browser"),
+         "https://2009-2017.state.gov/r/pa/ei/bgn/index.htm", "the archive refuses programs; open it in a browser "
+         "(the 1982 to 1990 editions are built: ctry:index lists them by country)"),
         ("link", "USGS Geographic Names Information System (GNIS): US place names",
          "https://www.usgs.gov/tools/geographic-names-information-system-gnis",
          "a lookup database of about a million names, not a book"),
@@ -367,10 +379,10 @@ LICENCE_LINES = {
     "geo_index": "The index (geo:index) is the toolkit's own facts and links, CC0.",
 }
 NOT_INCLUDED = [
-    ("State Department Background Notes and \"U.S. Relations With\" country fact sheets", "Public domain, but "
-     "www.state.gov answers programs \"403\" and its 2009-2017 archive (where the last Background Notes are) answers "
-     "\"forbidden\" (checked 2026-11-22); the GPO's printed Background Notes on the Internet Archive are from "
-     "1989-1990 and too old. The World Factbook covers the same facts. Link-only. Index: "
+    ("State Department Background Notes after 1990 and \"U.S. Relations With\" country fact sheets", "Public "
+     "domain, but www.state.gov answers programs \"403\" and its 2009-2017 archive (where the last Background Notes "
+     "are) answers \"forbidden\" (checked 2026-11-22). Link-only. The GPO's printed Background Notes of 1982 to 1990 "
+     "on the Internet Archive are built as dated history in countries.py (ctry:bgn_...). Index: "
      "https://2009-2017.state.gov/r/pa/ei/bgn/index.htm"),
     ("The World Factbook as Kiwix ZIM files with photos (Internet Archive theworldfactbook_en_all_2024-05, 7 GB)",
      "The same text with the CIA's photos, too large for this library; the text is built from the last edition "
