@@ -19,11 +19,14 @@ What this module builds, in plain words, each IN FULL:
                    and That All May Read (1983, the history and practice of library service to blind people);
   blind-services   the VA's directive on blind and visual impairment rehabilitation (VHA Directive 1174, from
                    va.gov), Coordinated Services for Blinded Veterans (1991), Occupations of Totally Blinded
-                   Veterans (1956, as history) and IRS Publication 524 (the credit for the elderly or the disabled);
-  blind-mobility   Dorothy Harrison Eustis's article "The Seeing Eye" (1927), which started guide dog work in America,
-                   and the 1969 report on designing a collapsible folding cane (with its instructions);
-  blind-daily-living  the VA Western Blind Rehabilitation Center's Instructional Manual for Visual Skills (1975: low
-                   vision testing and training);
+                   Veterans (1956, as history), the Rehabilitation Services Administration's Services to the Blind
+                   (1973), the Office of Education's pamphlet on blind and partially seeing children (1933) and IRS
+                   Publication 524 (the credit for the elderly or the disabled);
+  blind-mobility   Dorothy Harrison Eustis's article "The Seeing Eye" (1927), which started guide dog work in America
+                   (the mobility books of other groups are listed in the index: PROWAG, the ADA's service animal
+                   rules, Levy's and Villey's chapters on finding one's way);
+  blind-daily-living  Head Start's guide for teachers and parents of blind and visually impaired preschoolers (1978:
+                   self-help, motor and social skills, the classroom and the home);
   blind-screen-readers  the BRLTTY Reference Manual and BrlAPI Reference Manual, and BRLTTY's guides (commands, key
                    tables, text and contraction tables, devices, Linux, Windows, Android, and the key bindings of
                    every braille display it supports): GNU LGPL 2.1 or later, share-alike books;
@@ -40,7 +43,8 @@ What this module builds, in plain words, each IN FULL:
                    Education and Employment of the Blind (1886), Pierre Villey's The World of the Blind (1930); the
                    Perkins Institution's annual reports from 1833 to 1930 (Howe's reports among them); the Outlook
                    for the Blind, 1927 to 1930; the Louis Braille centenary at Paris (1909, in French); a 1916 article
-                   on a blind proofreader; and the VA's history of its Blind Rehabilitation Service (1998).
+                   on a blind proofreader; the Census Bureau's The Blind in the United States, 1910; and the VA's
+                   history of its Blind Rehabilitation Service (1998).
 
 Every old book says plainly that its words and many of its ideas about blind people are those of its day, and that
 old braille codes are not today's (UEB in the US since 2016; BANA's codes for mathematics, music and formats).
@@ -52,12 +56,15 @@ for the Blind before 1927 (the Internet Archive's records give no year, so the b
 books), books whose status is not clear (Techniques for Eating 1981, Preprimer Cooking 1973, the 1975 Workshop on
 Low Vision Mobility, Braille Into the Next Millennium 2000, Introduction to Braille Music Transcription 1974 with
 other publishers' music), Social Security's old booklets (out of date), the Speech Dispatcher and eSpeak NG manuals
-(only on GitHub, which refuses programs), and the FHWA/NCHRP guide to accessible pedestrian signals (copyright).
+(only on GitHub, which refuses programs), the FHWA/NCHRP guide to accessible pedestrian signals (copyright), and two
+government reports whose scans have no text layer (the 1969 folding cane report and the VA's 1975 Instructional
+Manual for Visual Skills).
 
 Licences: the Library of Congress and VA books are US government publications: written by government staff (17
 U.S.C. 105) and printed without a copyright notice; those before 1989 are also public domain because a work
 published in the US without a notice then lost its copyright (17 U.S.C. 405; the line checked on copyright.gov at
-every build, and the first pages of each PDF must name the Library of Congress and print no copyright line). The
+every build, and the first pages of each PDF must name the Library of Congress, or the Department of Health,
+Education and Welfare, and print no copyright line). The
 old books: published before 1931 (the builder checks each item's year on the Internet Archive at every build).
 BRLTTY's documentation: GNU LGPL 2.1 or later (the line checked on the manual's licence page at every build).
 robots.txt of archive.org, va.gov, irs.gov and brltty.app (none) allow the files; no AI rules (checked 2026-11-23).
@@ -96,6 +103,7 @@ ALLOWED = {NO_NOTICE: "open", GOV_NO_NOTICE: "open"}
 # The first twelve pages of a Library of Congress PDF must name the Library of Congress and print no copyright line
 # ("Copyright 1984" or "Copyright by ..."): checked at every build by build_textbooks.pdfdoc_book.
 LOC_FRONT = r"(?is)^(?!.*copyright\s*(?:©|\(c\))?\s*(?:19\d\d|20\d\d|by)).*library\s+of\s+congress"
+HEW_FRONT = r"(?is)^(?!.*copyright\s*(?:©|\(c\))?\s*(?:19\d\d|by)).*health,\s*education,?\s*and\s+welfare"
 
 SCAN = ("Read from the Internet Archive's copy (from the M.C. Migel Library of the American Foundation for the Blind, "
         "scanned for the American Printing House for the Blind): the machine-read text has the scanner's mistakes, "
@@ -122,6 +130,30 @@ def _loc(name, title, subject, archive, year, description, notice="", licence=NO
     if licence == NO_NOTICE:
         entry.update(licence_url=NO_NOTICE_URL, licence_page=NO_NOTICE_PAGE, licence_text=NO_NOTICE_TEXT)
     return entry
+
+
+def _fed(name, title, subject, archive, year, publisher, description, notice=""):
+    """One other federal publication (Office of Education, Census Bureau) written by government staff, read whole from
+    its Internet Archive copy (a US government work)."""
+    return K.us_pdf(GROUP, name=name, title=title, subject=subject, archive=archive, published=str(year),
+                    publisher=publisher, version=f"{year} (Internet Archive item {archive})",
+                    description=description, notice=f"A work of the US government ({publisher}): public domain (17 "
+                    "U.S.C. 105). " + SCAN + notice)
+
+
+def _hew(name, title, subject, archive, year, publisher, description, notice=""):
+    """One Department of Health, Education and Welfare publication read whole from its Internet Archive copy:
+    published by the department with no copyright notice before 1989, so public domain (NO_NOTICE); its first
+    pages must name the department and print no copyright line (HEW_FRONT)."""
+    return K.us_pdf(GROUP, name=name, title=title, subject=subject, archive=archive, published=str(year),
+                    publisher=publisher, version=f"{year} (Internet Archive item {archive})", description=description,
+                    licence=NO_NOTICE, licence_url=NO_NOTICE_URL, licence_page=NO_NOTICE_PAGE,
+                    licence_text=NO_NOTICE_TEXT, pdf_licence_text=HEW_FRONT,
+                    notice="Published by the US Department of Health, Education and Welfare, a US government "
+                           "department, with no copyright notice: a work published in the US without a notice before "
+                           "1978 entered the public domain at once, and one published from 1978 to 1 March 1989 lost "
+                           "its copyright unless it was registered within five years and the notice added (17 U.S.C. "
+                           "405). " + SCAN + notice)
 
 
 def _va(name, title, subject, archive, year, publisher, description, notice=""):
@@ -215,6 +247,25 @@ SERVICES = [
         "in vocational rehabilitation: professions, business, sales, clerical, skilled and unskilled work, farming "
         "and the training behind them.",
         "A record of 1956: today's jobs, technology and rights (the ADA, Section 504) are very different."),
+    _hew("hew_services_to_the_blind_1973", "Services to the Blind: A Community Concern (Eleventh Institute on "
+         "Rehabilitation Services, Rehabilitation Services Administration, 1973)", "Rehabilitation services for blind "
+         "people", "servicestoblindcsoci", 1973, "Rehabilitation Services Administration, Social and Rehabilitation "
+         "Service, US Department of Health, Education and Welfare",
+         "A training resource for vocational rehabilitation staff on serving blind people in the community: the "
+         "agencies for the blind, public and private, working together, rehabilitation facilities and their "
+         "standards, planning services in each state, and the counsellor's work.",
+         "A record of 1973: the laws (the Rehabilitation Act of 1973 and later) and services have changed since; see "
+         "vision:rsa_blind_programs for today's programmes."),
+    _fed("oe_teachers_problems_blind_partially_seeing_1933", "Teachers' Problems with Exceptional Children I: Blind "
+         "and Partially Seeing Children (Beatrice McLeod, Office of Education, 1933)", "Education of blind children "
+         "(history)", "teachersproblems00beat", 1933, "Office of Education, US Department of the Interior (Pamphlet "
+         "No. 40)",
+         "Twenty questions and answers for the ordinary classroom teacher, by the Office of Education's senior "
+         "specialist in the education of physically handicapped children: who is a blind or partially seeing child, "
+         "signs of eye trouble and simple tests, getting medical care, schools for the blind, sight-saving classes, "
+         "lighting, supplies and methods, and the agencies that help.",
+         "A record of 1933: today children's rights to education are set by IDEA and Section 504 (law:us_code_idea), "
+         "and teaching methods have changed."),
     K.us_pdf(GROUP, name="irs_pub_524", title="Credit for the Elderly or the Disabled (IRS Publication 524)",
              subject="Taxes and disability", publisher="Internal Revenue Service (IRS), US Department of the "
              "Treasury", pdf="https://www.irs.gov/pub/irs-pdf/p524.pdf",
@@ -240,31 +291,19 @@ MOBILITY = [
              "school at Potsdam that trained shepherd dogs to guide blinded soldiers, how the dogs were trained and "
              "worked, and what a dog guide meant to a blind man's freedom. Morris Frank read it, wrote to her, and "
              "with her founded The Seeing Eye in 1929.", note=OLD_DOG_NOTE),
-    K.us_pdf(GROUP, name="hew_collapsible_folding_cane_1969", title="Design and Development of a Collapsible Folding "
-             "Cane (IIT Research Institute for the Department of Health, Education and Welfare, 1969)",
-             subject="White canes (history and design)", publisher="IIT Research Institute, under contract "
-             "SAV-1058-67 for the Social and Rehabilitation Service, US Department of Health, Education and Welfare",
-             archive="designdevelopmen00unse", published="1969",
-             version="report of 21 January 1969 (Internet Archive item designdevelopmen00unse)",
-             licence=NO_NOTICE, licence_url=NO_NOTICE_URL, licence_page=NO_NOTICE_PAGE, licence_text=NO_NOTICE_TEXT,
-             description="The report of a government contract to design a long cane that folds: the designs tried "
-                         "(short and long segments), how the cane was tested by blind travellers and mobility "
-                         "instructors, the instructions for unfolding, using and folding it, and recommendations.",
-             notice="A report written under contract for the US Department of Health, Education and Welfare and "
-                    "published in 1969 with no copyright notice: a work published in the US without a notice before "
-                    "1978 entered the public domain. " + SCAN + "Canes have changed since: ask an orientation and "
-                    "mobility instructor which cane and technique suit you."),
 ]
 
 DAILY = [
-    _va("va_instructional_manual_visual_skills_1975", "Instructional Manual for Visual Skills (Alice Wood, Western "
-        "Blind Rehabilitation Center, Veterans Administration, 1975)", "Low vision training",
-        "instructionalman00alic", 1975, "Western Blind Rehabilitation Center, Veterans Administration Hospital, Palo "
-        "Alto", "The VA Western Blind Rehabilitation Center's manual for low vision specialists: the student work-up "
-        "and interview, testing distance and near acuity, colour, form and visual fields, training with magnifiers, "
-        "telescopes and other aids, scanning, eccentric viewing and perceptual training, with lesson plans.",
-        "Low vision devices and methods have changed since 1975; a low vision clinic or VA Blind Rehabilitation "
-        "Service can advise today."),
+    _hew("hew_head_start_children_visual_handicaps_1978", "Mainstreaming Preschoolers: Children with Visual "
+         "Handicaps, a guide for teachers, parents and others (Head Start Bureau, 1978)", "Young blind children: "
+         "daily life and learning", "childrenwithvisu00loua", 1978, "Head Start Bureau, Administration for Children, "
+         "Youth and Families, US Department of Health, Education and Welfare (DHEW Publication No. (OHDS) 78-31112)",
+         "Head Start's guide for teachers and parents of blind and visually impaired children aged three to five: "
+         "what visual handicaps are and how they are found, how they affect a young child's self-concept, motor, "
+         "self-help, language and social skills, planning the classroom and teaching techniques with activities, "
+         "what parents can do at home, where to find help, and a chart of normal development from birth to six.",
+         "A record of 1978: services and laws (IDEA's early intervention and preschool programmes today) have "
+         "changed; words such as \"visually handicapped\" are those of its day."),
 ]
 
 # ====================================================================== blind-screen-readers: BRLTTY (LGPL)
@@ -471,6 +510,13 @@ HISTORY = [
          "A short magazine article of July 1916 about Mrs. L. N. Muck of College View, Nebraska, one of the few "
          "blind proofreaders of her day, at a newspaper printed for blind readers, and how its editor wrote copy on "
          "a braille writing machine.", OLD_HISTORY_NOTE),
+    _fed("census_blind_in_united_states_1910", "The Blind in the United States, 1910 (Bureau of the Census, 1917)",
+         "Blind people in the US (history)", "blindinuniteds00unit", 1917, "Bureau of the Census, US Department of "
+         "Commerce",
+         "The Census Bureau's report on blind people counted in the 1910 census: their numbers by state and city, "
+         "sex, age, race and nativity, marriage, occupations and those in institutions, and from special schedules "
+         "the age at which sight was lost, its causes, education and work.",
+         "A record of its time, in the words of 1917."),
     K.us_pdf(GROUP, name="va_blind_rehabilitation_50_years_1998", title="Blind Rehabilitation Service: 50 Years of "
              "Excellence, 1948 to 1998 (Department of Veterans Affairs)", subject="Blinded veterans (history)",
              publisher="Hines Blind Rehabilitation Center and Medical Media, US Department of Veterans Affairs",
@@ -527,10 +573,11 @@ LICENCE_LINES = {
                      "first twelve pages of each PDF at every build); written by Library of Congress staff (17 U.S.C. "
                      "105); before 1989 also public domain for lack of notice (copyright.gov, title 17 chapter 4, "
                      "\"Omission of notice on certain copies\", checked at every build).",
-    "blind_va_federal": "va.gov (VHA Directive 1174), irs.gov (Publication 524) and the VA's own booklets on the "
-                        "Internet Archive: works of the US government (17 U.S.C. 105, checked on govinfo.gov's "
-                        "policies page at every build); the 1969 cane report for HEW has no copyright notice (before "
-                        "1978). robots.txt of va.gov, irs.gov and archive.org allow the files; no AI rules (checked "
+    "blind_va_federal": "va.gov (VHA Directive 1174), irs.gov (Publication 524) and the VA's, Office of "
+                        "Education's and Census Bureau's own publications on the Internet Archive: works of the US "
+                        "government (17 U.S.C. 105, checked on govinfo.gov's policies page at every build); the HEW "
+                        "publications of 1973 and 1978 carry no copyright notice (their first pages checked at every "
+                        "build). robots.txt of va.gov, irs.gov and archive.org allow the files; no AI rules (checked "
                         "2026-11-23).",
     "blind_old_books": "Internet Archive items: each item's metadata \"date\" before 1931 (checked at every build, so "
                        "a later reprint is refused). The British and French books are public domain in the US as "
@@ -572,6 +619,11 @@ NOT_INCLUDED = [
     ("Accessible Pedestrian Signals: A Guide to Best Practices (NCHRP, Transportation Research Board)", "Copyright of "
      "the National Academies: link-only. The Access Board's own guidelines for accessible pedestrian signals and "
      "detectable warnings are built (travel:access_board_prowag). Index: https://www.apsguide.org/"),
+    ("Design and Development of a Collapsible Folding Cane (1969) and the VA's Instructional Manual for Visual "
+     "Skills (1975)", "Public domain government reports, but the Internet Archive's PDFs of both are mostly scanned "
+     "pictures without their words, so the builder refuses them (tried 2026-11-23); open them in the Internet "
+     "Archive's own reader. Index: https://archive.org/details/designdevelopmen00unse and "
+     "https://archive.org/details/instructionalman00alic"),
     ("USDA Food and Nutrition Service and HUD guides for blind people", "Not looked for in this round beyond what the "
      "library already has (HUD's reasonable accommodation and modification pages, civic:); the index links those. "
      "Index: https://www.fns.usda.gov/"),

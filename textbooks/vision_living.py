@@ -325,14 +325,12 @@ SECTIONS = [
         ("key", "guide:ada_gov_guidance", "ADA.gov guidance, including service animals"),
         ("key", "blind:eustis_seeing_eye_1927", "The Seeing Eye (Eustis, 1927): the article that started guide dog "
                                                 "work in America"),
-        ("key", "blind:hew_collapsible_folding_cane_1969", "Design of a collapsible folding cane, with its "
-                                                           "instructions (1969)"),
         ("key", "blind:levy_blindness_and_the_blind_1872", "Blindness and the Blind (Levy, 1872): \"on the blind "
                                                            "walking alone, and of guides\""),
         ("key", "blind:villey_world_of_the_blind_1930", "The World of the Blind (Villey, 1930): the sense of "
                                                         "obstacles and finding one's way"),
         ("key", "pet:index", "Pet care: the dog care books (for guide dog handlers too)"),
-        ("word", "blind-mobility", "The guide dog and cane books (request word)"),
+        ("word", "blind-mobility", "The guide dog book of this area (request word)"),
         ("pack", "commons_mobility_deafblind", "Pictures: orientation and mobility training, sighted guiding, "
                                                "mobility canes, guide horses"),
         ("pack", "commons_crosswalks_signals", "Pictures: crossings, accessible pedestrian signals and push buttons"),
@@ -347,6 +345,10 @@ SECTIONS = [
         ("key", "vision:bep_currency_access", "The free US Currency Reader Program and accessible currency"),
         ("key", "vision:access_board_rx_labels", "Accessible prescription labels: braille, large print, talking labels"),
         ("key", "civic:hud_doj_reasonable_modifications", "Home modifications under the Fair Housing Act"),
+        ("key", "blind:hew_head_start_children_visual_handicaps_1978", "Head Start's guide for parents and teachers "
+                                                                       "of blind preschoolers: self-help skills "
+                                                                       "(1978)"),
+        ("word", "blind-daily-living", "The daily living books of this area (request word)"),
         ("pack", "commons_money_sides", "Pictures: US and Canadian money with how to tell it by touch or low vision"),
         ("pack", "commons_tactile_access", "Pictures: tactile graphics and models, large print, reading machines"),
         ("link", "ScripTalk talking prescription labels (En-Vision America)", "https://www.envisionamerica.com/",
@@ -390,6 +392,7 @@ SECTIONS = [
         ("key", "blind:irs_pub_524", "IRS Publication 524: credit for the elderly or the disabled"),
         ("key", "pdf:irs_pub_554_tax_guide_seniors", "IRS Publication 554: tax guide for seniors"),
         ("key", "blind:nls_that_all_may_read_1983", "That All May Read: library service for blind people (NLS, 1983)"),
+        ("key", "blind:hew_services_to_the_blind_1973", "Services to the Blind: A Community Concern (RSA, 1973)"),
         ("word", "blind-services", "The VA and IRS books (request word)"),
         ("key", "legal:adata_factsheets", "ADA National Network fact sheets"),
         ("link", "SSA Red Book and \"If You Are Blind Or Have Low Vision\"", "https://www.ssa.gov/redbook/",
@@ -407,6 +410,8 @@ SECTIONS = [
                                                                       "1956: history)"),
         ("key", "blind:armitage_education_employment_blind_1886", "The Education and Employment of the Blind "
                                                                   "(Armitage, 1886: history)"),
+        ("key", "blind:oe_teachers_problems_blind_partially_seeing_1933", "Blind and partially seeing children in "
+                                                                          "the classroom (Office of Education, 1933)"),
         ("link", "Job Accommodation Network (askjan.org)", "https://askjan.org/",
          "Its robots.txt shuts out AI readers: link-only."),
         ("link", "AFB CareerConnect and APH's educational products", "https://www.afb.org/",
@@ -416,9 +421,6 @@ SECTIONS = [
         ("key", "eyes:nei_eye_health", "National Eye Institute: eye conditions, low vision and vision "
                                        "rehabilitation"),
         ("key", "eyes:cdc_vision_health", "CDC Vision Health"),
-        ("key", "blind:va_instructional_manual_visual_skills_1975", "Instructional Manual for Visual Skills (VA "
-                                                                    "low vision training, 1975)"),
-        ("word", "blind-daily-living", "The low vision and daily living books (request word)"),
         ("key", "eyes:nhs_eyes", "NHS eye conditions"),
         ("key", "pub:europepmc_reviews:vision", "Open-access review articles on blindness and low vision"),
         ("pack", "commons_eye_care", "Pictures: magnifying glasses, loupes, reading glasses, Snellen charts"),
@@ -464,6 +466,7 @@ SECTIONS = [
                                                     "on); the later ones to 1930 under the request word "
                                                     "blind-history"),
         ("key", "hist:best_the_blind_1919", "Harry Best, The Blind (1919)"),
+        ("key", "blind:census_blind_in_united_states_1910", "The Blind in the United States, 1910 (Census Bureau)"),
         ("key", "blind:levy_blindness_and_the_blind_1872", "Blindness and the Blind (Levy, 1872)"),
         ("key", "blind:villey_world_of_the_blind_1930", "The World of the Blind (Villey, 1930)"),
         ("key", "blind:braille_centenary_paris_1909", "The Louis Braille centenary at Paris (1909, in French)"),
