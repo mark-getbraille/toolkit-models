@@ -28,8 +28,8 @@ What this module builds, in plain words, each IN FULL:
     (1919), Burritt's Geography of the Heavens (1860), Serviss's Astronomy with the Naked Eye (1908), Norton's Star
     Atlas (1910), Gall's Easy Guide to the Constellations (1910), Olcott's Star Lore of All Ages (1911), Collins's
     Book of Stars (1920) and the Bartons' Guide to the Constellations (1928);
-  - water purification: Sanitary Control and Surveillance of Field Water Supplies (TB MED 577 / NAVMED P-5010-10,
-    2010) and the Army's Field Water Supply (TM 5-700, 1961), judged by the release rule;
+  - water purification: the Army's Field Water Supply (TM 5-700, 1961), judged by the release rule (TB MED 577, the
+    armed forces' field water manual of 2010, is already in the service skills collection and linked from the index);
   - fishing gear, nets, cordage from fibre and baskets: White's How to Make Baskets (1901), James's Practical Basket
     Making (1914), Hasluck's Basket Work of All Kinds (1914), Mason's Aboriginal American Basketry (1904), Dodge's
     Useful Fiber Plants of the World (USDA, 1897), Keene's Fishing Tackle (1886), Taylor's Preservation of Fish Nets
@@ -49,8 +49,9 @@ Not built (NOT_INCLUDED, link-only for Program Downloader or a browser): Extensi
 pages (they refuse programs), the National Center for Home Food Preservation (copyright), state trapper education
 manuals (each state's copyright), the NGA's Bowditch and sight reduction tables (the site did not answer), the
 Nautical and Air Almanacs (joint US and UK Crown works, sold), and others listed below. Psychological first aid and
-remote medicine are left to the remote medicine collection; Army meat-cutting and cook manuals to the service skills
-collection.
+remote medicine are left to the remote medicine collection. The service skills collection (skill:) holds the Army's
+Red Meats course, the Marine Corps' Meats and Meat Cookery, TM 10-440 Blacksmith and Welder, Military Water Supply and
+TB MED 577; the index links them.
 
 Run from the repository's folder:
   python3 textbooks/homestead_fill.py hfill:index --out build/textbooks
@@ -404,15 +405,6 @@ NAV_PDFS = [
 # ====================================================================== water purification
 
 WATER_PDFS = [
-    _mil("tb_med_577_field_water_supplies_2010", "Sanitary Control and Surveillance of Field Water Supplies (TB MED "
-         "577 / NAVMED P-5010-10 / AFMAN 48-138_IP, 2010)", "Field water treatment",
-         "Departments of the Army, Navy and Air Force", "NAVMEDP501010SANITARYCONTROLANDSURVEILLANCEOFFIELDWATERSUPPLIES2010",
-         "2010",
-         "The armed forces' manual for keeping field drinking water safe (read from the Navy Bureau of Medicine "
-         "and Surgery history office's copy): health risks in water, choosing a source, treatment (settling, "
-         "filtration, reverse osmosis, chlorination and other disinfection), individual and small-unit water "
-         "treatment, storing and carrying water, testing, and water in ice and bottled water.", WATER_SAFETY,
-         "a work of the US Army, Navy and Air Force"),
     _mil("army_tm_5_700_field_water_supply_1961", "Field Water Supply (TM 5-700, US Army, 1961)",
          "Field water supply and treatment", "Headquarters, Department of the Army", "fieldwatersupply00unitrich",
          "1961",
@@ -513,6 +505,9 @@ SECTIONS = [
                                                      "Beef (and Pork) on the Farm (1960s)"),
         ("word", "pub:usda_farmers_bulletins:1970s", "USDA Farmers' Bulletins: Beef, Lamb and Pork Slaughtering, "
                                                      "Cutting, Preserving, and Cooking on the Farm (1977, 1978)"),
+        ("key", "skill:accp_md0710_red_meats", "Red Meats (Army subcourse MD0710): wholesale and retail cuts, cured "
+                                               "and smoked meats"),
+        ("key", "skill:usmc_mci_meats_and_meat_cookery_1984", "Meats and Meat Cookery (Marine Corps Institute, 1984)"),
         ("word", "game-fish", "Game and fish food safety and chronic wasting disease (request word)"),
         ("word", "preserving", "Home food preserving, smoking and curing as history (request word)"),
         ("pack", "commons_homestead_stores", "Sausage making, cleavers and butcher knives, for the picture describer"),
@@ -557,6 +552,9 @@ SECTIONS = [
                                                                       "1915)"),
         ("key", "hfill:lungwitz_complete_guide_blacksmithing_horseshoeing_1902", "The Complete Guide to "
                                                                                  "Blacksmithing, Horseshoeing (1902)"),
+        ("key", "skill:army_tm_10_440_blacksmith_and_welder_1941", "Blacksmith and Welder (Army TM 10-440, 1941)"),
+        ("key", "skill:usmc_mci_metal_working_and_welding_1983", "Metal Working and Welding (Marine Corps Institute, "
+                                                                 "1983)"),
         ("word", "making", "Home manufacturing and making: casting, machining and metalwork (request word)"),
         ("pack", "commons_forge_traps_tanning", "Blacksmith's tools, hardies, swage blocks, horseshoes and farriery, "
                                                 "for the picture describer"),
@@ -596,8 +594,9 @@ SECTIONS = [
          "run by NASA's Jet Propulsion Laboratory and the Astronomical Society of the Pacific under their own "
          "terms; open it in a browser")]),
     ("Water purification", "Making water safe: boiling, disinfecting, filtering and storing it. " + WATER_SAFETY, [
-        ("key", "hfill:tb_med_577_field_water_supplies_2010", "Sanitary Control and Surveillance of Field Water "
-                                                              "Supplies (TB MED 577, 2010)"),
+        ("key", "skill:army_tb_med_577_field_water_supplies_2010", "Sanitary Control and Surveillance of Field Water "
+                                                                   "Supplies (TB MED 577, 2010)"),
+        ("key", "skill:accp_md0160_military_water_supply", "Military Water Supply (Army subcourse MD0160)"),
         ("key", "hfill:army_tm_5_700_field_water_supply_1961", "Field Water Supply (TM 5-700, 1961)"),
         ("key", "outcook:cdc_emergency_water", "CDC: making water safe in an emergency, boiling and disinfecting"),
         ("key", "outcook:epa_emergency_water", "EPA: emergency disinfection of drinking water (personal use)"),
@@ -661,7 +660,7 @@ LICENCE_LINES = {
                     "the Bureau of Fisheries' net study (Internet Archive copies), and the USDA AMS Institutional Meat "
                     "Purchase Specifications read from www.ams.usda.gov (its robots.txt allows /sites/default/files; "
                     "no AI rules, checked 2026-11-23).",
-    "hfill_military": "AFM 51-40 (ERIC's copy), TM 1-205, TB MED 577 / NAVMED P-5010-10 and TM 5-700: works of the US "
+    "hfill_military": "AFM 51-40 (ERIC's copy), TM 1-205 and TM 5-700: works of the US "
                       "armed forces read from the Internet Archive and judged at every build by the release rule "
                       "(military_release.py): the builder reads the front pages and says truthfully what they print "
                       "about distribution; a restricted marking is never republished.",
@@ -703,14 +702,17 @@ NOT_INCLUDED = [
     ("The Nautical Almanac and the Air Almanac", "Produced jointly by the US Naval Observatory and HM Nautical Almanac "
      "Office (UK Crown copyright in part) and sold each year; an old almanac is useless for navigation. Link-only. "
      "Index: https://aa.usno.navy.mil/"),
-    ("Water Supply and Water Purification (TM 5-295, 1942)", "Replaced by TM 5-700 (1961) and TB MED 577 (2010), "
+    ("Water Supply and Water Purification (TM 5-295, 1942)", "Replaced by TM 5-700 (1961, built here) and TB MED 577 (2010, "
+     "skill:army_tb_med_577_field_water_supplies_2010), "
      "both built here. Index: https://archive.org/details/TM5-295"),
     ("CAWST household water treatment guides, Eawag's SODIS manual and WHO's household water treatment documents",
      "Non-commercial licences or their makers' copyright. Link-only from hfill:index. Index: https://www.cawst.org/ "
      "and https://www.sodis.ch/"),
-    ("Army meat cutting, cook and subsistence manuals (TM 10-series) and Navy metalworking rate manuals", "Left to "
-     "the service skills and Navy rates collections being built at the same time, so the same manual is not built "
-     "twice. Index: https://archive.org/search?query=TM+10-405"),
+    ("Army and Marine Corps meat, food inspection, blacksmith and field water manuals", "Already in the service skills "
+     "collection (skill:accp_md0710_red_meats, skill:usmc_mci_meats_and_meat_cookery_1984, "
+     "skill:army_tm_10_440_blacksmith_and_welder_1941, skill:accp_md0160_military_water_supply, "
+     "skill:army_tb_med_577_field_water_supplies_2010) and linked from hfill:index; not built twice. Navy metalworking "
+     "rate manuals are left to the Navy rates collection. Index: https://archive.org/details/md-0710-red-meats-edition-200"),
     ("Psychological first aid and remote medicine", "Covered by the remote medicine collection; not repeated here. "
      "Index: https://www.ptsd.va.gov/professional/treat/type/psych_firstaid_manual.asp"),
 ]

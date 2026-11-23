@@ -134,7 +134,7 @@ def test_military_book_keeps_the_release_line(monkeypatch):
                           entry["description"], "Made-up release line. " + entry["notice"])
     monkeypatch.setattr(B, "pdfdoc_book", made_up_book)
     monkeypatch.setattr(D, "ai_refused", lambda url, cache=None: False)
-    book = M.COLLECTION.book_for("hfill:tb_med_577_field_water_supplies_2010", "work")
+    book = M.COLLECTION.book_for("hfill:army_tm_5_700_field_water_supply_1961", "work")
     assert book.notice.startswith("Made-up release line. The release line before this")
     old = M.COLLECTION.book_for("hfill:olcott_star_lore_1911", "work")
     assert old.notice == M.COLLECTION.pdfs["olcott_star_lore_1911"]["notice"]
@@ -161,6 +161,6 @@ def test_index_made_offline_with_keys_the_library_has(monkeypatch):
 def test_not_included_rows():
     rows = " ".join(r[0] + " " + r[1] for r in M.NOT_INCLUDED)
     for words in ("FSIS", "Extension", "trapper education", "msi.nga.mil", "Nautical Almanac", "remote medicine",
-                  "service skills", "pub:usda_farmers_bulletins", "SODIS"):
+                  "service skills", "skill:army_tb_med_577_field_water_supplies_2010", "pub:usda_farmers_bulletins", "SODIS"):
         assert words in rows, words
     assert not re.search(r"\bhfill:(?!index|usfs_woody)", rows)    # nothing listed as left out is also built

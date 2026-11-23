@@ -51,8 +51,8 @@ GUIDANCE = [
                "stars and navigation, water, nets and baskets; in the reference library: hfill:index)",
          url="https://github.com/mark-getbraille/toolkit-models", by="the Digital Accessibility Toolkit"),
     dict(title="Sanitary Control and Surveillance of Field Water Supplies (TB MED 577; in the reference library: "
-               "hfill:tb_med_577_field_water_supplies_2010)",
-         url="https://archive.org/details/NAVMEDP501010SANITARYCONTROLANDSURVEILLANCEOFFIELDWATERSUPPLIES2010",
+               "skill:army_tb_med_577_field_water_supplies_2010)",
+         url="https://archive.org/details/ost-military-medical-tbmed577",
          by="the US Army, Navy and Air Force"),
     dict(title="Making water safe in an emergency (CDC; in the reference library: outcook:cdc_emergency_water)",
          url="https://www.cdc.gov/water-emergency/", by="the Centers for Disease Control and Prevention"),

@@ -46,6 +46,6 @@ def test_makers_link_only():
 
 def test_guidance_points_to_the_library():
     text = " ".join(g["title"] + " " + g["url"] for g in M.GUIDANCE)
-    for key in ("hfill:index", "hfill:tb_med_577_field_water_supplies_2010", "outcook:cdc_emergency_water"):
+    for key in ("hfill:index", "skill:army_tb_med_577_field_water_supplies_2010", "outcook:cdc_emergency_water"):
         assert key in text, key
     assert all(g["url"].startswith("https://") and g["by"] for g in M.GUIDANCE)
