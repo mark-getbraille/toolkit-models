@@ -333,6 +333,8 @@ SECTIONS = [
         ("word", "travel", "Travel books: USA.gov travel pages, FAA PackSafe, national park passes"),
         ("key", "lang:wikivoyage_phrasebooks", "Wikivoyage phrasebooks"),
         ("word", "languages", "Language courses (FSI, Peace Corps) and example sentences"),
+        ("key", "pclang:index", "Peace Corps language courses: every language, where it is spoken and its courses"),
+        ("word", "peace-corps-languages", "The Peace Corps's language courses for every country it served"),
         ("word", "holidays", "Holidays and observances, with other countries' public holidays")]),
     ("Links only", "Sources the builder cannot read, or that are not books.", [
         ("link", "State Department country pages (U.S. Relations With ... fact sheets)",
