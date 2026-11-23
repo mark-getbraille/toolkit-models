@@ -28,8 +28,8 @@ music theory (the "games" and "music" topics of open_catalogues.py), the old pia
 Theory) whole in the Kiwix library.
 
 Not built (NOT_INCLUDED, link-only for the owner's personal assistant): Pagat.com card game rules, the FIDE Laws of
-Chess, Wikibooks' game books (in Kiwix), the Game Accessibility Guidelines and AbleGamers (no open licence), the American Go Association's rules, Scrabble's rules, the official league rules of the sports, Open Music
-Theory and Hutchinson's Music Theory for the 21st-Century Classroom (licence not confirmed or robots.txt refuses),
+Chess, Wikibooks' game books (in Kiwix), the Game Accessibility Guidelines and AbleGamers (no open licence), the American Go Association's rules, Scrabble's rules, the official league rules of the sports (Open Music
+Theory and Music Theory for the 21st-Century Classroom are now built in music_learning.py, musiclearn:),
 AudioGames.net and the accessible game makers, the US Mint's and the Smithsonian National Postal Museum's pages.
 
 Run from the repository's folder:
@@ -236,11 +236,12 @@ NOT_INCLUDED = [
     ("Official sports rules (NFL, NBA, MLB, NHL, FIFA Laws of the Game, NCAA rule books, USA Pickleball)", "Each "
      "league's copyright; no public-domain government edition exists; link-only. Index: "
      "https://www.theifab.com/laws/ and https://www.ncaa.org/sports/2013/11/5/playing-rules-administration.aspx"),
-    ("Open Music Theory (Gotham and others, CC BY-SA)", "Openly licensed, but its host viva.pressbooks.pub's "
-     "robots.txt refuses programs (checked 2026-11-22); link-only. Index: https://viva.pressbooks.pub/"
-     "openmusictheory/"),
-    ("Music Theory for the 21st-Century Classroom (Robert Hutchinson)", "Its pages state no licence the builder could "
-     "find (checked 2026-11-22); link-only until one is confirmed. Index: https://musictheory.pugetsound.edu/mt21c/"),
+    ("Open Music Theory (Gotham and others, CC BY-SA)", "Its second edition's host viva.pressbooks.pub refuses "
+     "programs; the first edition (openmusictheory.github.io, CC BY-SA 4.0) is built in the music collection "
+     "(musiclearn:open_music_theory, 2026-11-23). Index: https://viva.pressbooks.pub/openmusictheory/"),
+    ("Music Theory for the 21st-Century Classroom (Robert Hutchinson)", "Its colophon gives the GNU Free "
+     "Documentation License 1.2 or later (found 2026-11-23); built in the music collection "
+     "(musiclearn:music_theory_21st_century_classroom). Index: https://musictheory.pugetsound.edu/mt21c/"),
     ("Morphy's games, Lasker's Manual of Chess (1927) and Nimzowitsch's My System", "The Internet Archive copies found "
      "are later reprints or new translations (copyright) or have no text layer; left out. Index: "
      "https://archive.org/search?query=morphy+games+chess"),
