@@ -626,8 +626,9 @@ SECTIONS = [
         ("key", "craft:butterick_tatting_netting_1895", "Tatting and Netting (Butterick, 1895)"),
         ("key", "knot:index", "Knots and outdoor skills: the guide to knots, rope and cordage"),
         ("word", "knots-military", "Military and Coast Guard rope and knot manuals (request word)"),
-        ("pack", "commons_homestead_stores", "Fishing nets, cast nets, ropemaking, baskets and basketry, for the "
-                                             "picture describer"),
+        ("pack", "commons_homestead_stores", "Fishing nets, cast nets, baskets and basketry, for the picture "
+                                             "describer"),
+        ("pack", "commons_knots", "Knots, rope making and ropewalks, for the picture describer"),
         ("pack", "commons_fishing_tackle", "Fishing tackle, for the picture describer")]),
 ]
 INDEX = X.index_maker("hfill", GROUP, "Homestead skills: a guide to the library", "Homestead and self-reliance "

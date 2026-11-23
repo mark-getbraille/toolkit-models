@@ -2050,6 +2050,13 @@ COMMONS_KEYS = COMMONS_KEYS | frozenset(MAKING_COMMONS_KEYS)
 from photography_packs import PHOTOGRAPHY_PACKS, PHOTOGRAPHY_COMMONS_KEYS
 PACKS.update(PHOTOGRAPHY_PACKS)
 COMMONS_KEYS = COMMONS_KEYS | frozenset(PHOTOGRAPHY_COMMONS_KEYS)
+# Homestead and self-reliance skills (packs/homestead_fill_packs.py, the owner's request of 2026-11-23): Commons
+# blacksmith's tools, horseshoes, historic traps in museums, tanneries, seed libraries, baskets, fishing nets, rope
+# making, sausage making, water purification, constellations, star charts, sextants and chronometers; every answer
+# ends with its forge, trap law, tanning, meat, blade, water, seed, fishing rule, Sun or old chart note.
+from homestead_fill_packs import HOMESTEAD_FILL_PACKS, HOMESTEAD_FILL_COMMONS_KEYS
+PACKS.update(HOMESTEAD_FILL_PACKS)
+COMMONS_KEYS = COMMONS_KEYS | frozenset(HOMESTEAD_FILL_COMMONS_KEYS)
 
 
 def pack_lanes(keys):
