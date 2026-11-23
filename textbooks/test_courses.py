@@ -276,7 +276,7 @@ def test_weekly_check_and_catalogue(monkeypatch, tmp_path):
     monkeypatch.setattr(updates, "guide_sign", lambda entry: seen.append(entry["name"]) or "g")
     assert updates.fingerprint("k12:im_grade_6_math") == "g" and seen == ["im_grade_6_math"]
     data = B.merge([str(tmp_path / "none.json")])
-    assert data["groups"]["k12"] == "School books (K-12)"
+    assert data["groups"]["k12"] == "Teaching and homeschooling"      # the school books' group since 2026-11-23
     assert any("SkillsCommons" in x["title"] for x in data["not_included"])
     assert data["kiwix_labels"]["khanacademy_en_all"] == sources.PERSONAL_USE
     assert "libretexts" in data["licence_lines"] and "k12" in data["group_notes"]

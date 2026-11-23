@@ -1,5 +1,6 @@
-"""More education for the reference library, in the group "Reference, education" (the owner's request of 2026-11-22:
-flesh out education; a sibling of education_help.py, edu:). Keys: edumore:<name>. Request word: education-more (every
+"""More education for the reference library, in the group "Teaching and homeschooling" (group key "k12", the
+top-level section of 23 November 2026; keys unchanged). First asked for by the owner on 2026-11-22
+(flesh out education; a sibling of education_help.py, edu:). Keys: edumore:<name>. Request word: education-more (every
 book here).
 
 The Department of Education's own sites refuse programs (education_help.py's NOT_INCLUDED: ed.gov, studentaid.gov,
@@ -50,8 +51,8 @@ import govinfo_kit as GK  # noqa: E402
 import refs_kit as K  # noqa: E402
 from old_ia_books import old_book  # noqa: E402
 
-GROUP = EDU.GROUP                      # "education": the same group as education_help.py
-GROUPS = dict(EDU.GROUPS)              # {"education": "Reference, education"}
+GROUP = EDU.GROUP                      # "k12" ("Teaching and homeschooling"): the same group as education_help.py
+GROUPS = dict(EDU.GROUPS)              # {} (the group is named in sources.GROUPS)
 LEGAL = EDU.LEGAL
 
 # What is said in every old book's description ("{year}" is filled in): it is marked as historical.

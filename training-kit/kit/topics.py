@@ -413,7 +413,7 @@ TOPICS = [
     Topic("crafts", "Arts and crafts",
           "Knitting, crochet, lace, quilting, embroidery, weaving, sewing, upholstery, leather and fabrics, pottery, "
           "jewellery and beading, paper crafts, candles and soap, glass and carving, art supplies, models and "
-          "resin, craft cutters and heat presses, and photography.",
+          "resin, craft cutters and heat presses, beekeeping, saddlery, hat making and photography.",
           (# textile crafts (home_crafts_sources.py)
            "commons_knit_crochet_lace", "commons_quilt_embroidery_weaving", "commons_sewing_mending",
            "commons_upholstery_leather_shoes", "commons_fabrics_fibres", "open_images_textile_crafts",
@@ -422,6 +422,8 @@ TOPICS = [
            "commons_pottery_ceramics", "museum_ceramics", "commons_jewellery_beading", "museum_jewellery",
            "commons_paper_crafts", "commons_candle_soap", "commons_glass_carving", "commons_art_supplies",
            "commons_models_resin", "museum_glass_crafts", "open_images_crafts",
+           # craft trades: beekeeping equipment, glassblowing, saddlery, tailors, hatters (craft_trades_sources.py)
+           "commons_craft_trades",
            # vinyl cutters, cutting machines, heat presses, screen printing and machine embroidery (making_sources.py;
            # also in "machines" and "home", which keep the lasers and engravers it also holds)
            "commons_cutting_lasers",
@@ -467,6 +469,20 @@ TOPICS = [
            # non-commercial and research-only (personal use)
            "dvqa", "chartqa", "scienceqa", "ai2d", "streetsignset", "fintabnet_tables", "tqa_diagrams",
            "commons_mail_parcels", "im2latex_formulas")),
+    # Teaching and school (the owner's request of 23 November 2026: teaching and homeschooling is a top-level section):
+    # the school diagrams, textbook figures, formulas, chemical structures and charts a pupil or teacher meets, with
+    # braille and tactile graphics for teaching blind pupils. Every collection here is also in "documents" (or, for
+    # braille and tactile graphics, "vision"), which keep them.
+    Topic("teaching", "Teaching and school",
+          "School and textbook pictures for teaching and homeschooling: science diagrams, textbook figures, maths "
+          "and science formulas, chemical structures, charts and graphs, maps in lessons, and braille and tactile "
+          "graphics for blind pupils.",
+          ("openstax_figures", "synthetic_formulas", "chem_structures", "commons_charts", "owid_charts", "plotqa",
+           "commons_braille_writing", "commons_tactile_access",
+           # share-alike
+           "mapqa",
+           # non-commercial and research-only (personal use)
+           "ai2d", "tqa_diagrams", "scienceqa", "chartqa", "dvqa", "im2latex_formulas")),
     Topic("nature", "Plants, animals and nature",
           "Plants, mushrooms, insects, birds and other animals by name, household pests and pest control, pet and "
           "farm breeds and animals, crops and their diseases, weeds, poisonous plants, mushrooms and wild plants, "
