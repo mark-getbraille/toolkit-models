@@ -5,7 +5,9 @@ the builder and the weekly check). Request word: library-guide. Group: "Referenc
 
 What the book holds, one page per area (each page has headings for a screen reader's heading keys, and a start page
 links to every page):
-  - Reference books: every group of the reference library (sources.GROUPS), each on its own page, with every book:
+  - Reference books: the guides to the sections first (SECTION_GUIDES; a top-level section's group page, SECTIONS,
+    starts with its guide's key), then every group of the reference library (sources.GROUPS), each on its own
+    page, with every book:
     its title, what it covers in one line, its size when the published catalogue (textbooks.json) lists it, and its
     licence class (open, share-alike, personal use, link-only). Books the code lists but no build has published yet
     are listed too, marked "not built yet". The books that were checked and NOT built (NOT_INCLUDED) have a page of
@@ -57,6 +59,17 @@ LICENCE_LINES = {
 }
 NOT_INCLUDED = []           # nothing was left out: every part of the library is described
 
+# The top-level sections the owner asked for, each one group of the reference library with a guide book of its own:
+# {group key: (section name, the key of its guide)}. Each one's group page starts with its guide's key (the Reference
+# books page lists the guides of SECTION_GUIDES). Teaching and homeschooling (the owner's request of 23 November 2026) is the school
+# books' group under its old key "k12" (teach_index.py).
+SECTIONS = {
+    "k12": ("Teaching and homeschooling", "teach:index"),
+    "crafts": ("Arts and crafts", "arts:index"),
+    "history": ("History", "hist:index"),
+    "sports": ("Sports", "sport:index"),
+}
+
 # Program Downloader's folders on the B: drive (the owner's plan of 22 November 2026). Data packs and Original sources
 # are in Program Downloader 1.4 (downloader/paths.py, backup.py, originals.py); the other four folders are being added
 # to it, so their words here follow the plan and should be checked against the program's own guide when they ship.
@@ -94,6 +107,7 @@ FOLDERS = [
 # The top-level sections that have a guide book of their own (key, section, request word): listed on the Reference
 # books page so the owner can open the guide to a whole section (the owner's requests of 22 and 23 November 2026).
 SECTION_GUIDES = [
+    ("teach:index", "Teaching and homeschooling", "teach-section"),
     ("arts:index", "Arts and crafts", "arts-crafts"),
     ("lang:index", "Languages", "languages-index"),
 ]
@@ -284,7 +298,8 @@ def reference_pages(data):
         path = f"books-{slug(g)}"
         body.append(f'<li><a href="{path}">{esc(name)}</a>: {len(rs)} books, {len(built)} built'
                     f'{(", " + size_words(total)) if total else ""}.</li>')
-        gb = [f"<p>{len(rs)} books, {len(built)} of them built"
+        gb = [f"<p>A top-level section. Start with its guide, key {esc(SECTIONS[g][1])}.</p>" if g in SECTIONS else ""]
+        gb += [f"<p>{len(rs)} books, {len(built)} of them built"
               f"{(', ' + size_words(total) + ' in all') if total else ''}. "
               f"The books are listed under their licence class, A to Z.</p>"]
         for cls in CLASS_ORDER:

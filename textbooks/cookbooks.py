@@ -746,7 +746,8 @@ def sign(key):
     import updates                               # here, not at the top: updates imports the builder
     entry = BY_NAME.get(key.split(":", 1)[1])
     if entry is None:
-        return ""
+        import cooking_basics                    # the cooking basics books share the prefix cook: (cooking_basics.py)
+        return cooking_basics.COLLECTION.sign(key) if key in cooking_basics.COLLECTION.own_keys() else ""
     try:
         if entry["kind"] == "recipes":
             return hashlib.sha256(json.dumps(SITES[entry["site"]][0]()).encode()).hexdigest()[:24]
@@ -773,6 +774,11 @@ def build_cookbooks(keys, out_dir, cache=None, date=None, limit=None):
     os.makedirs(out_dir, exist_ok=True)
     recipe_books = []
     plan = expand_keys(keys)
+    import cooking_basics                        # the cooking basics books share the prefix cook: (cooking_basics.py)
+    theirs = [k for k in plan if k in cooking_basics.COLLECTION.own_keys()]
+    if theirs:
+        manifests.update(cooking_basics.COLLECTION.build(theirs, out_dir, cache, date, limit))
+        plan = [k for k in plan if k not in theirs]
     plan.sort(key=lambda k: k.endswith("cookbooks_library_guide"))     # the guide last: it lists the recipes built
     for key in plan:
         entry = BY_NAME.get(key.split(":", 1)[1]) if key.startswith("cook:") else None

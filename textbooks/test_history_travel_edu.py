@@ -39,7 +39,7 @@ import travel_more as TM  # noqa: E402
 
 WORDS = {H: ["history"] + list(H.WORD_TAGS), TM: ["travel-more"], EM: ["education-more"]}
 GROUP_NAMES = {H: ("history", "Reference, history"), TM: ("travel", "Reference, travel"),
-               EM: ("education", "Reference, education")}
+               EM: ("k12", "Teaching and homeschooling")}       # the teaching section since 2026-11-23
 
 
 def entries(m):
@@ -55,7 +55,8 @@ def test_registered_with_groups_lines_and_rows():
         assert m.__name__ in more_refs.MODULES and more_refs.MODULES.count(m.__name__) == 1
         assert m in more_refs.modules() and prefixes.count(m.COLLECTION.prefix) == 1
         group, name = GROUP_NAMES[m]
-        assert m.GROUPS == {group: name} and sources.GROUPS[group] == name
+        # (education_more names no group of its own: "k12" is named in sources.GROUPS, the school books' group)
+        assert m.GROUPS in ({group: name}, {}) and sources.GROUPS[group] == name
         for word in words:
             keys = sources.expand_keys([word])
             assert 0 < len(keys) == len(set(keys)) <= 256, word

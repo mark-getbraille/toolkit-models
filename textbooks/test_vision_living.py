@@ -61,9 +61,12 @@ def test_index_keys_are_real():
     for title, intro, entries in V.SECTIONS:
         assert title and intro.endswith("."), title
         for kind, what, words, *more in entries:
-            assert kind in ("key", "manuals", "pack", "link") and words, (title, what)
+            assert kind in ("key", "word", "manuals", "pack", "link") and words, (title, what)
             if kind == "key":
                 assert V.key_exists(what), what
+            elif kind == "word":                 # a request word that stands for real books, not itself
+                keys = sources.expand_keys([what])
+                assert keys and keys != [what] and all(V.key_exists(k) for k in keys), what
             elif kind == "manuals":
                 assert f'CATEGORIES["{what}"]' in manuals or f'"{what}": dict(' in manuals, what
             elif kind == "link":
@@ -85,13 +88,14 @@ def test_index_book_from_records(monkeypatch, tmp_path):
     monkeypatch.setattr(B, "fetch", lambda *a, **k: (_ for _ in ()).throw(AssertionError("no fetch")))
     monkeypatch.setattr(V, "SECTIONS", [("Made-up subject", "A made-up introduction.", [
         ("key", "atdoc:nvda_user_guide", "NVDA User Guide"), ("key", "vision:made_up", "nothing"),
-        ("pack", "commons_braille_writing", "braille writers"),
+        ("pack", "commons_braille_writing", "braille writers"), ("word", "blind-braille", "old braille codes"),
         ("link", "A made-up site", "https://example.org/", "Copyright: link-only.")])])
     left_out = []
     book = V.index_book("index", str(tmp_path), None, left_out)
     assert len(book.pages) == 1 and "atdoc:nvda_user_guide" in book.pages[0].body
     assert "vision:made_up" not in book.pages[0].body and left_out[0]["title"] == "vision:made_up"
     assert "https://example.org/" in book.pages[0].body and book.licence == "CC0 1.0"
+    assert "request word blind-braille" in book.pages[0].body
 
 
 def test_aph_reader(monkeypatch, tmp_path):
