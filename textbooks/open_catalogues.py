@@ -386,6 +386,10 @@ IA_TOPICS = {
     "outdoors": ("Survival and outdoor skills", "fieldmanual", 'subject:(camping OR woodcraft OR "outdoor life" OR '
                  'scouting)'),
     "parenting": ("Parenting and child care", "health", 'subject:("child care" OR "infants care" OR parenting)'),
+    # Teaching and homeschooling (the owner's request of 23 November 2026, group key "k12"): teaching methods, school
+    # readers and primers, and homeschooling.
+    "teaching": ("Teaching and homeschooling", "k12", 'subject:(teaching OR "home schooling" OR homeschooling OR '
+                 '"readers (primary)" OR primers OR "education -- study and teaching")'),
     "philosophy": ("Philosophy and religion", "reference", 'subject:(philosophy OR religion OR ethics)'),
     "psychology": ("Psychology", "reference", 'subject:(psychology)'),
     "economics": ("Economics and business", "reference", 'subject:(economics OR business OR accounting)'),

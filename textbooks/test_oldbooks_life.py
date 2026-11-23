@@ -60,10 +60,18 @@ def test_registered_and_wired():
     assert prefixes.count("olife") == 1
 
 
+# The teachers' guides moved to "Teaching and homeschooling" (the owner's request of 2026-11-23).
+TEACHERS_GUIDES = {"comstock_handbook_nature_study_1911", "nasa_exploring_the_moon_1994",
+                   "nasa_space_based_astronomy_1994", "nasa_looking_at_earth_from_space_1995", "nasa_microgravity_1995",
+                   "nasa_space_food_nutrition_1999", "nasa_plants_in_space_1997", "nasa_mars_exploration_water_2000"}
+
+
 def test_books_in_existing_groups():
     for area, group in GROUPS.items():
         for e in O.AREAS[area]:
-            assert e["group"] == group and group in sources.GROUPS, e["name"]
+            # the teachers' guides are in "Teaching and homeschooling" (group key "k12") since 2026-11-23
+            expected = O.TEACH if e["name"] in TEACHERS_GUIDES else group
+            assert e["group"] == expected and expected in sources.GROUPS, e["name"]
     for e in O.AREAS["computer"]:
         assert e["group"] in ("computer", "typing"), e["name"]
     assert sources.GROUPS["computer"] == "Reference, computer and phone basics"
