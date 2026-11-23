@@ -1,10 +1,12 @@
 """Self-test of the arts and crafts guide (arts_crafts_index.py) and of the move of the craft books into the one
-top-level group "Reference, arts and crafts" (the owner's request of 22 November 2026), with MADE-UP data only:
+top-level group "Reference, arts and crafts" (the owner's request of 22 November 2026), with MADE-UP data only (the craft
+trade pages of 23 November 2026 included):
 nothing is downloaded.
 
 It checks that the module is registered under its request word "arts-crafts" (at most 256 jobs) in the arts and crafts
 group; that its key prefix "arts:" clashes with no other module; that the index lists every craft book (the textile
-craft books of home_crafts.py, the sewing books of thin_topics.py, every book of crafts_books.py) and the photography
+craft books of home_crafts.py, the sewing books of thin_topics.py, every book of crafts_books.py and craft_trades.py,
+and homestead.py's two old beekeeping books) and the photography
 collection, and no home repair book; that every key, pack and manual collection it names exists; that the craft books
 keep their keys and request words; and that two modules sharing the "craft:" prefix each build their own keys.
 
@@ -17,6 +19,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import arts_crafts_index as A  # noqa: E402
+import craft_trades as CT  # noqa: E402
 import crafts_books as CB  # noqa: E402
 import home_crafts as HC  # noqa: E402
 import more_refs  # noqa: E402
@@ -56,7 +59,9 @@ def test_index_lists_every_craft_book_and_photography():
     crafts = {f"craft:{g['name']}" for g in CB.GUIDES + CB.PDFS}
     textiles = {f"craft:{g['name']}" for g in HC.GUIDES + HC.PDFS if g["group"] == "crafts"}
     sewing = {f"pdf:{e['name']}" for e in TT.SEWING}
-    assert crafts | textiles | sewing | {"make:index"} == keys
+    trades = {f"ctrade:{e['name']}" for e in CT.GUIDES + CT.PDFS}
+    bees = {what for _k, what, _t in A.HOMESTEAD_BEE_KEYS}
+    assert crafts | textiles | sewing | trades | bees | {"make:index"} == keys
     assert "craft:webster_quilts_1915" in textiles and "craft:mickel_leather_work_1915" in textiles
     home_repair = {f"craft:{g['name']}" for g in HC.GUIDES + HC.PDFS if g["group"] == HC.GROUP}
     assert "craft:epa_safe_pest_control" in home_repair and not home_repair & keys

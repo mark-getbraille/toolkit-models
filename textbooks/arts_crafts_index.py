@@ -11,6 +11,8 @@ What this module builds, in plain words:
       the sewing, knitting and needlework books of thin_topics.py (thin:sewing, keys pdf:<name>),
       the pottery, jewellery, paper, bookbinding, calligraphy, glass, carving, painting, soap and candle books of
         crafts_books.py,
+      the craft trade books of craft_trades.py (beekeeping, glass blowing and glass work, leather working, clothing
+        making and repair), one page per trade, with homestead.py's two old beekeeping books on the beekeeping page,
       and the photography collection (another helper is adding it; it is named here only by its request word).
   The home repair, pest and mending books stay in "Reference, home repair and pests" (home_crafts.py) and are not
   listed; the making books (3D printing, CNC) stay in their own group, with make:index linked for cutting machines.
@@ -27,6 +29,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import craft_trades as CT  # noqa: E402
 import crafts_books as CB  # noqa: E402
 import home_crafts as HC  # noqa: E402
 import practical_index as X  # noqa: E402
@@ -69,6 +72,18 @@ def crafts_books_page(page):
         if fits:
             rows.append(("key", f"craft:{g['name']}", g["title"]))
     return rows
+
+
+# homestead.py's two old beekeeping books (in the homesteading group), listed on the beekeeping page too.
+HOMESTEAD_BEE_KEYS = [("key", "homestead:langstroth_hive_honey_bee_1913", "Langstroth on the Hive and Honey Bee "
+                                                                          "(revised by Dadant, 1913)"),
+                      ("key", "homestead:root_abc_bee_culture_1905", "The ABC of Bee Culture (A. I. Root, 1905)")]
+
+
+def trade_books(area):
+    """("key", key, title) entries of craft_trades.py's books of one trade ("bees", "glass", "leather",
+    "clothing")."""
+    return [("key", f"ctrade:{e['name']}", e["title"]) for e in CT.GUIDES + CT.PDFS if e["area"] == area]
 
 
 def sections():
@@ -119,6 +134,30 @@ def sections():
              ("manuals", "craft_machines", "Cricut, Silhouette, Brother ScanNCut and Sizzix machines"),
              ("manuals", "heat_press_vinyl", "Heat presses, vinyl cutters and sublimation printers"),
              ("pack", "commons_cutting_lasers", "Vinyl cutters, cutting machines, heat presses and screen printing")]),
+        ("Beekeeping", "Bees and hives, queen rearing, honey and wax, bee diseases and Varroa, with the sting and "
+                       "smoker safety notes (the beekeeping books are in the homesteading group).",
+         trade_books("bees") + HOMESTEAD_BEE_KEYS + [
+             ("word", "ctrade-bees", "Every beekeeping book of the craft trades collection"),
+             ("manuals", "homestead", "Beekeeping equipment, with the homestead equipment manuals"),
+             ("pack", "commons_homestead_poultry_bees", "Beehives, bee smokers, honey extractors and beekeeping suits"),
+             ("pack", "open_images_homestead", "Honeycomb, beekeepers and apiaries in photos")]),
+        ("Glass blowing and glass work", "Scientific glassblowing and lampwork, annealing, eye protection, and "
+                                         "stained and leaded glass.",
+         trade_books("glass") + [
+             ("word", "ctrade-glass", "Every glass book of the craft trades collection"),
+             ("manuals", "pottery_kilns", "Kilns, including glass kilns"),
+             ("pack", "commons_glass_carving", "Stained glass, glassblowing, lampworking and mosaics")]),
+        ("Leather working", "Leather craft, harness making and saddlery, shoemaking and shoe repair, tanning, and "
+                            "canvas and webbing repair.",
+         trade_books("leather") + [
+             ("word", "ctrade-leather", "Every leather and canvas book of the craft trades collection"),
+             ("pack", "commons_upholstery_leather_shoes", "Leatherwork, shoemaking and cobblers")]),
+        ("Clothing making and repair", "Tailoring, pattern drafting, dressmaking, millinery, fitting, mending and "
+                                       "remaking clothes.",
+         trade_books("clothing") + [
+             ("word", "ctrade-clothing", "Every clothing book of the craft trades collection"),
+             ("manuals", "sewing_textile", "Sewing machines and sergers"),
+             ("pack", "commons_sewing_mending", "Sewing patterns, dress forms, tailoring and mending")]),
         ("Photography", "Cameras, taking pictures and photo technique.", [
              ("word", PHOTOGRAPHY_WORD, "The photography collection's books")]),
     ]
@@ -127,15 +166,17 @@ def sections():
 SECTIONS = sections()
 INDEX = X.index_maker("arts", GROUP, "Arts and crafts: a guide to the library", "Arts and crafts",
                       "A guide to the library for arts and crafts: textile crafts, pottery, jewellery, paper and "
-                      "books, glass, carving and painting, soap and candles, models, craft cutting machines and "
-                      "photography, with the books, manuals and picture packs of each.", SECTIONS)
+                      "books, glass, carving and painting, soap and candles, models, craft cutting machines, "
+                      "beekeeping, glass blowing, leather working, clothing making and repair, and photography, with "
+                      "the books, manuals and picture packs of each.", SECTIONS)
 MAKERS = {"index": INDEX}
 
 
 def every_key():
     """arts:index and every book key the index lists (the request word arts-crafts)."""
-    return ["arts:index"] + [what for _p, _i, entries in SECTIONS for kind, what, *_r in entries if kind == "key"
+    keys = ["arts:index"] + [what for _p, _i, entries in SECTIONS for kind, what, *_r in entries if kind == "key"
                              and what != "make:index"]
+    return list(dict.fromkeys(keys))
 
 
 COLLECTION = K.Collection("arts", GROUP, makers=MAKERS, words={"arts-crafts": every_key})

@@ -39,6 +39,7 @@ MODULES = [
     "electronics_books",    # electronics repair and assistive-technology care: Kuphaldt, NEETS, NLS, VA, Wikibooks (elec:)
     "building_books",       # light construction: Army carpentry and masonry, Navy builder, OSHA, Wood Handbook (build:)
     "crafts_books",         # arts and crafts: Wikibooks origami and bookbinding, old pottery, jewellery, glass books (craft:)
+    "craft_trades",         # craft trades: beekeeping, glass blowing, leather working, clothing making and repair (ctrade:)
     "arts_crafts_index",    # arts and crafts, a top-level section: the guide to every craft book, manual and pack (arts:)
     # life skills (the owner's request of 2026-11-22)
     "car_care",             # old public-domain car care books (car:)
