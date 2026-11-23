@@ -140,6 +140,8 @@ MODULES = [
     "education_more",       # education: ED booklets (ERIC copies), FAFSA form, old education classics (edumore:)
     # official copies for the thin sections, from GovInfo, agency sites and the Internet Archive (2026-11-22)
     "govinfo_fill",         # NHTSA, FEMA, SAMHSA, NIA, CMS, VA, NARA, CDC, CPSC, EPA booklets; Army and Navy manuals (gpo:)
+    # teaching and homeschooling outside the US (the owner's request of 2026-11-23; the US states are in teach-us's module)
+    "teach_world",          # Canada, UK (with Oak), Ireland, Australia, NZ, other countries, NGOs, classics (tworld:)
 ]
 
 _loaded = {}
