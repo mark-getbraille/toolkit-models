@@ -251,6 +251,21 @@ def test_old_plan_and_screens(monkeypatch, tmp_path):
     assert len(book.originals) == 4 and "IS-909" in book.notice and "course date 2013-10-31" in book.notice
 
 
+def test_old_knowledge_check():
+    """An older screen's question comes from its script: the choices with the right one marked, then the
+    explanation without the player's own words."""
+    page = ('<div class="group_container"><form><span class="questiontext">ignored form copy</span></form>'
+            '<script>var c = q1 = new Practice100(); c.description = "Which plan comes first?\\n<br \\/>Pick one.";'
+            'c.formName = "F"; c.answers = [{"feedback":"","correct":true,"text":"The family plan"},'
+            '{"feedback":"","correct":false,"text":"None"}];\n'
+            'q1.remediation = {"always":[],"correct":["<p><span>Correct.</span> Review the feedback below. When you '
+            'are ready to proceed, click on the Next button.</p><p>Plans start at home.</p>"]};\n</script></div>')
+    body = F.old_screen(page, "https://emilms.fema.gov/is_0909/groups/9.html")
+    assert "Which plan comes first?" in body and "<li>The family plan (correct answer)</li>" in body
+    assert "<li>None</li>" in body and "Plans start at home." in body and "Explanation" in body
+    assert "ignored form copy" not in body and "Next button" not in body and "Review the feedback" not in body
+
+
 def test_link_course_is_not_built(monkeypatch, tmp_path):
     monkeypatch.setattr(B, "fetch", fake_fetch({K.GOVINFO_POLICY: GOVINFO}))
     left_out = []

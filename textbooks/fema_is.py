@@ -739,10 +739,51 @@ def old_screen(text, url):
     if not m:
         return ""
     body = text[m.end():]
+    questions = old_questions(body)
     body = re.sub(r"<(script|style)\b.*?</\1>", "", body, flags=re.S | re.I)
     body = re.sub(r"<span\b[^>]*class=\"title\"[^>]*>(.*?)</span>", r"<h3>\1</h3>", body, flags=re.S)
     body = re.sub(r"<div\b[^>]*class=\"imagetitle[^\"]*\"[^>]*>(.*?)</div>", r"<p>\1</p>", body, flags=re.S)
-    return _clean(body, url, layout=True)
+    return (_clean(body, url, layout=True) + questions).strip()
+
+
+def old_questions(text):
+    """The knowledge-check questions of an older screen, from its script (c.description and c.answers: the question
+    and its choices, the right ones marked, with any feedback), as HTML; "" when it has none. The question form on
+    the page itself is left out by the cleaner (forms are not read)."""
+    out = []
+    for m in re.finditer(r'c\.description = ("(?:[^"\\]|\\.)*");(.*?)c\.answers = (\[.*?\]);', text, re.S):
+        try:
+            stem, answers = json.loads(m.group(1)), json.loads(m.group(3))
+        except ValueError:
+            continue
+        items = []
+        for a in answers if isinstance(answers, list) else []:
+            words = _clean(str(a.get("text") or ""))
+            words = re.sub(r"^<p>(.*)</p>$", r"\1", words, flags=re.S)
+            if words:
+                feedback = re.sub(r"^<p>(.*)</p>$", r"\1", _clean(str(a.get("feedback") or "")), flags=re.S)
+                items.append(f"<li>{words}{' (correct answer)' if a.get('correct') else ''}"
+                             f"{(' ' + feedback) if feedback else ''}</li>")
+        out.append("<p><strong>Knowledge check:</strong></p>" + _block(_clean(stem)) +
+                   ("<ul>" + "".join(items) + "</ul>" if items else "") + _remediation(text[m.end():]))
+    return "".join(out)
+
+
+def _remediation(text):
+    """The explanation an older screen shows after a right answer (its script's remediation "correct" text), without
+    the player's "Correct. Review the feedback below ... click on the Next button." words; "" when it has none."""
+    m = re.search(r"\.remediation = (\{.*?\});\s*\n", text, re.S)
+    if not m:
+        return ""
+    try:
+        words = " ".join(json.loads(m.group(1)).get("correct") or [])
+    except (ValueError, AttributeError):
+        return ""
+    words = _clean(words)
+    words = re.sub(r"(?i)\bcorrect[.!]?\s*(?=review the feedback)|review the feedback below\.?|when you are ready to "
+                   r"proceed, (click|select) (on )?the next button\.?", "", words)
+    words = re.sub(r"<(p|strong|span)>\s*</\1>", "", words).strip()
+    return f"<p><strong>Explanation:</strong></p>{words}" if _norm(words) else ""
 
 
 # ---------------------------------------------------------------------- the course books
