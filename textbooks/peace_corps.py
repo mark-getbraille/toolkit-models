@@ -831,6 +831,9 @@ def all_keys():
 ELSEWHERE = [
     ("key", "relate:peace_corps_culture_matters", "Culture Matters: The Peace Corps Cross-Cultural Workbook (1997)"),
     ("key", "lang:fsi:tagalog", "Peace Corps Tagalog Language Correspondence Course (1994)"),
+    ("key", "pclang:index", "Peace Corps language courses: every language, where it is spoken, its courses and "
+                            "recordings"),
+    ("word", "peace-corps-languages", "Every Peace Corps language course, lesson book, phrasebook and dictionary"),
     ("word", "languages", "Language courses (FSI, DLI and Peace Corps), phrasebooks and example sentences"),
 ]
 LINKS = [
