@@ -189,6 +189,11 @@ def met_themed(o):
 MET_MOST = 3000            # object ids read from each Met search at most
 
 
+MET_MISSES = 25        # unanswered Met objects in a row before a pause
+MET_PAUSE = 120        # seconds of that pause
+MET_PAUSES = 4         # pauses before the Met is given up for this pass
+
+
 def met_search_items(searches, keep, want, prefix):
     """(file name, picture address, rows) of Met objects found by the searches whose record keep() accepts:
     public domain with a picture, not a highlight (the kit's met), musical instrument, nude or erotica
@@ -213,11 +218,28 @@ def met_search_items(searches, keep, want, prefix):
             time.sleep(0.3)
     rng.shuffle(ids)
     items = []
+    # The Met's object pages sometimes refuse a burst of requests from one machine (every answer then fails at once:
+    # the world coins pack came out empty twice on 23 November 2026). After MET_MISSES unanswered objects in a row it
+    # waits MET_PAUSE seconds and goes on more slowly; after MET_PAUSES such waits it stops and says so.
+    misses = pauses = 0
+    gap = 0.1
     for oid in ids:
         if len(items) >= want or build_packs.listing_out_of_time():
             break
-        time.sleep(0.1)
+        time.sleep(gap)
         o = get_json(s, f"{MET}v1/objects/{oid}") or {}
+        if not o:
+            misses += 1
+            if misses >= MET_MISSES:
+                pauses += 1
+                if pauses > MET_PAUSES:
+                    say(f"  Met {prefix}: the Met kept refusing its object pages; stopped with {len(items)} found.")
+                    break
+                say(f"  Met {prefix}: {misses} objects in a row were not answered; waiting {MET_PAUSE} seconds.")
+                time.sleep(MET_PAUSE)
+                misses, gap = 0, min(2.0, gap * 3)
+            continue
+        misses = 0
         why = met_excluded(o)                # a themed object is one of these packs' own, so it is kept
         if (why and not why.startswith("a themed object")) or not keep(o):
             continue
