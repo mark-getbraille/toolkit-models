@@ -1,5 +1,7 @@
-"""Books to read aloud to children, in the group "Reference, parenting and family" (the owner's request of
-2026-11-22). Keys: read-aloud (the English books and the nursery rhymes), readaloud:<source> (every piece of one
+"""Books to read aloud to children (the owner's request of 2026-11-22). Groups: the levelled picture books of Book
+Dash and the African Storybook, made for teaching children to read, are in "Teaching and homeschooling" (TEACH_GROUP,
+group key "k12", the top-level section of 23 November 2026); the old nursery rhymes and fairy tales stay in
+"Reference, parenting and family". No key or request word changed. Keys: read-aloud (the English books and the nursery rhymes), readaloud:<source> (every piece of one
 source), readaloud:<source>:<piece> (one language and reading level), readaloud:nursery_rhymes.
 
 What this module builds, in plain words:
@@ -40,6 +42,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import refs_kit as K  # noqa: E402
 
 GROUP = "parenting"
+# The levelled picture books (reading practice from first words to read-aloud stories) are teaching material: they are
+# in "Teaching and homeschooling" (named in sources.GROUPS under the school books' key "k12").
+TEACH_GROUP = "k12"
 STUDIO = "https://studio.learningequality.org"
 CC_BY_4 = "https://creativecommons.org/licenses/by/4.0/"
 TIME_BUDGET = 3.4 * 3600         # seconds one key may take (a build job's limit is 4 hours)
@@ -174,7 +179,7 @@ def picture_book(name, piece, work, cache=None, left_out=None, limit=None):
         f"readaloud_{name}_{B.slug(piece, 50).replace('-', '_')}",
         f"{spec['title']}: stories in {language}" + (f", level {level}" if level != "0" else ", picture books to read "
                                                       "aloud"),
-        "Children's picture books to read aloud", GROUP, spec["publisher"], "CC BY 4.0", CC_BY_4, spec["source"],
+        "Children's picture books to read aloud", TEACH_GROUP, spec["publisher"], "CC BY 4.0", CC_BY_4, spec["source"],
         f"Children's picture stories in {language} from {spec['title']} ({words.split(' (')[0]}): every story of the "
         "channel at this level, one page each, with its words and credits, for reading aloud to a child or with a "
         "beginning reader." + (" Left out: " + "; ".join(f"{n} {what}" for what, n in sorted(counts.items())) + "."

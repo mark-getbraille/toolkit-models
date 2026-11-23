@@ -30,11 +30,25 @@ def test_the_owners_topics_are_there():
     assert [t.id for t in topics.TOPICS] == ["medicines", "health", "drugs", "firearms", "food", "drinks", "alcohol",
                                              "machines", "transport", "home", "power", "radio", "privacy", "screens",
                                              "money", "people", "places", "art", "crafts", "sports", "documents",
-                                             "nature", "vision", "nudity", "sexual"]
+                                             "teaching", "nature", "vision", "nudity", "sexual"]
     for topic in topics.TOPICS:
         assert topic.title and topic.description.endswith(".") and len(topic.description) < 300
         assert topics.find(topic.id.upper()) is topic
     assert topics.find("nope") is None
+
+
+def test_teaching_is_a_section_of_its_own():
+    """Teaching and school (the owner's request of 23 November 2026): the school diagrams, textbook figures, formulas,
+    charts and braille pictures, right after "documents"; every one is still in "documents" or "vision"."""
+    ids = [t.id for t in topics.TOPICS]
+    assert ids.index("teaching") == ids.index("documents") + 1
+    teaching = topics.find("teaching")
+    assert teaching.title == "Teaching and school" and not teaching.sensitive and not teaching.needs
+    assert {"openstax_figures", "synthetic_formulas", "ai2d", "tqa_diagrams", "scienceqa",
+            "commons_braille_writing"} <= set(teaching.keys)
+    kept = set(topics.find("documents").keys) | set(topics.find("vision").keys)
+    assert set(teaching.keys) <= kept and len(teaching.keys) == len(set(teaching.keys))
+    assert all(k in KNOWN for k in teaching.keys)
 
 
 def test_arts_and_crafts_is_a_section_of_its_own():

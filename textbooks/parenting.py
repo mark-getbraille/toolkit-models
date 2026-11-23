@@ -1,5 +1,7 @@
 """Parenting and family resources for the reference library, in the group "Reference, parenting and family" (the
-owner's request of 2026-11-22). Keys: parenting (every book), parent:<name>.
+owner's request of 2026-11-22). Keys: parenting (every book), parent:<name>. The Center for Parent Information and
+Resources' special education guides (parent:cpir_parent_guides) are in "Teaching and homeschooling" (group key "k12",
+the top-level section of 23 November 2026).
 
 What this module builds, in plain words, each IN FULL (every page of the guide, read from the publisher's own site):
   - CDC's parenting pages, kept whole with their text unchanged as CDC's terms ask: Positive Parenting Tips by age,
@@ -172,8 +174,10 @@ CPIR_NOT_PAGES = (r"login|logout|register|password|profile|members|activity|dash
                   r"buzz-from-the-hub|parent-center|parentcenter|the-parent|welcome-parent|the-cpir|whatiscpir|resourcelibrary|ta-resources|"
                   r"resources-in-|resource-family|resources-tta|wp-|tag|author|feed|buzz|korean|osep|naptac|dissem|web-|"
                   r"essa|rda|spp-apr|priority-|regs-|fapebrief|10-great|glossar|raisecenter")
+# The special education guides are in "Teaching and homeschooling" (group key "k12", the top-level section of 23
+# November 2026), with the IEP guide and the teaching books; key and request word unchanged.
 GUIDES.append(dict(
-    K.guide(GROUP, "cpir_parent_guides", "Parent guides to disabilities, special education and early intervention "
+    K.guide("k12", "cpir_parent_guides", "Parent guides to disabilities, special education and early intervention "
             "(Center for Parent Information and Resources)", "Special education and disabilities for parents",
             "Center for Parent Information and Resources (CPIR), funded by the US Department of Education",
             [f"{CPIR}/{h}/" for h in CPIR_HUBS],

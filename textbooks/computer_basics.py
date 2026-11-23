@@ -117,6 +117,8 @@ SECTIONS = [
          ("key", "pcb:libreoffice_getting_started", "LibreOffice Getting Started: opening, saving and organising "
                                                     "documents"),
          ("key", "pcb:loc_personal_digital_archiving", "Keeping files safe: folders, file names and backups"),
+         ("key", "comp:index", "Going further: Linux, programming, the Windows command prompt, home networking "
+                               "and phones (the computers guide)"),
          ("pack", "commons_computer_basics", "Power buttons, touchpads, keys, memory and SIM cards, cartridges"),
          ("pack", "open_images_computer_basics", "Floppy disks, hubs, mousepads, tablet chargers and stands"),
          ("link", "GCFGlobal Computer Basics (free lessons)", "https://edu.gcfglobal.org/en/computerbasics/",
