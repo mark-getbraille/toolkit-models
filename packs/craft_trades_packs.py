@@ -71,17 +71,18 @@ GLASSWORK = [
                                 "crack", GLASS_NOTE),
 ]
 LEATHERWORK = [
-    thing("Saddlers", "a saddler, who makes and repairs saddles and harness", LEATHER_NOTE),
+    thing("Saddlers", "a picture of saddlers (people who make and repair saddles and harness) or their work",
+          LEATHER_NOTE),
     thing("Saddleries", "a saddlery, a saddler's shop or workshop", LEATHER_NOTE),
     thing("Manufacture of saddles", "saddles being made", LEATHER_NOTE),
     thing("Leather carving", "leather carving, cutting and tooling a pattern into leather", LEATHER_NOTE),
     thing("Swivel knives", "a swivel knife, the leather carver's knife with a turning blade", LEATHER_NOTE),
 ]
 CLOTHING_TRADES = [
-    thing("Tailors", "a tailor, who makes and alters clothes to measure"),
+    thing("Tailors", "a picture of tailors (people who make and alter clothes to measure) or their work"),
     thing("Tailor shops", "a tailor's shop"),
-    thing("Hatters", "a hatter, who makes or sells hats"),
-    thing("Milliners", "a milliner, who makes and trims hats"),
+    thing("Hatters", "a picture of hatters (people who make or sell hats) or their shop"),
+    thing("Milliners", "a picture of milliners (people who make and trim hats) or their shop"),
     thing("Hat blocks", "a hat block, a wooden form on which a hat is shaped"),
     thing("Hat block making", "hat blocks being made"),
 ]
