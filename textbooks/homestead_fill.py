@@ -17,7 +17,7 @@ What this module builds, in plain words, each IN FULL:
     Snares (1907), Steel Traps (1907) and Fur Buyers' Guide (1915), Kreps's Science of Trapping (1909), Farnham's Home
     Manufacture of Furs and Skins (1916), Gibson's Camp Life in the Woods and the Tricks of Trapping (1881) and Watt's
     Leather Manufacture (1906);
-  - blacksmithing and the farm forge: Drew's Farm Blacksmithing (1910), Holmström's Modern Blacksmithing (1904),
+  - blacksmithing and the farm forge: Holmström's Modern Blacksmithing (1904),
     Richardson's Practical Blacksmithing (four volumes, 1889), Friese's Farm Blacksmithing (1921), Bacon's
     Forge-Practice and Heat Treatment of Steel (1919), Googerty's Practical Forging and Art Smithing (1915), Ilgen's
     Forge Work (1912) and Lungwitz's Complete Guide to Blacksmithing, Horseshoeing (1902);
@@ -284,11 +284,6 @@ def _richardson(volume, archive, what):
 
 
 FORGE_PDFS = [
-    _old("drew_farm_blacksmithing_1910", "Farm Blacksmithing (James M. Drew, 1910)", "Farm forge work",
-         "James M. Drew (Webb Publishing Company, St. Paul)", "cu31924003588450", 1910,
-         "A small textbook of the farm forge from the University of Minnesota's School of Agriculture: the forge, "
-         "fire and tools, drawing out, upsetting, bending, punching and welding, making hooks, rings and links, "
-         "and tempering simple tools.", OLD_FORGE, FORGE_SAFETY),
     _old("holmstrom_modern_blacksmithing_1904", "Modern Blacksmithing, Rational Horse Shoeing and Wagon Making (J. G. "
          "Holmström, 1904)", "Blacksmithing and horseshoeing", "J. G. Holmström (Frederick J. Drake, Chicago)",
          "modernblacksmith00holm", 1904,
@@ -538,7 +533,8 @@ SECTIONS = [
         ("link", "Your state's trapper education course and trapping rules", "https://www.fws.gov/",
          "each state wildlife agency's own pages and copyright; the US Fish and Wildlife Service links them")]),
     ("Blacksmithing and the farm forge", "Forging, tool-making, heat treatment and horseshoeing. " + FORGE_SAFETY, [
-        ("key", "hfill:drew_farm_blacksmithing_1910", "Farm Blacksmithing (Drew, 1910)"),
+        ("word", "apt:drew_farm_blacksmithing_1904", "Farm Blacksmithing (Drew, 1904), in the appropriate technology "
+                                                     "collection"),
         ("key", "hfill:friese_farm_blacksmithing_1921", "Farm Blacksmithing (Friese, 1921)"),
         ("key", "hfill:holmstrom_modern_blacksmithing_1904", "Modern Blacksmithing (Holmström, 1904)"),
         ("key", "hfill:richardson_practical_blacksmithing_v1_1889", "Practical Blacksmithing, volume 1 (1889)"),
@@ -605,6 +601,8 @@ SECTIONS = [
         ("key", "pdf:army_fm_21_10_field_hygiene_2000", "Field Hygiene and Sanitation (FM 21-10, 2000): water"),
         ("key", "olife:usda_yearbook_1955_water", "Water: the Yearbook of Agriculture 1955 (USDA)"),
         ("word", "bushcraft", "Bushcraft books, with finding water in the wild (request word)"),
+        ("word", "apt-water", "Appropriate technology: Peace Corps water supply, wells, water purification and "
+                              "sanitation manuals (request word)"),
         ("pack", "commons_homestead_stores", "Water purification, for the picture describer"),
         ("link", "CAWST: household water treatment", "https://www.cawst.org/",
          "its own terms (non-commercial); open it in a browser"),
@@ -625,6 +623,8 @@ SECTIONS = [
         ("key", "craft:butterick_tatting_netting_1895", "Tatting and Netting (Butterick, 1895)"),
         ("key", "knot:index", "Knots and outdoor skills: the guide to knots, rope and cordage"),
         ("word", "knots-military", "Military and Coast Guard rope and knot manuals (request word)"),
+        ("word", "apt:chapman_treatise_ropemaking_1869", "A Treatise on Ropemaking (Chapman, 1869), in the "
+                                                         "appropriate technology collection"),
         ("pack", "commons_homestead_stores", "Fishing nets, cast nets, baskets and basketry, for the picture "
                                              "describer"),
         ("pack", "commons_knots", "Knots, rope making and ropewalks, for the picture describer"),
@@ -713,6 +713,9 @@ NOT_INCLUDED = [
      "skill:army_tm_10_440_blacksmith_and_welder_1941, skill:accp_md0160_military_water_supply, "
      "skill:army_tb_med_577_field_water_supplies_2010) and linked from hfill:index; not built twice. Navy metalworking "
      "rate manuals are left to the Navy rates collection. Index: https://archive.org/details/md-0710-red-meats-edition-200"),
+    ("Drew's Farm Blacksmithing and Chapman's Treatise on Ropemaking", "Built by the appropriate technology "
+     "collection being added at the same time (apt:drew_farm_blacksmithing_1904, apt:chapman_treatise_ropemaking_1869), "
+     "so they are linked from hfill:index, not built twice. Index: https://archive.org/details/farmblacksmithin00drew"),
     ("Psychological first aid and remote medicine", "Covered by the remote medicine collection; not repeated here. "
      "Index: https://www.ptsd.va.gov/professional/treat/type/psych_firstaid_manual.asp"),
 ]

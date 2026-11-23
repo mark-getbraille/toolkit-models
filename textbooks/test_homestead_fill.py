@@ -120,7 +120,7 @@ def test_old_book_refused_after_1930(monkeypatch, tmp_path):
     monkeypatch.setattr(B, "archive_year", lambda ident, cache=None: 1931)
     monkeypatch.setattr(B, "fetch", lambda *a, **k: (_ for _ in ()).throw(AssertionError("no download")))
     left_out = []
-    entry = dict(M.COLLECTION.pdfs["drew_farm_blacksmithing_1910"], archive="madeupitem")
+    entry = dict(M.COLLECTION.pdfs["friese_farm_blacksmithing_1921"], archive="madeupitem")
     assert B.pdfdoc_book(entry, str(tmp_path), None, left_out) is None
     assert "before 1931" in left_out[0]["reason"]
 
