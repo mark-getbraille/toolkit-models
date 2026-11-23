@@ -8,5 +8,5 @@
 # 21 November (2): human and animal medicine labels (DailyMed, Drugs@FDA, Health Canada brand names), 23 books.
 # 21 November (3): animal sounds (NPS Sound Gallery descriptions and links).
 # 21 November (4): with the animal sounds book, the K-12 school books and open courses (LibreTexts, BCcampus, Illustrative Mathematics, Siyavula, OpenStax). Personal-use courses go in a later run.
-# 23 November (2): homesteading, outdoors, card and board games, games and hobbies, sacred texts, science you can use, plant identification and literature.
-homestead,outdoors,card-games,board-games,games-hobbies,sacred-texts,science-use,plant-id,literature
+# 23 November (3): knots and lashings, military knot and seamanship manuals, bushcraft, small boats, the Admiralty manuals, military manuals read whole, government forms and state laws.
+knot:index,knot:burgess_knots_ties_splices_1884,knot:shaw_knots_useful_ornamental_1924,knots-military,bushcraft,small-boats,kmil:admiralty_manual_of_seamanship_1951_v1,kmil:admiralty_manual_of_seamanship_1951_v2,kmil:admiralty_manual_of_seamanship_1951_v3,kmil:admiralty_manual_of_seamanship_1964_v1,kmil:admiralty_manual_of_seamanship_1967_v2,kmil:admiralty_manual_of_seamanship_1964_v3,kmil:admiralty_manual_of_seamanship_1972_v1,military-whole,radio:army_fm_6_02_53_tactical_radio_2009,radio:army_atp_6_02_53_tactical_radios_2025,kmil:bluejackets_manual_1927,gov-forms,state-laws-1
