@@ -162,6 +162,10 @@ MODULES = [
     "trades",               # OSHA booklets and standards (29 CFR 1910, 1926, 1928), NIOSH, MSHA, DOE, BLS, old trade books, index (trade:)
     # FEMA Independent Study courses (the owner's request of 2026-11-23), their own group
     "fema_is",              # every FEMA EMI Independent Study course: student manuals and web lessons, index (fema:)
+    # music, small business and taxes, everyday maths (the owner's request of 2026-11-23)
+    "music_learning",       # music theory (open textbooks, old books), method books, braille music, history, index (musiclearn:)
+    "business_tax",         # IRS publications and instructions, IRS small business pages, FTC guides, bookkeeping, index (biz:)
+    "everyday_maths",       # practical, business and mental arithmetic, units and the slide rule, index (emath:)
 ]
 
 _loaded = {}
