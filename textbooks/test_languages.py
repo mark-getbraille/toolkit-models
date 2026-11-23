@@ -1,7 +1,7 @@
 """Self-test of the language learning books (languages.py), with MADE-UP data only: nothing is downloaded.
 
 It checks that the module is registered once under its request word "languages" (at most 256 jobs) and reaches
-sources.py with its group "Reference, language learning"; that the courses cover the languages the owner asked for
+sources.py with its group "Languages" (a top-level section since 23 November 2026); that the courses cover the languages the owner asked for
 first; that the volumes of a made-up Internet Archive item are picked one per volume with the words (the "Text PDF",
 else the "_text" PDF), and named by volume; that a made-up course's audio is listed as originals with its sizes and
 never downloaded; that the Wikivoyage phrasebooks are share-alike with a pattern that takes each phrasebook; that
@@ -25,7 +25,7 @@ import sources  # noqa: E402
 
 def test_registered():
     assert "languages" in more_refs.MODULES and L in more_refs.modules()
-    assert sources.GROUPS["languages"] == "Reference, language learning"
+    assert sources.GROUPS["languages"] == "Languages"
     keys = sources.expand_keys(["languages"])
     assert keys == L.COLLECTION.expand_keys(["languages"]) and len(keys) == len(set(keys)) <= 256
     assert {f"lang:fsi:{c['key']}" for c in L.COURSES} <= set(keys)

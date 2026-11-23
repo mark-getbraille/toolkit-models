@@ -5,8 +5,8 @@ the builder and the weekly check). Request word: library-guide. Group: "Referenc
 
 What the book holds, one page per area (each page has headings for a screen reader's heading keys, and a start page
 links to every page):
-  - Reference books: the top-level sections first (SECTIONS: Teaching and homeschooling, Arts and crafts, History,
-    Sports, each with its guide's key), then every group of the reference library (sources.GROUPS), each on its own
+  - Reference books: the guides to the sections first (SECTION_GUIDES; a top-level section's group page, SECTIONS,
+    starts with its guide's key), then every group of the reference library (sources.GROUPS), each on its own
     page, with every book:
     its title, what it covers in one line, its size when the published catalogue (textbooks.json) lists it, and its
     licence class (open, share-alike, personal use, link-only). Books the code lists but no build has published yet
@@ -60,8 +60,8 @@ LICENCE_LINES = {
 NOT_INCLUDED = []           # nothing was left out: every part of the library is described
 
 # The top-level sections the owner asked for, each one group of the reference library with a guide book of its own:
-# {group key: (section name, the key of its guide)}. The Reference books page lists them first, and each one's group
-# page starts with its guide's key. Teaching and homeschooling (the owner's request of 23 November 2026) is the school
+# {group key: (section name, the key of its guide)}. Each one's group page starts with its guide's key (the Reference
+# books page lists the guides of SECTION_GUIDES). Teaching and homeschooling (the owner's request of 23 November 2026) is the school
 # books' group under its old key "k12" (teach_index.py).
 SECTIONS = {
     "k12": ("Teaching and homeschooling", "teach:index"),
@@ -102,6 +102,14 @@ FOLDERS = [
      "Personal use: the FCC's weekly amateur licence database with \"Look up a call sign.cmd\" for offline call-sign "
      "lookup, and repeater lists from frequency coordinators that publish free lists (add more in \"Coordinator "
      "sites.txt\"). RepeaterBook exports and the ARRL directory are on the To do yourself list."),
+]
+
+# The top-level sections that have a guide book of their own (key, section, request word): listed on the Reference
+# books page so the owner can open the guide to a whole section (the owner's requests of 22 and 23 November 2026).
+SECTION_GUIDES = [
+    ("teach:index", "Teaching and homeschooling", "teach-section"),
+    ("arts:index", "Arts and crafts", "arts-crafts"),
+    ("lang:index", "Languages", "languages-index"),
 ]
 
 # Where each part of the library lands on B: (release tags are matched by their first words).
@@ -277,11 +285,9 @@ def reference_pages(data):
             "<p>Every group of the reference library, with how many books it has, how many are built and their total "
             "size. Each group has its own page listing every book. Licence classes:</p><ul>"]
     body += [f"<li>{esc(v)}</li>" for k, v in CLASS_HELP.items() if k != "unknown"]
-    body.append("</ul><h2>The top-level sections</h2><p>Each has a guide book that lists its books by grade, subject or "
-                "topic, with the request words and picture packs:</p><ul>")
-    for g, (section, guide) in SECTIONS.items():
-        body.append(f'<li><a href="books-{slug(g)}">{esc(section)}</a>: its guide is key {esc(guide)}.</li>'
-                    if g in rows else f"<li>{esc(section)}: its guide is key {esc(guide)} (not built yet).</li>")
+    body.append("</ul><h2>Guides to the sections</h2><ul>")
+    body += [f"<li>{esc(name)}: the guide book {esc(key)} (request word {esc(word)}).</li>"
+             for key, name, word in SECTION_GUIDES]
     body.append("</ul><h2>The groups</h2><ul>")
     pages = []
     for g in order:

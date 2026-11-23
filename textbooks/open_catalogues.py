@@ -336,7 +336,8 @@ def otl_items(piece, titles):
 
 # Topic key -> (the library's topic, the toolkit's group, the Internet Archive search words for it). Sewing, art and
 # drawing, and crafts are in "Reference, arts and crafts" (group "crafts", crafts_books.py), the one top-level group
-# for crafts (the owner's request of 22 November 2026).
+# for crafts (the owner's request of 22 November 2026). Foreign languages are in "Languages" (group "languages",
+# languages.py), the top-level section for language learning (the owner's request of 23 November 2026).
 IA_TOPICS = {
     "birds": ("Birds", "science", 'subject:(birds OR ornithology)'),
     "mammals": ("Mammals", "science", 'subject:(mammals)'),
@@ -375,7 +376,7 @@ IA_TOPICS = {
     "history": ("History", "history", 'subject:("united states history" OR "world history")'),
     "english": ("Writing, grammar and English usage", "reference", 'subject:("english language" OR grammar OR '
                 'composition OR rhetoric)'),
-    "languages": ("Languages (foreign)", "reference", 'subject:("spanish language" OR "french language" OR '
+    "languages": ("Languages (foreign)", "languages", 'subject:("spanish language" OR "french language" OR '
                   '"german language" OR "latin language")'),
     "mathematics": ("Mathematics", "textbooks", 'subject:(mathematics OR arithmetic OR algebra OR geometry)'),
     "science": ("Physics and chemistry", "textbooks", 'subject:(physics OR chemistry)'),
