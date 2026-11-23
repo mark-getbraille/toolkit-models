@@ -140,6 +140,8 @@ MODULES = [
     "education_more",       # education: ED booklets (ERIC copies), FAFSA form, old education classics (edumore:)
     # official copies for the thin sections, from GovInfo, agency sites and the Internet Archive (2026-11-22)
     "govinfo_fill",         # NHTSA, FEMA, SAMHSA, NIA, CMS, VA, NARA, CDC, CPSC, EPA booklets; Army and Navy manuals (gpo:)
+    # appropriate technology and village skills (the owner's request of 2026-11-23), its own group
+    "approtech",            # Peace Corps ICE water, wells, building, farm and energy manuals, USGS, USDA, old books (apt:)
 ]
 
 _loaded = {}
