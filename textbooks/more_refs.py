@@ -39,6 +39,7 @@ MODULES = [
     "electronics_books",    # electronics repair and assistive-technology care: Kuphaldt, NEETS, NLS, VA, Wikibooks (elec:)
     "building_books",       # light construction: Army carpentry and masonry, Navy builder, OSHA, Wood Handbook (build:)
     "crafts_books",         # arts and crafts: Wikibooks origami and bookbinding, old pottery, jewellery, glass books (craft:)
+    "craft_trades",         # craft trades: beekeeping, glass blowing, leather working, clothing making and repair (ctrade:)
     "arts_crafts_index",    # arts and crafts, a top-level section: the guide to every craft book, manual and pack (arts:)
     # life skills (the owner's request of 2026-11-22)
     "car_care",             # old public-domain car care books (car:)
@@ -90,7 +91,7 @@ MODULES = [
     # people: disability, veterans, education, relationships, immigration (the owner's request of 2026-11-22)
     "disability_life",      # deaf and hard of hearing, autism, mobility, disability rights beyond blindness (dis:)
     "veterans",             # VA benefits booklet, homeless, mental health, crisis line, DOL VETS, discharge (veteran:)
-    "education_help",       # apprenticeships, adult education, college planning, study skills, accommodations (edu:)
+    "education_help",       # apprenticeships, adult education, college planning (edu:); in Teaching and homeschooling
     "relationships",        # communication, conflict resolution, healthy relationships, cultural etiquette (relate:)
     "immigration",          # USCIS Policy Manual and guides, M-618, EOIR, Canada newcomers (immig:)
     # health and life (the owner's request of 2026-11-22), each in its own group
@@ -156,6 +157,9 @@ MODULES = [
     "peace_corps",          # teaching, health, youth, business, agriculture, environment, community, volunteers (pc:)
     # thin homestead and self-reliance areas (the owner's request of 2026-11-23)
     "homestead_fill",       # seed saving, butchering, trapping and tanning, forge, stars and navigation, water, nets and baskets (hfill:)
+    # teaching and homeschooling, a top-level section (the owner's request of 2026-11-23; group key "k12")
+    "teach_states",         # homeschooling laws and open state curricula, all 50 states, DC and territories (tstate:)
+    "teach_index",          # the guide to the section, and federal homeschooling booklets (teach:)
     # teaching and homeschooling outside the US (the owner's request of 2026-11-23; the US states are in teach-us's module)
     "teach_world",          # Canada, UK (with Oak), Ireland, Australia, NZ, other countries, NGOs, classics (tworld:)
     # trades, apprenticeship and workplace safety (the owner's request of 2026-11-23), its own group

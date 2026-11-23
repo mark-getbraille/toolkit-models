@@ -44,7 +44,8 @@ def test_guides_registered(m):
     assert keys == c.expand_keys([word]) and len(keys) == len(set(keys)) <= 256
     assert set(keys) == {f"{c.prefix}:{n}" for n in list(c.guides) + list(c.pdfs)}
     for g in list(c.guides.values()) + list(c.pdfs.values()):
-        assert g["group"] == "parenting", g["name"]
+        # the special education guides are in "Teaching and homeschooling" (group key "k12") since 2026-11-23
+        assert g["group"] == ("k12" if g["name"] == "cpir_parent_guides" else "parenting"), g["name"]
         whole = bool(g.get("unchanged"))
         short = g["licence"] if g["licence"] in sources.NO_CHANGES else B.licence_short(g["licence"])
         assert B.licence_kind(short, whole), g["name"]
@@ -167,7 +168,7 @@ def test_picture_book(monkeypatch, tmp_path):
     body = book.pages[0].body
     assert "A kite flies high." in body and "By A. Writer." in body and "Licence: CC BY 4.0." in body
     assert "red kite flies" in body and "1 stories under \"All Rights Reserved\"" in book.description
-    assert book.licence == "CC BY 4.0" and book.group == "parenting" and book.published == "2026-01-02"
+    assert book.licence == "CC BY 4.0" and book.group == "k12" and book.published == "2026-01-02"   # teaching
     assert book.grades.startswith("Read-aloud") and book.version.endswith("version 7")
     assert [o["kind"] for o in book.originals] == ["sqlite", "epub", "pdf"]
 

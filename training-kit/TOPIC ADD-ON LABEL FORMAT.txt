@@ -19,8 +19,8 @@ UTF-8 JSON, one object, with exactly these fields in this order:
   "topic_id"            the topic's short name, lower case: one of
                         "medicines", "health", "drugs", "firearms", "food", "drinks", "alcohol", "machines",
                         "transport", "home", "power", "radio", "privacy", "screens", "money", "people", "places",
-                        "art", "crafts", "sports", "documents", "nature", "vision", "nudity", "sexual". New topics
-                        may be added later.
+                        "art", "crafts", "sports", "documents", "teaching", "nature", "vision", "nudity", "sexual". New
+                        topics may be added later.
   "title"               the topic's name for people, for example "Food and packaged goods".
   "description"         one or two plain sentences about what the add-on knows, to show the person.
   "base_model"          the Hugging Face repository of the model it was trained on, for example
