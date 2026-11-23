@@ -86,6 +86,10 @@ def key_exists(key):
         return any(e["name"] == name for e in tables[prefix])
     if prefix == "tech":                    # the computer help books (tech_kb.py, through refs_common)
         return key in sources.expand_keys(["techdocs"])
+    if prefix == "cook":                    # cookbooks.py's own books (cooking_basics.py shares the prefix)
+        import cookbooks
+        if name in cookbooks.BY_NAME:
+            return True
     m = more_refs.module_for(key)
     return bool(m) and key in m.COLLECTION.own_keys()
 

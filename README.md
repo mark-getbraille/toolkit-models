@@ -196,7 +196,15 @@ and why):
   leaflet (Medication Guide), then the rest of the label, in the label's own words. Every page says "Information,
   not medical advice: ask a pharmacist or doctor" (animals: "ask a veterinarian"). In their own release
   (`medicines`), rebuilt each month after DailyMed's monthly release, old versions kept.
-- **School books, K-12** (key `k12`, group "School books (K-12)"): Illustrative Mathematics' student books for
+- **Teaching and homeschooling** (a top-level section since 23 November 2026; group key `k12`, group "Teaching and
+  homeschooling"; guide `teach:index`, request words `teach-section`, `homeschool`, `teach-us`): the school books
+  below, the education books (`edu:`, `edumore:`), the levelled picture books for learning to read, the teachers'
+  guides and special education guides, five federal homeschooling booklets (`teach:`), and the state-by-state
+  homeschooling laws and open state curricula of all 50 states, DC and the territories (`textbooks/teach_states.py`,
+  `tstate:index`, `tstate-laws`, `tstate-curriculum`, `tstate-<region>`): Washington's Since Time Immemorial
+  curriculum and standards and the Utah Middle School Math Project (CC BY), Massachusetts' Investigating History (CC
+  BY-NC, personal use).
+- **School books, K-12** (key `k12`, in "Teaching and homeschooling"): Illustrative Mathematics' student books for
   grades 6 to 8, Algebra 1, Geometry and Algebra 2 and its K-5 family materials (CC BY 4.0), Open Up HS Math (CC
   BY-NC 4.0, personal use only), the Utah State Board of Education's science books for kindergarten to high school
   (CC BY-NC-SA 3.0, personal use only), Siyavula (more grades) and OpenStax's high school books (keys `k12:<name>`,

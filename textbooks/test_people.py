@@ -5,7 +5,7 @@ immigration.py (immig:), with MADE-UP data only: nothing is downloaded.
 It checks that:
   - each module is registered once under its request word (disability, veterans, education, relationships,
     immigration), each word stays at 256 jobs or fewer, and the words reach sources.expand_keys;
-  - the groups exist ("Reference, disability and accessibility", "Reference, veterans", "Reference, education",
+  - the groups exist ("Reference, disability and accessibility", "Reference, veterans", "Teaching and homeschooling",
     "Reference, communication and relationships", "Reference, immigration") and the licence lines and left-out
     rows reach sources.py;
   - every book has a licence the toolkit may repackage, a description, a notice, a licence page and line, and a
@@ -39,7 +39,7 @@ import veterans as VET  # noqa: E402
 LEGAL = "General information, not legal advice; check the current rules or ask an accredited representative or lawyer."
 MODULES = {"disability": DIS, "veterans": VET, "education": EDU, "relationships": REL, "immigration": IMM}
 GROUP_NAMES = {"disability": "Reference, disability and accessibility", "veterans": "Reference, veterans",
-               "education": "Reference, education", "relationships": "Reference, communication and relationships",
+               "education": "Teaching and homeschooling", "relationships": "Reference, communication and relationships",
                "immigration": "Reference, immigration"}
 
 

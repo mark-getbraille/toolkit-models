@@ -663,8 +663,12 @@ GROUPS = {
     # The official labels of medicines (medications.py; keys medicines, med:...):
     "medicines": "Reference, medicines", "vet_medicines": "Reference, animal medicines",
     # School books, kindergarten to grade 12 (the owner's request of 2026-11-21): K12_GUIDES, the K-12 PDFs, Siyavula,
-    # OpenStax's high school books and the K-12 courses of courses.py.
-    "k12": "School books (K-12)",
+    # OpenStax's high school books and the K-12 courses of courses.py. Since 23 November 2026 the group is the top-level
+    # section "Teaching and homeschooling" (the owner's request): the school books, the education books
+    # (education_help.py, education_more.py), the levelled picture books for learning to read, the teachers' guides,
+    # the special education guides, the state-by-state homeschooling laws and curricula (teach_states.py) and the
+    # guide teach:index (teach_index.py). The key "k12" stayed, so no book's group key or request word changed.
+    "k12": "Teaching and homeschooling",
     # Cookbooks and recipes (cookbooks.py; keys cookbooks, cook:...), the owner's request of 2026-11-21.
     "cookbooks": "Reference, cookbooks and recipes",
 }

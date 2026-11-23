@@ -14,7 +14,8 @@ downloads, which are not used).
     Microsoft's troubleshooting and support articles (the SupportArticles-docs repository behind
     learn.microsoft.com/troubleshoot) for Windows, Windows Server, Outlook, Office, Microsoft 365, Exchange,
     SharePoint and OneDrive, Teams and Microsoft Edge; the Microsoft 365 admin documentation; and the accessibility
-    guidance for Windows apps (the developer guides to Narrator, keyboard access, screen readers and high contrast).
+    guidance for Windows apps (the developer guides to Narrator, keyboard access, screen readers and high contrast);
+    the Windows commands reference (every command of the command prompt) and the Windows Terminal documentation.
   Apple's open-source Swift documentation: "The Swift Programming Language" (the swift-book repository) and the
     Swift.org documentation (API design guidelines, getting started, package manager, server, C++ interoperability),
     both under the Apache License 2.0 with the Runtime Library Exception, whose text is a page of each book.
@@ -174,6 +175,26 @@ MS_BOOKS = [
                      "designing for screen readers and Narrator, keyboard accessibility, high contrast and colour, "
                      "text scaling, accessible text requirements, custom automation peers, testing with Narrator "
                      "and Accessibility Insights, and the accessibility checklist."),
+    # added 2026-11-23 for the computers collection (computers_more.py, comp:index): the command prompt and the
+    # Windows Terminal, both CC BY 4.0 by their repositories' LICENSE (checked at every build)
+    dict(name="ms_windows_commands", repo="MicrosoftDocs/windowsserverdocs", branch="main",
+         folders=["WindowsServerDocs/administration/windows-commands"], includes=[],
+         title="Windows commands: the command prompt reference (cmd, Microsoft Learn)",
+         subject="Windows (command prompt)", source="https://learn.microsoft.com/windows-server/administration/"
+         "windows-commands/windows-commands",
+         description="Microsoft's reference of every command of the Windows command prompt (cmd.exe), one article "
+                     "per command, with its syntax, parameters and examples: dir, cd, copy, xcopy, robocopy, del, "
+                     "move, ren, md, attrib, type, more, find, findstr, sort, ipconfig, ping, tracert, netstat, "
+                     "nslookup, chkdsk, sfc, diskpart, format, shutdown, tasklist, taskkill, systeminfo, set, "
+                     "setx, where, wmic, net, sc, schtasks, bcdedit, and the rest, with the command-line syntax "
+                     "key. Most commands work the same in Windows 10 and 11 as in Windows Server."),
+    dict(name="ms_windows_terminal", repo="MicrosoftDocs/terminal", branch="main", folders=["TerminalDocs"],
+         includes=[], title="Windows Terminal documentation (Microsoft Learn)",
+         subject="Windows (Windows Terminal)", source="https://learn.microsoft.com/windows/terminal/",
+         description="Microsoft's documentation for Windows Terminal, every article: installing it, the command "
+                     "palette, panes and tabs, profiles for Command Prompt, PowerShell and WSL Linux, settings, "
+                     "actions and keyboard shortcuts, search and selection, command-line arguments, tips and "
+                     "troubleshooting, and the Cascadia Code font."),
 ]
 APPLE_BOOKS = [
     dict(name="swift_book", repo="swiftlang/swift-book", branch="main", licence_file="LICENSE.txt",

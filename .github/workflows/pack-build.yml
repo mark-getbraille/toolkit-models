@@ -474,6 +474,7 @@ jobs:
             commons_models_resin) limit=500 ;;
             museum_glass_crafts) limit=1000 ;;
             open_images_crafts) limit=2500 ;;
+            commons_craft_trades) limit=1000 ;;
             commons_car_care) limit=900 ;;
             commons_ev_charging) limit=300 ;;
             commons_dashboard_lights) limit=400 ;;
