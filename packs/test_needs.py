@@ -300,3 +300,19 @@ if __name__ == "__main__":
             check()
         print(f"passed: {check.__name__}")
     print(f"All {len(checks)} needs checks passed.")
+
+
+def test_picture_names_stay_plain():
+    """Picture names from other sites become plain file names that cannot leave the pack's folder when unpacked;
+    names that are already plain stay exactly as they were."""
+    for good in ("met-12345.jpg", "nara-mil-9.jpg", "europeana-2048_x.jpg", "pack_key"):
+        assert build_packs.plain_name(good) == good
+    for bad, plain in (("../../evil.jpg", "evil.jpg"), ("..\\..\\x.jpg", "x.jpg"), ("C:x y.jpg", "C_x_y.jpg"),
+                       (".hidden.jpg", "hidden.jpg"), ("a..b.jpg", "a.b.jpg"), ("", "picture")):
+        assert build_packs.plain_name(bad) == plain, bad
+    assert build_packs.plain_file("pictures/../x.jpg") == "pictures/x.jpg"
+    try:
+        build_packs.write_pack("../evil", [], tempfile.mkdtemp())
+        raise AssertionError("a pack key with a path was accepted")
+    except ValueError:
+        pass

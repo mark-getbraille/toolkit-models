@@ -2100,6 +2100,29 @@ def merged_considered(old_notes, new_lines):
     return [json.dumps(note) + "\n" for note in merged.values()]
 
 
+PLAIN_NAME = re.compile(r"[\w.-]+")
+
+
+def plain_name(name):
+    """name as a plain file name that stays inside the pack's "pictures" folder wherever it is unpacked: only
+    letters, digits, dot, dash and underscore (anything else, such as "/", "\\", ":" or a space, becomes "_"), never
+    ".." and never a leading dot (a hidden file). A name that is already plain (all the packs' names so far) comes
+    back unchanged; the same name always gives the same answer, so a picture and its translated twin still match."""
+    name = str(name or "")
+    if PLAIN_NAME.fullmatch(name) and ".." not in name and not name.startswith("."):
+        return name
+    clean = re.sub(r"[^\w.-]+", "_", name.replace("\\", "/").rsplit("/", 1)[-1] or name)
+    clean = re.sub(r"\.{2,}", ".", clean).lstrip(".")
+    return clean[:150] or "picture"
+
+
+def plain_file(file):
+    """A row's "file" ("pictures/<name>") with its name made plain (plain_name); other values unchanged."""
+    if isinstance(file, str) and file.startswith("pictures/"):
+        return "pictures/" + plain_name(file[len("pictures/"):])
+    return file
+
+
 def write_pack(key, entries, out, old=None):
     """Write the pack zip (rows.jsonl, pictures, CREDITS.txt), cut it into parts when over PART_BYTES; returns its
     manifest {"key", "rows", "pictures", "size", "sha256", "files", "passes"}. Each picture's row keeps the address it
@@ -2108,6 +2131,8 @@ def write_pack(key, entries, out, old=None):
     merged with the new ones; the zip is then named <key>.pass<N>.zip so the published files are not overwritten."""
     import shutil
     sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+    if plain_name(key) != key:                       # the pack's key names its files: it must be a plain name
+        raise ValueError(f"not a plain pack name: {key!r}")
     os.makedirs(out, exist_ok=True)
     path = os.path.join(out, f"{key}.zip" if old is None else f"{key}.pass{PASS}.zip")
     rows, credits, names = [], [], set()
@@ -2121,12 +2146,18 @@ def write_pack(key, entries, out, old=None):
                         names.add(info.filename[len("pictures/"):])
             rows += old.rows
         for name, data, row in entries:
+            # Picture names come from other sites (record numbers, titles): each is made a plain file name, so a
+            # name like "../x" or "C:\\x" can never write outside the pack's folder when the pack is unpacked.
+            source = SOURCES.get(name)
             if data is not None:
+                name = plain_name(name)
                 z.writestr(f"pictures/{name}", data)
                 names.add(name)
                 row = dict(row, file=f"pictures/{name}")       # (a translated twin already names its picture)
-                if SOURCES.get(name):
-                    row["source"] = SOURCES[name]
+                if source:
+                    row["source"] = source
+            elif row.get("file"):
+                row = dict(row, file=plain_file(row["file"]))  # a translated twin: the same plain name
             rows.append(row)
             if row.get("credit"):
                 credits.append(f"{row.get('file') or row.get('url')}: {row['credit']}")
@@ -2332,7 +2363,7 @@ def needs_names(items, taken):
     """A file name for each set-aside picture, unique in the needs zip (names already taken get a number)."""
     names = []
     for item in items:
-        base = re.sub(r"[^\w.-]+", "_", os.path.basename(item["name"]))[:120] or "picture.jpg"
+        base = plain_name(os.path.basename(item["name"]))[:120] or "picture.jpg"
         stem, _dot, _ending = base.rpartition(".")
         base = (stem or base) + ".jpg"
         candidate, number = base, 1
@@ -2426,6 +2457,7 @@ def write_needs(key, out, entries=(), old=None, seconds=None):
             if item["url_only"]:
                 row["url_only"] = True
             elif index in got:
+                name = plain_name(name)          # a plain file name only (needs_names makes them so already)
                 z.writestr(f"pictures/{name}", got[index])
                 row = {"file": f"pictures/{name}", **row}
             else:
