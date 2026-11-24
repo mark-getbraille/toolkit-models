@@ -28,4 +28,5 @@
 # 23 November (4): the run before this one (e0b3c73) is already building everything above; this run builds only these three again.
 # 23 November (5): the run before (3f11376) is building chemical structures and veterans; this one builds world coins again (the Met now gets pauses when it refuses) and electronic parts again (Commons refused).
 # 23 November (6): the run before (97f1f0d) is building world coins and electronic parts; this one builds chemical structures from the stored Wikidata list.
-chem_structures
+# 24 November: electronic parts again (Wikimedia Commons refused GitHub's machine last time).
+commons_electronic_parts
