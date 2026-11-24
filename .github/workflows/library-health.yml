@@ -14,8 +14,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write           # to create the release and attach the reports
-  actions: read             # to read the build runs and the logs of failed jobs
+  contents: read   # the job asks for more below
 
 concurrency:
   group: library-reports
@@ -23,11 +22,16 @@ concurrency:
 
 jobs:
   reports:
+    permissions:
+      contents: write           # to create the release and attach the reports
+      actions: read             # to read the build runs and the logs of failed jobs
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false   # no job pushes with git; gh uses GH_TOKEN
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.12"
       - name: Make the size plan

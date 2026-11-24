@@ -31,7 +31,7 @@ on:
         default: "all"
 
 permissions:
-  contents: write
+  contents: read   # each job that publishes asks for more below
 
 jobs:
   plan:
@@ -39,18 +39,24 @@ jobs:
     outputs:
       keys: ${{ steps.keys.outputs.keys }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false   # no job pushes with git; gh uses GH_TOKEN
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.12"
       - id: keys
+        env:
+          INPUT_KEYS: ${{ inputs.keys }}   # passed as a variable, never pasted into the script
         run: |
-          keys='${{ inputs.keys }}'
+          keys="$INPUT_KEYS"
           if [ -z "$keys" ] && [ -f convert-request.txt ]; then keys=$(grep -v '^#' convert-request.txt | tr -d '[:space:]'); fi
           echo "keys=$(python convert_models.py --plan plan.json --list-json "${keys:-all}")" >> "$GITHUB_OUTPUT"
 
   convert:
     needs: plan
+    permissions:
+      contents: write   # publishes to a release
     runs-on: ubuntu-latest
     timeout-minutes: 360
     strategy:
@@ -61,8 +67,11 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       HF_HUB_DISABLE_TELEMETRY: "1"
+      MODEL_KEY: ${{ matrix.key }}   # the scripts read the key from this variable, never pasted into them
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false   # no job pushes with git; gh uses GH_TOKEN
       # Not needed for the small OPUS-MT translation models.
       - name: Free disk space and add swap
         if: ${{ !startsWith(matrix.key, 'opus-mt-') }}
@@ -76,7 +85,7 @@ jobs:
           # The swap file: 20 GB, or 40 GB for MADLAD-400 7B (33 GB of 32-bit weights in memory while it converts).
           swap_gb=20
           need_gb=0
-          case "${{ matrix.key }}" in
+          case "$MODEL_KEY" in
             madlad400-7b) swap_gb=40; need_gb=90 ;;   # swap, 33 GB download, 8 GB output, 8 GB zip
           esac
           # The runner's second disk (/mnt), when it has room, takes the swap file and, with more room, the work
@@ -90,12 +99,12 @@ jobs:
           fi
           root_free=$(df --output=avail -BG / | tail -1 | tr -dc 0-9)
           if [ "$need_gb" -gt 0 ] && [ "$(( ${mnt_free:-0} > root_free ? ${mnt_free:-0} : root_free ))" -lt "$need_gb" ]; then
-            echo "::error::${{ matrix.key }} needs about $need_gb GB of free disk; this runner has ${root_free} GB on / and ${mnt_free:-0} GB on /mnt"
+            echo "::error::$MODEL_KEY needs about $need_gb GB of free disk; this runner has ${root_free} GB on / and ${mnt_free:-0} GB on /mnt"
             exit 1
           fi
           sudo fallocate -l "${swap_gb}G" "$swap" && sudo chmod 600 "$swap" && sudo mkswap "$swap" && sudo swapon "$swap"
           df -h / /mnt && free -g
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.12"
       # Permissive licences only: onnxruntime-genai (MIT) and its model builder, optimum-intel, openvino and nncf
@@ -104,7 +113,7 @@ jobs:
       - name: Install the converters
         run: |
           python -m pip install --upgrade pip
-          case "${{ matrix.key }}" in
+          case "$MODEL_KEY" in
             # Translation models: CTranslate2's converter, pinned (each version at least two weeks old when chosen).
             # ctranslate2 4.8.3: the toolkit's faster-whisper accepts 4.x, and a model converted by 4.8.3 loads in
             # 4.8.3 or newer. sentencepiece 0.2.2: the conversion only copies the SentencePiece files, so the version
@@ -117,14 +126,14 @@ jobs:
           esac
           python -m pip install "huggingface_hub>=0.34" "transformers>=4.57,<5.6" torch torchvision \
             --extra-index-url https://download.pytorch.org/whl/cpu
-          case "${{ matrix.key }}" in
+          case "$MODEL_KEY" in
             ort-*) python -m pip install onnxruntime-genai==0.18.0 onnx onnx-ir onnxscript ;;  # onnx-ir (Apache-2.0), onnxscript (MIT): the model builder needs them
             # optimum-intel 2.2 exports Qwen3-VL only with Transformers 5.0 or older (4.57 added Qwen3-VL).
             ov-*)  python -m pip install "optimum-intel[openvino]==2.2.0" "nncf>=3.3" "transformers==4.57.6" ;;
           esac
       - name: Convert
-        run: python convert_models.py --plan plan.json --out build/engine-models --upload "${{ matrix.key }}"
-      - uses: actions/upload-artifact@v4
+        run: python convert_models.py --plan plan.json --out build/engine-models --upload "$MODEL_KEY"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: manifest-${{ matrix.key }}
           path: build/engine-models/manifest-${{ matrix.key }}.json
@@ -132,15 +141,19 @@ jobs:
   manifest:
     needs: convert
     if: always()
+    permissions:
+      contents: write   # publishes to a release
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false   # no job pushes with git; gh uses GH_TOKEN
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.12"
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           pattern: manifest-*
           path: manifests

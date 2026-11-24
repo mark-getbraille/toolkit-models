@@ -20,8 +20,13 @@ on:
         required: true
         type: number
 
+permissions:
+  contents: read   # the build job asks for more below (packs.yml grants it)
+
 jobs:
   build:
+    permissions:
+      contents: write   # publishes to a release
     runs-on: ubuntu-latest
     timeout-minutes: 350
     strategy:
@@ -39,27 +44,32 @@ jobs:
       # NYPL's free Digital Collections API token (optional): with it nypl_menus also takes later menus that NYPL marks
       # "No Known U.S. Copyright Restrictions"; without it only menus dated before 1931.
       NYPL_API_TOKEN: ${{ secrets.NYPL_API_TOKEN }}
+      PACK_KEY: ${{ matrix.key }}   # the scripts read the key from this variable, never pasted into them
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false   # no job pushes with git; gh uses GH_TOKEN
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.12"
       - name: Install what the builder needs
         run: |
-          python -m pip install requests pillow pyarrow "huggingface_hub>=0.34"
-          key="${{ matrix.key }}"
+          # Exact versions (the ones that resolved when they were pinned, 2026-11-24), so a new release on PyPI cannot
+          # change the build without a change here.
+          python -m pip install "requests==2.34.2" "pillow==13.0.0" "pyarrow==26.0.1" "huggingface_hub==2.4.0"
+          key="$PACK_KEY"
           key="${key%+}"
           # The packs in other languages are also translated into English (OPUS-MT, on the processor); a needs-only
           # run ("key?") translates nothing.
           if [ "${key%\?}" != "$key" ]; then key="needs-only"; fi
           case "$key" in
             ksamsok|rijksmuseum|coco_cn|europeana_fi|europeana_cs|europeana_hu|europeana_el|europeana_no|europeana_pl|smk|anefo)
-              python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+              python -m pip install "torch==2.15.0" --index-url https://download.pytorch.org/whl/cpu
               python -m pip install "transformers==4.57.6" "sentencepiece==0.2.1" "sacremoses==0.1.1" ;;
             cd_booklets)
-              python -m pip install numpy "pypdfium2==5.15.2" ;;
+              python -m pip install "numpy==2.5.5" "pypdfium2==5.15.2" ;;
             cd_films|pd_film_stills)
-              python -m pip install numpy && sudo apt-get update && sudo apt-get install -y ffmpeg ;;
+              python -m pip install "numpy==2.5.5" && sudo apt-get update && sudo apt-get install -y ffmpeg ;;
             synthetic_formulas)
               python -m pip install "matplotlib==3.11.2" ;;
             chem_structures)
@@ -77,7 +87,7 @@ jobs:
           esac
       - name: Build the pack
         run: |
-          key="${{ matrix.key }}"
+          key="$PACK_KEY"
           key="${key%+}"                 # "key+": a top-up pass of key
           key="${key%\?}"                # "key?": a needs-only run of key
           case "$key" in
@@ -629,7 +639,7 @@ jobs:
             commons_stars_navigation) limit=700 ;;
           esac
           mode=""
-          case "${{ matrix.key }}" in
+          case "$PACK_KEY" in
             *+) mode="--top-up" ;;
             *\?) mode="--needs-only" ;;
           esac
@@ -643,7 +653,7 @@ jobs:
           gh release view training-data > /dev/null 2>&1 || gh release create training-data \
             --title "Training data packs" \
             --notes "Picture packs for the Picture Model Training Kit (packs/build_packs.py); each zip has CREDITS.txt."
-          key="${{ matrix.key }}"
+          key="$PACK_KEY"
           key="${key%+}"
           key="${key%\?}"
           if [ ! -f "build/packs/manifest-$key.json" ]; then
@@ -665,7 +675,7 @@ jobs:
           gh release view needs-description > /dev/null 2>&1 || gh release create needs-description \
             --title "Pictures that need a description" \
             --notes "Pictures the pack builders set aside because their description was missing or poor (packs/build_packs.py needs_description). Each needs-<key>.vN.zip opens in the training kit's Describe pictures (Import a package) or with Build a Review Pack.cmd. Nothing here is trained on until a person describes and checks it."
-          key="${{ matrix.key }}"
+          key="$PACK_KEY"
           key="${key%+}"
           key="${key%\?}"
           if [ ! -f "build/packs/needs-manifest-$key.json" ]; then

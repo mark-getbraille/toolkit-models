@@ -25,7 +25,7 @@ on:
         default: "all"
 
 permissions:
-  contents: write
+  contents: read   # each job that publishes asks for more below
 
 concurrency:
   group: training-packs
@@ -39,10 +39,14 @@ jobs:
       commons: ${{ steps.keys.outputs.commons }}
       other: ${{ steps.keys.outputs.other }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false   # no job pushes with git; gh uses GH_TOKEN
       - id: keys
+        env:
+          INPUT_KEYS: ${{ inputs.keys }}   # passed as a variable, never pasted into the script
         run: |
-          keys='${{ inputs.keys }}'
+          keys="$INPUT_KEYS"
           if [ -z "$keys" ]; then keys=$(grep -v '^#' packs/request.txt | tr -d '[:space:]'); fi
           python3 - "$keys" >> "$GITHUB_OUTPUT" <<'PY'
           import json, sys
@@ -219,6 +223,8 @@ jobs:
   build:
     needs: plan
     if: needs.plan.outputs.other != '[]'
+    permissions:
+      contents: write   # publishes to a release
     uses: ./.github/workflows/pack-build.yml
     with:
       keys: ${{ needs.plan.outputs.other }}
@@ -228,6 +234,8 @@ jobs:
   build-commons:
     needs: plan
     if: needs.plan.outputs.commons != '[]'
+    permissions:
+      contents: write   # publishes to a release
     uses: ./.github/workflows/pack-build.yml
     with:
       keys: ${{ needs.plan.outputs.commons }}
@@ -237,11 +245,15 @@ jobs:
   manifest:
     needs: [build, build-commons]
     if: always()
+    permissions:
+      contents: write   # publishes to a release
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false   # no job pushes with git; gh uses GH_TOKEN
       - name: Merge the packs' manifests into packs.json
         run: |
           mkdir -p merged && cd merged
@@ -280,6 +292,8 @@ jobs:
   needs-manifest:
     needs: [build, build-commons]
     if: always()
+    permissions:
+      contents: write   # publishes to a release
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
