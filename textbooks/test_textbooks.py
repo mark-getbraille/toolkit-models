@@ -65,6 +65,22 @@ def test_sample_book(tmp_path):
     json.dumps(data)
 
 
+def test_pages_cannot_run_code():
+    """Links keep only web, e-mail and within-the-book addresses, and the last check of every page (safe_body)
+    removes anything that could run a program in the reader's browser, while a normal page stays exactly as it was."""
+    cleaner = B._Cleaner({}, "https://example.org/a/")
+    assert cleaner.clean('<p><a href="javascript:alert(1)">Words</a> <a href="page2">Next</a> '
+                         '<a href="mailto:x@example.org">Mail</a></p>') == \
+        '<p><a>Words</a> <a href="https://example.org/a/page2">Next</a> <a href="mailto:x@example.org">Mail</a></p>'
+    normal = '<p id="x">Text &amp; more <a href="page#y">link</a></p>\n<img src="media/a.jpg" alt="A">'
+    assert B.safe_body(normal) == normal
+    bad = B.safe_body('<p onclick="x()">A</p><script>bad()</script><iframe src="x">in</iframe>'
+                      '<a href=" jav&#x61;script:x">B</a><img src="data:text/html,x"><div style="x:expression(1)">C</div>'
+                      '<img src="data:image/png;base64,AA" alt="dot"><form><p>F</p></form><embed src="x">')
+    assert bad == '<p>A</p><a>B</a><img><div>C</div><img src="data:image/png;base64,AA" alt="dot">'
+    assert B.safe_body('<a href="vbscript:x">V</a>') == "<a>V</a>"
+
+
 def test_openstax_pinned_to_cc_by_and_personal_use(tmp_path):
     """OpenStax's 2026 change to CC BY-NC-SA: a pinned repository is built from its last CC BY 4.0 commit with that
     commit as its version (openstax.org's catalogue, which describes the newest version, does not change its

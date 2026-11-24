@@ -100,6 +100,8 @@ USER_AGENT = "DigitalAccessibilityToolkit-textbooks/1.0 (open textbooks for blin
              "github.com/mark-getbraille/toolkit-models)"
 PAUSE = 1.0                      # seconds between two requests to the same site
 CNX = "{http://cnx.rice.edu/cnxml}"
+# The picture types an OpenStax picture may have to go into a book (see OpenStaxBook.media).
+PICTURE_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
 COL = "{http://cnx.rice.edu/collxml}"
 MD = "{http://cnx.rice.edu/mdml}"
 MATHML = "{http://www.w3.org/1998/Math/MathML}"
@@ -320,7 +322,107 @@ def page_html(book, page, previous=None, following=None):
     nav.append(f'<p>{esc(credit_line(book))}</p></nav>')
     return (f'<!DOCTYPE html>\n<html lang="{esc(two_letters(book.language))}"><head><meta charset="utf-8">'
             f'<title>{esc(page.title)}</title><link rel="stylesheet" href="style.css"></head><body>'
-            f'<h1>{esc(page.title)}</h1>\n{page.body}\n{"".join(nav)}</body></html>')
+            f'<h1>{esc(page.title)}</h1>\n{safe_body(page.body)}\n{"".join(nav)}</body></html>')
+
+
+# ====================================================================== the last safety check of a page
+# Page bodies are made by many source modules, some of them from other people's web pages. Before a page goes into
+# a book it gets one last check, so that nothing in it can run a program in the reader's browser: no <script>,
+# <iframe>, <object>, <embed> or <form>, no "on..." attributes (onclick, onerror, ...), no style that runs code, and
+# no javascript:, vbscript: or data: addresses in links and pictures. A normal page has none of these, and then its
+# HTML is left exactly as it was (byte for byte); only a page with something unsafe is written out again.
+
+UNSAFE_TAGS = {"script", "iframe", "object", "embed", "form", "frame", "frameset", "applet", "base", "meta", "link"}
+UNSAFE_VOID = {"embed", "base", "meta", "link", "frame"}          # tags with no closing tag (nothing inside to drop)
+URL_ATTRS = {"href", "src", "action", "formaction", "xlink:href", "poster", "background", "srcset", "data", "lowsrc",
+             "dynsrc", "cite", "longdesc", "usemap", "ping"}
+SAFE_DATA_PICTURE = re.compile(r"data:image/(png|jpeg|jpg|gif|webp);", re.I)   # small pictures written in the page
+
+
+def _bad_address(name, value):
+    """True when an address attribute (href, src, ...) would run code: javascript:, vbscript: or data: (a data:
+    picture in src stays: it is only a picture). Spaces and control characters are ignored, as browsers do."""
+    squeezed = re.sub(r"[\x00-\x20]+", "", html.unescape(value or "")).lower()
+    if not re.match(r"(javascript|vbscript|data|livescript|mocha):", squeezed):
+        return False
+    return not (name == "src" and SAFE_DATA_PICTURE.match(squeezed))
+
+
+def _bad_attribute(name, value):
+    """True when an attribute must go: on... (event handlers), a style that runs code, or an unsafe address."""
+    name = (name or "").lower()
+    if name.startswith("on"):
+        return True
+    if name == "style":
+        squeezed = re.sub(r"[\s\\]+", "", html.unescape(value or "")).lower()
+        return any(w in squeezed for w in ("expression(", "javascript:", "vbscript:", "-moz-binding", "behavior:"))
+    return name in URL_ATTRS and _bad_address(name, value)
+
+
+def _body_events(body):
+    """The pieces of an HTML body as the browser would read them, as (kind, tag, attributes, text) tuples: kind is
+    "start", "startend", "end", "data" or "other" (comments and the like)."""
+    from html.parser import HTMLParser
+    events = []
+
+    class Reader(HTMLParser):
+        """Collects the pieces of the page."""
+
+        def handle_starttag(self, tag, attrs):
+            """An opening tag."""
+            events.append(("start", tag, attrs, ""))
+
+        def handle_startendtag(self, tag, attrs):
+            """A tag closed at once (<br/>)."""
+            events.append(("startend", tag, attrs, ""))
+
+        def handle_endtag(self, tag):
+            """A closing tag."""
+            events.append(("end", tag, [], ""))
+
+        def handle_data(self, data):
+            """Text."""
+            events.append(("data", "", [], data))
+
+        def handle_comment(self, data):
+            """A comment (dropped when the page is written again)."""
+            events.append(("other", "", [], ""))
+    reader = Reader(convert_charrefs=True)
+    reader.feed(body)
+    reader.close()
+    return events
+
+
+def safe_body(body):
+    """body (the HTML of a page's text) with nothing in it that can run code (see the notes above). A body with
+    nothing unsafe comes back unchanged."""
+    if not body or "<" not in body:
+        return body or ""
+    events = _body_events(body)
+    unsafe = any(tag in UNSAFE_TAGS or any(_bad_attribute(n, v) for n, v in attrs) for _, tag, attrs, _ in events)
+    if not unsafe:
+        return body
+    out, skip = [], []                       # skip: the unsafe tags we are inside (their whole contents are dropped)
+    for kind, tag, attrs, text in events:
+        if skip:
+            if tag == skip[-1] and kind == "start":
+                skip.append(tag)
+            elif tag == skip[-1] and kind == "end":
+                skip.pop()
+            continue
+        if tag in UNSAFE_TAGS:
+            if kind == "start" and tag not in UNSAFE_VOID:
+                skip.append(tag)
+            continue
+        if kind == "data":
+            out.append(esc(text))
+        elif kind in ("start", "startend"):
+            kept = "".join(f' {n}="{esc(v or "")}"' if v is not None else f" {n}"
+                           for n, v in attrs if not _bad_attribute(n, v) and re.fullmatch(r"[\w:.-]+", n))
+            out.append(f"<{tag}{kept}{' /' if kind == 'startend' else ''}>")
+        elif kind == "end":
+            out.append(f"</{tag}>")
+    return "".join(out)
 
 
 def two_letters(code):
@@ -1030,9 +1132,13 @@ class OpenStaxBook:
             name = os.path.basename(src)
             if self.pictures and name:
                 path = os.path.join(self.repo, "media", name)
-                if os.path.exists(path):
-                    kind = image.get("mime-type") or "image/jpeg"
-                    kind = "image/jpeg" if kind in ("image/jpg",) else kind
+                kind = (image.get("mime-type") or "image/jpeg").strip().lower()
+                kind = "image/jpeg" if kind in ("image/jpg", "image/pjpeg") else kind
+                # Only plain picture types go into the book. The book's own files say what type each file is,
+                # and a file called text/html or image/svg+xml would be opened as a web page that can run code,
+                # so those are left out and the reader gets the picture's description instead (the description
+                # is what a braille reader uses anyway; SVG drawings are rare in these books).
+                if os.path.exists(path) and kind in PICTURE_TYPES:
                     with open(path, "rb") as f:
                         self.resources[f"media/{name}"] = (f.read(), kind)
                     return f'<img src="media/{esc(name)}" alt="{esc(alt)}">'
@@ -1262,6 +1368,14 @@ def mathml_spans(text):
     return re.sub(r"<(?:\w+:)?math\b.*?</(?:\w+:)?math>", one, text, flags=re.S)
 
 
+def _plain_link(href):
+    """True for a link the books may keep: an http, https or mailto address, or one with no kind at all (an address
+    within the same site, like "page2" or "#part"). Spaces and control characters are ignored, as browsers do."""
+    squeezed = re.sub(r"[\x00-\x20]+", "", html.unescape(href or ""))
+    scheme = urllib.parse.urlsplit(squeezed).scheme.lower()
+    return scheme in ("", "http", "https", "mailto")
+
+
 class _Cleaner:
     """Keeps only the plain structure of a web page's HTML (KEEP_TAGS, without classes and styles), drops what is
     not the text (DROP_TAGS), pictures without a real description, and the "shortcode" marks; links within the book
@@ -1319,6 +1433,12 @@ class _Cleaner:
             target = self.links.get(href.split("#")[0])
             if target:
                 href = target + ("#" + href.split("#", 1)[1] if "#" in href else "")
+            elif not _plain_link(href):
+                # Only web (http, https), e-mail (mailto) and within-the-book links are kept; any other kind
+                # (javascript:, data:, file: ...) could run code or open something on the reader's computer, so
+                # the link is dropped and only its words stay (the </a> closes an <a> without an address).
+                self.out.append("<a>")
+                return
             self.out.append(f'<a href="{esc(href)}">')
             return
         ident = f' id="{esc(a["id"])}"' if a.get("id") else ""
