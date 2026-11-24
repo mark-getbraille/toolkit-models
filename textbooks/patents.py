@@ -184,13 +184,14 @@ def odp_call(key, url, body=None):
     if not url.startswith(ODP):
         raise ValueError(f"not an Open Data Portal address: {url}")
     data = json.dumps(body).encode("utf-8") if body is not None else None
-    headers = {"X-API-KEY": key, "Accept": "*/*", "User-Agent": B.USER_AGENT}
+    headers = {"Accept": "*/*", "User-Agent": B.USER_AGENT}
     if data is not None:
         headers["Content-Type"] = "application/json"
     for attempt in range(4):
         time.sleep(PAUSE)
         try:
-            with urllib.request.urlopen(urllib.request.Request(url, data=data, headers=headers), timeout=120) as r:
+            # keyed_urlopen: the key goes only to api.uspto.gov, also when the portal answers "moved".
+            with B.keyed_urlopen(url, {"X-API-KEY": key}, data=data, headers=headers, timeout=120) as r:
                 return r.status, r.read(XML_MOST + 1)
         except urllib.error.HTTPError as e:
             if e.code in (429, 500, 502, 503, 504) and attempt < 3:

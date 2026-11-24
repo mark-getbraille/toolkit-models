@@ -302,11 +302,12 @@ def oak_download(piece, key):
     refused."""
     import build_textbooks as B
     body = json.dumps({"subjects": [piece]}).encode("utf-8")
-    req = urllib.request.Request(f"{OAK_API}/api/bulk", data=body, method="POST",
-                                 headers={"User-Agent": B.USER_AGENT, "Content-Type": "application/json",
-                                          "Authorization": f"Bearer {key}"})
     try:
-        with urllib.request.urlopen(req, timeout=600) as r:
+        # keyed_urlopen: the key goes only to Oak's own site, also when it answers "moved" (the bulk zip may be
+        # handed out from another address, which gets the request without the key).
+        with B.keyed_urlopen(f"{OAK_API}/api/bulk", {"Authorization": f"Bearer {key}"}, data=body, method="POST",
+                             headers={"User-Agent": B.USER_AGENT, "Content-Type": "application/json"},
+                             timeout=600) as r:
             data = r.read()
     except urllib.error.HTTPError as e:
         if e.code in (401, 403):

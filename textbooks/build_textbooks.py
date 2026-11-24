@@ -728,6 +728,85 @@ _last = {}
 CRAWL_DELAY = {}                 # {host: seconds} a site's robots.txt asks for between requests (allowed_by_robots)
 
 
+# ---------------------------------------------------------------------- calls with the owner's API keys
+# Some sources need the owner's own API key (govinfo, USPTO, Oak, ...). Python's usual urlopen sends every header
+# again when a site answers "moved, look over there", even to another site, so a key could be handed to a stranger.
+# keyed_urlopen sends the key only to the site it is meant for: on a move to the same site (and not from https down
+# to http) the key goes along; on a move to another site the request is followed without the key, and that site,
+# if it needs a key, simply refuses.
+
+class _KeyOnlyToSameSite(urllib.request.HTTPRedirectHandler):
+    """Follows a move ("redirect") as usual, but puts the key headers back only when the new address is on the
+    same site (same host name, and https stays https). The key headers are kept apart from the others ("not
+    redirected" headers), so a move to another site never carries them."""
+
+    def __init__(self, secret_headers):
+        """secret_headers: {header name: value} of the key headers."""
+        super().__init__()
+        self.secret_headers = secret_headers
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        """The request to the new address (None or an error when it is not followed)."""
+        new = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if new is None:
+            return None
+        old, moved = urllib.parse.urlsplit(req.full_url), urllib.parse.urlsplit(new.full_url)
+        same_site = (moved.hostname or "").lower() == (old.hostname or "").lower() and moved.port == old.port
+        if same_site and not (old.scheme == "https" and moved.scheme != "https"):
+            for name, value in self.secret_headers.items():
+                new.add_unredirected_header(name, value)
+        return new
+
+
+def keyed_urlopen(url, secret_headers, data=None, headers=None, method=None, timeout=120):
+    """Open url like urllib.request.urlopen, sending secret_headers ({"X-Api-Key": key}) only to url's own site,
+    also after a move (see _KeyOnlyToSameSite). The answer is used with "with ... as r" as usual."""
+    req = urllib.request.Request(url, data=data, headers=headers or {}, method=method)
+    for name, value in secret_headers.items():
+        req.add_unredirected_header(name, value)
+    return urllib.request.build_opener(_KeyOnlyToSameSite(secret_headers)).open(req, timeout=timeout)
+
+
+# Address parts that hold a key or a password, hidden in every message, log line and published file (hide_keys).
+KEY_PARAMS = r"(?:api[_-]?key|apikey|key|wskey|token|access[_-]?token|secret|password)"
+_KEY_IN_ADDRESS = re.compile(r"([?&;]" + KEY_PARAMS + r"=)[^&;#\s\"'<>)\]]*", re.I)
+
+
+def hide_keys(text):
+    """text with the value of every key, token or password in an address replaced by "(hidden)": "https://x/a?
+    api_key=SECRET&q=1" -> "https://x/a?api_key=(hidden)&q=1". Used where error messages and left-out reasons are
+    made, so that a key never ends up in the build's log or in a published manifest."""
+    return _KEY_IN_ADDRESS.sub(r"\1(hidden)", str(text)) if text else text
+
+
+def hide_keys_in(value):
+    """hide_keys on every piece of text in value (a manifest: dicts, lists and text, at any depth)."""
+    if isinstance(value, str):
+        return hide_keys(value)
+    if isinstance(value, list):
+        return [hide_keys_in(v) for v in value]
+    if isinstance(value, dict):
+        return {k: hide_keys_in(v) for k, v in value.items()}
+    return value
+
+
+def hide_keys_in_manifests(out_dir):
+    """Every manifest-*.json in out_dir written again with hide_keys_in when a key shows in it (the last check
+    before the manifests are uploaded, whichever source module wrote them)."""
+    if not os.path.isdir(out_dir):
+        return
+    for name in sorted(os.listdir(out_dir)):
+        if not (name.startswith("manifest-") and name.endswith(".json")):
+            continue
+        path = os.path.join(out_dir, name)
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+        clean = hide_keys_in(data)
+        if clean != data:
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(clean, f, indent=1, ensure_ascii=False)
+
+
 def fetch(url, cache=None, binary=False, tries=4):
     """The body of url (text, or bytes with binary=True): one request at a time, PAUSE seconds between two
     requests to the same site (or the Crawl-delay its robots.txt asks for), a few tries on errors, compressed answers
@@ -2772,7 +2851,8 @@ def build(keys, out_dir, cache=None, pictures=False, local_osbooks=None, date=No
                     try:
                         b = siyavula_book(subject, grade, title, words, cache, left_out)
                     except Exception as e:  # noqa: BLE001 - one book's failure does not stop the others
-                        left_out.append({"title": f"Siyavula {title}", "reason": f"It could not be read ({e})."})
+                        left_out.append({"title": f"Siyavula {title}",
+                                         "reason": f"It could not be read ({hide_keys(e)})."})
                         b = None
                     if b is not None:
                         books.append(b)
@@ -2791,7 +2871,7 @@ def build(keys, out_dir, cache=None, pictures=False, local_osbooks=None, date=No
                     try:
                         b = dspace_book(entry, work, cache, left_out)
                     except Exception as e:  # noqa: BLE001
-                        left_out.append({"title": entry[3], "reason": f"It could not be read ({e})."})
+                        left_out.append({"title": entry[3], "reason": f"It could not be read ({hide_keys(e)})."})
                         b = None
                     if b is not None:
                         books.append(b)
@@ -2803,7 +2883,7 @@ def build(keys, out_dir, cache=None, pictures=False, local_osbooks=None, date=No
                 try:
                     b = pdfdoc_book(entry, work, cache, left_out)
                 except Exception as e:  # noqa: BLE001 - said in the manifest
-                    left_out.append({"title": entry["title"], "reason": f"It could not be read ({e})."})
+                    left_out.append({"title": entry["title"], "reason": f"It could not be read ({hide_keys(e)})."})
                     b = None
                 if b is not None:
                     books.append(b)
@@ -2815,7 +2895,7 @@ def build(keys, out_dir, cache=None, pictures=False, local_osbooks=None, date=No
                 try:
                     b = lawdoc_book(entry, cache, left_out)
                 except Exception as e:  # noqa: BLE001 - said in the manifest
-                    left_out.append({"title": entry["title"], "reason": f"It could not be read ({e})."})
+                    left_out.append({"title": entry["title"], "reason": f"It could not be read ({hide_keys(e)})."})
                     b = None
                 if b is not None:
                     books.append(b)
@@ -2828,7 +2908,7 @@ def build(keys, out_dir, cache=None, pictures=False, local_osbooks=None, date=No
                 try:
                     b = webguide_book(entry, cache, left_out)
                 except Exception as e:  # noqa: BLE001 - said in the manifest
-                    left_out.append({"title": entry["title"], "reason": f"It could not be read ({e})."})
+                    left_out.append({"title": entry["title"], "reason": f"It could not be read ({hide_keys(e)})."})
                     b = None
                 if b is not None:
                     books.append(b)
@@ -2836,7 +2916,7 @@ def build(keys, out_dir, cache=None, pictures=False, local_osbooks=None, date=No
                 print(f"Unknown key {key}; skipped.")
                 continue
         except Exception as e:  # noqa: BLE001 - said in the manifest
-            left_out.append({"title": key, "reason": f"It could not be built ({e})."})
+            left_out.append({"title": key, "reason": f"It could not be built ({hide_keys(e)})."})
         entries = []
         for book in books:
             if not book.pages:
@@ -2931,13 +3011,14 @@ def main(argv=None):
         if a.existing and os.path.exists(a.existing):
             with open(a.existing, encoding="utf-8") as f:
                 existing = json.load(f)
-        data = merge(a.merge, existing, robots_for_originals)
+        data = hide_keys_in(merge(a.merge, existing, robots_for_originals))   # no key in the published catalogue
         os.makedirs(a.out, exist_ok=True)
         with open(os.path.join(a.out, "textbooks.json"), "w", encoding="utf-8") as f:
             json.dump(data, f, indent=1, ensure_ascii=False)
         print(f"textbooks.json: {len(data['books'])} books")
         return 0
     build(a.keys, a.out, a.cache, a.pictures, a.local_osbooks)
+    hide_keys_in_manifests(a.out)            # no key in a manifest, whichever module wrote it
     return 0
 
 

@@ -153,7 +153,7 @@ def build_keys(mod, keys, out_dir, cache=None, date=None, limit=None):
         try:
             books = mod.books_for(key, work, cache, left_out, limit) or []
         except Exception as e:  # noqa: BLE001 - said in the manifest
-            left_out.append({"title": key, "reason": f"It could not be built ({e})."})
+            left_out.append({"title": key, "reason": f"It could not be built ({B.hide_keys(e)})."})
             books = []
         for book in books:
             if not book.pages:

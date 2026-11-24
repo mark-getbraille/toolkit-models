@@ -81,6 +81,46 @@ def test_pages_cannot_run_code():
     assert B.safe_body('<a href="vbscript:x">V</a>') == "<a>V</a>"
 
 
+def test_keys_stay_with_their_site(tmp_path, monkeypatch):
+    """An API key is sent again after a move only to the same site, and never shows in a message or manifest."""
+    import http.server
+    import threading
+    seen = []
+
+    class Site(http.server.BaseHTTPRequestHandler):
+        """A made-up local site that moves one address within itself and one to another host name."""
+
+        def log_message(self, *args):
+            """Quiet."""
+
+        def do_GET(self):
+            """Answer, remembering which host was asked and whether the key came along."""
+            seen.append((self.headers.get("Host").split(":")[0], self.path, self.headers.get("X-Api-Key")))
+            port = self.server.server_address[1]
+            moves = {"/same": "/end", "/other": f"http://localhost:{port}/end"}
+            self.send_response(302 if self.path in moves else 200)
+            if self.path in moves:
+                self.send_header("Location", moves[self.path])
+            self.end_headers()
+    server = http.server.HTTPServer(("127.0.0.1", 0), Site)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    monkeypatch.setenv("NO_PROXY", "127.0.0.1,localhost")
+    monkeypatch.setenv("no_proxy", "127.0.0.1,localhost")
+    try:
+        for path in ("same", "other"):
+            with B.keyed_urlopen(f"http://127.0.0.1:{server.server_address[1]}/{path}", {"X-Api-Key": "K1"}) as r:
+                r.read()
+    finally:
+        server.shutdown()
+    assert seen == [("127.0.0.1", "/same", "K1"), ("127.0.0.1", "/end", "K1"), ("127.0.0.1", "/other", "K1"),
+                    ("localhost", "/end", None)]
+    assert B.hide_keys("x https://a.example/s?q=1&api_key=K2&key=K3 y") == \
+        "x https://a.example/s?q=1&api_key=(hidden)&key=(hidden) y"
+    (tmp_path / "manifest-a.json").write_text(json.dumps({"left_out": [{"reason": "https://a.example/?token=K4"}]}))
+    B.hide_keys_in_manifests(str(tmp_path))
+    assert "K4" not in (tmp_path / "manifest-a.json").read_text()
+
+
 def test_openstax_pinned_to_cc_by_and_personal_use(tmp_path):
     """OpenStax's 2026 change to CC BY-NC-SA: a pinned repository is built from its last CC BY 4.0 commit with that
     commit as its version (openstax.org's catalogue, which describes the newest version, does not change its

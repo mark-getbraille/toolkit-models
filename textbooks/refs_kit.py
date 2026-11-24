@@ -273,7 +273,7 @@ class Collection:
             try:
                 book = self.book_for(key, work, cache, left_out, limit)
             except Exception as e:  # noqa: BLE001 - said in the manifest
-                left_out.append({"title": key, "reason": f"It could not be built ({e})."})
+                left_out.append({"title": key, "reason": f"It could not be built ({B.hide_keys(e)})."})
                 book = None
             if book is not None and not book.pages:
                 left_out.append({"title": book.title, "reason": "No pages could be read."})

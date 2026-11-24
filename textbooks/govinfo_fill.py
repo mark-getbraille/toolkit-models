@@ -180,10 +180,10 @@ def api_search(key, docclass, size=100):
     import build_textbooks as B
     body = json.dumps({"query": f"collection:GOVPUB AND docclass:{docclass}", "pageSize": size, "offsetMark": "*",
                        "sorts": [{"field": "publishdate", "sortOrder": "DESC"}]}).encode("utf-8")
-    req = urllib.request.Request(API, data=body, method="POST", headers={
-        "User-Agent": B.USER_AGENT, "Content-Type": "application/json", "Accept": "application/json",
-        "X-Api-Key": key})
-    with urllib.request.urlopen(req, timeout=120) as r:
+    # keyed_urlopen: the key goes only to api.govinfo.gov, also when it answers "moved".
+    with B.keyed_urlopen(API, {"X-Api-Key": key}, data=body, method="POST", headers={
+            "User-Agent": B.USER_AGENT, "Content-Type": "application/json", "Accept": "application/json"},
+            timeout=120) as r:
         return json.load(r).get("results", [])
 
 
@@ -241,7 +241,8 @@ def new_book(name, work, cache=None, left_out=None, limit=None):
             left_out.append({"title": f"{title}: {docclass}", "reason": f"GovInfo's API answered {e.code}."})
             continue
         except (urllib.error.URLError, OSError, ValueError) as e:
-            left_out.append({"title": f"{title}: {docclass}", "reason": f"GovInfo's API could not be read ({e})."})
+            left_out.append({"title": f"{title}: {docclass}",
+                             "reason": f"GovInfo's API could not be read ({B.hide_keys(e)})."})
             continue
         book.pages.append(B.Page(f"class-{docclass.lower()}", f"Publications of class {docclass.replace('_', '.')}",
                                  rows_html(rows), chapter))

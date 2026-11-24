@@ -199,9 +199,10 @@ def test_govinfo_search_with_a_made_up_key(monkeypatch):
         def __exit__(self, *a):
             return False
 
-    def fake_urlopen(req, timeout=0):
-        """A made-up api.govinfo.gov: records what was sent and answers three made-up results."""
-        sent.append((req.full_url, json.loads(req.data)))
+    def fake_urlopen(url, secret_headers, data=None, headers=None, method=None, timeout=0):
+        """A made-up api.govinfo.gov (in place of build_textbooks.keyed_urlopen): records what was sent and answers
+        three made-up results."""
+        sent.append((url, json.loads(data), secret_headers))
         return Answer({"results": [
             {"title": "Fly Rights: A Consumer Guide to Air Travel", "packageId": "GOVPUB-TD-made-up1",
              "collectionCode": "GOVPUB", "dateIssued": "2004-01-01"},
@@ -210,7 +211,7 @@ def test_govinfo_search_with_a_made_up_key(monkeypatch):
              "collectionCode": "GOVPUB"}]})
 
     monkeypatch.setenv(GK.GOVINFO_KEY_ENV, "made-up-key")
-    monkeypatch.setattr(GK.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(B, "keyed_urlopen", fake_urlopen)
     got = {}
 
     def fake_set(entry, parts, work, cache=None, left_out=None, limit=None):
@@ -229,8 +230,10 @@ def test_govinfo_search_with_a_made_up_key(monkeypatch):
     book = TM.COLLECTION.makers["govinfo_travel_publications"][0]("govinfo_travel_publications", "work", None,
                                                                    left_out)
     assert book is not None and not left_out
-    url, body = sent[0]
-    assert url.startswith(f"{GK.GOVINFO_API}/search?api_key=") and "collection:GOVPUB" in body["query"]
+    url, body, secret = sent[0]
+    # the key goes in the X-Api-Key header, never in the address (which can end up in logs)
+    assert url == f"{GK.GOVINFO_API}/search" and secret == {"X-Api-Key": "made-up-key"}
+    assert "collection:GOVPUB" in body["query"]
     assert got["parts"] == [("Fly Rights: A Consumer Guide to Air Travel (2004-01-01)",
                              "https://www.govinfo.gov/content/pkg/GOVPUB-TD-made-up1/pdf/GOVPUB-TD-made-up1.pdf",
                              "https://www.govinfo.gov/app/details/GOVPUB-TD-made-up1")]

@@ -183,13 +183,15 @@ def test_the_key_goes_in_a_header_only(monkeypatch):
         def __exit__(self, *a):
             return False
 
-    def fake_open(req, timeout=None):
-        seen["url"], seen["headers"], seen["body"] = req.full_url, dict(req.header_items()), req.data
+    def fake_open(url, secret_headers, data=None, headers=None, method=None, timeout=None):
+        """A made-up build_textbooks.keyed_urlopen: records what would be sent (the key in its own headers)."""
+        seen["url"], seen["headers"], seen["body"] = url, dict(secret_headers), data
         return Answer(json.dumps({"results": [{"packageId": "X"}]}).encode())
-    monkeypatch.setattr(G.urllib.request, "urlopen", fake_open)
+    import build_textbooks
+    monkeypatch.setattr(build_textbooks, "keyed_urlopen", fake_open)
     out = G.api_search("MADE-UP-KEY-1234", "TD8")
     assert out == [{"packageId": "X"}]
     assert seen["url"] == G.API and "MADE-UP-KEY-1234" not in seen["url"]
-    assert seen["headers"].get("X-api-key") == "MADE-UP-KEY-1234"
+    assert seen["headers"] == {"X-Api-Key": "MADE-UP-KEY-1234"}
     body = json.loads(seen["body"])
     assert body["query"] == "collection:GOVPUB AND docclass:TD8" and "MADE-UP-KEY-1234" not in seen["body"].decode()

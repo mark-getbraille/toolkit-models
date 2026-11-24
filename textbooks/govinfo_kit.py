@@ -52,15 +52,17 @@ def public_pdf(package, granule=""):
 
 def search(key, query, collections, page_size=100):
     """[{title, package, granule, collection, date}] of govinfo's search for query in the collections (["GOVPUB"]),
-    first page of results only, or None when the key is refused. The key goes in the address as the API asks."""
+    first page of results only, or None when the key is refused. The key goes in the X-Api-Key header (govinfo
+    takes it there as well as in the address), never in the address, so it is not written to any log; and only to
+    api.govinfo.gov, also when it answers "moved" (build_textbooks.keyed_urlopen)."""
     import build_textbooks as B
     q = query + (" AND (" + " OR ".join(f"collection:{c}" for c in collections) + ")" if collections else "")
     body = json.dumps({"query": q, "pageSize": page_size, "offsetMark": "*",
                        "sorts": [{"field": "score", "sortOrder": "DESC"}]}).encode("utf-8")
-    req = urllib.request.Request(f"{GOVINFO_API}/search?api_key={key}", data=body, method="POST",
-                                 headers={"User-Agent": B.USER_AGENT, "Content-Type": "application/json"})
     try:
-        with urllib.request.urlopen(req, timeout=120) as r:
+        with B.keyed_urlopen(f"{GOVINFO_API}/search", {"X-Api-Key": key}, data=body, method="POST",
+                             headers={"User-Agent": B.USER_AGENT, "Content-Type": "application/json"},
+                             timeout=120) as r:
             data = json.loads(r.read().decode("utf-8"))
     except urllib.error.HTTPError as e:
         if e.code in (401, 403):
