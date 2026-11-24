@@ -1797,7 +1797,19 @@ def odp_get(s, key, url, **kwargs):
     if not url.startswith(ODP_HOST):
         return None
     time.sleep(PATENT_PAUSE)
-    return rs.get(s, url, headers={"X-API-KEY": key, "Accept": "*/*"}, **kwargs)
+    # The key must never go to another site: moves ("redirects") are followed here one at a time, and the key
+    # goes along only while the address stays on the portal's own site (a PDF handed out from a storage site is
+    # fetched without the key).
+    from urllib.parse import urljoin, urlsplit
+    own_host = urlsplit(ODP_HOST).hostname
+    for _ in range(6):
+        keyed = urlsplit(url).hostname == own_host and url.startswith("https://")
+        headers = {"X-API-KEY": key, "Accept": "*/*"} if keyed else {"Accept": "*/*"}
+        r = rs.get(s, url, headers=headers, allow_redirects=False, **kwargs)
+        if r is None or not r.is_redirect:
+            return r
+        url = urljoin(url, r.headers.get("Location", ""))
+    return None
 
 
 def odp_search(s, key, family, offset, limit=100):
@@ -1811,7 +1823,8 @@ def odp_search(s, key, family, offset, limit=100):
     data = None
     for attempt in range(4):
         try:
-            r = s.post(ODP + "patent/applications/search", json=body, timeout=90,
+            # allow_redirects=False: the search never moves, and a move must not carry the key to another site
+            r = s.post(ODP + "patent/applications/search", json=body, timeout=90, allow_redirects=False,
                        headers={"X-API-KEY": key, "Accept": "application/json"})
         except Exception:  # noqa: BLE001 - tried again
             time.sleep(5 * (attempt + 1))

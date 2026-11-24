@@ -45,6 +45,25 @@ def token():
     return os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN") or ""
 
 
+class _TokenOnlyToSameSite(urllib.request.HTTPRedirectHandler):
+    """Follows a move ("redirect") as usual, sending the token again only when the new address is on the same site
+    (same host, https staying https); a move to another site is followed without it."""
+
+    def __init__(self, authorization):
+        """authorization: the Authorization header's value, or None when no token is sent."""
+        super().__init__()
+        self.authorization = authorization
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        """The request to the new address, with the token only for the same site."""
+        new = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if new is not None and self.authorization:
+            old, moved = urllib.parse.urlsplit(req.full_url), urllib.parse.urlsplit(new.full_url)
+            if moved.hostname == old.hostname and moved.port == old.port and moved.scheme == old.scheme == "https":
+                new.add_unredirected_header("Authorization", self.authorization)
+        return new
+
+
 def http_get(url, binary=False, tries=3, timeout=120):
     """The body of url (text, or bytes with binary=True). Raises urllib.error.HTTPError for an answer like 404, after
     trying a busy server (429, 5xx) a few times with a growing pause."""
@@ -59,8 +78,13 @@ def http_get(url, binary=False, tries=3, timeout=120):
         if wait > 0:
             time.sleep(wait)
         try:
-            req = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(req, timeout=timeout) as r:
+            req = urllib.request.Request(url, headers={k: v for k, v in headers.items() if k != "Authorization"})
+            if "Authorization" in headers:
+                # The token is kept apart ("not redirected"), so a move to another site (GitHub hands out release
+                # files from its storage site) never carries it; _TokenOnlyToSameSite puts it back for the same site.
+                req.add_unredirected_header("Authorization", headers["Authorization"])
+            opener = urllib.request.build_opener(_TokenOnlyToSameSite(headers.get("Authorization")))
+            with opener.open(req, timeout=timeout) as r:
                 data = r.read()
             return data if binary else data.decode("utf-8", "replace")
         except urllib.error.HTTPError as e:
