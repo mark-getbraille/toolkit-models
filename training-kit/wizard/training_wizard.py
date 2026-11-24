@@ -110,6 +110,9 @@ import wx
 
 APP_NAME = "Picture Model Training"
 UV_URL = "https://github.com/astral-sh/uv/releases/download/0.9.5/uv-x86_64-pc-windows-msvc.zip"
+# The SHA-256 uv publishes beside that zip (uv-x86_64-pc-windows-msvc.zip.sha256): a download that does not match
+# it is refused, never unpacked or run.
+UV_SHA256 = "515dc53d7553f1357d0abc1f70acd921fbb9e30230b1d9a08737236daa6ee920"
 TORCH_INDEX = "https://download.pytorch.org/whl/cu128"
 KIT_NAME = "Picture Model Training Kit"
 DEFAULT_FOLDER = "C:\\Training"
@@ -423,7 +426,11 @@ def install_tools(kit, report, pictures=False):
         report("Getting ready: downloading the installer helper, about 20 MB.")
         request = urllib.request.Request(UV_URL, headers={"User-Agent": APP_NAME})
         with urllib.request.urlopen(request, timeout=300) as r:
-            zipfile.ZipFile(io.BytesIO(r.read())).extractall(tools)
+            data = r.read()
+        if hashlib.sha256(data).hexdigest() != UV_SHA256:
+            raise RuntimeError("The installer helper that was downloaded does not match its published checksum, so it "
+                               "was not used. Check the internet connection and try again.")
+        zipfile.ZipFile(io.BytesIO(data)).extractall(tools)
     requirements = os.path.join(kit, "kit", "requirements.txt")
     with open(requirements, "rb") as f:
         wanted = hashlib.sha256(f.read()).hexdigest()

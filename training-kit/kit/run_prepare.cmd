@@ -10,6 +10,9 @@ rem a key. The drafts need the NVIDIA graphics card; the clean-up does not.
 setlocal
 cd /d "%~dp0.."
 set "UV_URL=https://github.com/astral-sh/uv/releases/download/0.9.5/uv-x86_64-pc-windows-msvc.zip"
+rem The helper's SHA-256 published with uv 0.9.5 (uv-x86_64-pc-windows-msvc.zip.sha256): a download that does
+rem not match it (damaged, or changed on the way) is deleted, never unpacked or run.
+set "UV_SHA256=515dc53d7553f1357d0abc1f70acd921fbb9e30230b1d9a08737236daa6ee920"
 set "UV_CACHE_DIR=%CD%\work\uv-cache"
 set "UV_PYTHON_INSTALL_DIR=%CD%\tools\python"
 set "HF_HOME=%CD%\work\hf-cache"
@@ -26,7 +29,7 @@ if not exist kit\prepare_data.py (
 )
 if not exist tools\uv.exe (
   echo Getting ready: downloading the installer helper, about 20 MB.
-  powershell -NoProfile -ExecutionPolicy Bypass -Command "$ProgressPreference='SilentlyContinue'; Invoke-WebRequest -UseBasicParsing -Uri '%UV_URL%' -OutFile 'tools\uv.zip'; Expand-Archive -Force 'tools\uv.zip' 'tools'"
+  powershell -NoProfile -ExecutionPolicy Bypass -Command "$ProgressPreference='SilentlyContinue'; Invoke-WebRequest -UseBasicParsing -Uri '%UV_URL%' -OutFile 'tools\uv.zip'; if ((Get-FileHash -Algorithm SHA256 'tools\uv.zip').Hash -eq '%UV_SHA256%') { Expand-Archive -Force 'tools\uv.zip' 'tools' } else { Remove-Item -Force 'tools\uv.zip'; Write-Host 'The downloaded helper did not match its published checksum, so it was deleted.' }"
   if not exist tools\uv.exe (
     echo STOPPED: the installer helper could not be downloaded. Check the internet connection and start again.
     goto :end

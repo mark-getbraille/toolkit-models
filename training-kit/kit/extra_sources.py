@@ -1948,6 +1948,8 @@ def prepare_indoor_scenes(source, data_dir, work, cap):
     return fetch_pictures(items, os.path.join(data_dir, source.key), workers=4)
 
 
+# Plain http: ftp.cs.stanford.edu has no valid https certificate for its own name (checked 2026-11-24). Only
+# pictures are read from it, opened as pictures and never run; it stays http until the site offers https.
 SOP_URL, SOP_SIZE = "http://ftp.cs.stanford.edu/cs/cvgl/Stanford_Online_Products.zip", 3083860082
 SOP_THINGS = {"bicycle": "a bicycle", "cabinet": "a cabinet", "chair": "a chair", "coffee_maker": "a coffee maker",
               "fan": "an electric fan", "kettle": "a kettle", "lamp": "a lamp", "mug": "a mug", "sofa": "a sofa",

@@ -876,7 +876,8 @@ def prepare_food101(source, data_dir, work, cap):
     return rows
 
 
-DOGS_URL = "http://vision.stanford.edu/aditya86/ImageNetDogs/images.tar"
+# https: the site answers securely too (checked 2026-11-24), so the download cannot be changed on the way.
+DOGS_URL = "https://vision.stanford.edu/aditya86/ImageNetDogs/images.tar"
 
 
 def dog_breed(folder):
@@ -1159,7 +1160,7 @@ PERSONAL_SOURCES = [
     Source("stanford_dogs", "Stanford Dogs: 120 dog breeds (research terms; personal use)",
            "ImageNet terms: non-commercial research and education only (image-net.org/download)",
            "Stanford Dogs (Khosla, Jayadevaprakash, Yao and Fei-Fei, 2011), from ImageNet, "
-           "http://vision.stanford.edu/aditya86/ImageNetDogs/", "research", 2400, 20, prepare_stanford_dogs,
+           "https://vision.stanford.edu/aditya86/ImageNetDogs/", "research", 2400, 20, prepare_stanford_dogs,
            "790 MB, once", terms="https://image-net.org/download.php",
            terms_summary="ImageNet's photos: for non-commercial research and educational use only; the photos "
                          "belong to their owners."),
