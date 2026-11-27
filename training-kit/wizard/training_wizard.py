@@ -337,13 +337,44 @@ def nvidia_smi():
     return None
 
 
+def gpu_backend_module():
+    """The kit's gpu_backend.py (bundled into the program, or beside the wizard in the kit), which looks for AMD
+    graphics when there is no NVIDIA card (new, being tested); None when it cannot be loaded."""
+    folder = resource("kit")
+    if folder not in sys.path:
+        sys.path.insert(0, folder)
+    try:
+        import gpu_backend
+        return gpu_backend
+    except Exception:  # noqa: BLE001 - then only NVIDIA is looked for, as before
+        return None
+
+
+def amd_choice():
+    """(code, [plain sentences]) about AMD graphics, used only when there is no NVIDIA driver: code "supported" when
+    AMD's PyTorch for Windows supports the card (or KIT_AMD_TRY=1 for an unknown one), else "unknown",
+    "unsupported" or "none"."""
+    backend = gpu_backend_module()
+    if backend is None:
+        return "none", []
+    code, _name, lines = backend.amd_choice(backend.video_controllers())
+    if code == "unknown" and os.environ.get("KIT_AMD_TRY") == "1":
+        code = "supported"
+    return code, lines
+
+
 def check_computer(folder, library=None):
-    """Plain sentences about the NVIDIA card, the free space where the kit goes and where the picture library is,
-    and whether training can start ([sentences], ready)."""
+    """Plain sentences about the NVIDIA card (or, without one, AMD graphics: new, being tested), the free space
+    where the kit goes and where the picture library is, and whether training can start ([sentences], ready)."""
     lines, ready = [], True
     tool = nvidia_smi()
-    if tool is None:
+    amd, amd_lines = amd_choice() if tool is None else ("none", [])
+    if tool is None and amd == "supported":
+        lines.extend(amd_lines)
+        lines.append("The training checks the AMD graphics' memory and chip when it starts.")
+    elif tool is None:
         lines.append("No NVIDIA graphics card driver was found. The training needs an NVIDIA card with 12 GB or more.")
+        lines.extend(line.replace("STOPPED: ", "") for line in amd_lines)
         ready = False
     else:
         try:
@@ -432,6 +463,8 @@ def install_tools(kit, report, pictures=False):
                                "was not used. Check the internet connection and try again.")
         zipfile.ZipFile(io.BytesIO(data)).extractall(tools)
     requirements = os.path.join(kit, "kit", "requirements.txt")
+    if nvidia_smi() is None and amd_choice()[0] == "supported":     # AMD graphics: AMD's own PyTorch (being tested)
+        requirements = os.path.join(kit, "kit", "requirements-amd.txt")
     with open(requirements, "rb") as f:
         wanted = hashlib.sha256(f.read()).hexdigest()
     mark = os.path.join(kit, "env", "installed.txt")
@@ -453,7 +486,7 @@ def install_tools(kit, report, pictures=False):
         if not installed(mark, wanted):
             report("Getting ready: installing the picture-making tools in the kit folder. This can take 10 to 30 "
                    "minutes, and nothing is said while it works.")
-            pip_install(uv, kit, env, extra)
+            pip_install(uv, kit, env, extra, amd=requirements.endswith("requirements-amd.txt"))
             with open(mark, "w", encoding="utf-8") as f:
                 f.write(wanted)
             report("Getting ready: the picture-making tools are installed.")
@@ -468,8 +501,13 @@ def installed(mark, wanted):
         return False
 
 
-def pip_install(uv, kit, env, requirements):
-    """Install a requirements file into the kit's own Python (with PyTorch's CUDA packages)."""
+def pip_install(uv, kit, env, requirements, amd=False):
+    """Install a requirements file into the kit's own Python (with PyTorch's CUDA packages; for AMD graphics,
+    kit\requirements-amd.txt names AMD's own PyTorch files itself, so the CUDA index is not used)."""
+    if amd or requirements.endswith("requirements-amd.txt"):
+        run_quiet([uv, "pip", "install", "--python", os.path.join("env", "Scripts", "python.exe"), "-r",
+                   requirements, "--quiet"], kit, env)
+        return
     run_quiet([uv, "pip", "install", "--python", os.path.join("env", "Scripts", "python.exe"), "-r", requirements,
                "--extra-index-url", TORCH_INDEX, "--index-strategy", "unsafe-best-match", "--quiet"], kit, env)
 

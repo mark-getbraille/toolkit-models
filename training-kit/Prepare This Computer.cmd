@@ -72,6 +72,8 @@ if not defined NVSMI (
   echo    No NVIDIA driver was found. The graphics cards in this computer are:
   powershell -NoProfile -Command "Get-CimInstance Win32_VideoController | ForEach-Object { Write-Host ('      ' + $_.Name) }"
   echo    The kit needs an NVIDIA card. Tell Claude the names above.
+  echo    AMD Radeon graphics are a second choice, new and being tested: Quick Try.cmd checks whether yours
+  echo    can be used. See "Training on an AMD graphics card" in READ ME FIRST.txt.
 ) else (
   for /f "tokens=1,2 delims=," %%a in ('call "%NVSMI%" --query-gpu^=name^,memory.total --format^=csv^,noheader') do echo    Graphics card: %%a, memory%%b
 )

@@ -1,0 +1,70 @@
+# AMD graphics (new, being tested): the same tools as requirements.txt, but with AMD's own PyTorch for Windows
+# (ROCm 7.2.1) instead of NVIDIA's CUDA PyTorch, and without bitsandbytes (its 8-bit and 4-bit parts work only on
+# NVIDIA cards; the kit uses ordinary AdamW and 16-bit models instead). Chosen by kit\amd_setup.cmd and the wizard
+# only when there is no NVIDIA driver and kit\gpu_backend.py finds an AMD Radeon that AMD's wheels support.
+# requirements.txt (NVIDIA) is not changed by this file.
+# AMD's Windows notes for 7.2.1 still list "No ML training support": training on AMD is a test until it is tried.
+#
+# AMD's packages: from AMD's own repository, exactly as AMD's install guide lists them for 7.2.1
+# (rocm.docs.amd.com/projects/radeon-ryzen, "PyTorch via PIP installation", Windows; graphics driver 26.2.2 or newer).
+# AMD publishes no checksums, so each SHA-256 below was worked out from the file downloaded from repo.radeon.com on
+# 27 November 2026 (files dated 28 February 2026); a file that does not match is refused by uv. rocm_sdk_devel (the
+# developer headers, 233 MB) is left out: torch needs only rocm[libraries]. torchaudio is not used by the kit.
+# AMD's chips for these wheels: gfx1100, gfx1101 (Radeon RX 7900 / 7800 / 7700, PRO W7900, W7800, W7700),
+# gfx1200, gfx1201 (Radeon RX 9060 XT / 9070, AI PRO R9700), gfx1150, gfx1151 (Ryzen AI 300 and 400, Ryzen AI Max).
+# Install:  uv pip install -r kit\requirements-amd.txt   (no PyTorch CUDA index)
+rocm[libraries] @ https://repo.radeon.com/rocm/windows/rocm-rel-7.2.1/rocm-7.2.1.tar.gz --hash=sha256:9084902eaa69213a00a90784ad89e6e5fe73c702df0cc6cc3a70d777c7a6142b
+rocm-sdk-core @ https://repo.radeon.com/rocm/windows/rocm-rel-7.2.1/rocm_sdk_core-7.2.1-py3-none-win_amd64.whl --hash=sha256:f68989d48df71cbfc3cb68bf705dc37c0f56e9666feddb59a1a0f5ff7539fe1c
+rocm-sdk-libraries-custom @ https://repo.radeon.com/rocm/windows/rocm-rel-7.2.1/rocm_sdk_libraries_custom-7.2.1-py3-none-win_amd64.whl --hash=sha256:c7fe0b0731af8896093ff69e11496830d3cb6a4aed73e895c60b7cbdc200be92
+torch @ https://repo.radeon.com/rocm/windows/rocm-rel-7.2.1/torch-2.9.1%2Brocm7.2.1-cp312-cp312-win_amd64.whl --hash=sha256:e88bf270163b48f7f27f7ea3db5ffb3be4ba107301933022bcb3c6ddedfeeabb
+torchvision @ https://repo.radeon.com/rocm/windows/rocm-rel-7.2.1/torchvision-0.24.1%2Brocm7.2.1-cp312-cp312-win_amd64.whl --hash=sha256:b5c34d76a2f01fb97e1e0f224bd97fc3a58ec1ee1ef2376af2d72086e9aca34c
+accelerate==1.15.0
+aiohappyeyeballs==2.7.1
+aiohttp==3.14.5
+aiosignal==1.4.0
+anyio==4.16.0
+attrs==26.1.0
+certifi==2026.10.23
+charset-normalizer==3.5.2
+colorama==0.4.6
+datasets==5.0.1
+dill==0.4.1
+filelock==4.2.10
+frozenlist==1.8.0
+fsspec==2026.6.0
+h11==0.16.0
+hf-xet==1.8.0
+httpcore==1.0.9
+httpx==0.28.1
+huggingface-hub==0.36.2
+idna==3.20
+jinja2==3.1.6
+markupsafe==3.0.4
+mpmath==1.3.0
+multidict==7.2.1
+multiprocess==0.70.19
+networkx==3.7
+numpy==2.5.5
+packaging==26.3
+pandas==3.1.1
+peft==0.21.3
+pillow==13.0.0
+propcache==0.5.4
+psutil==7.2.2
+pyarrow==26.0.1
+pypdfium2==5.15.2
+python-dateutil==4.0.0
+pyyaml==6.0.3
+regex==2026.11.15
+requests==2.34.2
+safetensors==0.8.0
+setuptools==84.2.1
+sympy==1.14.0
+tokenizers==0.22.2
+tqdm==4.70.1
+transformers==4.57.6
+typing-extensions==4.16.0
+tzdata==2026.6
+urllib3==2.8.0
+xxhash==4.1.0
+yarl==1.25.1

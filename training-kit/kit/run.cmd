@@ -23,11 +23,8 @@ where nvidia-smi >nul 2>&1
 if not errorlevel 1 set "NVSMI=nvidia-smi"
 if not defined NVSMI if exist "%ProgramFiles%\NVIDIA Corporation\NVSMI\nvidia-smi.exe" set "NVSMI=%ProgramFiles%\NVIDIA Corporation\NVSMI\nvidia-smi.exe"
 if not defined NVSMI if exist "%SystemRoot%\System32\nvidia-smi.exe" set "NVSMI=%SystemRoot%\System32\nvidia-smi.exe"
-if not defined NVSMI (
-  echo STOPPED: no NVIDIA graphics card driver was found. The kit needs an NVIDIA card with at least 12 GB of memory
-  echo and its driver from nvidia.com. If this computer has an AMD or Intel graphics card instead, tell Claude its name.
-  goto :end
-)
+rem No NVIDIA driver: AMD graphics as a second choice (new, being tested: kit\amd_setup.cmd), or the usual message.
+if not defined NVSMI goto :amd
 if not exist tools\uv.exe (
   echo Getting ready: downloading the installer helper, about 20 MB.
   powershell -NoProfile -ExecutionPolicy Bypass -Command "$ProgressPreference='SilentlyContinue'; Invoke-WebRequest -UseBasicParsing -Uri '%UV_URL%' -OutFile 'tools\uv.zip'; if ((Get-FileHash -Algorithm SHA256 'tools\uv.zip').Hash -eq '%UV_SHA256%') { Expand-Archive -Force 'tools\uv.zip' 'tools' } else { Remove-Item -Force 'tools\uv.zip'; Write-Host 'The downloaded helper did not match its published checksum, so it was deleted.' }"
@@ -44,6 +41,11 @@ if not exist env\installed.txt (
   if errorlevel 1 goto :failed
   echo installed> env\installed.txt
 )
+env\Scripts\python.exe kit\train.py %*
+goto :end
+:amd
+call kit\amd_setup.cmd describer
+if errorlevel 1 goto :end
 env\Scripts\python.exe kit\train.py %*
 goto :end
 :failed
