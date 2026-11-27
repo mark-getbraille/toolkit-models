@@ -8,5 +8,5 @@
 # 21 November (2): human and animal medicine labels (DailyMed, Drugs@FDA, Health Canada brand names), 23 books.
 # 21 November (3): animal sounds (NPS Sound Gallery descriptions and links).
 # 21 November (4): with the animal sounds book, the K-12 school books and open courses (LibreTexts, BCcampus, Illustrative Mathematics, Siyavula, OpenStax). Personal-use courses go in a later run.
-# 27 November: open language courses (languages section).
-lang-open
+# 27 November (evening): trades and OSHA, and the FEMA Emergency Management Institute courses.
+trades,fema-is
