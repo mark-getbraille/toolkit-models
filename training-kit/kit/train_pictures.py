@@ -1,6 +1,6 @@
 """Picture Model Training Kit, picture-making part: teach a Stable Diffusion model (SDXL or SD 1.5) to draw pictures
 from plain descriptions, by training a small add-on (a LoRA) on the described pictures of the kit's picture library,
-on your own computer's NVIDIA graphics card.
+on your own computer's NVIDIA graphics card (or, new and being tested, an AMD Radeon: see gpu_backend.py).
 
 Every step says what it does in plain words, on the screen and in training-log.txt (train.py's say()). A finished
 step is not done again: if the computer restarts or the window is closed, start it again and it carries on where it
@@ -709,13 +709,18 @@ def train_lora(base, items, cache_dir, run_dir, steps, device, dtype):
         p.data = p.data.float()                          # the add-on learns in full precision, the model is bf16
     unet.enable_gradient_checkpointing()
     unet.train()
+    amd = device == "cuda" and train.gpu_backend.is_rocm(torch)     # AMD graphics: new, being tested
     try:
         import bitsandbytes as bnb
         if device != "cuda":
             raise RuntimeError("8-bit AdamW needs the graphics card")
+        if amd:
+            raise RuntimeError("bitsandbytes works only on NVIDIA cards")
         optimizer = bnb.optim.AdamW8bit(params, lr=RATE, weight_decay=1e-2)
-    except Exception:  # noqa: BLE001 - no bitsandbytes (the kit's own tests on a processor)
+    except Exception:  # noqa: BLE001 - no bitsandbytes (the kit's own tests on a processor, or AMD graphics)
         optimizer = torch.optim.AdamW(params, lr=RATE, weight_decay=1e-2)
+    # fp16 (only on AMD graphics without bf16): a gradient scaler keeps small gradients from becoming nothing.
+    scaler = torch.amp.GradScaler("cuda") if amd and dtype == torch.float16 else None
     warmup = max(1, min(100, steps // 20))
 
     def rate_at(step):
@@ -747,8 +752,10 @@ def train_lora(base, items, cache_dir, run_dir, steps, device, dtype):
         say(f"  Carrying on from step {position} of {steps}.")
 
     def precision():
-        """bf16 mixed precision on the graphics card; plain float32 on the processor (tests)."""
-        return torch.autocast("cuda", dtype=torch.bfloat16) if device == "cuda" else contextlib.nullcontext()
+        """bf16 mixed precision on the graphics card (fp16 on AMD graphics without bf16); plain float32 on the
+        processor (tests)."""
+        mixed = torch.float16 if amd and dtype == torch.float16 else torch.bfloat16
+        return torch.autocast("cuda", dtype=mixed) if device == "cuda" else contextlib.nullcontext()
     start, started_at, last_said = time.time(), position, time.time()
     per_step = batch * accumulate
     timer = train.system_monitor.Timer()      # where the time goes: written into the logs with each progress line
@@ -774,11 +781,17 @@ def train_lora(base, items, cache_dir, run_dir, steps, device, dtype):
             snr = compute_snr(noise_scheduler, timesteps)
             weight = torch.clamp(snr, max=SNR_GAMMA) / (snr if prediction == "epsilon" else snr + 1)
             loss = (loss * weight).mean()
-            (loss / accumulate).backward()
+            (scaler.scale(loss / accumulate) if scaler else loss / accumulate).backward()
             total += loss.item() / accumulate        # waits for the graphics card, so the timing is true
             timer.add("graphics card work", time.time() - began)
+        if scaler:
+            scaler.unscale_(optimizer)
         torch.nn.utils.clip_grad_norm_(params, 1.0)
-        optimizer.step()
+        if scaler:
+            scaler.step(optimizer)
+            scaler.update()
+        else:
+            optimizer.step()
         scheduler.step()
         optimizer.zero_grad(set_to_none=True)
         losses = (losses + [total])[-100:]
@@ -1083,10 +1096,15 @@ def check_computer(settings, work, testing):
         if testing:
             say("No graphics card: testing on the processor (tiny test models only).")
             return "none (processor test)", "cpu", torch.float32
+        if train.gpu_backend.is_rocm(torch):
+            stop(train.AMD_UNUSABLE)
         stop("No NVIDIA graphics card can be used. Picture training needs an NVIDIA card with at least "
              f"{settings['memory']} GB of memory and an up-to-date NVIDIA driver (from nvidia.com).")
     props = torch.cuda.get_device_properties(0)
     memory = props.total_memory / 1024 ** 3
+    amd = train.gpu_backend.is_rocm(torch)        # AMD graphics (new, being tested): say why, check the chip
+    if amd:
+        memory = train.check_amd()
     say(f"Graphics card: {props.name}, {memory:.0f} GB of memory.")
     if memory < settings["memory"] - 0.5 and not testing:
         stop(f"{settings['name']} needs a card with at least {settings['memory']} GB of memory; this card has "
@@ -1096,6 +1114,8 @@ def check_computer(settings, work, testing):
     if free_gb < settings["disk"] and not testing:
         stop(f"Picture training needs about {settings['disk']} GB of free disk space here; there is {free_gb:.0f} GB.")
     torch.backends.cuda.matmul.allow_tf32 = True
+    if amd:
+        return props.name, "cuda", train.card().dtype
     return props.name, "cuda", torch.bfloat16
 
 
@@ -1299,7 +1319,9 @@ def main(argv=None):
             "places": sum(1 for item in ready if item.get("place")),
             "clip_before": scores["before"], "clip_after": scores["after"],
             "verdict": clip_verdict(scores["before"], scores["after"]),
-            "precision": "bf16 mixed precision, 8-bit AdamW" if device == "cuda" else "float32 on the processor (test)",
+            "precision": ("float32 on the processor (test)" if device != "cuda" else
+                          f"AMD graphics (ROCm), {str(dtype)[6:]} mixed precision, AdamW" if train.on_amd() else
+                          "bf16 mixed precision, 8-bit AdamW"),
             "settings": {"rank": RANK, "alpha": RANK, "rate": RATE, "batch": batch, "accumulate": accumulate,
                          "snr_gamma": SNR_GAMMA, "targets": TARGETS, "resolution": base.resolution,
                          "buckets": base.buckets, "test_steps": TEST_STEPS}}

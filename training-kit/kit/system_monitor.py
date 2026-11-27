@@ -205,9 +205,17 @@ def describe_computer(tool):
         lines.append("Computer: NVIDIA's tool (nvidia-smi) was not found, so the graphics card is not measured.")
     try:
         import torch
-        lines.append(f"Computer: PyTorch {torch.__version__}, CUDA {torch.version.cuda}"
-                     + (f", cuDNN {torch.backends.cudnn.version()}" if torch.backends.cudnn.is_available() else "")
-                     + ".")
+        if getattr(torch.version, "hip", None):      # AMD's PyTorch (ROCm): new, being tested
+            line = f"Computer: PyTorch {torch.__version__}, AMD ROCm (HIP {torch.version.hip})"
+            if torch.cuda.is_available():
+                props = torch.cuda.get_device_properties(0)
+                line += (f", graphics {props.name} ({(getattr(props, 'gcnArchName', '') or '').split(':')[0]}), "
+                         f"{props.total_memory / 1024 ** 3:.0f} GB reported")
+            lines.append(line + ".")
+        else:
+            lines.append(f"Computer: PyTorch {torch.__version__}, CUDA {torch.version.cuda}"
+                         + (f", cuDNN {torch.backends.cudnn.version()}" if torch.backends.cudnn.is_available() else "")
+                         + ".")
     except Exception:  # noqa: BLE001 - not every tool of the kit uses PyTorch
         pass
     lines.append(f"Computer: {platform.system()} {platform.release()} ({platform.version()}), Python "

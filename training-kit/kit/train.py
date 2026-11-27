@@ -7,7 +7,8 @@ done again: if the computer restarts or the window is closed, start it again and
 (training itself from its last save, every 200 pictures).
 
 The steps:
-  1. check the graphics card (NVIDIA, enough memory) and the free disk space;
+  1. check the graphics card (NVIDIA, enough memory) and the free disk space (an AMD Radeon is a second choice, new
+     and being tested: gpu_backend.py says which card and backend are used, and why, in the log);
   2. download the model at a pinned commit from Hugging Face;
   3. download the described pictures of every collection in sources.py (photos described in detail, photos taken
      by blind people, questions blind people asked, pictures with text to read, museum descriptions written for
@@ -115,6 +116,7 @@ MODELS = {   # the toolkit's uncensored picture models (app/toolkit/vision/engin
     "8b": ("huihui-ai/Huihui-Qwen3-VL-8B-Instruct-abliterated", "b47a0690b22eaf1d9a63874d967a03781c90f9cf", 15),
 }   # key: (Hugging Face repository, commit, the least graphics card memory in GB)
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import gpu_backend  # noqa: E402 - NVIDIA (CUDA, as always) or, new and being tested, AMD (ROCm)
 import sources  # noqa: E402 - the collections, beside this file
 import system_monitor  # noqa: E402 - computer use in the logs (processor, graphics card, disks, temperatures)
 
@@ -124,6 +126,9 @@ DETAILED, BRIEF = sources.DETAILED, sources.BRIEF
 
 SAVE_EVERY = 200           # training pictures between saves
 FREE_GB_NEEDED = {"4b": 90, "8b": 110}
+# AMD graphics only (new, being tested): without bitsandbytes the model is loaded in 16 bits, not 4, so it needs more
+# memory than MODELS says (a guess with room to spare, to be checked on real AMD hardware). NVIDIA is not affected.
+AMD_MEMORY_NEEDED = {"4b": 20, "8b": 32}
 ANSWER_TOKENS = {sources.DETAILED: 450, sources.NARRATE: 250, sources.ALT_TEXT: 160}    # others: 100
 
 
@@ -191,11 +196,15 @@ def check_computer(model_key, work, free_needed=None):
     (free_needed GB; the training's FREE_GB_NEEDED when not given); returns the card's name and memory in GB."""
     import torch
     if not torch.cuda.is_available():
+        if gpu_backend.is_rocm(torch):
+            stop(AMD_UNUSABLE)
         stop("No NVIDIA graphics card can be used. The kit needs an NVIDIA card with at least 12 GB of memory and an "
              "up-to-date NVIDIA driver (from nvidia.com).")
     props = torch.cuda.get_device_properties(0)
     memory = props.total_memory / 1024 ** 3
     need = MODELS[model_key][2]
+    if gpu_backend.is_rocm(torch):
+        memory, need = check_amd(), AMD_MEMORY_NEEDED[model_key] - 1
     say(f"Graphics card: {props.name}, {memory:.0f} GB of memory.")
     if memory < need:
         stop(f"The {model_key.upper()} model needs a card with at least {need + 1} GB of memory; this card has "
@@ -207,6 +216,46 @@ def check_computer(model_key, work, free_needed=None):
         stop(f"The kit needs about {need_gb} GB of free disk space here; there is {free:.0f} GB. "
              "Free some space, or move the kit folder to a bigger drive, and start it again.")
     return props.name, memory
+
+
+AMD_UNUSABLE = ("AMD's PyTorch is installed, but it cannot use the AMD graphics. Install AMD's graphics driver "
+                f"{gpu_backend.AMD_DRIVER} or newer (from amd.com), turn off Smart App Control (Windows Security, App "
+                "and browser control), restart the computer and start the kit again. Training on AMD graphics is new "
+                "and being tested: tell Claude what happened.")
+CARD = []        # the graphics card as gpu_backend sees it, worked out once (card())
+
+
+def card():
+    """The graphics card as gpu_backend.torch_device() sees it (None: none), worked out once per run."""
+    if not CARD:
+        CARD.append(gpu_backend.torch_device())
+    return CARD[0]
+
+
+def on_amd():
+    """True when the training runs on AMD graphics (AMD's ROCm PyTorch with a usable card)."""
+    try:
+        import torch
+    except ImportError:          # the training tools are not installed (the kit's own tests)
+        return False
+    return torch.cuda.is_available() and gpu_backend.is_rocm(torch)
+
+
+def check_amd():
+    """AMD graphics only: say which card, backend and choices are used and why (into the log), stop with a plain
+    reason when AMD's PyTorch does not support its chip or a small sum on it fails; returns the memory in GB the
+    kit plans with (on built-in graphics that share the computer's memory, a conservative part of it)."""
+    import torch
+    device = card()
+    for line in gpu_backend.report_lines(device):
+        say(line)
+    problem = gpu_backend.chip_problem(device)
+    if problem:
+        stop(problem)
+    error = gpu_backend.smoke_test(torch, device)
+    if error:
+        stop(f"The AMD graphics could not do a first small sum ({error}). " + AMD_UNUSABLE)
+    return device.memory_gb
 
 
 # ----------------------------------------------------------------- 2. the model
@@ -503,6 +552,8 @@ def load_model(folder, four_bit=True, adapter=None, trainable=False):
     import torch
     from transformers import AutoModelForImageTextToText, AutoProcessor
     kwargs = {"dtype": torch.bfloat16 if torch.cuda.is_available() else torch.float32}
+    if on_amd():                 # AMD (new, being tested): no bitsandbytes, so 16 bits on the card instead of 4
+        kwargs["dtype"], kwargs["device_map"], four_bit = card().dtype, {"": 0}, False
     if four_bit:
         from transformers import BitsAndBytesConfig
         kwargs["quantization_config"] = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
@@ -641,10 +692,14 @@ def train(model, processor, rows, adapter_dir, device, epochs=1, rate=1e-4, accu
     final = os.path.join(adapter_dir, "final")
     params = [p for p in model.parameters() if p.requires_grad]
     try:
+        if on_amd():
+            raise RuntimeError("bitsandbytes works only on NVIDIA cards")
         import bitsandbytes as bnb
         optimizer = bnb.optim.PagedAdamW8bit(params, lr=rate, weight_decay=0.0)
-    except Exception:  # noqa: BLE001 - no bitsandbytes (the self-test on a processor)
+    except Exception:  # noqa: BLE001 - no bitsandbytes (the self-test on a processor, or AMD graphics)
         optimizer = torch.optim.AdamW(params, lr=rate)
+    # fp16 (only on AMD graphics without bf16): a gradient scaler keeps small gradients from becoming nothing.
+    scaler = torch.amp.GradScaler("cuda") if on_amd() and card().dtype == torch.float16 else None
     total = len(rows) * epochs
     steps = math.ceil(total / accumulate)
     warmup = max(1, steps // 30)
@@ -682,7 +737,7 @@ def train(model, processor, rows, adapter_dir, device, epochs=1, rate=1e-4, accu
             timer.add("preparing pictures (processor)", time.time() - began)
             began = time.time()
             loss = model(**batch).loss / accumulate
-            loss.backward()
+            (scaler.scale(loss) if scaler else loss).backward()
             losses.append(loss.item() * accumulate)      # waits for the graphics card, so the timing is true
             timer.add("graphics card work", time.time() - began)
         except torch.cuda.OutOfMemoryError:
@@ -691,8 +746,14 @@ def train(model, processor, rows, adapter_dir, device, epochs=1, rate=1e-4, accu
             say(f"    picture {index + 1} was too big for the card's memory and is skipped")
         if (index + 1) % accumulate == 0 or index + 1 == total:
             began = time.time()
+            if scaler:
+                scaler.unscale_(optimizer)
             torch.nn.utils.clip_grad_norm_(params, 1.0)
-            optimizer.step()
+            if scaler:
+                scaler.step(optimizer)
+                scaler.update()
+            else:
+                optimizer.step()
             scheduler.step()
             optimizer.zero_grad(set_to_none=True)
             timer.add("learning step (graphics card)", time.time() - began)
@@ -1452,8 +1513,10 @@ def main(argv=None):
             "topic": topic.id if topic is not None else None,
             "topic_replay": args.topic_replay if topic is not None else None, "replay_pictures": replay_pictures,
             "real_questions": real_questions_summary(real_before, real_after),
-            "settings": {"lora_r": 16, "lora_alpha": 32, "rate": 1e-4, "accumulate": 8, "four_bit": True,
-                         "long_side": sources.LONG_SIDE, "system": SYSTEM}}
+            "settings": {"lora_r": 16, "lora_alpha": 32, "rate": 1e-4, "accumulate": 8, "four_bit": not on_amd(),
+                         "long_side": sources.LONG_SIDE, "system": SYSTEM,
+                         **({"graphics": f"AMD {card().name} ({card().chip}), ROCm, {str(card().dtype)[6:]}, "
+                                         "16-bit model, AdamW"} if on_amd() else {})}}
     if topic is not None:
         # The label (topics.py), beside the add-on and in the zip: personal use only by the kit's usual rules.
         import topics
