@@ -143,6 +143,7 @@ organisation and says "used with permission, personal use only".
 What you need
 - An NVIDIA graphics card with at least 12 GB of memory for the 4B model, or 16 GB for the 8B model, with an
   up-to-date NVIDIA driver.
+  (AMD graphics are a second choice, new and being tested: see "Training on an AMD graphics card" below.)
 - About 90 GB of free disk space (110 GB for the 8B model) on the drive where you unpack the kit.
 - An internet connection for the downloads, about 40 GB in all (more with Wikipedia).
 - Time: the downloads take a few hours, and training on all the pictures takes roughly a day on a fast card.
@@ -199,6 +200,43 @@ You can close the window at any time, or the computer can restart. Press Enter o
 carries on where it stopped. Training carries on from its last save; a collection already downloaded is not
 downloaded again. If it says STOPPED, it gives the reason on the same line, for example a card with too little
 memory or too little disk space.
+
+Training on an AMD graphics card (new, being tested)
+The kit is made for NVIDIA cards, and on a computer with an NVIDIA card nothing here changes. On a computer without
+one, the kit now looks for AMD graphics as a second choice and, when AMD's own PyTorch for Windows supports it, trains
+on it. This is new: nobody has run it on real AMD hardware yet, and AMD itself still lists "no training support" for
+its Windows version, so treat the first AMD trainings as tests.
+- Which AMD graphics: Radeon RX 7900, 7800 and 7700 cards, Radeon PRO W7900, W7800 and W7700, Radeon RX 9070 and
+  9060 XT, Radeon AI PRO R9700, and the built-in graphics of Ryzen AI Max (Radeon 8060S, 8050S, 8040S) and Ryzen AI
+  9 (Radeon 890M, 880M). The Radeon 8065S of the newer Ryzen AI Max PRO is not on AMD's list yet; the kit tries it as
+  the same family and checks the real chip before training. Older cards (RX 6000 and before, RX 7600) cannot be
+  used.
+- What it needs: Windows 11, AMD's graphics driver 26.2.2 or newer from amd.com, and Smart App Control turned off
+  (Windows Security, App and browser control), as AMD asks.
+- What happens: Quick Try.cmd (or any Start file) says "No NVIDIA driver was found, but there is AMD graphics", says
+  the card's name and whether it can be used, and installs AMD's tools (about 4 GB, each file checked against its
+  checksum) instead of NVIDIA's. The log then says which card was used, that it was AMD (ROCm), how much memory the
+  kit plans with, and what was done differently, and why.
+- What is different on AMD: the model is loaded in 16 bits instead of 4 (the 4-bit and 8-bit parts only work on
+  NVIDIA), so it needs more memory: about 20 GB for the 4B model and 32 GB for the 8B model. A Ryzen AI Max with
+  lots of memory has plenty; a 16 GB AMD card can only make pictures (Stable Diffusion), not train the describer.
+  On built-in graphics that share the computer's memory, the kit plans with at most three quarters of it, so
+  Windows keeps room. The graphics card's temperature and use are not measured in the "Computer use" lines on AMD.
+- If the card is not known by name, the kit stops and says so. To try anyway, open a console window in the kit
+  folder, type: set KIT_AMD_TRY=1 and press Enter, then type: "Quick Try.cmd" and press Enter.
+
+Checklist for an AMD tester
+1. Install AMD's driver 26.2.2 or newer, turn off Smart App Control, restart.
+2. Run "Computer Check.cmd" and keep "Computer Check.txt" (it lists the graphics cards).
+3. Press Enter on "Quick Try.cmd". Check that it says AMD graphics were found, names the card, and installs AMD's
+   tools without stopping.
+4. When step 1 of the training runs, check that training-log.txt has a "Graphics:" line saying AMD (ROCm), the
+   chip (for example gfx1151) and the memory planned with, and the lines saying bf16 or fp16 and "ordinary AdamW".
+5. Let the quick try finish. Check that it says FINISHED, that the report has scores before and after, and note how
+   long it took (the log says it every 200 pictures).
+6. Try a picture-making quick try too (in the program: What to train, picture-making model, SD 1.5, Quick try).
+7. If anything says STOPPED, or the computer freezes or restarts, send Claude training-log.txt, "Computer Check.txt"
+   and the "Picture Model Training logs" folder from the desktop.
 
 When it has finished
 It says FINISHED and whether the model got better. Two files matter:

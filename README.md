@@ -71,6 +71,14 @@ on your own NVIDIA graphics card. It trains a small add-on (a LoRA adapter) on D
 4.0) and tests the model before and after. Download it from the release **training-kit**, unpack it, and read
 `READ ME FIRST.txt`. A trained add-on is published here only if its test shows it describes better.
 
+**Training on an AMD graphics card (new, being tested).** Without an NVIDIA card, the kit now tries AMD graphics as a
+second choice: `kit/gpu_backend.py` reads the card's name from Windows and, for a chip that AMD's PyTorch for Windows
+(ROCm 7.2.1) supports (Radeon RX 7000 and 9000, Radeon PRO W7000, Ryzen AI 300 and Ryzen AI Max), `kit/amd_setup.cmd`
+installs `kit/requirements-amd.txt` (AMD's own wheels, each pinned with its SHA-256) instead of the NVIDIA list. On AMD
+the model is trained in 16 bits with ordinary AdamW (bitsandbytes is NVIDIA-only), and the log says which card and
+backend were used and why. Nothing changes on an NVIDIA computer. See "Training on an AMD graphics card" and the AMD
+tester's checklist in `READ ME FIRST.txt`.
+
 ## Open textbooks
 
 The release **textbooks** holds open textbooks and reference works as ZIM files (the offline library format of
